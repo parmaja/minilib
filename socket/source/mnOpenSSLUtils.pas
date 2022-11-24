@@ -34,6 +34,7 @@ type
   public
     constructor Create;
     procedure UpdateFile; override;
+    function AltNames: TStrings;
   end;
 
   TPX509Helper = record helper for PX509
@@ -261,7 +262,19 @@ begin
       Result.SetExt(NID_key_usage, vConfig.ReadString(n, SN_key_usage, ''));
     end;
 
-    Result.SetExt(NID_subject_alt_name, 'SN=1-TST|2-TST|3-ed22f1d8-e6a2-1118-9b58-d9a8f11e445f');
+    var s := vConfig.AltNames;
+    try
+      var sk := BuildAltStack(GEN_DNS, s);
+      try
+        var res := X509_add1_ext_i2d(Result, NID_subject_alt_name, sk, 0, 0);
+      finally
+        OPENSSL_sk_free(sk);
+      end;
+
+    finally
+      s.Free;
+    end;
+
   except
     FreeAndNil(Result);
   end;
@@ -271,6 +284,7 @@ function MakeCertReq(vConfig: TsslConfig; px: PX509; pk: PEVP_PKEY): Boolean; ov
 var
   req: PX509_REQ;
   n, v: UTF8String;
+  i: Integer;
 begin
   //C:\temp\openssl-master\apps\req.c
 
@@ -278,8 +292,10 @@ begin
   try
     n := UTF8Encode('1.3.6.1.4.1.311.20.2');
     n := UTF8Encode('TSTZATCACodeSigning');
+    //vConfig.ReadSection
 
-    var i := X509_REQ_add1_attr_by_txt(req, PByte(n), MBSTRING_ASC, PByte(v), -1);
+    i := px.SetExt(NID_subject_alt_name, 'SN=1-TST|2-TST|3-ed22f1d8-e6a2-1118-9b58-d9a8f11e445f');
+    i := X509_REQ_add1_attr_by_txt(req, PByte(n), MBSTRING_ASC, PByte(v), -1);
 
     vConfig.WriteString('Result', 'Csr', px.BIOstr(procedure(bio: PBIO)
     begin
@@ -392,6 +408,17 @@ end;
 constructor TsslConfig.Create;
 begin
   inherited Create('');
+end;
+
+function TsslConfig.AltNames: TStrings;
+begin
+  Result := TStringList.Create;
+  try
+    if SectionExists('alt_names') then
+      ReadSectionValues('alt_names', Result);
+  except
+    FreeAndNil(Result);
+  end;
 end;
 
 procedure TsslConfig.UpdateFile;

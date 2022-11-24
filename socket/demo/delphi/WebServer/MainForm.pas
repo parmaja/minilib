@@ -157,6 +157,11 @@ begin
     s.WriteString('req_ext', 'basicConstraints', 'critical,CA:TRUE');
     s.WriteString('req_ext', 'keyUsage', 'critical,cRLSign,digitalSignature,keyCertSign');
 
+    s.WriteString('alt_names', 'serial', '123456');
+    s.WriteString('alt_names', 'ID', '310122393500003');
+    s.WriteString('alt_names', 'code', '9950');
+    s.WriteString('alt_names', 'address', 'MyAddress');
+    s.WriteString('alt_names', 'category', 'Industry');
 
     MakeCert('certificate', s);
     {if MakeCert(s) then

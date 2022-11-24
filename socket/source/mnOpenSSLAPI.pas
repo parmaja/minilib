@@ -47,6 +47,16 @@ const
   SSL_VERIFY_CLIENT_ONCE          = $04;
   SSL_VERIFY_POST_HANDSHAKE       = $08;
 
+  GEN_OTHERNAME                   = 0;
+  GEN_EMAIL                       = 1;
+  GEN_DNS                         = 2;
+  GEN_X400                        = 3;
+  GEN_DIRNAME                     = 4;
+  GEN_EDIPARTY                    = 5;
+  GEN_URI                         = 6;
+  GEN_IPADD                       = 7;
+  GEN_RID                         = 8;
+
   SSL_MODE_ENABLE_PARTIAL_WRITE                 = $00000001;
   SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER           = $00000002;
   SSL_MODE_AUTO_RETRY                           = $00000004;
@@ -3597,6 +3607,7 @@ var
   X509_getm_notAfter: function(x: PX509): PASN1_TIME; cdecl;
   X509_set_pubkey: function(x: PX509; pkey: PEVP_PKEY): Integer; cdecl;
   X509_get_subject_name: function(x: PX509): PX509_NAME; cdecl;
+  X509_add1_ext_i2d: function(x: PX509; nid: Integer; value: Pointer; crit: Integer; flags: Cardinal): Integer; cdecl;
 
   X509_set_subject_name: function(x: PX509; name: PX509_NAME): Integer; cdecl;
   X509_REQ_get_pubkey: function(req: PX509_REQ): PEVP_PKEY; cdecl;
@@ -3872,6 +3883,8 @@ begin
   X509_getm_notAfter := GetAddress('X509_getm_notAfter');
   X509_set_pubkey := GetAddress('X509_set_pubkey');
   X509_get_subject_name := GetAddress('X509_get_subject_name');
+  X509_add1_ext_i2d := GetAddress('X509_add1_ext_i2d');
+
 
   X509_set_subject_name := GetAddress('X509_set_subject_name');
   X509_REQ_get_pubkey := GetAddress('X509_REQ_get_pubkey');
@@ -3929,6 +3942,8 @@ begin
   ASN1_STRING_new := GetAddress('ASN1_STRING_new');
   ASN1_STRING_set := GetAddress('ASN1_STRING_set');
   GENERAL_NAME_new := GetAddress('GENERAL_NAME_new');
+  GENERAL_NAME_set0_value := GetAddress('GENERAL_NAME_set0_value');
+
 
   BIO_s_mem := GetAddress('BIO_s_mem');
   HMAC := GetAddress('HMAC');
