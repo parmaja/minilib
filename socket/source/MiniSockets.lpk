@@ -66,10 +66,6 @@
         <UnitName Value="mnOpenSSL"/>
       </Item>
       <Item>
-        <Filename Value="mnOpenSSLUtils.pas"/>
-        <UnitName Value="mnOpenSSLUtils"/>
-      </Item>
-      <Item>
         <Filename Value="mnZKTClients.pas"/>
         <UnitName Value="mnZKTClients"/>
       </Item>
