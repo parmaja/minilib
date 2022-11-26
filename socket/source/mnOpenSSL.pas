@@ -144,7 +144,8 @@ procedure CleanupOpenSSL;
 procedure RaiseLastSSLError;
 procedure RaiseSSLError(Message: utf8string);
 
-function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
+function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 
 implementation
 
@@ -281,6 +282,43 @@ begin
       if pk <> nil then
       	EVP_PKEY_free(pk);
     end;
+  end;
+end;
+
+function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
+var
+	x509: PX509;
+	pkey: PEVP_PKEY;
+  outbio: PBIO;
+  s: utf8string;
+  xx: PX509_REQ;
+begin
+	x509 :=nil;
+	pkey := nil;
+  try
+    Result := MakeCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days);
+
+    outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');
+	  PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
+    BIO_free(outbio);
+
+    outbio := BIO_new_file(PUTF8Char(CertificateFile), 'w');
+	  PEM_write_bio_X509(outbio, x509);
+    BIO_free(outbio);
+
+
+    s := ChangeFileExt(CertificateFile, '.csr');
+    xx := X509_to_X509_REQ(x509, pkey, EVP_sha256);
+    outbio := BIO_new_file(PUTF8Char(s), 'w');
+	  PEM_write_bio_X509_REQ(outbio, xx);
+    BIO_free(outbio);
+    X509_REQ_free(xx);
+
+  finally
+    if x509 <> nil then
+  	  X509_free(x509);
+    if pkey <> nil then
+  	  EVP_PKEY_free(pkey);
   end;
 end;
 

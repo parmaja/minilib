@@ -3395,6 +3395,9 @@ type
   PASN1_SCTX = Pointer;
   PPASN1_SCTX = ^PASN1_SCTX;
 
+  Pstack_st_X509_EXTENSION = PSLLObject;
+  PPstack_st_X509_EXTENSION = ^Pstack_st_X509_EXTENSION;
+
   ASN1_ENCODING_st = record
     enc: PByte;
     len: Integer;
@@ -3683,6 +3686,10 @@ var
   GENERAL_NAME_new: function(): PGENERAL_NAME; cdecl;
   GENERAL_NAME_set0_value: procedure(a: PGENERAL_NAME; typ: Integer; value: Pointer); cdecl;
 
+  X509_NAME_add_entry_by_NID: function(name: PX509_NAME; nid: Integer; typ: Integer; bytes: PByte; len: Integer; loc: Integer; &set: Integer): Integer; cdecl;
+  X509_REQ_add_extensions: function(req: PX509_REQ; sk: Pstack_st_X509_EXTENSION): Integer; cdecl;
+  X509_REQ_add_extensions_nid: function(req: PX509_REQ; sk: Pstack_st_X509_EXTENSION; nid: Integer): Integer; cdecl;
+  X509V3_add1_i2d: function(var sk: POPENSSL_STACK; nid: Integer; value: Pointer; crit: Integer; flags: Cardinal): Integer; cdecl;
   //Aliases functions
 
   function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong; inline;
@@ -3963,6 +3970,12 @@ begin
   ERR_get_error := GetAddress('ERR_get_error');
   ERR_error_string := GetAddress('ERR_error_string');
   ERR_load_CRYPTO_strings := GetAddress('ERR_load_CRYPTO_strings');
+
+  X509_NAME_add_entry_by_NID := GetAddress('X509_NAME_add_entry_by_NID');
+  X509_REQ_add_extensions := GetAddress('X509_REQ_add_extensions');
+  X509_REQ_add_extensions_nid := GetAddress('X509_REQ_add_extensions_nid');
+  X509V3_add1_i2d := GetAddress('X509V3_add1_i2d');
+
 end;
 
 function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt;

@@ -44,20 +44,35 @@ type
     procedure AdjTime(vDays: NativeInt); overload;
     procedure AdjTime(vFrom, vTo: NativeInt); overload;
 
-    procedure SetSubjectName(const vField, vData: string);
+    procedure SetSubjectName(const vField, vData: string); overload;
+    procedure SetSubjectName(vNID: Integer; const vData: string); overload;
+
     function SetExt(NID: Integer; const vData: string): Integer;
     function BIOstr(vProc: TProc<PBIO>): string;
     class function Generate(vConfig: TsslConfig; vProc: TProc<PX509, PEVP_PKEY>): Boolean; static;
   end;
 
+  TSSLStackHelper = record helper for POPENSSL_STACK
+    function SetExt(NID: Integer; const vData: string): Integer;
+    function SetStack(typ: Integer; const vData: TStrings): Integer;
+  end;
 
-function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+  TSSLStackData = record
+    Name: UTF8String;
+    Gen: PGENERAL_NAME;
+    ASN: PASN1_STRING;
+  end;
+
+  TSSLStackArr = TArray<TSSLStackData>;
+
+
 
 function MakeX509(vConfig: TsslConfig): PX509;
 function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
+function MakeCertReq(vConfig: TsslConfig; px: PX509; pk: PEVP_PKEY): Boolean; overload;
 function MakeCert(vConfig: TsslConfig): Boolean; overload;
 function MakeCert(const vName: string; vConfig: TsslConfig): Boolean; overload;
-function BuildAltStack(AltType: Integer; Names: TStrings): POPENSSL_STACK;
+function BuildAltStack(AltType: Integer; Names: TStrings; var vArr: TSSLStackArr): POPENSSL_STACK;
 
 implementation
 
@@ -96,9 +111,6 @@ end;
 function MakeX509(vConfig: TsslConfig): PX509;
 var
   n: string;
-  s: TStrings;
-  sk: POPENSSL_STACK;
-  var res: Integer;
 begin
   InitOpenSSLLibrary;
 
@@ -107,6 +119,8 @@ begin
     X509_set_version(Result, 2);
     Result.SetSerial(vConfig.ReadInteger('req', 'Serial', 0));
     Result.AdjTime(vConfig.ReadInteger('req', 'Days', 1));
+
+    Result.SetSubjectName(NID_pkcs9_emailAddress, vConfig.ReadString('req', 'emailAddress', ''));
 
     n := vConfig.ReadString('req', 'distinguished_name', '');
     if n<>'' then
@@ -133,19 +147,6 @@ begin
       Result.SetExt(NID_key_usage, vConfig.ReadString(n, SN_key_usage, ''));
     end;
 
-    s := vConfig.AltNames;
-    try
-      sk := BuildAltStack(GEN_DNS, s);
-      try
-        res := X509_add1_ext_i2d(Result, NID_subject_alt_name, sk, 0, 0);
-      finally
-        OPENSSL_sk_free(sk);
-      end;
-
-    finally
-      s.Free;
-    end;
-
   except
     FreeAndNil(Result);
   end;
@@ -156,17 +157,41 @@ var
   req: PX509_REQ;
   n, v: UTF8String;
   i: Integer;
+
+  s: TStrings;
+  t, sk: POPENSSL_STACK;
+  res: Integer;
 begin
   //C:\temp\openssl-master\apps\req.c
 
   req := X509_to_X509_REQ(px, pk, EVP_sha256);
   try
-    n := UTF8Encode('1.3.6.1.4.1.311.20.2');
+
+    {n := UTF8Encode('1.3.6.1.4.1.311.20.2');
     n := UTF8Encode('TSTZATCACodeSigning');
     //vConfig.ReadSection
 
     i := px.SetExt(NID_subject_alt_name, 'SN=1-TST|2-TST|3-ed22f1d8-e6a2-1118-9b58-d9a8f11e445f');
-    i := X509_REQ_add1_attr_by_txt(req, PByte(n), MBSTRING_ASC, PByte(v), -1);
+    i := X509_REQ_add1_attr_by_txt(req, PByte(n), MBSTRING_ASC, PByte(v), -1);}
+
+    sk := OPENSSL_sk_new_null;
+    try
+      sk.SetExt(NID_key_usage, vConfig.ReadString('v3_req', SN_key_usage, ''));
+
+      s := vConfig.AltNames;
+      try
+        sk.SetStack(GEN_DNS, s);
+      finally
+        s.Free;
+      end;
+
+      X509_REQ_add_extensions(req, sk);
+    finally
+      OPENSSL_sk_free(sk);
+    end;
+
+    X509_REQ_sign(req, pk, EVP_sha256);
+
 
     vConfig.WriteString('Result', 'Csr', px.BIOstr(procedure(bio: PBIO)
     begin
@@ -235,43 +260,6 @@ begin
     _Write(vName+'.csr', vConfig.ReadString('Result', 'Csr', ''));
     _Write(vName+'.private.pem', vConfig.ReadString('Result', 'PrvKey', ''));
     _Write(vName+'.public.pem', vConfig.ReadString('Result', 'PubKey', ''));
-  end;
-end;
-
-function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
-var
-	x509: PX509;
-	pkey: PEVP_PKEY;
-  outbio: PBIO;
-  s: utf8string;
-  xx: PX509_REQ;
-begin
-	x509 :=nil;
-	pkey := nil;
-  try
-    Result := MakeCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days);
-
-    outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');
-	  PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
-    BIO_free(outbio);
-
-    outbio := BIO_new_file(PUTF8Char(CertificateFile), 'w');
-	  PEM_write_bio_X509(outbio, x509);
-    BIO_free(outbio);
-
-
-    s := ChangeFileExt(CertificateFile, '.csr');
-    xx := X509_to_X509_REQ(x509, pkey, EVP_sha256);
-    outbio := BIO_new_file(PUTF8Char(s), 'w');
-	  PEM_write_bio_X509_REQ(outbio, xx);
-    BIO_free(outbio);
-    X509_REQ_free(xx);
-
-  finally
-    if x509 <> nil then
-  	  X509_free(x509);
-    if pkey <> nil then
-  	  EVP_PKEY_free(pkey);
   end;
 end;
 
@@ -397,26 +385,40 @@ begin
   ASN1_INTEGER_set(X509_get_serialNumber(Self), vSerial);
 end;
 
-function BuildAltStack(AltType: Integer; Names: TStrings): POPENSSL_STACK;
+procedure TPX509Helper.SetSubjectName(vNID: Integer; const vData: string);
+var
+  n: PX509_NAME;
+  d: UTF8String;
+begin
+  if vData <> '' then
+  begin
+    n := X509_get_subject_name(Self);
+    d := UTF8Encode(vData);
+
+    X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_ASC, PByte(d), -1, -1, 0);
+  end;
+end;
+
+function BuildAltStack(AltType: Integer; Names: TStrings; var vArr: TSSLStackArr): POPENSSL_STACK;
 var
   i: Integer;
   c: Integer;
   g: PGENERAL_NAME;
   v: PASN1_STRING;
-  t: UTF8String;
 begin
   Result := OPENSSL_sk_new_null;
   if Names.Count<>0 then
   begin
-    for var s in Names do
+    SetLength(vArr, Names.Count);
+    for i:=0 to Names.Count-1 do
     begin
-      g := GENERAL_NAME_new;
-      v := ASN1_STRING_new;
-      t := UTF8Encode(s);
+      vArr[i].Gen := GENERAL_NAME_new;
+      vArr[i].ASN := ASN1_STRING_new;
+      vArr[i].Name := UTF8Encode(Names[i]);
 
-      ASN1_STRING_set(v, PByte(t), Length(t));
-      GENERAL_NAME_set0_value(g, AltType, v);
-      OPENSSL_sk_push(Result, g)
+      ASN1_STRING_set(vArr[i].ASN, PByte(vArr[i].Name), Length(vArr[i].Name));
+      GENERAL_NAME_set0_value(vArr[i].Gen, AltType, vArr[i].ASN);
+      OPENSSL_sk_push(Result, vArr[i].Gen);
     end;
 
 
@@ -437,6 +439,35 @@ begin
             f_OPENSSL_sk_push(result, Pointer(FAltGenStr[I]));
         end;
     end;}
+  end;
+end;
+
+{ TSSLStackHelper }
+
+function TSSLStackHelper.SetExt(NID: Integer; const vData: string): Integer;
+var
+  Ext : PX509_EXTENSION;
+  d: UTF8String;
+begin
+  Result := 0;
+  if vData<>'' then
+  begin
+    d := UTF8Encode(vData);
+    Ext := X509V3_EXT_conf_nid(nil, nil, NID, PUTF8Char(d));
+    OPENSSL_sk_push(Self, ext);
+  end;
+end;
+
+function TSSLStackHelper.SetStack(typ: Integer; const vData: TStrings): Integer;
+var
+  sk: POPENSSL_STACK;
+  aArr: TSSLStackArr;
+begin
+  sk := BuildAltStack(GEN_DNS, vData, aArr);
+  try
+    Result := X509V3_add1_i2d(Self, NID_subject_alt_name, sk, 0, 0);
+  finally
+    OPENSSL_sk_free(sk);
   end;
 end;
 
