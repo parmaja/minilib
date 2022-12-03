@@ -305,6 +305,40 @@ const
   EVP_PKS_DSA      = $0200;
   EVP_PKS_EC       = $0400;
 
+  X509_PURPOSE_DYNAMIC                    = $1;
+  X509_PURPOSE_DYNAMIC_NAME               = $2;
+  X509_PURPOSE_SSL_CLIENT                 = 1;
+  X509_PURPOSE_SSL_SERVER                 = 2;
+  X509_PURPOSE_NS_SSL_SERVER              = 3;
+  X509_PURPOSE_SMIME_SIGN                 = 4;
+  X509_PURPOSE_SMIME_ENCRYPT              = 5;
+  X509_PURPOSE_CRL_SIGN                   = 6;
+  X509_PURPOSE_ANY                        = 7;
+  X509_PURPOSE_OCSP_HELPER                = 8;
+  X509_PURPOSE_TIMESTAMP_SIGN             = 9;
+  X509_PURPOSE_MIN                        = 1;
+  X509_PURPOSE_MAX                        = 9;
+  X509V3_EXT_UNKNOWN_MASK                 = ($f shl 16);
+  X509V3_EXT_DEFAULT                      = 0;
+  X509V3_EXT_ERROR_UNKNOWN                = (1 shl 16);
+  X509V3_EXT_PARSE_UNKNOWN                = (2 shl 16);
+  X509V3_EXT_DUMP_UNKNOWN                 = (3 shl 16);
+  X509V3_ADD_OP_MASK                      = $f;
+  X509V3_ADD_DEFAULT                      = 0;
+  X509V3_ADD_APPEND                       = 1;
+  X509V3_ADD_REPLACE                      = 2;
+  X509V3_ADD_REPLACE_EXISTING             = 3;
+  X509V3_ADD_KEEP_EXISTING                = 4;
+  X509V3_ADD_DELETE                       = 5;
+  X509V3_ADD_SILENT                       = $10;
+  X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT    = $1;
+  X509_CHECK_FLAG_NO_WILDCARDS            = $2;
+  X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS    = $4;
+  X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS   = $8;
+  X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS = $10;
+  X509_CHECK_FLAG_NEVER_CHECK_SUBJECT     = $20;
+  _X509_CHECK_FLAG_DOT_SUBDOMAINS         = $8000;
+
   SN_undef                                                   = 'UNDEF';
   LN_undef                                                   = 'undefined';
   NID_undef                                                  = 0;
@@ -3192,6 +3226,7 @@ const
 
   EVP_PKEY_NONE   = NID_undef;
   EVP_PKEY_RSA    = NID_rsaEncryption;
+  EVP_PKEY_EC     = NID_X9_62_id_ecPublicKey;
 
   SSL_SENT_SHUTDOWN = 1;
   SSL_RECEIVED_SHUTDOWN = 0;
@@ -3284,7 +3319,7 @@ type
 
   PX509 = type PSLLObject;
   PX509_STORE_CTX = PSLLObject;
-  PX509_REQ = PSLLObject;
+  PX509_REQ = type PSLLObject;
   PX509_CRL =PSLLObject;
   PX509V3_CONF_METHOD = PSLLObject;
   PPX509_REQ = ^PX509_REQ;
@@ -3292,6 +3327,11 @@ type
   PX509_sign = PSLLObject;
   PX509_EXTENSION = PSLLObject;
   PLHASH = PSLLObject;
+
+  PEC_KEY = PSLLObject;
+  PPEC_KEY = ^PEC_KEY;
+  PEC_KEY_METHOD = PSLLObject;
+  PPEC_KEY_METHOD = ^PEC_KEY_METHOD;
 
   PBIO_METHOD = PSLLObject;
   PPBIO_METHOD = ^PBIO_METHOD;
@@ -3304,6 +3344,11 @@ type
   PEVP_CIPHER = PSLLObject;
   PEVP_PKEY = PSLLObject;
   PEVP_MD = PSLLObject;
+
+  PEC_GROUP = PSLLObject;
+  PPEC_GROUP = ^PEC_GROUP;
+  PEC_POINT = PSLLObject;
+  PPEC_POINT = ^PEC_POINT;
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
 
@@ -3613,6 +3658,8 @@ var
   X509_add1_ext_i2d: function(x: PX509; nid: Integer; value: Pointer; crit: Integer; flags: Cardinal): Integer; cdecl;
 
   X509_set_subject_name: function(x: PX509; name: PX509_NAME): Integer; cdecl;
+  X509_REQ_set_subject_name: function(req: PX509_REQ; name: PX509_NAME): Integer; cdecl;
+
   X509_REQ_get_pubkey: function(req: PX509_REQ): PEVP_PKEY; cdecl;
   X509_REQ_add1_attr_by_txt: function(req: PX509_REQ; attrname: PByte; &type: Integer; bytes: PByte; len: Integer): Integer; cdecl;
 
@@ -3683,6 +3730,9 @@ var
 
   ASN1_STRING_set: function(str: PASN1_STRING; data: Pointer; len: Integer): Integer; cdecl;
   ASN1_STRING_new: function(): PASN1_STRING; cdecl;
+  ASN1_OCTET_STRING_new: function():PASN1_OCTET_STRING; cdecl;
+  ASN1_OCTET_STRING_set: function(str: PASN1_OCTET_STRING; data: PByte; len: Integer): Integer; cdecl;
+
   GENERAL_NAME_new: function(): PGENERAL_NAME; cdecl;
   GENERAL_NAME_set0_value: procedure(a: PGENERAL_NAME; typ: Integer; value: Pointer); cdecl;
 
@@ -3690,6 +3740,20 @@ var
   X509_REQ_add_extensions: function(req: PX509_REQ; sk: Pstack_st_X509_EXTENSION): Integer; cdecl;
   X509_REQ_add_extensions_nid: function(req: PX509_REQ; sk: Pstack_st_X509_EXTENSION; nid: Integer): Integer; cdecl;
   X509V3_add1_i2d: function(var sk: POPENSSL_STACK; nid: Integer; value: Pointer; crit: Integer; flags: Cardinal): Integer; cdecl;
+  OBJ_create: function(name: PUTF8Char; sn: PUTF8Char; ln: PUTF8Char): Integer; cdecl;
+  OBJ_txt2nid: function(s: PUTF8Char): Integer; cdecl;
+
+  EC_KEY_new:  function(): PEC_KEY; cdecl;
+  EC_KEY_get_flags: function(key: PEC_KEY): Integer; cdecl;
+  EC_KEY_set_flags: procedure(key: PEC_KEY; flags: Integer); cdecl;
+  EC_KEY_clear_flags: procedure(key: PEC_KEY; flags: Integer); cdecl;
+  EC_KEY_new_by_curve_name: function(nid: Integer): PEC_KEY; cdecl;
+  EC_KEY_free: procedure(key: PEC_KEY); cdecl;
+
+  EC_GROUP_new_by_curve_name: function(nid: Integer): PEC_GROUP; cdecl;
+  EC_KEY_set_group: function(key: PEC_KEY; group: PEC_GROUP): Integer; cdecl;
+  EC_KEY_generate_key: function(key: PEC_KEY): Integer; cdecl;
+
   //Aliases functions
 
   function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong; inline;
@@ -3706,6 +3770,8 @@ var
   function SSL_set_mode(ssl: PSSL; op: Integer): clong; inline;
 
   function EVP_PKEY_assign_RSA(pkey: PEVP_PKEY; key: PRSA): Integer;
+  function EVP_PKEY_assign_EC_KEY(pkey: PEVP_PKEY; key: PEC_KEY): Integer;
+
 
   //tls1.h
   function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
@@ -3768,6 +3834,11 @@ end;
 function EVP_PKEY_assign_RSA(pkey: PEVP_PKEY; key: PRSA): Integer;
 begin
   Result := EVP_PKEY_assign(pkey, EVP_PKEY_RSA, key);
+end;
+
+function EVP_PKEY_assign_EC_KEY(pkey: PEVP_PKEY; key: PEC_KEY): Integer;
+begin
+  Result := EVP_PKEY_assign(pkey, EVP_PKEY_EC, key);
 end;
 
 function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
@@ -3894,6 +3965,7 @@ begin
 
 
   X509_set_subject_name := GetAddress('X509_set_subject_name');
+  X509_REQ_set_subject_name := GetAddress('X509_REQ_set_subject_name');
   X509_REQ_get_pubkey := GetAddress('X509_REQ_get_pubkey');
   X509_REQ_add1_attr_by_txt := GetAddress('X509_REQ_add1_attr_by_txt');
 
@@ -3950,6 +4022,8 @@ begin
   ASN1_STRING_set := GetAddress('ASN1_STRING_set');
   GENERAL_NAME_new := GetAddress('GENERAL_NAME_new');
   GENERAL_NAME_set0_value := GetAddress('GENERAL_NAME_set0_value');
+  ASN1_OCTET_STRING_new := GetAddress('ASN1_OCTET_STRING_new');
+  ASN1_OCTET_STRING_set := GetAddress('ASN1_OCTET_STRING_set');
 
 
   BIO_s_mem := GetAddress('BIO_s_mem');
@@ -3976,6 +4050,19 @@ begin
   X509_REQ_add_extensions_nid := GetAddress('X509_REQ_add_extensions_nid');
   X509V3_add1_i2d := GetAddress('X509V3_add1_i2d');
 
+  OBJ_create  := GetAddress('OBJ_create');
+  OBJ_txt2nid := GetAddress('OBJ_txt2nid');
+
+  EC_KEY_new := GetAddress('EC_KEY_new');
+  EC_KEY_get_flags := GetAddress('EC_KEY_get_flags');
+  EC_KEY_set_flags := GetAddress('EC_KEY_set_flags');
+  EC_KEY_clear_flags := GetAddress('EC_KEY_clear_flags');
+  EC_KEY_new_by_curve_name := GetAddress('EC_KEY_new_by_curve_name');
+  EC_KEY_free := GetAddress('EC_KEY_free');
+
+  EC_GROUP_new_by_curve_name := GetAddress('EC_GROUP_new_by_curve_name');
+  EC_KEY_set_group := GetAddress('EC_KEY_set_group');
+  EC_KEY_generate_key := GetAddress('EC_KEY_generate_key');
 end;
 
 function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt;

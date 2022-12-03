@@ -146,13 +146,14 @@ begin
     s.WriteInteger('req', 'default_bits', 2048);
     s.WriteInteger('req', 'Serial', 0);
     s.WriteInteger('req', 'Days', 1);
+    s.WriteString('req', 'emailAddress', 'anasbash@hotmail.com');
     s.WriteString('req', 'distinguished_name', 'dn');
     s.WriteString('req', 'req_extensions', 'req_ext');
 
-    s.WriteString('dn', 'CN', 'Creative Solutions');
-    s.WriteString('dn', 'O', 'Creative Solutions');
-    s.WriteString('dn', 'C', 'Creative Solutions');
-    s.WriteString('dn', 'OU', '');
+    s.WriteString('dn', 'C', 'SA');
+    s.WriteString('dn', 'OU', 'Riyad Branch');
+    s.WriteString('dn', 'O', 'Contoso');
+    s.WriteString('dn', 'CN', 'EA123456789');
 
     s.WriteString('req_ext', 'basicConstraints', 'critical,CA:TRUE');
     s.WriteString('req_ext', 'keyUsage', 'critical,cRLSign,digitalSignature,keyCertSign');
