@@ -640,7 +640,7 @@ end;
 
 function TmnHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
 begin
-  Post(vURL, PByte(vData), Length(vData));
+  Result := Post(vURL, PByte(vData), Length(vData));
 end;
 
 procedure TmnHttpClient.ReceiveStream(AStream: TStream);
