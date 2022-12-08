@@ -130,6 +130,7 @@ function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): Strin
 
 function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
 procedure SpliteStr(const S, Separator: string; out Name, Value: string);
+
 function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
 function StrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Boolean; overload;
@@ -1391,6 +1392,9 @@ var
   Index, B, E: Integer;
   C: Char;
 begin
+  if Str='' then
+    Exit('');
+
   Index := 0;
   B := 0;
   E := 1;
@@ -1402,7 +1406,7 @@ begin
     if C = vSeperator then
       Inc(Index);
 
-    if Index = vToIndex + 1 then
+    if (Index = vToIndex + 1) then
     begin
       E := E - 1;
       Break;
@@ -1418,7 +1422,10 @@ end;
 
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer): String;
 begin
-  Result := SubStr(Str, vSeperator, vIndex, vIndex);
+  if Str='' then
+    Result := ''
+  else
+    Result := SubStr(Str, vSeperator, vIndex, vIndex);
 end;
 
 procedure SpliteStr(const S, Separator: string; out Name, Value: string);

@@ -22,7 +22,7 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, StrUtils, 
+  SysUtils, Classes, StrUtils,
   mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
   mnClients, mnStreams, mnStreamUtils;
 
@@ -98,12 +98,21 @@ type
   private
     FLocation: UTF8String;
     FServer: UTF8String;
+    FHead: UTF8String;
+    function GetStatusResult: string;
+    function GetStatusVersion: string;
+    function GetStatusCode: Integer;
   protected
     procedure ReceiveHeaders; virtual;
   public
     procedure Receive;
     property Location: UTF8String read FLocation write FLocation;
     property Server: UTF8String read FServer write FServer;
+    property Head: UTF8String read FHead;
+
+    property StatusVersion: string read GetStatusVersion;
+    property StatusCode: Integer read GetStatusCode;
+    property StatusResult: string read GetStatusResult;
   end;
 
   { TmnCustomHttpStream }
@@ -408,22 +417,31 @@ begin
 end;
 
 procedure TmnHttpRequest.SendPost(vData: PByte; vCount: Cardinal);
+
+  procedure _Write(const s: string);
+  begin
+    Client.Stream.WriteLineUTF8(s);
+    //TFile.AppendAllText('c:\temp\h.Log', s+#13);
+  end;
+
 var
   s: UTF8String;
   f: TmnField;
 begin
   CollectHeaders;
-  Client.Stream.WriteLineUTF8('POST ' + Client.Path + ' ' + ProtocolVersion);
+  _Write('POST ' + Client.Path + ' ' + ProtocolVersion);
+
   for f in Items do
     if f.AsString <> '' then
-      Client.Stream.WriteLineUTF8(f.FullString);
+      _Write(f.FullString);
   for f in Client.Cookies do
     s := f.Value + ';';
   if s <> '' then
-    Client.Stream.WriteLineUTF8('Cookie: ' + s);
-  Client.Stream.WriteLineUTF8('Content-Length: ' + IntToStr(vCount));
-  Client.Stream.WriteLineUTF8('');
-  Client.Stream.Write(vData^, vCount)
+    _Write('Cookie: ' + s);
+  _Write('Content-Length: ' + IntToStr(vCount));
+  _Write('');
+
+  Client.Stream.Write(vData^, vCount);
 end;
 
 procedure TmnHttpRequest.SendGet;
@@ -480,11 +498,30 @@ begin
   end;
 end;
 
+function TmnHttpResponse.GetStatusCode: Integer;
+var
+  s: string;
+begin
+  s := SubStr(Head, ' ', 1);
+  Result := StrToIntDef(s, 0);
+end;
+
+function TmnHttpResponse.GetStatusResult: string;
+begin
+  Result := SubStr(Head, ' ', 2); { TODO : to correct use remain text :) }
+end;
+
+function TmnHttpResponse.GetStatusVersion: string;
+begin
+  Result := SubStr(Head, ' ', 0);
+end;
+
 procedure TmnHttpResponse.Receive;
 var
   s: UTF8String;
 begin
   FHeaders.Clear;
+  Client.Stream.ReadLine(FHead, True);
   // if FStream.Connected then
   begin
     Client.Stream.ReadLine(s, True);
