@@ -1541,7 +1541,6 @@ var
   b, c: Byte;
   i, p: Integer;
 begin
-  Result := True;
   BufSize := Count * 2;
   GetMem(Buf, BufSize);
   try
@@ -1559,7 +1558,8 @@ begin
       inc(p);
 
     end;
-    Over.Write(Buf^, BufSize, ResultCount, RealCount);
+    Result := Over.Write(Buf^, BufSize, ResultCount, RealCount);
+    ResultCount := ResultCount div 2;
   finally
     FreeMem(Buf);
   end;

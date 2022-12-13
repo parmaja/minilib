@@ -485,7 +485,7 @@ end;
 
 function TmnChunkStreamProxy.ChunkSize: Integer;
 begin
-  Result := 512;
+  Result := 1024;
 end;
 
 { TmnPlainStreamProxy }
