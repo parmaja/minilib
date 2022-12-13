@@ -87,6 +87,13 @@ type
 
   TmnChunkStreamProxy = class(TmnStreamOverProxy)
   protected
+    FChunkEnd: Boolean;
+    FReadSize: Integer;
+    function ChunkSize: Integer;
+
+    function ReadSize: Integer;
+    procedure ReadChunkEndOfLine;
+
     procedure CloseWrite; override;
     procedure CloseRead; override;
     function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
@@ -339,50 +346,146 @@ end;
 procedure TmnChunkStreamProxy.CloseRead;
 begin
   inherited;
+  FChunkEnd := False;
+  FReadSize := 0;
 
 end;
 
 procedure TmnChunkStreamProxy.CloseWrite;
+const
+  sEOD = '0'#13#10#13#10;
+var
+  r, e: Longint;
+
 begin
   inherited;
+  Over.Write(PUtf8Char(sEOD)^, Length(sEOD), r, e);
 
 end;
 
 function TmnChunkStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
 var
-  b: Byte;
-  r, c: LongInt;
-  aCount: Integer;
-  s: string;
+  aCount: longint;
 begin
-  Result := Over.Read(Buffer, Count, ResultCount, RealCount);
-  Exit;
+  //Result := Over.Read(Buffer, Count, ResultCount, RealCount);
+  //Exit;
+  ResultCount := 0;
+  RealCount := 0;
+  //Result := not FChunkEnd;
+  Result := True;
 
-  s := '';
-  aCount := 0;
-  repeat
-    Over.Read(b, 1, r, c);
-    case b of
-      13, 10:
+  if Result then
+  begin
+    if FReadSize=0 then
+    begin
+      FReadSize := ReadSize;
+      if FReadSize=0 then
       begin
-        Over.Read(b, 1, r, c);
-        aCount := StrToIntDef('$'+s, 0);
-        Over.Read(Buffer, aCount, ResultCount, RealCount);
-
-        Over.Read(b, 1, r, c);
-        Over.Read(b, 1, r, c);
-        b := 0;
+        //FChunkEnd := True;
+        CloseData;
       end;
-      else
-        s := s + Chr(b);
     end;
 
-  until b=0;
+    if FReadSize>0 then
+    begin
+      if FReadSize>=Count then
+        aCount := Count
+      else
+        aCount := FReadSize;
+
+      Over.Read(Buffer, aCount, ResultCount, RealCount);
+      Dec(FReadSize, ResultCount);
+    end;
+
+    if FReadSize = 0 then
+    begin
+      ReadChunkEndOfLine;
+    end;
+  end;
 end;
 
 function TmnChunkStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+const
+  sEOL = #13#10;
+
+var
+  c, i, t: Integer;
+  r, e: LongInt;
+  b: PByte;
+  s: UTF8String;
 begin
-  Result := Over.Write(Buffer, Count, ResultCount, RealCount);
+  { TODO : support chunk write }
+
+  b := @Buffer;
+
+  ResultCount := Count;
+  RealCount := Count;
+
+  while True do
+  begin
+    if Count>ChunkSize then
+      t := ChunkSize
+    else
+      t := Count;
+
+    s := UTF8Encode(IntToHex(t, 1))+sEOL;
+
+    Over.Write(PUtf8Char(s)^, Length(s), r, e);
+    Result := Over.Write(b^, t, r, e);
+    Over.Write(PUtf8Char(sEOL)^, Length(sEOL), r, e);
+    Inc(b, t);
+    //Result := Over.Write(#13#10, t, r, e);
+    Count := Count-t;
+    if Count<=0 then
+      Break;
+  end;
+end;
+
+procedure TmnChunkStreamProxy.ReadChunkEndOfLine;
+var
+  b: Byte;
+  r, c: LongInt;
+begin
+  Over.Read(b, 1, r, c); //skip $A
+  if b=13 then
+    Over.Read(b, 1, r, c); //skip $A
+end;
+
+function TmnChunkStreamProxy.ReadSize: Integer;
+var
+  b: Byte;
+  r, c: LongInt;
+  s: string;
+  t: Boolean;
+begin
+  Result := -1;
+
+  s := '';
+  while True do
+  begin
+    t := Over.Read(b, 1, r, c);
+    if t and (r<>0) then
+    begin
+      case b of
+        13, 10:
+        begin
+          Result := StrToIntDef('$'+s, 0);
+          if b=13 then
+            Over.Read(b, 1, r, c); //skip $A
+          Break;
+        end;
+        else
+          s := s + Chr(b);
+      end;
+    end
+    else
+      Break;
+  end;
+end;
+
+function TmnChunkStreamProxy.ChunkSize: Integer;
+begin
+  Result := 512;
 end;
 
 { TmnPlainStreamProxy }

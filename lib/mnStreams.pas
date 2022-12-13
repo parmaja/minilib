@@ -38,6 +38,7 @@ type
 
   TmnStreamClose = set of (
     cloRead, //Mark is as EOF
+    cloData, //Mark is as end of data
     cloWrite //Flush buffer
   );
 
@@ -54,6 +55,8 @@ type
     function GetConnected: Boolean; virtual; //Socket or COM ports have Connected override
     function CanRead: Boolean;
     function CanWrite: Boolean;
+    procedure SetCloseData;
+    procedure ResetCloseData;
   public
     //Count = 0 , load until eof
     function ReadString(out S: string; Count: TFileSize = 0): Boolean; overload;
@@ -69,8 +72,12 @@ type
     function CopyToStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline; //alias
     function CopyFromStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline; //alias
 
+
     property Connected: Boolean read GetConnected;
     property Done: TmnStreamClose read FDone;
+
+    function Read(var Buffer; Count: Integer): Integer; override;
+    function Write(const Buffer; Count: Integer): Integer; override;
   end;
 
   TmnStreamOverProxy = class;
@@ -91,6 +98,7 @@ type
     procedure Flush; virtual;
     procedure CloseRead; virtual; abstract;
     procedure CloseWrite; virtual; abstract;
+    procedure CloseData; virtual;
     property Over: TmnStreamProxy read FOver;
   public
     //RealCount passed to Original Stream to retrive the real size of write or read, do not assign or modifiy it
@@ -155,6 +163,8 @@ type
 
     procedure CloseRead; override;
     procedure CloseWrite; override;
+    procedure CloseData; override;
+
     procedure Flush; override;
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
     function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
@@ -337,8 +347,8 @@ type
     Method: TmnMethodProxyEncode;
   end;
 
-const
-  ReadWriteBufferSize = 1024;
+var
+  ReadWriteBufferSize: Integer = 1024;
 
 implementation
 
@@ -442,6 +452,12 @@ begin
     CloseRead;
     CloseWrite;
   end;
+end;
+
+procedure TmnStreamProxy.CloseData;
+begin
+  if FOver <> nil then
+    Over.CloseData;
 end;
 
 procedure TmnStreamProxy.CloseReadAll;
@@ -654,12 +670,22 @@ end;
 
 function TmnCustomStream.CanRead: Boolean;
 begin
-  Result := Connected and not (cloRead in Done);
+  Result := Connected and not (cloData in Done) and not (cloRead in Done);
 end;
 
 function TmnCustomStream.CanWrite: Boolean;
 begin
-  Result := Connected and not (cloWrite in Done);
+  Result := Connected and not (cloData in Done) and not (cloWrite in Done);
+end;
+
+procedure TmnCustomStream.ResetCloseData;
+begin
+  FDone := FDone - [cloData];
+end;
+
+procedure TmnCustomStream.SetCloseData;
+begin
+  FDone := FDone + [cloData];
 end;
 
 function TmnCustomStream.CopyFromStream(AStream: TStream; Count: TFileSize): TFileSize;
@@ -704,6 +730,12 @@ begin
   finally
     FreeMem(aBuffer);
   end;
+end;
+
+function TmnCustomStream.Read(var Buffer; Count: Integer): Integer;
+begin
+  ResetCloseData;
+  Result := inherited Read(Buffer, Count);
 end;
 
 function TmnCustomStream.ReadBufferBytes(Count: TFileSize): TBytes;
@@ -754,6 +786,12 @@ var
   RealCount: Integer;
 begin
   Result := WriteStream(AStream, Count, RealCount);
+end;
+
+function TmnCustomStream.Write(const Buffer; Count: Integer): Integer;
+begin
+  //ResetCloseData;
+  Result := inherited Write(Buffer, Count);
 end;
 
 function TmnCustomStream.WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize;
@@ -1329,7 +1367,7 @@ var
       begin
         if aCount=ABufferSize then
         begin
-          ABufferSize := ABufferSize + ReadWriteBufferSize;
+          ABufferSize := ABufferSize + ReadWriteBufferSize; { TODO : change ReadWriteBufferSize->FReadBuffer.Size }
           ReallocMem(ABuffer, ABufferSize);
         end;
         t := ABuffer;
@@ -1723,6 +1761,11 @@ begin
   ResultCount := FStream.WriteBuffer(Buffer, Count);
   RealCount := ResultCount;
   Result := True;
+end;
+
+procedure TmnInitialStreamProxy.CloseData;
+begin
+  FStream.SetCloseData;
 end;
 
 procedure TmnInitialStreamProxy.CloseRead;

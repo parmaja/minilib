@@ -56,6 +56,10 @@ type
     procedure ExampleHexImage; //Hex image
     procedure ExampleCopyHexImage; //Hex image2 images and read one
 
+    procedure ExampleChunkedRead;
+    procedure ExampleChunkedWrite;
+    procedure ExampleChunkedImage;
+
     procedure ExampleInflateImage; //Inflate image
     procedure ExampleGZImage; //GZ image
 
@@ -646,6 +650,85 @@ begin
   end;
 end;
 
+procedure TTestStream.ExampleChunkedImage;
+var
+  aImageFile: TFileStream;
+  Stream: TmnBufferStream;
+  Proxy: TmnChunkStreamProxy;
+begin
+  WriteLn('Read image to hex file');
+  aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmCreate or fmOpenWrite));
+  Proxy := TmnChunkStreamProxy.Create;
+  Stream.AddProxy(Proxy);
+  Stream.AddProxy(TmnHexStreamProxy.Create);
+  try
+    WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aImageFile)));
+  finally
+    FreeAndNil(Stream);
+    FreeAndNil(aImageFile);
+  end;
+
+  WriteLn('Read hex file to image');
+  aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmOpenRead));
+  Proxy := TmnChunkStreamProxy.Create;
+  Stream.AddProxy(Proxy);
+  Stream.AddProxy(TmnHexStreamProxy.Create);
+  try
+    WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aImageFile)));
+  finally
+    FreeAndNil(Stream);
+    FreeAndNil(aImageFile);
+  end;
+end;
+
+procedure TTestStream.ExampleChunkedRead;
+var
+  Stream: TmnBufferStream;
+  Proxy: TmnChunkStreamProxy;
+  f: TFileStream;
+begin
+
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_chunk.txt', fmOpenRead));
+  Proxy := TmnChunkStreamProxy.Create;
+  Stream.AddProxy(Proxy);
+  //ReadWriteBufferSize := 3;
+
+  f := TFileStream.Create('temp1.txt', fmCreate or fmOpenWrite);
+  try
+    Stream.ReadStream(f);
+  finally
+    f.Free;
+  end;
+
+  f := TFileStream.Create('temp2.txt', fmCreate or fmOpenWrite);
+  try
+    Stream.ReadStream(f);
+  finally
+    f.Free;
+  end;
+
+  FreeAndNil(Stream);
+end;
+
+procedure TTestStream.ExampleChunkedWrite;
+var
+  Stream: TmnBufferStream;
+  Proxy: TmnChunkStreamProxy;
+begin
+
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_chunk.txt', fmCreate or fmOpenWrite));
+  Proxy := TmnChunkStreamProxy.Create;
+  Stream.AddProxy(Proxy);
+  try
+    Stream.WriteLineUTF8('0123456789');
+    Stream.WriteLineUTF8('0123456789 kjhdkajshd kjh fdksajdf hdfjas kdfh ksdh fklsdhf ksdhf ksdhf ksdh fklshfj dffdff');
+  finally
+    FreeAndNil(Stream);
+  end;
+end;
+
 procedure TTestStream.ExampleCopyHexImage;
 var
   aImageFile: TFileStream;
@@ -779,8 +862,8 @@ begin
     FreeAndNil(Stream2);
     FreeAndNil(Stream1);
   end;
-  WriteLn('source size = ' + GetFileSize('image.jpg').ToString);
-  WriteLn('destination size = ' + GetFileSize('image_copy.jpg').ToString);
+  WriteLn('source size = ' + GetSizeOfFile('image.jpg').ToString);
+  WriteLn('destination size = ' + GetSizeOfFile('image_copy.jpg').ToString);
 end;
 
 procedure TTestStream.CopyFileRead;
@@ -798,8 +881,8 @@ begin
     FreeAndNil(Stream1);
   end;
 
-  WriteLn('source size = ' + GetFileSize('image.jpg').ToString);
-  WriteLn('destination size = ' + GetFileSize('image_copy.jpg').ToString);
+  WriteLn('source size = ' + GetSizeOfFile('image.jpg').ToString);
+  WriteLn('destination size = ' + GetSizeOfFile('image_copy.jpg').ToString);
 end;
 
 constructor TTestStream.Create;
@@ -864,6 +947,10 @@ begin
       AddProc('ExampleGZText: GZ Text', ExampleGZText);
       AddProc('ExampleGZText: Headered Text', ExampleTextWithHeader);
       AddProc('ExampleFileText: Readline Text', ExampleReadLineFile);
+      AddProc('ExampleChunked: Read Chunked lines', ExampleChunkedRead);
+      AddProc('ExampleChunked: Write Chunked lines', ExampleChunkedWrite);
+      AddProc('ExampleChunked: Image Chunked lines', ExampleChunkedImage);
+
 
       while true do
       begin
