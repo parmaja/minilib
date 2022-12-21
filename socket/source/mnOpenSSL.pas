@@ -146,11 +146,66 @@ procedure RaiseSSLError(Message: utf8string);
 
 function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
+function ECDSASignBase64(const vData, vKey: utf8string): UTF8String; overload;
+function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
 
 implementation
 
 uses
   mnSockets;
+
+function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
+var
+  bio, b64: PBIO;
+  aBuf: PBUF_MEM;
+begin
+	b64 := BIO_new(BIO_f_base64());
+	bio := BIO_new(BIO_s_mem());
+	bio := BIO_push(b64, bio);
+	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); //Ignore newlines - write everything in one line
+	BIO_write(bio, vBuf, vLen);
+	BIO_flush(bio);
+  BIO_get_mem_ptr(bio, aBuf);
+
+  Result := aBuf.data;
+  SetLength(Result, aBuf.length);
+
+	//BIO_set_close(bio, BIO_NOCLOSE);
+	BIO_free_all(bio);
+
+end;
+
+function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
+var
+	aKey: PEC_KEY;
+  bio: PBIO;
+begin
+  InitOpenSSLLibrary;
+
+  bio := BIO_new_mem_buf(PByte(vKey), Length(vKey));
+  try
+    aKey := PEM_read_bio_ECPrivateKey(bio, nil, nil, nil);
+    try
+      var aLen := ECDSA_size(aKey);
+      SetLength(Result, aLen);
+
+      ECDSA_sign(0, PByte(vData), Length(vData), PByte(Result), @aLen, aKey);
+      SetLength(Result, aLen);
+    finally
+
+    end;
+  finally
+    BIO_free(bio);
+  end;
+end;
+
+function ECDSASignBase64(const vData, vKey: utf8string): UTF8String; overload;
+begin
+  var b := ECDSASign(vData, vKey);
+  Result := BioBase64Encode(PByte(b[0]), Length(b));
+  //Result := tnet
+end;
 
 function AddExt(cert: PX509; nid: integer; value: PUTF8Char): Integer;
 var

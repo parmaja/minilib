@@ -84,7 +84,6 @@ function BuildAltStack(AltType: Integer; Names: TStrings; var vArr: TSSLStackArr
 
 implementation
 
-
 function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
 var
   ecp: PEC_KEY;

@@ -55,10 +55,100 @@ const
   GEN_EDIPARTY                    = 5;
   GEN_URI                         = 6;
   GEN_IPADD                       = 7;
-  GEN_RID                         = 8;
+  GEN_RID                             = 8;
 
-  SSL_MODE_ENABLE_PARTIAL_WRITE                 = $00000001;
-  SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER           = $00000002;
+  BIO_FP_READ                         = $02;
+  BIO_FP_WRITE                        = $04;
+  BIO_FP_APPEND                       = $08;
+  BIO_FP_TEXT                         = $10;
+  BIO_FLAGS_READ                      = $01;
+  BIO_FLAGS_WRITE                     = $02;
+  BIO_FLAGS_IO_SPECIAL                = $04;
+  BIO_FLAGS_RWS                       = (BIO_FLAGS_READ or BIO_FLAGS_WRITE or BIO_FLAGS_IO_SPECIAL);
+  BIO_FLAGS_SHOULD_RETRY              = $08;
+  BIO_FLAGS_UPLINK                    = 0;
+  BIO_FLAGS_BASE64_NO_NL              = $100;
+  BIO_FLAGS_MEM_RDONLY                = $200;
+  BIO_FLAGS_NONCLEAR_RST              = $400;
+  BIO_FLAGS_IN_EOF                    = $800;
+  BIO_RR_SSL_X509_LOOKUP              = $01;
+  BIO_RR_CONNECT                      = $02;
+  BIO_RR_ACCEPT                       = $03;
+  BIO_CB_FREE                         = $01;
+  BIO_CB_READ                         = $02;
+  BIO_CB_WRITE                        = $03;
+  BIO_CB_PUTS                         = $04;
+  BIO_CB_GETS                         = $05;
+  BIO_CB_CTRL                         = $06;
+  BIO_CB_RETURN                       = $80;
+  BIO_C_SET_CONNECT                   = 100;
+  BIO_C_DO_STATE_MACHINE              = 101;
+  BIO_C_SET_NBIO                      = 102;
+  BIO_C_SET_FD                        = 104;
+  BIO_C_GET_FD                        = 105;
+  BIO_C_SET_FILE_PTR                  = 106;
+  BIO_C_GET_FILE_PTR                  = 107;
+  BIO_C_SET_FILENAME                  = 108;
+  BIO_C_SET_SSL                       = 109;
+  BIO_C_GET_SSL                       = 110;
+  BIO_C_SET_MD                        = 111;
+  BIO_C_GET_MD                        = 112;
+  BIO_C_GET_CIPHER_STATUS             = 113;
+  BIO_C_SET_BUF_MEM                   = 114;
+  BIO_C_GET_BUF_MEM_PTR               = 115;
+  BIO_C_GET_BUFF_NUM_LINES            = 116;
+  BIO_C_SET_BUFF_SIZE                 = 117;
+  BIO_C_SET_ACCEPT                    = 118;
+  BIO_C_SSL_MODE                      = 119;
+  BIO_C_GET_MD_CTX                    = 120;
+  BIO_C_SET_BUFF_READ_DATA            = 122;
+  BIO_C_GET_CONNECT                   = 123;
+  BIO_C_GET_ACCEPT                    = 124;
+  BIO_C_SET_SSL_RENEGOTIATE_BYTES     = 125;
+  BIO_C_GET_SSL_NUM_RENEGOTIATES      = 126;
+  BIO_C_SET_SSL_RENEGOTIATE_TIMEOUT   = 127;
+  BIO_C_FILE_SEEK                     = 128;
+  BIO_C_GET_CIPHER_CTX                = 129;
+  BIO_C_SET_BUF_MEM_EOF_RETURN        = 130;
+  BIO_C_SET_BIND_MODE                 = 131;
+  BIO_C_GET_BIND_MODE                 = 132;
+  BIO_C_FILE_TELL                     = 133;
+  BIO_C_GET_SOCKS                     = 134;
+  BIO_C_SET_SOCKS                     = 135;
+  BIO_C_SET_WRITE_BUF_SIZE            = 136;
+  BIO_C_GET_WRITE_BUF_SIZE            = 137;
+  BIO_C_MAKE_BIO_PAIR                 = 138;
+  BIO_C_DESTROY_BIO_PAIR              = 139;
+  BIO_C_GET_WRITE_GUARANTEE           = 140;
+  BIO_C_GET_READ_REQUEST              = 141;
+  BIO_C_SHUTDOWN_WR                   = 142;
+  BIO_C_NREAD0                        = 143;
+  BIO_C_NREAD                         = 144;
+  BIO_C_NWRITE0                       = 145;
+  BIO_C_NWRITE                        = 146;
+  BIO_C_RESET_READ_REQUEST            = 147;
+  BIO_C_SET_MD_CTX                    = 148;
+  BIO_C_SET_PREFIX                    = 149;
+  BIO_C_GET_PREFIX                    = 150;
+  BIO_C_SET_SUFFIX                    = 151;
+  BIO_C_GET_SUFFIX                    = 152;
+  BIO_C_SET_EX_ARG                    = 153;
+  BIO_C_GET_EX_ARG                    = 154;
+  BIO_C_SET_CONNECT_MODE              = 155;
+  BIO_FAMILY_IPV4                     = 4;
+  BIO_FAMILY_IPV6                     = 6;
+  BIO_FAMILY_IPANY                    = 256;
+  BIO_BIND_NORMAL                     = 0;
+  BIO_SOCK_REUSEADDR                  = $01;
+  BIO_BIND_REUSEADDR                  = BIO_SOCK_REUSEADDR;
+  BIO_BIND_REUSEADDR_IF_UNUSED        = BIO_SOCK_REUSEADDR;
+  BIO_SOCK_V6_ONLY                    = $02;
+  BIO_SOCK_KEEPALIVE                  = $04;
+  BIO_SOCK_NONBLOCK                   = $08;
+  BIO_SOCK_NODELAY                    = $10;
+
+  SSL_MODE_ENABLE_PARTIAL_WRITE       = $00000001;
+  SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER = $00000002;
   SSL_MODE_AUTO_RETRY                           = $00000004;
   SSL_MODE_NO_AUTO_CHAIN                        = $00000008;
   SSL_MODE_RELEASE_BUFFERS                      = $00000010;
@@ -267,32 +357,46 @@ const
   SSL_FILETYPE_ASN1      = X509_FILETYPE_ASN1;
   SSL_FILETYPE_PEM       = X509_FILETYPE_PEM;
 
-//bio.h
-  BIO_C_SET_CONNECT                             = 100;
-  BIO_C_DO_STATE_MACHINE                        = 101;
-  BIO_C_SET_NBIO                                = 102;
-  //BIO_C_SET_PROXY_PARAM               = 103;
-  BIO_C_SET_FD                                  = 104;
-  BIO_C_GET_FD                                  = 105;
-  BIO_C_SET_FILE_PTR                            = 106;
-  BIO_C_GET_FILE_PTR                            = 107;
-  BIO_C_SET_FILENAME                            = 108;
-  BIO_C_SET_SSL                                 = 109;
-  BIO_C_GET_SSL                                 = 110;
 
-  BIO_FLAGS_READ          = $01;
-  BIO_FLAGS_WRITE         = $02;
-  BIO_FLAGS_IO_SPECIAL    = $04;
-  BIO_FLAGS_RWS           = (BIO_FLAGS_READ or BIO_FLAGS_WRITE or BIO_FLAGS_IO_SPECIAL);
-  BIO_FLAGS_SHOULD_RETRY  = $08;
 
-  BIO_CTRL_INFO = 3;
-
-  BIO_CTRL_DGRAM_SET_RECV_TIMEOUT = 33;(* setsockopt, essentially *)
-  BIO_CTRL_DGRAM_GET_RECV_TIMEOUT = 34;(* getsockopt, essentially *)
-  BIO_CTRL_DGRAM_SET_SEND_TIMEOUT = 35;(* setsockopt, essentially *)
-  BIO_CTRL_DGRAM_GET_SEND_TIMEOUT = 36;(* getsockopt, essentially *)
-
+  BIO_CTRL_RESET                       = 1;
+  BIO_CTRL_EOF                         = 2;
+  BIO_CTRL_INFO                        = 3;
+  BIO_CTRL_SET                         = 4;
+  BIO_CTRL_GET                         = 5;
+  BIO_CTRL_PUSH                        = 6;
+  BIO_CTRL_POP                         = 7;
+  BIO_CTRL_GET_CLOSE                   = 8;
+  BIO_CTRL_SET_CLOSE                   = 9;
+  _BIO_CTRL_PENDING                    = 10;
+  BIO_CTRL_FLUSH                       = 11;
+  BIO_CTRL_DUP                         = 12;
+  _BIO_CTRL_WPENDING                   = 13;
+  BIO_CTRL_SET_CALLBACK                = 14;
+  BIO_CTRL_GET_CALLBACK                = 15;
+  BIO_CTRL_PEEK                        = 29;
+  BIO_CTRL_SET_FILENAME                = 30;
+  BIO_CTRL_DGRAM_CONNECT               = 31;
+  BIO_CTRL_DGRAM_SET_CONNECTED         = 32;
+  BIO_CTRL_DGRAM_SET_RECV_TIMEOUT      = 33;
+  BIO_CTRL_DGRAM_GET_RECV_TIMEOUT      = 34;
+  BIO_CTRL_DGRAM_SET_SEND_TIMEOUT      = 35;
+  BIO_CTRL_DGRAM_GET_SEND_TIMEOUT      = 36;
+  BIO_CTRL_DGRAM_GET_RECV_TIMER_EXP    = 37;
+  BIO_CTRL_DGRAM_GET_SEND_TIMER_EXP    = 38;
+  BIO_CTRL_DGRAM_MTU_DISCOVER          = 39;
+  BIO_CTRL_DGRAM_QUERY_MTU             = 40;
+  BIO_CTRL_DGRAM_GET_FALLBACK_MTU      = 47;
+  BIO_CTRL_DGRAM_GET_MTU               = 41;
+  BIO_CTRL_DGRAM_SET_MTU               = 42;
+  BIO_CTRL_DGRAM_MTU_EXCEEDED          = 43;
+  BIO_CTRL_DGRAM_GET_PEER              = 46;
+  BIO_CTRL_DGRAM_SET_PEER              = 44;
+  BIO_CTRL_DGRAM_SET_NEXT_TIMEOUT      = 45;
+  BIO_CTRL_DGRAM_SET_DONT_FRAG         = 48;
+  BIO_CTRL_DGRAM_GET_MTU_OVERHEAD      = 49;
+  BIO_CTRL_DGRAM_SCTP_SET_IN_HANDSHAKE = 50;
+  BIO_CTRL_DGRAM_SET_PEEK_MODE         = 71;
 
   EVP_PK_RSA       = $0001;
   EVP_PK_DSA       = $0002;
@@ -3531,6 +3635,16 @@ type
   P_anonymous_type_5 = ^_anonymous_type_5;
 
 
+  buf_mem_st = record
+    length: NativeUInt;
+    data: PUTF8Char;
+    max: NativeUInt;
+    flags: Cardinal;
+  end;
+
+  BUF_MEM = buf_mem_st;
+  PBUF_MEM = ^BUF_MEM;
+
   asn1_type_st = record
     &type: Integer;
     value: _anonymous_type_1;
@@ -3703,6 +3817,7 @@ var
   BIO_new_fd: function(handle: THandle; close_flag: Integer): PBIO; cdecl; //idk
   BIO_new_file: function(filename: PUTF8Char; Mode: PUTF8Char): PBIO; cdecl;
   BIO_new_mem_buf: function(buf: PByte; len: Integer): PBIO; cdecl;
+  BIO_f_base64: function(): PBIO_METHOD; cdecl;
 
   BIO_s_mem: function(): PBIO_METHOD; cdecl;
   HMAC: function(evp_md: PEVP_MD; key: Pointer; key_len: Integer; d: PByte; n: NativeUInt; md: PByte; var md_len: Cardinal): PByte; cdecl;
@@ -3711,6 +3826,8 @@ var
   BIO_write: function(b: PBIO; const data; dlen: Integer): Integer; cdecl;
   BIO_gets: function(b: PBIO; buf: PByte; Size: Integer): Integer; cdecl;
   BIO_puts: function(bio: PBIO; buf: PUTF8Char): Integer; cdecl;
+  BIO_push: function(b: PBIO; append: PBIO): PBIO; cdecl;
+  BIO_set_flags: function(b: PBIO; flags: Integer): integer; cdecl;
   BIO_test_flags: function(b: PBIO; flags: Integer): integer; cdecl;
   BIO_free_all: procedure(b: PBIO); cdecl;
   BIO_free: function(bio: PBIO): Integer; cdecl;
@@ -3754,6 +3871,11 @@ var
   EC_KEY_set_group: function(key: PEC_KEY; group: PEC_GROUP): Integer; cdecl;
   EC_KEY_generate_key: function(key: PEC_KEY): Integer; cdecl;
 
+  PEM_read_bio_ECPrivateKey: function(bp: PBIO; x: PPEC_KEY; cb: Ppem_password_cb; u: Pointer): PEC_KEY; cdecl;
+  ECDSA_size: function(eckey: PEC_KEY): Integer; cdecl;
+  ECDSA_sign: function(&type: Integer; dgst: PByte; dgstlen: Integer; sig: PByte; siglen: PCardinal; eckey: PEC_KEY): Integer; cdecl;
+
+
   //Aliases functions
 
   function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong; inline;
@@ -3766,6 +3888,9 @@ var
   function BIO_do_handshake(b: PBIO): clong; inline;
   function BIO_set_nbio(b: PBIO; n: Integer): clong; inline; //set blocking mode or not
   function BIO_should_retry(b: PBIO): Boolean; inline;
+  function BIO_get_mem_ptr(b: PBIO; var pp: PBUF_MEM): clong; inline;
+  function BIO_flush(b: PBIO): clong; inline;
+  function BIO_set_close(b: PBIO; c: clong): clong; inline;
 
   function SSL_set_mode(ssl: PSSL; op: Integer): clong; inline;
 
@@ -3829,6 +3954,21 @@ end;
 function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong;
 begin
   Result := BIO_ctrl(b, BIO_C_GET_SSL, 0, @ssl);
+end;
+
+function BIO_get_mem_ptr(b: PBIO; var pp: PBUF_MEM) : clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_GET_BUF_MEM_PTR, 0, @pp);
+end;
+
+function BIO_flush(b: PBIO): clong; inline;
+begin
+  Result := BIO_ctrl(b, BIO_CTRL_FLUSH, 0, nil);
+end;
+
+function BIO_set_close(b: PBIO; c: clong): clong; inline;
+begin
+  Result := BIO_ctrl(b, BIO_CTRL_SET_CLOSE, c, nil);
 end;
 
 function EVP_PKEY_assign_RSA(pkey: PEVP_PKEY; key: PRSA): Integer;
@@ -4006,12 +4146,15 @@ begin
   BIO_new_fd := GetAddress('BIO_new_fd');
   BIO_new_file := GetAddress('BIO_new_file');
   BIO_new_mem_buf := GetAddress('BIO_new_mem_buf');
+  BIO_f_base64 := GetAddress('BIO_f_base64');
+  BIO_set_flags := GetAddress('BIO_set_flags');
   BIO_test_flags := GetAddress('BIO_test_flags');
   BIO_free := GetAddress('BIO_free');
   BIO_free_all := GetAddress('BIO_free_all');
   BIO_write := GetAddress('BIO_write');
   BIO_read := GetAddress('BIO_read');
   BIO_puts := GetAddress('BIO_puts');
+  BIO_push := GetAddress('BIO_push');
   BIO_gets := GetAddress('BIO_gets');
 
   OPENSSL_sk_new_null := GetAddress('OPENSSL_sk_new_null');
@@ -4063,6 +4206,10 @@ begin
   EC_GROUP_new_by_curve_name := GetAddress('EC_GROUP_new_by_curve_name');
   EC_KEY_set_group := GetAddress('EC_KEY_set_group');
   EC_KEY_generate_key := GetAddress('EC_KEY_generate_key');
+
+  PEM_read_bio_ECPrivateKey := GetAddress('PEM_read_bio_ECPrivateKey');
+  ECDSA_size := GetAddress('ECDSA_size');
+  ECDSA_sign := GetAddress('ECDSA_sign');
 end;
 
 function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt;
