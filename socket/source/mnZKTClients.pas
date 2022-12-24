@@ -572,20 +572,14 @@ begin
         CMD_ACK_UNAUTH:
         begin
           CommandData := nil;
-          if Key <> 0 then
-          begin
-            ACommandData := nil;
-            ACommandData.Add(GetCommKey(Key, SessionID));
-            Packet := CreatePacket(CMD_AUTH, FSessionId, NewReplyID, ACommandData);
-            Send(Packet);
-            ReceiveHeader(Payload);
-            Result := Payload.Header.Command = CMD_ACK_OK;
-          end
-          else
-          begin
-             Result := False;
-             FLastError := 'ZK: Unauth';
-          end;
+          ACommandData := nil;
+          ACommandData.Add(GetCommKey(Key, SessionID));
+          Packet := CreatePacket(CMD_AUTH, FSessionId, NewReplyID, ACommandData);
+          Send(Packet);
+          ReceiveHeader(Payload);
+          Result := Payload.Header.Command = CMD_ACK_OK;
+          if not Result then
+            FLastError := 'ZK: Unauth';
         end;
         CMD_PREPARE_DATA:
         begin
