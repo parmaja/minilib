@@ -36,6 +36,8 @@ uses
   mnClasses, mnClients, mnSockets;
 
 const
+  CMD_MAGIC_NUMBER =  $5050827d;
+
   CMD_CONNECT = 1000; //03E8
   CMD_EXIT = 1001;
   CMD_ENABLEDEVICE = 1002;
@@ -267,7 +269,7 @@ type
     function ReceiveData(out Payload: TZKPayload; out Data: TBytes): Boolean; deprecated;
     function ReceiveBuffer(var Buffer; Size: Integer): Boolean;
     function ReceiveBytes(out Data: TBytes; Size: Integer): Boolean;
-    function ReceiveHeader(out Payload: TZKPayload): Boolean;
+    function ReceivePayload(out Payload: TZKPayload): Boolean;
   public
     class function GetCommKey(Key: LongWord; SessionID: WORD): LongWord;
     constructor Create(vKey: LongWord; vHost: AnsiString; vPort: AnsiString = '4370'); virtual;
@@ -539,15 +541,16 @@ function TZKClient.ExecCommand(Command, ReplyId: Word; CommandData: TBytes; out 
 var
   Packet: TBytes;
   CMD: Integer;
-  aSize: LongWord;
+  aSize, aWholeSize, aPageSize, aReadSize: LongWord;
   ACommandData: TBytes;
+  aBuf: TBytes;
 begin
   FLastError := '';
   RespondData := nil;
   aSize := 0;
   Packet := CreatePacket(Command, FSessionId, ReplyId, CommandData);
   Send(Packet);
-  Result := ReceiveHeader(Payload);
+  Result := ReceivePayload(Payload);
   if Result then
   begin
     Result := ReplyId = Payload.Header.ReplyID;
@@ -576,22 +579,37 @@ begin
           ACommandData.Add(GetCommKey(Key, SessionID));
           Packet := CreatePacket(CMD_AUTH, FSessionId, NewReplyID, ACommandData);
           Send(Packet);
-          ReceiveHeader(Payload);
+          ReceivePayload(Payload);
           Result := Payload.Header.Command = CMD_ACK_OK;
           if not Result then
             FLastError := 'ZK: Unauth';
         end;
         CMD_PREPARE_DATA:
         begin
-          ReceiveBytes(RespondData, Payload.DataSize);
-          ReceiveHeader(Payload);
-          Result := Payload.Header.Command = CMD_DATA;
-          if Result then
+          {read Payload.Size = 16 ..}
+          ReceiveBuffer(aWholeSize, SizeOf(aWholeSize));
+          ReceiveBuffer(aPageSize, SizeOf(aPageSize));
+
+          while True do
           begin
-            ReceiveBuffer(aSize, SizeOf(aSize));
-            ReceiveBytes(RespondData, aSize);
-            ReceiveHeader(Payload);
-            Result := (Payload.Header.ReplyID = ReplyId) and (Payload.Header.Command = CMD_ACK_OK);
+            ReceivePayload(Payload);
+            if Payload.Header.Command = CMD_DATA then
+            begin
+              ReceiveBytes(aBuf, PayLoad.DataSize);
+              RespondData := RespondData + aBuf;
+
+              aWholeSize := aWholeSize - PayLoad.DataSize;
+              if aWholeSize<aPageSize then
+                aReadSize := aWholeSize;
+            end
+            else if Payload.Header.Command = CMD_ACK_OK then
+              Break
+            else
+            begin
+              FLastError := 'ZK: Error Parse Data';
+              Result := False;
+              Break;
+            end;
           end;
         end;
         else
@@ -737,11 +755,12 @@ begin
     Result := True;
 end;
 
-function TZKClient.ReceiveHeader(out Payload: TZKPayload): Boolean;
+function TZKClient.ReceivePayload(out Payload: TZKPayload): Boolean;
 var
   c: Integer;
 begin
-  Initialize(Payload);
+  //Initialize(Payload);
+  FillChar(Payload, SizeOf(Payload), 0);
   c := FSocket.Read(Payload, SizeOf(Payload));
   Result := c > 0;
 end;
