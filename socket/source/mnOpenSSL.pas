@@ -160,6 +160,8 @@ var
   bio, b64: PBIO;
   aBuf: PBUF_MEM;
 begin
+  InitOpenSSLLibrary;
+
 	b64 := BIO_new(BIO_f_base64());
 	bio := BIO_new(BIO_s_mem());
 	bio := BIO_push(b64, bio);

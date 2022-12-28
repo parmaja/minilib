@@ -22,7 +22,7 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, StrUtils,
+  SysUtils, Classes, StrUtils, 
   mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
   mnClients, mnStreams, mnStreamUtils;
 
@@ -406,7 +406,8 @@ begin
     Header['Accept-CharSet'] := FAcceptCharSet;
     if Client.Compressing then
       Header['Accept-Encoding'] := 'deflate, gzip';
-    Header['Accept-Language'] := FAcceptLanguage;
+    if FAcceptLanguage<>'' then
+      Header['Accept-Language'] := FAcceptLanguage;
     Header['Referer'] := FReferer;
   end;
 end;
