@@ -3752,7 +3752,7 @@ var
 
   PEM_read_bio_X509_REQ: function(bp: PBIO; x: PPX509_REQ; cb: Ppem_password_cb; var u): PX509_REQ; cdecl;
   PEM_write_bio_X509_REQ: function(bp: PBIO; x: PX509_REQ): Integer; cdecl;
-  PEM_write_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; const enc: PEVP_CIPHER; kstr:PByte; klen: Integer; cb: Ppem_password_cb; u: Pointer): integer; cdecl;
+  PEM_write_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; const enc: PEVP_CIPHER; kstr: PByte; klen: Integer; cb: Ppem_password_cb; u: Pointer): integer; cdecl;
   PEM_write_bio_X509: function(bp: PBIO; x: PX509): Integer; cdecl;
   PEM_write_X509: function(fh: NativeInt; x: PX509): Integer; cdecl;
   PEM_write_bio_RSAPublicKey: function(bp: PBIO; x: PRSA): Integer; cdecl;
@@ -3763,6 +3763,7 @@ var
 
   ASN1_INTEGER_set_int64: function(a: PASN1_INTEGER; r: Int64): Integer; cdecl;
   ASN1_INTEGER_set: function(const a: PASN1_INTEGER; v: Integer): Integer; cdecl;
+
   X509_get_serialNumber: function(x: PX509): PASN1_INTEGER; cdecl;
   X509_gmtime_adj: function(s: PASN1_TIME; adj: clong): PASN1_TIME; cdecl;
   X509_getm_notBefore: function(x: PX509): PASN1_TIME; cdecl;
@@ -3908,7 +3909,6 @@ var
 var
   OpenSSLLib: TmnOpenSSLLib = nil;
   CryptoLib: TmnCryptoLib = nil;
-
 
 implementation
 

@@ -19,7 +19,7 @@ interface
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
   mnLogs,
-  StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSLUtils,
+  StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSL,
   LResources, Buttons, Menus;
 
 type

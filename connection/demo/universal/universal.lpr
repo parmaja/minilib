@@ -22,8 +22,8 @@ begin
 {$endif}
 *)
   RequireDerivedFormResource :=True;
-  Application.Title:='Universal';
-  Application.Scaled:=True;
+  Application.Title :='Universal';
+  Application.Scaled :=True;
   Application.Initialize;
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;

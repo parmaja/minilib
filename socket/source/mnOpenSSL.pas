@@ -182,6 +182,7 @@ function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
 var
 	aKey: PEC_KEY;
   bio: PBIO;
+  aLen: Integer;
 begin
   InitOpenSSLLibrary;
 
@@ -189,7 +190,7 @@ begin
   try
     aKey := PEM_read_bio_ECPrivateKey(bio, nil, nil, nil);
     try
-      var aLen := ECDSA_size(aKey);
+      aLen := ECDSA_size(aKey);
       SetLength(Result, aLen);
 
       ECDSA_sign(0, PByte(vData), Length(vData), PByte(Result), @aLen, aKey);
@@ -203,8 +204,10 @@ begin
 end;
 
 function ECDSASignBase64(const vData, vKey: utf8string): UTF8String; overload;
+var
+  b: TBytes;
 begin
-  var b := ECDSASign(vData, vKey);
+  b := ECDSASign(vData, vKey);
   Result := BioBase64Encode(PByte(b[0]), Length(b));
   //Result := tnet
 end;
