@@ -22,7 +22,7 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, StrUtils, 
+  SysUtils, Classes, StrUtils, IOUtils,
   mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
   mnClients, mnStreams, mnStreamUtils;
 
@@ -81,6 +81,7 @@ type
   private
     FAccept: UTF8String;
     FReferer: UTF8String;
+    FIsPatch: Boolean;
   protected
     procedure CollectHeaders; virtual;
   public
@@ -90,6 +91,7 @@ type
     procedure SendPost(vData: PByte; vCount: Cardinal);
 
     property Referer: UTF8String read FReferer write FReferer;
+    property IsPatch: Boolean read FIsPatch write FIsPatch;
   end;
 
   { TmnHttpResponse }
@@ -422,7 +424,7 @@ procedure TmnHttpRequest.SendPost(vData: PByte; vCount: Cardinal);
   procedure _Write(const s: string);
   begin
     Client.Stream.WriteLineUTF8(s);
-    //TFile.AppendAllText('c:\temp\h.Log', s+#13);
+    TFile.AppendAllText('c:\temp\h.Log', s+#13);
   end;
 
 var
@@ -430,7 +432,10 @@ var
   f: TmnField;
 begin
   CollectHeaders;
-  _Write('POST ' + Client.Path + ' ' + ProtocolVersion);
+  if IsPatch then
+    _Write('PATCH ' + Client.Path + ' ' + ProtocolVersion)
+  else
+    _Write('POST ' + Client.Path + ' ' + ProtocolVersion);
 
   for f in Items do
     if f.AsString <> '' then
@@ -443,6 +448,8 @@ begin
   _Write('');
 
   Client.Stream.Write(vData^, vCount);
+
+  TFile.AppendAllText('c:\temp\h.Log', TEncoding.UTF8.GetString(vData, vCount)+#13);
 end;
 
 procedure TmnHttpRequest.SendGet;
@@ -604,6 +611,8 @@ end;
 
 procedure TmnHttpClient.FreeStream;
 begin
+  ChunkedProxy := nil;
+  CompressProxy := nil;
   FreeAndNil(FStream);
 end;
 

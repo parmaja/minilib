@@ -66,6 +66,12 @@ type
 
   { TmnLibrary }
 
+  TmnbLoadState = (lsInit, lsLoaded, lsFail);
+
+  TmnbLoadStateHelper = record helper for TmnbLoadState
+    function AsBoolean: Boolean;
+  end;
+
   TmnLibrary = class(TObject)
   private
   protected
@@ -81,7 +87,7 @@ type
     constructor Create(ALibraryName: string); virtual;
     destructor Destroy; override;
 
-    function Load: Boolean;
+    function Load(vSafe: Boolean = False): TmnbLoadState;
     function IsLoaded: Boolean;
     procedure Release;
     function GetAddress(const ProcedureName: string; ARaiseError: Boolean = False): Pointer; overload;
@@ -126,30 +132,37 @@ begin
   {$ENDIF}
 end;
 
-function TmnLibrary.Load: Boolean;
+function TmnLibrary.Load(vSafe: Boolean = False): TmnbLoadState;
+var
+  b: Boolean;
 begin
-  Result := not IsLoaded;
-  if Result then
+  if IsLoaded then
   begin
-
-    RefCount := RefCount + 1;
-    if RefCount = 1 then
+    Result := lsLoaded
+  end
+  else
+  begin
+    FHandle := InternalLoadLibrary(LibraryName);
+    if (FHandle = 0) then
     begin
-      FHandle := InternalLoadLibrary(LibraryName);
-      if (FHandle = 0) then
-      begin
-        RefCount := 0;
-        //if RaiseError then //check with zaher
-        raise EInOutError.CreateFmt(SErrLoadFailed,[LibraryName]);
-      end
+      RefCount := 0;
+      //if RaiseError then //check with zaher
+      if not vSafe then
+        raise EInOutError.CreateFmt(SErrLoadFailed,[LibraryName])
       else
-      begin
-        LoadedLibrary := LibraryName;
-        Link;
-        Init;
-      end;
+        Result := lsFail;
+    end
+    else
+    begin
+      LoadedLibrary := LibraryName;
+      Link;
+      Init;
+      Result := lsInit;
     end;
   end;
+
+  if Result.AsBoolean then
+    Inc(RefCount);
 end;
 
 procedure TmnLibrary.Init;
@@ -203,6 +216,14 @@ begin
     FInvalidNames := FInvalidNames + ProcedureName;
   end;
 end;
+
+{ TmnbLoadStateHelper }
+
+function TmnbLoadStateHelper.AsBoolean: Boolean;
+begin
+  Result := Self in [lsInit, lsLoaded];
+end;
+
 
 end.
 

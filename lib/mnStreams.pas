@@ -70,14 +70,15 @@ type
     function WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
 
     function CopyToStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline; //alias
-    function CopyFromStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline; //alias
+    function CopyFromStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline;
 
 
     property Connected: Boolean read GetConnected;
     property Done: TmnStreamClose read FDone;
 
-    function Read(var Buffer; Count: Integer): Integer; override;
-    function Write(const Buffer; Count: Integer): Integer; override;
+
+    function Read(var Buffer; Count: longint): longint; override;
+    function Write(const Buffer; Count: longint): longint; override;
   end;
 
   TmnStreamOverProxy = class;
@@ -732,7 +733,7 @@ begin
   end;
 end;
 
-function TmnCustomStream.Read(var Buffer; Count: Integer): Integer;
+function TmnCustomStream.Read(var Buffer; Count: longint): longint;
 begin
   ResetCloseData;
   Result := inherited Read(Buffer, Count);
@@ -788,7 +789,7 @@ begin
   Result := WriteStream(AStream, Count, RealCount);
 end;
 
-function TmnCustomStream.Write(const Buffer; Count: Integer): Integer;
+function TmnCustomStream.Write(const Buffer; Count: longint): longint;
 begin
   //ResetCloseData;
   Result := inherited Write(Buffer, Count);

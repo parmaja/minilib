@@ -15,7 +15,7 @@ interface
 
 uses
   Classes, SysUtils,
-  mnLogs,
+  mnLogs, mnLibraries,
   mnOpenSSLAPI;
 
 type
@@ -399,7 +399,7 @@ end;
 
 procedure InitOpenSSLLibrary(All: Boolean);
 begin
-  if OpenSSLLib.Load then
+  if OpenSSLLib.Load=lsInit then
   begin
     if All then
       OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS or OPENSSL_INIT_LOAD_CRYPTO_STRINGS, nil)
@@ -407,7 +407,7 @@ begin
       OPENSSL_init_ssl(0, nil);
     //ERR_load_SSL_strings();//IDK
 
-    if CryptoLib.Load then
+    if CryptoLib.Load=lsInit then
     begin
       if All then
         OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS or OPENSSL_INIT_ADD_ALL_DIGESTS, nil)

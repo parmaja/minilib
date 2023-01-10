@@ -3641,7 +3641,6 @@ type
     max: NativeUInt;
     flags: Cardinal;
   end;
-
   BUF_MEM = buf_mem_st;
   PBUF_MEM = ^BUF_MEM;
 
