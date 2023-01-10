@@ -22,7 +22,7 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, StrUtils, IOUtils,
+  SysUtils, Classes, StrUtils,
   mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
   mnClients, mnStreams, mnStreamUtils;
 
@@ -424,7 +424,7 @@ procedure TmnHttpRequest.SendPost(vData: PByte; vCount: Cardinal);
   procedure _Write(const s: string);
   begin
     Client.Stream.WriteLineUTF8(s);
-    TFile.AppendAllText('c:\temp\h.Log', s+#13);
+    //TFile.AppendAllText('c:\temp\h.Log', s+#13);
   end;
 
 var
@@ -449,7 +449,7 @@ begin
 
   Client.Stream.Write(vData^, vCount);
 
-  TFile.AppendAllText('c:\temp\h.Log', TEncoding.UTF8.GetString(vData, vCount)+#13);
+  //TFile.AppendAllText('c:\temp\h.Log', TEncoding.UTF8.GetString(vData, vCount)+#13);
 end;
 
 procedure TmnHttpRequest.SendGet;
