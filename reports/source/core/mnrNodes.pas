@@ -345,18 +345,18 @@ var
 begin
   with vCell.DesignCell do
   begin
+    v  := vCell.AsDouble;
     if AppendTotals then
     begin
-      v           := vCell.AsDouble;
       if Invert then
         v := -v;
       SubTotal    := SubTotal + v;
       Total       := Total + v;
       PageTotal   := PageTotal + v;
       ToPageTotal := ToPageTotal + v;
-      if (Count=0) or (v<MinValue) then MinValue := v;
-      if (Count=0) or (v>MaxValue) then MaxValue := v;
     end;
+    if (Count=0) or (v<MinValue) then MinValue := v;
+    if (Count=0) or (v>MaxValue) then MaxValue := v;
   end;
 end;
 
