@@ -1378,7 +1378,16 @@ const
   SQL_TYPE_DATE = 570;
   SQL_INT64 = 580;
   SQL_BOOLEAN = 590; //zaher huh
-  SQL_NULL = 32766;
+
+  SQL_TIMESTAMP_TZ_EX              = 32748;
+  SQL_TIME_TZ_EX                   = 32750;
+  SQL_INT128                       = 32752;
+  SQL_TIMESTAMP_TZ                 = 32754;
+  SQL_TIME_TZ                      = 32756;
+  SQL_DEC16                        = 32760;
+  SQL_DEC34                        = 32762;
+  SQL_BOOLEAN_ex                   = 32764;
+  SQL_NULL                         = 32766;
 
   SQLDA_VERSION1 = 1;
   SQLDA_VERSION2 = 2;

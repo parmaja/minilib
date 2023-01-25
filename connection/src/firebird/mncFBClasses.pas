@@ -298,6 +298,7 @@ type
 function getb(p: PBSTREAM): Byte;
 function putb(x: Byte; p: PBSTREAM): Int;
 function putbx(x: Byte; p: PBSTREAM): Int;
+function FBSqlDef(X: short): short;
 
 procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: Short);
 procedure FBReadBlob(hBlobHandle: PISC_BLOB_HANDLE; buffer: PByte; BlobSize: Long);
@@ -486,6 +487,11 @@ begin
   end;
 end;
 
+function FBSqlDef(X: short): short;
+begin
+  Result := x and (not 1);
+end;
+
 procedure InitSQLDA(var Data: PXSQLDA; New: Integer; Clean: Boolean = True);
 var
   old: Integer;
@@ -572,7 +578,7 @@ end;
 
 function TmncSQLVAR.GetSqlPrecision: Short;
 begin
-  case SqlType and not 1 of
+  case SqlDef of
     SQL_SHORT:
       Result := 4;
     SQL_LONG:
@@ -601,7 +607,7 @@ end;
 
 function TmncSQLVAR.GetSqlDef: Short;
 begin
-  Result := SqlType and (not 1);
+  Result := FBSqlDef(SqlType);
 end;
 
 function TmncSQLVAR.GetSQLVAR: PXSQLVAR;
@@ -912,7 +918,7 @@ begin
 
   if FXSQLVAR^.SqlData = nil then
     case SqlDef of
-      SQL_TEXT, SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_BLOB, SQL_ARRAY, SQL_QUAD, SQL_SHORT, SQL_LONG, SQL_INT64, SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT, SQL_BOOLEAN:
+      SQL_TEXT, SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_BLOB, SQL_ARRAY, SQL_QUAD, SQL_SHORT, SQL_LONG, SQL_INT64, SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT, SQL_BOOLEAN, SQL_INT128, SQL_DEC16, SQL_DEC34:
         begin
           if (SqlLen = 0) then
             { Make sure you get a valid pointer anyway
@@ -960,7 +966,7 @@ begin
         Result := FBScaleCurrency(Int64(PShort(SqlData)^), SqlScale);
       SQL_LONG:
         Result := FBScaleCurrency(Int64(PLong(SqlData)^), SqlScale);
-      SQL_INT64:
+      SQL_INT64, SQL_INT128:
         Result := FBScaleCurrency(PInt64(SqlData)^, SqlScale);
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT:
         Result := GetAsDouble;
@@ -1229,7 +1235,7 @@ begin
         else
           Result := FloatToStr(AsDouble);
       end;
-      SQL_INT64:
+      SQL_INT64, SQL_INT128:
       begin
         if SqlScale = 0 then
           Result := IntToStr(AsInt64)
