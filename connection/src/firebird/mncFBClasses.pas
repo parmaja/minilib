@@ -585,6 +585,7 @@ type
 function getb(p: PBSTREAM): Byte;
 function putb(x: Byte; p: PBSTREAM): Integer;
 function putbx(x: Byte; p: PBSTREAM): Integer;
+function FBSqlDef(X: SmallInt): SmallInt;
 
 procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: SmallInt);
 procedure FBReadBlob(hBlobHandle: PISC_BLOB_HANDLE; buffer: PByte; BlobSize: Long);
@@ -773,6 +774,11 @@ begin
   end;
 end;
 
+function FBSqlDef(X: SmallInt): SmallInt;
+begin
+  Result := x and (not 1);
+end;
+
 procedure InitSQLDA(var Data: PXSQLDA; New: Integer; Clean: Boolean = True);
 var
   old: Integer;
@@ -859,12 +865,12 @@ end;
 
 function TmncSQLVAR.GetSqlPrecision: SmallInt;
 begin
-  case SqlType and not 1 of
+  case SqlDef of
     SQL_SHORT:
       Result := 4;
     SQL_LONG:
       Result := 9;
-    SQL_INT64:
+    SQL_INT64, SQL_INT128:
       Result := 18;
   else
     Result := 0;
@@ -888,7 +894,7 @@ end;
 
 function TmncSQLVAR.GetSqlDef: SmallInt;
 begin
-  Result := SqlType and (not 1);
+  Result := FBSqlDef(SqlType);
 end;
 
 function TmncSQLVAR.GetSQLVAR: PXSQLVAR;
@@ -1199,7 +1205,7 @@ begin
 
   if FXSQLVAR^.SqlData = nil then
     case SqlDef of
-      SQL_TEXT, SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_BLOB, SQL_ARRAY, SQL_QUAD, SQL_SHORT, SQL_LONG, SQL_INT64, SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT, SQL_BOOLEAN:
+      SQL_TEXT, SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_BLOB, SQL_ARRAY, SQL_QUAD, SQL_SHORT, SQL_LONG, SQL_INT64, SQL_INT128, SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT, SQL_BOOLEAN:
         begin
           if (SqlLen = 0) then
             { Make sure you get a valid pointer anyway
@@ -1247,7 +1253,7 @@ begin
         Result := FBScaleCurrency(Int64(PSmallInt(SqlData)^), SqlScale);
       SQL_LONG:
         Result := FBScaleCurrency(Int64(PLong(SqlData)^), SqlScale);
-      SQL_INT64:
+      SQL_INT64, SQL_INT128:
         Result := FBScaleCurrency(PInt64(SqlData)^, SqlScale);
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT:
         Result := GetAsDouble;
@@ -1272,7 +1278,7 @@ begin
       end;
       SQL_SHORT: Result := FBScaleInt64(Int64(PSmallInt(SqlData)^), SqlScale);
       SQL_LONG: Result := FBScaleInt64(Int64(PLong(SqlData)^), SqlScale);
-      SQL_INT64: Result := FBScaleInt64(PInt64(SqlData)^, SqlScale);
+      SQL_INT64, SQL_INT128: Result := FBScaleInt64(PInt64(SqlData)^, SqlScale);
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT: Result := Trunc(AsDouble);
       SQL_BOOLEAN:
         case PSmallInt(SqlData)^ of
@@ -1366,7 +1372,7 @@ begin
         Result := FBScaleDouble(Int64(PSmallInt(SqlData)^), SqlScale);
       SQL_LONG:
         Result := FBScaleDouble(Int64(PLong(SqlData)^), SqlScale);
-      SQL_INT64:
+      SQL_INT64, SQL_INT128:
         Result := FBScaleDouble(PInt64(SqlData)^, SqlScale);
       SQL_FLOAT:
         Result := PSingle(SqlData)^;
@@ -1416,7 +1422,7 @@ begin
         Result := Trunc(FBScaleDouble(Int64(PSmallInt(SqlData)^), SqlScale));
       SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_LONG:
         Result := Trunc(FBScaleDouble(Int64(PLong(SqlData)^), SqlScale));
-      SQL_INT64:
+      SQL_INT64, SQL_INT128:
         Result := Trunc(FBScaleDouble(PInt64(SqlData)^, SqlScale));
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT:
         Result := Trunc(AsDouble);
@@ -1516,7 +1522,7 @@ begin
         else
           Result := FloatToStr(AsDouble);
       end;
-      SQL_INT64:
+      SQL_INT64, SQL_INT128:
       begin
         if SqlScale = 0 then
           Result := IntToStr(AsInt64)
@@ -1565,7 +1571,7 @@ begin
           Result := AsCurrency
         else
           Result := AsDouble;
-      SQL_INT64:
+      SQL_INT64, SQL_INT128:
         if SqlScale = 0 then
           Result := AsInt64
         else if SqlScale >= (-4) then
@@ -1957,7 +1963,7 @@ begin
   Result := False;
   if not IsNull then
     case SqlDef of
-      SQL_INT64:
+      SQL_INT64, SQL_INT128:
         Result := PInt64(SqlData)^ <> ISC_FALSE;
       SQL_LONG:
         Result := PLong(SqlData)^ <> ISC_FALSE;
