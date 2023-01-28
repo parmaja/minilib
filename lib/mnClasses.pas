@@ -263,7 +263,7 @@ end;
 
 function TmnObjectList<_Object_>.IndexOfObject(Item: TObject): Integer;
 begin
-  if Item is _Object_ then
+  if Item is TClass(_Object_) then
     Result := IndexOf(_Object_(Item))
   else
     Result := -1;
