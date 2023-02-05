@@ -507,6 +507,8 @@ type
     procedure SetAsNullString(const AValue: string);
     function GetAsChar: char;
     procedure SetAsChar(const AValue: char);
+    function GetBytes: TBytes;
+    procedure SetBytes(const Value: TBytes);
   protected
     FDBHandle: PISC_DB_HANDLE;
     FTRHandle: PISC_TR_HANDLE;
@@ -560,6 +562,7 @@ type
     property AsVariant: Variant read GetAsVariant write SetAsVariant;
     property AValue: Variant read GetAsVariant write SetAsVariant;
     property AsGUID: TGUID read GetAsGUID write SetAsGUID;
+    property AsBytes: TBytes read GetBytes write SetBytes;
 
     property IsNull: Boolean read GetIsNull write SetIsNull;
     property IsNullable: Boolean read GetIsNullable write SetIsNullable;
@@ -1587,6 +1590,35 @@ begin
     end;
 end;
 
+function TmncSQLVAR.GetBytes: TBytes;
+var
+  sz: PByte;
+  str_len: Integer;
+  ss: TStringStream;
+  s: UTF8String;
+begin
+  Result := nil;
+  { Check null, if so return a default string }
+  if not IsNull then
+    case SqlDef of
+      SQL_TEXT, SQL_VARYING:
+      begin
+        sz := SqlData;
+        if (SqlDef = SQL_TEXT) then
+          str_len := SqlLen
+        else
+        begin
+          str_len := FBLib.isc_vax_integer(SqlData, 2);
+          Inc(sz, 2);
+        end;
+        SetLength(Result, str_len);
+        Move(sz^, PByte(Result)^, str_len);
+      end;
+      else
+        FBRaiseError(fbceInvalidDataConversion, [nil]);
+    end;
+end;
+
 function TmncSQLVAR.GetIsNull: Boolean;
 begin
   Result := IsNullable and Assigned(SqlInd) and (SqlInd^ = -1);
@@ -2075,6 +2107,19 @@ begin
   if (Size <> 0) and (len > Size) then
     len := Size;
   Move(sz^, buffer^, len);
+end;
+
+procedure TmncSQLVAR.SetBytes(const Value: TBytes);
+begin
+  if IsNullable then
+    IsNull := False;
+  SqlType := SQL_TEXT or (SqlType and 1);
+  SqlScale := 0;
+  SqlLen := Length(Value);
+  UpdateData(0, SqlLen);
+  if (SqlLen > 0) then
+    Move(Value[0], SqlData^, SqlLen);
+  Modified := True;
 end;
 
 function TmncSQLVAR.GetAsGUID: TGUID;
