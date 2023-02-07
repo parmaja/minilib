@@ -1,6 +1,6 @@
 ## Mini Lib for Pascal ##
 
-Pascal library, FreePascal 3.2 or later or DelphiXE
+Pascal library, FreePascal 3.3 or later or DelphiXE
 
 ### Folders ###
 
