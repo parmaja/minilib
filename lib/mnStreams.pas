@@ -959,7 +959,7 @@ function TmnBufferStream.WriteUTF8(const S: UTF8String): TFileSize;
 begin
   Result := 0;
   if s <> '' then
-    Result := Write(Pointer(S)^, Length(S));
+    Result := Write(PByte(S)^, Length(S));
 end;
 
 procedure TmnBufferStream.ReadCommand(out Command: string; out Params: string);
