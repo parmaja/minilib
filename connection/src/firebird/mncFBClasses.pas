@@ -1557,14 +1557,19 @@ begin
       SQL_ARRAY:
         Result := '[Array]';
       SQL_BLOB:
-        begin
-          if SqlSubtype = 1 then
-            Result := AsString
-          else
-            Result := '[Blob]';
-        end;
+      begin
+        if SqlSubtype = isc_blob_text then
+          Result := AsString
+        else
+          Result := '[Blob]';
+      end;
       SQL_TEXT, SQL_VARYING:
-        Result := AsString;
+      begin
+        if SqlSubtype = fb_text_subtype_binary then
+          Result := AsBytes
+        else
+          Result := AsString;
+      end;
       SQL_TIMESTAMP, SQL_TYPE_DATE, SQL_TYPE_TIME:
         Result := AsDateTime;
       SQL_SHORT, SQL_LONG:
@@ -1926,8 +1931,8 @@ begin
         AsDateTime := AValue;
       varOleStr, varString, varUString:
         AsString := AValue;
-      varArray:
-        FBRaiseError(fbceNotSupported, [nil]);
+      varArray .. varArray + varRecord: //http://www.verycomputer.com/205_228a9bec472bd3dd_1.htm  = VarType 8209 means a byte array. ((varArray + varByte) 8192 + 17)
+        AsBytes := AValue;
       varByRef, varDispatch, varError, varUnknown, varVariant:
         FBRaiseError(fbceNotPermitted, [nil]);
       varInt64:
@@ -2077,7 +2082,7 @@ end;
 
 function TmncSQLVAR.GetAsText: string;
 begin
-  if (SqlDef = SQL_BLOB) and (SqlSubtype <> 1) then
+  if (SqlDef = SQL_BLOB) and (SqlSubtype <> isc_blob_text) then
     Result := AsHex
   else
     Result := AsString;
@@ -2085,7 +2090,7 @@ end;
 
 procedure TmncSQLVAR.SetAsText(const AValue: string);
 begin
-  if (SqlDef = SQL_BLOB) and (SqlSubtype <> 1) then
+  if (SqlDef = SQL_BLOB) and (SqlSubtype <> isc_blob_text) then
     AsHex := AValue
   else
     AsString := AValue;
@@ -2116,6 +2121,7 @@ begin
   SqlType := SQL_TEXT or (SqlType and 1);
   SqlScale := 0;
   SqlLen := Length(Value);
+  //SqlSubtype := fb_text_subtype_binary;{ TODO : support sub type }
   UpdateData(0, SqlLen);
   if (SqlLen > 0) then
     Move(Value[0], SqlData^, SqlLen);
