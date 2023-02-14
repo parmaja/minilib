@@ -58,7 +58,7 @@ object Form1: TForm1
     Left = 8
     Height = 15
     Top = 203
-    Width = 261
+    Width = 262
     Caption = '*Alias for ".\examples\empbuild\EMPLOYEE.FDB"'
     Color = clDefault
     ParentColor = False

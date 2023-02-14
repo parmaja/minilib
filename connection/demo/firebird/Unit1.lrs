@@ -15,7 +15,7 @@ LazarusResources.Add('TForm1','FORMDATA',[
   +'lick'#8'TabOrder'#2#3#0#0#7'TButton'#7'Button4'#4'Left'#2#8#6'Height'#2#25#3
   +'Top'#2':'#5'Width'#2'K'#7'Caption'#6#4'List'#7'OnClick'#7#12'Button4Click'#8
   +'TabOrder'#2#4#0#0#6'TLabel'#6'Label1'#4'Left'#2#8#6'Height'#2#15#3'Top'#3
-  +#203#0#5'Width'#3#5#1#7'Caption'#6'-*Alias for ".\examples\empbuild\EMPLOYEE'
+  +#203#0#5'Width'#3#6#1#7'Caption'#6'-*Alias for ".\examples\empbuild\EMPLOYEE'
   +'.FDB"'#5'Color'#7#9'clDefault'#11'ParentColor'#8#0#0#5'TEdit'#12'PasswordEd'
   +'it'#4'Left'#3#189#0#6'Height'#2#23#3'Top'#2#6#5'Width'#2'P'#8'AutoSize'#8#8
   +'TabOrder'#2#5#4'Text'#6#9'masterkey'#0#0#0
