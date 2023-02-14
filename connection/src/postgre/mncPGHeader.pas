@@ -678,7 +678,7 @@ type
   Tlo_truncate = function(conn: PPGconn; fd, len: Integer): Integer; cdecl;
   Tlo_truncate64 = function(conn: PPGconn; fd: Integer; len: Int64): Int64; cdecl;
   Tlo_unlink = function(conn: PPGconn; lobjId: OID): Integer; cdecl;
-  Tlo_import = function(conn: PPGconn; filename: PByte): OID; cdecl;
+  Tlo_import = function(conn: PPGconn; filename: PUTF8Char): OID; cdecl;
   Tlo_import_with_oid = function(conn: PPGconn; const filename: PByte; lobjId: Oid): Oid; cdecl;
   Tlo_export = function(conn: PPGconn; lobjId: OID; filename: PByte): Integer; cdecl;
 

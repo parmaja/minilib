@@ -233,7 +233,7 @@ type
 
   { TmncItem }
 
-  TmncItem = class(TmnCustomField)
+  TmncItem = class(TmnField)
   private
   protected
     FDataType: TmncDataType;
@@ -255,6 +255,7 @@ type
   protected
     function Find(const vName: string): TmncItem; virtual; abstract;
   public
+    procedure Assign(Source: TmncItems); virtual;
     function Add(AColumn: TmncItem): Integer; overload;
     function ItemByName(const vName: string): TmncItem;
     function IsExists(const vName: string): Boolean;
@@ -1688,6 +1689,17 @@ begin
 end;
 
 { TmncItems }
+
+procedure TmncItems.Assign(Source: TmncItems);
+var
+  Item: TmnField;
+begin
+  Clear;
+  for Item in Source do
+  begin
+    Add(Item);
+  end;
+end;
 
 function TmncItems.GetItem(Index: Integer): TmncItem;
 begin

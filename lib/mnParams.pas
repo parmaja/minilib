@@ -37,7 +37,6 @@ type
     FDelimiter: Char;
     function GetAsString: string;
     procedure SetAsString(const Value: string);
-    function GetItem(Index: Integer): TmnField;
   protected
     function SetValue(const Index: string; const AValue: Variant): TmnField; override;
     function CreateField: TmnField; override;
@@ -57,7 +56,6 @@ type
     property Delimiter: Char read FDelimiter write FDelimiter; //eol
     property AsString: string read GetAsString write SetAsString;
     property Require[const Index: string]: TmnField read RequireField;
-    property Items[Index: Integer]: TmnField read GetItem;
   end;
 
   TmnSection = class(TmnParams)
@@ -110,11 +108,6 @@ begin
       Result := Result + Delimiter;
     Result := Result + Item.Name + Separator + ' ' + Item.AsString;
   end;
-end;
-
-function TmnParams.GetItem(Index: Integer): TmnField;
-begin
-  Result := (inherited GetItem(Index)) as TmnField;
 end;
 
 function TmnParams.SetValue(const Index: string; const AValue: Variant): TmnField;

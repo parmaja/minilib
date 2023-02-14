@@ -19,7 +19,8 @@ unit mnFields;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Variants, Contnrs;
+  Classes, SysUtils, DateUtils, Variants, Contnrs,
+  mnClasses, mnUtils;
 
 type
 
@@ -58,10 +59,18 @@ type
     function ReadAsHex: string;
     procedure WriteAsHex(const AValue: string);
     procedure WriteAsNullString(const AValue: string);
+
+    {$ifndef NEXTGEN}
     function ReadAsAnsiString: ansistring;
     procedure WriteAsAnsiString(const AValue: ansistring);
     function ReadAsWideString: widestring;
     procedure WriteAsWideString(const AValue: widestring);
+    function ReadAsBytes: TBytes;
+    procedure WriteAsBytes(const AValue: TBytes);
+    function ReadAsGuid: TGUID;
+    procedure WriteAsGuid(const Value: TGUID);
+    {$endif}
+
     function ReadAsUtf8String: UTF8String;
     procedure WriteAsUtf8String(const AValue: UTF8String);
     function ReadAsTrimString: string;
@@ -89,6 +98,8 @@ type
     procedure WriteAsTime(const AValue: TDateTime);
     function ReadIsNull: Boolean;
     procedure WriteIsNull(const AValue: Boolean);
+    function ReadAsForeign: Integer;
+    procedure WriteAsForeign(const Value: Integer);
     function ReadIsEmpty: Boolean;
     function ReadIsExists: Boolean;
   protected
@@ -109,12 +120,14 @@ type
     procedure SetAsBoolean(const AValue: Boolean); virtual;
     function GetAsCurrency: Currency; virtual;
     procedure SetAsCurrency(const AValue: Currency); virtual;
-    function GetAsDate: TDateTime; virtual; 
+    function GetAsDate: TDateTime; virtual;
     procedure SetAsDate(const AValue: TDateTime); virtual;
     function GetAsDateTime: TDateTime; virtual;
     procedure SetAsDateTime(const AValue: TDateTime); virtual;
     function GetAsTime: TDateTime; virtual;
     procedure SetAsTime(const AValue: TDateTime); virtual;
+    function GetAsBytes: TBytes; virtual;
+    procedure SetAsBytes(const AValue: TBytes); virtual;
 
     function GetIsNull: Boolean; virtual; abstract;
     procedure SetIsNull(const AValue: Boolean); virtual; abstract;
@@ -123,8 +136,10 @@ type
     property Value: Variant read GetValue write SetValue;
     property AsVariant: Variant read GetValue write SetValue;
     //* AsAnsiString: Convert strign to utf8 it is special for Lazarus
+    {$ifndef NEXTGEN}
     property AsAnsiString: ansistring read ReadAsAnsiString write WriteAsAnsiString;
     property AsWideString: widestring read ReadAsWideString write WriteAsWideString;
+    {$endif}
     property AsUtf8String: Utf8String read ReadAsUtf8String write WriteAsUtf8String;
     property AsTrimString: string read ReadAsTrimString write WriteAsTrimString;
     property AsNullString: string read ReadAsString write WriteAsNullString;
@@ -141,6 +156,9 @@ type
     property AsTime: TDateTime read ReadAsTime write WriteAsTime;
     property AsDateTime: TDateTime read ReadAsDateTime write WriteAsDateTime;
     property AsText: string read ReadAsText write WriteAsText; //binary text blob convert to hex
+    property AsBytes: TBytes read ReadAsBytes write WriteAsBytes;
+    property AsGuid: TGUID read ReadAsGuid write WriteAsGuid;
+    property AsForeign: Integer read ReadAsForeign write WriteAsForeign; // alias for as integer for foreign fields
 
     property IsNull: Boolean read ReadIsNull write WriteIsNull;
     property IsEmpty: Boolean read ReadIsEmpty;
@@ -160,18 +178,17 @@ type
     procedure Assign(Source: TPersistent); override;
     procedure Clear; virtual;//make value null //should be abstract
     procedure Empty; virtual;//make value empty
+
+    //class operator Implicit (f: TprmustomField): Integer; { TODO : when support by delphi }
   end;
 
   TmnCustomFieldClass = class of TmnCustomField;
 
   { TmnCustomFields }
 
-  TmnCustomFields = class(TObjectList)
-  private
-    function GetItem(Index: Integer): TmnCustomField;
-  protected
+  TmnCustomFields<T: Class> = class(TmnObjectList<T>)
   public
-    property Items[Index: Integer]: TmnCustomField read GetItem;
+    procedure Clear; virtual;
   end;
 
   { TmnField }
@@ -216,7 +233,7 @@ type
 
   { TmnFields }
 
-  TmnFields = class(TmnCustomFields, IFields)
+  TmnFields = class(TmnCustomFields<TmnField>, IFields)
   private
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
@@ -236,7 +253,6 @@ type
     procedure LoadFromFile(const FileName: string);
     procedure SaveToFile(const FileName: string);
     function AddItem(S: string; Separator: string; TrimIt: Boolean = False): TmnField; overload;
-    function Add(AField: TmnField): Integer; overload;
     function Add(AName, AValue: string): TmnField; overload;
     //This will split the name and value
     function Put(const AName, AValue: string): TmnField; overload;
@@ -275,6 +291,11 @@ begin
   Result := AsInteger <> 0;
 end;
 
+function TmnCustomField.GetAsBytes: TBytes;
+begin
+  Result := Value;
+end;
+
 function TmnCustomField.GetAsCurrency: Currency;
 begin
   Result := Value;
@@ -282,8 +303,7 @@ end;
 
 function TmnCustomField.GetAsDate: TDateTime;
 begin
-  Result := Value;
-  Result := DateOf(Result);
+  Result := DateOf(AsDateTime);
 end;
 
 function TmnCustomField.GetAsDateTime: TDateTime;
@@ -311,8 +331,8 @@ end;
 
 function TmnCustomField.GetAsTime: TDateTime;
 begin
-  Result := Value;
-  Result := TimeOf(Result);
+//  Result := TimeOf(Value);
+  Result := TimeOf(AsDateTime);
 end;
 
 function TmnCustomField.ReadAsTrimString: string;
@@ -324,17 +344,6 @@ function TmnCustomField.GetIsEmpty: Boolean;
 begin
   Result := VarIsClear(Value) or (VarType(Value) in [varEmpty, varNull, varUnknown]);
 end;
-
-{function TmnCustomField.GetIsNull: Boolean;
-begin
-  Result := (VarType(Value) in [varNull]);
-end;}
-
-{procedure TmnCustomField.SetIsNull(const AValue: Boolean);
-begin
-  if AValue then
-    Clear;
-end;}
 
 procedure TmnCustomField.LoadFromFile(const FileName: string);
 var
@@ -363,6 +372,21 @@ begin
     except
       on E: EVariantError do
         Result := False;
+      else
+        raise;
+    end;
+end;
+
+function TmnCustomField.ReadAsBytes: TBytes;
+begin
+  if IsEmpty then
+    Result := nil
+  else
+    try
+      Result := GetAsBytes;
+    except
+      on E: EVariantError do
+        Result := nil;
       else
         raise;
     end;
@@ -497,13 +521,8 @@ begin
 end;
 
 function TmnCustomField.ReadAsHex: string;
-var
-  s: string;
 begin
-  s := GetAsString;
-  SetLength(Result, Length(s) * 2);
-
-  BinToHex(PChar(s), PChar(Result), Length(s));
+  Result := String2Hex(AsString);
 end;
 
 procedure TmnCustomField.WriteIsNull(const AValue: Boolean);
@@ -518,17 +537,21 @@ begin
 end;
 
 procedure TmnCustomField.WriteAsHex(const AValue: string);
-var
-  s: string;
 begin
-  SetLength(s, Length(AValue) div 2);
-  HexToBin(PChar(AValue), @s[1], Length(s));
-  AsString := s;
+  AsString := Hex2String(AValue);
 end;
 
 procedure TmnCustomField.SetAsBoolean(const AValue: Boolean);
 begin
   AsInteger := Ord(AValue);
+end;
+
+procedure TmnCustomField.SetAsBytes(const AValue: TBytes);
+begin
+  if Length(AValue) = 0 then
+    Clear
+  else
+    Value := AValue;
 end;
 
 procedure TmnCustomField.SetAsCurrency(const AValue: Currency);
@@ -543,7 +566,10 @@ end;
 
 procedure TmnCustomField.SetAsDateTime(const AValue: TDateTime);
 begin
-  Value := AValue;
+  if AValue = 0 then
+    Clear //TODO ask belal
+  else
+    Value := AValue;
 end;
 
 procedure TmnCustomField.SetAsInt64(const AValue: Int64);
@@ -576,10 +602,32 @@ begin
   Value := Unassigned;
 end;
 
+{$ifndef NEXTGEN}
 function TmnCustomField.ReadAsAnsiString: ansistring;
 begin
   Result := AnsiString(GetAsString);
 end;
+
+procedure TmnCustomField.WriteAsAnsiString(const AValue: ansistring);
+begin
+  {$ifdef FPC}
+  //fpc not auto convert because string type it same with ansistring
+  SetAsString(Utf8Encode(AValue));
+  {$else}
+  SetAsString(AnsiToUtf8(AValue));
+  {$endif}
+end;
+
+function TmnCustomField.ReadAsWideString: widestring;
+begin
+  Result := widestring(GetAsString);//the compiler will convert it
+end;
+
+procedure TmnCustomField.WriteAsWideString(const AValue: widestring);
+begin
+  SetAsString(String(AValue));
+end;
+{$endif}
 
 procedure TmnCustomField.SaveToFile(const FileName: string);
 var
@@ -611,21 +659,6 @@ begin
   raise Exception.Create('Not implemented yet');
 end;
 
-procedure TmnCustomField.WriteAsAnsiString(const AValue: ansistring);
-begin
-  {$ifdef FPC}
-  //fpc not auto convert because string type it same with ansistring
-  SetAsString(Utf8Encode(AValue));
-  {$else}
-  SetAsString(String(AValue));
-  {$endif}
-end;
-
-function TmnCustomField.ReadAsWideString: widestring;
-begin
-  Result := widestring(GetAsString);//the compiler will convert it
-end;
-
 function TmnCustomField.ReadIsExists: Boolean;
 begin
   Result := Self <> nil;
@@ -634,7 +667,7 @@ end;
 function TmnCustomField.ReadIsEmpty: Boolean;
 begin
   if Self <> nil then
-    Result := GetIsEmpty
+    Result := IsNull or GetIsEmpty
   else
     Result := True;
 end;
@@ -652,15 +685,16 @@ begin
   AsString := AValue;
 end;
 
-procedure TmnCustomField.WriteAsWideString(const AValue: widestring);
-begin
-  SetAsString(String(AValue));
-end;
-
 procedure TmnCustomField.WriteAsBoolean(const AValue: Boolean);
 begin
   CheckIsNil;
   SetAsBoolean(AValue);
+end;
+
+procedure TmnCustomField.WriteAsBytes(const AValue: TBytes);
+begin
+  CheckIsNil;
+  SetAsBytes(AValue);
 end;
 
 procedure TmnCustomField.WriteAsCurrency(const AValue: Currency);
@@ -702,10 +736,33 @@ begin
     end;
 end;
 
+function TmnCustomField.ReadAsForeign: Integer;
+begin
+  Result := AsInteger;
+end;
+
+function TmnCustomField.ReadAsGuid: TGUID;
+begin
+  Result := TGUID.Create(AsBytes);
+end;
+
 procedure TmnCustomField.WriteAsDouble(const AValue: Double);
 begin
   CheckIsNil;
   SetAsDouble(AValue);
+end;
+
+procedure TmnCustomField.WriteAsForeign(const Value: Integer);
+begin
+  if Value = 0 then
+    Clear
+  else
+    AsInteger := Value;
+end;
+
+procedure TmnCustomField.WriteAsGuid(const Value: TGUID);
+begin
+  AsBytes := Value.ToByteArray;
 end;
 
 procedure TmnCustomField.WriteAsInteger(const AValue: Integer);
@@ -734,7 +791,7 @@ end;
 
 function TmnCustomField.ReadAsUtf8String: UTF8String;
 begin
-  Result := UTF8Encode(GetAsString);
+  Result := UTF8Encode(GetAsString); // the compiler will convert it
 end;
 
 procedure TmnCustomField.WriteAsUtf8String(const AValue: UTF8String);
@@ -742,7 +799,7 @@ begin
   {$ifdef FPC}
   SetAsString(UTF8Decode(AValue));
   {$else}
-  SetAsString(UTF8ToString(AValue));
+  SetAsString(UTF8Decode(AValue));
   {$endif}
 end;
 
@@ -757,16 +814,6 @@ begin
 end;
 
 { TmnFields }
-
-function TmnCustomFields.GetItem(Index: Integer): TmnCustomField;
-begin
-  Result := (inherited Items[Index]) as TmnCustomField;
-end;
-
-function TmnFields.Add(AField: TmnField): Integer;
-begin
-  Result := inherited Add(AField);
-end;
 
 {function TmnFields.ByName(vName: string): TmnField;
 begin
@@ -1025,6 +1072,13 @@ end;
 function TmnField.GetNameValue(Seperator: string): String;
 begin
   Result := Name + Seperator + AsString;
+end;
+
+{ TmnCustomFields<T> }
+
+procedure TmnCustomFields<T>.Clear;
+begin
+  inherited Create;
 end;
 
 end.

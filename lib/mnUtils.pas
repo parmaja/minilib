@@ -254,6 +254,12 @@ function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string;
 function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload;
 function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload;
 
+function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
+procedure BinToHex(Buffer: PByte; Text: PByte; BufSize: longint); overload;
+function String2Hex(const vData: string): string; overload;
+function String2Hex(const vData: PByte; vCount: Integer): string; overload;
+function Hex2String(const vData: string): string; overload;
+
 //Files Utils
 
 type
@@ -1742,6 +1748,76 @@ end;
 function StringOf(const Value: TBytes; CodePage: Word): string;
 begin
   Result := TEncoding.CodePageEncoding(CodePage).GetString(Value);
+end;
+
+function Hex2String(const vData: string): string; overload;
+var
+  b, r: TBytes;
+begin
+  if vData<>'' then
+  begin
+    b := TEncoding.ANSI.GetBytes(vData);
+    SetLength(r, Length(vData) div 2);
+
+    HexToBin(PByte(@b[0]), PByte(@r[0]), Length(r));
+    Result := TEncoding.Unicode.GetString(r);
+  end
+  else
+    Result := '';
+end;
+
+function String2Hex(const vData: string): string; overload;
+begin
+  if vData<>'' then
+    Result := String2Hex(PByte(vData), ByteLength(vData))
+  else
+    Result := '';
+end;
+
+function String2Hex(const vData: PByte; vCount: Integer): string;
+begin
+  SetLength(Result, 2*vCount);
+  BinToHex(vData, PByte(Result), vCount);
+end;
+
+
+const
+  //H2BValidSet = ['0'..'9','A'..'F','a'..'f'];
+  //H2BConvert: array['0'..'f'] of SmallInt = ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15);
+  H2BValidSet = [$30..$39,$41..$46,$61..$66];
+  H2BConvert: array[$30..$66] of SmallInt = ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15);
+
+function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer;
+var
+  I: Integer;
+begin
+  I := BufSize;
+  while I > 0 do
+  begin
+    if not (Text^ in H2BValidSet) or not ((Text+1)^ in H2BValidset) then Break;
+    Buffer^ := (H2BConvert[Text[0]] shl 4) + H2BConvert[Text[1]];
+    Inc(Buffer);
+    Inc(Text, 2);
+    Dec(I);
+  end;
+  Result := BufSize - I;
+end;
+
+procedure BinToHex(Buffer: PByte; Text: PByte; BufSize: longint);
+const
+  Convert: array[0..15] of Byte = ($30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46) ; //AnsiString('0123456789ABCDEF');
+var
+  I: Integer;
+  p: PByte;
+begin
+  p := Text;
+  for I := 0 to BufSize - 1 do
+  begin
+    p^ := Convert[Buffer[I] shr 4];
+    Inc(p);
+    P^ := Convert[Buffer[I] and $F];
+    Inc(p);
+  end;
 end;
 
 function IsAllLowerCase(S: string): Boolean;

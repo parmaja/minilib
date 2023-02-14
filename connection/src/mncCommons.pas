@@ -22,7 +22,8 @@ type
   EmncException = class(Exception)
   end;
 
-  TmncObject = class(TObject)
+  TmncObject = class(TInterfacedPersistent)
+//  TmncObject = class(TObject)
   end;
 
   TmncLinks = class;
@@ -137,7 +138,7 @@ end;
 constructor TmncLinkObject.CreateBy(vLink: TmncLinksObject);
 begin
   Create;
-  Link := vLink;
+  Link := vLink; // TODO check if it a session like this If is TprmCustomTransaction
 end;
 
 end.
