@@ -186,9 +186,10 @@ type
 
   { TmnCustomFields }
 
-  TmnCustomFields<T: Class> = class(TmnObjectList<T>)
+  TmnCustomFields<T: TmnCustomField> = class(TmnObjectList<T>)
   public
     procedure Clear; virtual;
+    procedure Clean; virtual;
   end;
 
   { TmnField }
@@ -263,7 +264,6 @@ type
     function IndexOfName(const vName: string): Integer;
     function RemoveByName(const vName: string): Boolean;
     //todo IndexOfName, IndexOf
-    procedure Clean; virtual;
     property FieldByName[const Index: string]: TmnField read FindByName;
     property Field[const Index: string]: TmnField read FindField;
     property Exists[const Index: string]: Boolean read IsExists;
@@ -968,16 +968,6 @@ begin
   Result.Value := AValue;
 end;
 
-procedure TmnFields.Clean;
-var
-  i: Integer;
-begin
-  for i := 0 to Count - 1 do
-  begin
-    Items[i].Clear;
-  end;
-end;
-
 function TmnFields.FindField(const vName: string): TmnField;
 var
   i: Integer;
@@ -1079,6 +1069,16 @@ end;
 procedure TmnCustomFields<T>.Clear;
 begin
   inherited Create;
+end;
+
+procedure TmnCustomFields<T>.Clean;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+  begin
+    Items[i].Clear;
+  end;
 end;
 
 end.

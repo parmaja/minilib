@@ -84,6 +84,13 @@ type
       cstCreated  //When use autocreate and it is created
     );
 
+  TmncMode = (
+      mcmStrict,
+      mcmAutoStart
+    );
+
+  TmncModes = set of TmncMode;
+
   TmncStates = set of TmncState;
 
   TmncServerInfo = record
@@ -108,6 +115,7 @@ type
     FTransactions: TmncTransactions;
     FStartCount: Integer;
     FStates: TmncStates;
+    FMode: TmncModes;
     procedure SetConnected(const Value: Boolean);
     procedure SetParams(const AValue: TStrings);
     procedure ParamsChanging(Sender: TObject);
@@ -140,6 +148,8 @@ type
     procedure SetState(aState: TmncState);
     property Transactions: TmncTransactions read FTransactions;
     property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Transaction when created
+    property Mode: TmncModes read FMode write FMode;
+    function IsStrict: Boolean; virtual;
     property Connected: Boolean read GetConnected write SetConnected;
     property Active: Boolean read GetConnected write SetConnected;
     property States: TmncStates read FStates;
@@ -151,7 +161,7 @@ type
     property Password: string read FServerInfo.Password write FServerInfo.Password;
     property Role: string read FServerInfo.Role write FServerInfo.Role;
     property ServerInfo: TmncServerInfo read FServerInfo write SetServerInfo;
-    property StartCount: Integer read FStartCount;
+    property StartCount: Integer read FStartCount write FStartCount;
 
     property Params: TStrings read FParams write SetParams;
     property OnConnected: TNotifyEvent read FOnConnected write FOnConnected;
@@ -181,9 +191,9 @@ type
     FConnection: TmncConnection;
     FStartCount: Integer;
     FAction: TmncTransactionAction;
-    FCurrentAction: TmncTransactionAction;
-    FIsInit: Boolean;
     FParamsChanged: Boolean;
+    FIsInit: Boolean;
+    FCurrentAction: TmncTransactionAction;
     procedure SetParams(const Value: TStrings);
     procedure SetConnection(const Value: TmncConnection);
     procedure SetActive(const Value: Boolean);
@@ -223,6 +233,7 @@ type
 
   TmncDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig {bigint or int64}{, dtEnum, dtSet});
   TmncSubType = (dstBinary, dstImage, dstText, dstXML, dstJSON);
+  TmncBlobType = (blobBinary, blobText);
 
 {
   TmncItem base class for Column and Field and Param
@@ -235,10 +246,12 @@ type
 
   TmncItem = class(TmnField)
   private
+    FBlobType: TmncBlobType;
   protected
     FDataType: TmncDataType;
     function GetAsText: string; override;
     procedure SetAsText(const AValue: string); override;
+    property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
     property DataType: TmncDataType read FDataType default dtUnknown;
   public
     function IsNumber: Boolean;
@@ -809,6 +822,11 @@ procedure TmncConnection.DoInit;
 begin
 end;
 
+function TmncConnection.IsStrict: Boolean;
+begin
+  Result := (mcmStrict in Mode) or (ccStrict in Capabilities);
+end;
+
 procedure TmncConnection.Prepare;
 begin
 end;
@@ -1120,25 +1138,6 @@ begin
   InternalStop(sdaCommit, Retaining);
 end;
 
-constructor TmncTransaction.Create(vConnection: TmncConnection);
-var
-  aBehaviors: TmncTransactionBehaviors;
-begin
-  aBehaviors := [];
-  if ccStrict in vConnection.Capabilities then
-    aBehaviors := aBehaviors + [sbhStrict];
-  if ccTransaction in vConnection.Capabilities then
-  begin
-{    if ccMultiConnection in vConnection.Model.Capabilities then //deprecated
-      aBehaviors := aBehaviors + [sbhMultiple, sbhIndependent]
-    else }if ccMultiTransaction in vConnection.Capabilities then
-      aBehaviors := aBehaviors + [sbhMultiple]
-    else
-      aBehaviors := aBehaviors + [sbhEmulate]
-  end;
-  Create(vConnection, aBehaviors);
-end;
-
 constructor TmncTransaction.Create(vConnection: TmncConnection; vBehaviors: TmncTransactionBehaviors);
 begin
   inherited Create;
@@ -1150,6 +1149,23 @@ begin
   FBehaviors := vBehaviors;
   if Connection.AutoStart then
     Start;
+end;
+
+constructor TmncTransaction.Create(vConnection: TmncConnection);
+var
+  aBehaviors: TmncTransactionBehaviors;
+begin
+  aBehaviors := [];
+  if ccStrict in vConnection.Capabilities then
+    aBehaviors := aBehaviors + [sbhStrict];
+  if ccTransaction in vConnection.Capabilities then
+  begin
+    if ccMultiTransaction in vConnection.Capabilities then
+      aBehaviors := aBehaviors + [sbhMultiple]
+    else
+      aBehaviors := aBehaviors + [sbhEmulate]
+  end;
+  Create(vConnection, aBehaviors);
 end;
 
 destructor TmncTransaction.Destroy;
@@ -1194,10 +1210,12 @@ end;
 
 procedure TmncTransaction.InternalStart;
 begin
-  if Active then //Even if not strict, you cant start the Transaction more than one
-    raise EmncException.Create('Transaction is already active.');
-  Connection.CheckActive;
-  //Connection.Init; //Sure if the connection is initialized, maybe it is not connected yet!
+  if Connection.IsStrict then
+  begin
+    if Active then //Even if not strict, you cant start the Transaction more than one?
+      raise EmncException.Create('Transaction is already active.');
+    Connection.CheckActive; //* TODO move out of strict
+  end;
   Init;
   if sbhEmulate in Behaviors then
   begin
@@ -1215,11 +1233,10 @@ end;
 
 procedure TmncTransaction.InternalStop(How: TmncTransactionAction; Retaining: Boolean);
 begin
-  if not Active then //Even if not strict we check if active, because you cant stop Transaction if you not started it!
+  if Connection.IsStrict and (not Active) then //Even if not strict we check if active, because you cant stop Transaction if you not started it!
     raise EmncException.Create('Oops you have not started it yet!');
 
-  if not Retaining then
-    Links.Close;
+  //Links.Close; belal: conceder this case cmd1  begin trans cmd2 end trans => force cmd1 close
 
   if sbhEmulate in Behaviors then
   begin
@@ -1231,15 +1248,22 @@ begin
     begin
       if Connection.FStartCount = 0 then
         raise EmncException.Create('Transaction not started yet!');
-      Dec(Connection.FStartCount);
-     if (FCurrentAction > How) then
-        raise EmncException.Create('there is older action rollbacked!'); //in emulate mode you can't do rollback, then commit if we have 2 Transaction started
-      FCurrentAction := How;
-      if Connection.FStartCount = 0 then
+
+      if (FCurrentAction > How) then
+      begin
+        How := FCurrentAction;
+        //raise EmncException.Create('there is older action rollbacked!'); //in emulate mode you can't do rollback, then commit if we have 2 Transaction started
+      end
+      else
+        FCurrentAction := How;
+
+      if Connection.FStartCount = 1 then //* Last transaction
       begin
         DoStop(How, Retaining);
-        FCurrentAction := sdaCommit;
-      end;
+        Dec(Connection.FStartCount); //* Dec here after stop, if Stop raise exception no dec for startcount
+      end
+      else if Connection.FStartCount > 0 then
+        Dec(Connection.FStartCount);
     end;
   end
   else if sbhMultiple in Behaviors then
@@ -1669,7 +1693,8 @@ end;
 
 function TmncItem.GetAsText: string;
 begin
-  if DataType in [dtBlob] then
+  //if (IsBlob) and (BlobType = blobText) then
+  if (DataType in [dtBlob]) and (BlobType = blobBinary) then
     Result := AsHex
   else
     Result := inherited GetAsText;
@@ -1677,7 +1702,8 @@ end;
 
 procedure TmncItem.SetAsText(const AValue: string);
 begin
-  if DataType in [dtBlob] then
+  //if (IsBlob) and (BlobType = blobText) then
+  if (DataType in [dtBlob]) and (BlobType = blobBinary) then
     AsHex := AValue
   else
     inherited SetAsText(AValue);
