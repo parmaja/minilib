@@ -10,8 +10,6 @@ object Form1: TForm1
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  OldCreateOrder = False
-  PixelsPerInch = 96
   TextHeight = 13
   object Button1: TButton
     Left = 6
@@ -39,7 +37,8 @@ object Form1: TForm1
     Align = alBottom
     ItemHeight = 13
     TabOrder = 2
-    ExplicitTop = 208
+    ExplicitTop = 307
+    ExplicitWidth = 374
   end
   object PassEdit: TEdit
     Left = 8
@@ -77,6 +76,14 @@ object Form1: TForm1
     Font.Name = 'Courier New'
     Font.Style = []
     TabOrder = 6
+    CodeFolding.GutterShapeSize = 11
+    CodeFolding.CollapsedLineColor = clGrayText
+    CodeFolding.FolderBarLinesColor = clGrayText
+    CodeFolding.IndentGuidesColor = clGray
+    CodeFolding.IndentGuides = True
+    CodeFolding.ShowCollapsedLine = False
+    CodeFolding.ShowHintMark = True
+    UseCodeFolding = False
     Gutter.Font.Charset = DEFAULT_CHARSET
     Gutter.Font.Color = clWindowText
     Gutter.Font.Height = -11
@@ -84,6 +91,7 @@ object Form1: TForm1
     Gutter.Font.Style = []
     Lines.Strings = (
       'SynEdit1')
+    FontSmoothing = fsmNone
   end
   object TreeBtn: TButton
     Left = 258

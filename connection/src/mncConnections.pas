@@ -244,7 +244,7 @@ type
 
   { TmncItem }
 
-  TmncItem = class(TmnField)
+  TmncItem = class(TmnCustomField)
   private
     FBlobType: TmncBlobType;
   protected
@@ -262,9 +262,8 @@ type
 
   { TmncItems }
 
-  TmncItems = class(TmnFields)
+  TmncItems = class(TmnCustomFields<TmncItem>)
   private
-    function GetItem(Index: Integer): TmncItem; overload;
   protected
     function Find(const vName: string): TmncItem; virtual; abstract;
   public
@@ -272,7 +271,6 @@ type
     function Add(AColumn: TmncItem): Integer; overload;
     function ItemByName(const vName: string): TmncItem;
     function IsExists(const vName: string): Boolean;
-    property Items[Index: Integer]: TmncItem read GetItem;
   end;
 
   TmnDataOption = (doRequired, doNullable);
@@ -405,6 +403,9 @@ type
     FRowID: Integer;
     function GetItem(Index: Integer): TmncField;
     function GetField(const Index: string): TmncField;
+    function GetValues(const Index: string): Variant;
+    procedure SetValues(const Index: string; const AValue: Variant);
+    function SetValue(const Index: string; const AValue: Variant): TmncField;
   protected
     function Find(const vName: string): TmncItem; override;
     function DoCreateField(vColumn: TmncColumn): TmncField; virtual; abstract;
@@ -412,13 +413,16 @@ type
     constructor Create(vColumns: TmncColumns); virtual;
     function CreateField(vColumn: TmncColumn): TmncField; reintroduce; overload;
     function CreateField(vIndex: Integer): TmncField; reintroduce; overload;
+    function FindField(const vName: string): TmncField;
     function FieldByName(const vName: string): TmncField;
     function Add(Column: TmncColumn): TmncField; overload;
     function Add(Column: TmncColumn; Value: Variant): TmncField; overload;
     function Add(Index: Integer; Value: Variant): TmncField; overload;
     property Columns: TmncColumns read FColumns;
     property Field[const Index: string]: TmncField read GetField; default;
+
     property Items[Index: Integer]: TmncField read GetItem;
+    property Values[const Index: string]: Variant read GetValues write SetValues;
     property RowID: Integer read FRowID write FRowID default 0; //most of SQL engines have this value
   end;
 
@@ -1397,6 +1401,32 @@ begin
   Result := (inherited Items[Index]) as TmncField;
 end;
 
+function TmncFields.GetValues(const Index: string): Variant;
+var
+  F: TmncField;
+begin
+  F := FindField(Index);
+  if F <> nil then
+    Result := F.Value
+  else
+    Result := Unassigned;
+end;
+
+function TmncFields.SetValue(const Index: string; const AValue: Variant): TmncField;
+begin
+  Result := FieldByName(Index);
+  Result.Value := AValue;
+end;
+
+procedure TmncFields.SetValues(const Index: string; const AValue: Variant);
+var
+  Field: TmncField;
+begin
+  Field := FieldByName(Index);
+  if Field<>nil then
+    Field.Value := AValue;
+end;
+
 function TmncFields.Find(const vName: string): TmncItem;
 var
   i: Integer;
@@ -1412,6 +1442,11 @@ begin
       break;
     end;
   end;
+end;
+
+function TmncFields.FindField(const vName: string): TmncField;
+begin
+  Result := Find(vName) as TmncField;
 end;
 
 { TmncColumns }
@@ -1718,18 +1753,13 @@ end;
 
 procedure TmncItems.Assign(Source: TmncItems);
 var
-  Item: TmnField;
+  Item: TmncItem;
 begin
   Clear;
   for Item in Source do
   begin
     Add(Item);
   end;
-end;
-
-function TmncItems.GetItem(Index: Integer): TmncItem;
-begin
-  Result := (inherited Items[Index]) as TmncItem;
 end;
 
 function TmncItems.Add(AColumn: TmncItem): Integer;

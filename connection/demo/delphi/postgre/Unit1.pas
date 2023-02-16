@@ -121,7 +121,7 @@ begin
         t := GetTickCount;
         if Cmd.Execute then
         begin
-          while not Cmd.EOF do
+          while not Cmd.Done do
           begin
             for I := 0 to Cmd.Fields.Count - 1 do
               SynEdit1.Lines.Add(Cmd.Fields.Items[i].Column.Name+': '+Cmd.Fields.Items[i].AsString);
@@ -217,7 +217,7 @@ begin
       begin
         SynEdit1.Lines.BeginUpdate;
         SynEdit1.Lines.Clear;
-        while not Cmd.EOF do
+        while not Cmd.Done do
         begin
           s := '';
           for I := 0 to Cmd.Fields.Count - 1 do
@@ -271,7 +271,7 @@ begin
         t := GetTickCount;
         if Cmd.Execute then
         begin
-          while not Cmd.EOF do
+          while not Cmd.Done do
           begin
             for I := 0 to Cmd.Fields.Count - 1 do
               SynEdit1.Lines.Add(Cmd.Fields.Items[i].Column.Name+': '+Cmd.Fields.Items[i].AsString);
@@ -307,7 +307,7 @@ begin
       Transaction.Start;
       Cmd := TmncPGCommand(Transaction.CreateCommand);
       try
-        aOID := lo_import(Conn.Handle, PChar('c:\worldcitiespop.txt'));
+        aOID := lo_import(Conn.Handle, Putf8Char('c:\worldcitiespop.txt'));
 
         Cmd.SQL.Text := 'update "Test" set "Data" = ?Data where "ID" = 5';
         Cmd.Prepare;
