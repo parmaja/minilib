@@ -1068,7 +1068,7 @@ end;
 
 procedure TmnCustomFields<T>.Clear;
 begin
-  inherited Create;
+  inherited Clear;
 end;
 
 procedure TmnCustomFields<T>.Clean;

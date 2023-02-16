@@ -249,7 +249,6 @@ type
     FCommand: TmncCustomPGCommand;
   protected
     function DoCreateField(vColumn: TmncColumn): TmncField; override;
-    function Find(const vName: string): TmncItem; override;
     property Command: TmncCustomPGCommand read FCommand;
 
   public
@@ -1462,11 +1461,6 @@ end;
 function TmncPostgreFields.DoCreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncPostgreField.Create(vColumn);
-end;
-
-function TmncPostgreFields.Find(const vName: string): TmncItem;
-begin
-  Result := inherited Find(vName);
 end;
 
 function TmncPostgreFields.IsNull: Boolean;
