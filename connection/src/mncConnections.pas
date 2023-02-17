@@ -25,6 +25,10 @@ unit mncConnections;
   Column have metadata, name, datatype
   Fields have only Values, no name, no datatype
   Param have metadata and values
+
+  TODO:
+    use Dictonary hash list for Fields
+    remove Retain
 }
 
 interface
@@ -235,8 +239,8 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
-  TmncDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig {bigint or int64}{, dtEnum, dtSet});
-  TmncSubType = (dstBinary, dstImage, dstText, dstXML, dstJSON);
+  TmncDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig {bigint or int64}, dtUUID{, dtEnum, dtSet});
+  TmncSubType = (dstBinary, dstText, dstImage, dstXML, dstJSON);
   TmncBlobType = (blobBinary, blobText);
 
 {
@@ -420,7 +424,7 @@ type
     property RowID: Int64 read FRowID write FRowID default 0; //most of SQL engines have this value
   end;
 
-  TmncRecord = class(TmncFields)
+  TmncRecord = class(TmncFields) //*TODO: use it insteadof TmncFields
   private
   public
   end;
@@ -526,6 +530,8 @@ type
     FParsed: Boolean;
     FPrepared: Boolean;
     FNextOnExecute: Boolean;
+    FIndex: Int64;
+    FID: Int64;
     function GetValues(const Index: string): Variant;
     procedure SetRequest(const Value: TStrings);
     procedure SetColumns(const Value: TmncColumns);
@@ -533,6 +539,7 @@ type
     procedure SetParams(const Value: TmncParams);
     function GetField(const Index: string): TmncField;
     function GetParam(const Index: string): TmncParam;
+    function GetIndex: Int64;
   protected
     FRequest: TStrings;
     procedure SetActive(const Value: Boolean); override;
@@ -595,6 +602,9 @@ type
     property Param[const Index: string]: TmncParam read GetParam;
     property Values[const Index: string]: Variant read GetValues;
     property Options: TmncCommandOptions read FOptions write FOptions;
+    property Index: Int64 read GetIndex; //* RowIndex
+    property ID: Int64 read FID write FID; //*TODO: deprecated;
+    property Tag: Int64 read FID write FID; //*TODO: deprecated;
   end;
 
 { Simple classes usful for rapid implmetation }
@@ -888,6 +898,24 @@ begin
     Close;
 end;
 
+procedure TmncCommand.DoCommit;
+begin
+
+
+
+end;
+
+procedure TmncCommand.DoRollback;
+begin
+
+
+
+end;
+
+procedure TmncCommand.Fetch;
+begin
+end;
+
 function TmncCommand.CreateColumns: TmncColumns;
 begin
   Result := TmncColumns.Create;
@@ -896,22 +924,6 @@ end;
 function TmncCommand.CreateBinds: TmncBinds;
 begin
   Result := TmncBinds.Create;
-end;
-
-procedure TmncCommand.Fetch;
-begin
-end;
-
-function TmncCommand.InternalExecute(vNext: Boolean): Boolean;
-begin
-  if not FPrepared then
-    Prepare;
-  Clean;
-  DoExecute;
-  if vNext and not Done then //TODO Check it do we need not Done
-    Result := Next
-  else
-    Result := not Done;
 end;
 
 constructor TmncCommand.Create;
@@ -924,6 +936,24 @@ begin
   FParams := CreateParams;
   FBinds := CreateBinds;
   FNextOnExecute := True;
+end;
+
+function TmncCommand.InternalExecute(vNext: Boolean): Boolean;
+begin
+  if not FPrepared then
+    Prepare;
+  Clean;
+  DoExecute;
+  if vNext and not Done then //TODO Check it do we need not Done
+  begin
+    FIndex := -1;
+    Result := Next;
+  end
+  else
+  begin
+    FIndex := 0;
+    Result := not Done;
+  end;
 end;
 
 function TmncCommand.Step: Boolean;
@@ -952,6 +982,11 @@ begin
     Result := Fields.Field[Index]
   else
     raise EmncException.Create('Current record not found');
+end;
+
+function TmncCommand.GetIndex: Int64;
+begin
+  Result := FIndex;
 end;
 
 function TmncCommand.GetParam(const Index: string): TmncParam;
@@ -990,18 +1025,9 @@ end;
 
 procedure TmncCommand.DoUnparse;
 begin
-  FParsed := False;
 end;
 
 procedure TmncCommand.DoUnprepare;
-begin
-end;
-
-procedure TmncCommand.DoCommit;
-begin
-end;
-
-procedure TmncCommand.DoRollback;
 begin
 end;
 
@@ -1014,6 +1040,8 @@ begin
   Fetch;
   DoNext;
   Result := not Done;
+  if Result then
+    Inc(FIndex);
 end;
 
 procedure TmncCommand.Prepare;
@@ -1087,32 +1115,6 @@ begin
   //TODO OnRequestChanged;
 end;
 
-function TmncCommand.GetValues(const Index: string): Variant;
-begin
-  if not Prepared then
-    Prepare;
-  if Fields <> nil then
-    Result := Fields.Values[Index]
-  else
-    raise EmncException.Create('Current record not found');
-end;
-
-procedure TmncLinkTransaction.SetTransaction(AValue: TmncTransaction);
-begin
-  inherited Link := AValue;
-end;
-
-function TmncLinkTransaction.GetTransaction: TmncTransaction;
-begin
-  Result := Link as TmncTransaction;
-end;
-
-constructor TmncLinkTransaction.CreateBy(vTransaction: TmncTransaction);
-begin
-  Create;
-  Transaction := vTransaction;//Transaction not FTransaction
-end;
-
 procedure TmncCommand.Commit;
 begin
   if Active then
@@ -1131,6 +1133,34 @@ begin
   DoClose;
   DoUnparse;
   FPrepared := False;
+end;
+
+function TmncCommand.GetValues(const Index: string): Variant;
+begin
+  if not Prepared then
+    Prepare;
+  if Fields <> nil then
+    Result := Fields.Values[Index]
+  else
+    raise EmncException.Create('Current record not found');
+end;
+
+{ TmncLinkTransaction }
+
+procedure TmncLinkTransaction.SetTransaction(AValue: TmncTransaction);
+begin
+  inherited Link := AValue;
+end;
+
+function TmncLinkTransaction.GetTransaction: TmncTransaction;
+begin
+  Result := Link as TmncTransaction;
+end;
+
+constructor TmncLinkTransaction.CreateBy(vTransaction: TmncTransaction);
+begin
+  Create;
+  Transaction := vTransaction;//Transaction not FTransaction
 end;
 
 { TmncTransaction }
@@ -1737,7 +1767,5 @@ begin
 end;
 
 initialization
-
 finalization
-
 end.
