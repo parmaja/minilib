@@ -266,8 +266,6 @@ type
     function GetActive: Boolean; override;
     procedure SetActive(const Value: Boolean); override;
     procedure DoClose; override;
-    procedure DoCommit; override;
-    procedure DoRollback; override;
     //function GetPlan: string;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
@@ -1284,11 +1282,6 @@ begin
   end;
 end;
 
-procedure TmncFBCommand.DoRollback;
-begin
-  Transaction.Rollback;
-end;
-
 function TmncFBCommand.CreateFields(vColumns: TmncColumns): TmncFields;
 begin
   Result := TmncFBFields.Create(vColumns);
@@ -1324,11 +1317,6 @@ begin
     FEOF := True;
     FActive := False;
   end;
-end;
-
-procedure TmncFBCommand.DoCommit;
-begin
-  Transaction.Commit;
 end;
 
 function TmncFBCommand.GetActive: Boolean;

@@ -154,7 +154,6 @@ type
   TmncSQLCommand = class abstract(TmncCommand)
   private
     FFetchBlob: Boolean;
-    FFetched: Int64;
     FParamPrefix: Char;
     FProcessSQL: Boolean;
     FReady: Boolean; //BOF
@@ -170,8 +169,7 @@ type
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(SQLOptions: TmncParseSQLOptions);
-    procedure Fetch; override;
-    procedure Clean; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
+    procedure Reset; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     procedure HitDone;   //Make it FDone True
     procedure HitUnready; //Make it FReady False
 
@@ -187,7 +185,6 @@ type
     function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
     property Ready: Boolean read FReady;
-    property Fetched: Int64 read FFetched;
     property FetchBlobs: Boolean read FFetchBlob write FFetchBlob default false;
     //ParamPrefix is ? to use it to open param and match it before convert it to engine paramprefix
     property ParamPrefix: Char read FParamPrefix write SetParamPrefix default '?';
@@ -527,18 +524,11 @@ begin
   //maybe clear params, idk
 end;
 
-procedure TmncSQLCommand.Fetch;
-begin
-  inherited;
-  Inc(FFetched);
-end;
-
-procedure TmncSQLCommand.Clean;
+procedure TmncSQLCommand.Reset;
 begin
   inherited;
   FReady := True;
   FDone := False;
-  FFetched := 0;
 end;
 
 procedure TmncSQLCommand.HitDone;
@@ -783,7 +773,7 @@ begin
         CMD.Binds.Clear;
         for i := 0 to Count - 1 do
         begin
-          aParam := CMD.Params.Found(Self[i].Name);//it will auto create it if not founded
+          aParam := CMD.Params.Require(Self[i].Name);//it will auto create it if not founded
           CMD.Binds.Add(aParam);
         end;
       finally

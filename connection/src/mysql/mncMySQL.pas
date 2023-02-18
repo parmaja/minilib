@@ -215,8 +215,6 @@ type
     function GetDone: Boolean; override;
     function GetActive:Boolean; override;
     procedure DoClose; override;
-    procedure DoCommit; override;
-    procedure DoRollback; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
     function CreateBinds: TmncBinds; override;
@@ -1083,11 +1081,6 @@ begin
   inherited;
 end;
 
-procedure TmncMySQLCommand.DoRollback;
-begin
-  Transaction.Rollback;
-end;
-
 function TmncMySQLCommand.CreateFields(vColumns: TmncColumns): TmncFields;
 begin
   Result := TmncMySQLFields.Create(vColumns);
@@ -1114,11 +1107,6 @@ begin
   CheckError(mysql_stmt_free_result(FStatment));
   CheckError(mysql_stmt_close(FStatment));
   FStatment := nil;
-end;
-
-procedure TmncMySQLCommand.DoCommit;
-begin
-  Transaction.Commit;
 end;
 
 function TmncMySQLCommand.FetchColumns: Boolean;

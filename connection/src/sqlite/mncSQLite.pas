@@ -175,8 +175,6 @@ type
     function GetDone: Boolean; override;
     function GetActive:Boolean; override;
     procedure DoClose; override;
-    procedure DoCommit; override;
-    procedure DoRollback; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
     function CreateBinds: TmncBinds; override;
@@ -790,11 +788,6 @@ begin
   CheckError(sqlite3_prepare(Connection.DBHandle, PAnsiChar(GetProcessedSQL), -1 , @FStatment, @FTail));
 end;
 
-procedure TmncSQLiteCommand.DoRollback;
-begin
-  Transaction.Rollback;
-end;
-
 function TmncSQLiteCommand.CreateFields(vColumns: TmncColumns): TmncFields;
 begin
   Result := TmncSQLiteFields.Create(vColumns);
@@ -814,11 +807,6 @@ procedure TmncSQLiteCommand.DoClose;
 begin
   CheckError(sqlite3_finalize(FStatment));
   FStatment := nil;  
-end;
-
-procedure TmncSQLiteCommand.DoCommit;
-begin
-  Transaction.Commit;
 end;
 
 procedure TmncSQLiteCommand.FetchColumns;
