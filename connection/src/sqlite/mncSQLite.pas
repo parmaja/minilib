@@ -61,11 +61,11 @@ type
     function CreateTransaction: TmncSQLTransaction; overload; override; 
     procedure Interrupt;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean =False); override;
-    function IsDatabaseExists(vName: string): Boolean; override;
+    function IsDatabaseExists(const vName: string): Boolean; override;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
     procedure Vacuum; override;
     function GetVersion: string;
-    procedure Execute(Command: string); override;
+    procedure Execute(const vSQL: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property ReadCommited: Boolean read FReadCommited write SetReadCommited;
     property Synchronous: TmncSynchronous read FSynchronous write FSynchronous default syncDefault;
@@ -91,7 +91,7 @@ type
     procedure DoStart; override;
     procedure DoStop(How: TmncTransactionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
-    function InternalCreateCommand: TmncSQLCommand; override;
+    function DoCreateCommand: TmncSQLCommand; override;
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
@@ -398,7 +398,7 @@ begin
   //TODO
 end;
 
-function TmncSQLiteConnection.IsDatabaseExists(vName: string): Boolean;
+function TmncSQLiteConnection.IsDatabaseExists(const vName: string): Boolean;
 begin
   Result := FileExists(vName);
 end;
@@ -467,7 +467,7 @@ begin
   inherited;
 end;
 
-function TmncSQLiteTransaction.InternalCreateCommand: TmncSQLCommand;
+function TmncSQLiteTransaction.DoCreateCommand: TmncSQLCommand;
 begin
   Result := TmncSQLiteCommand.Create;
 end;
@@ -492,14 +492,14 @@ begin
     Execute('BEGIN');
 end;
 
-procedure TmncSQLiteConnection.Execute(Command: string);
+procedure TmncSQLiteConnection.Execute(const vSQL: string);
 var
  lMsg  : PUtf8Char;
  s : Utf8String;
  r  : integer;
 begin
   lMSg := nil;
-  s := Command;
+  s := vSQL;
   r := sqlite3_exec(FDBHandle, PUtf8Char(s), nil, nil, @lMsg);
   if lMSg <> nil then
   begin

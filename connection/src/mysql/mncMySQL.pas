@@ -55,13 +55,13 @@ type
     procedure SetStorageEngine(vName: string);
     procedure SetAutoCommit(AMode: Boolean);
     function SelectDatabase(vName: string; RaiseException: Boolean = true): Boolean;
-    function IsDatabaseExists(vName: string): Boolean; override;
+    function IsDatabaseExists(const vName: string): Boolean; override;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); override;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
     procedure Vacuum; override;
 
     function GetVersion: string;
-    procedure Execute(Command: string); override;
+    procedure Execute(const vSQL: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property ReadCommited: Boolean read FReadCommited write SetReadCommited;
     property DBHandle: PMYSQL read FDBHandle;
@@ -80,7 +80,7 @@ type
     procedure DoStart; override;
     procedure DoStop(How: TmncTransactionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
-    function InternalCreateCommand: TmncSQLCommand; override;
+    function DoCreateCommand: TmncSQLCommand; override;
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
@@ -514,7 +514,7 @@ begin
     FDatabase := vName;
 end;
 
-function TmncMySQLConnection.IsDatabaseExists(vName: string): Boolean;
+function TmncMySQLConnection.IsDatabaseExists(const vName: string): Boolean;
 var
   aConn: TmncSQLConnection;
   aTransaction: TmncSQLTransaction;
@@ -625,7 +625,7 @@ begin
   inherited;
 end;
 
-function TmncMySQLTransaction.InternalCreateCommand: TmncSQLCommand;
+function TmncMySQLTransaction.DoCreateCommand: TmncSQLCommand;
 begin
   Result := TmncMySQLCommand.Create;
 end;
@@ -651,9 +651,9 @@ begin
     Execute('BEGIN');
 end;
 
-procedure TmncMySQLConnection.Execute(Command: string);
+procedure TmncMySQLConnection.Execute(const vSQL: string);
 begin
-  CheckError(mysql_query(FDBHandle, PAnsiChar(Command)));
+  CheckError(mysql_query(FDBHandle, PAnsiChar(vSQL)));
 end;
 
 function TmncMySQLTransaction.GetActive: Boolean;

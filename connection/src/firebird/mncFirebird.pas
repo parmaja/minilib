@@ -61,11 +61,11 @@ type
     function CreateTransaction: TmncSQLTransaction; override;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); override;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
-    function IsDatabaseExists(vName: string): Boolean; override;
+    function IsDatabaseExists(const vName: string): Boolean; override;
     procedure Vacuum; override;
     function GetVersion: string;
     function GetExtension: string; override;
-    procedure Execute(vCommand: string); override;
+    procedure Execute(const vSQL: string); override;
     property Role: string read FRole write FRole;
     property CharacterSet: string read FCharacterSet write FCharacterSet; //ex: WIN1252 for Lazarus use UTF8
     //todo 'character set WIN1252 collate WIN_PTBR';
@@ -89,7 +89,7 @@ type
     procedure DoStart; override;
     procedure DoStop(How: TmncTransactionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
-    function InternalCreateCommand: TmncSQLCommand; override;
+    function DoCreateCommand: TmncSQLCommand; override;
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
@@ -232,7 +232,6 @@ type
     function GetParams: TmncFBParams;
     function GetBinds: TmncFBBinds;
   protected
-    function GetParseOptions: TmncParseSQLOptions; override;
     function CheckErr(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     function CreateParams: TmncParams; override;
     property Params: TmncFBParams read GetParams;
@@ -432,7 +431,7 @@ begin
   end;
 end;
 
-function TmncFBConnection.IsDatabaseExists(vName: string): Boolean;
+function TmncFBConnection.IsDatabaseExists(const vName: string): Boolean;
 begin
   //TODO
 end;
@@ -588,7 +587,7 @@ begin
   inherited;
 end;
 
-function TmncFBTransaction.InternalCreateCommand: TmncSQLCommand;
+function TmncFBTransaction.DoCreateCommand: TmncSQLCommand;
 begin
   Result := TmncFBCommand.CreateBy(Self);
 end;
@@ -657,7 +656,7 @@ begin
   end;
 end;
 
-procedure TmncFBConnection.Execute(vCommand: string);
+procedure TmncFBConnection.Execute(const vSQL: string);
 var
   tr_handle: TISC_TR_HANDLE;
   StatusVector: TStatusVector;
@@ -665,7 +664,7 @@ var
 begin
   tr_handle := 0;
   try
-    s := UTF8Encode(vCommand);
+    s := UTF8Encode(vSQL);
     CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PByte(s), FB_DIALECT, nil), StatusVector, True);
   finally
   end;
@@ -1533,11 +1532,6 @@ end;
 function TmncCustomFBCommand.GetBinds: TmncFBBinds;
 begin
   Result := inherited Binds as TmncFBBinds;
-end;
-
-function TmncCustomFBCommand.GetParseOptions: TmncParseSQLOptions;
-begin
-  Result := [];
 end;
 
 function TmncCustomFBCommand.GetTransaction: TmncFBTransaction;

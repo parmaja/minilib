@@ -564,7 +564,6 @@ type
     function CreateBinds: TmncBinds; virtual;
     procedure Fetch; virtual; //Called before DoNext
     property Request: TStrings read FRequest write SetRequest;
-    property Binds: TmncBinds read FBinds; //for Dublicated names when pass the params when execute select * from t1 where f1 = ?p1 and f2 = ?p1 and f3=p2
     function InternalExecute(vNext: Boolean): Boolean;
   public
     constructor Create; override;
@@ -597,6 +596,7 @@ type
     property Prepared: Boolean read FPrepared;
     property Columns: TmncColumns read FColumns write SetColumns;
     property Fields: TmncFields read FFields write SetFields; //Current record loaded in memory, it is nil sometime if no data, do not access it if no data exists
+    property Binds: TmncBinds read FBinds; //for Dublicated names when pass the params when execute select * from t1 where f1 = ?p1 and f2 = ?p1 and f3=p2
     property Field[const Index: string]: TmncField read GetField;
     property Params: TmncParams read FParams write SetParams;
     property Param[const Index: string]: TmncParam read GetParam;
