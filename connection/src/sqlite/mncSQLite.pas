@@ -35,14 +35,14 @@ type
 
   TmncSQLiteConnection = class(TmncSQLConnection)
   private
-    FAutoCreate: Boolean;
-    FCorrectDateTime: Boolean;
     FDBHandle: PSqlite3;
+    FCorrectDateTime: Boolean;
     FExclusive: Boolean;
     FJournalMode: TmncJournalMode;
     FReadCommited: Boolean;
     FSynchronous: TmncSynchronous;
     FTempStore: TmncTempStore;
+    FAutoCreate: Boolean;
     procedure SetExclusive(const AValue: Boolean);
     procedure SetJournalMode(const AValue: TmncJournalMode);
     procedure SetReadCommited(const AValue: Boolean);
@@ -54,6 +54,7 @@ type
     function GetConnected:Boolean; override;
     procedure CheckError(Error: Integer; const ExtraMsg: string = '');
     procedure DoInit; override;
+    function DoGetNextIDSQL(const vName: string; vStep: Integer): string; override;
   public
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
@@ -246,6 +247,7 @@ begin
 end;
 
 function SQLTypeToType(vType: Integer; const MetaType: string): TmncDataType;
+
   function isDate: Boolean;
   begin
     Result := SameText(MetaType, 'date') or SameText(MetaType, 'timestamp') or SameText(MetaType, 'datetime');
@@ -334,6 +336,27 @@ begin
   FreeBuffer;
   inherited;
 end;
+
+
+{belal: copy from prmSQLite use fetch values :)}
+{function TprmSQLiteField.GetAsDateTime: TDateTime;
+var
+  s: string;
+  d: Double;
+begin
+  s := AsString;
+  if (s<>'')and(s<>'0') then
+  begin
+    d := StrToFloatDef(s, 0);
+    if d=0 then
+      Result := ISOStrToDate(s)
+    else
+      Result := d;
+  end
+  else
+    Result := 0;
+end;
+}
 
 { TmncSQLiteFields }
 
@@ -456,6 +479,11 @@ begin
   {$ifdef FPC}
   SQLiteLib.Release;
   {$endif}
+end;
+
+function TmncSQLiteConnection.DoGetNextIDSQL(const vName: string; vStep: Integer): string;
+begin
+  Result := Format('select max(''%s'')+%d', [vName, vStep]); //belal: check max
 end;
 
 { TmncSQLiteTransaction }

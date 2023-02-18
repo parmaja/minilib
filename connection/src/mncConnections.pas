@@ -1765,7 +1765,7 @@ begin
     inherited;
     {$ifdef FPC}
     if Action = lnAdded then
-      FDic.AddOrSetValue(T(Ptr).GetName.ToLower, Ptr);
+      FDic.AddOrSetValue(T(Ptr).GetName.ToLower, T(Ptr));
     {$else}
     if Action = cnAdded then
       FDic.AddOrSetValue(Value.GetName.ToLower, Value);
