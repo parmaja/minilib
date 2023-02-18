@@ -96,7 +96,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    procedure Execute(SQL: string);
+    procedure Execute(const vSQL: string); override;
     function GetLastRowID: Int64;
     function GetRowsChanged: Integer;
     property Connection: TmncSQLiteConnection read GetConnection write SetConnection;
@@ -288,6 +288,8 @@ begin
     begin
       if SameText(MetaType, 'Blob') then
         Result := dtBlob
+      else if SameText(MetaType, 'timestamp') then
+        Result := dtDateTime
       else
         Result := dtString;
     end
@@ -337,7 +339,7 @@ begin
   inherited;
 end;
 
-
+//no need, we processes in fetchvalues
 {belal: copy from prmSQLite use fetch values :)}
 {function TprmSQLiteField.GetAsDateTime: TDateTime;
 var
@@ -498,9 +500,9 @@ begin
   Result := TmncSQLiteCommand.Create;
 end;
 
-procedure TmncSQLiteTransaction.Execute(SQL: string);
+procedure TmncSQLiteTransaction.Execute(const vSQL: string);
 begin
-  Connection.Execute(UTF8Encode(SQL));
+  Connection.Execute(UTF8Encode(vSQL));
 end;
 
 procedure TmncSQLiteTransaction.DoStart;
@@ -764,7 +766,7 @@ begin
             s := VarToStr(Binds[i].Param.Value) + #0;
             Binds[i].AllocBuffer(PUtf8Char(s)^, Length(s));
           end;
-          CheckError(sqlite3_bind_text(FStatment, i + 1, PAnsiChar(Binds[i].Buffer), -1, nil)); //up to #0
+          CheckError(sqlite3_bind_text(FStatment, i + 1, PUTF8Char(Binds[i].Buffer), -1, nil)); //up to #0
           //CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), Binds[i].BufferSize, nil)); not work with empty string not null
         end;
       end;
@@ -813,7 +815,7 @@ begin
   FLastStepResult := 0;
 //  sqlite3_prepare_v2
 //TODO: apply value of params if using injection mode
-  CheckError(sqlite3_prepare(Connection.DBHandle, PAnsiChar(GetProcessedSQL), -1 , @FStatment, @FTail));
+  CheckError(sqlite3_prepare(Connection.DBHandle, PUtf8Char(UTF8Encode(GetProcessedSQL)), -1 , @FStatment, @FTail));
 end;
 
 function TmncSQLiteCommand.CreateFields(vColumns: TmncColumns): TmncFields;
@@ -843,7 +845,7 @@ var
   c: Integer;
   aName: string;
   FieldType: Integer;
-  MetaType: PAnsiChar;
+  MetaType: PUTF8Char;
   aColumn: TmncColumn;
 begin
   Columns.Clear;
@@ -936,15 +938,19 @@ begin
             v.i := sqlite3_column_bytes(FStatment, i);
             SetLength(str, v.i);
             Move(PByte(sqlite3_column_blob(FStatment, i))^, PByte(str)^, v.i);
+            aCurrent.Add(i, str);
           end
           else if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
           begin
             str := sqlite3_column_text(FStatment, i);
             v.d := ISOStrToDate(str);
+            aCurrent.Add(i, v.d);
           end
           else
+          begin
             str := sqlite3_column_text(FStatment, i);
             aCurrent.Add(i, str);
+          end;
         end
         else
         begin
