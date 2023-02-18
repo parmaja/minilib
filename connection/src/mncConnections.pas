@@ -445,7 +445,6 @@ type
   { TmncCustomParams }
 
   TmncCustomParams = class(TmncCustomFields<TmncParam>)
-  private
   protected
     function GetParam(const Index: string): TmncParam;
     function GetItem(Index: Integer): TmncParam;
@@ -900,16 +899,12 @@ end;
 
 procedure TmncCommand.DoCommit;
 begin
-
-
-
+  Transaction.Commit;
 end;
 
 procedure TmncCommand.DoRollback;
 begin
-
-
-
+  Transaction.Rollback;
 end;
 
 procedure TmncCommand.Fetch;
@@ -1559,6 +1554,7 @@ end;
 
 function TmncCustomParams.FindParam(const vName: string): TmncParam;
 begin
+
   Result := Find(vName) as TmncParam;
 end;
 
