@@ -129,6 +129,8 @@ type
     function GetAsTime: TDateTime; override;
     procedure SetAsTime(const AValue: TDateTime); override;
 
+    function GetAsBytes: TBytes; override;
+
     function GetIsNull: Boolean; override;
     procedure SetIsNull(const AValue: Boolean); override;
     function GetIsEmpty: Boolean; override;
@@ -186,6 +188,8 @@ type
     procedure SetAsDateTime(const AValue: TDateTime); override;
     function GetAsTime: TDateTime; override;
     procedure SetAsTime(const AValue: TDateTime); override;
+    function GetAsBytes: TBytes; override;
+    procedure SetAsBytes(const AValue: TBytes); override;
 
     function GetIsNull: Boolean; override;
     procedure SetIsNull(const AValue: Boolean); override;
@@ -305,7 +309,7 @@ implementation
 
 function SQLTypeToDataType(SQLType: Integer):TmncDataType;
 begin
-  case SQLType of
+  case FBSqlDef(SQLType) of
     SQL_TEXT: Result := dtString;
     SQL_DOUBLE: Result := dtFloat;
     SQL_FLOAT: Result := dtFloat;
@@ -320,6 +324,8 @@ begin
     SQL_TYPE_DATE: Result := dtDate;
     SQL_INT64: Result := dtInteger;
     SQL_NULL: Result := dtUnknown;
+    SQL_DEC16: Result := dtFloat;
+    SQL_DEC34: Result := dtFloat;
     //SQL_DATE: Result := dtDateTime;
     SQL_BOOLEAN: Result := dtBoolean;
     else
@@ -432,6 +438,7 @@ end;
 function TmncFBConnection.IsDatabaseExists(const vName: string): Boolean;
 begin
   //TODO
+  Result := False;
 end;
 
 procedure TmncFBConnection.SetVariable(const vName, vData: string);
@@ -556,7 +563,6 @@ begin
       raise EFBError.Create(-1, 'This database not dialect 3, other dialects not supported')
   finally
   end;
-
 {    for i := 0 to FEventNotifiers.Count - 1 do
       if IFBEventNotifier(FEventNotifiers[i]).GetAutoRegister then
         IFBEventNotifier(FEventNotifiers[i]).RegisterEvents;}
@@ -581,7 +587,6 @@ end;
 
 destructor TmncFBTransaction.Destroy;
 begin
-
   inherited;
 end;
 
@@ -594,7 +599,9 @@ procedure TmncFBTransaction.Execute(vSQL: string);
 var
   StatusVector: TStatusVector;
   s: UTF8String;
+  //s: TBytes;
 begin
+  //s := TEncoding.UTF8.GetBytes(vSQL);
   s := UTF8Encode(vSQL);
   CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @Connection.Handle, @FHandle, Length(s), PByte(s), FB_DIALECT, nil), StatusVector, True);
 end;
@@ -795,6 +802,11 @@ begin
   Result := FSQLVAR.AsBoolean;
 end;
 
+function TmncFBField.GetAsBytes: TBytes;
+begin
+  Result := FSQLVAR.AsBytes;
+end;
+
 procedure TmncFBField.SetAsBoolean(const AValue: Boolean);
 begin
   FSQLVAR.AsBoolean := AValue;
@@ -973,6 +985,11 @@ begin
   Result := FSQLVAR.AsBoolean;
 end;
 
+function TmncFBParam.GetAsBytes: TBytes;
+begin
+  Result := FSQLVAR.AsBytes;
+end;
+
 procedure TmncFBParam.SetAsBoolean(const AValue: Boolean);
 begin
   FSQLVAR.AsBoolean := AValue;
@@ -981,6 +998,11 @@ end;
 function TmncFBParam.GetAsCurrency: Currency;
 begin
   Result := FSQLVAR.AsCurrency;
+end;
+
+procedure TmncFBParam.SetAsBytes(const AValue: TBytes);
+begin
+  FSQLVAR.AsBytes := AValue;
 end;
 
 procedure TmncFBParam.SetAsCurrency(const AValue: Currency);
@@ -1282,14 +1304,14 @@ begin
   end;
 end;
 
-function TmncFBCommand.CreateFields(vColumns: TmncColumns): TmncFields;
-begin
-  Result := TmncFBFields.Create(vColumns);
-end;
-
 function TmncFBCommand.CreateBinds: TmncBinds;
 begin
   Result := TmncFBBinds.Create;
+end;
+
+function TmncFBCommand.CreateFields(vColumns: TmncColumns): TmncFields;
+begin
+  Result := TmncFBFields.Create(vColumns);
 end;
 
 function TmncFBCommand.CreateParams: TmncParams;
@@ -1507,6 +1529,11 @@ begin
   Result := nil;
 end;
 
+function TmncCustomFBCommand.GetBinds: TmncFBBinds;
+begin
+  Result := inherited Binds as TmncFBBinds;
+end;
+
 function TmncCustomFBCommand.GetConnection: TmncFBConnection;
 begin
   Result := Transaction.Connection as TmncFBConnection;
@@ -1515,11 +1542,6 @@ end;
 function TmncCustomFBCommand.GetParams: TmncFBParams;
 begin
   Result := inherited Params as TmncFBParams;
-end;
-
-function TmncCustomFBCommand.GetBinds: TmncFBBinds;
-begin
-  Result := inherited Binds as TmncFBBinds;
 end;
 
 function TmncCustomFBCommand.GetTransaction: TmncFBTransaction;

@@ -21,7 +21,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, StrUtils,
-  mnClasses,
+  mnClasses, mnUtils,
   mncConnections, mncCommons;
 
 type
@@ -56,19 +56,73 @@ type
     psoAddParamsNames
   );
 
+  TmncSQLConnection = class;
   TmncSQLTransaction = class;
   TmncSQLCommand = class;
+
+  TReconnectProcedure = procedure(vConnection: TmncSQLConnection);
+
+  TDBDispatcherProc = reference to procedure(vMessage: string; vPID: IntPtr; var vHandeled: Boolean);
+
+  TDBChannel = class(TmncObject)
+  private
+    FName: string;
+    FCount: Integer;
+  public
+    property Name: string read FName;
+    property Count: Integer read FCount;
+  end;
+
+  TDBChannels = class(TmnObjectList<TDBChannel>)
+  public
+    function Find(const vName: string): TDBChannel;
+    function Register(const vName: string): Boolean;
+    function Unregister(const vName: string): Boolean;
+  end;
+
+  TDBDispatcher = class(TmncObject)
+  private
+    FName: string;
+    FChannel: string;
+    FEvent: TDBDispatcherProc;
+  public
+    property Name: string read FName;
+    property Channel: string read FChannel;
+    property Event: TDBDispatcherProc read FEvent;
+    //property Channel: string read FChannel;
+  end;
+
+  TDBDispatchers = class(TmnObjectList<TDBDispatcher>)
+  private
+    FChannels: TDBChannels;
+    FDB: TmncSQLConnection;
+  public
+    constructor Create(vDB: TmncSQLConnection);
+    destructor Destroy; override;
+
+    function RegisterDispatcher(const vName, vChannel: string; vEvent: TDBDispatcherProc): TDBDispatcher;
+    procedure UnregisterDispatcher(const vName: string);
+
+    procedure Process;
+    property DB: TmncSQLConnection read FDB;
+    property Channels: TDBChannels read FChannels;
+    function Find(const vName: string): TDBDispatcher;
+  end;
 
   { TmncSQLConnection }
 
   TmncSQLConnection = class abstract(TmncConnection)
   private
+    FIsReconnecting: Boolean;
+    FDispatchers: TDBDispatchers;
     function GetNextID(const vName: string; vStep: Integer): Integer;
   protected
     procedure DoClone(vConn: TmncSQLConnection); virtual;
     function DoGetNextIDSQL(const vName: string; vStep: Integer): string; virtual; deprecated; //TODO move it to dervied class should not be here, wrong place
   public
     constructor Create; override;
+    destructor Destroy; override;
+
     function CreateTransaction: TmncSQLTransaction; virtual; abstract;
 
     property NextID[const vName: string; vStep: Integer]: Integer read GetNextID; //deprecated;
@@ -91,6 +145,9 @@ type
     procedure CloneExecute(const vResource, vSQL: string; vArgs: array of const); overload;
     procedure CloneExecute(const vResource, vSQL: string); overload;
 
+    function UniqueDBName(const vBase: string): string; virtual; //TODO move to utils
+    function EnumDatabases: TStrings; virtual;
+
     procedure Vacuum; virtual;
     {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
@@ -100,6 +157,16 @@ type
     function GetExtension: string; virtual;
     //ScriptSeperator
     function ScriptSeperator: string; virtual;
+
+    //******************
+    function TestConnected: Boolean; virtual;
+    function IsReconnecting: Boolean; virtual;
+    function ReceiveNotifications: TStrings; virtual;
+    procedure Reconnect; virtual;
+    procedure RecoverConnection; virtual;
+    procedure StartListen(const vChannel: string); virtual;
+    procedure StopListen(const vChannel: string); virtual;
+    property Dispatchers: TDBDispatchers read FDispatchers;
   end;
 
   { TmncSQLTransaction }
@@ -209,6 +276,9 @@ type
     procedure LoadFromStrings(Strings: TStringList);
     procedure LoadFromFiles(Strings: TStringList);
   end;
+
+var
+  ReconnectProc: TReconnectProcedure = nil;
 
 implementation
 (*
@@ -427,6 +497,11 @@ begin
   Result := '^';
 end;
 
+function TmncSQLConnection.UniqueDBName(const vBase: string): string;
+begin
+  Result := '';
+end;
+
 procedure TmncSQLConnection.DoClone(vConn: TmncSQLConnection);
 begin
 end;
@@ -434,6 +509,7 @@ end;
 constructor TmncSQLConnection.Create;
 begin
   inherited Create;
+  FDispatchers := TDBDispatchers.Create(Self);
 end;
 
 function TmncSQLConnection.IsDatabaseExists: Boolean;
@@ -454,6 +530,11 @@ end;
 procedure TmncSQLConnection.Execute(const vSQL: string);
 begin
   raise Exception.Create('Execute is not suported in ' + EngineName);
+end;
+
+function TmncSQLConnection.EnumDatabases: TStrings;
+begin
+
 end;
 
 procedure TmncSQLConnection.Execute(const vSQL: string; vArgs: array of const);
@@ -784,6 +865,205 @@ begin
       Text := CMD.SQL.Text;
     end;
   end;
+end;
+
+destructor TmncSQLConnection.Destroy;
+begin
+  FreeAndNil(FDispatchers);
+  inherited;
+end;
+
+function TmncSQLConnection.IsReconnecting: Boolean;
+begin
+  Result := FIsReconnecting;
+end;
+
+function TmncSQLConnection.ReceiveNotifications: TStrings;
+begin
+  Result := nil;
+end;
+
+procedure TmncSQLConnection.Reconnect;
+begin
+  if not TestConnected then
+  begin
+    FIsReconnecting := True;
+    try
+      if Assigned(ReconnectProc) then
+        ReconnectProc(Self);
+    finally
+      if TestConnected then
+        FIsReconnecting := False;
+    end;
+  end;
+end;
+
+procedure TmncSQLConnection.RecoverConnection;
+begin
+end;
+
+procedure TmncSQLConnection.StartListen(const vChannel: string);
+begin
+end;
+
+procedure TmncSQLConnection.StopListen(const vChannel: string);
+begin
+end;
+
+function TmncSQLConnection.TestConnected: Boolean;
+begin
+  Result := True;
+end;
+
+{ TDBDispatchers }
+
+constructor TDBDispatchers.Create(vDB: TmncSQLConnection);
+begin
+  inherited Create(True);
+  FDB := vDB;
+
+  FChannels := TDBChannels.Create;
+end;
+
+destructor TDBDispatchers.Destroy;
+begin
+  FreeAndNil(FChannels);
+  inherited;
+end;
+
+function TDBDispatchers.Find(const vName: string): TDBDispatcher;
+begin
+  Result := nil;
+  for var itm in Self do
+    if itm.Name=vName then
+    begin
+      Result := itm;
+      Break;
+    end;
+end;
+
+procedure TDBDispatchers.Process;
+var
+  st: TStrings;
+  i, j: Integer;
+  aName: string;
+  aValue: string;
+  aHandeled: Boolean;
+begin
+  if Count<>0 then
+  begin
+    st := DB.ReceiveNotifications;
+    try
+      if st.Count<>0 then
+      begin
+        //for var s: stringex in st do
+        while st.Count<>0 do
+        begin
+          i := st.Count-1;
+          aName := st.Names[i];
+          aValue := st.ValueFromIndex[i];
+          aHandeled := False;
+
+          for var itm in Self do
+            if SameText(aName, itm.Channel) then
+              itm.FEvent(aValue, IntPtr(st.Objects[i]), aHandeled);
+              { TODO : improve: aHandeled := aHandeled or }
+
+          if aHandeled then
+          begin
+            j := st.Count-1;
+            while j>=0 do
+            begin
+              if (SubStr(st[i], '=') = aName) then
+                Delete(i);
+            end;
+          end
+          else
+            st.Delete(i);
+        end;
+      end;
+    finally
+      st.Free;
+    end;
+  end;
+end;
+
+function TDBDispatchers.RegisterDispatcher(const vName, vChannel: string; vEvent: TDBDispatcherProc): TDBDispatcher;
+begin
+  if Find(vName)<>nil then raise Exception.Create('duplicate name');
+
+  Result := TDBDispatcher.Create;
+  Result.FName := vName;
+  Result.FChannel := vChannel;
+  Result.FEvent := vEvent;
+  Add(Result);
+
+  if Channels.Register(vChannel) then
+    DB.StartListen(vChannel);
+end;
+
+procedure TDBDispatchers.UnregisterDispatcher(const vName: string);
+begin
+  var itm := Find(vName);
+  if (itm<>nil) then
+  begin
+    if Channels.Unregister(itm.Channel) then
+      DB.StopListen(itm.Channel);
+    Remove(itm);
+  end;
+
+
+
+  {RemoveItems(procedure(vItem: TDBDispatcher; var vCheck: Boolean)
+  begin
+    vCheck := vItem.Name = vName;
+  end);}
+end;
+
+{ TDBChannels }
+
+function TDBChannels.Find(const vName: string): TDBChannel;
+begin
+  Result := nil;
+  for var itm in Self do
+    if itm.Name=vName then
+    begin
+      Result := itm;
+      break;
+    end;
+end;
+
+function TDBChannels.Register(const vName: string): Boolean;
+begin
+  var itm := Find(vName);
+  Result := itm = nil;
+  if Result then
+  begin
+    itm := TDBChannel.Create;
+    itm.FName := vName;
+    itm.FCount := 0;
+    Add(itm);
+  end;
+  itm.FCount := itm.FCount + 1;
+end;
+
+function TDBChannels.Unregister(const vName: string): Boolean;
+begin
+  Result := False;
+
+  var itm := Find(vName);
+  if itm<>nil then
+  begin
+    itm.FCount := itm.FCount-1;
+    if itm.Count=0 then
+    begin
+      Result := True;
+      Remove(itm);
+    end;
+  end;
+  {$ifopt D+}
+  //raise exception
+  {$endif}
 end;
 
 end.
