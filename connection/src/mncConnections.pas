@@ -1035,6 +1035,7 @@ begin
     raise EmncException.Create('Command is already prepared!');
   if not FParsed then
     Parse;
+  { TODO : Clear Columns and Fields }
   CheckTransaction;
   DoPrepare;
   FPrepared := True;
@@ -1758,7 +1759,7 @@ begin
     if Action in [lnExtracted, lnDeleted] then //Need it in FPC https://forum.lazarus.freepascal.org/index.php/topic,60984.0.html
       FDic.Remove(T(Ptr).GetName.ToLower);//bug in fpc
     {$else}
-    if Action in [cnExtracting, cnDeleting] then
+    if Action in [cnExtracting, cnRemoved, cnDeleting] then
       FDic.Remove(Value.GetName.ToLower);
     {$endif}
     inherited;
