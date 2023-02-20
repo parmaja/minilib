@@ -9,6 +9,7 @@ unit mncSQL;
 {$M+}
 {$H+}
 {$IFDEF FPC}
+{$modeswitch functionreferences}{$modeswitch anonymousfunctions}
 {$mode delphi}
 {$ENDIF}
 
@@ -60,6 +61,7 @@ type
   TmncSQLTransaction = class;
   TmncSQLCommand = class;
 
+  {$ifndef FPC}
   TReconnectProcedure = procedure(vConnection: TmncSQLConnection);
 
   TDBDispatcherProc = reference to procedure(vMessage: string; vPID: IntPtr; var vHandeled: Boolean);
@@ -108,17 +110,21 @@ type
     property Channels: TDBChannels read FChannels;
     function Find(const vName: string): TDBDispatcher;
   end;
+  {$endif}
 
   { TmncSQLConnection }
 
   TmncSQLConnection = class abstract(TmncConnection)
   private
+    {$ifndef FPC}
     FIsReconnecting: Boolean;
     FDispatchers: TDBDispatchers;
+    {$endif}
     function GetNextID(const vName: string; vStep: Integer): Integer;
   protected
     procedure DoClone(vConn: TmncSQLConnection); virtual;
     function DoGetNextIDSQL(const vName: string; vStep: Integer): string; virtual; deprecated; //TODO move it to dervied class should not be here, wrong place
+    function GetSequenceSQL: string; virtual;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -158,7 +164,7 @@ type
     //ScriptSeperator
     function ScriptSeperator: string; virtual;
 
-    //******************
+    {$ifndef FPC}
     function TestConnected: Boolean; virtual;
     function IsReconnecting: Boolean; virtual;
     function ReceiveNotifications: TStrings; virtual;
@@ -167,6 +173,7 @@ type
     procedure StartListen(const vChannel: string); virtual;
     procedure StopListen(const vChannel: string); virtual;
     property Dispatchers: TDBDispatchers read FDispatchers;
+    {$endif}
   end;
 
   { TmncSQLTransaction }
@@ -277,8 +284,10 @@ type
     procedure LoadFromFiles(Strings: TStringList);
   end;
 
+{$ifndef FPC}
 var
   ReconnectProc: TReconnectProcedure = nil;
+{$endif}
 
 implementation
 (*
@@ -311,6 +320,11 @@ end;
 { TmncSQLTransaction }
 
 function TmncSQLConnection.DoGetNextIDSQL(const vName: string; vStep: Integer): string;
+begin
+  Result := '';
+end;
+
+function TmncSQLConnection.GetSequenceSQL: string;
 begin
   Result := '';
 end;
@@ -509,7 +523,9 @@ end;
 constructor TmncSQLConnection.Create;
 begin
   inherited Create;
+  {$ifndef FPC}
   FDispatchers := TDBDispatchers.Create(Self);
+  {$endif}
 end;
 
 function TmncSQLConnection.IsDatabaseExists: Boolean;
@@ -869,10 +885,13 @@ end;
 
 destructor TmncSQLConnection.Destroy;
 begin
+  {$ifndef FPC}
   FreeAndNil(FDispatchers);
+  {$endif}
   inherited;
 end;
 
+{$ifndef FPC}
 function TmncSQLConnection.IsReconnecting: Boolean;
 begin
   Result := FIsReconnecting;
@@ -1065,6 +1084,6 @@ begin
   //raise exception
   {$endif}
 end;
-
+{$endif}
 end.
 
