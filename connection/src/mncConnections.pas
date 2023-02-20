@@ -427,7 +427,6 @@ type
     function CreateField(vColumn: TmncColumn): TmncField; reintroduce; overload;
     function CreateField(vIndex: Integer): TmncField; reintroduce; overload;
     function IsExist(const vName: string): Boolean;
-    function FindField(const vName: string): TmncField;
     function FieldByName(const vName: string): TmncField;
     function Add(Column: TmncColumn): TmncField; overload;
     function Add(Column: TmncColumn; Value: Variant): TmncField; overload;
@@ -466,7 +465,6 @@ type
     function GetItem(Index: Integer): TmncParam;
   public
     procedure Clear; override;
-    function FindParam(const vName: string): TmncParam;
     function ParamByName(const vName: string): TmncParam;
     property Items[Index: Integer]: TmncParam read GetItem;
     property Param[const Index: string]: TmncParam read GetParam; default;
@@ -962,12 +960,12 @@ end;
 
 function TmncCommand.GetField(const Index: string): TmncField;
 begin
-  if not Prepared then
-    Prepare;
+  {if not Prepared then
+    Prepare;}
   if Fields <> nil then
     Result := Fields.Field[Index]
   else
-    raise EmncException.Create('Current record not found');
+    Result := nil;
 end;
 
 function TmncCommand.GetIndex: Int64;
@@ -982,7 +980,7 @@ begin
   if Params <> nil then
     Result := Params.Param[Index]
   else
-    raise EmncException.Create('Params is nil');
+    Result := nil;
 end;
 
 procedure TmncCommand.CheckActive;
@@ -1393,7 +1391,7 @@ end;
 
 function TmncFields.GetField(const Index: string): TmncField;
 begin
-  Result := FieldByName(Index);
+  Result := Find(Index);
 end;
 
 function TmncFields.GetItem(Index: Integer): TmncField;
@@ -1407,7 +1405,7 @@ function TmncFields.GetValues(const Index: string): Variant;
 var
   F: TmncField;
 begin
-  F := FindField(Index);
+  F := Find(Index);
   if F <> nil then
     Result := F.Value
   else
@@ -1432,11 +1430,6 @@ begin
   Field := FieldByName(Index);
   if Field<>nil then
     Field.Value := AValue;
-end;
-
-function TmncFields.FindField(const vName: string): TmncField;
-begin
-  Result := Find(vName) as TmncField;
 end;
 
 { TmncColumns }
@@ -1509,7 +1502,7 @@ end;
 
 function TmncParams.Require(const Name: string): TmncParam;
 begin
-  Result := FindParam(Name) as TmncParam;
+  Result := Find(Name);
   if Result = nil then
     Result := Add(Name);
 end;
@@ -1519,22 +1512,16 @@ begin
   inherited;
 end;
 
-function TmncCustomParams.FindParam(const vName: string): TmncParam;
-begin
-
-  Result := Find(vName) as TmncParam;
-end;
-
 function TmncCustomParams.ParamByName(const vName: string): TmncParam;
 begin
-  Result := FindParam(vName);
+  Result := Find(vName);
   if Result = nil then
     raise EmncException.Create('Param ' + vName + ' not found');
 end;
 
 function TmncCustomParams.GetParam(const Index: string): TmncParam;
 begin
-  Result := ParamByName(Index);
+  Result := Find(Index);
 end;
 
 function TmncCustomParams.GetItem(Index: Integer): TmncParam;
