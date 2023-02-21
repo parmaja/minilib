@@ -561,7 +561,6 @@ type
     procedure CheckTransaction; // Check the Transaction is started if need transaction
     function GetDone: Boolean; virtual; abstract;
     procedure DoParse; virtual; abstract;
-    procedure DoUnparse; virtual;
     procedure DoPrepare; virtual; abstract;
     procedure DoUnprepare; virtual;
     procedure DoExecute; virtual; abstract; //Here apply the Binds and execute the sql
@@ -574,7 +573,7 @@ type
     function CreateParams: TmncParams; virtual; abstract;
     function CreateBinds: TmncBinds; virtual;
     property Request: TStrings read FRequest write SetRequest;
-    function InternalExecute(vNext: Boolean): Boolean;
+    function InternalExecute(vNext: Boolean): Boolean; virtual;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -872,7 +871,6 @@ end;
 
 procedure TmncCommand.Clear;
 begin
-  DoUnparse;
   FPrepared := False;
   FRequest.Clear;
   if FParams <> nil then
@@ -901,6 +899,7 @@ end;
 
 procedure TmncCommand.DoRequestChanged(Sender: TObject);
 begin
+  FParsed := False;
   if Active then
     Close;
 end;
@@ -1007,10 +1006,6 @@ begin
   }
 end;
 
-procedure TmncCommand.DoUnparse;
-begin
-end;
-
 procedure TmncCommand.DoUnprepare;
 begin
 end;
@@ -1103,7 +1098,6 @@ begin
     DoUnprepare;
   //Reset; Maybe not
   DoClose;
-  DoUnparse;
   FPrepared := False;
 end;
 

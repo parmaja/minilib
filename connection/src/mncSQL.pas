@@ -154,6 +154,7 @@ type
     function UniqueDBName(const vBase: string): string; virtual; //TODO move to utils
     function EnumDatabases: TStrings; virtual;
 
+
     procedure Vacuum; virtual;
     {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
@@ -241,17 +242,18 @@ type
     function GetDone: Boolean; override;
     function GetParseOptions: TmncParseSQLOptions; virtual;
     procedure DoParse; override;
-    procedure DoUnparse; override;
     procedure ParseSQL(SQLOptions: TmncParseSQLOptions);
     procedure Reset; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     procedure HitDone;   //Make it FDone True
     procedure HitUnready; //Make it FReady False
 
     function GetProcessedSQL: string;
+    procedure DoRequestChanged(Sender: TObject); override;
 
     property ProcessedSQL: TmncProcessedSQL read FProcessedSQL;
 
     function CreateProcessedSQL: TmncProcessedSQL; virtual;
+
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -613,12 +615,12 @@ begin
     ParseSQL(GetParseOptions);
 end;
 
-procedure TmncSQLCommand.DoUnparse;
+procedure TmncSQLCommand.DoRequestChanged(Sender: TObject);
 begin
   inherited;
-  if ProcessedSQL <> nil then
+  if ProcessedSQL <> nil then { TODO : need discuss }
     ProcessedSQL.Clear;
-  //maybe clear params, idk
+
 end;
 
 procedure TmncSQLCommand.Reset;
