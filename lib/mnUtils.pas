@@ -141,10 +141,10 @@ function CharInArray(const C: string; const ArrayOfChar : array of Char; CaseIns
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 //Used by GetTickCount, return minuts,secons,miliseconds
 function TicksToString(vTicks: Int64): string;
-function DequoteStr(Str: string; QuoteChar: string = #0): string;
-function ExcludeTrailing(Str: string; TrailingChar: string = #0): string;
-function RemoveEncloseStr(S, Left, Right: string): string;
-function EncloseStr(S, Left, Right: string): string;
+function DequoteStr(const Str: string; QuoteChar: string = #0): string;
+function ExcludeTrailing(const Str: string; TrailingChar: string = #0): string;
+function RemoveEncloseStr(const S, Left, Right: string): string;
+function EncloseStr(const S, Left, Right: string): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
 
@@ -326,7 +326,7 @@ begin
   end;
 end;
 
-function DequoteStr(Str: string; QuoteChar: string = #0): string;
+function DequoteStr(const Str: string; QuoteChar: string = #0): string;
 begin
   if Str = '' then
     Result := ''
@@ -358,7 +358,7 @@ begin
   end;
 end;
 
-function ExcludeTrailing(Str: string; TrailingChar: string = #0): string;
+function ExcludeTrailing(const Str: string; TrailingChar: string = #0): string;
 begin
   if (TrailingChar > #0) and (RightStr(Str, 1) = TrailingChar) then
     Result := MidStr(Str, 1, Length(Str) - 1)
@@ -366,7 +366,7 @@ begin
     Result := Str;
 end;
 
-function RemoveEncloseStr(S, Left, Right: string): string;
+function RemoveEncloseStr(const S, Left, Right: string): string;
 var
   start, count: Integer;
 begin
@@ -382,7 +382,7 @@ begin
   Result := MidStr(S, start, count);
 end;
 
-function EncloseStr(S, Left, Right: string): string;
+function EncloseStr(const S, Left, Right: string): string;
 begin
   if S <> '' then
     Result := Left + S + Right

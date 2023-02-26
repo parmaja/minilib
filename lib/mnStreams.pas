@@ -228,10 +228,10 @@ type
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
     {$endif}
 
-    function ReadLine: string; overload;
+    function ReadLine(ExcludeEOL: Boolean = True): string; overload;
     function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLineUTF8(out S: utf8string; ExcludeEOL: Boolean = True): Boolean; overload;
-    function ReadLineUTF8: UTF8String; overload;
+    function ReadLineUTF8(ExcludeEOL: Boolean = True): UTF8String; overload;
     function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True): Boolean; overload;
 
     function ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean = True): Boolean; overload;
@@ -1068,9 +1068,9 @@ begin
   FreeMem(res);
 end;
 
-function TmnBufferStream.ReadLine: string;
+function TmnBufferStream.ReadLine(ExcludeEOL: Boolean): string;
 begin
-  ReadLine(Result);
+  ReadLine(Result, ExcludeEOL);
 end;
 
 {function TmnBufferStream.ReadLn: string;
@@ -1078,9 +1078,9 @@ begin
   ReadLine(Result);
 end;}
 
-function TmnBufferStream.ReadLineUTF8: UTF8String;
+function TmnBufferStream.ReadLineUTF8(ExcludeEOL: Boolean): UTF8String;
 begin
-  ReadLineUTF8(Result, True);
+  ReadLineUTF8(Result, ExcludeEOL);
 end;
 
 function TmnBufferStream.ReadLineUTF8(out S: utf8string; ExcludeEOL: Boolean): Boolean;

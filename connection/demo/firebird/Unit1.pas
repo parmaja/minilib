@@ -6,6 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, LResources, Forms, Controls, Graphics, Dialogs,
+  mnClasses,
   StdCtrls, ExtCtrls, mncFirebird, mncCSV,
   mncConnections, memds;
 

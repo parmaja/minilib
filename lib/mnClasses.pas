@@ -106,8 +106,10 @@ type
     TmnNamedObject = class(TmnObject)
     private
       FName: string;
+    protected
+      procedure SetName(const Value: string); virtual;
     public
-      property Name: string read FName write FName;
+      property Name: string read FName write SetName;
     end;
 
     //USAGE: TMyNamedObjectList = class(TmnNamedObjectList<TMyNamedObject>)
@@ -490,6 +492,13 @@ end;
 constructor TmnNameValueObject.Create;
 begin
   inherited Create;
+end;
+
+{ TmnNamedObject }
+
+procedure TmnNamedObject.SetName(const Value: string);
+begin
+  FName := Value;
 end;
 
 end.
