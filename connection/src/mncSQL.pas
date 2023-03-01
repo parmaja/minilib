@@ -231,21 +231,15 @@ type
     FFetchBlob: Boolean;
     FParamPrefix: Char;
     FProcessSQL: Boolean;
-    FReady: Boolean; //BOF
-    FDone: Boolean; //EOF
     FProcessedSQL: TmncProcessedSQL;
     function GetTransaction: TmncSQLTransaction;
     procedure SetTransaction(AValue: TmncSQLTransaction);
     function GetSQL: TStrings;
     procedure SetParamPrefix(AValue: Char);
   protected
-    function GetDone: Boolean; override;
     function GetParseOptions: TmncParseSQLOptions; virtual;
     procedure DoParse; override;
     procedure ParseSQL(SQLOptions: TmncParseSQLOptions);
-    procedure Reset; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
-    procedure HitDone;   //Make it FDone True
-    procedure HitUnready; //Make it FReady False
 
     function GetProcessedSQL: string;
     procedure DoRequestChanged(Sender: TObject); override;
@@ -260,7 +254,6 @@ type
     function GetLastRowID: Int64; virtual;
     function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
-    property Ready: Boolean read FReady;
     property FetchBlobs: Boolean read FFetchBlob write FFetchBlob default false;
     //ParamPrefix is ? to use it to open param and match it before convert it to engine paramprefix
     property ParamPrefix: Char read FParamPrefix write SetParamPrefix default '?';
@@ -599,11 +592,6 @@ begin
   inherited Transaction := AValue;
 end;
 
-function TmncSQLCommand.GetDone: Boolean;
-begin
-  Result := FDone;
-end;
-
 function TmncSQLCommand.GetParseOptions: TmncParseSQLOptions;
 begin
   Result := [];
@@ -621,23 +609,6 @@ begin
   if ProcessedSQL <> nil then { TODO : need discuss }
     ProcessedSQL.Clear;
 
-end;
-
-procedure TmncSQLCommand.Reset;
-begin
-  inherited;
-  FReady := True;
-  FDone := False;
-end;
-
-procedure TmncSQLCommand.HitDone;
-begin
-  FDone := True;
-end;
-
-procedure TmncSQLCommand.HitUnready;
-begin
-  FReady := False;
 end;
 
 procedure TmncSQLCommand.ParseSQL(SQLOptions: TmncParseSQLOptions);
@@ -668,6 +639,8 @@ begin
   FProcessSQL := True;
   FFetchBlob := False;
   FParamPrefix := '?';
+
+  Reset;
 end;
 
 function TmncSQLCommand.CreateProcessedSQL: TmncProcessedSQL;

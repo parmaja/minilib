@@ -545,6 +545,8 @@ type
     FNextOnExecute: Boolean;
     FIndex: Int64;
     FID: Int64;
+    FDone: Boolean;
+    FReady: Boolean;
     function GetValues(const Index: string): Variant;
     procedure SetRequest(const Value: TStrings);
     procedure SetColumns(const Value: TmncColumns);
@@ -559,14 +561,12 @@ type
     procedure CheckActive;
     procedure CheckInactive;
     procedure CheckTransaction; // Check the Transaction is started if need transaction
-    function GetDone: Boolean; virtual; abstract;
     procedure DoParse; virtual; abstract;
     procedure DoPrepare; virtual; abstract;
     procedure DoUnprepare; virtual;
     procedure DoExecute; virtual; abstract; //Here apply the Binds and execute the sql
     procedure DoNext; virtual; abstract;
     procedure DoClose; virtual; abstract;
-    procedure Reset; virtual; //Reset and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     procedure DoRequestChanged(Sender: TObject); virtual;
     function CreateFields(vColumns: TmncColumns): TmncFields; virtual; abstract;
     function CreateColumns: TmncColumns; virtual;
@@ -574,6 +574,7 @@ type
     function CreateBinds: TmncBinds; virtual;
     property Request: TStrings read FRequest write SetRequest;
     function InternalExecute(vNext: Boolean): Boolean; virtual;
+
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -594,7 +595,14 @@ type
     procedure Close;
     procedure Clear; virtual;
     //Detach make Fields or Params unrelated to DB handles, you can use them in salfty in arrays
-    property Done: Boolean read GetDone;
+    procedure Reset; virtual; //Reset and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
+    property Done: Boolean read FDone; //EOF :)
+    property Ready: Boolean read FReady; //BOF :)
+    procedure HitDone; overload;   //Make it FDone True
+    procedure HitDone(vCondition: Boolean); overload;
+    procedure HitUnready; //Make it FReady False
+
+
     function DetachFields: TmncFields;
     function DetachParams: TmncParams;
     property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
@@ -946,7 +954,7 @@ end;
 
 function TmncCommand.Step: Boolean;
 begin
-  if Done then
+  if Ready then
     Result := InternalExecute(True)
   else
     Result := Next;
@@ -1012,6 +1020,8 @@ end;
 
 procedure TmncCommand.Reset;
 begin
+  FReady := True;
+  FDone := False;
 end;
 
 function TmncCommand.Next: Boolean;
@@ -1096,7 +1106,7 @@ begin
 
   if Prepared then
     DoUnprepare;
-  //Reset; Maybe not
+  Reset; //Maybe not
   DoClose;
   FPrepared := False;
 end;
@@ -1109,6 +1119,22 @@ begin
     Result := Fields.Values[Index]
   else
     raise EmncException.Create('Current record not found');
+end;
+
+procedure TmncCommand.HitDone;
+begin
+  FDone := True;
+end;
+
+procedure TmncCommand.HitDone(vCondition: Boolean);
+begin
+  if vCondition then
+    HitDone;
+end;
+
+procedure TmncCommand.HitUnready;
+begin
+  FReady := False;
 end;
 
 { TmncLinkTransaction }

@@ -173,7 +173,6 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetDone: Boolean; override;
     function GetActive:Boolean; override;
     procedure DoClose; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
@@ -688,11 +687,6 @@ begin
   inherited;
 end;
 
-function TmncSQLiteCommand.GetDone: Boolean;
-begin
-  Result := (FStatment = nil) or inherited GetDone;
-end;
-
 function TmncSQLiteCommand.GetRowsChanged: Integer;
 begin
   Result := Transaction.GetRowsChanged;
@@ -790,7 +784,12 @@ end;
 procedure TmncSQLiteCommand.DoNext;
 begin
   if not Ready then
+  begin
     FLastStepResult := sqlite3_step(FStatment); //already steped in DoExecute
+    if FStatment=nil then
+      HitDone;
+  end; {todo: improve logic}
+
   if (FLastStepResult = SQLITE_ROW) then
   begin
     if Ready then

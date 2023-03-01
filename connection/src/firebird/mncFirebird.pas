@@ -251,8 +251,6 @@ type
     FActive: Boolean;
     FCursor: string;
     FSQLType: TFBDSQLTypes;
-    FBOF: Boolean;
-    FEOF: Boolean;
     procedure SetCursor(AValue: string);
     procedure FreeHandle;
     //Very dangrouse functions, be sure not free it with SQLVAR sqldata and sqlind, becuase it is shared with params sqldata
@@ -274,7 +272,6 @@ type
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
     function CreateBinds: TmncBinds; override;
-    function GetDone: Boolean; override;
   public
     procedure Clear; override;
     function GetRowsChanged: Integer; override;
@@ -301,7 +298,7 @@ type
     procedure DoExecute; override;
     procedure DoParse; override;
     procedure DoNext; override;
-    function GetDone: Boolean; override;
+    function GetDone: Boolean;
     function CreateColumns: TmncColumns; override;
   end;
 
@@ -1174,12 +1171,7 @@ end;
 procedure TmncFBCommand.Clear;
 begin
   inherited;
-  FBOF := True;
-end;
-
-function TmncFBCommand.GetDone: Boolean;
-begin
-  Result := FEOF;
+  //FBOF := True;
 end;
 
 function TmncFBCommand.GetFields: TmncFBFields;
@@ -1221,8 +1213,6 @@ var
   aData: PXSQLDA;
 begin
   if Active then DoClose;
-  FBOF := True;
-  FEOF := False;
   CheckHandle;
   AllocateBinds(aData);
   try
@@ -1233,7 +1223,7 @@ begin
         if FCursor <> '' then
           CheckErr(FBLib.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PByte(FCursor), 0), StatusVector, True);
         FActive := True;
-        FBOF := False;
+        HitUnready;
       end;
       SQLExecProcedure:
       begin
@@ -1241,30 +1231,30 @@ begin
         begin
           CheckErr(FBLib.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, Fields.SQLDA), StatusVector, True);
           FActive := True;
-          FBOF := True;
+          //FBOF := True;
         end
         else
         begin
           //CheckErr(FBLib.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, aData), StatusVector, True);
           CheckErr(FBLib.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, nil), StatusVector, True);
-          FEOF := True;
+          HitDone;
         end;
       end;
       SQLCommit:
       begin
         CheckErr(FBLib.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
-        FEOF := True;
+        HitDone;
       end;
       SQLStartTransaction:
       begin
         CheckErr(FBLib.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
-        FEOF := True;
+        HitDone;
       end;
       else
       begin
         CheckErr(FBLib.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
         FActive := True;
-        FEOF := True;
+        HitDone;
       end;
     end;
   finally
@@ -1277,31 +1267,25 @@ var
   fetch_res: ISC_STATUS;
   StatusVector: TStatusVector;
 begin
-  if FBOF then
+  if not Ready and (FSQLType = SQLExecProcedure) then
   begin
-    FBOF := False;
-  end
-  else
-  begin
-    if (FSQLType = SQLExecProcedure) then
-    begin
-      FEOF := True;
-      Fields.Clean;
-    end;
+    HitDone;
+    Fields.Clean;
   end;
 
-  if not FEOF  and (FSQLType <> SQLExecProcedure) then
+  if not Done and (FSQLType <> SQLExecProcedure) then
   begin
       fetch_res := CheckErr(FBLib.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
 
       if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
       begin
-        FEOF := True;
+        HitDone;
         Fields.Clean;
       end
       else if (fetch_res > 0) then
         FBRaiseError(StatusVector)
   end;
+  HitUnready;
 end;
 
 function TmncFBCommand.CreateBinds: TmncBinds;
@@ -1336,7 +1320,6 @@ begin
           FBRaiseError(StatusVector);
     end;
   finally
-    FEOF := True;
     FActive := False;
   end;
 end;
