@@ -359,7 +359,6 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure DoClose; override;
     procedure ClearStatement; virtual;
@@ -389,7 +388,7 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetDone: Boolean; override;
+    function GetDone: Boolean;
     function GetActive: Boolean; override;
     procedure DoClose; override;
     function FetchSQL: UTF8String;
@@ -1047,11 +1046,6 @@ begin
   FStatus := PGRES_EMPTY_QUERY;
   FTuple := 0;
   //Connection.Execute();
-end;
-
-function TmncPGCommand.GetDone: Boolean;
-begin
-  Result := (FStatement = nil) or FEOF;
 end;
 
 function TmncPGCommand.GetLastInsertID: Int64;

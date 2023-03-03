@@ -212,7 +212,6 @@ type
     procedure DoExecute; override;
     procedure DoNext; override;
     procedure DoUnPrepare; override;
-    function GetDone: Boolean; override;
     function GetActive:Boolean; override;
     procedure DoClose; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
@@ -819,11 +818,6 @@ end;
 procedure TmncMySQLCommand.Clear;
 begin
   inherited;
-end;
-
-function TmncMySQLCommand.GetDone: Boolean;
-begin
-  Result := (FStatment = nil) or inherited GetDone;
 end;
 
 function TmncMySQLCommand.GetRowsChanged: Integer;

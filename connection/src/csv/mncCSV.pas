@@ -108,7 +108,6 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure DoClose; override;
     property Transaction: TmncCSVTransaction read GetTransaction;
@@ -228,11 +227,6 @@ end;
 destructor TmncCSVCommand.Destroy;
 begin
   inherited;
-end;
-
-function TmncCSVCommand.GetDone: Boolean;
-begin
-  Result := (Mode = csvmWrite) or (FCSVStream = nil);// do not check (FCSVStream.Done) last line will not loaded;
 end;
 
 procedure TmncCSVCommand.DoExecute;
