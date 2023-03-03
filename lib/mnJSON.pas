@@ -47,6 +47,10 @@ procedure JsonParseCallback(Content: string; FromIndex: Integer; AParent: TObjec
 
 implementation
 
+const
+  sNumberOpenChars = ['-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  sNumberChars = sNumberOpenChars + ['.', 'x', 'h', 'a', 'b', 'c', 'd', 'e', 'f'];
+
 procedure RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
 begin
   if Line > 0 then
@@ -66,8 +70,6 @@ begin
 end;
 
 procedure JsonParseCallback(Content: string; FromIndex: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
-const
-  sWhiteSpace = [#0, #10, #13, ' '];
 type
   TExpect = (exValue, exName, exAssign, exNext);
   TContext = (cxPairs, cxArray);
@@ -75,6 +77,7 @@ type
   TToken = (
     tkNone,
     tkString,
+    tkEscape,
     tkNumber,
     tkIdentifire
   );
@@ -96,38 +99,39 @@ var
   Pair: TObject;
 
   Index: Integer;
-  Start: Integer;
 
   Token: TToken;
 
   LineNumber: Int64;
   ColumnNumber: Int64;
+  StringBuffer: String;
+  StartString: Integer;
+
   Ch: Char;
 
-  procedure Push;
+  procedure Error(const Msg: string);
+  begin
+    RaiseError(Msg, LineNumber+1, ColumnNumber+1);
+  end;
+
+  procedure Push; {$ifdef FPC} inline; {$endif}
   begin
     SetLength(Stack, Length(Stack) + 1);
     Stack[High(Stack)].Parent := Parent;
     Stack[High(Stack)].Context := Context;
   end;
 
-  procedure Pop;
+  procedure Pop; {$ifdef FPC} inline; {$endif}
   begin
     Parent := Stack[High(Stack)].Parent;
     Context := Stack[High(Stack)].Context;
     SetLength(Stack, High(Stack));
   end;
 
-  procedure Error(const Msg: string);
-  begin
-    RaiseError(Msg, LineNumber, ColumnNumber);
-  end;
-
 begin
   if Content = '' then
     exit;
 
-  Index := 0;
   if (@AcquireProc = nil) then
     Error('JSON Parser: Acquire is nil');
 
@@ -136,7 +140,7 @@ begin
   if Index = 0 then
     Index := 1;
 
-  Start := Index;
+  StartString := Index;
 
   //initial/or continue(TODO: by param)
   Context := cxPairs;
@@ -151,31 +155,104 @@ begin
   repeat
     Ch := Content[Index];
     case Token of
-      tkString:
+      tkEscape:
       begin
-        if Ch = '"' then
-        begin
-          //
-          if Expect = exName then
-          begin
-            //Creating a Pair Item
-            AcquireProc(Parent, Copy(Content, Start, Index - Start), aqPair, Pair);
-            Push;
-            Parent := Pair;
-            Expect := exAssign;
-          end
-          else if Expect = exValue then
-          begin
-            AcquireProc(Parent, Copy(Content, Start, Index - Start), aqString, AObject);
-            Expect := exNext;
-          end
+        case Ch of
+          'b': StringBuffer := StringBuffer + #8;
+          't': StringBuffer := StringBuffer + #9;
+          'n': StringBuffer := StringBuffer + #10;
+          'r': StringBuffer := StringBuffer + #13;
+          '0': StringBuffer := StringBuffer + #0;
           else
-            Error('Expected Next or End');
-          Start := Index;
-          Token := tkNone;
+            StringBuffer := StringBuffer + Ch;
         end;
         Inc(Index);
+        Inc(ColumnNumber);
+        StartString := Index;
+        Token := tkString;
       end;
+      tkString:
+        begin
+          if Ch = '"' then
+          begin
+            if Expect = exName then
+            begin
+              //Creating a Pair Item
+              AcquireProc(Parent, StringBuffer + Copy(Content, StartString, Index - StartString), aqPair, Pair);
+              Push;
+              Parent := Pair;
+              Expect := exAssign;
+            end
+            else if Expect = exValue then
+            begin
+              AcquireProc(Parent, StringBuffer + Copy(Content, StartString, Index - StartString), aqString, AObject);
+              Expect := exNext;
+            end
+            else
+              Error('Expected Next or End');
+            StringBuffer := '';
+            Token := tkNone;
+          end
+          else //Ch = '"'
+          begin
+            if Ch = '\' then
+            begin
+              StringBuffer := StringBuffer + Copy(Content, StartString, Index - StartString);
+              StartString := Index + 1;
+              Token := tkEscape;
+            end;
+          end;
+
+          //Next char yes, we do not need " anymore
+          Inc(Index);
+          Inc(ColumnNumber);
+        end;
+      tkIdentifire:
+        begin
+          if not CharInSet(Ch, ['A'..'Z', 'a'..'z', '_']) then
+          begin
+            if Expect = exName then
+            begin
+              //Creating a Pair Item
+              AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqPair, Pair);
+              Push;
+              Parent := Pair;
+              Expect := exAssign;
+            end
+            else if Expect = exValue then
+            begin
+              AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqIdentifier, AObject);
+              Expect := exNext;
+            end
+            else
+              Error('Expected Next or End');
+            Token := tkNone;
+          end
+          else
+          begin
+            Inc(Index);
+            Inc(ColumnNumber);
+          end;
+        end;
+      tkNumber:
+        begin
+          if not CharInSet(Ch, sNumberChars) then
+          begin
+            if Expect = exValue then
+            begin
+              AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqNumber, AObject);
+              Expect := exNext;
+            end
+            else
+              Error('Expected Next or End');
+            Token := tkNone;
+          end
+          else
+          begin
+            Inc(Index);
+            Inc(ColumnNumber);
+          end;
+        end;
       else
       begin
         case Ch of
@@ -185,10 +262,20 @@ begin
             Inc(LineNumber);
             ColumnNumber := 0;
           end;
+          'A'..'Z', 'a'..'z', '_':
+          begin
+            StartString := Index;
+            Token := tkIdentifire;
+          end;
+          '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+          begin
+            StartString := Index;
+            Token := tkNumber;
+          end;
           '"':
           begin
+            StartString := Index + 1;
             Token := tkString;
-            Start := Index + 1;
           end;
           ':':
           begin
@@ -239,6 +326,7 @@ begin
           end;
         end;
         Inc(Index);
+        inc(ColumnNumber);
       end;
     end;
   until (Ch=#0) or (Index > Length(Content));
