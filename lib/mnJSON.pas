@@ -138,6 +138,8 @@ var
     {$endif}
   end;
 
+var
+  Size: Int64;
 begin
   if Content = '' then
     exit;
@@ -147,8 +149,10 @@ begin
 
   Index := FromIndex;
 
-  if Index = 0 then
-    Index := 1;
+  if Index = 1 then
+    Index := 0;
+
+  Size := Length(Content);
 
   StartString := Index;
 
@@ -341,7 +345,7 @@ begin
         Inc(ColumnNumber);
       end;
     end;
-  until (Ch=#0) or (Index > Length(Content));
+  until (Ch=#0) or (Index > Size);
 
   if (Expect <> exNext) then
     Error('End of string not expected');
