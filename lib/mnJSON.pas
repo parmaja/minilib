@@ -18,11 +18,15 @@ unit mnJSON;
 {$define windows}
 {$endif}
 
+{.$define verbose}
+
 interface
 
 uses
 {$IFDEF windows}Windows, {$ENDIF}
-  Classes, SysUtils, StrUtils, DateUtils, Types, Character;
+  Classes, SysUtils, StrUtils, DateUtils, Types, Character,
+  System.Rtti,
+  mnUtils;
 
 const
   sUTF8BOM: array [1 .. 3] of Char = (#$EF, #$BB, #$BF);
@@ -41,9 +45,9 @@ type
     aqBoolean
   );
 
-  TmnJsonAcquireProc = procedure(AParentObject: TObject; Value: string; ValueType: TmnJsonAcquireType; out AObject: TObject);
+  TmnJsonAcquireProc = procedure(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 
-procedure JsonParseCallback(Content: string; FromIndex: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+procedure JsonParseCallback(const Content: string; FromIndex: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 
 implementation
 
@@ -69,7 +73,7 @@ begin
   end;
 end;
 
-procedure JsonParseCallback(Content: string; FromIndex: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+procedure JsonParseCallback(const Content: string; FromIndex: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 type
   TExpect = (exValue, exName, exAssign, exNext);
   TContext = (cxPairs, cxArray);
@@ -111,11 +115,14 @@ var
 
   procedure Error(const Msg: string);
   begin
-    RaiseError(Msg, LineNumber+1, ColumnNumber+1);
+    RaiseError(Msg, LineNumber, ColumnNumber);
   end;
 
   procedure Push; {$ifdef FPC} inline; {$endif}
   begin
+    {$ifdef verbose}
+    Writeln(Format('%0.4d ', [LineNumber])+ RepeatString('    ', Length(Stack))+ 'Push '+ TRttiEnumerationType.GetName(Context)+ ' ' +TRttiEnumerationType.GetName(Expect));
+    {$endif}
     SetLength(Stack, Length(Stack) + 1);
     Stack[High(Stack)].Parent := Parent;
     Stack[High(Stack)].Context := Context;
@@ -126,6 +133,9 @@ var
     Parent := Stack[High(Stack)].Parent;
     Context := Stack[High(Stack)].Context;
     SetLength(Stack, High(Stack));
+    {$ifdef verbose}
+    Writeln(Format('%0.4d ', [LineNumber])+RepeatString('    ', Length(Stack)) + 'Pop '+ TRttiEnumerationType.GetName(Context) +' '+TRttiEnumerationType.GetName(Expect));
+    {$endif}
   end;
 
 begin
@@ -149,8 +159,8 @@ begin
   Pair := nil;
 
   Token := tkNone;
-  LineNumber := 0;
-  ColumnNumber := 0;
+  LineNumber := 1;
+  ColumnNumber := 1;
 
   repeat
     Ch := Content[Index];
@@ -179,8 +189,6 @@ begin
             begin
               //Creating a Pair Item
               AcquireProc(Parent, StringBuffer + Copy(Content, StartString, Index - StartString), aqPair, Pair);
-              Push;
-              Parent := Pair;
               Expect := exAssign;
             end
             else if Expect = exValue then
@@ -260,7 +268,7 @@ begin
           #13:
           begin
             Inc(LineNumber);
-            ColumnNumber := 0;
+            ColumnNumber := 1;
           end;
           'A'..'Z', 'a'..'z', '_':
           begin
@@ -281,7 +289,9 @@ begin
           begin
             if Expect <> exAssign then
               Error('Expected assign symbol :');
-            Expect := exValue
+            Expect := exValue;
+            Push;
+            Parent := Pair;
           end;
           ',':
           begin
@@ -307,6 +317,8 @@ begin
           end;
           '}' :
           begin
+            if Expect = exNext then
+              Pop;
             Pop;
             Expect := exNext;
           end;
@@ -326,7 +338,7 @@ begin
           end;
         end;
         Inc(Index);
-        inc(ColumnNumber);
+        Inc(ColumnNumber);
       end;
     end;
   until (Ch=#0) or (Index > Length(Content));
@@ -336,5 +348,4 @@ begin
 end;
 
 initialization
-
 end.
