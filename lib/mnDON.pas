@@ -34,7 +34,7 @@ interface
 uses
 {$IFDEF windows}Windows, {$ENDIF}
   Classes, SysUtils, StrUtils, DateUtils, Types, Character,
-  mnClasses, mnUtils,
+  mnClasses, mnUtils, mnJSON,
   System.Rtti;
 
 type
@@ -96,6 +96,7 @@ type
     procedure SetName(const AValue: string);
     procedure SetValue(AValue: TDON_Value);
   public
+    function ReleaseValue: TDON_Value;
     procedure WriteTo(Writer: TSourceWriter; LastOne:Boolean; Level: Integer); override;
   published
     property Value: TDON_Value read FValue write SetValue;
@@ -212,9 +213,27 @@ type
   published
   end;
 
+function JsonParsePair(const S: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
+function JsonParseValue(const S: string; Options: TJSONParseOptions = []): TDON_Value; overload;
+
+procedure JsonAcquire(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
 
 implementation
+
+function JsonParsePair(const S: string; Options: TJSONParseOptions): TDON_Pair;
+begin
+  Result := TDON_Root.Create;
+  JsonParseCallback(s, Result, JsonAcquire, Options);
+end;
+
+function JsonParseValue(const S: string; Options: TJSONParseOptions): TDON_Value;
+var
+  Pair: TDON_Pair;
+begin
+  Pair := JsonParsePair(S, Options);
+  Result := Pair.ReleaseValue;
+end;
 
 { TSourceWriter }
 
@@ -405,6 +424,13 @@ begin
   end;
 end;
 
+function TDON_Pair.ReleaseValue: TDON_Value;
+begin
+  Result := FValue;
+  Result.FParent := Self;
+  FValue := nil;
+end;
+
 procedure TDON_Pair.SetName(const AValue: string);
 begin
   if FName =AValue then Exit;
@@ -440,20 +466,33 @@ begin
   if AParentObject = nil then
     raise Exception.Create('Can not set value to nil object');
 
-  if (AParentObject is TDON_Array_Value) then
-  begin
-    CreateValue;
-    (AParentObject as TDON_Array_Value).Add(v);
-  end
-  else if (AParentObject is TDON_Pair) then
+  if (AParentObject is TDON_Pair) then
   begin
      if (AParentObject as TDON_Pair).Value <> nil then
       raise Exception.Create('Value is already set and it is not array: ' + AParentObject.ClassName);
     CreateValue;
     (AParentObject as TDON_Pair).Value  :=  v;
   end
+  else if (AParentObject is TDON_Array_Value) then
+  begin
+    CreateValue;
+    (AParentObject as TDON_Array_Value).Add(v);
+  end
   else
-    raise Exception.Create('Value can not set to:' + AParentObject.ClassName);
+    raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);
+end;
+
+procedure JsonAcquire(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+begin
+  case ValueType of
+    aqPair: (AParentObject as TDON_Object_Value).AcquirePair(Value, AObject);
+    aqObject: AObject := donAcquireValue(AParentObject, Value, donObject);
+    aqArray: AObject := donAcquireValue(AParentObject, Value, donArray);
+    aqString: AObject := donAcquireValue(AParentObject, Value, donString);
+    aqNumber: AObject := donAcquireValue(AParentObject, Value, donNumber);
+    aqBoolean: AObject := donAcquireValue(AParentObject, Value, donBoolean);
+    aqIdentifier: AObject := donAcquireValue(AParentObject, Value, donIdentifier);
+  end;
 end;
 
 { TDON_Boolean_Value }

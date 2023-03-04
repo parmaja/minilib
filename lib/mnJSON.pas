@@ -43,7 +43,10 @@ uses
   System.Rtti;
 
 type
-  TJSONParseOption = (jpoStrict);
+  TJSONParseOption = (
+    jpoUnstrict,
+    jpoSafe
+  );
   TJSONParseOptions = set of TJSONParseOption;
 
   TmnJsonAcquireType = (
@@ -376,8 +379,6 @@ var
 begin
   JSONParser.JsonParseCallback(Content, 1, AParent, AcquireProc, vOptions);
 end;
-
-{ TmnJSONParser }
 
 initialization
 end.
