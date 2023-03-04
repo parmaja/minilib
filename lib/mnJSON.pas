@@ -1,22 +1,34 @@
 unit mnJSON;
 { **
+  *  JSON Parser
+  *    without object tree
+  *
   *  This file is part of the "Mini Library"
   *
-  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+  * @license   The MIT License (MIT)
+  *
   *            See the file COPYING.MLGPL, included in this distribution,
   * @author    Zaher Dirkey <zaher, zaherdirkey>
+  * @author    Belal AlHamad
   * }
 
 {$IFDEF FPC}
 {$MODE delphi}
-{$modeswitch arrayoperators}
+{$ModeSwitch arrayoperators}
 {$ModeSwitch advancedrecords}
+{$ModeSwitch ArrayOperators}
 {$ModeSwitch typehelpers}
+{$ModeSwitch functionreferences}
+{$ModeSwitch anonymousfunctions}
+{$mode delphi}
 {$ENDIF}
 {$M+}{$H+}
 {$ifdef mswindows}
 {$define windows}
 {$endif}
+
+{$STRINGCHECKS OFF}
+{$POINTERMATH ON}
 
 {.$define verbose}
 
@@ -25,11 +37,10 @@ interface
 uses
 {$IFDEF windows}Windows, {$ENDIF}
   Classes, SysUtils, StrUtils, DateUtils, Types, Character,
-  System.Rtti,
-  mnUtils;
-
-const
-  sUTF8BOM: array [1 .. 3] of Char = (#$EF, #$BB, #$BF);
+  {$ifdef verbose}
+//  mnUtils,
+  {$endif}
+  System.Rtti;
 
 type
   TJSONParseOption = (jpoStrict);
@@ -45,9 +56,45 @@ type
     aqBoolean
   );
 
-  TmnJsonAcquireProc = procedure(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+  TmnJsonAcquireProc = procedure(AParentObject: TObject; const Value: String; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 
-procedure JsonParseCallback(const Content: string; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+  TmnJSONParser = record
+  private
+    type
+      TExpect = (exValue, exName, exAssign, exNext);
+
+      TToken = (
+        tkNone,
+        tkString,
+        tkEscape,
+        tkNumber,
+        tkIdentifire
+      );
+
+      TContext = (cxPairs, cxArray);
+
+      TStackItem = record
+        Parent: TObject;
+        Context: TContext;
+      end;
+
+      TStack = array of TStackItem;
+
+  public
+    Stack: TStack;
+    Parent: TObject;
+    Expect: TExpect;
+    Context: TContext;
+    StackIndex: Integer;
+    Token: TToken;
+    LineNumber: Int64;
+    ColumnNumber: Int64;
+    StringBuffer: String;
+    StartString: Integer;
+    procedure JsonParseCallback(const Content: String; Index: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+  end;
+
+procedure JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 
 implementation
 
@@ -73,46 +120,10 @@ begin
   end;
 end;
 
-procedure JsonParseCallback(const Content: string; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
-type
-  TExpect = (exValue, exName, exAssign, exNext);
-
-  TToken = (
-    tkNone,
-    tkString,
-    tkEscape,
-    tkNumber,
-    tkIdentifire
-  );
-
-  TContext = (cxPairs, cxArray);
-
-  TStackItem = record
-    Parent: TObject;
-    Context: TContext;
-  end;
-
-  TStack = array of TStackItem;
-
+procedure TmnJSONParser.JsonParseCallback(const Content: String; Index: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 var
-  Stack: TStack;
-  Parent: TObject;
-  Expect: TExpect;
-  Context: TContext;
-
   AObject: TObject;
   Pair: TObject;
-
-  Index: Integer;
-
-  Token: TToken;
-
-  LineNumber: Int64;
-  ColumnNumber: Int64;
-  StringBuffer: String;
-  StartString: Integer;
-
-  StackIndex: Integer;
 
   procedure Error(const Msg: string);
   begin
@@ -180,8 +191,13 @@ begin
           'b': StringBuffer := StringBuffer + #8;
           't': StringBuffer := StringBuffer + #9;
           'n': StringBuffer := StringBuffer + #10;
+          'f': StringBuffer := StringBuffer + #12;
           'r': StringBuffer := StringBuffer + #13;
           '0': StringBuffer := StringBuffer + #0;
+          'u':
+          begin
+            //TODO: unicode escape
+          end
           else
             StringBuffer := StringBuffer + Ch;
         end;
@@ -232,8 +248,6 @@ begin
             begin
               //Creating a Pair Item
               AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqPair, Pair);
-              Push;
-              Parent := Pair;
               Expect := exAssign;
             end
             else if Expect = exValue then
@@ -355,6 +369,15 @@ begin
   if (Expect <> exNext) then
     Error('End of string not expected');
 end;
+
+procedure JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+var
+  JSONParser: TmnJSONParser;
+begin
+  JSONParser.JsonParseCallback(Content, 1, AParent, AcquireProc, vOptions);
+end;
+
+{ TmnJSONParser }
 
 initialization
 end.
