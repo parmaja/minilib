@@ -47,7 +47,7 @@ type
 
   TmnJsonAcquireProc = procedure(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 
-procedure JsonParseCallback(const Content: string; FromIndex: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+procedure JsonParseCallback(const Content: string; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 
 implementation
 
@@ -73,7 +73,7 @@ begin
   end;
 end;
 
-procedure JsonParseCallback(const Content: string; FromIndex: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+procedure JsonParseCallback(const Content: string; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 type
   TExpect = (exValue, exName, exAssign, exNext);
 
@@ -112,9 +112,7 @@ var
   StringBuffer: String;
   StartString: Integer;
 
-  Ch: Char;
-
-  StackSize: Integer;
+  StackIndex: Integer;
 
   procedure Error(const Msg: string);
   begin
@@ -127,17 +125,17 @@ var
     Writeln(Format('%0.4d ', [LineNumber])+ RepeatString('    ', Length(Stack))+ 'Push '+ TRttiEnumerationType.GetName(Context)+ ' ' +TRttiEnumerationType.GetName(Expect));
     {$endif}
   //  SetLength(Stack, Length(Stack) + 1);
-    Stack[StackSize].Parent := Parent;
-    Stack[StackSize].Context := Context;
-    StackSize := StackSize + 1;
+    Stack[StackIndex].Parent := Parent;
+    Stack[StackIndex].Context := Context;
+    StackIndex := StackIndex + 1;
   end;
 
   procedure Pop; {$ifdef FPC} inline; {$endif}
   begin
-    Parent := Stack[StackSize-1].Parent;
-    Context := Stack[StackSize-1].Context;
+    Parent := Stack[StackIndex-1].Parent;
+    Context := Stack[StackIndex-1].Context;
 //    SetLength(Stack, High(Stack));
-    StackSize := StackSize - 1;
+    StackIndex := StackIndex - 1;
     {$ifdef verbose}
     Writeln(Format('%0.4d ', [LineNumber])+RepeatString('    ', Length(Stack)) + 'Pop '+ TRttiEnumerationType.GetName(Context) +' '+TRttiEnumerationType.GetName(Expect));
     {$endif}
@@ -145,7 +143,10 @@ var
 
 var
   Size: Int64;
+  Ch: Char;
 begin
+
+  StackIndex := 0;
   SetLength(Stack, 1000);
 
   if Content = '' then
@@ -154,10 +155,7 @@ begin
   if (@AcquireProc = nil) then
     Error('JSON Parser: Acquire is nil');
 
-  Index := FromIndex;
-
-  if Index = 1 then
-    Index := 0;
+  Index := 1;
 
   Size := Length(Content);
 
@@ -212,7 +210,7 @@ begin
             StringBuffer := '';
             Token := tkNone;
           end
-          else //Ch = '"'
+          else 
           begin
             if Ch = '\' then
             begin
