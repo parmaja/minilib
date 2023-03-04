@@ -76,7 +76,6 @@ end;
 procedure JsonParseCallback(const Content: string; FromIndex: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 type
   TExpect = (exValue, exName, exAssign, exNext);
-  TContext = (cxPairs, cxArray);
 
   TToken = (
     tkNone,
@@ -85,6 +84,8 @@ type
     tkNumber,
     tkIdentifire
   );
+
+  TContext = (cxPairs, cxArray);
 
   TStackItem = record
     Parent: TObject;
@@ -113,6 +114,8 @@ var
 
   Ch: Char;
 
+  StackSize: Integer;
+
   procedure Error(const Msg: string);
   begin
     RaiseError(Msg, LineNumber, ColumnNumber);
@@ -123,16 +126,18 @@ var
     {$ifdef verbose}
     Writeln(Format('%0.4d ', [LineNumber])+ RepeatString('    ', Length(Stack))+ 'Push '+ TRttiEnumerationType.GetName(Context)+ ' ' +TRttiEnumerationType.GetName(Expect));
     {$endif}
-    SetLength(Stack, Length(Stack) + 1);
-    Stack[High(Stack)].Parent := Parent;
-    Stack[High(Stack)].Context := Context;
+  //  SetLength(Stack, Length(Stack) + 1);
+    Stack[StackSize].Parent := Parent;
+    Stack[StackSize].Context := Context;
+    StackSize := StackSize + 1;
   end;
 
   procedure Pop; {$ifdef FPC} inline; {$endif}
   begin
-    Parent := Stack[High(Stack)].Parent;
-    Context := Stack[High(Stack)].Context;
-    SetLength(Stack, High(Stack));
+    Parent := Stack[StackSize-1].Parent;
+    Context := Stack[StackSize-1].Context;
+//    SetLength(Stack, High(Stack));
+    StackSize := StackSize - 1;
     {$ifdef verbose}
     Writeln(Format('%0.4d ', [LineNumber])+RepeatString('    ', Length(Stack)) + 'Pop '+ TRttiEnumerationType.GetName(Context) +' '+TRttiEnumerationType.GetName(Expect));
     {$endif}
@@ -141,6 +146,8 @@ var
 var
   Size: Int64;
 begin
+  SetLength(Stack, 1000);
+
   if Content = '' then
     exit;
 
