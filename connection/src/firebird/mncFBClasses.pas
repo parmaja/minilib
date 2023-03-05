@@ -1478,7 +1478,7 @@ var
   sz: PByte;
   str_len: Integer;
   ss: TStringStream;
-  s: UTF8String;
+
 begin
   Result := '';
   { Check null, if so return a default string }
@@ -1502,6 +1502,7 @@ begin
       SQL_TEXT, SQL_VARYING:
       begin
         sz := SqlData;
+
         if (SqlDef = SQL_TEXT) then
           str_len := SqlLen
         else
@@ -1509,9 +1510,22 @@ begin
           str_len := FBLib.isc_vax_integer(SqlData, 2);
           Inc(sz, 2);
         end;
-        SetLength(s, str_len);
+
+        {SetLength(s, str_len);
         Move(sz^, PByte(s)^, str_len);
-        Result := s;
+        Result := s;}
+        if str_len<>0 then
+        begin
+          if SqlSubtype = fb_text_subtype_binary then
+          begin
+            SetLength(Result, str_len * 2);
+            BinToHex(sz, PChar(Result), str_len);
+          end
+          else
+            Result := TEncoding.UTF8.GetString(sz, str_len);
+        end
+        else
+          Result := '';
       end;
       SQL_TYPE_DATE: Result := FormatDateTime('yyyy-mm-dd', AsDateTime);
       SQL_TYPE_TIME: Result := TimeToStr(AsDateTime);
