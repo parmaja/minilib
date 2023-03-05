@@ -18,7 +18,7 @@ interface
 
 uses
   SysUtils, Classes, Variants,
-  StrUtils,
+  StrUtils, mnUtils,
   mncFBHeader;
 
 const

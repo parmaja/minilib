@@ -254,6 +254,7 @@ function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string;
 function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload;
 function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload;
 
+//TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
 procedure BinToHex(Buffer: PByte; Text: PByte; BufSize: longint); overload;
 function String2Hex(const vData: string): string; overload;
@@ -1779,7 +1780,6 @@ begin
   SetLength(Result, 2*vCount);
   BinToHex(vData, PByte(Result), vCount);
 end;
-
 
 const
   //H2BValidSet = ['0'..'9','A'..'F','a'..'f'];

@@ -10,6 +10,7 @@ unit mnJSON;
   *            See the file COPYING.MLGPL, included in this distribution,
   * @author    Zaher Dirkey <zaher, zaherdirkey>
   * @author    Belal AlHamad
+  *
   * }
 
 {$IFDEF FPC}
@@ -20,7 +21,6 @@ unit mnJSON;
 {$ModeSwitch typehelpers}
 {$ModeSwitch functionreferences}
 {$ModeSwitch anonymousfunctions}
-{$mode delphi}
 {$ENDIF}
 {$M+}{$H+}
 {$ifdef mswindows}
@@ -36,16 +36,13 @@ interface
 
 uses
 {$IFDEF windows}Windows, {$ENDIF}
-  Classes, SysUtils, StrUtils, DateUtils, Types, Character,
-  {$ifdef verbose}
-//  mnUtils,
-  {$endif}
-  System.Rtti;
+  Classes, SysUtils, StrUtils, DateUtils, Types, Character;
 
 type
   TJSONParseOption = (
     jpoUnstrict,
-    jpoSafe
+    jpoSafe,
+    jpoUTF8 //TODO
   );
   TJSONParseOptions = set of TJSONParseOption;
 
@@ -71,7 +68,8 @@ type
         tkString,
         tkEscape,
         tkNumber,
-        tkIdentifire
+        tkIdentifire,
+        tkReturn //End of line to escape #10
       );
 
       TContext = (cxPairs, cxArray);
@@ -83,18 +81,25 @@ type
 
       TStack = array of TStackItem;
 
+    var
+      Stack: TStack;
+      Parent: TObject;
+      Context: TContext;
+      StackIndex: Integer;
+      Expect: TExpect;
+
+      LineNumber: Int64;
+      ColumnNumber: Int64;
+
+      Token: TToken;
+      StringBuffer: String;
+      StartString: Integer;
+      Index: Integer;
+    procedure Pop; inline;
+    procedure Push; inline;
+    procedure Next; inline;
   public
-    Stack: TStack;
-    Parent: TObject;
-    Expect: TExpect;
-    Context: TContext;
-    StackIndex: Integer;
-    Token: TToken;
-    LineNumber: Int64;
-    ColumnNumber: Int64;
-    StringBuffer: String;
-    StartString: Integer;
-    procedure JsonParseCallback(const Content: String; Index: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+    procedure JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
   end;
 
 procedure JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
@@ -123,7 +128,36 @@ begin
   end;
 end;
 
-procedure TmnJSONParser.JsonParseCallback(const Content: String; Index: Integer; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+procedure TmnJSONParser.Push; {$ifdef FPC} inline; {$endif}
+begin
+  {$ifdef verbose}
+  Writeln(Format('%0.4d ', [LineNumber])+ RepeatString('    ', Length(Stack))+ 'Push '+ TRttiEnumerationType.GetName(Context)+ ' ' +TRttiEnumerationType.GetName(Expect));
+  {$endif}
+  if StackIndex >= Length(Stack) then
+    SetLength(Stack, StackIndex + 1);
+  Stack[StackIndex].Parent := Parent;
+  Stack[StackIndex].Context := Context;
+  StackIndex := StackIndex + 1;
+end;
+
+procedure TmnJSONParser.Next;
+begin
+  Inc(Index);
+  Inc(ColumnNumber);
+end;
+
+procedure TmnJSONParser.Pop; {$ifdef FPC} inline; {$endif}
+begin
+  Parent := Stack[StackIndex-1].Parent;
+  Context := Stack[StackIndex-1].Context;
+//    SetLength(Stack, High(Stack));
+  StackIndex := StackIndex - 1;
+  {$ifdef verbose}
+  Writeln(Format('%0.4d ', [LineNumber])+RepeatString('    ', Length(Stack)) + 'Pop '+ TRttiEnumerationType.GetName(Context) +' '+TRttiEnumerationType.GetName(Expect));
+  {$endif}
+end;
+
+procedure TmnJSONParser.JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 var
   AObject: TObject;
   Pair: TObject;
@@ -133,35 +167,13 @@ var
     RaiseError(Msg, LineNumber, ColumnNumber);
   end;
 
-  procedure Push; {$ifdef FPC} inline; {$endif}
-  begin
-    {$ifdef verbose}
-    Writeln(Format('%0.4d ', [LineNumber])+ RepeatString('    ', Length(Stack))+ 'Push '+ TRttiEnumerationType.GetName(Context)+ ' ' +TRttiEnumerationType.GetName(Expect));
-    {$endif}
-  //  SetLength(Stack, Length(Stack) + 1);
-    Stack[StackIndex].Parent := Parent;
-    Stack[StackIndex].Context := Context;
-    StackIndex := StackIndex + 1;
-  end;
-
-  procedure Pop; {$ifdef FPC} inline; {$endif}
-  begin
-    Parent := Stack[StackIndex-1].Parent;
-    Context := Stack[StackIndex-1].Context;
-//    SetLength(Stack, High(Stack));
-    StackIndex := StackIndex - 1;
-    {$ifdef verbose}
-    Writeln(Format('%0.4d ', [LineNumber])+RepeatString('    ', Length(Stack)) + 'Pop '+ TRttiEnumerationType.GetName(Context) +' '+TRttiEnumerationType.GetName(Expect));
-    {$endif}
-  end;
-
 var
-  Size: Int64;
+  Len: Int64;
   Ch: Char;
 begin
 
   StackIndex := 0;
-  SetLength(Stack, 1000);
+  SetLength(Stack, 100); //* Buffing it for fast grow
 
   if Content = '' then
     exit;
@@ -170,10 +182,9 @@ begin
     Error('JSON Parser: Acquire is nil');
 
   Index := 1;
+  Len := Length(Content);
 
-  Size := Length(Content);
-
-  StartString := Index;
+  StartString := -1; //* for strings
 
   //initial/or continue(TODO: by param)
   Context := cxPairs;
@@ -188,6 +199,12 @@ begin
   repeat
     Ch := Content[Index];
     case Token of
+      tkReturn:
+      begin
+        if Ch = #10 then
+          Next;
+        Token := tkNone;
+      end;
       tkEscape:
       begin
         case Ch of
@@ -204,8 +221,7 @@ begin
           else
             StringBuffer := StringBuffer + Ch;
         end;
-        Inc(Index);
-        Inc(ColumnNumber);
+        Next;
         StartString := Index;
         Token := tkString;
       end;
@@ -240,8 +256,7 @@ begin
           end;
 
           //Next char yes, we do not need " anymore
-          Inc(Index);
-          Inc(ColumnNumber);
+          Next;
         end;
       tkIdentifire:
         begin
@@ -264,8 +279,7 @@ begin
           end
           else
           begin
-            Inc(Index);
-            Inc(ColumnNumber);
+            Next;
           end;
         end;
       tkNumber:
@@ -283,8 +297,7 @@ begin
           end
           else
           begin
-            Inc(Index);
-            Inc(ColumnNumber);
+            Next;
           end;
         end;
       else
@@ -292,6 +305,12 @@ begin
         case Ch of
           ' ', #8, #9:; //* Nothing to do
           #13:
+          begin
+            Inc(LineNumber);
+            ColumnNumber := 1;
+            Token := tkReturn;
+          end;
+          #10:
           begin
             Inc(LineNumber);
             ColumnNumber := 1;
@@ -363,11 +382,10 @@ begin
             Expect := exNext;
           end;
         end;
-        Inc(Index);
-        Inc(ColumnNumber);
+        Next;
       end;
     end;
-  until (Ch=#0) or (Index > Size);
+  until (Ch=#0) or (Index > Len);
 
   if (Expect <> exNext) then
     Error('End of string not expected');
@@ -377,7 +395,7 @@ procedure JsonParseCallback(const Content: String; AParent: TObject; const Acqui
 var
   JSONParser: TmnJSONParser;
 begin
-  JSONParser.JsonParseCallback(Content, 1, AParent, AcquireProc, vOptions);
+  JSONParser.JsonParseCallback(Content, AParent, AcquireProc, vOptions);
 end;
 
 initialization

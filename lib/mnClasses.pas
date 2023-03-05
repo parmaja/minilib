@@ -105,8 +105,8 @@ type
 
     TmnNamedObject = class(TmnObject)
     private
-      FName: string;
     protected
+      FName: string;
       procedure SetName(const Value: string); virtual;
     public
       property Name: string read FName write SetName;

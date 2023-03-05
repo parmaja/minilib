@@ -1,14 +1,14 @@
 unit mnDON;
 { **
-  *  Data Object Notication Tree
+  *  Data Object Notication/Nodes Tree
   *
   *  @license   The MIT License (MIT)
-  *
-  *  This file is part of the "Mini Library"
   *
   *  @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
   *            See the file COPYING.MLGPL, included in this distribution,
   *  @author    Zaher Dirkey <zaher, zaherdirkey>
+  *  @author    Belal AlHamad
+  *
   *}
 
 {$IFDEF FPC}
@@ -19,7 +19,6 @@ unit mnDON;
 {$ModeSwitch typehelpers}
 {$ModeSwitch functionreferences}
 {$ModeSwitch anonymousfunctions}
-{$mode delphi}
 {$ENDIF}
 {$M+}{$H+}
 {$ifdef mswindows}
@@ -34,13 +33,12 @@ interface
 uses
 {$IFDEF windows}Windows, {$ENDIF}
   Classes, SysUtils, StrUtils, DateUtils, Types, Character,
-  mnClasses, mnUtils, mnJSON,
-  System.Rtti;
+  mnClasses, mnUtils, mnJSON, mnFields;
 
 type
-  { TSourceWriter }
+  { TSerializer }
 
-  TSourceWriter = class abstract(TObject)
+  TSerializer = class abstract(TObject)
   public
     TabWidth: Integer;
     constructor Create;
@@ -49,9 +47,9 @@ type
     procedure NewLine; virtual; abstract;
   end;
 
-  { TStringSourceWriter }
+  { TStringsSerializer }
 
-  TStringSourceWriter = class(TSourceWriter)
+  TStringsSerializer = class(TSerializer)
   private
     FStrings: TStrings;
     FLine: string;
@@ -82,7 +80,7 @@ type
 
   TDON_Base = class abstract(TmnObject)
   public
-    procedure WriteTo(Writer: TSourceWriter; LastOne:Boolean; Level: Integer); virtual;
+    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); virtual;
   end;
 
   TDON_Value = class;
@@ -97,7 +95,7 @@ type
     procedure SetValue(AValue: TDON_Value);
   public
     function ReleaseValue: TDON_Value;
-    procedure WriteTo(Writer: TSourceWriter; LastOne:Boolean; Level: Integer); override;
+    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); virtual;
   published
     property Value: TDON_Value read FValue write SetValue;
     property Name: string read FName write SetName;
@@ -107,56 +105,129 @@ type
 
   TDON_Root = class(TDON_Pair)
   public
-    procedure WriteTo(Writer: TSourceWriter; LastOne:Boolean; Level: Integer); override;
+    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
   end;
 
   { TDON_Value }
 
-  TDON_Value = class abstract(TDON_Base)
+  TDON_Value = class abstract(TmnCustomField)
   private
     FParent: TDON_Pair;
+    function GetValues(Index: string): TDON_Value;
+    procedure SetValues(Index: string; const Value: TDON_Value);
+  protected
+    function FindItem(Name: string): TDON_Value; virtual;
+    function GetItem(Index: Integer): TDON_Value; virtual;
+    function GetIsNull: Boolean; override;
   public
     constructor Create(AParent: TDON_Pair);
-    procedure WriteTo(Writer: TSourceWriter; LastOne:Boolean; Level: Integer); override;
+    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); virtual;
     property Parent: TDON_Pair read FParent;
+    property Values[Index: string]: TDON_Value read GetValues write SetValues; default;
+    property AsUtf8String;
+  published
+    //property IsBlob;
+    //property BlobType;
+    property IsNull;
+    property Value;
+    property AsVariant;
+    property AsString;
+    {$ifndef NEXTGEN}
+    property AsAnsiString;
+    {$endif}
+    property AsTrimString;
+    property AsNullString;
+    property AsInteger;
+    property AsInt64;
+    property AsForeign;
+    property AsBoolean;
+    property AsCurrency;
+    property AsDate;
+    property AsTime;
+    property AsDateTime;
+    property AsText; //binary text blob convert to hex
+    property AsHex;
+    property AsDouble;
+    property AsBytes;
   end;
 
   TDON_ValueClass = class of TDON_Value;
 
-  { TDON_String_Value }
+  { TDON_Custom_String_Value }
 
-  TDON_String_Value = class(TDON_Value)
+  TDON_Custom_String_Value = class abstract(TDON_Value)
   private
-    FText: string;
+    FValue: string;
+  protected
+    function GetAsBoolean: Boolean; override;
+    function GetAsCurrency: Currency; override;
+    function GetAsDateTime: TDateTime; override;
+    function GetAsDouble: Double; override;
+    function GetAsInteger: Longint; override;
+    function GetAsString: string; override;
+    function GetValue: Variant; override;
+
+    function GetIsEmpty: Boolean; override;
+
+    procedure SetAsBoolean(const Value: Boolean); override;
+    procedure SetAsCurrency(const Value: Currency); override;
+    procedure SetAsDateTime(const Value: TDateTime); override;
+    procedure SetAsDouble(const Value: Double); override;
+    procedure SetAsInteger(const Value: Longint); override;
+    procedure SetAsString(const Value: string); override;
+    procedure SetValue(const Value: Variant); override;
   public
-    procedure WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer); override;
     constructor Create(AParent: TDON_Pair; const AText: string); overload;
   published
-    property Text: string read FText write FText;
+    property Value: string read FValue write FValue;
+  end;
+
+  { TDON_String_Value }
+
+  TDON_String_Value = class(TDON_Custom_String_Value)
+  public
+    procedure Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer); override;
   end;
 
   { TDON_Identifier_Value }
 
-  TDON_Identifier_Value = class(TDON_Value)
+  TDON_Identifier_Value = class(TDON_Custom_String_Value)
   private
-    FText: string;
+  protected
+    function GetIsNull: Boolean; override;
   public
-    procedure WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer); override;
-    constructor Create(AParent: TDON_Pair; const AText: string); overload;
+    procedure Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer); override;
   published
-    property Text: string read FText write FText;
   end;
 
   { TDON_Number_Value }
 
   TDON_Number_Value = class(TDON_Value)
   private
-    FNumber: string;
+    FValue: Double;
+  protected
+    function GetAsBoolean: Boolean; override;
+    function GetAsCurrency: Currency; override;
+    function GetAsDateTime: TDateTime; override;
+    function GetAsDouble: Double; override;
+    function GetAsInteger: Longint; override;
+    function GetAsString: string; override;
+    function GetValue: Variant; override;
+
+    function GetIsEmpty: Boolean; override;
+
+    procedure SetAsBoolean(const Value: Boolean); override;
+    procedure SetAsCurrency(const Value: Currency); override;
+    procedure SetAsDateTime(const Value: TDateTime); override;
+    procedure SetAsDouble(const Value: Double); override;
+    procedure SetAsInteger(const Value: Longint); override;
+    procedure SetAsString(const Value: string); override;
+    procedure SetValue(const Value: Variant); override;
   public
-    procedure WriteTo(Writer: TSourceWriter; LastOne:Boolean; Level: Integer); override;
-    constructor Create(AParent: TDON_Pair; const ANumber: string); overload;
+    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
+    constructor Create(AParent: TDON_Pair; const ANumber: Double); overload;
   published
-    property Number: string read FNumber write FNumber;
+    property Value: Double read FValue write FValue;
   end;
 
   { TDON_Boolean_Value }
@@ -164,32 +235,56 @@ type
   TDON_Boolean_Value = class(TDON_Value)
   private
     FValue: Boolean;
+  protected
+    function GetValue: Variant; override;
+
+    function GetAsBoolean: Boolean; override;
+    function GetAsCurrency: Currency; override;
+    function GetAsDateTime: TDateTime; override;
+    function GetAsDouble: Double; override;
+    function GetAsInteger: Longint; override;
+    function GetAsString: string; override;
+
+    function GetIsEmpty: Boolean; override;
+
+    procedure SetValue(const Value: Variant); override;
+
+    procedure SetAsBoolean(const Value: Boolean); override;
+    procedure SetAsCurrency(const Value: Currency); override;
+    procedure SetAsDateTime(const Value: TDateTime); override;
+    procedure SetAsDouble(const Value: Double); override;
+    procedure SetAsInteger(const Value: Longint); override;
+    procedure SetAsString(const Value: string); override;
   public
-    procedure WriteTo(Writer: TSourceWriter; LastOne:Boolean; Level: Integer); override;
+    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
     constructor Create(AParent: TDON_Pair; AValue: Boolean); overload;
-    constructor Create(AParent: TDON_Pair; const AValue: string); overload;
   published
     property Value: Boolean read FValue write FValue;
   end;
 
-  { TDON_Items }
+  { TDON_Pairs }
 
-  TDON_Items = class(TmnObjectList<TDON_Pair>)
+  TDON_Pairs = class(TmnObjectList<TDON_Pair>)
   public
+    function Find(AName: string): TDON_Pair;
   end;
 
   { TDON_Object_Value }
 
   TDON_Object_Value = class(TDON_Value)
   private
-    FItems: TDON_Items;
+    FPairs: TDON_Pairs;
+  protected
+    function FindItem(Name: string): TDON_Value; override;
+    function GetItem(Index: Integer): TDON_Value; override;
+    function GetAsString: string; override;
   public
     procedure Created; override;
     destructor Destroy; override;
     procedure AcquirePair(const AName: string; out AObject: TObject);
     procedure Add(Value: TDON_Pair); overload;
-    procedure WriteTo(Writer: TSourceWriter; LastOne:Boolean; Level: Integer); override;
-    property Items: TDON_Items read FItems;
+    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
+    property Pairs: TDON_Pairs read FPairs;
   published
   end;
 
@@ -204,76 +299,108 @@ type
   TDON_Array_Value = class(TDON_Value)
   private
     FItems: TDON_List;
-  public
+   protected
+    function GetAsString: string; override;
+   public
     procedure Created; override;
     destructor Destroy; override;
     procedure Add(Value: TDON_Value); overload;
-    procedure WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer); override;
+    procedure Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer); override;
     property Items: TDON_List read FItems;
+
   published
   end;
 
-function JsonParsePair(const S: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
-function JsonParseValue(const S: string; Options: TJSONParseOptions = []): TDON_Value; overload;
+function JsonParseStringPair(const S: string; Options: TJSONParseOptions = []): TDON_Pair;
+function JsonParseStringValue(const S: string; Options: TJSONParseOptions = []): TDON_Value;
+
+function JsonParseFilePair(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair;
+function JsonParseFileValue(const FileName: string; Options: TJSONParseOptions = []): TDON_Value;
 
 procedure JsonAcquire(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
 
 implementation
 
-function JsonParsePair(const S: string; Options: TJSONParseOptions): TDON_Pair;
+function LoadFileString(FileName: string): string;
+var
+  Stream : TStringStream;
+begin
+  Stream := TStringStream.Create('' , TUTF8Encoding.Create);
+  try
+    Stream.LoadFromFile(FileName);
+    Result := Stream.DataString;
+  finally
+    Stream.Free;
+  end;
+end;
+
+function JsonParseStringPair(const S: string; Options: TJSONParseOptions): TDON_Pair;
 begin
   Result := TDON_Root.Create;
   JsonParseCallback(s, Result, JsonAcquire, Options);
 end;
 
-function JsonParseValue(const S: string; Options: TJSONParseOptions): TDON_Value;
+function JsonParseStringValue(const S: string; Options: TJSONParseOptions): TDON_Value;
 var
   Pair: TDON_Pair;
 begin
-  Pair := JsonParsePair(S, Options);
+  Pair := JsonParseStringPair(S, Options);
   Result := Pair.ReleaseValue;
 end;
 
-{ TSourceWriter }
+function JsonParseFilePair(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair;
+begin
+  Result := JsonParseStringPair(LoadFileString(FileName), Options)
+end;
 
-constructor TSourceWriter.Create;
+function JsonParseFileValue(const FileName: string; Options: TJSONParseOptions = []): TDON_Value;
+var
+  Pair: TDON_Pair;
+begin
+  Pair := JsonParseFilePair(FileName, Options);
+  Result := Pair.ReleaseValue;
+end;
+
+{ TSerializer }
+
+constructor TSerializer.Create;
 begin
   inherited Create;
   TabWidth := 4;
 end;
 
-procedure TSourceWriter.Add(Level: Integer; S: string);
+procedure TSerializer.Add(Level: Integer; S: string);
 begin
   Add(StringOfChar(' ', Level * TabWidth) + S);
 end;
 
-{ TStringSourceWriter }
+{ TStringsSerializer }
 
-constructor TStringSourceWriter.Create(Strings: TStrings);
+constructor TStringsSerializer.Create(Strings: TStrings);
 begin
   inherited Create;
   FStrings := Strings;
 end;
 
-destructor TStringSourceWriter.Destroy;
+destructor TStringsSerializer.Destroy;
 begin
   Flush;
   inherited;
 end;
 
-procedure TStringSourceWriter.Flush;
+procedure TStringsSerializer.Flush;
 begin
   if FLine <> '' then
     NewLine;
 end;
 
-procedure TStringSourceWriter.Add(const S: string);
+procedure TStringsSerializer.Add(const S: string);
 begin
   FLine := FLine + S;
 end;
 
-procedure TStringSourceWriter.NewLine;
+procedure TStringsSerializer.NewLine;
 begin
   FStrings.Add(FLine);
   FLine := '';
@@ -281,23 +408,99 @@ end;
 
 { TDON_Root }
 
-procedure TDON_Root.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
+procedure TDON_Root.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
 begin
-  Value.WriteTo(Writer, LastOne, Level);
+  Value.Serialize(Serializer, LastOne, Level);
 end;
 
 { TDON_Number_Value }
 
-procedure TDON_Number_Value.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
+function TDON_Number_Value.GetAsBoolean: Boolean;
 begin
-  Writer.Add(Number);
+  Result := AsDouble <> 0;
+end;
+
+function TDON_Number_Value.GetAsCurrency: Currency;
+begin
+  Result := AsDouble;
+end;
+
+function TDON_Number_Value.GetAsDateTime: TDateTime;
+begin
+  Result := AsDouble;
+end;
+
+function TDON_Number_Value.GetAsDouble: Double;
+begin
+  Result := FValue;
+end;
+
+function TDON_Number_Value.GetAsInteger: Longint;
+begin
+  Result := Trunc(FValue);
+end;
+
+function TDON_Number_Value.GetAsString: string;
+begin
+  Result := FloatToStr(FValue);
+end;
+
+function TDON_Number_Value.GetValue: Variant;
+begin
+  Result := FValue;
+end;
+
+function TDON_Number_Value.GetIsEmpty: Boolean;
+begin
+  Result := FValue = 0;
+end;
+
+procedure TDON_Number_Value.SetAsBoolean(const Value: Boolean);
+begin
+  FValue := Ord(Value);
+end;
+
+procedure TDON_Number_Value.SetAsCurrency(const Value: Currency);
+begin
+  FValue := Value;
+end;
+
+procedure TDON_Number_Value.SetAsDateTime(const Value: TDateTime);
+begin
+  FValue := Value;
+end;
+
+procedure TDON_Number_Value.SetAsDouble(const Value: Double);
+begin
+  FValue := Value;
+
+end;
+
+procedure TDON_Number_Value.SetAsInteger(const Value: Longint);
+begin
+  FValue := Trunc(Value);
+end;
+
+procedure TDON_Number_Value.SetAsString(const Value: string);
+begin
+  FValue := StrToFloatDef(Value, 0);
+end;
+
+procedure TDON_Number_Value.SetValue(const Value: Variant);
+begin
+  FValue := Value;
+end;
+
+procedure TDON_Number_Value.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
+begin
+  Serializer.Add(FloatToStr(Value));
   inherited;
 end;
 
-constructor TDON_Number_Value.Create(AParent: TDON_Pair; const ANumber: string);
+constructor TDON_Number_Value.Create(AParent: TDON_Pair; const ANumber: Double);
 begin
   inherited Create(AParent);
-  FNumber := ANumber;
+  FValue := ANumber;
 end;
 
 { TDON_Value }
@@ -308,34 +511,51 @@ begin
   FParent := AParent;
 end;
 
-procedure TDON_Value.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
+function TDON_Value.FindItem(Name: string): TDON_Value;
+begin
+  if Name = '' then
+    Result := Self
+  else
+    Result := nil;
+end;
+
+function TDON_Value.GetIsNull: Boolean;
+begin
+  Result := False;
+end;
+
+function TDON_Value.GetItem(Index: Integer): TDON_Value;
+begin
+  if Index = -1 then
+    Result := Self
+  else
+    Result := nil;
+end;
+
+function TDON_Value.GetValues(Index: string): TDON_Value;
+begin
+  Result := FindItem(Index);
+end;
+
+procedure TDON_Value.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
 begin
   if Self = nil then
-    Writer.Add('null');
+    Serializer.Add('null');
   if not LastOne then
-    Writer.Add(',');
-  Writer.NewLine;
+    Serializer.Add(',');
+  Serializer.NewLine;
+end;
+
+procedure TDON_Value.SetValues(Index: string; const Value: TDON_Value);
+begin
+  //TODO
 end;
 
 { TDON_Base }
 
-procedure TDON_Base.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
+procedure TDON_Base.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
 begin
 
-end;
-
-{ TDON_String_Value }
-
-procedure TDON_String_Value.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
-begin
-  Writer.Add(QuoteStr(EscapeStringC(Text), '"'));
-  inherited;
-end;
-
-constructor TDON_String_Value.Create(AParent: TDON_Pair; const AText: string);
-begin
-  inherited Create(AParent);
-  FText := AText;
 end;
 
 { TDON_Array_Value }
@@ -352,23 +572,28 @@ begin
   inherited;
 end;
 
+function TDON_Array_Value.GetAsString: string;
+begin
+  Result := '{Array}';
+end;
+
 procedure TDON_Array_Value.Add(Value: TDON_Value);
 begin
   Items.Add(Value);
 end;
 
-procedure TDON_Array_Value.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
+procedure TDON_Array_Value.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
 var
   Itm: TDON_Value;
 begin
-  Writer.Add('[');
-  Writer.NewLine;
+  Serializer.Add('[');
+  Serializer.NewLine;
   for Itm in Items do
   begin
-    Writer.Add(Level + 1);
-    Itm.WriteTo(Writer, itm = Items.Last , Level + 1);
+    Serializer.Add(Level + 1);
+    Itm.Serialize(Serializer, itm = Items.Last , Level + 1);
   end;
-  Writer.Add(Level, ']');
+  Serializer.Add(Level, ']');
   inherited;
 end;
 
@@ -377,13 +602,34 @@ end;
 procedure TDON_Object_Value.Created;
 begin
   inherited;
-  FItems := TDON_Items.Create;
+  FPairs := TDON_Pairs.Create;
 end;
 
 destructor TDON_Object_Value.Destroy;
 begin
-  FreeAndNil(FItems);
+  FreeAndNil(FPairs);
   inherited;
+end;
+
+function TDON_Object_Value.FindItem(Name: string): TDON_Value;
+var
+  Pair: TDON_Pair;
+begin
+  Pair := FPairs.Find(Name);
+  if Pair = nil then
+    Result := nil
+  else
+    Result := Pair.Value;
+end;
+
+function TDON_Object_Value.GetAsString: string;
+begin
+  Result := '{Object}';
+end;
+
+function TDON_Object_Value.GetItem(Index: Integer): TDON_Value;
+begin
+  Result := FPairs[Index].Value;
 end;
 
 procedure TDON_Object_Value.AcquirePair(const AName: string; out AObject: TObject);
@@ -395,18 +641,18 @@ end;
 
 procedure TDON_Object_Value.Add(Value: TDON_Pair);
 begin
-  Items.Add(Value);
+  FPairs.Add(Value);
 end;
 
-procedure TDON_Object_Value.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
+procedure TDON_Object_Value.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
 var
   Itm: TDON_Pair;
 begin
-  Writer.Add('{');
-  Writer.NewLine;
-  for Itm in Items do
-    Itm.WriteTo(Writer, itm = Items.Last , Level + 1);
-  Writer.Add(Level, '}');
+  Serializer.Add('{');
+  Serializer.NewLine;
+  for Itm in Pairs do
+    Itm.Serialize(Serializer, itm = Pairs.Last , Level + 1);
+  Serializer.Add(Level, '}');
   inherited;
 end;
 
@@ -437,13 +683,13 @@ begin
   FName :=AValue;
 end;
 
-procedure TDON_Pair.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
+procedure TDON_Pair.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
 begin
-  Writer.Add(Level, QuoteStr(Name, '"') + ': ');
+  Serializer.Add(Level, QuoteStr(Name, '"') + ': ');
   if Value = nil then
     raise Exception.Create('Value is null for: ' + Name)
   else
-    Value.WriteTo(Writer, LastOne, Level);
+    Value.Serialize(Serializer, LastOne, Level);
 end;
 
 function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
@@ -452,9 +698,9 @@ var
   procedure CreateValue;
   begin
     case AType of
-      donNumber: v :=  TDON_Number_Value.Create(nil, AValue);
+      donNumber: v :=  TDON_Number_Value.Create(nil, StrToFloatDef(AValue, 0));
       donIdentifier: v :=  TDON_Identifier_Value.Create(nil, AValue);
-      donBoolean: v :=  TDON_Boolean_Value.Create(nil, AValue);
+      donBoolean: v :=  TDON_Boolean_Value.Create(nil, StrToBoolDef(AValue, False));
       donString: v :=  TDON_String_Value.Create(nil, AValue);
       donObject: v := TDON_Object_Value.Create(nil);
       donArray: v := TDON_Array_Value.Create(nil);
@@ -497,13 +743,13 @@ end;
 
 { TDON_Boolean_Value }
 
-procedure TDON_Boolean_Value.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
+procedure TDON_Boolean_Value.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
 begin
   if Value then
-    Writer.Add('true')
+    Serializer.Add('true')
   else
-    Writer.Add('false');
-  inherited WriteTo(Writer, LastOne, Level);
+    Serializer.Add('false');
+  inherited Serialize(Serializer, LastOne, Level);
 end;
 
 constructor TDON_Boolean_Value.Create(AParent: TDON_Pair; AValue: Boolean);
@@ -512,27 +758,203 @@ begin
   FValue := AValue;
 end;
 
-constructor TDON_Boolean_Value.Create(AParent: TDON_Pair; const AValue: string);
+function TDON_Boolean_Value.GetAsBoolean: Boolean;
 begin
-  inherited Create(AParent);
-  if AValue = 'true' then
-    FValue := true
-  else if AValue = 'false' then
-    FValue := false;
+  Result := FValue;
 end;
 
-{ TDON_Identifier_Value }
-
-procedure TDON_Identifier_Value.WriteTo(Writer: TSourceWriter; LastOne: Boolean; Level: Integer);
+function TDON_Boolean_Value.GetAsCurrency: Currency;
 begin
-  Writer.Add(Text);
+  Result := Ord(AsBoolean);
+end;
+
+function TDON_Boolean_Value.GetAsDateTime: TDateTime;
+begin
+  Result := 0;
+end;
+
+function TDON_Boolean_Value.GetAsDouble: Double;
+begin
+  Result := Ord(AsBoolean);
+end;
+
+function TDON_Boolean_Value.GetAsInteger: Longint;
+begin
+  Result := Ord(AsBoolean);
+end;
+
+function TDON_Boolean_Value.GetAsString: string;
+begin
+  Result := BoolToStr(FValue);
+end;
+
+function TDON_Boolean_Value.GetValue: Variant;
+begin
+  Result := FValue;
+end;
+
+function TDON_Boolean_Value.GetIsEmpty: Boolean;
+begin
+  Result := not FValue;
+end;
+
+procedure TDON_Boolean_Value.SetAsBoolean(const Value: Boolean);
+begin
+  FValue := Value;
+end;
+
+procedure TDON_Boolean_Value.SetAsCurrency(const Value: Currency);
+begin
+  FValue := Value <> 0;
+end;
+
+procedure TDON_Boolean_Value.SetAsDateTime(const Value: TDateTime);
+begin
+  FValue := Value <> 0;
+
+end;
+
+procedure TDON_Boolean_Value.SetAsDouble(const Value: Double);
+begin
+  FValue := Value <> 0;
+end;
+
+procedure TDON_Boolean_Value.SetAsInteger(const Value: Longint);
+begin
+  FValue := Value <> 0;
+end;
+
+procedure TDON_Boolean_Value.SetAsString(const Value: string);
+begin
+  FValue := StrToBoolDef(Value, False);
+end;
+
+procedure TDON_Boolean_Value.SetValue(const Value: Variant);
+begin
+  FValue := Value;
+end;
+
+{ TDON_Custom_String_Value }
+
+constructor TDON_Custom_String_Value.Create(AParent: TDON_Pair; const AText: string);
+begin
+  inherited Create(AParent);
+  FValue := AText;
+end;
+
+function TDON_Custom_String_Value.GetAsBoolean: Boolean;
+begin
+  Result := StrToBoolDef(AsString, False);
+end;
+
+function TDON_Custom_String_Value.GetAsCurrency: Currency;
+begin
+  Result := StrToCurrDef(AsString, 0);
+end;
+
+function TDON_Custom_String_Value.GetAsDateTime: TDateTime;
+begin
+  Result := StrToDateTimeDef(AsString, 0);
+end;
+
+function TDON_Custom_String_Value.GetAsDouble: Double;
+begin
+  Result := StrToFloatDef(AsString, 0);
+end;
+
+function TDON_Custom_String_Value.GetAsInteger: Longint;
+begin
+  Result := StrToIntDef(AsString, 0);
+end;
+
+function TDON_Custom_String_Value.GetAsString: string;
+begin
+  Result := FValue;
+end;
+
+function TDON_Custom_String_Value.GetValue: Variant;
+begin
+  Result := FValue;
+end;
+
+function TDON_Custom_String_Value.GetIsEmpty: Boolean;
+begin
+  Result := FValue = '';
+end;
+
+procedure TDON_Custom_String_Value.SetAsBoolean(const Value: Boolean);
+begin
+  FValue := BoolToStr(Value);
+end;
+
+procedure TDON_Custom_String_Value.SetAsCurrency(const Value: Currency);
+begin
+  FValue := CurrToStr(Value);
+end;
+
+procedure TDON_Custom_String_Value.SetAsDateTime(const Value: TDateTime);
+begin
+  FValue := DateTimeToStr(Value);
+end;
+
+procedure TDON_Custom_String_Value.SetAsDouble(const Value: Double);
+begin
+  FValue := FloatToStr(Value);
+end;
+
+procedure TDON_Custom_String_Value.SetAsInteger(const Value: Longint);
+begin
+  FValue := IntToStr(Value);
+
+end;
+
+procedure TDON_Custom_String_Value.SetAsString(const Value: string);
+begin
+  FValue := Value;
+end;
+
+procedure TDON_Custom_String_Value.SetValue(const Value: Variant);
+begin
+  FValue := Value;
+end;
+
+{ TDON_Identifier_Value}
+
+function TDON_Identifier_Value.GetIsNull: Boolean;
+begin
+  Result := SameText(Value, 'null');
+end;
+
+procedure TDON_Identifier_Value.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
+begin
+  Serializer.Add(Value);
   inherited;
 end;
 
-constructor TDON_Identifier_Value.Create(AParent: TDON_Pair; const AText: string);
+{ TDON_String_Value }
+
+procedure TDON_String_Value.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
 begin
-  inherited Create(AParent);
-  FText := AText;
+  Serializer.Add(QuoteStr(EscapeStringC(Value), '"'));
+  inherited;
+end;
+
+{ TDON_Pairs }
+
+function TDON_Pairs.Find(AName: string): TDON_Pair;
+var
+  i: integer;
+begin
+  Result := nil;
+  if AName <> '' then
+    for i := 0 to Count - 1 do
+    begin
+      if SameText(Items[i].Name, AName) then
+      begin
+        Result := Items[i];
+        break;
+      end;
+    end;
 end;
 
 initialization
