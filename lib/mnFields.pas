@@ -108,6 +108,7 @@ type
 
     function GetAsText: string; virtual;
     procedure SetAsText(const AValue: string); virtual;
+
     function GetAsString: string; virtual;
     procedure SetAsString(const AValue: string); virtual;
     function GetAsInteger: Integer; virtual;
@@ -129,10 +130,13 @@ type
     function GetAsBytes: TBytes; virtual;
     procedure SetAsBytes(const AValue: TBytes); virtual;
 
-    function GetIsNull: Boolean; virtual; abstract;
+    function GetIsNull: Boolean; virtual;
     procedure SetIsNull(const AValue: Boolean); virtual; abstract;
     function GetIsEmpty: Boolean; virtual;
+    procedure Created; virtual;
   public
+    procedure AfterConstruction; override;
+
     property Value: Variant read GetValue write SetValue;
     property AsVariant: Variant read GetValue write SetValue;
     //* AsAnsiString: Convert strign to utf8 it is special for Lazarus
@@ -342,7 +346,12 @@ end;
 
 function TmnCustomField.GetIsEmpty: Boolean;
 begin
-  Result := VarIsClear(Value) or (VarType(Value) in [varEmpty, varNull, varUnknown]);
+  Result := IsNull;
+end;
+
+function TmnCustomField.GetIsNull: Boolean;
+begin
+  Result := (Self = nil) or (VarType(Value) in [varEmpty, varNull, varDispatch, varUnknown]);
 end;
 
 procedure TmnCustomField.LoadFromFile(const FileName: string);
@@ -364,7 +373,7 @@ end;
 
 function TmnCustomField.ReadAsBoolean: Boolean;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := False
   else
     try
@@ -379,7 +388,7 @@ end;
 
 function TmnCustomField.ReadAsBytes: TBytes;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := nil
   else
     try
@@ -394,7 +403,7 @@ end;
 
 function TmnCustomField.ReadAsCurrency: Currency;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := 0
   else
     try
@@ -409,7 +418,7 @@ end;
 
 function TmnCustomField.ReadAsDate: TDateTime;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := 0
   else
     try
@@ -424,7 +433,7 @@ end;
 
 function TmnCustomField.ReadAsDateTime: TDateTime;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := 0
   else
     try
@@ -439,7 +448,7 @@ end;
 
 function TmnCustomField.ReadAsInt64: Int64;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := 0
   else
     try
@@ -454,7 +463,7 @@ end;
 
 function TmnCustomField.ReadAsInteger: Integer;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := 0
   else
     try
@@ -469,7 +478,7 @@ end;
 
 function TmnCustomField.ReadAsString: string;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := ''
   else
     try
@@ -484,7 +493,7 @@ end;
 
 function TmnCustomField.ReadAsText: string;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := ''
   else
     try
@@ -499,7 +508,7 @@ end;
 
 function TmnCustomField.ReadAsTime: TDateTime;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := 0
   else
     try
@@ -646,6 +655,16 @@ begin
   inherited Create;
 end;
 
+procedure TmnCustomField.AfterConstruction;
+begin
+  inherited;
+  Created;
+end;
+
+procedure TmnCustomField.Created;
+begin
+end;
+
 procedure TmnCustomField.Assign(Source: TPersistent);
 begin
   if Source is TmnCustomField then
@@ -667,7 +686,7 @@ end;
 function TmnCustomField.ReadIsEmpty: Boolean;
 begin
   if Self <> nil then
-    Result := IsNull or GetIsEmpty
+    Result := IsNull
   else
     Result := True;
 end;
@@ -723,7 +742,7 @@ end;
 
 function TmnCustomField.ReadAsDouble: Double;
 begin
-  if IsEmpty then
+  if IsNull then
     Result := 0
   else
     try
