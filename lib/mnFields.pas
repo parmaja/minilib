@@ -131,7 +131,7 @@ type
     procedure SetAsBytes(const AValue: TBytes); virtual;
 
     function GetIsNull: Boolean; virtual;
-    procedure SetIsNull(const AValue: Boolean); virtual; abstract;
+    procedure SetIsNull(const AValue: Boolean); virtual;
     function GetIsEmpty: Boolean; virtual;
     procedure Created; virtual;
   public
@@ -825,6 +825,10 @@ end;
 procedure TmnCustomField.SetAsTime(const AValue: TDateTime);
 begin
   Value := TimeOf(AValue);
+end;
+
+procedure TmnCustomField.SetIsNull(const AValue: Boolean);
+begin
 end;
 
 procedure TmnCustomField.WriteAsTrimString(const AValue: string);

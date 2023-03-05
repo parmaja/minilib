@@ -1,0 +1,14 @@
+{
+    Name: "The \"Name",
+    Value: "JSON",
+    A: [],
+    "Caption": "Hello World",
+    Tag: 150,
+    "None": null,
+    "Books": {
+        "Library": "The Roof",
+        "Book1": {
+            "Title": "20 miles to the hell"
+        }
+    }
+}

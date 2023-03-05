@@ -76,6 +76,10 @@ type
     donIdentifier
   );
 
+  TDON_Value = class;
+  TDON_Parent = class;
+  TDON_Object_Value = class;
+
   { TDON_Base }
 
   TDON_Base = class abstract(TmnObject)
@@ -83,36 +87,11 @@ type
     procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); virtual;
   end;
 
-  TDON_Value = class;
-
-  { TDON_Pair }
-
-  TDON_Pair = class(TDON_Base)
-  private
-    FName: string;
-    FValue: TDON_Value;
-    procedure SetName(const AValue: string);
-    procedure SetValue(AValue: TDON_Value);
-  public
-    function ReleaseValue: TDON_Value;
-    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); virtual;
-  published
-    property Value: TDON_Value read FValue write SetValue;
-    property Name: string read FName write SetName;
-  end;
-
-  { TDON_Root }
-
-  TDON_Root = class(TDON_Pair)
-  public
-    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
-  end;
-
   { TDON_Value }
 
   TDON_Value = class abstract(TmnCustomField)
   private
-    FParent: TDON_Pair;
+    FParent: TDON_Parent;
     function GetValues(Index: string): TDON_Value;
     procedure SetValues(Index: string; const Value: TDON_Value);
   protected
@@ -120,9 +99,20 @@ type
     function GetItem(Index: Integer): TDON_Value; virtual;
     function GetIsNull: Boolean; override;
   public
-    constructor Create(AParent: TDON_Pair);
+    constructor Create(AParent: TDON_Parent);
     procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); virtual;
-    property Parent: TDON_Pair read FParent;
+    property Parent: TDON_Parent read FParent;
+
+    function ByPath(Path: TStrings): TDON_Value; overload;
+    function ByPath(Path: string; Delimiter: Char = '.'): TDON_Value; overload;
+    function ByPath(Path: TArray<string>): TDON_Value; overload;
+
+    function AddObject: TDON_Value; overload;
+    function AddObject(Name: String): TDON_Value; overload;
+    function AddArray: TDON_Value; overload;
+    function AddArray(Name: String): TDON_Value; overload;
+    function AddPair(Name: String; Value: string): TDON_Value; overload; //Add Pair with string value with this name
+
     property Values[Index: string]: TDON_Value read GetValues write SetValues; default;
     property AsUtf8String;
   published
@@ -177,7 +167,7 @@ type
     procedure SetAsString(const Value: string); override;
     procedure SetValue(const Value: Variant); override;
   public
-    constructor Create(AParent: TDON_Pair; const AText: string); overload;
+    constructor Create(AParent: TDON_Parent; const AText: string); overload;
   published
     property Value: string read FValue write FValue;
   end;
@@ -225,7 +215,7 @@ type
     procedure SetValue(const Value: Variant); override;
   public
     procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
-    constructor Create(AParent: TDON_Pair; const ANumber: Double); overload;
+    constructor Create(AParent: TDON_Parent; const ANumber: Double); overload;
   published
     property Value: Double read FValue write FValue;
   end;
@@ -257,9 +247,41 @@ type
     procedure SetAsString(const Value: string); override;
   public
     procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
-    constructor Create(AParent: TDON_Pair; AValue: Boolean); overload;
+    constructor Create(AParent: TDON_Parent; AValue: Boolean); overload;
   published
     property Value: Boolean read FValue write FValue;
+  end;
+
+  TDON_Parent = class abstract(TDON_Value)
+  end;
+
+  { TDON_Pair }
+
+  TDON_Pair = class(TDON_Parent)
+  private
+    FParent: TDON_Object_Value;
+    FName: string;
+    FValue: TDON_Value;
+    procedure SetPairName(const AValue: string);
+    procedure SetPairValue(AValue: TDON_Value);
+  protected
+    function GetAsString: string; override;
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  public
+    constructor Create(AParent: TDON_Object_Value);
+    function ReleaseValue: TDON_Value;
+    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
+  published
+    property Value: TDON_Value read FValue write SetPairValue;
+    property Name: string read FName write SetPairName;
+  end;
+
+  { TDON_Root }
+
+  TDON_Root = class(TDON_Pair)
+  public
+    procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
   end;
 
   { TDON_Pairs }
@@ -271,18 +293,21 @@ type
 
   { TDON_Object_Value }
 
-  TDON_Object_Value = class(TDON_Value)
+  TDON_Object_Value = class(TDON_Parent)
   private
     FPairs: TDON_Pairs;
   protected
     function FindItem(Name: string): TDON_Value; override;
     function GetItem(Index: Integer): TDON_Value; override;
     function GetAsString: string; override;
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
   public
     procedure Created; override;
     destructor Destroy; override;
+    function CreatePair(PairName: string): TDON_Pair;
     procedure AcquirePair(const AName: string; out AObject: TObject);
-    procedure Add(Value: TDON_Pair); overload;
+    procedure AddPair(Value: TDON_Pair); overload;
     procedure Serialize(Serializer: TSerializer; LastOne:Boolean; Level: Integer); override;
     property Pairs: TDON_Pairs read FPairs;
   published
@@ -296,18 +321,26 @@ type
 
   { TDON_Array_Value }
 
-  TDON_Array_Value = class(TDON_Value)
+  TDON_Array_Value = class(TDON_Parent)
   private
     FItems: TDON_List;
-   protected
+    function GetCount: Integer;
+  protected
     function GetAsString: string; override;
-   public
+    function FindItem(Name: string): TDON_Value; override;
+    function GetItem(Index: Integer): TDON_Value; override;
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  public
     procedure Created; override;
     destructor Destroy; override;
-    procedure Add(Value: TDON_Value); overload;
+    function Add(Value: TDON_Value): TDON_Value; overload;
+    function Add(Value: String): TDON_Value; overload;
+    procedure Add(Values: array of const); overload;
+
     procedure Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer); override;
     property Items: TDON_List read FItems;
-
+    property Count: Integer read GetCount;
   published
   end;
 
@@ -337,7 +370,7 @@ end;
 
 function JsonParseStringPair(const S: string; Options: TJSONParseOptions): TDON_Pair;
 begin
-  Result := TDON_Root.Create;
+  Result := TDON_Root.Create(nil);
   JsonParseCallback(s, Result, JsonAcquire, Options);
 end;
 
@@ -497,7 +530,7 @@ begin
   inherited;
 end;
 
-constructor TDON_Number_Value.Create(AParent: TDON_Pair; const ANumber: Double);
+constructor TDON_Number_Value.Create(AParent: TDON_Parent; const ANumber: Double);
 begin
   inherited Create(AParent);
   FValue := ANumber;
@@ -505,7 +538,137 @@ end;
 
 { TDON_Value }
 
-constructor TDON_Value.Create(AParent: TDON_Pair);
+function TDON_Value.ByPath(Path: TStrings): TDON_Value;
+var
+  i: Integer;
+begin
+  Result := self;
+  i := 0;
+  while (Result <> nil) and (i < Path.Count) do
+  begin
+    Result := Result.FindItem(Path[i]);
+    Inc(i);
+  end;
+end;
+
+function TDON_Value.ByPath(Path: string; Delimiter: Char): TDON_Value;
+var
+  sl: TStringList;
+begin
+  sl := TStringList.Create;
+  try
+    sl.Delimiter := Delimiter;
+    sl.DelimitedText := Path;
+    Result := ByPath(sl);
+  finally
+    sl.Free;
+  end;
+end;
+
+function TDON_Value.AddArray(Name: String): TDON_Value;
+var
+  aPair: TDON_Pair;
+begin
+  if (Self is TDON_Object_Value) then
+  begin
+    aPair := (Self as TDON_Object_Value).CreatePair(Name);
+    aPair.Value := TDON_Array_Value.Create(aPair);
+    Result := aPair.Value;
+  end
+  else
+    raise Exception.Create('You cant add object here');
+end;
+
+function TDON_Value.AddObject: TDON_Value;
+var
+  aPair: TDON_Pair;
+begin
+  if (Self is TDON_Object_Value) then
+  begin
+    aPair := (Self as TDON_Object_Value).CreatePair('');
+    aPair.Value := TDON_Object_Value.Create(aPair);
+    Result := aPair.Value;
+  end
+  else if (Self is TDON_Array_Value) then
+  begin
+    Result := (Self as TDON_Array_Value).Add(TDON_Object_Value.Create(Self as TDON_Array_Value));
+  end
+  else if (FParent is TDON_Pair) then
+  begin
+    Result := TDON_Object_Value.Create(Self as TDON_Pair);
+    (Self as TDON_Pair).Value := Result;
+  end
+  else
+    raise Exception.Create('Can not add object here');
+end;
+
+function TDON_Value.AddPair(Name, Value: string): TDON_Value;
+var
+  aPair: TDON_Pair;
+begin
+  if (Self is TDON_Object_Value) then
+  begin
+    aPair := (Self as TDON_Object_Value).CreatePair(Name);
+    aPair.Value := TDON_String_Value.Create(aPair, Value);
+    Result := aPair.Value;
+  end
+  else
+    raise Exception.Create('Not an object');
+end;
+
+function TDON_Value.AddObject(Name: String): TDON_Value;
+var
+  aPair: TDON_Pair;
+begin
+  if (Self is TDON_Object_Value) then
+  begin
+    aPair := (Self as TDON_Object_Value).CreatePair(Name);
+    aPair.Value := TDON_Object_Value.Create(aPair);
+    Result := aPair.Value;
+  end
+  else
+    raise Exception.Create('You can add object with name here');
+end;
+
+function TDON_Value.AddArray: TDON_Value;
+var
+  aPair: TDON_Pair;
+begin
+  if (Self is TDON_Object_Value) then
+  begin
+    aPair := (Self as TDON_Object_Value).CreatePair('');
+    aPair.Value := TDON_Array_Value.Create(aPair);
+    Result := aPair.Value;
+  end
+  else if (Self is TDON_Array_Value) then
+  begin
+    Result := (Self as TDON_Array_Value).Add(TDON_Array_Value.Create(Self as TDON_Array_Value));
+  end
+  else if (FParent is TDON_Pair) then
+  begin
+    Result := TDON_Array_Value.Create(Self as TDON_Pair);
+    (Self as TDON_Pair).Value := Result;
+  end
+  else
+    raise Exception.Create('Can not add array here');
+end;
+
+function TDON_Value.ByPath(Path: TArray<string>): TDON_Value;
+var
+  sl: TStringList;
+  s: string;
+begin
+  sl := TStringList.Create;
+  try
+    for s in Path do
+      sl.Append(s);
+    Result := ByPath(sl);
+  finally
+    sl.Free;
+  end;
+end;
+
+constructor TDON_Value.Create(AParent: TDON_Parent);
 begin
   inherited Create;
   FParent := AParent;
@@ -560,6 +723,36 @@ end;
 
 { TDON_Array_Value }
 
+procedure TDON_Array_Value.Add(Values: array of const);
+var
+  i : Integer;
+begin
+  if High(Values) > 0 then
+  begin
+    for i := 0 to High(Values) do
+    begin
+      case Values[i].vType of
+        vtBoolean:
+          Items.Add(TDON_Boolean_Value.Create(Self, Values[i].VBoolean));
+        vtChar:
+          Items.Add(TDON_String_Value.Create(Self, String(Values[i].VChar)));
+        vtString:
+          Items.Add(TDON_String_Value.Create(Self, String(Values[i].VString^)));
+        vtInteger:
+          Items.Add(TDON_Number_Value.Create(Self, Values[i].VInteger));
+        vtExtended:
+          Items.Add(TDON_Number_Value.Create(Self, Values[i].VExtended^));
+      end;
+    end;
+  end;
+end;
+
+function TDON_Array_Value.Add(Value: String): TDON_Value;
+begin
+  Result := TDON_String_Value.Create(Self, Value);
+  Add(Result);
+end;
+
 procedure TDON_Array_Value.Created;
 begin
   inherited;
@@ -572,29 +765,63 @@ begin
   inherited;
 end;
 
+function TDON_Array_Value.FindItem(Name: string): TDON_Value;
+begin
+  Result := nil;
+end;
+
 function TDON_Array_Value.GetAsString: string;
 begin
   Result := '{Array}';
 end;
 
-procedure TDON_Array_Value.Add(Value: TDON_Value);
+function TDON_Array_Value.GetCount: Integer;
+begin
+  Result := Items.Count;
+end;
+
+function TDON_Array_Value.GetItem(Index: Integer): TDON_Value;
+begin
+  if Index < FItems.Count then
+    Result := FItems[Index]
+  else
+    Result := nil;
+end;
+
+function TDON_Array_Value.GetValue: Variant;
+begin
+  Result := AsString;
+end;
+
+function TDON_Array_Value.Add(Value: TDON_Value): TDON_Value;
 begin
   Items.Add(Value);
+  Result := Value;
 end;
 
 procedure TDON_Array_Value.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
 var
   Itm: TDON_Value;
 begin
-  Serializer.Add('[');
-  Serializer.NewLine;
-  for Itm in Items do
+  if Items.Count>0 then
   begin
-    Serializer.Add(Level + 1);
-    Itm.Serialize(Serializer, itm = Items.Last , Level + 1);
-  end;
-  Serializer.Add(Level, ']');
+    Serializer.Add('[');
+    Serializer.NewLine;
+    for Itm in Items do
+    begin
+      Serializer.Add(Level + 1);
+      Itm.Serialize(Serializer, itm = Items.Last , Level + 1);
+    end;
+    Serializer.Add(Level, ']');
+  end
+  else
+    Serializer.Add('[]');
   inherited;
+end;
+
+procedure TDON_Array_Value.SetValue(const AValue: Variant);
+begin
+  AsString := AValue;
 end;
 
 { TDON_Object_Value }
@@ -603,6 +830,13 @@ procedure TDON_Object_Value.Created;
 begin
   inherited;
   FPairs := TDON_Pairs.Create;
+end;
+
+function TDON_Object_Value.CreatePair(PairName: string): TDON_Pair;
+begin
+  Result := TDON_Pair.Create(Self);
+  Result.FName := PairName;
+  AddPair(Result);
 end;
 
 destructor TDON_Object_Value.Destroy;
@@ -632,14 +866,19 @@ begin
   Result := FPairs[Index].Value;
 end;
 
-procedure TDON_Object_Value.AcquirePair(const AName: string; out AObject: TObject);
+function TDON_Object_Value.GetValue: Variant;
 begin
-  AObject := TDON_Pair.Create;
-  (AObject as TDON_Pair).Name := AName;
-  Add((AObject as TDON_Pair));
+  Result := AsString;
 end;
 
-procedure TDON_Object_Value.Add(Value: TDON_Pair);
+procedure TDON_Object_Value.AcquirePair(const AName: string; out AObject: TObject);
+begin
+  AObject := TDON_Pair.Create(Self);
+  (AObject as TDON_Pair).FName := AName;
+  AddPair((AObject as TDON_Pair));
+end;
+
+procedure TDON_Object_Value.AddPair(Value: TDON_Pair);
 begin
   FPairs.Add(Value);
 end;
@@ -648,17 +887,27 @@ procedure TDON_Object_Value.Serialize(Serializer: TSerializer; LastOne: Boolean;
 var
   Itm: TDON_Pair;
 begin
-  Serializer.Add('{');
-  Serializer.NewLine;
-  for Itm in Pairs do
-    Itm.Serialize(Serializer, itm = Pairs.Last , Level + 1);
-  Serializer.Add(Level, '}');
+  if (Pairs.Count > 0) then
+  begin
+    Serializer.Add('{');
+    Serializer.NewLine;
+    for Itm in Pairs do
+      Itm.Serialize(Serializer, itm = Pairs.Last , Level + 1);
+    Serializer.Add(Level, '}');
+  end
+  else
+    Serializer.Add('{}');
   inherited;
+end;
+
+procedure TDON_Object_Value.SetValue(const AValue: Variant);
+begin
+  AsString := aValue;
 end;
 
 { TDON_Pair }
 
-procedure TDON_Pair.SetValue(AValue: TDON_Value);
+procedure TDON_Pair.SetPairValue(AValue: TDON_Value);
 begin
   if FValue <> AValue then
   begin
@@ -670,6 +919,21 @@ begin
   end;
 end;
 
+constructor TDON_Pair.Create(AParent: TDON_Object_Value);
+begin
+  FParent := AParent;
+end;
+
+function TDON_Pair.GetAsString: string;
+begin
+  Result := '{Pair}';
+end;
+
+function TDON_Pair.GetValue: Variant;
+begin
+  Result := AsString;
+end;
+
 function TDON_Pair.ReleaseValue: TDON_Value;
 begin
   Result := FValue;
@@ -677,10 +941,15 @@ begin
   FValue := nil;
 end;
 
-procedure TDON_Pair.SetName(const AValue: string);
+procedure TDON_Pair.SetPairName(const AValue: string);
 begin
   if FName =AValue then Exit;
   FName :=AValue;
+end;
+
+procedure TDON_Pair.SetValue(const AValue: Variant);
+begin
+  AsString := AValue;
 end;
 
 procedure TDON_Pair.Serialize(Serializer: TSerializer; LastOne: Boolean; Level: Integer);
@@ -752,7 +1021,7 @@ begin
   inherited Serialize(Serializer, LastOne, Level);
 end;
 
-constructor TDON_Boolean_Value.Create(AParent: TDON_Pair; AValue: Boolean);
+constructor TDON_Boolean_Value.Create(AParent: TDON_Parent; AValue: Boolean);
 begin
   inherited Create(AParent);
   FValue := AValue;
@@ -836,7 +1105,7 @@ end;
 
 { TDON_Custom_String_Value }
 
-constructor TDON_Custom_String_Value.Create(AParent: TDON_Pair; const AText: string);
+constructor TDON_Custom_String_Value.Create(AParent: TDON_Parent; const AText: string);
 begin
   inherited Create(AParent);
   FValue := AText;

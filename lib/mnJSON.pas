@@ -164,7 +164,8 @@ var
 
   procedure Error(const Msg: string);
   begin
-    RaiseError(Msg, LineNumber, ColumnNumber);
+    if not (jpoSafe in vOptions) then
+      RaiseError(Msg, LineNumber, ColumnNumber);
   end;
 
 var
