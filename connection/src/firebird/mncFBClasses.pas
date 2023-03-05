@@ -18,7 +18,8 @@ interface
 
 uses
   SysUtils, Classes, Variants,
-  mnUtils, mncFBHeader;
+  StrUtils,
+  mncFBHeader;
 
 const
   DefaultBlobSegmentSize = 16 * 1024;
