@@ -432,7 +432,9 @@ type
     function Add(Index: Integer; Value: Variant): TmncField; overload;
     property Columns: TmncColumns read FColumns;
     property Field[const Index: string]: TmncField read GetField; default;
-
+    {$ifndef FPC}
+    property Field[Index: Integer]: TmncField read GetItem; default;
+    {$endif}
     property Items[Index: Integer]: TmncField read GetItem;
     property Values[const Index: string]: Variant read GetValues write SetValues;
     property RowID: Int64 read FRowID write FRowID default 0; //most of SQL engines have this value

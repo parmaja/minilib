@@ -545,7 +545,7 @@ end;
 
 function TmncSQLConnection.EnumDatabases: TStrings;
 begin
-
+  Result := nil;
 end;
 
 procedure TmncSQLConnection.Execute(const vSQL: string; vArgs: array of const);

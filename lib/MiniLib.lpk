@@ -111,6 +111,14 @@
         <Filename Value="mnJobs.pas"/>
         <UnitName Value="mnJobs"/>
       </Item>
+      <Item>
+        <Filename Value="mnJSON.pas"/>
+        <UnitName Value="mnJSON"/>
+      </Item>
+      <Item>
+        <Filename Value="mnDON.pas"/>
+        <UnitName Value="mnDON"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

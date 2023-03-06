@@ -150,15 +150,57 @@ begin
       var Json3 := JsonParseStringValue(s);
       LogEndTick('Test mnJSON');
       Json3.Free;
+
+      LogBeginTick;
+      var d_json := json.TJSONObject.Create;
+      for i :=0  to 1000000 do
+        d_json.addpair('Test'+i.ToString,'Value'+i.ToString);
+      LogEndTick('Test Add Delphi JSON');
+
+      LogBeginTick;
+      for i :=0  to 10000 do
+        var j := d_json.FindValue('Test'+i.ToString);
+      LogEndTick('Test get Delphi JSON');
+
+      d_json.Free;
+
+      LogBeginTick;
+      var mn_json := TDON_Object_Value.Create(nil);
+      for i :=0  to 1000000 do
+        mn_json.AddPair('Test'+i.ToString,'Value'+i.ToString);
+      LogEndTick('Test Add mnJSON');
+
+      LogBeginTick;
+      for i :=0  to 10000 do
+        var j := mn_json['Test'+i.ToString];
+      LogEndTick('Test get mnJSON');
+      mn_json.Free;
+
+      Lines.LoadFromFile('test.json');
+
+      var json5 := json.TJSONObject.ParseJSONValue(Lines.Text, False, True);
+      LogBeginTick;
+      for i :=0 to 1000000 do
+        var dd := json5.FindValue('Books.Book1.Title');
+      LogEndTick('Delphi JSON get value');
 {
       var v := Json3.AsString;
       var v := Json3['"books.zaher'].AsString;
       var v := Json3['books']['zaher'].AsString;
 }
       var Json4 := JsonParseFileValue('test.json', []);
+
+      LogBeginTick;
+      for i :=0  to 1000000 do
+        //var dd := Json4['Books']['Book1']['Title'];
+        var dd := Json4[['Books','Book1','Title']];
+      LogEndTick('mnJSON get value');
+
       Writeln(Json4['Books']['Library'].AsString);
       Writeln(Json4['Books']['Book1']['Title'].AsString);
+      Writeln(Json4['Books']['Book1']['Pages'][2].AsString);
       Writeln(Json4.ByPath('Books.Book1.Title').AsString);
+
 //      Writeln(Json4.ByPath('"Books"."Book1"."Title"').AsString); //TODO
       Writeln(Json4.ByPath('Books.Book1.Title').AsString);
       Writeln(Json4.ByPath('Books\Book1\Title', '\').AsString);
@@ -167,6 +209,7 @@ begin
       Json4.ByPath(['Books']).AddObject('Book2');
       Json4.ByPath(['Books', 'Book2']).AddPair('Title', 'No one care');
       Json4.ByPath(['Books', 'Book2']).AddPair('ISPN', '545454610');
+      Json4.ByPath(['Books']).AddObject('Book3');
 //          Json4.ByPath(['Books', 'Book2']).Let('Pages', '10');
       //Json4.ByPath(['Books','Book1']).Add('Ventors', ['10']);
 
