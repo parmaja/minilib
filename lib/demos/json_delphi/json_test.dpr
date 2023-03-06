@@ -130,7 +130,8 @@ var
   {$ifdef DON}
   i: Integer;
   JSONRoot: TDON_Pair;
-  Writer: TStringsSerializer;
+  Serializer: TStringsSerializer;
+  Generator: TJsonSerializeGernerator;
   {$else}
   JSONRoot: TMyJSONObject;
   {$endif}
@@ -170,9 +171,10 @@ begin
 
       Lines.Clear;
 
-      Writer := TStringsSerializer.Create(Lines);
-      JSon4.Serialize(Writer, True, 0);
-      Writer.Free;
+      Serializer := TStringsSerializer.Create(Lines);
+      Serializer.Serialize(TJsonSerializeGernerator, Json4);
+      //JSon4.Serialize(Writer, True, 0);
+      Serializer.Free;
       for i := 0 to Lines.Count -1 do
         WriteLn(Lines[i]);
 
