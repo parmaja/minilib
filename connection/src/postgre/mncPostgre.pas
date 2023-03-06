@@ -208,7 +208,6 @@ type
 
     FValue: string;
     FIsNull: Boolean;
-    FIsEmpty: Boolean;
     function GetData: string;
   protected
     function GetValue: Variant; override;
@@ -226,8 +225,6 @@ type
     function GetAsDateTime: TDateTime; override;
     function GetAsTime: TDateTime; override;
     function GetIsNull: Boolean; override;
-    function GetIsEmpty: Boolean; override;
-
 
     procedure SetAsText(const AValue: string); override;
     procedure SetAsString(const AValue: string); override;
@@ -1364,11 +1361,6 @@ begin
     Result := FValue;
 end;
 
-function TmncPostgreField.GetIsEmpty: Boolean;
-begin
-  Result := FIsEmpty;
-end;
-
 function TmncPostgreField.GetIsNull: Boolean;
 begin
   Result := FIsNull;
@@ -1814,13 +1806,11 @@ begin
         f.FDataLen := PQgetlength(vRes, vTuple, i);
         //f.FDataLen := NullPos(f.FData)-1;
         //f.FDataLen := 0;
-        f.FIsEmpty := f.FDataLen = 0;
         f.FIsNull := False;
       end
       else
       begin
         f.FIsNull := True;
-        f.FIsEmpty := True;
       end;
     end;
   end;

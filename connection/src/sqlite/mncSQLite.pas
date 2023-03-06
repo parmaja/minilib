@@ -130,13 +130,14 @@ type
 
   TmncSQLiteBind = class(TmncBind)
   private
-    FBuffer: Pointer;
+    FBuffer: PByte;
     FBufferSize: Integer;
     function GetBufferAllocated: Boolean;
   protected
-    procedure AllocBuffer(var P; Size: Integer); virtual;
+    // AddTerminated add #0 for strings
+    procedure AllocBuffer(var P; Size: Integer; AddTerminated: Boolean = False); virtual;
     procedure FreeBuffer;
-    property Buffer: Pointer read FBuffer;
+    property Buffer: PByte read FBuffer;
     property BufferSize: Integer read FBufferSize;
     property BufferAllocated: Boolean read GetBufferAllocated;
   public
@@ -314,14 +315,19 @@ begin
   Result := Buffer <> nil;
 end;
 
-procedure TmncSQLiteBind.AllocBuffer(var P; Size: Integer);
+procedure TmncSQLiteBind.AllocBuffer(var P; Size: Integer; AddTerminated: Boolean = False);
 begin
   FreeBuffer;
+
   FBufferSize := Size;
-  if Size > 0 then
+  if AddTerminated then
+    Inc(FBufferSize);
+  if FBufferSize > 0 then
   begin
     FBuffer := AllocMem(FBufferSize);
     Move(P, FBuffer^, Size);
+    if AddTerminated then
+      FBuffer[FBufferSize - 1] := 0;
   end;
 end;
 
@@ -716,7 +722,7 @@ begin
 
   for i := 0 to Binds.Count - 1 do
   begin
-    if Binds[i].Param.IsEmpty then
+    if Binds[i].Param.IsNull then
       CheckError(sqlite3_bind_null(FStatment, i + 1))
     else
     begin
@@ -757,10 +763,14 @@ begin
         begin
           if not Binds[i].BufferAllocated then //TODO test after remove this line, i think it is not useful
           begin
-            s := VarToStr(Binds[i].Param.Value) + #0;
-            Binds[i].AllocBuffer(PUtf8Char(s)^, Length(s));
+            s := VarToStr(Binds[i].Param.Value);
+            Binds[i].AllocBuffer(PUtf8Char(s)^, Length(s), True); //TODO need to check if already have terminal #0
           end;
-          CheckError(sqlite3_bind_text(FStatment, i + 1, PUTF8Char(Binds[i].Buffer), -1, nil)); //up to #0
+
+          if Binds[i].BufferSize <= 1 then //* with #0
+            CheckError(sqlite3_bind_null(FStatment, i + 1))
+          else
+            CheckError(sqlite3_bind_text(FStatment, i + 1, PUTF8Char(Binds[i].Buffer), -1, nil)); //up to #0
           //CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), Binds[i].BufferSize, nil)); not work with empty string not null
         end;
       end;

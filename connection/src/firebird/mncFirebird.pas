@@ -133,7 +133,6 @@ type
 
     function GetIsNull: Boolean; override;
     procedure SetIsNull(const AValue: Boolean); override;
-    function GetIsEmpty: Boolean; override;
   public
     constructor Create(vColumn: TmncColumn); override;
     destructor Destroy; override;
@@ -193,7 +192,6 @@ type
 
     function GetIsNull: Boolean; override;
     procedure SetIsNull(const AValue: Boolean); override;
-    function GetIsEmpty: Boolean; override;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -859,11 +857,6 @@ begin
   FSQLVAR.IsNull := AValue;
 end;
 
-function TmncFBField.GetIsEmpty: Boolean;
-begin
-  Result := FSQLVAR.IsNull;
-end;
-
 constructor TmncFBField.Create(vColumn: TmncColumn);
 begin
   inherited;
@@ -1045,11 +1038,6 @@ end;
 procedure TmncFBParam.SetIsNull(const AValue: Boolean);
 begin
   FSQLVAR.IsNull := AValue;
-end;
-
-function TmncFBParam.GetIsEmpty: Boolean;
-begin
-  Result := FSQLVAR.IsNull;
 end;
 
 { TmncFBFields }

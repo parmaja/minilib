@@ -100,7 +100,6 @@ type
     procedure WriteIsNull(const AValue: Boolean);
     function ReadAsForeign: Integer;
     procedure WriteAsForeign(const Value: Integer);
-    function ReadIsEmpty: Boolean;
     function ReadIsExists: Boolean;
   protected
     function GetValue: Variant; virtual; abstract;
@@ -132,7 +131,6 @@ type
 
     function GetIsNull: Boolean; virtual;
     procedure SetIsNull(const AValue: Boolean); virtual;
-    function GetIsEmpty: Boolean; virtual;
     procedure Created; virtual;
   public
     procedure AfterConstruction; override;
@@ -165,7 +163,6 @@ type
     property AsForeign: Integer read ReadAsForeign write WriteAsForeign; // alias for as integer for foreign fields
 
     property IsNull: Boolean read ReadIsNull write WriteIsNull;
-    property IsEmpty: Boolean read ReadIsEmpty;
     property IsExists: Boolean read ReadIsExists;
 
     procedure LoadFromStream(Stream: TStream); virtual;
@@ -214,7 +211,6 @@ type
     function GetNameValue(Seperator: string = '='): String;
   published
     property Value;
-    property IsEmpty;
     property IsNull;
     
     property AsVariant;
@@ -342,11 +338,6 @@ end;
 function TmnCustomField.ReadAsTrimString: string;
 begin
   Result := Trim(AsString);
-end;
-
-function TmnCustomField.GetIsEmpty: Boolean;
-begin
-  Result := IsNull;
 end;
 
 function TmnCustomField.GetIsNull: Boolean;
@@ -681,14 +672,6 @@ end;
 function TmnCustomField.ReadIsExists: Boolean;
 begin
   Result := Self <> nil;
-end;
-
-function TmnCustomField.ReadIsEmpty: Boolean;
-begin
-  if Self <> nil then
-    Result := IsNull
-  else
-    Result := True;
 end;
 
 function TmnCustomField.ReadIsNull: Boolean;

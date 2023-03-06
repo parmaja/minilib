@@ -8,6 +8,7 @@ uses
   System.SysUtils, Windows, Classes,
   Json, ioUtils,
   mnUtils, prmClasses, mnConfigs,
+  mnFields,
   mnDON, mnJSON;
 
 var
@@ -154,11 +155,11 @@ begin
       var v := Json3['"books.zaher'].AsString;
       var v := Json3['books']['zaher'].AsString;
 }
-
-
       var Json4 := JsonParseFileValue('test.json', []);
       Writeln(Json4['Books']['Library'].AsString);
       Writeln(Json4['Books']['Book1']['Title'].AsString);
+      Writeln(Json4.ByPath('Books.Book1.Title').AsString);
+//      Writeln(Json4.ByPath('"Books"."Book1"."Title"').AsString); //TODO
       Writeln(Json4.ByPath('Books.Book1.Title').AsString);
       Writeln(Json4.ByPath('Books\Book1\Title', '\').AsString);
       Writeln(Json4.ByPath(['Books','Book1','Title']).AsString);

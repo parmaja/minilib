@@ -362,7 +362,6 @@ type
   published
     //property IsBlob;
     //property BlobType;
-    property IsEmpty;
     property IsNull;
     property Value;
     property AsVariant;
