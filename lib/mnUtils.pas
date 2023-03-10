@@ -264,12 +264,11 @@ function Hex2String(const vData: string): string; overload;
 //Files Utils
 
 type
-  TEnumFilesOptions = set of (efDirectory, efFile);
+  TEnumFilesOptions = set of (efFile, efDirectory, efFullPath);
   //If set Resume to false it will stop loop
   TEnumFilesCallback = procedure(AObject: TObject; const FileName: string; Count, Level:Integer; IsDirectory: Boolean; var Resume: Boolean);
 
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions; FullPath: Boolean = False); overload;
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean = False); overload;
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
 function FirstFile(Path, Files: string): string;
 function DeleteFiles(Path, Files: string): Integer;
 function GetSizeOfFile(const vFile: string): Int64; //GetFileSize
@@ -1852,7 +1851,7 @@ begin
     Result := -1;
 end;
 
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions; FullPath: Boolean); overload;
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions); overload;
 var
   R: integer;
   SearchRec: TSearchRec;
@@ -1865,7 +1864,7 @@ begin
       or ((efFile in Options) and ((SearchRec.Attr and faDirectory) <> faDirectory)))
       and ((SearchRec.Name <> '.') and (SearchRec.Name <> '..')) then
     begin
-      if FullPath then
+      if efFullPath in Options then
         FileList.Add(Folder + SearchRec.Name)
       else
         FileList.Add(SearchRec.Name);
@@ -1875,11 +1874,6 @@ begin
   FindClose(SearchRec);
 end;
 
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean);
-begin
-  EnumFiles(FileList, Folder, Filter, [efDirectory, efFile], FullPath);
-end;
-
 function DeleteFiles(Path, Files: string): Integer;
 var
   FileList: TStringList;
@@ -1887,7 +1881,7 @@ var
 begin
   FileList := TStringList.Create;
   try
-    EnumFiles(FileList, Path, Files, [efFile], True);
+    EnumFiles(FileList, Path, Files, [efFile, efFullPath]);
     Result := FileList.Count;
     for f in FileList do
       DeleteFile(f);
@@ -1902,7 +1896,7 @@ var
 begin
   FileList := TStringList.Create;
   try
-    EnumFiles(FileList, Path, Files, [efFile], True);
+    EnumFiles(FileList, Path, Files, [efFile, efFullPath]);
     if FileList.Count > 0 then
       Result := FileList[0]
     else

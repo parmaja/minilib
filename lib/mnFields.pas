@@ -20,6 +20,7 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, Variants, Contnrs,
+  {$ifndef FPC} Types,{$endif}
   mnClasses, mnUtils;
 
 type

@@ -40,9 +40,9 @@ uses
 
 type
   TJSONParseOption = (
-    jpoUnstrict,
-    jpoSafe,
-    jpoUTF8 //TODO
+    jsoStrict,
+    jsoSafe,
+    jsoUTF8 //TODO
   );
   TJSONParseOptions = set of TJSONParseOption;
 
@@ -63,7 +63,11 @@ type
   TmnJSONParser = record
   private
     type
-      TExpect = (exValue, exName, exAssign, exNext);
+      TExpect = (exValue, exName, exAssign, exNext, exEnd);
+      TExpects = set of TExpect;
+
+      TContext = (cxPair, cxArray);
+      TContexts = set of TContext;
 
       TToken = (
         tkNone,
@@ -73,8 +77,6 @@ type
         tkIdentifire,
         tkReturn //End of line to escape #10
       );
-
-      TContext = (cxPairs, cxArray);
 
       TStackItem = record
         Parent: TObject;
@@ -101,11 +103,15 @@ type
       StartString: Integer;
       Index: Integer;
       Options: TJSONParseOptions;
+    procedure RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
     procedure Pop; inline;
     procedure Push; inline;
     procedure Next; inline;
-    procedure Error(const Msg: string);
-  public
+    procedure CheckExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); inline;
+    procedure Error(const Msg: string); inline;
+    procedure ErrorBlock; inline;
+    procedure ErrorNotExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); //not inline
+    public
     procedure Init(AParent: TObject; vAcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
     procedure Parse(const Content: String);
     procedure Finish;
@@ -116,14 +122,14 @@ procedure JsonParseCallback(const Content: String; AParent: TObject; const Acqui
 implementation
 
 const
-  sNumberOpenChars = ['-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-  sNumberChars = sNumberOpenChars + ['.', 'x', 'h', 'a', 'b', 'c', 'd', 'e', 'f'];
+  sNumberChars = ['.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'x', 'h', 'a', 'b', 'c', 'd', 'e', 'f'];
+  sNumberOpenChars = sNumberChars + ['-', '+'];
 
-procedure RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
+procedure TmnJSONParser.RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
 begin
   if Line > 0 then
   begin
-    raise Exception.Create(AError + ' line: ' + Line.ToString + ' column: '+ Column.ToString)
+    raise Exception.Create(AError + ' :: line: ' + Line.ToString + ' column: '+ Column.ToString)
     {$ifdef FPC}
     at get_caller_addr(get_frame), get_caller_frame(get_frame)
     {$endif};
@@ -134,6 +140,33 @@ begin
     {$ifdef FPC}
     at get_caller_addr(get_frame), get_caller_frame(get_frame)
     {$endif};
+  end;
+end;
+
+procedure TmnJSONParser.ErrorNotExpected(AExpected: TExpects; AContexts: TContexts);
+var
+  Result: string;
+begin
+  if not (Expect in AExpected) then
+  begin
+    Result := 'Expected';
+    case Expect of
+      exName: Result := Result + ' name';
+      exValue: Result := Result + ' value';
+      exAssign: Result := Result + ' colon `:`';
+      exNext: Result := Result + ' comma `,`';
+    end;
+
+    RaiseError(Result)
+  end;
+
+  if not (Context in AContexts) then
+  begin
+    if Context = cxArray then
+      Error('Expected , or ] or EOF')
+    else
+      Error('Expected , or } or EOF');
+    RaiseError(Result);
   end;
 end;
 
@@ -155,9 +188,17 @@ begin
   Inc(ColumnNumber);
 end;
 
+procedure TmnJSONParser.CheckExpected(AExpected: TExpects; AContexts: TContexts);
+begin
+  if not (Expect in AExpected) or not (Context in AContexts) then
+  begin
+    ErrorNotExpected(AExpected, AContexts)
+  end;
+end;
+
 procedure TmnJSONParser.Error(const Msg: string);
 begin
-  if not (jpoSafe in Options) then
+  if not (jsoSafe in Options) then
     RaiseError(Msg, LineNumber, ColumnNumber);
 end;
 
@@ -169,17 +210,35 @@ begin
   StackIndex := 0;
   SetLength(Stack, 100); //* Buffing it for fast grow
   //initial/or continue(TODO: by param)
-  Context := cxPairs;
+  Context := cxPair;
   Expect := exValue;
   LineNumber := 1;
   ColumnNumber := 1;
   Pair := nil;
 end;
 
+procedure TmnJSONParser.ErrorBlock;
+begin
+  if Context = cxArray then
+    Error('Expected , or ] or EOF')
+  else
+    Error('Expected , or } or EOF');
+end;
+
 procedure TmnJSONParser.Finish;
 begin
-  if (Expect <> exNext) then
-    Error('End of string/file not expected');
+  if (Expect = exNext) then
+  begin
+    if StackIndex > 0 then
+    begin
+      if Context = cxPair then
+        Error('Expected } but found EOF')
+      else
+        Error('Expected ] but found EOF');
+    end
+  end
+  else if (Expect <> exEnd) then
+    Error('Expected EOF');
 end;
 
 procedure TmnJSONParser.Pop; {$ifdef FPC} inline; {$endif}
@@ -227,6 +286,11 @@ begin
         end;
         tkEscape:
         begin
+          if (jsoStrict in Options) then
+          begin
+            if CharInSet(Ch, [#0, #10, #13]) then
+              Error('End of line in string!');
+          end;
           case Ch of
             'b': StringBuffer := StringBuffer + #8;
             't': StringBuffer := StringBuffer + #9;
@@ -261,18 +325,24 @@ begin
                 Expect := exNext;
               end
               else
-                Error('Expected Next or End');
+                ErrorBlock;
               StringBuffer := '';
               Token := tkNone;
             end
             else
             begin
+              if (jsoStrict in Options) then
+              begin
+                if CharInSet(Ch, [#0, #10, #13]) then
+                  Error('End of line in string!');
+              end;
+
               if Ch = '\' then
               begin
                 StringBuffer := StringBuffer + Copy(Content, StartString, Index - StartString);
                 StartString := Index + 1;
                 Token := tkEscape;
-              end;
+              end
             end;
 
             //Next char yes, we do not need " anymore
@@ -294,7 +364,12 @@ begin
                 Expect := exNext;
               end
               else
-                Error('Expected Next or End');
+              begin
+                if Context = cxArray then
+                  Error('Expected , or ] or EOF')
+                else
+                  Error('Expected , or } or EOF');
+              end;
               Token := tkNone;
             end
             else
@@ -312,7 +387,7 @@ begin
                 Expect := exNext;
               end
               else
-                Error('Expected Next or End');
+                ErrorBlock;
               Token := tkNone;
             end
             else
@@ -337,33 +412,36 @@ begin
             end;
             'A'..'Z', 'a'..'z', '_':
             begin
+              CheckExpected([exName, exValue, exEnd]);
               StartString := Index;
               Token := tkIdentifire;
             end;
             '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
             begin
+              CheckExpected([exValue, exEnd]);
               StartString := Index;
               Token := tkNumber;
             end;
             '"':
             begin
+              CheckExpected([exName, exValue, exEnd]);
               StartString := Index + 1;
               Token := tkString;
             end;
             ':':
             begin
-              if Expect <> exAssign then
-                Error('Expected assign symbol :');
+              CheckExpected([exAssign], [cxPair]);
               Expect := exValue;
               Push;
               Parent := Pair;
             end;
             ',':
             begin
-              if Expect <> exNext then
-                Error('Not expected ,');
-              if Context = cxPairs then
+              CheckExpected([exNext]);
+              if Context = cxPair then
               begin
+                if StackIndex = 0 then
+                  Error('Expected EOF');
                 Pop;
                 Expect := exName;
               end
@@ -372,25 +450,31 @@ begin
             end;
             '{' :
             begin
-              if Expect <> exValue then
-                Error('Expected Value');
+              CheckExpected([exValue]);
               Push;
               AcquireProc(Parent, '', aqObject, AObject);
               Parent := AObject;
-              Context := cxPairs;
+              Context := cxPair;
               Expect := exName;
             end;
             '}' :
             begin
+              CheckExpected([exName, exNext], [cxPair]);
+              if StackIndex = 0 then
+                Error('Expected EOF');
               if Expect = exNext then
                 Pop;
+              if StackIndex = 0 then
+                Error('Expected EOF');
               Pop;
-              Expect := exNext;
+              if StackIndex < 0 then
+                Expect := exEnd
+              else
+                Expect := exNext;
             end;
             '[' :
             begin
-              if Expect <> exValue then
-                Error('Expected Value');
+              CheckExpected([exValue]);
               Push;
               AcquireProc(Parent, '', aqArray, AObject);
               Parent := AObject;
@@ -398,9 +482,17 @@ begin
             end;
             ']' :
             begin
+              CheckExpected([exNext], [cxArray]);
+              if StackIndex = 0 then
+                Error('Expected EOF');
               Pop;
-              Expect := exNext;
-            end;
+              if StackIndex < 0 then
+                Expect := exEnd
+              else
+                Expect := exNext;
+            end
+            else
+              Error('Illigal character: '+ Ch);
           end;
           Next;
         end;

@@ -363,6 +363,8 @@ function JsonParseFileValue(const FileName: string; Options: TJSONParseOptions =
 
 procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
 
+function JsonLintFile(const FileName: string; Options: TJSONParseOptions = []): string; //Return Error message
+
 //Used in JSON parser
 procedure JsonAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 
@@ -384,7 +386,15 @@ end;
 function JsonParseStringPair(const S: string; Options: TJSONParseOptions): TDON_Pair;
 begin
   Result := TDON_Root.Create(nil);
-  JsonParseCallback(s, Result, JsonAcquireCallback, Options);
+  try
+    JsonParseCallback(s, Result, JsonAcquireCallback, Options);
+  except
+    on E: Exception do
+    begin
+      FreeAndNil(Result);
+      raise;
+    end;
+  end
 end;
 
 function JsonParseStringValue(const S: string; Options: TJSONParseOptions): TDON_Value;
@@ -418,6 +428,36 @@ begin
     //JSon4.Serialize(Writer, True, 0);
   finally
     Serializer.Free;
+  end;
+end;
+
+function JsonLintString(const S: string; Options: TJSONParseOptions): TDON_Pair;
+begin
+  Result := TDON_Root.Create(nil);
+  try
+    JsonParseCallback(s, Result, JsonAcquireCallback, Options);
+  except
+    on E: Exception do
+    begin
+      FreeAndNil(Result);
+      raise;
+    end;
+  end
+end;
+
+function JsonLintFile(const FileName: string; Options: TJSONParseOptions = []): string; //Return Error message
+var
+  Pair: TDON_Pair;
+begin
+  Result := '';
+  try
+    Pair := JsonLintString(LoadFileString(FileName), Options);
+    FreeAndNil(Pair);
+  except
+    on E: Exception do
+    begin
+      Result := E.Message;
+    end;
   end;
 end;
 
@@ -852,7 +892,6 @@ end;
 
 function TDON_Object_Value.FindItem(const Name: string): TDON_Value;
 var
-  Pair: TDON_Pair;
   i: Integer;
 begin
   //for speed do not put it in FPairs.Find(Name)
