@@ -279,6 +279,7 @@ type
     FValue: TDON_Value;
     procedure SetPairValue(AValue: TDON_Value);
   protected
+    function FindItem(const Name: string): TDON_Value; override;
     function GetAsString: string; override;
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
@@ -360,8 +361,10 @@ function JsonParseStringValue(const S: string; Options: TJSONParseOptions = []):
 function JsonParseFilePair(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair;
 function JsonParseFileValue(const FileName: string; Options: TJSONParseOptions = []): TDON_Value;
 
+procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
+
+//Used in JSON parser
 procedure JsonAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
-//function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
 
 implementation
 
@@ -403,6 +406,19 @@ var
 begin
   Pair := JsonParseFilePair(FileName, Options);
   Result := Pair.ReleaseValue;
+end;
+
+procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
+var
+  Serializer: TStringsSerializer;
+begin
+  Serializer := TStringsSerializer.Create(Strings);
+  try
+    Serializer.Serialize(TJsonSerializeGernerator, Pair);
+    //JSon4.Serialize(Writer, True, 0);
+  finally
+    Serializer.Free;
+  end;
 end;
 
 { TSerializer }
@@ -710,7 +726,10 @@ end;
 
 function TDON_Value.GetValues(const Index: string): TDON_Value;
 begin
-  Result := FindItem(Index);
+  if Self = nil then
+    Result := nil
+  else
+    Result := FindItem(Index);
 end;
 
 procedure TDON_Value.SetValues(const Index: string; const Value: TDON_Value);
@@ -894,6 +913,14 @@ end;
 constructor TDON_Pair.Create(AParent: TDON_Object_Value);
 begin
   FParent := AParent;
+end;
+
+function TDON_Pair.FindItem(const Name: string): TDON_Value;
+begin
+  if (Self = nil) or (Value = nil) then
+    Result := nil
+  else
+    Result := Value.FindItem(Name);
 end;
 
 function TDON_Pair.GetAsString: string;
