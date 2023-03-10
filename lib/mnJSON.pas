@@ -51,12 +51,14 @@ type
     aqObject,
     aqArray,
     aqString,
-    aqNumber,
     aqIdentifier,
+    aqNumber,
     aqBoolean
   );
 
   TmnJsonAcquireProc = procedure(AParentObject: TObject; const Value: String; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+
+  { TmnJSONParser }
 
   TmnJSONParser = record
   private
@@ -82,8 +84,11 @@ type
       TStack = array of TStackItem;
 
     var
+      AcquireProc: TmnJsonAcquireProc;
+
       Stack: TStack;
       Parent: TObject;
+      Pair: TObject;
       Context: TContext;
       StackIndex: Integer;
       Expect: TExpect;
@@ -95,11 +100,15 @@ type
       StringBuffer: String;
       StartString: Integer;
       Index: Integer;
+      Options: TJSONParseOptions;
     procedure Pop; inline;
     procedure Push; inline;
     procedure Next; inline;
+    procedure Error(const Msg: string);
   public
-    procedure JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+    procedure Init(AParent: TObject; vAcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+    procedure Parse(const Content: String);
+    procedure Finish;
   end;
 
 procedure JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
@@ -146,6 +155,33 @@ begin
   Inc(ColumnNumber);
 end;
 
+procedure TmnJSONParser.Error(const Msg: string);
+begin
+  if not (jpoSafe in Options) then
+    RaiseError(Msg, LineNumber, ColumnNumber);
+end;
+
+procedure TmnJSONParser.Init(AParent: TObject; vAcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+begin
+  Options := vOptions;
+  AcquireProc := vAcquireProc;
+  Parent := AParent;
+  StackIndex := 0;
+  SetLength(Stack, 100); //* Buffing it for fast grow
+  //initial/or continue(TODO: by param)
+  Context := cxPairs;
+  Expect := exValue;
+  LineNumber := 1;
+  ColumnNumber := 1;
+  Pair := nil;
+end;
+
+procedure TmnJSONParser.Finish;
+begin
+  if (Expect <> exNext) then
+    Error('End of string/file not expected');
+end;
+
 procedure TmnJSONParser.Pop; {$ifdef FPC} inline; {$endif}
 begin
   Parent := Stack[StackIndex-1].Parent;
@@ -157,246 +193,234 @@ begin
   {$endif}
 end;
 
-procedure TmnJSONParser.JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+procedure TmnJSONParser.Parse(const Content: String);
 var
   AObject: TObject;
-  Pair: TObject;
-
-  procedure Error(const Msg: string);
-  begin
-    if not (jpoSafe in vOptions) then
-      RaiseError(Msg, LineNumber, ColumnNumber);
-  end;
 
 var
   Len: Int64;
   Ch: Char;
 begin
-
-  StackIndex := 0;
-  SetLength(Stack, 100); //* Buffing it for fast grow
-
   if Content = '' then
     exit;
 
   if (@AcquireProc = nil) then
     Error('JSON Parser: Acquire is nil');
+  if (Parent = nil) then
+    Error('JSON Parser: Parent is nil');
 
   Index := 1;
   Len := Length(Content);
 
   StartString := -1; //* for strings
 
-  //initial/or continue(TODO: by param)
-  Context := cxPairs;
-  Expect := exValue;
-  Parent := AParent;
-  Pair := nil;
-
   Token := tkNone;
-  LineNumber := 1;
-  ColumnNumber := 1;
-
-  repeat
-    Ch := Content[Index];
-    case Token of
-      tkReturn:
-      begin
-        if Ch = #10 then
-          Next;
-        Token := tkNone;
-      end;
-      tkEscape:
-      begin
-        case Ch of
-          'b': StringBuffer := StringBuffer + #8;
-          't': StringBuffer := StringBuffer + #9;
-          'n': StringBuffer := StringBuffer + #10;
-          'f': StringBuffer := StringBuffer + #12;
-          'r': StringBuffer := StringBuffer + #13;
-          '0': StringBuffer := StringBuffer + #0;
-          'u':
-          begin
-            //TODO: unicode escape
-          end
-          else
-            StringBuffer := StringBuffer + Ch;
-        end;
-        Next;
-        StartString := Index;
-        Token := tkString;
-      end;
-      tkString:
+  try
+    repeat
+      Ch := Content[Index];
+      case Token of
+        tkReturn:
         begin
-          if Ch = '"' then
-          begin
-            if Expect = exName then
+          if Ch = #10 then
+            Next;
+          Token := tkNone;
+        end;
+        tkEscape:
+        begin
+          case Ch of
+            'b': StringBuffer := StringBuffer + #8;
+            't': StringBuffer := StringBuffer + #9;
+            'n': StringBuffer := StringBuffer + #10;
+            'f': StringBuffer := StringBuffer + #12;
+            'r': StringBuffer := StringBuffer + #13;
+            '0': StringBuffer := StringBuffer + #0;
+            'u':
             begin
-              //Creating a Pair Item
-              AcquireProc(Parent, StringBuffer + Copy(Content, StartString, Index - StartString), aqPair, Pair);
-              Expect := exAssign;
-            end
-            else if Expect = exValue then
-            begin
-              AcquireProc(Parent, StringBuffer + Copy(Content, StartString, Index - StartString), aqString, AObject);
-              Expect := exNext;
+              //TODO: unicode escape
             end
             else
-              Error('Expected Next or End');
-            StringBuffer := '';
-            Token := tkNone;
-          end
-          else 
+              StringBuffer := StringBuffer + Ch;
+          end;
+          Next;
+          StartString := Index;
+          Token := tkString;
+        end;
+        tkString:
           begin
-            if Ch = '\' then
+            if Ch = '"' then
             begin
-              StringBuffer := StringBuffer + Copy(Content, StartString, Index - StartString);
-              StartString := Index + 1;
-              Token := tkEscape;
+              if Expect = exName then
+              begin
+                //Creating a Pair Item
+                AcquireProc(Parent, StringBuffer + Copy(Content, StartString, Index - StartString), aqPair, Pair);
+                Expect := exAssign;
+              end
+              else if Expect = exValue then
+              begin
+                AcquireProc(Parent, StringBuffer + Copy(Content, StartString, Index - StartString), aqString, AObject);
+                Expect := exNext;
+              end
+              else
+                Error('Expected Next or End');
+              StringBuffer := '';
+              Token := tkNone;
+            end
+            else
+            begin
+              if Ch = '\' then
+              begin
+                StringBuffer := StringBuffer + Copy(Content, StartString, Index - StartString);
+                StartString := Index + 1;
+                Token := tkEscape;
+              end;
+            end;
+
+            //Next char yes, we do not need " anymore
+            Next;
+          end;
+        tkIdentifire:
+          begin
+            if not CharInSet(Ch, ['A'..'Z', 'a'..'z', '0'..'9',  '_']) then
+            begin
+              if Expect = exName then
+              begin
+                //Creating a Pair Item
+                AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqPair, Pair);
+                Expect := exAssign;
+              end
+              else if Expect = exValue then
+              begin
+                AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqIdentifier, AObject);
+                Expect := exNext;
+              end
+              else
+                Error('Expected Next or End');
+              Token := tkNone;
+            end
+            else
+            begin
+              Next;
             end;
           end;
-
-          //Next char yes, we do not need " anymore
+        tkNumber:
+          begin
+            if not CharInSet(Ch, sNumberChars) then
+            begin
+              if Expect = exValue then
+              begin
+                AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqNumber, AObject);
+                Expect := exNext;
+              end
+              else
+                Error('Expected Next or End');
+              Token := tkNone;
+            end
+            else
+            begin
+              Next;
+            end;
+          end;
+        else
+        begin
+          case Ch of
+            ' ', #8, #9:; //* Nothing to do
+            #13:
+            begin
+              Inc(LineNumber);
+              ColumnNumber := 1;
+              Token := tkReturn;
+            end;
+            #10:
+            begin
+              Inc(LineNumber);
+              ColumnNumber := 1;
+            end;
+            'A'..'Z', 'a'..'z', '_':
+            begin
+              StartString := Index;
+              Token := tkIdentifire;
+            end;
+            '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+            begin
+              StartString := Index;
+              Token := tkNumber;
+            end;
+            '"':
+            begin
+              StartString := Index + 1;
+              Token := tkString;
+            end;
+            ':':
+            begin
+              if Expect <> exAssign then
+                Error('Expected assign symbol :');
+              Expect := exValue;
+              Push;
+              Parent := Pair;
+            end;
+            ',':
+            begin
+              if Expect <> exNext then
+                Error('Not expected ,');
+              if Context = cxPairs then
+              begin
+                Pop;
+                Expect := exName;
+              end
+              else
+                Expect := exValue;
+            end;
+            '{' :
+            begin
+              if Expect <> exValue then
+                Error('Expected Value');
+              Push;
+              AcquireProc(Parent, '', aqObject, AObject);
+              Parent := AObject;
+              Context := cxPairs;
+              Expect := exName;
+            end;
+            '}' :
+            begin
+              if Expect = exNext then
+                Pop;
+              Pop;
+              Expect := exNext;
+            end;
+            '[' :
+            begin
+              if Expect <> exValue then
+                Error('Expected Value');
+              Push;
+              AcquireProc(Parent, '', aqArray, AObject);
+              Parent := AObject;
+              Context := cxArray;
+            end;
+            ']' :
+            begin
+              Pop;
+              Expect := exNext;
+            end;
+          end;
           Next;
         end;
-      tkIdentifire:
-        begin
-          if not CharInSet(Ch, ['A'..'Z', 'a'..'z', '_']) then
-          begin
-            if Expect = exName then
-            begin
-              //Creating a Pair Item
-              AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqPair, Pair);
-              Expect := exAssign;
-            end
-            else if Expect = exValue then
-            begin
-              AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqIdentifier, AObject);
-              Expect := exNext;
-            end
-            else
-              Error('Expected Next or End');
-            Token := tkNone;
-          end
-          else
-          begin
-            Next;
-          end;
-        end;
-      tkNumber:
-        begin
-          if not CharInSet(Ch, sNumberChars) then
-          begin
-            if Expect = exValue then
-            begin
-              AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqNumber, AObject);
-              Expect := exNext;
-            end
-            else
-              Error('Expected Next or End');
-            Token := tkNone;
-          end
-          else
-          begin
-            Next;
-          end;
-        end;
-      else
-      begin
-        case Ch of
-          ' ', #8, #9:; //* Nothing to do
-          #13:
-          begin
-            Inc(LineNumber);
-            ColumnNumber := 1;
-            Token := tkReturn;
-          end;
-          #10:
-          begin
-            Inc(LineNumber);
-            ColumnNumber := 1;
-          end;
-          'A'..'Z', 'a'..'z', '_':
-          begin
-            StartString := Index;
-            Token := tkIdentifire;
-          end;
-          '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-          begin
-            StartString := Index;
-            Token := tkNumber;
-          end;
-          '"':
-          begin
-            StartString := Index + 1;
-            Token := tkString;
-          end;
-          ':':
-          begin
-            if Expect <> exAssign then
-              Error('Expected assign symbol :');
-            Expect := exValue;
-            Push;
-            Parent := Pair;
-          end;
-          ',':
-          begin
-            if Expect <> exNext then
-              Error('Not expected ,');
-            if Context = cxPairs then
-            begin
-              Pop;
-              Expect := exName;
-            end
-            else
-              Expect := exValue;
-          end;
-          '{' :
-          begin
-            if Expect <> exValue then
-              Error('Expected Value');
-            Push;
-            AcquireProc(Parent, '', aqObject, AObject);
-            Parent := AObject;
-            Context := cxPairs;
-            Expect := exName;
-          end;
-          '}' :
-          begin
-            if Expect = exNext then
-              Pop;
-            Pop;
-            Expect := exNext;
-          end;
-          '[' :
-          begin
-            if Expect <> exValue then
-              Error('Expected Value');
-            Push;
-            AcquireProc(Parent, '', aqArray, AObject);
-            Parent := AObject;
-            Context := cxArray;
-          end;
-          ']' :
-          begin
-            Pop;
-            Expect := exNext;
-          end;
-        end;
-        Next;
       end;
+    until (Ch=#0) or (Index > Len);
+  except
+    on E: Exception do
+    begin
+      RaiseError(E.Message, LineNumber, ColumnNumber);
     end;
-  until (Ch=#0) or (Index > Len);
-
-  if (Expect <> exNext) then
-    Error('End of string not expected');
+  end;
 end;
 
 procedure JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 var
   JSONParser: TmnJSONParser;
 begin
-  JSONParser.JsonParseCallback(Content, AParent, AcquireProc, vOptions);
+  JSONParser.Init(AParent, AcquireProc, vOptions);
+  JSONParser.Parse(Content);
+  JSONParser.Finish;
 end;
 
 initialization

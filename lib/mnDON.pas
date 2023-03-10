@@ -360,8 +360,8 @@ function JsonParseStringValue(const S: string; Options: TJSONParseOptions = []):
 function JsonParseFilePair(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair;
 function JsonParseFileValue(const FileName: string; Options: TJSONParseOptions = []): TDON_Value;
 
-procedure JsonAcquire(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
-function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
+procedure JsonAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+//function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
 
 implementation
 
@@ -381,7 +381,7 @@ end;
 function JsonParseStringPair(const S: string; Options: TJSONParseOptions): TDON_Pair;
 begin
   Result := TDON_Root.Create(nil);
-  JsonParseCallback(s, Result, JsonAcquire, Options);
+  JsonParseCallback(s, Result, JsonAcquireCallback, Options);
 end;
 
 function JsonParseStringValue(const S: string; Options: TJSONParseOptions): TDON_Value;
@@ -945,6 +945,10 @@ begin
     CreateValue;
     (AParentObject as TDON_Pair).Value  :=  v;
   end
+  {else if (AParentObject is TDON_Object_Value) then
+  begin
+    Result := (AParentObject as TDON_Object_Value).CreatePair(AValue);
+  end}
   else if (AParentObject is TDON_Array_Value) then
   begin
     CreateValue;
@@ -954,16 +958,16 @@ begin
     raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);
 end;
 
-procedure JsonAcquire(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+procedure JsonAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 begin
   case ValueType of
     aqPair: (AParentObject as TDON_Object_Value).AcquirePair(Value, AObject);
     aqObject: AObject := donAcquireValue(AParentObject, Value, donObject);
     aqArray: AObject := donAcquireValue(AParentObject, Value, donArray);
     aqString: AObject := donAcquireValue(AParentObject, Value, donString);
+    aqIdentifier: AObject := donAcquireValue(AParentObject, Value, donIdentifier);
     aqNumber: AObject := donAcquireValue(AParentObject, Value, donNumber);
     aqBoolean: AObject := donAcquireValue(AParentObject, Value, donBoolean);
-    aqIdentifier: AObject := donAcquireValue(AParentObject, Value, donIdentifier);
   end;
 end;
 
