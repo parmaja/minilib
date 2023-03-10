@@ -41,7 +41,8 @@ var
 begin
   DON := TDON_Root.Create(nil);
   try
-    //E := JsonLintFile('test\fail30.json', [jsoStrict]);
+    //E := JsonLintFile('test\fail09.json', [jsoStrict]);
+    //E := JsonLintFile('test.json', [jsoStrict]);
     //exit;
 
     Parser.Init(DON, @JsonAcquireCallback, []);

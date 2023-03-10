@@ -63,10 +63,16 @@ type
   TmnJSONParser = record
   private
     type
+      TState = (stNone, stOpen);
+
       TExpect = (exValue, exName, exAssign, exNext, exEnd);
       TExpects = set of TExpect;
 
-      TContext = (cxPair, cxArray);
+      TContext = (
+        cxPair,
+        cxArray
+      );
+
       TContexts = set of TContext;
 
       TToken = (
@@ -79,8 +85,9 @@ type
       );
 
       TStackItem = record
-        Parent: TObject;
+        State: TState;
         Context: TContext;
+        Parent: TObject;
       end;
 
       TStack = array of TStackItem;
@@ -92,6 +99,7 @@ type
       Parent: TObject;
       Pair: TObject;
       Context: TContext;
+      State: TState;
       StackIndex: Integer;
       Expect: TExpect;
 
@@ -103,13 +111,13 @@ type
       StartString: Integer;
       Index: Integer;
       Options: TJSONParseOptions;
+      ErrorMessage: String;
     procedure RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
-    procedure Pop; inline;
     procedure Push; inline;
+    procedure Pop; inline;
     procedure Next; inline;
     procedure CheckExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); inline;
     procedure Error(const Msg: string); inline;
-    procedure ErrorBlock; inline;
     procedure ErrorNotExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); //not inline
     public
     procedure Init(AParent: TObject; vAcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
@@ -122,25 +130,23 @@ procedure JsonParseCallback(const Content: String; AParent: TObject; const Acqui
 implementation
 
 const
-  sNumberChars = ['.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'x', 'h', 'a', 'b', 'c', 'd', 'e', 'f'];
-  sNumberOpenChars = sNumberChars + ['-', '+'];
+  sNumberChars = ['.', '-', '+',
+                  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                  'a', 'b', 'c', 'd', 'e', 'f', 'h', 'x',
+                  'A', 'B', 'C', 'D', 'E', 'F', 'H', 'X'
+                 ];
 
 procedure TmnJSONParser.RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
 begin
   if Line > 0 then
   begin
-    raise Exception.Create(AError + ' :: line: ' + Line.ToString + ' column: '+ Column.ToString)
-    {$ifdef FPC}
-    at get_caller_addr(get_frame), get_caller_frame(get_frame)
-    {$endif};
+    ErrorMessage := AError + ' :: line: ' + Line.ToString + ' column: '+ Column.ToString;
+    raise Exception.Create(ErrorMessage);
   end
   else
-  begin
-    raise Exception.Create(AError)
-    {$ifdef FPC}
-    at get_caller_addr(get_frame), get_caller_frame(get_frame)
-    {$endif};
-  end;
+    ErrorMessage := AError;
+  if not (jsoSafe in Options) then
+    raise Exception.Create(ErrorMessage)
 end;
 
 procedure TmnJSONParser.ErrorNotExpected(AExpected: TExpects; AContexts: TContexts);
@@ -162,10 +168,12 @@ begin
 
   if not (Context in AContexts) then
   begin
-    if Context = cxArray then
-      Error('Expected , or ] or EOF')
+    if StackIndex<0 then
+      Error('Expected EOF')
+    else if Context = cxArray then
+      Error('Expected in Array')
     else
-      Error('Expected , or } or EOF');
+      Error('Expected in Pairs');
     RaiseError(Result);
   end;
 end;
@@ -179,6 +187,7 @@ begin
     SetLength(Stack, StackIndex + 1);
   Stack[StackIndex].Parent := Parent;
   Stack[StackIndex].Context := Context;
+  Stack[StackIndex].State := State;
   StackIndex := StackIndex + 1;
 end;
 
@@ -198,8 +207,7 @@ end;
 
 procedure TmnJSONParser.Error(const Msg: string);
 begin
-  if not (jsoSafe in Options) then
-    RaiseError(Msg, LineNumber, ColumnNumber);
+  RaiseError(Msg, LineNumber, ColumnNumber);
 end;
 
 procedure TmnJSONParser.Init(AParent: TObject; vAcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
@@ -212,17 +220,10 @@ begin
   //initial/or continue(TODO: by param)
   Context := cxPair;
   Expect := exValue;
+  State := stOpen;
   LineNumber := 1;
   ColumnNumber := 1;
   Pair := nil;
-end;
-
-procedure TmnJSONParser.ErrorBlock;
-begin
-  if Context = cxArray then
-    Error('Expected , or ] or EOF')
-  else
-    Error('Expected , or } or EOF');
 end;
 
 procedure TmnJSONParser.Finish;
@@ -243,8 +244,11 @@ end;
 
 procedure TmnJSONParser.Pop; {$ifdef FPC} inline; {$endif}
 begin
+  if StackIndex = 0 then
+    Error('Expected EOF');
   Parent := Stack[StackIndex-1].Parent;
   Context := Stack[StackIndex-1].Context;
+  State := Stack[StackIndex-1].State;
 //    SetLength(Stack, High(Stack));
   StackIndex := StackIndex - 1;
   {$ifdef verbose}
@@ -325,7 +329,7 @@ begin
                 Expect := exNext;
               end
               else
-                ErrorBlock;
+                CheckExpected([exName, exValue], [Context]);
               StringBuffer := '';
               Token := tkNone;
             end
@@ -364,12 +368,7 @@ begin
                 Expect := exNext;
               end
               else
-              begin
-                if Context = cxArray then
-                  Error('Expected , or ] or EOF')
-                else
-                  Error('Expected , or } or EOF');
-              end;
+                CheckExpected([exName, exValue], [Context]);
               Token := tkNone;
             end
             else
@@ -387,7 +386,7 @@ begin
                 Expect := exNext;
               end
               else
-                ErrorBlock;
+                CheckExpected([exValue], [Context]);
               Token := tkNone;
             end
             else
@@ -440,13 +439,12 @@ begin
               CheckExpected([exNext]);
               if Context = cxPair then
               begin
-                if StackIndex = 0 then
-                  Error('Expected EOF');
                 Pop;
                 Expect := exName;
               end
               else
                 Expect := exValue;
+              State := stNone;
             end;
             '{' :
             begin
@@ -456,35 +454,38 @@ begin
               Parent := AObject;
               Context := cxPair;
               Expect := exName;
+              State := stOpen;
             end;
             '}' :
             begin
-              CheckExpected([exName, exNext], [cxPair]);
-              if StackIndex = 0 then
-                Error('Expected EOF');
+              if State = stOpen then
+                CheckExpected([exNext, exName], [cxPair])
+              else
+                CheckExpected([exNext], [cxPair]);
               if Expect = exNext then
                 Pop;
-              if StackIndex = 0 then
-                Error('Expected EOF');
               Pop;
               if StackIndex < 0 then
                 Expect := exEnd
               else
                 Expect := exNext;
             end;
-            '[' :
+            '[':
             begin
               CheckExpected([exValue]);
               Push;
               AcquireProc(Parent, '', aqArray, AObject);
               Parent := AObject;
               Context := cxArray;
+              Expect := exValue;
+              State := stOpen;
             end;
-            ']' :
+            ']':
             begin
-              CheckExpected([exNext], [cxArray]);
-              if StackIndex = 0 then
-                Error('Expected EOF');
+              if State = stOpen then
+                CheckExpected([exNext, exValue], [cxArray])
+              else
+                CheckExpected([exNext], [cxArray]);
               Pop;
               if StackIndex < 0 then
                 Expect := exEnd
@@ -492,7 +493,7 @@ begin
                 Expect := exNext;
             end
             else
-              Error('Illigal character: '+ Ch);
+              Error('Illigal character: ' + Ch + ' '+ IntToHex(ord(Ch)));
           end;
           Next;
         end;
@@ -501,7 +502,10 @@ begin
   except
     on E: Exception do
     begin
-      RaiseError(E.Message, LineNumber, ColumnNumber);
+      if (jsoSafe in Options) then
+        RaiseError(E.Message, LineNumber, ColumnNumber)
+      else
+        raise;
     end;
   end;
 end;
