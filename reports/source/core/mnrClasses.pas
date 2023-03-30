@@ -17,7 +17,8 @@ Rename AcceptMode to Resume
 interface
 
 uses
-  SysUtils, Classes, mnrLists, mnUtils, mnClasses;
+  SysUtils, Classes, Json, Generics.Collections, Types,
+  mnrLists, mnUtils, mnClasses;
 
 const
   ID_SECTION_BASE          = 0;
@@ -68,13 +69,13 @@ type
   TmnrFetch = record
     FetchMode: TmnrFetchMode;
     AcceptMode: TmnrAcceptMode;
-    ID: Integer;
-    Number: Integer;
+    ID: Int64;
     Locked: Boolean;
-    Data: TObject;
+    _Data: TObject;
+    Data: TJSONObject;
 
-    procedure Reset;
-    procedure Clear;
+    procedure Reset; //call in new fetch
+    procedure Clear; //call in start loop
   end;
 
   TOnRequest = procedure(vCell: TmnrCell) of object;
@@ -142,11 +143,12 @@ type
     FDesignRow: TmnrDesignRow;
     FSection: TmnrSection;
 
-    FID: Int64;
-    FNumber: Integer;
-    FRowIndex: Integer;
-    FLocked: Boolean;
-    FData: TObject;
+    Flocked: Boolean;
+    FJData: TJsonObject;
+    function GetJData: TJsonObject;
+    function GetID: Int64;
+    function GetLocked: Boolean;
+    function GetRowIndex: Integer;
   protected
     function GetFirst: TmnrCell;
     function GetLast: TmnrCell;
@@ -158,6 +160,9 @@ type
     function GetSection: TmnrSection;
     function GetByIndex(vIndex: Integer): TmnrCell;
   public
+    constructor Create(vNodes: TmnrNode);
+    destructor Destroy; override;
+
     function GetCellByIndex(I: Integer): TmnrCell;
     function FindCell(vName: string): TmnrCell;
     procedure ScaleCells;
@@ -172,11 +177,10 @@ type
     property First: TmnrCell read GetFirst;
     property Last: TmnrCell read GetLast;
 
-    property ID: Int64 read FID;
+    property ID: Int64 read GetID;
     property Locked: Boolean read FLocked;
-    property Number: Integer read FNumber;
-    property RowIndex: Integer read FRowIndex;
-    property Data: TObject read FData;
+    property RowIndex: Integer read GetRowIndex;
+    property JData: TJsonObject read FJData;
 
     property ByIndex[vIndex: Integer]: TmnrCell read GetByIndex;
   end;
@@ -508,6 +512,7 @@ type
     FAppendPageTotals: Boolean;
     FHitAppendTitles: Boolean;
     FRows: TmnObjectList<TmnrRow>;
+    FRowData: TJSONObject; //default row data
 
     function GetNext: TmnrSection;
     function GetNodes: TmnrSections;
@@ -515,7 +520,7 @@ type
     procedure SetNodes(const Value: TmnrSections);
     function GetLoopWay: TmnrSectionLoopWay;
   protected
-    function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode; virtual;
+    function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 
     procedure DoAppendDetailTotals(vSection: TmnrSection);
     procedure DoAppendPageTotals(vSection: TmnrSection);
@@ -1762,6 +1767,14 @@ begin
   FSectionLoopWay     := slwAuto;
   FRows := TmnObjectList<TmnrRow>.Create;
   FRows.OwnsObjects := False;
+
+  FRowData := TJSONObject.Create;
+  FRowData.AddPair('Int', 1);
+  FRowData.AddPair('number', 1.225);
+  FRowData.AddPair('check', False);
+  FRowData.AddPair('Int2', 1);
+  FRowData.AddPair('number2', 1.225);
+  FRowData.AddPair('check2', True);
 end;
 
 destructor TmnrSection.Destroy;
@@ -1770,6 +1783,7 @@ begin
   FDesignRows.Free;
   FReferencesRows.Free;
   FreeAndNil(FRows);
+  FreeAndNil(FRowData);
   inherited;
 end;
 
@@ -1782,10 +1796,16 @@ begin
   else
     Report.Fetch(Self, vParams);
 
+
   if vParams.Data<>nil then Report.RowsData.Add(vParams.Data);
 
   Result := vParams.AcceptMode;
 end;
+
+type
+  THackJson = class(TJSONValue)
+    FMembers: TList<TJSONPair>;
+  end;
 
 procedure TmnrSection.FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow);
 var
@@ -1795,6 +1815,9 @@ var
   aRow: TmnrRow;
   //c: TmnrCell;
   Accepted: Boolean;
+  i: Integer;
+  p: TJSONPair;
+  c: Integer;
 begin
   aDesignRow := DesignRows.First;
   if aDesignRow <> nil then
@@ -1803,12 +1826,30 @@ begin
     begin
       aRow := Report.CreateNewRow(Self, vReference);
       try
-        aRow.FID        := vParams.ID;
-        aRow.FNumber    := vParams.Number;
         aRow.FLocked    := vParams.Locked;
-        aRow.FData      := vParams.Data;
-        aRow.FRowIndex  := vIndex;
         aRow.FDesignRow := aDesignRow;
+
+        aRow.JData.AddPair('ID', vParams.ID);
+        //aRow.JData.AddPair('Number', vParams.Number);
+        aRow.JData.AddPair('Locked', vParams.Locked);
+        aRow.JData.AddPair('Index', vIndex);
+
+        if vParams.Data<>nil then
+        begin
+          {c := vParams.Data.Count;
+          while c<>0 do
+          begin
+            p := vParams.Data.Pairs[c-1];
+            THackJson(vParams.Data).FMembers.RemoveItem(p, FromEnd); //faster than clone but not safe
+            aRow.JData.AddPair(p);
+            Dec(c);
+          end;}
+
+
+          for i:=0 to vParams.Data.Count-1 do
+            aRow.JData.AddPair(vParams.Data.Pairs[i].Clone as TJSONPair);
+        end;
+
 
         //note data may be nil
         DoUpdateRowData(aRow, vParams.Data, aDesignRow.Next=nil);
@@ -2342,6 +2383,12 @@ begin
   Result.Registered;
 end;
 
+constructor TmnrRow.Create(vNodes: TmnrNode);
+begin
+  inherited Create(vNodes);
+  FJData := TJSONObject.Create;
+end;
+
 procedure TmnrRow.DescaleCells;
 var
   c: TmnrCell;
@@ -2355,6 +2402,12 @@ begin
       c := c.Next as TmnrCell;
     until (c = nil);
   end;
+end;
+
+destructor TmnrRow.Destroy;
+begin
+  FreeAndNil(FJData);
+  inherited;
 end;
 
 function TmnrRow.FindCell(vName: string): TmnrCell;
@@ -2423,9 +2476,32 @@ begin
   Result := TmnrCell(inherited GetFirst);
 end;
 
+function TmnrRow.GetID: Int64;
+begin
+  Result := JData.GetValue<Int64>('ID', 0);
+end;
+
+function TmnrRow.GetJData: TJsonObject;
+begin
+  {if FJData<>nil then
+    Result := FJData
+  else if Section<>nil then
+    Result := Section.FRowData
+  else
+    Result := nil;}
+  if FJData=nil then FJData := TJSONObject.Create;
+  Result := FJData;
+end;
+
 function TmnrRow.GetLast: TmnrCell;
 begin
   Result := TmnrCell(inherited GetLast);
+end;
+
+function TmnrRow.GetLocked: Boolean;
+begin
+  //Result := JData.GetValue<Boolean>('Locked', False); //slow fill
+  Result := Flocked;
 end;
 
 function TmnrRow.GetNext: TmnrRow;
@@ -2441,6 +2517,11 @@ end;
 function TmnrRow.GetReferencesRow: TmnrReferencesRow;
 begin
   Result := FReferencesRow;
+end;
+
+function TmnrRow.GetRowIndex: Integer;
+begin
+  Result := JData.GetValue<Integer>('Index', 0);
 end;
 
 function TmnrRow.GetSection: TmnrSection;
@@ -3689,9 +3770,9 @@ end;
 procedure TmnrFetch.Reset;
 begin
   ID     := 0;
-  Number := 0;
   Locked := False;
   Data   := nil;
+  _Data  := nil;
 end;
 
 initialization
