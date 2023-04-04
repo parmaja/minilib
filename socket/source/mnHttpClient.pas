@@ -541,11 +541,11 @@ begin
   // if FStream.Connected then
   begin
     Client.Stream.ReadLine(s, True);
-    //s := Trim(s);
+    s := Trim(s);
     repeat
       Items.AddItem(s, ':', True);
       Client.Stream.ReadLine(s, True);
-      //s := Trim(s);
+      s := Trim(s);
     until { FStream.Connected or } (s = '');
   end;
   ReceiveHeaders;

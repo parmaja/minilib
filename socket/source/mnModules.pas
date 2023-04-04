@@ -127,7 +127,7 @@ type
   end;
 
   TmodRespondState = (
-    resRespondSent, //reposnd line, first line before header
+    resHeadSent, //reposnd line, first line before header
     resHeaderSent,
     resContentsSent,
     //resSuccess,
@@ -145,6 +145,8 @@ type
     FHeader: TmnHeader;
     //FRespondResult: TmodRespondResult;
     FStream: TmnBufferStream;
+  protected
+    function HeadText: string; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -155,13 +157,11 @@ type
 
     //Add new header, can dublicate
     procedure PostHeader(AName, AValue: String); virtual;
-    //Update header by name
-    procedure SetHeader(AName, AValue: String); virtual;
     //Update header by name but adding new value to old value
     procedure PutHeader(AName, AValue: String); virtual;
-    procedure SendHeader; virtual;
 
-    procedure SendRespond(ALine: String); virtual;
+    procedure SendHeader; virtual;
+    procedure SendHead; virtual;
   end;
 
   TmodModule = class;
@@ -505,18 +505,22 @@ begin
   inherited;
 end;
 
-procedure TmodRespond.PostHeader(AName, AValue: String);
+function TmodRespond.HeadText: string;
 begin
-  if resHeaderSent in FStates then
-    raise TmodModuleException.Create('Header is sent');
-  Header.Add(AName, AValue);
+  Result := '';
 end;
 
-procedure TmodRespond.SetHeader(AName, AValue: String);
+procedure TmodRespond.PostHeader(AName, AValue: String);
+var
+  itm: TmnField;
 begin
+  if resContentsSent in FStates then
+    raise TmodModuleException.Create('Content is sent');
+
+  itm := Header.Add(AName, AValue);
+
   if resHeaderSent in FStates then
-    raise TmodModuleException.Create('Header is sent');
-  Header.Put(AName, AValue);
+    Stream.WriteLineUTF8(itm.GetNameValue(': '));
 end;
 
 procedure TmodRespond.PutHeader(AName, AValue: String);
@@ -531,12 +535,11 @@ var
   item: TmnField;
   s: String;
 begin
-  if not (resRespondSent in FStates) then
-    raise TmodModuleException.Create('Respond line not sent');
   if resHeaderSent in FStates then
     raise TmodModuleException.Create('Header is sent');
   FStates := FStates + [resHeaderSent];
 
+  SendHead;
 
   for item in Header do
   begin
@@ -555,12 +558,15 @@ begin
   Stream.WriteLineUTF8(Utf8string(s));}
 end;
 
-procedure TmodRespond.SendRespond(ALine: String);
+procedure TmodRespond.SendHead;
 begin
-  if resRespondSent in FStates then
+  if resHeadSent in FStates then
     raise TmodModuleException.Create('Respond is sent');
-  Stream.WriteLineUTF8(ALine);
-  FStates := FStates + [resRespondSent];
+  if HeadText='' then
+    raise TmodModuleException.Create('head not set');
+
+  Stream.WriteLineUTF8(HeadText);
+  FStates := FStates + [resHeadSent];
 end;
 
 { TmodRequest }

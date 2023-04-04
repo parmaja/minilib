@@ -47,6 +47,16 @@ uses
 type
 
   TmodWebModule = class;
+  THttpResult = (
+    hrNone,
+    hrOK,
+    hrMovedTemporarily, //302
+    hrNotFound
+  );
+
+  THttpResultHelper = record helper for THttpResult
+    function ToString: string;
+  end;
 
   { TmodHttpRespond }
 
@@ -60,8 +70,11 @@ type
     FCookies: TmnParams;
     FRoot: string; //Document root folder
     FHost: string;
+    FHttpResult: THttpResult;
     procedure SetCompressClass(AValue: TmnCompressStreamProxyClass);
     procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
+  protected
+    function HeadText: string; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -73,6 +86,7 @@ type
     property ContentLength: Integer read FContentLength write FContentLength;
     property CompressClass: TmnCompressStreamProxyClass read FCompressClass write SetCompressClass;
     property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
+    property HttpResult: THttpResult read FHttpResult write FHttpResult;
     //Document root folder
     property Root: string read FRoot;
     property Host: string read FHost;
@@ -269,6 +283,7 @@ begin
   inherited Create;
   FCookies := TmnParams.Create;
   FURIParams := TmnParams.Create;
+  FHttpResult := hrNone;
 end;
 
 destructor TmodHttpRespond.Destroy;
@@ -276,6 +291,11 @@ begin
   FreeAndNil(FCookies);
   FreeAndNil(FURIParams);
   inherited Destroy;
+end;
+
+function TmodHttpRespond.HeadText: string;
+begin
+  Result := HttpResult.ToString;
 end;
 
 procedure TmodHttpRespond.SendHeader;
@@ -371,7 +391,7 @@ procedure TmodURICommand.RespondNotFound;
 var
   Body: string;
 begin
-  Respond.SendRespond('HTTP/1.1 200 OK');
+  Respond.HttpResult := hrOK;
   Respond.PostHeader('Content-Type', 'text/html');
   Respond.SendHeader;
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
@@ -485,9 +505,10 @@ begin
         else}
           aDocSize := aDocStream.Size;
 
+        Respond.HttpResult := hrOK;
+
         if Active then
         begin
-          Respond.SendRespond('HTTP/1.1 200 OK');
           Respond.PostHeader('Content-Type', DocumentToContentType(vDocument));
           if Respond.KeepAlive then
             Respond.PostHeader('Content-Length', IntToStr(aDocSize));
@@ -533,9 +554,9 @@ begin
   begin
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
     Request.Address := IncludeURLDelimiter(Request.Address);
-    //Respond.SendRespond('HTTP/1.1 301 Moved Permanently');
-    Respond.SendRespond('HTTP/1.1 302 Found');
-    //Respond.SendRespond('HTTP/1.1 307 Temporary Redirect');
+    //Respond.SendHead('HTTP/1.1 301 Moved Permanently');
+    Respond.HttpResult := hrMovedTemporarily;
+    //Respond.SendHead('HTTP/1.1 307 Temporary Redirect');
 
     Respond.PostHeader('Location', Request.CollectURI);
     Respond.SendHeader;
@@ -553,7 +574,8 @@ end;
 procedure TmodServerInfoCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.SendRespond('OK');
+  Respond.HttpResult := hrOK;
+  Respond.SendHeader;
   //Respond.Stream.WriteLine('Server is running on port: ' + Module.Server.Port);
   Respond.Stream.WriteLine('the server is: "' + ParamStr(0) + '"');
 end;
@@ -733,6 +755,17 @@ begin
   ARequest.URI := URIDecode(ARequest.URI);
   //ARequest.ParsePath(ARequest.URI); duplicate in parse head :)
   ARequest.Command := ARequest.Method;
+end;
+
+{ THttpResultHelper }
+
+function THttpResultHelper.ToString: string;
+begin
+  Result := 'HTTP/1.1 ';
+  case Self of
+    hrOK: Result := Result + '200 OK';
+    hrNotFound: Result := Result + '404 NotFound';
+  end;
 end;
 
 initialization

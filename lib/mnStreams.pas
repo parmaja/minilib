@@ -251,6 +251,7 @@ type
     function WriteRawByte(const S: UTF8String): TFileSize; overload;
     function WriteUTF8(const S: UTF8String): TFileSize; overload;
     function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
+    function WriteLineUTF8(const S: string): TFileSize; overload;
 
     {$ifndef NEXTGEN}
     function WriteAnsiString(const S: ansistring): TFileSize; overload;
@@ -856,6 +857,11 @@ begin
     EOL := EndOfLine;
     Result := Result + Write(Pointer(EOL)^, Length(EOL));
   end;
+end;
+
+function TmnBufferStream.WriteLineUTF8(const S: string): TFileSize;
+begin
+  Result := WriteLineUTF8(UTF8Encode(s));
 end;
 
 function TmnBufferStream.WriteLine(const S: ansistring): TFileSize;
