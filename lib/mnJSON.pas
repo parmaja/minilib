@@ -41,6 +41,7 @@ uses
 type
   TJSONParseOption = (
     jsoStrict,
+    jsoNoDuplicate,//TODO do not allow duplicate names
     jsoSafe,
     jsoUTF8 //TODO
   );
@@ -217,7 +218,6 @@ begin
   Parent := AParent;
   StackIndex := 0;
   SetLength(Stack, 100); //* Buffing it for fast grow
-  //initial/or continue(TODO: by param)
   Context := cxPair;
   Expect := exValue;
   State := stOpen;
@@ -249,7 +249,6 @@ begin
   Parent := Stack[StackIndex-1].Parent;
   Context := Stack[StackIndex-1].Context;
   State := Stack[StackIndex-1].State;
-//    SetLength(Stack, High(Stack));
   StackIndex := StackIndex - 1;
   {$ifdef verbose}
   Writeln(Format('%0.4d ', [LineNumber])+RepeatString('    ', Length(Stack)) + 'Pop '+ TRttiEnumerationType.GetName(Context) +' '+TRttiEnumerationType.GetName(Expect));
