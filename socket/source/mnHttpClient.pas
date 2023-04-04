@@ -169,6 +169,7 @@ type
     function Post(const vURL: UTF8String; vData: UTF8String): Boolean; overload;
 
     function Get(const vURL: UTF8String): Boolean;
+    function CookiesStr: string;
 
     function ReadStream(AStream: TStream): TFileSize; overload;
     procedure ReadStream(AStream: TStream; Count: Integer); overload;
@@ -421,9 +422,15 @@ end;
 
 procedure TmnHttpRequest.SendPost(vData: PByte; vCount: Cardinal);
 
-  procedure _Write(const s: string);
+  procedure _Write(const s: UTF8String); overload;
   begin
     Client.Stream.WriteLineUTF8(s);
+    //TFile.AppendAllText('c:\temp\h.Log', s+#13);
+  end;
+
+  procedure _Write(const s: String); overload;
+  begin
+    _Write(UTF8Encode(s));
     //TFile.AppendAllText('c:\temp\h.Log', s+#13);
   end;
 
@@ -440,10 +447,11 @@ begin
   for f in Items do
     if f.AsString <> '' then
       _Write(f.FullString);
-  for f in Client.Cookies do
-    s := f.Value + ';';
+
+  s := UTF8Encode(Client.CookiesStr);
   if s <> '' then
     _Write('Cookie: ' + s);
+
   _Write('Content-Length: ' + IntToStr(vCount));
   _Write('');
 
@@ -533,11 +541,11 @@ begin
   // if FStream.Connected then
   begin
     Client.Stream.ReadLine(s, True);
-    s := Trim(s);
+    //s := Trim(s);
     repeat
       Items.AddItem(s, ':', True);
       Client.Stream.ReadLine(s, True);
-      s := Trim(s);
+      //s := Trim(s);
     until { FStream.Connected or } (s = '');
   end;
   ReceiveHeaders;
@@ -562,6 +570,13 @@ end;
 function TmnHttpClient.Connected: Boolean;
 begin
   Result := FStream.Connected;
+end;
+
+function TmnHttpClient.CookiesStr: string;
+begin
+  Result := '';
+  for var c in Cookies do
+    Result := Result + c.Value + '; '
 end;
 
 procedure TmnHttpClient.Connect(const vURL: UTF8String);
@@ -592,6 +607,7 @@ end;
 function TmnHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 begin
   Connect(vUrl);
+
   Request.SendPost(vData, vCount);
   //
   Result := Stream.Connected;
@@ -679,7 +695,6 @@ var
   aCompressClass: TmnCompressStreamProxyClass;
 begin
   Response.Receive;
-
 
   s := Response.Header['Set-Cookie'];
   Cookies.Delimiter := ';';

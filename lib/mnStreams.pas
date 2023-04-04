@@ -1364,7 +1364,9 @@ var
   begin
     if vBI >= aCount then
     begin
-      if (Read(b, 1)=1) then
+      vErr := Read(b, 1)<>1;
+
+      if not vErr then
       begin
         if aCount=ABufferSize then
         begin
@@ -1375,10 +1377,7 @@ var
         Inc(t, aCount);
         t^ := b;
         Inc(aCount);
-        vErr := False;
-      end
-      else
-        vErr := True;
+      end;
     end
     else
       vErr := False;
@@ -1789,8 +1788,6 @@ begin
   inherited Create;
   FStream := AStream;
 end;
-
-
 
 end.
 

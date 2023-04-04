@@ -537,6 +537,7 @@ begin
     raise TmodModuleException.Create('Header is sent');
   FStates := FStates + [resHeaderSent];
 
+
   for item in Header do
   begin
     s := item.GetNameValue(': ');
@@ -544,6 +545,14 @@ begin
     Stream.WriteLineUTF8(S);
   end;
   Stream.WriteLineUTF8(Utf8string(''));
+
+  {s := '';
+  for item in Header do
+  begin
+    s := s + item.GetNameValue(': ')+Stream.EndOfLine;
+  end;
+ // s := s + Stream.EndOfLine;
+  Stream.WriteLineUTF8(Utf8string(s));}
 end;
 
 procedure TmodRespond.SendRespond(ALine: String);
