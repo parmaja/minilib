@@ -50,6 +50,7 @@ type
   THttpResult = (
     hrNone,
     hrOK,
+    hrError,
     hrMovedTemporarily, //302
     hrNotFound
   );
@@ -75,10 +76,11 @@ type
     procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
   protected
     function HeadText: string; override;
+    procedure DoSendHeader; override;
+    procedure DoHeaderSent; override;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure SendHeader; override;
     property Cookies: TmnParams read FCookies;
     property URIParams: TmnParams read FURIParams;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
@@ -140,6 +142,8 @@ type
     procedure DoCreateCommands; override;
 
     procedure Log(S: string); override;
+    procedure InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean); override;
+
   public
     destructor Destroy; override;
     property DocumentRoot: string read FDocumentRoot write SetDocumentRoot;
@@ -293,17 +297,9 @@ begin
   inherited Destroy;
 end;
 
-function TmodHttpRespond.HeadText: string;
+procedure TmodHttpRespond.DoHeaderSent;
 begin
-  Result := HttpResult.ToString;
-end;
-
-procedure TmodHttpRespond.SendHeader;
-begin
-  if Cookies.Count > 0 then
-    PostHeader('Cookies', Cookies.AsString);
-
-  inherited; //*<----------
+  inherited;
 
   if CompressClass <> nil then
   begin
@@ -315,6 +311,18 @@ begin
     else
       CompressProxy.Enable;
   end;
+end;
+
+procedure TmodHttpRespond.DoSendHeader;
+begin
+  inherited;
+  if Cookies.Count > 0 then
+    AddHeader('Cookies', Cookies.AsString);
+end;
+
+function TmodHttpRespond.HeadText: string;
+begin
+  Result := HttpResult.ToString;
 end;
 
 { TmodHttpPostCommand }
@@ -373,6 +381,14 @@ begin
   }
 end;
 
+procedure TmodWebModule.InternalError(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream; var Handled: Boolean);
+begin
+  inherited;
+  ARespondStream.WriteLineUTF8('HTTP/1.1 500 Internal Server Error');
+  ARespondStream.WriteLineUTF8('');
+  Handled := True;
+end;
+
 destructor TmodWebModule.Destroy;
 begin
   FreeAndNil(FDefaultDocument);
@@ -392,7 +408,7 @@ var
   Body: string;
 begin
   Respond.HttpResult := hrOK;
-  Respond.PostHeader('Content-Type', 'text/html');
+  Respond.AddHeader('Content-Type', 'text/html');
   Respond.SendHeader;
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
     '<BODY><H1>404 Not Found</H1>The requested URL ' +
@@ -509,9 +525,9 @@ begin
 
         if Active then
         begin
-          Respond.PostHeader('Content-Type', DocumentToContentType(vDocument));
+          Respond.AddHeader('Content-Type', DocumentToContentType(vDocument));
           if Respond.KeepAlive then
-            Respond.PostHeader('Content-Length', IntToStr(aDocSize));
+            Respond.AddHeader('Content-Length', IntToStr(aDocSize));
         end;
 
         Respond.SendHeader;
@@ -558,7 +574,7 @@ begin
     Respond.HttpResult := hrMovedTemporarily;
     //Respond.SendHead('HTTP/1.1 307 Temporary Redirect');
 
-    Respond.PostHeader('Location', Request.CollectURI);
+    Respond.AddHeader('Location', Request.CollectURI);
     Respond.SendHeader;
   end
   else
@@ -684,8 +700,8 @@ begin
   if Module.UseKeepAlive and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive') then
   begin
     Respond.KeepAlive := True;
-    Respond.PostHeader('Connection', 'Keep-Alive');
-    Respond.PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
+    Respond.AddHeader('Connection', 'Keep-Alive');
+    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
 
   if Module.UseCompressing then
@@ -697,7 +713,7 @@ begin
     else
       Respond.CompressClass := nil;
     if Respond.CompressClass <> nil then
-      Respond.PostHeader('Content-Encoding', Respond.CompressClass.GetCompressName);
+      Respond.AddHeader('Content-Encoding', Respond.CompressClass.GetCompressName);
   end;
 
   if (Request.Header['Content-Length'].IsExists) then
@@ -764,6 +780,7 @@ begin
   Result := 'HTTP/1.1 ';
   case Self of
     hrOK: Result := Result + '200 OK';
+    hrError: Result := Result + '500 Internal Server Error';
     hrNotFound: Result := Result + '404 NotFound';
   end;
 end;
