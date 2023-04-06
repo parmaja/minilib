@@ -38,12 +38,6 @@ const
   cOSName = 'Linux';
   {$endif}
 
-{$ifdef FPC}
-{$else}
-  type
-    TStringArray = array of string;
-{$endif}
-
 type
   TConfOption = (
     coUseSubnames,

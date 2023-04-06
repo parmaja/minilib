@@ -483,7 +483,7 @@ begin
   else if Ext = 'json' then
     Result := 'application/json'
   else if Ext = 'js' then
-    Result := 'text/js'
+    Result := 'text/javascript'
   else
     Result := 'application/binary';
 end;
