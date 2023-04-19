@@ -51,7 +51,8 @@ type
     hrNone,
     hrOK,
     hrError,
-    hrMovedTemporarily, //302
+    hrMovedTemporarily, //307
+    hrFound, //302
     hrNotFound
   );
 
@@ -571,7 +572,7 @@ begin
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
     Request.Address := IncludeURLDelimiter(Request.Address);
     //Respond.SendHead('HTTP/1.1 301 Moved Permanently');
-    Respond.HttpResult := hrMovedTemporarily;
+    Respond.HttpResult := hrFound;
     //Respond.SendHead('HTTP/1.1 307 Temporary Redirect');
 
     Respond.AddHeader('Location', Request.CollectURI);
@@ -782,6 +783,8 @@ begin
     hrOK: Result := Result + '200 OK';
     hrError: Result := Result + '500 Internal Server Error';
     hrNotFound: Result := Result + '404 NotFound';
+    hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
+    hrFound: Result := Result + '302 Found';
   end;
 end;
 
