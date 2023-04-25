@@ -13,12 +13,14 @@
  *
  *
  }
- {
+ {  HEAD:
               userinfo       host      port
               ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
   GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top HTTP/1.1
   └┬┘    └─┬─┘   └───────────┬───────────┘└───────┬───────┘└───────────┬─────────────┘ └┬─┘ └─────┬┘
   method scheme          authority               path                query             fragment   protocol
+  └┬┘                                     └──┬──┘
+  Command                                  Module                     Params
 
   https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 
@@ -73,7 +75,7 @@ type
 
     //from URI :) URI = Address + Params
     Address: Utf8string;
-    Params: Utf8string;
+    Query: Utf8string;
 
     Path: Utf8string;
 
@@ -88,6 +90,7 @@ type
   private
     FHeader: TmnHeader;
     FStream: TmnBufferStream;
+    FContentLength: Integer;
     procedure SetRequestHeader(AValue: TmnHeader);
   protected
     Info: TmodRequestInfo;
@@ -102,13 +105,14 @@ type
     property URI: Utf8string read Info.URI write Info.URI;
     property Protocol: Utf8string read Info.Protocol write Info.Protocol;
     property Address: Utf8string read Info.Address write Info.Address;
-    property Params: Utf8string read Info.Params write Info.Params;
+    property Query: Utf8string read Info.Query write Info.Query;
     //for module
     property Path: Utf8string read Info.Path write Info.Path;
     property Module: String read Info.Module write Info.Module;
     property Command: String read Info.Command write Info.Command;
     property Client: String read Info.Client write Info.Client;
 
+    property ContentLength: Integer read FContentLength write FContentLength;
     property Stream: TmnBufferStream read FStream write FStream;
     property Header: TmnHeader read FHeader write SetRequestHeader;
     function CollectURI: string;
@@ -594,8 +598,8 @@ end;
 
 function TmodRequest.CollectURI: string;
 begin
-  if Params<>'' then
-    Result := Address+'?'+Params
+  if Query<>'' then
+    Result := Address+'?'+Query
   else
     Result := Address;
 end;
@@ -696,7 +700,6 @@ begin
       end
       else
         try
-          aModule.ParseHead(aRequest);
           aRequest.Client := RemoteIP;
           Result := aModule.Execute(aRequest, Stream, Stream);
         finally
@@ -1002,6 +1005,7 @@ begin
   Result.Status := [erSuccess];
 
 
+  ParseHead(ARequest);
   ParseHeader(ARequest.Header, ARequestStream);
 
   aCmd := RequestCommand(ARequest, ARequestStream, ARespondStream);
@@ -1145,7 +1149,7 @@ begin
   ARequest.Clear;
   ARequest.Raw := RequestLine;
   ParseRaw(RequestLine, ARequest.Info.Method, ARequest.Info.Protocol, ARequest.Info.URI);
-  ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Params);
+  ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Query);
 end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;

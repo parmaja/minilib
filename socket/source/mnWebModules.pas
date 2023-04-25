@@ -144,6 +144,8 @@ type
 
     procedure Log(S: string); override;
     procedure InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean); override;
+    procedure ParseHead(ARequest: TmodRequest); override;
+
 
   public
     destructor Destroy; override;
@@ -330,13 +332,24 @@ end;
 
 procedure TmodHttpPostCommand.RespondResult(var Result: TmodRespondResult);
 begin
-  if SameText(Request.Method, 'POST') and (Request.Header['Content-Type'].Have('application/json')) then
+  if SameText(Request.Method, 'POST') then
   begin
-    Contents := TMemoryStream.Create;
-    if Request.Stream <> nil then
-      Request.Stream.ReadStream(Contents, Respond.ContentLength);
-    Contents.Position := 0; //it is memory btw
-    //Contents.SaveToFile('d:\temp\json.json');
+    if (Request.Header['Content-Type'].Have('application/json')) then
+    begin
+      Contents := TMemoryStream.Create;
+      if Request.Stream <> nil then
+        Request.Stream.ReadStream(Contents, Request.ContentLength);
+      Contents.Position := 0; //it is memory btw
+      //Contents.SaveToFile('d:\temp\json.json');
+    end
+    else
+    begin
+      Contents := TMemoryStream.Create;
+      if Request.Stream <> nil then
+        Request.Stream.ReadStream(Contents, Request.ContentLength);
+      Contents.Position := 0; //it is memory btw
+      Contents.SaveToFile('c:\temp\1.txt');
+    end;
   end;
   inherited;
 end;
@@ -400,6 +413,12 @@ procedure TmodWebModule.Log(S: string);
 begin
   inherited;
   Modules.Log(S);
+end;
+
+procedure TmodWebModule.ParseHead(ARequest: TmodRequest);
+begin
+  inherited;
+  ARequest.Command := ARequest.Method;
 end;
 
 { TmodURICommand }
@@ -609,7 +628,7 @@ begin
   aFileName := Respond.URIParams.Values['FileName'];
   aFile := TFileStream.Create(Respond.Root + aFileName, fmCreate);
   try
-    Respond.Stream.ReadStream(aFile, Respond.ContentLength);
+    Respond.Stream.ReadStream(aFile, Request.ContentLength);
   finally
     aFile.Free;
   end;
@@ -696,7 +715,7 @@ end;
 procedure TmodHttpCommand.Prepare(var Result: TmodRespondResult);
 begin
   inherited;
-  ParseParams(Request.Params, Respond.URIParams);
+  ParseParams(Request.Query, Respond.URIParams);
 
   if Module.UseKeepAlive and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive') then
   begin
@@ -718,7 +737,7 @@ begin
   end;
 
   if (Request.Header['Content-Length'].IsExists) then
-    Respond.ContentLength := Request.Header['Content-Length'].AsInteger;
+    Request.ContentLength := Request.Header['Content-Length'].AsInteger;
 end;
 
 procedure TmodHttpCommand.Unprepare(var Result: TmodRespondResult);
