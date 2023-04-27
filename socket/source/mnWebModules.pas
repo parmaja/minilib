@@ -39,7 +39,7 @@ headers[2]
 interface
 
 uses
-  SysUtils, Classes, syncobjs, StrUtils,
+  SysUtils, Classes, syncobjs, StrUtils, //NetEncoding, Hash,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams,
   mnModules;
@@ -53,7 +53,8 @@ type
     hrError,
     hrMovedTemporarily, //307
     hrFound, //302
-    hrNotFound
+    hrNotFound,
+    hrSwitchingProtocols
   );
 
   THttpResultHelper = record helper for THttpResult
@@ -237,6 +238,16 @@ implementation
 //TODO slow function needs to improvements
 //https://stackoverflow.com/questions/1549213/whats-the-correct-encoding-of-http-get-request-strings
 
+{
+function HashWebSocketKey(const key: string): string;
+var
+  b: TBytes;
+begin
+  b := THashSHA1.GetHashBytes(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
+  Result := TNetEncoding.Base64String.EncodeBytesToString(b);
+end;
+}
+
 function URIDecode(const S: AnsiString; CodePage: Word = CP_UTF8): string;
 var
   c: AnsiChar;
@@ -384,7 +395,8 @@ end;
 procedure TmodWebModule.DoCreateCommands;
 begin
   inherited;
-  RegisterCommand('GET', TmodHttpGetCommand, true);
+  //RegisterCommand('GET', TmodHttpGetCommand, true);
+  RegisterCommand('GET', TmodHttpPostCommand, true);
   RegisterCommand('POST', TmodHttpPostCommand, true);
   RegisterCommand('Info', TmodServerInfoCommand);
   {
@@ -713,9 +725,19 @@ begin
 end;
 
 procedure TmodHttpCommand.Prepare(var Result: TmodRespondResult);
+var
+  Key: string;
 begin
   inherited;
   ParseParams(Request.Query, Respond.URIParams);
+
+  //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
+  Key := Request.Header.ReadString('Sec-WebSocket-Key');
+  if Key <> '' then
+  begin
+    Key := HashWebSocketKey(Key);
+    Respond.AddHeader('Sec-WebSocket-Accept', Key);
+  end;
 
   if Module.UseKeepAlive and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive') then
   begin
@@ -804,6 +826,7 @@ begin
     hrNotFound: Result := Result + '404 NotFound';
     hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
     hrFound: Result := Result + '302 Found';
+    hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
   end;
 end;
 

@@ -188,7 +188,8 @@ type
   public
     function CreateCommand(ASQL: string = ''): TmncSQLCommand;
     procedure ExecuteScript(AStrings: TStrings; AutoCommit: Boolean = False);
-    procedure Execute(const vSQL: string); virtual;
+    procedure Execute(const vSQL: string); overload; virtual;
+    procedure Execute(const vSQL: string; vArgs: array of const); overload;
     property Connection: TmncSQLConnection read GetConnection write SetConnection;
   end;
 
@@ -383,6 +384,11 @@ begin
   finally
     aCmd.Free;
   end;
+end;
+
+procedure TmncSQLTransaction.Execute(const vSQL: string; vArgs: array of const);
+begin
+  Execute(Format(vSQL, vArgs));
 end;
 
 procedure TmncSQLTransaction.ExecuteScript(AStrings: TStrings; AutoCommit: Boolean);

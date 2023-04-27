@@ -939,19 +939,19 @@ begin
   end;
 end;
 
-procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch: Boolean; var Resume: Boolean);
+procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; AName, AValue: string; IsSwitch: Boolean; var Resume: Boolean);
 begin
   with TObject(Sender) as TStrings do
   begin
-    if (Name <> '') and (Value = '') then
+    if (AName <> '') and (AValue = '') then
     begin
       if IsSwitch then
-        Add(Name + NameValueSeparator)
+        Add(AName + NameValueSeparator)
       else
-        Add(NameValueSeparator + Name)
+        Add(NameValueSeparator + AName)
     end
     else
-      Add(Name + NameValueSeparator + Value);
+      Add(AName + NameValueSeparator + AValue);
   end;
 end;
 
