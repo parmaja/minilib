@@ -735,8 +735,8 @@ begin
   Key := Request.Header.ReadString('Sec-WebSocket-Key');
   if Key <> '' then
   begin
-    Key := HashWebSocketKey(Key);
-    Respond.AddHeader('Sec-WebSocket-Accept', Key);
+    //Key := HashWebSocketKey(Key);
+    //Respond.AddHeader('Sec-WebSocket-Accept', Key);
   end;
 
   if Module.UseKeepAlive and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive') then
