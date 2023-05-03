@@ -54,7 +54,8 @@ type
     hrMovedTemporarily, //307
     hrFound, //302
     hrNotFound,
-    hrSwitchingProtocols
+    hrSwitchingProtocols,
+    hrServiceUnavailable
   );
 
   THttpResultHelper = record helper for THttpResult
@@ -395,8 +396,8 @@ end;
 procedure TmodWebModule.DoCreateCommands;
 begin
   inherited;
-  //RegisterCommand('GET', TmodHttpGetCommand, true);
-  RegisterCommand('GET', TmodHttpPostCommand, true);
+  RegisterCommand('GET', TmodHttpGetCommand, true);
+  //RegisterCommand('GET', TmodHttpPostCommand, true);
   RegisterCommand('POST', TmodHttpPostCommand, true);
   RegisterCommand('Info', TmodServerInfoCommand);
   {
@@ -827,11 +828,13 @@ begin
     hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
     hrFound: Result := Result + '302 Found';
     hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
+    hrServiceUnavailable: Result := Result + '503 Service Unavailable';
   end;
 end;
 
 initialization
   modLock := TCriticalSection.Create;
+
 finalization
   FreeAndNil(modLock);
 end.
