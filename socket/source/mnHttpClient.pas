@@ -345,7 +345,7 @@ begin
 
   if vPort = '' then
   begin
-    if SameText(vProtocol, 'https') then
+    if SameText(vProtocol, 'https') or SameText(vProtocol, 'wss') then
       vPort := '443'
     else
       vPort := '80';
@@ -588,10 +588,13 @@ begin
   Stream.Port := Port;
 
   Stream.Options := Stream.Options + [soNoDelay];
-  if SameText(Protocol, 'https') then
+  if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
     Stream.Options := Stream.Options + [soSSL, soWaitBeforeRead]
   else
     Stream.Options := Stream.Options - [soSSL];
+
+  if SameText(Protocol, 'ws') or SameText(Protocol, 'wss') then
+    Stream.Options := Stream.Options + [soWebsocket];
 
   if KeepAlive then
   begin

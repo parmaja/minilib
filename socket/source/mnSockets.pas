@@ -53,6 +53,7 @@ type
     soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set set ReadTimeout if no data come
     soWaitBeforeWrite, //Wait for ready before write, idk what for
     soCloseTimeout, //close socket if read timeout
+    soWebsocket,  //Use OpenSSL 1.1.1
     soSSL  //Use OpenSSL 1.1.1
     );
   TmnsoOptions = set of TmnsoOption;
