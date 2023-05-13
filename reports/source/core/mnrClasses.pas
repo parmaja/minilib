@@ -512,7 +512,8 @@ type
     FAppendPageTotals: Boolean;
     FHitAppendTitles: Boolean;
     FRows: TmnObjectList<TmnrRow>;
-    FRowData: TJSONObject; //default row data
+    FRowData: TJSONObject;
+    FTitleRow: TmnrRow; //default row data
 
     function GetNext: TmnrSection;
     function GetNodes: TmnrSections;
@@ -545,6 +546,7 @@ type
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
     property Rows: TmnObjectList<TmnrRow> read FRows;
+    property TitleRow: TmnrRow read FTitleRow;
 
     property Next: TmnrSection read GetNext;
     property Prior: TmnrSection read GetPrior;
@@ -1637,6 +1639,8 @@ begin
     begin
       aRow := Report.CreateNewRow(vSection, nil);
       aRow.FDesignRow := aDesignRow;
+      if FTitleRow=nil then FTitleRow := aRow;
+
       try
         d := aDesignRow.First;
         while d <> nil do
@@ -2013,6 +2017,7 @@ begin
     s.Rows.Clear;
     s.ReferencesRows.Clear;
     s.FHitAppendTitles := False;
+    s.FTitleRow := nil;
     if s.Sections<>nil then s.Sections.ClearItems;
 
     s := s.Next;
