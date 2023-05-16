@@ -73,11 +73,12 @@ type
     Protocol: Utf8string;
     URI: Utf8string;
 
-    //from URI :) URI = Address + Params
+    //from URI :) URI = Address + Query
     Address: Utf8string;
     Query: Utf8string;
 
     Path: Utf8string;
+
 
     Module: String;
     Command: String;

@@ -80,6 +80,7 @@ type
     constructor Create; overload;
     destructor Destroy; override;
     procedure Clear; virtual;
+    function IndexOf(vNode: TmnrNode): Integer;
   end;
 
   TmnrIndex = class
@@ -310,7 +311,6 @@ var
   p: TmnrNode;
   i: Integer;
 begin
-  Result := -1;
   if Nodes<>nil then
   begin
     p := FNodes.First;
@@ -319,8 +319,7 @@ begin
     begin
       if p=Self then
       begin
-        Result := i;
-        Break
+        Exit(i);
       end
       else
       begin
@@ -329,6 +328,8 @@ begin
       end;
     end;
   end;
+
+  Result := -1;
 end;
 
 function TmnrNode.GetLast: TmnrNode;
@@ -518,6 +519,27 @@ destructor TmnrNodes.Destroy;
 begin
   Clear;
   inherited;
+end;
+
+function TmnrNodes.IndexOf(vNode: TmnrNode): Integer;
+var
+  i: Integer;
+  n: TmnrNode;
+begin
+  i := 0;
+  n := First;
+  while n<>nil do
+  begin
+    if n=vNode then
+      Exit(i)
+    else
+    begin
+      Inc(i);
+      n := n.Next;
+    end;
+  end;
+
+  Result := -1;
 end;
 
 { TmnrLinkNode }
