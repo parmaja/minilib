@@ -730,7 +730,7 @@ var
   Key: string;
 begin
   inherited;
-  ParseParams(Request.Query, Respond.URIParams);
+  ParseQuery(Request.Query, Respond.URIParams);
 
   //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
   Key := Request.Header.ReadString('Sec-WebSocket-Key');

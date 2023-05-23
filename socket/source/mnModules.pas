@@ -69,15 +69,15 @@ type
     Raw: String; //Full of first line of header
 
     //from raw :) raw = Method + URI + Protocol
-    Method: Utf8string;
-    Protocol: Utf8string;
-    URI: Utf8string;
+    Method: string;
+    Protocol: string;
+    URI: string;
 
     //from URI :) URI = Address + Query
-    Address: Utf8string;
-    Query: Utf8string;
+    Address: string;
+    Query: string;
 
-    Path: Utf8string;
+    Path: string;
 
 
     Module: String;
@@ -92,7 +92,9 @@ type
     FHeader: TmnHeader;
     FStream: TmnBufferStream;
     FContentLength: Integer;
+    FParams: TmnParams;
     procedure SetRequestHeader(AValue: TmnHeader);
+    procedure SetParams(const Value: TmnParams);
   protected
     Info: TmodRequestInfo;
   public
@@ -102,16 +104,17 @@ type
     property Raw: String read Info.Raw write Info.Raw;
 
     //from raw
-    property Method: Utf8string read Info.Method write Info.Method;
-    property URI: Utf8string read Info.URI write Info.URI;
-    property Protocol: Utf8string read Info.Protocol write Info.Protocol;
-    property Address: Utf8string read Info.Address write Info.Address;
-    property Query: Utf8string read Info.Query write Info.Query;
+    property Method: string read Info.Method write Info.Method;
+    property URI: string read Info.URI write Info.URI;
+    property Protocol: string read Info.Protocol write Info.Protocol;
+    property Address: string read Info.Address write Info.Address;
+    property Query: string read Info.Query write Info.Query;
     //for module
-    property Path: Utf8string read Info.Path write Info.Path;
+    property Path: string read Info.Path write Info.Path;
     property Module: String read Info.Module write Info.Module;
     property Command: String read Info.Command write Info.Command;
     property Client: String read Info.Client write Info.Client;
+    property Params: TmnParams read FParams write SetParams;
 
     property ContentLength: Integer read FContentLength write FContentLength;
     property Stream: TmnBufferStream read FStream write FStream;
@@ -262,7 +265,9 @@ type
     procedure Created; override;
     procedure DoCreateCommands; virtual;
     procedure CreateCommands;
+    procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
 
+    function CreateParams(ARequest: TmodRequest): TmnParams; virtual;
     function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
     procedure ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream); virtual;
@@ -280,7 +285,6 @@ type
     constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules); virtual;
     destructor Destroy; override;
     function Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodRespondResult;
-    procedure ExecuteCommand(CommandName: String; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil; RequestString: TArray<String> = nil);
     function RegisterCommand(vName: String; CommandClass: TmodCommandClass; AFallback: Boolean = False): Integer; overload;
 
     property Commands: TmodCommandClasses read FCommands;
@@ -390,21 +394,22 @@ type
     function Have(AValue: String; vSeperators: TSysCharSet = [';']): Boolean;
   end;
 
-function ParseRaw(const Raw: String; out Method, Protocol, URI: Utf8string): Boolean;
-function ParseURI(const URI: String; out Address, Params: Utf8string): Boolean;
-procedure ParseParams(const Params: String; mnParams: TmnParams);
+function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
+function ParseURI(const URI: String; out Address, Params: string): Boolean;
+procedure ParseQuery(const Query: String; mnParams: TmnParams);
+procedure ParseParamsEx(const Params: String; mnParams: TmnParams);
 
 
-function ParseAddress(const Request: String; out URIPath: Utf8string; out URIQuery: Utf8string): Boolean; overload;
-function ParseAddress(const Request: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams): Boolean; overload;
-procedure ParsePath(const aRequest: String; out Name: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams);
+function ParseAddress(const Request: string; out URIPath: string; out URIQuery: string): Boolean; overload;
+function ParseAddress(const Request: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean; overload;
+procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
 
 implementation
 
 uses
   mnUtils;
 
-function ParseRaw(const Raw: String; out Method, Protocol, URI: Utf8string): Boolean;
+function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
 var
   aRequests: TStringList;
 begin
@@ -423,7 +428,7 @@ begin
   Result := True;
 end;
 
-function ParseURI(const URI: String; out Address, Params: Utf8string): Boolean;
+function ParseURI(const URI: String; out Address, Params: string): Boolean;
 var
   I, J: Integer;
 begin
@@ -438,14 +443,20 @@ begin
     Address := URI;
     Params := '';
   end;
+  Result := True;
 end;
 
-procedure ParseParams(const Params: String; mnParams: TmnParams);
+procedure ParseParamsEx(const Params: String; mnParams: TmnParams);
 begin
-  StrToStringsCallback(Params, mnParams, @ParamsCallBack, ['&'], [' ']);
+  StrToStringsCallback(Params, mnParams, @ParamsCallBack, ['/', ':'], [' ']);
 end;
 
-function ParseAddress(const Request: String; out URIPath: Utf8string; out URIQuery: Utf8string): Boolean;
+procedure ParseQuery(const Query: String; mnParams: TmnParams);
+begin
+  StrToStringsCallback(Query, mnParams, @ParamsCallBack, ['&'], [' ']);
+end;
+
+function ParseAddress(const Request: String; out URIPath: string; out URIQuery: string): Boolean;
 var
   I, J: Integer;
 begin
@@ -482,7 +493,7 @@ begin
   end;
 end;
 
-function ParseAddress(const Request: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams): Boolean;
+function ParseAddress(const Request: String; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean;
 begin
   Result := ParseAddress(Request, URIPath, URIParams);
   if Result then
@@ -491,7 +502,7 @@ begin
       StrToStringsCallback(URIParams, URIQuery, @ParamsCallBack, ['&'], [' ']);
 end;
 
-procedure ParsePath(const aRequest: String; out Name: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams);
+procedure ParsePath(const aRequest: String; out Name: String; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
 begin
   ParseAddress(aRequest, URIPath, URIParams, URIQuery);
   Name := SubStr(URIPath, URLPathDelim, 0);
@@ -588,6 +599,14 @@ end;
 
 { TmodRequest }
 
+procedure TmodRequest.SetParams(const Value: TmnParams);
+begin
+  if FParams<>nil then
+    FreeAndNil(FParams);
+
+  FParams := Value;
+end;
+
 procedure TmodRequest.SetRequestHeader(AValue: TmnHeader);
 begin
   if FHeader <> AValue then
@@ -615,6 +634,7 @@ end;
 destructor TmodRequest.Destroy;
 begin
   FreeAndNil(FHeader);
+  FreeAndNil(FParams);
   inherited Destroy;
 end;
 
@@ -684,7 +704,7 @@ var
   Result: TmodRespondResult;
 begin
   inherited;
-  aRequestLine := TrimRight(Stream.ReadLineUTF8);
+  aRequestLine := TrimRight(UTF8ToString(Stream.ReadLineUTF8));
   if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
     aRequest := TmodRequest.Create(Stream);
@@ -925,7 +945,7 @@ begin
   begin
     while not (cloRead in Stream.Done) do
     begin
-      line := Stream.ReadLineUTF8;
+      line := UTF8ToString(Stream.ReadLineUTF8);
       if line = '' then
         break
       else
@@ -939,6 +959,17 @@ end;
 procedure TmodModule.Created;
 begin
   inherited;
+end;
+
+function TmodModule.CreateParams(ARequest: TmodRequest): TmnParams;
+begin
+  Result := TmnParams.Create;
+  try
+    ParseParamsEx(ARequest.Address, Result);
+  except
+    FreeAndNil(Result);
+    raise;
+  end;
 end;
 
 procedure TmodModule.CreateCommands;
@@ -986,10 +1017,21 @@ procedure TmodModule.DoCreateCommands;
 begin
 end;
 
+procedure TmodModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
+begin
+  vMatch := StartsText('/'+AliasName, ARequest.Address);
+end;
+
 function TmodModule.Match(const ARequest: TmodRequest): Boolean;
+var
+  p: TmnParams;
 begin
   //Result := SameText(AliasName, ARequest.Module) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
-  Result := StartsText('/'+AliasName, ARequest.Address) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
+  Result := False;
+  if ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols)) then
+  begin
+    DoMatch(ARequest, Result);
+  end;
 end;
 
 procedure TmodModule.Log(S: String);
@@ -1028,14 +1070,6 @@ begin
     if not aHandled then
       raise TmodModuleException.Create('Can not find command or fallback command: ' + ARequest.Command);
   end;
-end;
-
-procedure TmodModule.ExecuteCommand(CommandName: String; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; RequestString: TArray<String>);
-var
-  ARequest: TmodRequest;
-begin
-  ARequest.Command := CommandName;
-  Execute(ARequest, ARequestStream, ARespondStream);
 end;
 
 procedure TmodModule.SetAliasName(AValue: String);
@@ -1160,6 +1194,7 @@ begin
   Result := nil;
   for item in Self do
   begin
+    ARequest.Params := item.CreateParams(ARequest); //always have params
     if item.Match(ARequest) then
     begin
       Result := item;

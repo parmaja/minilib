@@ -51,6 +51,7 @@ type
 *}
 
 TStrToStringsOptions = set of (
+  stsoKeepEmpty,
   stsoGroupSeparators //TODO, not tested yet, if one of separators come it will ignores chars in next separators like if separators = #13, #10, now #13#10 will considered as one line break
 ); //
 
@@ -657,12 +658,15 @@ begin
       if (Cur >= Start) then
       begin
         S := Copy(Content, Start + 1, Cur - Start - 1);
-        Resume := True;
-        CallBackProc(Sender, Index, S, Resume);
-        Index := Index + 1;
-        Inc(Result);
-        if not Resume then
-          break;
+        if (stsoKeepEmpty in vOptions) or (s<>'') then
+        begin
+          Resume := True;
+          CallBackProc(Sender, Index, S, Resume);
+          Index := Index + 1;
+          Inc(Result);
+          if not Resume then
+            break;
+        end;
       end;
       Cur := Cur + 1;
     until Cur > Length(Content) + 1;
@@ -675,7 +679,7 @@ begin
     raise Exception.Create('StrToStrings: Strings is nil');
   Strings.BeginUpdate;
   try
-    Result := StrToStringsCallback(Content, Strings, StrToStringsCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes);
+    Result := StrToStringsCallback(Content, Strings, StrToStringsCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes, [stsoKeepEmpty]);
   finally
     Strings.EndUpdate;
   end;
@@ -756,12 +760,15 @@ begin
       if (Cur >= Start) then
       begin
         S := Copy(Content, Start, Cur - Start - SepLength + 1); //TODO compare it with other function
-        Resume := True;
-        CallBackProc(Sender, Index, Start, Cur + 1, S, Resume);
-        Index := Index + 1;
-        Inc(Result);
-        if not Resume then
-          break;
+        if (stsoKeepEmpty in vOptions) or (s<>'') then
+        begin
+          Resume := True;
+          CallBackProc(Sender, Index, Start, Cur + 1, S, Resume);
+          Index := Index + 1;
+          Inc(Result);
+          if not Resume then
+            break;
+        end;
       end;
       Cur := Cur + 1;
     until Cur > Length(Content) + 1;
@@ -779,7 +786,7 @@ begin
     raise Exception.Create('StrToStrings: Strings is nil');
   Strings.BeginUpdate;
   try
-    Result := StrToStringsExCallback(Content, 0, Strings, StrToStringsExCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes);
+    Result := StrToStringsExCallback(Content, 0, Strings, StrToStringsExCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes, [stsoKeepEmpty]);
   finally
     Strings.EndUpdate;
   end;
