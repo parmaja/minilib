@@ -51,11 +51,12 @@ type
 
     //AutoRemove remove field if Value = '' when use Values or SetValues
     property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
-    property Field; default;
     property Separator: string read FSeparator write FSeparator; //value
     property Delimiter: Char read FDelimiter write FDelimiter; //eol
     property AsString: string read GetAsString write SetAsString;
     property Require[const Index: string]: TmnField read RequireField;
+
+    property Field; default;
   end;
 
   TmnSection = class(TmnParams)

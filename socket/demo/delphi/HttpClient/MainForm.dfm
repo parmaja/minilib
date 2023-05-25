@@ -10,10 +10,8 @@ object Form4: TForm4
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  OldCreateOrder = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  PixelsPerInch = 96
   TextHeight = 13
   object DocList: TMemo
     Left = 8
@@ -46,7 +44,7 @@ object Form4: TForm4
     Width = 537
     Height = 21
     TabOrder = 3
-    Text = 'www.google.com'
+    Text = '127.0.0.1:81/../../sql/accbalances.sql'
   end
   object Button1: TButton
     Left = 8

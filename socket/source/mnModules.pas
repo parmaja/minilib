@@ -77,10 +77,6 @@ type
     Address: string;
     Query: string;
 
-    Path: string;
-
-
-    Module: String;
     Command: String;
     Client: String;
   end;
@@ -92,15 +88,17 @@ type
     FHeader: TmnHeader;
     FStream: TmnBufferStream;
     FContentLength: Integer;
-    FParams: TmnParams;
+    FParams: TmnFields;
+    FRoute: TStrings;
+    FPath: String;
     procedure SetRequestHeader(AValue: TmnHeader);
-    procedure SetParams(const Value: TmnParams);
   protected
     Info: TmodRequestInfo;
   public
-    constructor Create(AStream: TmnBufferStream);
+    constructor Create;
     destructor Destroy; override;
     procedure  Clear;
+    property Stream: TmnBufferStream read FStream;
     property Raw: String read Info.Raw write Info.Raw;
 
     //from raw
@@ -110,14 +108,14 @@ type
     property Address: string read Info.Address write Info.Address;
     property Query: string read Info.Query write Info.Query;
     //for module
-    property Path: string read Info.Path write Info.Path;
-    property Module: String read Info.Module write Info.Module;
     property Command: String read Info.Command write Info.Command;
     property Client: String read Info.Client write Info.Client;
-    property Params: TmnParams read FParams write SetParams;
+    property Path: String read FPath write FPath;
+
+    property Route: TStrings read FRoute write FRoute;
+    property Params: TmnFields read FParams;
 
     property ContentLength: Integer read FContentLength write FContentLength;
-    property Stream: TmnBufferStream read FStream write FStream;
     property Header: TmnHeader read FHeader write SetRequestHeader;
     function CollectURI: string;
   end;
@@ -267,13 +265,14 @@ type
     procedure CreateCommands;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
 
-    function CreateParams(ARequest: TmodRequest): TmnParams; virtual;
+    procedure DoFillParams(ARequest: TmodRequest); virtual;
+    procedure FillParams(ARequest: TmodRequest);
     function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
+    function Match(const ARequest: TmodRequest): Boolean; virtual;
 
     procedure ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream); virtual;
     procedure ParseHead(ARequest: TmodRequest); virtual;
     function RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
-    function Match(const ARequest: TmodRequest): Boolean; virtual;
     procedure Log(S: String); virtual;
     procedure Start; virtual;
     procedure Stop; virtual;
@@ -346,6 +345,7 @@ type
   TmodModuleConnection = class(TmnServerConnection)
   private
   protected
+    function ModuleServer: TmodModuleServer;
     procedure Process; override;
     procedure Prepare; override;
   public
@@ -448,7 +448,7 @@ end;
 
 procedure ParseParamsEx(const Params: String; mnParams: TmnParams);
 begin
-  StrToStringsCallback(Params, mnParams, @ParamsCallBack, ['/', ':'], [' ']);
+  StrToStringsCallback(Params, mnParams, @ParamsCallBack, ['/'], [' ']);
 end;
 
 procedure ParseQuery(const Query: String; mnParams: TmnParams);
@@ -599,14 +599,6 @@ end;
 
 { TmodRequest }
 
-procedure TmodRequest.SetParams(const Value: TmnParams);
-begin
-  if FParams<>nil then
-    FreeAndNil(FParams);
-
-  FParams := Value;
-end;
-
 procedure TmodRequest.SetRequestHeader(AValue: TmnHeader);
 begin
   if FHeader <> AValue then
@@ -618,22 +610,23 @@ end;
 
 function TmodRequest.CollectURI: string;
 begin
+  Result := URLPathDelim + Address;
   if Query<>'' then
-    Result := Address+'?'+Query
-  else
-    Result := Address;
+    Result := Result+'?'+Query
 end;
 
-constructor TmodRequest.Create(AStream: TmnBufferStream);
+constructor TmodRequest.Create;
 begin
   inherited Create;
   FHeader := TmnHeader.Create;
-  FStream := AStream;
+  FRoute := TStringList.Create;
+  FParams := TmnFields.Create;
 end;
 
 destructor TmodRequest.Destroy;
 begin
   FreeAndNil(FHeader);
+  FreeAndNil(FRoute);
   FreeAndNil(FParams);
   inherited Destroy;
 end;
@@ -690,6 +683,11 @@ end;
 
 { TmodModuleConnection }
 
+function TmodModuleConnection.ModuleServer: TmodModuleServer;
+begin
+  Result :=  (Listener.Server as TmodModuleServer);
+end;
+
 procedure TmodModuleConnection.Prepare;
 begin
   inherited;
@@ -707,13 +705,10 @@ begin
   aRequestLine := TrimRight(UTF8ToString(Stream.ReadLineUTF8));
   if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
-    aRequest := TmodRequest.Create(Stream);
+    aRequest := TmodRequest.Create;
     try
-      (Listener.Server as TmodModuleServer).Modules.ParseHead(aRequest, aRequestLine);
-      aModule := (Listener.Server as TmodModuleServer).Modules.Match(aRequest);
-
-      if (aModule = nil) and ((Listener.Server as TmodModuleServer).Modules.Count > 0) then
-        aModule := (Listener.Server as TmodModuleServer).Modules.DefaultModule; //fall back
+      ModuleServer.Modules.ParseHead(aRequest, aRequestLine);
+      aModule := ModuleServer.Modules.Match(aRequest);
 
       if (aModule = nil) then
       begin
@@ -721,6 +716,7 @@ begin
       end
       else
         try
+          aRequest.FStream := Stream;
           aRequest.Client := RemoteIP;
           Result := aModule.Execute(aRequest, Stream, Stream);
         finally
@@ -925,18 +921,6 @@ begin
 
 end;
 
-procedure TmodModule.ParseHead(ARequest: TmodRequest);
-var
-  aAddress: string;
-begin
-  aAddress := ARequest.Address;
-  if (aAddress<>'') and StartsText(URLPathDelim, aAddress) then
-    aAddress := Copy(aAddress, 2, MaxInt);
-
-  ARequest.Module := SubStr(aAddress, URLPathDelim, 0);
-  ARequest.Path := Copy(aAddress, Length(ARequest.Module) + 1, MaxInt);
-end;
-
 procedure TmodModule.ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream);
 var
   line: String;
@@ -961,15 +945,13 @@ begin
   inherited;
 end;
 
-function TmodModule.CreateParams(ARequest: TmodRequest): TmnParams;
+procedure TmodModule.ParseHead(ARequest: TmodRequest);
+var
+  aAddress: string;
 begin
-  Result := TmnParams.Create;
-  try
-    ParseParamsEx(ARequest.Address, Result);
-  except
-    FreeAndNil(Result);
-    raise;
-  end;
+  aAddress := ARequest.Address;
+  if (aAddress<>'') and StartsText(URLPathDelim, aAddress) then
+    aAddress := Copy(aAddress, 2, MaxInt);
 end;
 
 procedure TmodModule.CreateCommands;
@@ -1017,9 +999,18 @@ procedure TmodModule.DoCreateCommands;
 begin
 end;
 
+procedure TmodModule.DoFillParams(ARequest: TmodRequest);
+begin
+  if ARequest.Route.Count>0 then
+  begin
+    ARequest.Params['Module'] := ARequest.Route[0];
+    ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
+  end;
+end;
+
 procedure TmodModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
 begin
-  vMatch := StartsText('/'+AliasName, ARequest.Address);
+  vMatch := (AliasName<>'') and (ARequest.Params['Module'] = AliasName);
 end;
 
 function TmodModule.Match(const ARequest: TmodRequest): Boolean;
@@ -1070,6 +1061,13 @@ begin
     if not aHandled then
       raise TmodModuleException.Create('Can not find command or fallback command: ' + ARequest.Command);
   end;
+end;
+
+procedure TmodModule.FillParams(ARequest: TmodRequest);
+begin
+  ARequest.Path := ARequest.Address;
+  ARequest.Params.Clear;
+  DoFillParams(ARequest);
 end;
 
 procedure TmodModule.SetAliasName(AValue: String);
@@ -1185,6 +1183,11 @@ begin
   ARequest.Raw := RequestLine;
   ParseRaw(RequestLine, ARequest.Info.Method, ARequest.Info.Protocol, ARequest.Info.URI);
   ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Query);
+
+  if (ARequest.Address<>'') and StartsText(URLPathDelim, ARequest.Address) then
+    ARequest.Address := Copy(ARequest.Address, 2, MaxInt);
+
+  StrToStrings(ARequest.Address, ARequest.Route, ['/']);
 end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;
@@ -1194,12 +1197,16 @@ begin
   Result := nil;
   for item in Self do
   begin
-    ARequest.Params := item.CreateParams(ARequest); //always have params
+
+    item.FillParams(ARequest); //always have params
     if item.Match(ARequest) then
-    begin
-      Result := item;
-      break;
-    end;
+      Exit(item);
+  end;
+
+  if DefaultModule<>nil then
+  begin
+    DefaultModule.FillParams(ARequest);
+    Result := DefaultModule;
   end;
 end;
 

@@ -24,7 +24,7 @@ type
     { Private declarations }
   public
     { Public declarations }
-    HttpStream: TmnCustomHttpStream;
+    HttpStream: TmnHttpStream;
   end;
 
 var
@@ -38,20 +38,20 @@ uses mnClients;
 
 procedure TForm4.Button1Click(Sender: TObject);
 var
-  Http: TmnCustomHttpStream;
+  Http: TmnHttpClient;
   I: Integer;
   s: string;
   st: TMemoryStream;
 begin
   DocList.Clear;
-  Http := TmnCustomHttpStream.Create('', '');
+  Http := TmnHttpClient.Create();
   st:= TMemoryStream.Create;
   try
     Http.Get(HostEdit.Text);
-    for I := 0 to Http.Response.Headers.Count - 1 do
-      HeaderList.Lines.Add(Http.Response.Headers[I]);
-    st.LoadFromStream(http);
-    st.SaveToFile('c:\1.txt');
+    //for I := 0 to Http.Response.Headers.Count - 1 do
+      //HeaderList.Lines.Add(Http.Response.Headers[I]);
+    st.LoadFromStream(http.Stream);
+    st.SaveToFile('c:\temp\1.txt');
     //DocList.Lines.LoadFromStream(http);
     //DocList.Lines.SaveToFile('c:\1.png');
     {s := Http.ReadLn;
@@ -86,13 +86,13 @@ begin
   Http := TmnHttpClient.Create;
   try
     Http.Get(HostEdit.Text);
-    for I := 0 to Http.Response.Headers.Count - 1 do
-      HeaderList.Lines.Add(Http.Response.Headers[I]);
-    s := Http.Response.ReadLn;
+    //for I := 0 to Http.Response.Headers.Count - 1 do
+      //HeaderList.Lines.Add(Http.Response.Headers[I]);
+    //s := Http.Response.ReadLn;
     while Http.Connected and (s <> '') do
     begin
       DocList.Lines.Add(s);
-      s := Http.Response.ReadLn;
+      //s := Http.Response.ReadLn;
     end;
   finally
     Http.Free;
@@ -108,9 +108,9 @@ begin
   DocList.Clear;
   st:= TMemoryStream.Create;
   try
-    HttpStream.Get(HostEdit.Text);
-    for I := 0 to HttpStream.Response.Headers.Count - 1 do
-      HeaderList.Lines.Add(HttpStream.Response.Headers[I]);
+    //HttpStream.Get(HostEdit.Text);
+    //for I := 0 to HttpStream.Response.Headers.Count - 1 do
+      //HeaderList.Lines.Add(HttpStream.Response.Headers[I]);
     st.LoadFromStream(HttpStream);
     st.SaveToFile('c:\1.txt');
     //DocList.Lines.LoadFromStream(http);
@@ -128,14 +128,12 @@ begin
 end;
 
 procedure TForm4.FormCreate(Sender: TObject);
-var
-  u: TmnHttpUrl;
 begin
-  u.Create('http://www.google.com:8080/index.php?test=1&dcghdh=3');
+  {u.Create('http://www.google.com:8080/index.php?test=1&dcghdh=3');
   u.Create('www.google.com/index.php?test=1&dcghdh=3');
   u.Create('https://google.com/index.php?test=1&dcghdh=3');
   HostEdit.Text := 'http://maps1.yimg.com/hx/tl?b=1&v=4.3&.intl=en&x=245&y=47&z=10&r=1';
-  HttpStream := TmnCustomHttpStream.Create('', '');
+  HttpStream := TmnHttpStream.Create('', '');}
 end;
 
 procedure TForm4.FormDestroy(Sender: TObject);

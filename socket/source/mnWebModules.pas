@@ -578,7 +578,7 @@ end;
 
 procedure TmodHttpGetCommand.RespondResult(var Result: TmodRespondResult);
 var
-  aDocument: string;
+  aDocument, aRoot: string;
 begin
 (*
 
@@ -591,16 +591,30 @@ begin
 
 *)
 
-  aDocument := IncludeTrailingPathDelimiter(Respond.Root);
+
+  aRoot := IncludeTrailingPathDelimiter(Respond.Root);
+  aDocument := aRoot;
+
   if Request.Path <> '' then
-    aDocument := aDocument + '.' + Request.Path;
+    aDocument := aDocument + '.\' + Request.Path;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
   if EndsText(PathDelim, aDocument) then //get the default file if it not defined
      aDocument := GetDefaultDocument(aDocument);
+
+  aRoot := ExpandFileName(aRoot);
   aDocument := ExpandFileName(aDocument);
 
-  if (Request.Path='') or (not EndsText(PathDelim, aDocument) and DirectoryExists(aDocument)) then
+  if not StartsStr(aRoot, aDocument) then //check if not out of root :)
   begin
+    Respond.HttpResult := hrError;
+  end
+  else if ((Request.Path = '') and not FileExists(aDocument)) or (not EndsText(PathDelim, aDocument) and DirectoryExists(aDocument)) then
+  begin
+    //http://127.0.0.1:81
+    //http://127.0.0.1:81/
+    //http://127.0.0.1:81/index.html
+    //http://127.0.0.1:81/test/web
+
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
     Request.Address := IncludeURLDelimiter(Request.Address);
     //Respond.SendHead('HTTP/1.1 301 Moved Permanently');
