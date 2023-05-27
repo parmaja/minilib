@@ -79,7 +79,6 @@ type
 
   TmnHttpRequest = class(TmnCustomHttpHeader)
   private
-    FAccept: UTF8String;
     FReferer: UTF8String;
     FIsPatch: Boolean;
   protected
@@ -405,7 +404,7 @@ begin
     Header['Host'] := Client.Host;
     Header['User-Agent'] := Client.UserAgent;
 
-    Header['Accept'] := FAccept;
+    Header['Accept'] := Accept;
     Header['Accept-CharSet'] := FAcceptCharSet;
     if Client.Compressing then
       Header['Accept-Encoding'] := 'deflate, gzip';
