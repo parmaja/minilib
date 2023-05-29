@@ -680,7 +680,7 @@ begin
   if Handle = nil then
     EmnOpenSSLException.Create('Can not create CTX handle');
 
-  o := SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3;
+  o := SSL_OP_ALL or SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_SINGLE_DH_USE or SSL_OP_SINGLE_ECDH_USE or SSL_OP_CIPHER_SERVER_PREFERENCE;
 
   if coNoComppressing in Options then
     o := o or SSL_OP_NO_COMPRESSION;
