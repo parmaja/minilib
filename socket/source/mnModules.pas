@@ -63,6 +63,7 @@ type
     function CreateField: TmnField; override;
   public
     constructor Create;
+    procedure ReadHeader(Stream: TmnBufferStream);
   end;
 
   TmodRequestInfo = record
@@ -270,7 +271,7 @@ type
     function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
     function Match(const ARequest: TmodRequest): Boolean; virtual;
 
-    procedure ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream); virtual;
+    procedure ReadHeader(RequestHeader: TmnHeader; Stream: TmnBufferStream); virtual;
     procedure ParseHead(ARequest: TmodRequest); virtual;
     function RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
     procedure Log(S: String); virtual;
@@ -656,6 +657,25 @@ begin
   Result := TmnHeaderField.Create;
 end;
 
+procedure TmnHeader.ReadHeader(Stream: TmnBufferStream);
+var
+  line: String;
+begin
+  if Stream <> nil then
+  begin
+    while not (cloRead in Stream.Done) do
+    begin
+      line := UTF8ToString(Stream.ReadLineUTF8);
+      if line = '' then
+        break
+      else
+      begin
+        AddItem(line, ':', True);
+      end;
+    end;
+  end;
+end;
+
 { TmodModuleListener }
 
 constructor TmodModuleServer.Create;
@@ -921,22 +941,11 @@ begin
 
 end;
 
-procedure TmodModule.ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream);
-var
-  line: String;
+procedure TmodModule.ReadHeader(RequestHeader: TmnHeader; Stream: TmnBufferStream);
 begin
   if Stream <> nil then
   begin
-    while not (cloRead in Stream.Done) do
-    begin
-      line := UTF8ToString(Stream.ReadLineUTF8);
-      if line = '' then
-        break
-      else
-      begin
-        RequestHeader.AddItem(line, ':', True);
-      end;
-    end;
+    RequestHeader.ReadHeader(Stream);
   end;
 end;
 
@@ -1040,7 +1049,7 @@ begin
 
 
   ParseHead(ARequest);
-  ParseHeader(ARequest.Header, ARequestStream);
+  ReadHeader(ARequest.Header, ARequestStream);
 
   aCmd := RequestCommand(ARequest, ARequestStream, ARespondStream);
 
