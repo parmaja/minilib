@@ -7,6 +7,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
+  Clipbrd,
   ExtCtrls, minibidi;
 
 type
@@ -74,6 +75,7 @@ var
   x, y, w: Integer;
   st: TTextStyle;
 begin
+  Clipbrd.Clipboard.AsText := s;
   x := 0;
   y := 50;
 

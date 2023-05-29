@@ -37,6 +37,9 @@
             </Checks>
           </CodeGeneration>
           <Linking>
+            <Debugging>
+              <DebugInfoType Value="dsDwarf3"/>
+            </Debugging>
             <Options>
               <Win32>
                 <GraphicApplication Value="True"/>
@@ -60,7 +63,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="61">
+    <Units Count="56">
       <Unit0>
         <Filename Value="minibidi_test.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -74,9 +77,12 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="49"/>
-        <CursorPos X="94" Y="62"/>
+        <TopLine Value="51"/>
+        <CursorPos X="33" Y="78"/>
         <UsageCount Value="135"/>
+        <Bookmarks Count="1">
+          <Item0 X="3" Y="78" ID="1"/>
+        </Bookmarks>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
@@ -193,200 +199,204 @@
         <UsageCount Value="17"/>
         <DefaultSyntaxHighlighter Value="C++"/>
       </Unit18>
-      <Unit25>
+      <Unit19>
+        <Filename Value=""/>
+        <UsageCount Value="10"/>
+      </Unit19>
+      <Unit20>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\inc\ctypes.pp"/>
         <UsageCount Value="10"/>
-      </Unit25>
-      <Unit26>
+      </Unit20>
+      <Unit21>
         <Filename Value="V:\programs\FPC\2.4\src\packages\xforms\examples\fonts.pp"/>
         <TopLine Value="65"/>
         <CursorPos Y="65"/>
         <UsageCount Value="10"/>
-      </Unit26>
-      <Unit27>
+      </Unit21>
+      <Unit22>
         <Filename Value="V:\programs\FPC\2.4\src\packages\univint\src\Fonts.pas"/>
         <TopLine Value="190"/>
         <CursorPos Y="211"/>
         <UsageCount Value="10"/>
-      </Unit27>
-      <Unit28>
+      </Unit22>
+      <Unit23>
         <Filename Value="V:\programs\FPC\2.4\src\packages\libndsfpc\src\nds9.pp"/>
         <CursorPos X="38" Y="9"/>
         <UsageCount Value="10"/>
-      </Unit28>
-      <Unit29>
+      </Unit23>
+      <Unit24>
         <Filename Value="P:\programs\fpc\2.6\src\rtl\objpas\objpas.pp"/>
         <TopLine Value="12"/>
         <CursorPos X="28" Y="26"/>
         <UsageCount Value="12"/>
-      </Unit29>
-      <Unit30>
+      </Unit24>
+      <Unit25>
         <Filename Value="P:\programs\fpc\2.6\src\rtl\inc\systemh.inc"/>
         <TopLine Value="360"/>
         <CursorPos X="3" Y="372"/>
         <UsageCount Value="18"/>
-      </Unit30>
-      <Unit31>
+      </Unit25>
+      <Unit26>
         <Filename Value="C:\Temp\curr.pas"/>
         <UnitName Value="test_abs_curr"/>
         <CursorPos X="11" Y="9"/>
         <UsageCount Value="12"/>
-      </Unit31>
-      <Unit32>
+      </Unit26>
+      <Unit27>
         <Filename Value="P:\programs\fpc\2.6\src\rtl\inc\mathh.inc"/>
         <TopLine Value="56"/>
         <CursorPos X="26" Y="70"/>
         <UsageCount Value="12"/>
-      </Unit32>
-      <Unit33>
+      </Unit27>
+      <Unit28>
         <Filename Value="..\..\lib\minibidi.inc"/>
         <CursorPos X="69" Y="26"/>
         <UsageCount Value="18"/>
         <Bookmarks Count="1">
           <Item0 X="5" Y="848" ID="9"/>
         </Bookmarks>
-      </Unit33>
-      <Unit34>
+      </Unit28>
+      <Unit29>
         <Filename Value="..\..\unicodes\doc\bidiassist.c"/>
         <TopLine Value="497"/>
         <CursorPos X="27" Y="531"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="C++"/>
-      </Unit34>
-      <Unit35>
+      </Unit29>
+      <Unit30>
         <Filename Value="..\..\lib\doc\unicode\readme.txt"/>
         <CursorPos X="41" Y="12"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit35>
-      <Unit36>
+      </Unit30>
+      <Unit31>
         <Filename Value="..\..\lib\doc\unicode\bidi.cpp"/>
         <TopLine Value="1696"/>
         <CursorPos X="91" Y="1713"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="C++"/>
-      </Unit36>
-      <Unit37>
+      </Unit31>
+      <Unit32>
         <Filename Value="..\..\lib\doc\minibidi\scripts\mini_mirror.pl"/>
         <CursorPos X="51" Y="11"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Perl"/>
-      </Unit37>
-      <Unit38>
+      </Unit32>
+      <Unit33>
         <Filename Value="..\..\lib\doc\minibidi\scripts\mini_condense.pl"/>
         <TopLine Value="161"/>
         <CursorPos X="14" Y="203"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Perl"/>
-      </Unit38>
-      <Unit39>
+      </Unit33>
+      <Unit34>
         <Filename Value="..\..\lib\doc\minibidi\minitests.txt"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit39>
-      <Unit40>
+      </Unit34>
+      <Unit35>
         <Filename Value="..\..\lib\doc\fribidi\fribidi_mirroring.c"/>
         <TopLine Value="26"/>
         <CursorPos Y="32"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="C++"/>
-      </Unit40>
-      <Unit41>
+      </Unit35>
+      <Unit36>
         <Filename Value="..\..\lib\doc\fribidi\fribidi_tab_mirroring.i"/>
         <TopLine Value="350"/>
         <CursorPos X="108" Y="381"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit41>
-      <Unit42>
+      </Unit36>
+      <Unit37>
         <Filename Value="..\..\lib\doc\fribidi\fribidi_create_mirroring.c"/>
         <TopLine Value="99"/>
         <CursorPos Y="141"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="C++"/>
-      </Unit42>
-      <Unit43>
+      </Unit37>
+      <Unit38>
         <Filename Value="..\..\lib\doc\fribidi\fribidi_char_sets_iso8859_6.c"/>
         <TopLine Value="34"/>
         <CursorPos X="19" Y="69"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="C++"/>
-      </Unit43>
-      <Unit44>
+      </Unit38>
+      <Unit39>
         <Filename Value="..\..\lib\doc\fribidi\unidata\BidiMirroring.txt"/>
         <TopLine Value="27"/>
         <CursorPos Y="27"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit44>
-      <Unit45>
+      </Unit39>
+      <Unit40>
         <Filename Value="..\..\lib\doc\fribidi\unidata\UnicodeData.txt"/>
         <TopLine Value="194"/>
         <CursorPos X="42" Y="219"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit45>
-      <Unit46>
+      </Unit40>
+      <Unit41>
         <Filename Value="..\..\lib\doc\bidi.cpp"/>
         <UsageCount Value="11"/>
         <DefaultSyntaxHighlighter Value="C++"/>
-      </Unit46>
-      <Unit47>
+      </Unit41>
+      <Unit42>
         <Filename Value="..\..\lib\doc\fribidi\unidata\README"/>
         <CursorPos X="11" Y="25"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit47>
-      <Unit48>
+      </Unit42>
+      <Unit43>
         <Filename Value="..\..\lib\doc\fribidi\tests\test_CapRTL_explicit.input"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit48>
-      <Unit49>
+      </Unit43>
+      <Unit44>
         <Filename Value="..\..\lib\doc\fribidi\tests\test_CapRTL_explicit.reference"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit49>
-      <Unit50>
+      </Unit44>
+      <Unit45>
         <Filename Value="..\..\lib\doc\fribidi\tests\test_CapRTL_implicit.input"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit50>
-      <Unit51>
+      </Unit45>
+      <Unit46>
         <Filename Value="..\..\lib\doc\fribidi\tests\test_CapRTL_implicit.reference"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit51>
-      <Unit52>
+      </Unit46>
+      <Unit47>
         <Filename Value="..\..\lib\doc\fribidi\tests\test_ISO8859-8_hebrew.input"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit52>
-      <Unit53>
+      </Unit47>
+      <Unit48>
         <Filename Value="..\..\lib\doc\fribidi\tests\test_UTF-8_persian.input"/>
         <CursorPos Y="11"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit53>
-      <Unit54>
+      </Unit48>
+      <Unit49>
         <Filename Value="..\..\lib\doc\fribidi\tests\test_UTF-8_persian.reference"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit54>
-      <Unit55>
+      </Unit49>
+      <Unit50>
         <Filename Value="..\..\lib\doc\fribidi\tests\test_ISO8859-8_hebrew.reference"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
-      </Unit55>
-      <Unit56>
+      </Unit50>
+      <Unit51>
         <Filename Value="..\..\mnUtils.pas"/>
         <EditorIndex Value="5"/>
         <TopLine Value="150"/>
         <CursorPos X="11" Y="162"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
-      </Unit56>
-      <Unit57>
+      </Unit51>
+      <Unit52>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
         <EditorIndex Value="3"/>
@@ -394,152 +404,152 @@
         <CursorPos X="14" Y="1130"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
-      </Unit57>
-      <Unit58>
+      </Unit52>
+      <Unit53>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
         <EditorIndex Value="4"/>
         <TopLine Value="1236"/>
         <CursorPos Y="1262"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
-      </Unit58>
-      <Unit59>
+      </Unit53>
+      <Unit54>
         <Filename Value="..\..\minibidi.pas"/>
         <EditorIndex Value="2"/>
         <TopLine Value="52"/>
         <CursorPos X="26" Y="64"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
-      </Unit59>
-      <Unit60>
+      </Unit54>
+      <Unit55>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\wincontrol.inc"/>
         <EditorIndex Value="1"/>
         <TopLine Value="4069"/>
         <CursorPos Y="4093"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
-      </Unit60>
+      </Unit55>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1279" TopLine="1256"/>
+        <Caret Line="1292" TopLine="1265"/>
       </Position1>
       <Position2>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1282" TopLine="1256"/>
+        <Caret Line="1293" TopLine="1265"/>
       </Position2>
       <Position3>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1283" TopLine="1256"/>
+        <Caret Line="1294" TopLine="1280"/>
       </Position3>
       <Position4>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1285" TopLine="1256"/>
+        <Caret Line="1296" TopLine="1280"/>
       </Position4>
       <Position5>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1286" TopLine="1256"/>
+        <Caret Line="1297" TopLine="1280"/>
       </Position5>
       <Position6>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1288" TopLine="1265"/>
+        <Caret Line="1300" TopLine="1280"/>
       </Position6>
       <Position7>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1290" TopLine="1265"/>
+        <Caret Line="1301" TopLine="1280"/>
       </Position7>
       <Position8>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1292" TopLine="1265"/>
+        <Caret Line="1302" TopLine="1280"/>
       </Position8>
       <Position9>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1293" TopLine="1265"/>
+        <Caret Line="1303" TopLine="1280"/>
       </Position9>
       <Position10>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1294" TopLine="1280"/>
+        <Caret Line="1306" TopLine="1280"/>
       </Position10>
       <Position11>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1296" TopLine="1280"/>
+        <Caret Line="1307" TopLine="1280"/>
       </Position11>
       <Position12>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1297" TopLine="1280"/>
+        <Caret Line="1321" TopLine="1284"/>
       </Position12>
       <Position13>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1300" TopLine="1280"/>
+        <Caret Line="1323" TopLine="1286"/>
       </Position13>
       <Position14>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1301" TopLine="1280"/>
+        <Caret Line="1325" TopLine="1288"/>
       </Position14>
       <Position15>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1302" TopLine="1280"/>
+        <Caret Line="1328" TopLine="1291"/>
       </Position15>
       <Position16>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1303" TopLine="1280"/>
+        <Caret Line="1331" TopLine="1294"/>
       </Position16>
       <Position17>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1306" TopLine="1280"/>
+        <Caret Line="1333" TopLine="1296"/>
       </Position17>
       <Position18>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1307" TopLine="1280"/>
+        <Caret Line="1334" TopLine="1297"/>
       </Position18>
       <Position19>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1321" TopLine="1284"/>
+        <Caret Line="1337" TopLine="1300"/>
       </Position19>
       <Position20>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1323" TopLine="1286"/>
+        <Caret Line="1339" TopLine="1302"/>
       </Position20>
       <Position21>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1325" TopLine="1288"/>
+        <Caret Line="1345" TopLine="1308"/>
       </Position21>
       <Position22>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1328" TopLine="1291"/>
+        <Caret Line="1347" TopLine="1310"/>
       </Position22>
       <Position23>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1331" TopLine="1294"/>
+        <Caret Line="1262" TopLine="1236"/>
       </Position23>
       <Position24>
-        <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1333" TopLine="1296"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="58" Column="45" TopLine="49"/>
       </Position24>
       <Position25>
-        <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1334" TopLine="1297"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="44" Column="3" TopLine="42"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1337" TopLine="1300"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="25" Column="15" TopLine="2"/>
       </Position26>
       <Position27>
-        <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1339" TopLine="1302"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="54" Column="3" TopLine="47"/>
       </Position27>
       <Position28>
-        <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1345" TopLine="1308"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="27" Column="15" TopLine="4"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1347" TopLine="1310"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="77" Column="7" TopLine="49"/>
       </Position29>
       <Position30>
-        <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1262" TopLine="1236"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="10" Column="11"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>
