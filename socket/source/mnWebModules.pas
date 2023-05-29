@@ -301,6 +301,7 @@ constructor TmodHttpRespond.Create;
 begin
   inherited Create;
   FCookies := TmnParams.Create;
+  FCookies.Delimiter := ';';
   FURIParams := TmnParams.Create;
   FHttpResult := hrNone;
 end;
@@ -383,7 +384,7 @@ procedure TmodWebModule.Created;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;
-  UseKeepAlive := False;
+  UseKeepAlive := klvUndefined;
   UseCompressing := True;
 
   FDocumentRoot := '';
@@ -754,7 +755,7 @@ begin
     //Respond.AddHeader('Sec-WebSocket-Accept', Key);
   end;
 
-  if Module.UseKeepAlive and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive') then
+  if SameText(Respond.Header.ReadString('Connection'), 'Keep-Alive') then
   begin
     Respond.KeepAlive := True;
     Respond.AddHeader('Connection', 'Keep-Alive');
@@ -784,7 +785,7 @@ begin
   inherited;
   if not Respond.Header.Exists['Content-Length'] then
     Respond.KeepAlive := False;
-  if Respond.KeepAlive and Module.UseKeepAlive and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive') then
+  if Respond.KeepAlive and (Module.UseKeepAlive in [klvUndefined, klvKeepAlive]) and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive') then
   begin
     Result.Timout := Module.KeepAliveTimeOut;
     if Request.Header.IsExists('Keep-Alive') then //idk if really sent from client

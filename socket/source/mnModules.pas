@@ -66,6 +66,16 @@ type
     procedure ReadHeader(Stream: TmnBufferStream);
   end;
 
+  TmodCommunicate = class abstract(TmnObject)
+  private
+    FHeader: TmnHeader;
+    FStream: TmnBufferStream;
+    procedure SetHeader(const AValue: TmnHeader);
+  public
+    property Stream: TmnBufferStream read FStream write FStream;
+    property Header: TmnHeader read FHeader write SetHeader;
+  end;
+
   TmodRequestInfo = record
     Raw: String; //Full of first line of header
 
@@ -84,22 +94,18 @@ type
 
   { TmodRequest }
 
-  TmodRequest = class(TObject)
+  TmodRequest = class(TmodCommunicate)
   private
-    FHeader: TmnHeader;
-    FStream: TmnBufferStream;
     FContentLength: Integer;
     FParams: TmnFields;
     FRoute: TStrings;
     FPath: String;
-    procedure SetRequestHeader(AValue: TmnHeader);
   protected
     Info: TmodRequestInfo;
   public
     constructor Create;
     destructor Destroy; override;
     procedure  Clear;
-    property Stream: TmnBufferStream read FStream;
     property Raw: String read Info.Raw write Info.Raw;
 
     //from raw
@@ -117,7 +123,6 @@ type
     property Params: TmnFields read FParams;
 
     property ContentLength: Integer read FContentLength write FContentLength;
-    property Header: TmnHeader read FHeader write SetRequestHeader;
     function CollectURI: string;
   end;
 
@@ -142,16 +147,16 @@ type
     resEnd
     );
 
+  TmodKeepAlive = (klvUndefined, klvClose, klvKeepAlive);
+
   TmodRespondStates = set of TmodRespondState;
 
   { TmodRespond }
 
-  TmodRespond = class(TObject)
+  TmodRespond = class(TmodCommunicate)
   private
     FStates: TmodRespondStates;
-    FHeader: TmnHeader;
     //FRespondResult: TmodRespondResult;
-    FStream: TmnBufferStream;
   protected
     function HeadText: string; virtual;
     procedure DoSendHeader; virtual;
@@ -160,8 +165,6 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    property Header: TmnHeader read FHeader;
-    property Stream: TmnBufferStream read FStream write FStream;
     property States: TmodRespondStates read FStates;
     //property RespondResult: TmodRespondResult read FRespondResult;
 
@@ -253,7 +256,7 @@ type
     FModules: TmodModules;
     FParams: TStringList;
     FProtocols: TArray<String>;
-    FUseKeepAlive: Boolean;
+    FUseKeepAlive: TmodKeepAlive;
     FUseCompressing: Boolean;
     procedure SetAliasName(AValue: String);
   protected
@@ -271,7 +274,7 @@ type
     function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
     function Match(const ARequest: TmodRequest): Boolean; virtual;
 
-    procedure ReadHeader(RequestHeader: TmnHeader; Stream: TmnBufferStream); virtual;
+    procedure ReadHeader(AHeader: TmnHeader; Stream: TmnBufferStream); virtual;
     procedure ParseHead(ARequest: TmodRequest); virtual;
     function RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
     procedure Log(S: String); virtual;
@@ -293,7 +296,7 @@ type
     property Modules: TmodModules read FModules;
     property Protocols: TArray<String> read FProtocols;
     property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
-    property UseKeepAlive: Boolean read FUseKeepAlive write FUseKeepAlive default False;
+    property UseKeepAlive: TmodKeepAlive read FUseKeepAlive write FUseKeepAlive default klvUndefined;
     property UseCompressing: Boolean read FUseCompressing write FUseCompressing;
     property AliasName: String read FAliasName write SetAliasName;
   end;
@@ -600,15 +603,6 @@ end;
 
 { TmodRequest }
 
-procedure TmodRequest.SetRequestHeader(AValue: TmnHeader);
-begin
-  if FHeader <> AValue then
-  begin
-    FreeAndNil(FHeader);
-    FHeader := AValue;
-  end;
-end;
-
 function TmodRequest.CollectURI: string;
 begin
   Result := URLPathDelim + Address;
@@ -835,7 +829,7 @@ begin
   FRequest := ARequest; //do not free
 
   FRespond := CreateRespond;
-  FRespond.Stream := RequestStream;
+  FRespond.FStream := RequestStream;
 end;
 
 destructor TmodCommand.Destroy;
@@ -941,11 +935,11 @@ begin
 
 end;
 
-procedure TmodModule.ReadHeader(RequestHeader: TmnHeader; Stream: TmnBufferStream);
+procedure TmodModule.ReadHeader(AHeader: TmnHeader; Stream: TmnBufferStream);
 begin
   if Stream <> nil then
   begin
-    RequestHeader.ReadHeader(Stream);
+    AHeader.ReadHeader(Stream);
   end;
 end;
 
@@ -1266,6 +1260,17 @@ begin
     finally
       SubValues.Free;
     end;
+  end;
+end;
+
+{ TmodCommunicate }
+
+procedure TmodCommunicate.SetHeader(const AValue: TmnHeader);
+begin
+  if FHeader <> AValue then
+  begin
+    FreeAndNil(FHeader);
+    FHeader := AValue;
   end;
 end;
 
