@@ -100,7 +100,14 @@ begin
     aWebModule.UseCompressing := CompressChk.Checked;
   end;
   Server.Port := PortEdit.Text;
-  Server.UseSSL := UseSSLChk.Checked
+
+  Server.UseSSL := UseSSLChk.Checked;
+
+  Server.CertificateFile := 'server.cer';
+  Server.PrivateKeyFile := 'server.private.key';
+
+  //Server.CertificateFile := 'test.crt';
+  //Server.PrivateKeyFile := 'test.private.key';
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/', '-']; Seprator: Char = ' '; IgnoreCase: Boolean = true): Boolean;
@@ -145,7 +152,7 @@ begin
   try
     s.WriteInteger('req', 'default_bits', 2048);
     s.WriteInteger('req', 'Serial', 0);
-    s.WriteInteger('req', 'Days', 1);
+    s.WriteInteger('req', 'Days', 300);
     s.WriteString('req', 'emailAddress', 'anasbash@hotmail.com');
     s.WriteString('req', 'distinguished_name', 'dn');
     s.WriteString('req', 'req_extensions', 'req_ext');
@@ -164,7 +171,9 @@ begin
     s.WriteString('alt_names', 'address', 'MyAddress');
     s.WriteString('alt_names', 'category', 'Industry');
 
-    MakeCert('certificate', s);
+    MakeCert2('server.crt', 'server.privatekey.key', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
+
+    //MakeCert2('server', s);
     {if MakeCert(s) then
     begin
       aPubKey := s.ReadString('Result', 'PubKey', '');

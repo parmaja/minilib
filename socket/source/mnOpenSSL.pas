@@ -694,8 +694,11 @@ begin
 end;
 
 procedure TContext.LoadPrivateKeyFile(FileName: utf8string);
+var
+  i: Integer;
 begin
-  if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
+  i := SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM);
+  if i <= 0 then
     raise EmnOpenSSLException.Create('fail to load private key');
 end;
 

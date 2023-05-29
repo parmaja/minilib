@@ -3719,6 +3719,7 @@ var
   SSL_CTX_use_certificate_file: function(ctx: PSSL_CTX; afile: PUTF8Char; atype: Integer): Integer; cdecl;
   SSL_CTX_use_PrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
   SSL_CTX_check_private_key: function(ctx: PSSL_CTX): Integer; cdecl;
+  SSL_CTX_use_RSAPrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
 
   TLS_method: function(): PSSL_METHOD; cdecl;
   TLS_server_method: function(): PSSL_METHOD; cdecl;
@@ -4055,6 +4056,7 @@ begin
   SSL_CTX_free := GetAddress('SSL_CTX_free');
   SSL_CTX_use_certificate_file := GetAddress('SSL_CTX_use_certificate_file');
   SSL_CTX_use_PrivateKey_file := GetAddress('SSL_CTX_use_PrivateKey_file');
+  SSL_CTX_use_RSAPrivateKey_file := GetAddress('SSL_CTX_use_RSAPrivateKey_file');
   SSL_CTX_check_private_key := GetAddress('SSL_CTX_check_private_key');
 
   BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect');
