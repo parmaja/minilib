@@ -509,7 +509,7 @@ begin
     FAcceptLanguage := Header['Accept-Language'];
     FAcceptEncoding.DelimitedText := Header['Content-Encoding'];
     FChunked := Self.Items['Transfer-Encoding'].Have('chunked', [',']);
-
+    FKeepAlive := SameText(Self.Items['Connection'].AsString, 'Keep-Alive');
   end;
 end;
 
@@ -685,7 +685,7 @@ function TmnHttpClient.ReadStream(AStream: TStream): TFileSize;
 var
   s: UTF8String;
 begin
-  if KeepAlive and (Response.ContentLength<>0) then //TODO check if response.KeepAlive
+  if Response.KeepAlive and (Response.ContentLength<>0) then
     Result := FStream.ReadStream(AStream, Response.ContentLength)
   else
     Result := FStream.ReadStream(AStream);
@@ -760,7 +760,7 @@ end;
 function TmnHttpClient.GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
 begin
   if Open(vURL) then
-    Result := FStream.ReadStream(OutStream)
+    Result := ReadStream(OutStream)
   else
     Result := 0;
 end;

@@ -103,11 +103,11 @@ begin
 
   Server.UseSSL := UseSSLChk.Checked;
 
-  Server.CertificateFile := 'server.cer';
+  Server.CertificateFile := 'server.crt';
   Server.PrivateKeyFile := 'server.private.key';
 
-  //Server.CertificateFile := 'test.crt';
-  //Server.PrivateKeyFile := 'test.private.key';
+  //Server.CertificateFile := 'certificate.pem';
+  //Server.PrivateKeyFile := 'key.pem';
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/', '-']; Seprator: Char = ' '; IgnoreCase: Boolean = true): Boolean;
@@ -171,7 +171,7 @@ begin
     s.WriteString('alt_names', 'address', 'MyAddress');
     s.WriteString('alt_names', 'category', 'Industry');
 
-    MakeCert2('server.crt', 'server.privatekey.key', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
+    MakeCert2('server.crt', 'server.private.key', 'minilib', 'parmaja', 'SY', '', 2048, 0, 100);
 
     //MakeCert2('server', s);
     {if MakeCert(s) then
@@ -303,7 +303,10 @@ end;
 
 procedure TMain.ModuleServerAfterOpen(Sender: TObject);
 begin
-  ShellExecute(Handle, 'Open', PWideChar('http://127.0.0.1:'+PortEdit.Text+'/web'), nil, nil, 0);
+  if UseSSLChk.Checked then
+    ShellExecute(Handle, 'Open', PWideChar('https://127.0.0.1/web'), nil, nil, 0)
+  else
+    ShellExecute(Handle, 'Open', PWideChar('http://127.0.0.1:'+PortEdit.Text+'/web'), nil, nil, 0);
 end;
 
 procedure TMain.ModuleServerChanged(Listener: TmnListener);

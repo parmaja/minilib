@@ -47,9 +47,11 @@ type
     procedure InternalCompressImage(GZ, WithHex: Boolean); //GZ image
 
     procedure ExampleSocket;
+    procedure ExampleTimeout;
     procedure ExampleSocketOpenStreet;
     procedure ExampleSocketTestTimeout;
     procedure ExampleSocketTestCancel;
+    procedure ExampleEchoServer;
 
     procedure ExampleSmallBuffer; //read write line with small buffer
     procedure ExampleHexLine; //Hex lines
@@ -82,7 +84,7 @@ type
 
 const
   sMsg: AnsiString = '0123456789';
-  sPort: UTF8String = '9000';
+  sPort: UTF8String = '443';
   sHost = '127.0.0.1';
 
 var
@@ -92,6 +94,7 @@ var
   Sender: TThreadSender = nil;
 
   Address: UTF8String;
+  EndOfLine: UTF8String;
   SocketOptionsStr: UTF8String;
   NoDelay: Boolean = False;
   CancelAfter: Boolean = False;
@@ -130,6 +133,10 @@ begin
     if UseSSL then
       Stream.Options := Stream.Options + [soSSL];
 
+    if EndOfLine<>'' then
+      Stream.EndOfLine := EndOfLine;
+
+
     Stream.Connect;
     try
       while true do
@@ -137,19 +144,22 @@ begin
         Stream.ReadLineUTF8(s);
         WriteLn('Server After read Line "' + s + '"');
         if s = '' then
+        begin
           WriteLn('Seem server socket canceled :(');
+          Break;
+        end;
 
         if not Stream.Connected then
           break;
         if sMsg <> s then
         begin
-          Log.WriteLn('Error msg: ' + s);
-          Break;
+          //Log.WriteLn('Error msg: ' + s);
+          //Break;
         end;
         if TestTimeOut > 0 then
           Sleep(TestTimeOut * 2);
 
-        Stream.WriteLine(sMsg);
+        //Stream.WriteLine(sMsg);
         Inc(Count);
         if not Stream.Connected then
           break;
@@ -206,9 +216,10 @@ begin
             Reciever.Stream.Disconnect;
           b := Stream.WriteLineUTF8(sMsg) > 0;
           b := Stream.ReadLineUTF8(s);
+          WriteLn('client After read Line "' + s + '"');
           if sMsg <> s then
           begin
-            Log.WriteLn('Error msg: ' + s);
+            Log.WriteLn('Error msg: ' + s + ' b: ' + b.ToString(True) + ' connected ' + Stream.Connected.ToString(True));
             Break;
           end;
           if not Stream.Connected then
@@ -427,11 +438,31 @@ begin
   QuickAck := Pos('q', S) > 0;
   WaitBeforeRead := Pos('w', S) > 0;
   UseSSL := Pos('s', S) > 0;
-  TestTimeOut := 100;
+  TestTimeOut := 1000;
   CancelAfter := False;
 
   if s <> 'c' then
     ini.WriteString('Options', 'SocketOptions', S);
+  InternalExampleSocket(WithServer, WithClient);
+end;
+
+procedure TTestStream.ExampleTimeout;
+var
+  WithServer, WithClient: boolean;
+begin
+  WithServer := True;
+  WithClient := True;
+
+  Address := '127.0.0.1';
+
+  NoDelay := True;
+  KeepAlive := False;
+  QuickAck := False;
+  WaitBeforeRead := True;
+  UseSSL := False;
+  TestTimeOut := 100;
+  CancelAfter := False;
+
   InternalExampleSocket(WithServer, WithClient);
 end;
 
@@ -451,7 +482,7 @@ begin
   QuickAck := False;
   UseSSL := False;
   try
-    Stream := TmnClientSocket.Create('c.tile.openstreetmap.de', '443');
+    Stream := TmnClientSocket.Create('c.tile.openstreetmap.org', '443');
     Stream.ReadTimeout := TestTimeOut;
     Stream.Options := SocketOptions;
     Stream.Options := Stream.Options + [soNoDelay];
@@ -468,7 +499,7 @@ begin
       if Stream.Connected then
       begin
         Stream.WriteLineUTF8('GET /17/65536/65536.png HTTP/1.1');
-        Stream.WriteLineUTF8('Host: c.tile.openstreetmap.de');
+        Stream.WriteLineUTF8('Host: c.tile.openstreetmap.org');
         Stream.WriteLineUTF8('User-Agent: Mozilla');
         Stream.WriteLineUTF8('Connection: close');
         Stream.WriteLineUTF8('');
@@ -767,6 +798,27 @@ begin
   end;
 end;
 
+procedure TTestStream.ExampleEchoServer;
+var
+  WithServer, WithClient: boolean;
+begin
+  WithServer := True;
+  WithClient := False;
+
+  Address := '127.0.0.1';
+
+  NoDelay := True;
+  KeepAlive := False;
+  QuickAck := False;
+  WaitBeforeRead := True;
+  UseSSL := True;
+  TestTimeOut := -1;
+  CancelAfter := False;
+  EndOfLine := #$D#$A;
+
+  InternalExampleSocket(WithServer, WithClient);
+end;
+
 procedure TTestStream.ExampleGZImage;
 begin
   InternalCompressImage(True, False);
@@ -922,7 +974,7 @@ var
 begin
   //InitOpenSSL;
   //if not FileExists(Application.Location + 'certificate.pem') then
-    //MakeCert('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
+    //MakeCert2('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
 
   ini := TIniFile.Create(Application.Location + 'Options.ini');
   try
@@ -931,7 +983,9 @@ begin
       WriteLn('');
       InstallConsoleLog;
       Address := ini.ReadString('options', 'Address', sHost);
+      AddProc('Example Echo Server ', ExampleEchoServer);
       AddProc('ExampleSocket: Socket threads', ExampleSocket);
+      AddProc('ExampleTimeout: Socket threads', ExampleTimeout);
       AddProc('ExampleSocket: Socket OpenStreetMap', ExampleSocketOpenStreet);
       AddProc('Example Socket Timout: Socket threads', ExampleSocketTestTimeout);
       AddProc('Example Socket Test Cancel', ExampleSocketTestCancel);

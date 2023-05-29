@@ -23,6 +23,8 @@ type
   EmnOpenSSLException = Exception;
   { TOpenSSLObject }
 
+  TsslError = (seSuccess, seTimeout, seClosed, seInvalid);
+
   TOpenSSLObject = class abstract(TObject)
   public
     constructor Create;
@@ -94,7 +96,7 @@ type
     function Handshake: Boolean;
     procedure SetVerifyNone;
     //Return False if failed
-    function Read(var Buf; Size: Integer; out ReadSize: Integer): Boolean;
+    function Read(var Buf; Size: Integer; out ReadSize: Integer): TsslError;
     function Write(const Buf; Size: Integer; out WriteSize: Integer): Boolean;
     function Pending: Boolean;
   end;
@@ -589,9 +591,9 @@ begin
   SSL_set_verify(Handle, SSL_VERIFY_NONE, nil);
 end;
 
-function TSSL.Read(var Buf; Size: Integer; out ReadSize: Integer): Boolean;
+function TSSL.Read(var Buf; Size: Integer; out ReadSize: Integer): TsslError;
 var
-  err: Integer;
+  err, errno: Integer;
 begin
   if not Active then
     raise EmnOpenSSLException.Create('SSL object is not Active');
@@ -599,21 +601,32 @@ begin
   ReadSize := SSL_read(Handle, Buf, Size);
   if ReadSize <= 0  then
   begin
+    errno := WallSocket.GetSocketError(FSocket);
     err := SSL_get_error(Handle, ReadSize);
-    Log.WriteLn('Read: ' + ERR_error_string(err, nil));
+
     {
       Here we have a problem some are not real error, Disconnected gracefully, or read time out
     }
-    if err = 5 then
+    if err = SSL_ERROR_ZERO_RETURN then
+      Result := seClosed
+    else if err = SSL_ERROR_SYSCALL then
     begin
-      err := WallSocket.GetSocketError(FSocket);
-      Log.WriteLn('Read: Socket Error: ' + IntToStr(err));
+      Log.WriteLn('Read: ' + ERR_error_string(err, nil));
+      Log.WriteLn('Read: Socket Error: ' + IntToStr(errno));
+      Result := seInvalid;
+      //check time out
+    end
+    else
+    begin
+      Log.WriteLn('Read: ' + ERR_error_string(err, nil));
+      Log.WriteLn('Read: Socket Error: ' + IntToStr(errno));
+      Result := seInvalid;
     end;
+
     ReadSize := 0;
-    Result := False;
   end
   else
-    Result := True;
+    Result := seSuccess;
 end;
 
 function TSSL.Write(const Buf; Size: Integer; out WriteSize: Integer): Boolean;
@@ -666,9 +679,12 @@ begin
   Handle := SSL_CTX_new(AMethod.Handle);
   if Handle = nil then
     EmnOpenSSLException.Create('Can not create CTX handle');
+
   o := SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3;
+
   if coNoComppressing in Options then
     o := o or SSL_OP_NO_COMPRESSION;
+
   SSL_CTX_set_options(Handle, o);
 end;
 

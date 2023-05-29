@@ -301,7 +301,7 @@ end;
 function TmnCustomSocket.Receive(var Buffer; var Count: Longint): TmnError;
 var
   ReadSize: Integer;
-  ret: Boolean;
+  ret: TsslError;
 begin
   //CheckActive; //no i do not want exeption in loop of buffer
   if not Active then
@@ -314,16 +314,19 @@ begin
     if SSL.Active then
     begin
       ret := SSL.Read(Buffer, Count, ReadSize);
-      if ret then
-      begin
-        Count := ReadSize;
-        Result := erSuccess;
-      end
-      else
-      begin
-        Count := 0;
-        Result := erInvalid
+      case ret of
+        seTimeout: Result := erTimeout;
+        seClosed: Result := erClosed;
+        seInvalid: Result := erInvalid;
+        else
+          Result := erSuccess;
       end;
+
+      if Result=erSuccess then
+        Count := ReadSize
+      else
+        Count := 0;
+
     end
     else
       Result := DoReceive(Buffer, Count);

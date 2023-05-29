@@ -1363,7 +1363,6 @@ begin
       if MatchIndex = MatchSize then
       begin
         Matched := True;
-
       end;
     end
     else

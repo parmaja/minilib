@@ -229,7 +229,7 @@ begin
 	x509 :=nil;
 	pkey := nil;
   try
-    Result := MakeCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days);
+    Result := MakeCert2(x509, pkey, CN, O, C, OU, Bits, Serial, Days);
     outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');
 	  PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
     BIO_free(outbio);
