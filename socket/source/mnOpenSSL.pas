@@ -558,12 +558,14 @@ end;
 function TSSL.Connect: Boolean;
 var
   ret: Integer;
+  s: string;
 begin
   ret := SSL_connect(Handle);
   if ret < 0  then
   begin
     Result := False;
-    Log.WriteLn('Connect: ' + ERR_error_string(ERR_get_error(), nil));
+    s := ERR_error_string(ERR_get_error(), nil);
+    Log.WriteLn('Connect: ' + s);
   end
   else if ret = 0 then //error
     Result := False

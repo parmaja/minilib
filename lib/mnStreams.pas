@@ -754,6 +754,9 @@ var
 begin
   Result := 0;
   RealCount := 0;
+  if Count=0 then
+    Exit;
+
   aSize := Count;
   {$ifdef FPC} //less hint in fpc
   aBuffer := nil;

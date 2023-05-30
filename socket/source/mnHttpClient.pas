@@ -261,7 +261,7 @@ begin
   e := vPos;
   Inc(e, vCount - l);
   aFound := False;
-  while p < e do
+  while p <= e do
   begin
     if (p^ in vStops) then
       Break;
@@ -376,16 +376,16 @@ end;
 procedure TmnHttpRequest.ApplyHeader;
 begin
   inherited;
-  Header['Host'].AsString := Client.Host;
-  Header['User-Agent'].AsString := Client.UserAgent;
+  Header['Host'] := Client.Host;
+  Header['User-Agent'] := Client.UserAgent;
 
-  Header['Accept'].AsString := Accept;
-  Header['Accept-CharSet'].AsString := FAcceptCharSet;
+  Header['Accept'] := Accept;
+  Header['Accept-CharSet'] := FAcceptCharSet;
   if Client.UseCompressing then
-    Header['Accept-Encoding'].AsString := 'deflate, gzip';
+    Header['Accept-Encoding'] := 'deflate, gzip';
   if FAcceptLanguage<>'' then
-    Header['Accept-Language'].AsString := FAcceptLanguage;
-  Header['Referer'].AsString := FReferer;
+    Header['Accept-Language'] := FAcceptLanguage;
+  Header['Referer'] := FReferer;
 end;
 
 procedure TmnHttpRequest.Created;
@@ -412,6 +412,7 @@ procedure TmnHttpRequest.SendCommand(Command: string; vData: PByte; vCount: Card
   begin
     Stream.WriteLineUTF8(s);
     //TFile.AppendAllText('c:\temp\h.Log', s+#13);
+    WriteLn(s);
   end;
 
   procedure _Write(const s: String); overload;
@@ -460,16 +461,16 @@ end;
 procedure TmnHttpResponse.RetrieveHeader;
 begin
   inherited;
-  FLocation := Header['Location'].AsString;
-  FServer := Header['Server'].AsString;
-  FContentType:= Header['Content-Type'].AsString;
-  FContentLength := StrToIntDef(Header['Content-Length'].AsString, 0);
-  FAccept := Header['Accept'].AsString;
-  FAcceptCharSet := Header['Accept-CharSet'].AsString;
-  FAcceptLanguage := Header['Accept-Language'].AsString;
-  FAcceptEncoding.DelimitedText := Header['Content-Encoding'].AsString;
-  FChunked := Header['Transfer-Encoding'].Have('chunked', [',']);
-  FKeepAlive := SameText(Header['Connection'].AsString, 'Keep-Alive');
+  FLocation := Header['Location'];
+  FServer := Header['Server'];
+  FContentType:= Header['Content-Type'];
+  FContentLength := StrToIntDef(Header['Content-Length'], 0);
+  FAccept := Header['Accept'];
+  FAcceptCharSet := Header['Accept-CharSet'];
+  FAcceptLanguage := Header['Accept-Language'];
+  FAcceptEncoding.DelimitedText := Header['Content-Encoding'];
+  FChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
+  FKeepAlive := SameText(Header['Connection'], 'Keep-Alive');
 end;
 
 function TmnHttpResponse.GetStatusCode: Integer;
@@ -552,11 +553,11 @@ begin
     klvUndefined: ; //TODO
     klvKeepAlive:
     begin
-      Request.Header['Connection'].AsString := 'Keep-Alive';
+      Request.Header['Connection'] := 'Keep-Alive';
       //Keep-Alive: timeout=1200
     end;
     klvClose:
-      Request.Header['Connection'].AsString := 'close';
+      Request.Header['Connection'] := 'close';
   end;
   Stream.Connect;
 end;
@@ -645,8 +646,11 @@ function TmnHttpClient.ReadStream(AStream: TStream): TFileSize;
 var
   s: UTF8String;
 begin
-  if Response.KeepAlive and (Response.ContentLength<>0) then
-    Result := FStream.ReadStream(AStream, Response.ContentLength)
+  if Response.KeepAlive then
+  begin
+    // and (Response.ContentLength<>0) nop and Response.ContentLength=0 checked in read stream
+    Result := FStream.ReadStream(AStream, Response.ContentLength);
+  end
   else
     Result := FStream.ReadStream(AStream);
 end;
@@ -658,7 +662,7 @@ var
 begin
   Response.Receive;
 
-  s := Response.Header['Set-Cookie'].AsString;
+  s := Response.Header['Set-Cookie'];
   Cookies.Delimiter := ';';
   Cookies.AsString := s;
 
@@ -680,9 +684,9 @@ begin
 
 
 
-  if Response.Header['Content-Encoding'].Have('gzip', [',']) then
+  if Response.Header.Field['Content-Encoding'].Have('gzip', [',']) then
     aCompressClass := TmnGzipStreamProxy
-  else if Response.Header['Content-Encoding'].Have('deflate', [',']) then
+  else if Response.Header.Field['Content-Encoding'].Have('deflate', [',']) then
     aCompressClass := TmnDeflateStreamProxy
   else
     aCompressClass := nil;
@@ -735,7 +739,8 @@ begin
     GetStream(vURL, m);
 
     SetLength(b, m.Size);
-    Move(PByte(m.Memory)^, b[0], m.Size);
+    if m.Size<>0 then
+      Move(PByte(m.Memory)^, b[0], m.Size);
     OutString := TEncoding.UTF8.GetString(b);
     Result := m.Size;
   finally
@@ -773,7 +778,7 @@ begin
   try
     Request.SendHead;
     Receive;
-    aSizeStr := Response.Header['Content-Length'].AsString;
+    aSizeStr := Response.Header['Content-Length'];
     FileSize := StrToInt64(aSizeStr);
   finally
     Disconnect;

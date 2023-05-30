@@ -274,7 +274,12 @@ begin
     if Kind = skServer then
       SSL.Handshake
     else
-      SSL.Connect;
+    begin
+      if not SSL.Connect then
+      begin
+        raise EmnSocketException.Create('SSL Connect failed');
+      end;
+    end;
   end;
 end;
 
@@ -576,7 +581,15 @@ begin
       raise EmnSocketException.CreateFmt('Connect failed [#%d]', [aErr]);
   end
   else
-    FSocket.Prepare;
+  begin
+    try
+      //check ssl
+      FSocket.Prepare;
+    except
+      Disconnect;
+      raise;
+    end;
+  end;
 end;
 
 function TmnSocketStream.CreateSocket(out vErr: Integer): TmnCustomSocket;

@@ -59,11 +59,15 @@ type
   { TmnHeader }
 
   TmnHeader = class(TmnParams)
+  private
+    function GetValues(const vName: string): string;
+    procedure SetValues(const vName, Value: string);
   protected
     function CreateField: TmnField; override;
   public
     constructor Create;
     procedure ReadHeader(Stream: TmnBufferStream);
+    property Values[const vName: string]: string read GetValues write SetValues; default;
   end;
 
   TmodCommunicate = class abstract(TmnObject)
@@ -72,8 +76,10 @@ type
     FStream: TmnBufferStream;
     procedure SetHeader(const AValue: TmnHeader);
   public
+    constructor Create;
+    destructor Destroy; override;
     property Stream: TmnBufferStream read FStream write FStream;
-    property Header: TmnHeader read FHeader write SetHeader;
+    property Header: TmnHeader read FHeader;
   end;
 
   TmodRequestInfo = record
@@ -518,12 +524,12 @@ end;
 constructor TmodRespond.Create;
 begin
   inherited;
-  FHeader := TmnHeader.Create;
+
 end;
 
 destructor TmodRespond.Destroy;
 begin
-  FreeAndNil(FHeader);
+
   inherited;
 end;
 
@@ -613,14 +619,12 @@ end;
 constructor TmodRequest.Create;
 begin
   inherited Create;
-  FHeader := TmnHeader.Create;
   FRoute := TStringList.Create;
   FParams := TmnFields.Create;
 end;
 
 destructor TmodRequest.Destroy;
 begin
-  FreeAndNil(FHeader);
   FreeAndNil(FRoute);
   FreeAndNil(FParams);
   inherited Destroy;
@@ -651,6 +655,11 @@ begin
   Result := TmnHeaderField.Create;
 end;
 
+function TmnHeader.GetValues(const vName: string): string;
+begin
+  Result := Field[vName].AsString;
+end;
+
 procedure TmnHeader.ReadHeader(Stream: TmnBufferStream);
 var
   line: String;
@@ -668,6 +677,11 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TmnHeader.SetValues(const vName, Value: string);
+begin
+  SetValue(vName, Value);
 end;
 
 { TmodModuleListener }
@@ -1264,6 +1278,18 @@ begin
 end;
 
 { TmodCommunicate }
+
+constructor TmodCommunicate.Create;
+begin
+  inherited Create;
+  FHeader := TmnHeader.Create;
+end;
+
+destructor TmodCommunicate.Destroy;
+begin
+  FreeAndNil(FHeader);
+  inherited;
+end;
 
 procedure TmodCommunicate.SetHeader(const AValue: TmnHeader);
 begin
