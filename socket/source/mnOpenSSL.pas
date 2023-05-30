@@ -47,7 +47,11 @@ type
   TTLS_SSLMethod = class(TSSLMethod)
   protected
     procedure CreateHandle; override;
-  public
+  end;
+
+  TTLS_SSLClientMethod = class(TSSLMethod)
+  protected
+    procedure CreateHandle; override;
   end;
 
   { TTLS_SSLServerMethod }
@@ -55,7 +59,6 @@ type
   TTLS_SSLServerMethod = class(TSSLMethod)
   protected
     procedure CreateHandle; override;
-  public
   end;
 
   { TCTX }
@@ -516,6 +519,7 @@ begin
   Initialize(Self);
   {$endif}
   CTX := ACTX;
+  //SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
   Handle := SSL_new(CTX.Handle);
   {$ifdef DEBUG}
   Log.WriteLn(SSL_get_version(Handle));
@@ -729,6 +733,13 @@ end;
 procedure TContext.SetVerifyNone;
 begin
   SSL_CTX_set_verify(Handle, SSL_VERIFY_PEER, nil);
+end;
+
+{ TTLS_SSLClientMethod }
+
+procedure TTLS_SSLClientMethod.CreateHandle;
+begin
+  Handle := TLS_client_method();
 end;
 
 end.

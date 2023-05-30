@@ -263,7 +263,10 @@ begin
   begin
     if Context = nil then
     begin
-      Context := TContext.Create(TTLS_SSLMethod);//TODO check if no Context referenced
+      if Kind = skServer then
+        Context := TContext.Create(TTLS_SSLServerMethod)
+      else
+        Context := TContext.Create(TTLS_SSLClientMethod);
       ContextOwned := True;
     end;
 

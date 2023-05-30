@@ -3722,6 +3722,7 @@ var
   SSL_CTX_use_RSAPrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
 
   TLS_method: function(): PSSL_METHOD; cdecl;
+  TLS_client_method: function(): PSSL_METHOD; cdecl;
   TLS_server_method: function(): PSSL_METHOD; cdecl;
 
   RAND_bytes: function(buf: PByte; num: Integer): Integer; cdecl;
@@ -4046,6 +4047,7 @@ begin
   SSL_get_peer_certificate := GetAddress('SSL_get_peer_certificate');
 
   TLS_method := GetAddress('TLS_method');
+  TLS_client_method := GetAddress('TLS_client_method');
   TLS_server_method := GetAddress('TLS_server_method');
 
   SSL_CTX_new := GetAddress('SSL_CTX_new');
