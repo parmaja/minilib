@@ -97,7 +97,7 @@ begin
   begin
     aHeader := TmnHeader.Create;
     aHeader.ReadHeader(vStream);
-    aType := aHeader['Content-Type'].AsString;
+    aType := aHeader['Content-Type'];
 
 //    ContentLength := Request.Header['Content-Length'].AsInteger;
 //    aHeader.

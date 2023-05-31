@@ -107,7 +107,7 @@ begin
   begin
     if Result <> '' then
       Result := Result + Delimiter;
-    Result := Result + Item.Name + Separator + ' ' + Item.AsString;
+    Result := Result + Item.Name + Separator + Item.AsString;
   end;
 end;
 
