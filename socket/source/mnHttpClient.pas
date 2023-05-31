@@ -412,7 +412,6 @@ procedure TmnHttpRequest.SendCommand(Command: string; vData: PByte; vCount: Card
   begin
     Stream.WriteLineUTF8(s);
     //TFile.AppendAllText('c:\temp\h.Log', s+#13);
-    WriteLn(s);
   end;
 
   procedure _Write(const s: String); overload;
@@ -652,7 +651,7 @@ begin
     Result := FStream.ReadStream(AStream, Response.ContentLength);
   end
   else
-    Result := FStream.ReadStream(AStream);
+    Result := FStream.ReadStream(AStream, -1); //read complete stream
 end;
 
 procedure TmnHttpClient.Receive;

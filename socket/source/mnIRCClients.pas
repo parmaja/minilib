@@ -44,7 +44,7 @@ fix topic changing
 interface
 
 uses
-  Classes, StrUtils, SyncObjs,
+  Classes, StrUtils, SyncObjs, Types,
   mnClasses, mnSockets, mnServers, mnClients, mnStreams, mnConnections, mnUtils;
 
 const
@@ -204,7 +204,7 @@ type
     function DoAccept(aName: string): Boolean; virtual; //Extending accept, useing OR
     function Accept(aName: string; aSubName: string = ''; aCTCP: Boolean = False): Boolean;
   public
-    Codes: TIntegerArray;
+    Codes: TIntegerDynArray;
     SubName: string;
     constructor Create(AClient: TmnIRCClient); virtual;
   end;
@@ -221,8 +221,8 @@ type
   public
     constructor Create(AClient: TmnIRCClient);
     destructor Destroy; override;
-    function Add(vName: string; vCodes: array of Integer; AClass: TIRCReceiverClass): Integer; overload;
-    function Add(vName: string; vSubName: string; vCTCP: Boolean; vCodes: array of Integer; AClass: TIRCReceiverClass): Integer; overload;
+    function Add(vName: string; vCodes: TIntegerDynArray; AClass: TIRCReceiverClass): Integer; overload;
+    function Add(vName: string; vSubName: string; vCTCP: Boolean; vCodes: TIntegerDynArray; AClass: TIRCReceiverClass): Integer; overload;
     function Find(aName, aSubName: string; aCTCP: Boolean): TIRCReceiver;
     property Client: TmnIRCClient read FClient;
   end;
@@ -2134,12 +2134,12 @@ end;
 
 { TCustomIRCReceivers }
 
-function TCustomIRCReceivers.Add(vName: string; vCodes: array of Integer; AClass: TIRCReceiverClass): Integer;
+function TCustomIRCReceivers.Add(vName: string; vCodes: TIntegerDynArray; AClass: TIRCReceiverClass): Integer;
 begin
   Result := Add(vName, '', False, vCodes, AClass);
 end;
 
-function TCustomIRCReceivers.Add(vName: string; vSubName: string; vCTCP: Boolean; vCodes: array of Integer; AClass: TIRCReceiverClass): Integer;
+function TCustomIRCReceivers.Add(vName: string; vSubName: string; vCTCP: Boolean; vCodes: TIntegerDynArray; AClass: TIRCReceiverClass): Integer;
 var
   AReceiver: TIRCReceiver;
 begin
