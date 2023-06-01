@@ -272,6 +272,7 @@ begin
 
     SSL := TSSL.Init(Context);
 
+
     SSL.SetSocket(FHandle);
 
     if Kind = skServer then

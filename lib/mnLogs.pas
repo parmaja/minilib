@@ -38,7 +38,8 @@ type
     destructor Destroy; override;
     function Add(AObject: TObject): Integer;
     procedure Write(S: string); overload;
-    procedure WriteLn(S: string);
+    procedure WriteLn(S: string); overload;
+    procedure WriteLn(S: string; vArgs: array of const); overload;
 
     procedure Write(R: TRect); overload;
     procedure Write(I: Integer); overload;
@@ -302,6 +303,11 @@ end;
 procedure TLogDispatcher.Write(S: string; I: Integer);
 begin
   Write(S + ': ' + IntToStr(I));
+end;
+
+procedure TLogDispatcher.WriteLn(S: string; vArgs: array of const);
+begin
+  Self.WriteLn(Format(s, vArgs));
 end;
 
 { TFileLog }
