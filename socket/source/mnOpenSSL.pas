@@ -82,10 +82,13 @@ type
     constructor Create(AMethod: TSSLMethod; Options: TContextOptions = [coNoComppressing]); overload;
     constructor Create(AMethodClass: TSSLMethodClass); overload;
     destructor Destroy; override;
+    procedure SetVerifyLocation(Location: utf8string);
+    procedure SetVerifyFile(AFileName: utf8string);
     procedure LoadCertFile(FileName: utf8string);
     procedure LoadPrivateKeyFile(FileName: utf8string);
     procedure CheckPrivateKey;
     procedure SetVerifyNone;
+    procedure SetVerifyPeer;
   end;
 
   TSSL = record//class(TOpenSSLObject)
@@ -99,6 +102,7 @@ type
   //public
     constructor Init(ACTX: TContext); overload;
     constructor Init(ASSL: PSSL); overload;
+    procedure SetHostName(AHostName: string);
     procedure Free;
     procedure ShutDown;
     procedure SetSocket(ASocket: Integer);
@@ -557,8 +561,6 @@ end;
 { TSSL }
 
 constructor TSSL.Init(ACTX: TContext);
-var
-  h: THandle;
 begin
   //inherited Create;
   {$ifdef FPC}
@@ -568,10 +570,6 @@ begin
   //SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
 
   Handle := SSL_new(CTX.Handle);
-
-  //when connect error to cloudflare site https://www.discogs.com/forum/thread/861907
-  //s := 'community.cloudflare.com';
-  //SSL_set_tlsext_host_name(Handle, PUTF8Char(s));
 
   {$ifdef DEBUG}
   //Log.WriteLn(SSL_get_version(Handle));
@@ -588,6 +586,14 @@ begin
   //inherited Create;
   Handle := ASSL;
   Active := True;
+end;
+
+procedure TSSL.SetHostName(AHostName: string);
+begin
+  //when connect error to cloudflare site https://www.discogs.com/forum/thread/861907
+  //s := 'community.cloudflare.com';
+  //* thanks to "p.sanders" https://www.discogs.com/forum/thread/861907#8612173
+  SSL_set_tlsext_host_name(Handle, PUTF8Char(AHostName));
 end;
 
 procedure TSSL.ShutDown;
@@ -748,8 +754,8 @@ begin
   if Handle = nil then
     EmnOpenSSLException.Create('Can not create CTX handle');
 
-  //o := SSL_OP_ALL or SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_SINGLE_DH_USE or SSL_OP_SINGLE_ECDH_USE or SSL_OP_CIPHER_SERVER_PREFERENCE;
-  o := SSL_OP_ALL or SSL_OP_SINGLE_DH_USE;
+  o := SSL_OP_ALL or SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_SINGLE_DH_USE or SSL_OP_SINGLE_ECDH_USE or SSL_OP_CIPHER_SERVER_PREFERENCE;
+  //o := SSL_OP_ALL or SSL_OP_SINGLE_DH_USE;
 
   if coNoComppressing in Options then
     o := o or SSL_OP_NO_COMPRESSION;
@@ -757,13 +763,13 @@ begin
   SSL_CTX_set_options(Handle, o);
   //SSL_CTX_set_min_proto_version(Handle, TLS1_3_VERSION);
   //SSL_CTX_set_max_proto_version(Handle, TLS1_3_VERSION);
-  SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
-  SSL_CTX_set_alpn_protos(Handle, PUTF8Char(sALPNProts), Length(sALPNProts));
+
+  //SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
+  //SSL_CTX_set_alpn_protos(Handle, PUTF8Char(sALPNProts), Length(sALPNProts));
 
   {$ifopt D+}
   SSL_CTX_set_info_callback(Handle, debug_callback);
   {$endif}
-  //var i := SSL_CTX_load_verify_locations(Handle, 'D:\Users\Belal\Downloads\cloudflaressl.com.crt', nil);
 end;
 
 constructor TContext.Create(AMethodClass: TSSLMethodClass);
@@ -802,7 +808,26 @@ begin
     raise EmnOpenSSLException.Create('Private key does not match the public certificate');
 end;
 
+procedure TContext.SetVerifyFile(AFileName: utf8string);
+var
+  err: Integer;
+begin
+  err := SSL_CTX_load_verify_locations(Handle, PUTF8Char(AFileName), nil);
+end;
+
+procedure TContext.SetVerifyLocation(Location: utf8string);
+var
+  err: Integer;
+begin
+  err := SSL_CTX_load_verify_locations(Handle, nil, PUTF8Char(Location));
+end;
+
 procedure TContext.SetVerifyNone;
+begin
+  SSL_CTX_set_verify(Handle, SSL_VERIFY_NONE, nil);
+end;
+
+procedure TContext.SetVerifyPeer;
 begin
   SSL_CTX_set_verify(Handle, SSL_VERIFY_PEER, nil);
 end;

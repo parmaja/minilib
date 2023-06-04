@@ -508,7 +508,8 @@ procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeo
 var
   aHandle: TSocketHandle;
   aAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
-  aHost: PHostEnt;
+  aHostAddress: PHostEnt;
+  aHostName: string;
   ret: Longint;
   aMode: u_long;
 begin
@@ -558,21 +559,22 @@ begin
         aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
         if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
         begin
-          aHost := gethostbyname(PAnsiChar(AnsiString(Address)));
-          if aHost <> nil then
+          aHostAddress := gethostbyname(PAnsiChar(AnsiString(Address)));
+          if aHostAddress <> nil then
           begin
             {$ifdef FPC}
-            aAddr.sin_addr.S_un_b.s_b1 := aHost.h_addr^[0];
-            aAddr.sin_addr.S_un_b.s_b2 := aHost.h_addr^[1];
-            aAddr.sin_addr.S_un_b.s_b3 := aHost.h_addr^[2];
-            aAddr.sin_addr.S_un_b.s_b4 := aHost.h_addr^[3];
+            aAddr.sin_addr.S_un_b.s_b1 := aHostAddress.h_addr^[0];
+            aAddr.sin_addr.S_un_b.s_b2 := aHostAddress.h_addr^[1];
+            aAddr.sin_addr.S_un_b.s_b3 := aHostAddress.h_addr^[2];
+            aAddr.sin_addr.S_un_b.s_b4 := aHostAddress.h_addr^[3];
             {$else}
-            aAddr.sin_addr.S_un_b.s_b1 := Byte(aHost.h_addr^[0]);
-            aAddr.sin_addr.S_un_b.s_b2 := Byte(aHost.h_addr^[1]);
-            aAddr.sin_addr.S_un_b.s_b3 := Byte(aHost.h_addr^[2]);
-            aAddr.sin_addr.S_un_b.s_b4 := Byte(aHost.h_addr^[3]);
+            aAddr.sin_addr.S_un_b.s_b1 := Byte(aHostAddress.h_addr^[0]);
+            aAddr.sin_addr.S_un_b.s_b2 := Byte(aHostAddress.h_addr^[1]);
+            aAddr.sin_addr.S_un_b.s_b3 := Byte(aHostAddress.h_addr^[2]);
+            aAddr.sin_addr.S_un_b.s_b4 := Byte(aHostAddress.h_addr^[3]);
             {$endif}
-            aAddr.sin_family := aHost.h_addrtype;
+            aAddr.sin_family := aHostAddress.h_addrtype;
+            aHostName := Address;
           end;
         end;
       end;
@@ -610,14 +612,14 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skClient)
+    vSocket := TmnSocket.Create(aHandle, Options, skClient, String(inet_ntoa(sockaddr_in(aAddr).sin_addr)), aHostName)
   else
     vSocket := nil;
 end;
 
 function TmnWallSocket.ResolveIP(Address: string): string;
 var
-  aHost: PHostEnt;
+  aHostAddress: PHostEnt;
   aAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
 begin
   if Address <> '' then
@@ -625,9 +627,9 @@ begin
     aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
     if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
     begin
-      aHost := gethostbyname(PAnsiChar(AnsiString(Address)));
-      if aHost <> nil then
-        Result := Byte(aHost.h_addr^[0]).ToString + '.' + Byte(aHost.h_addr^[1]).ToString + '.' + Byte(aHost.h_addr^[2]).ToString + '.' + Byte(aHost.h_addr^[3]).ToString
+      aHostAddress := gethostbyname(PAnsiChar(AnsiString(Address)));
+      if aHostAddress <> nil then
+        Result := Byte(aHostAddress.h_addr^[0]).ToString + '.' + Byte(aHostAddress.h_addr^[1]).ToString + '.' + Byte(aHostAddress.h_addr^[2]).ToString + '.' + Byte(aHostAddress.h_addr^[3]).ToString
       else
         Result := '';
     end

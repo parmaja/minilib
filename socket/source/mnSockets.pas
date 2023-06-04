@@ -53,8 +53,9 @@ type
     soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set set ReadTimeout if no data come
     soWaitBeforeWrite, //Wait for ready before write, idk what for
     soCloseTimeout, //close socket if read timeout
-    soWebsocket,  //Use OpenSSL 1.1.1
-    soSSL  //Use OpenSSL 1.1.1
+    soSSL,  //Use OpenSSL 1.1.1
+    soSSLDebug, //* TODO
+    soWebsocket  //Use OpenSSL 1.1.1
     );
   TmnsoOptions = set of TmnsoOption;
 
@@ -74,6 +75,8 @@ type
   private
     FOptions: TmnsoOptions;
     FKind: TSocketKind;
+    FHostAdress: string;
+		FHostName: string;
     function GetConnected: Boolean;
   protected
     FStates: TmnSocketStates;
@@ -98,7 +101,7 @@ type
   public
     Context: TContext; //Maybe Reference to Listener CTX or external CTX
 
-    constructor Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind);
+    constructor Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAdress: string = ''; AHostName: string = '');
     destructor Destroy; override;
     procedure Prepare; virtual; //TODO rename Connect;
     function Shutdown(How: TmnSocketStates): TmnError;
@@ -119,6 +122,9 @@ type
     function GetLocalName: string; virtual; abstract;
     function GetRemoteName: string; virtual; abstract;
     //property Handle: TSocketHandle read FHandle; //I prefer not public it, but i need it into OpenSSL
+
+    property HostAdress: string read FHostAdress;
+		property HostName: string read FHostName;
   end;
 
   { TmnCustomWallSocket }
@@ -238,12 +244,14 @@ begin
   end
 end;
 
-constructor TmnCustomSocket.Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind);
+constructor TmnCustomSocket.Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAdress: string; AHostName: string);
 begin
   inherited Create;
   FOptions := AOptions;
   FKind := AKind;
   FHandle := AHandle;
+  FHostName := AHostName;
+  FHostAdress := AHostAdress;
 end;
 
 destructor TmnCustomSocket.Destroy;
@@ -268,10 +276,13 @@ begin
       else
         Context := TContext.Create(TTLS_SSLClientMethod);
       ContextOwned := True;
+      //Context.SetVerifyLocation('C:\Programs\curl\bin');
     end;
 
     SSL := TSSL.Init(Context);
 
+    if (HostName<>'') then
+		  SSL.SetHostName(HostName);
 
     SSL.SetSocket(FHandle);
 

@@ -423,7 +423,8 @@ procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeo
 var
   aHandle: TSocketHandle;
   aAddr : TINetSockAddr;
-  aHost: THostEntry;
+  aHostAddress: THostEntry;
+  aHostName: string;
   aMode: longint;
   ret: cint;
   time: ttimeval;
@@ -459,10 +460,11 @@ begin
         aAddr.sin_addr := StrToNetAddr(Address);
         if (aAddr.sin_addr.s_addr = 0) then
         begin
-          if ResolveHostByName(Address, aHost) then
+          if ResolveHostByName(Address, aHostAddress) then
           begin
-            aAddr.sin_addr.s_addr := aHost.Addr.s_addr;
-          end;
+            aHostName := Address;
+            aAddr.sin_addr.s_addr := aHostAddress.Addr.s_addr;
+          end
         end;
       end;
 
@@ -496,7 +498,7 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skClient)
+    vSocket := TmnSocket.Create(aHandle, Options, skClient, String(NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)), aHostName)
   else
     vSocket := nil;
 end;
