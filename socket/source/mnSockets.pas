@@ -277,6 +277,7 @@ begin
         Context := TContext.Create(TTLS_SSLClientMethod);
       ContextOwned := True;
       //Context.SetVerifyLocation('C:\Programs\curl\bin');
+      //Context.SetVerifyFile('D:\temp\ssl\sni.cloudflaressl.com.crt');
     end;
 
     SSL := TSSL.Init(Context);

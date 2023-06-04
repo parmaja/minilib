@@ -57,6 +57,7 @@ type
     procedure ExampleSocketTestCancel;
     procedure ExampleEchoServer;
 
+    procedure ExamplePostmanEcho;
     procedure ExampleCloudFlare;
 
     procedure ExampleSmallBuffer; //read write line with small buffer
@@ -632,6 +633,48 @@ begin
   InternalCompressImage(False, False);
 end;
 
+procedure TTestStream.ExamplePostmanEcho;
+var
+  m: TStringStream;
+  c: TmnHttpClient;
+  s: string;
+begin
+  //https://documenter.getpostman.com/view/5025623/SWTG5aqV
+  m := TStringStream.Create;
+  c := TmnHttpClient.Create;
+  try
+    //c.UserAgent := 'curl/7.83.1';
+    c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.Accept := '*/*';
+    //c.Compressing := True;
+
+    s := m.DataString;
+
+
+
+    //c.GetString('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896', s);
+    c.GetString('https://postman-echo.com/get?test=1', s);
+    //c.GetString('https://raw.githubusercontent.com/paramjani12/paramjani12/main/README.md', s);
+
+    //c.Get('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896');
+    //c.ReadStream(m);
+
+
+    Writeln('');
+    Writeln(c.Response.Head);
+    for var h in c.Response.Header do
+      Writeln('>'+h.GetNameValue);
+    Writeln(s);
+
+    Writeln(c.Response.StatusCode.ToString);
+    Readln;
+
+  finally
+    c.Free;
+    m.Free;
+  end;
+end;
+
 procedure TTestStream.ExampleReadLineFile;
 var
   aTextFile: TFileStream;
@@ -781,18 +824,17 @@ begin
   m := TStringStream.Create;
   c := TmnHttpClient.Create;
   try
-    c.UserAgent := 'curl/7.83.1';
-    //c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-
-    //c.Request.Accept := '*/*';
+    //c.UserAgent := 'curl/7.83.1';
+    c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.Accept := '*/*';
     //c.Compressing := True;
 
     s := m.DataString;
 
 
     //c.GetString('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896', s);
-    //c.GetString('https://community.cloudflare.com/', s);
-    c.GetString('https://raw.githubusercontent.com/paramjani12/paramjani12/main/README.md', s);
+    c.GetString('https://community.cloudflare.com/', s);
+    //c.GetString('https://raw.githubusercontent.com/paramjani12/paramjani12/main/README.md', s);
 
     //c.Get('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896');
     //c.ReadStream(m);
@@ -1038,6 +1080,7 @@ begin
       InstallConsoleLog;
       Info.Address := ini.ReadString('options', 'Address', sHost);
       AddProc('Example Download Cloud Flare ', ExampleCloudFlare);
+      AddProc('Example Postman Echo ', ExamplePostmanEcho);
       AddProc('Example Echo Server ', ExampleEchoServer);
       AddProc('ExampleSocket: Socket threads', ExampleSocket);
       AddProc('ExampleTimeout: Socket threads', ExampleTimeout);

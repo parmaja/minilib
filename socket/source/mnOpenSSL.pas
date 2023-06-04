@@ -9,6 +9,7 @@ unit mnOpenSSL;
  {**
     openssl s_client -connect community.cloudflare.com:443 -nextprotoneg ''
     curl -v --http1.1 -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" "https://www.hepsiburada.com/" > 1.txt
+    curl -v --http1.1 -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" "https://community.cloudflare.com" > 1.txt
  *}
 
 {$M+}
@@ -102,7 +103,7 @@ type
   //public
     constructor Init(ACTX: TContext); overload;
     constructor Init(ASSL: PSSL); overload;
-    procedure SetHostName(AHostName: string);
+    procedure SetHostName(AHostName: UTF8String);
     procedure Free;
     procedure ShutDown;
     procedure SetSocket(ASocket: Integer);
@@ -378,7 +379,7 @@ begin
 
     AddExt(x, NID_basic_constraints, 'critical,CA:TRUE');
     //AddExt(x, NID_key_usage, PUTF8Char('critical,digitalSignature,keyEncipherment'));
-    AddExt(x, NID_key_usage, PUTF8Char('critical,cRLSign,digitalSignature,keyCertSign')); //Self-Signed
+    AddExt(x, NID_key_usage, PUTF8Char(UTF8String('critical,cRLSign,digitalSignature,keyCertSign'))); //Self-Signed
     AddExt(x, NID_subject_key_identifier, 'hash');
 
     sign := X509_sign(x, pk, EVP_sha256());
@@ -573,10 +574,9 @@ begin
 
   {$ifdef DEBUG}
   //Log.WriteLn(SSL_get_version(Handle));
-  SSL_ctrl(Handle, SSL_CTRL_SET_DEBUG_LEVEL, SSL_DEBUG_CONNECT or SSL_DEBUG_HANDSHAKE or SSL_DEBUG_ERROR, nil);
-  bio_out := BIO_new_file('xdebugx.log', 'w');
-  SSL_set_bio(Handle, nil, bio_out);
-
+  //SSL_ctrl(Handle, SSL_CTRL_SET_DEBUG_LEVEL, SSL_DEBUG_CONNECT or SSL_DEBUG_HANDSHAKE or SSL_DEBUG_ERROR, nil);
+  //bio_out := BIO_new_file('xdebugx.log', 'w');
+  //SSL_set_bio(Handle, nil, bio_out);
   {$endif}
   Active := True;
 end;
@@ -588,7 +588,7 @@ begin
   Active := True;
 end;
 
-procedure TSSL.SetHostName(AHostName: string);
+procedure TSSL.SetHostName(AHostName: UTF8String);
 begin
   //when connect error to cloudflare site https://www.discogs.com/forum/thread/861907
   //s := 'community.cloudflare.com';
@@ -754,8 +754,8 @@ begin
   if Handle = nil then
     EmnOpenSSLException.Create('Can not create CTX handle');
 
-  o := SSL_OP_ALL or SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_SINGLE_DH_USE or SSL_OP_SINGLE_ECDH_USE or SSL_OP_CIPHER_SERVER_PREFERENCE;
-  //o := SSL_OP_ALL or SSL_OP_SINGLE_DH_USE;
+  //o := SSL_OP_ALL or SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_SINGLE_DH_USE or SSL_OP_SINGLE_ECDH_USE or SSL_OP_CIPHER_SERVER_PREFERENCE;
+  o := SSL_OP_ALL or SSL_OP_SINGLE_DH_USE;
 
   if coNoComppressing in Options then
     o := o or SSL_OP_NO_COMPRESSION;
@@ -764,8 +764,8 @@ begin
   //SSL_CTX_set_min_proto_version(Handle, TLS1_3_VERSION);
   //SSL_CTX_set_max_proto_version(Handle, TLS1_3_VERSION);
 
-  //SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
-  //SSL_CTX_set_alpn_protos(Handle, PUTF8Char(sALPNProts), Length(sALPNProts));
+  SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
+  SSL_CTX_set_alpn_protos(Handle, PUTF8Char(sALPNProts), Length(sALPNProts));
 
   {$ifopt D+}
   SSL_CTX_set_info_callback(Handle, debug_callback);
