@@ -101,7 +101,8 @@ type
   PPEC_POINT = ^PEC_POINT;
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
-  TCTXInfoCallback = procedure(const ssl: PSSL; where: cint; ret: cint); cdecl;
+  TCTXInfoCallback = procedure(ssl: PSSL; where: cint; ret: cint); cdecl;
+  TCTXAlpnSelectCallback = function(ssl: PSSL; var outdata: PByte; var outlen: integer; const indata: PByte; inlen: Byte; arg: Pointer): Integer; cdecl;
 
   { Context specific info }
   //https://abi-laboratory.pro/index.php?view=type_view&l=openssl&v=1.0.2e&obj=c93f7&t=1ede6
@@ -350,6 +351,7 @@ var
   SSL_set_fd: function(ssl: PSSL; d: Integer): integer; cdecl;
   SSL_connect: function(ssl: PSSL): Integer; cdecl;
   SSL_accept: function(ssl: PSSL): Integer; cdecl;
+  SSL_set_bio: procedure(ssl: PSSL; rbio: PBIO; wbio: PBIO); cdecl;
 
   SSL_read: function(ssl: PSSL; var buf; size: integer): integer; cdecl;
   SSL_write: function(ssl: PSSL; const buf; size: integer): integer; cdecl;
@@ -361,6 +363,7 @@ var
   SSL_state_string_long: function(ssl: PSSL): PUTF8Char; cdecl;
   SSL_alert_type_string_long: function(val: integer): PUTF8Char; cdecl;
   SSL_alert_desc_string_long: function(val: integer): PUTF8Char; cdecl;
+  SSL_select_next_proto: function(var outdata: PUTF8Char; var outlen: Integer; server: PUTF8Char; serverlen: Integer; client: PUTF8Char; clientlen: Integer): Integer; cdecl;
 
   SSL_CTX_new: function(Method: PSSL_METHOD): PSSL_CTX; cdecl;
   SSL_CTX_set_verify: procedure(ctx: PSSL_CTX; Mode: Integer; Callback: TSSLVerifyCallback); cdecl;
@@ -374,6 +377,8 @@ var
   SSL_CTX_use_RSAPrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
   SSL_CTX_ctrl: function(ctx: PSSL_CTX; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
   SSL_CTX_set_info_callback: procedure(ctx: PSSL_CTX; Callback: TCTXInfoCallback); cdecl;
+  SSL_CTX_set_alpn_select_cb: function(ctx: PSSL_CTX; Callback: TCTXAlpnSelectCallback; args: Pointer): Integer; cdecl;
+  SSL_CTX_set_alpn_protos: function(ctx: PSSL_CTX; prots: PUTF8Char; len: integer): Integer; cdecl;
 
   TLS_method: function(): PSSL_METHOD; cdecl;
   TLS_client_method: function(): PSSL_METHOD; cdecl;
@@ -725,11 +730,13 @@ begin
   SSL_write := GetAddress('SSL_write');
   SSL_pending := GetAddress('SSL_pending');
   SSL_has_pending := GetAddress('SSL_has_pending');
+  SSL_set_bio := GetAddress('SSL_set_bio');
 
   SSL_state_string := GetAddress('SSL_state_string');
   SSL_state_string_long := GetAddress('SSL_state_string_long');
   SSL_alert_type_string_long := GetAddress('SSL_alert_type_string_long');
   SSL_alert_desc_string_long := GetAddress('SSL_alert_desc_string_long');
+  SSL_select_next_proto := GetAddress('SSL_select_next_proto');
 
   SSL_get_peer_certificate := GetAddress('SSL_get_peer_certificate');
 
@@ -749,6 +756,8 @@ begin
   SSL_CTX_check_private_key := GetAddress('SSL_CTX_check_private_key');
   SSL_CTX_ctrl := GetAddress('SSL_CTX_ctrl');
   SSL_CTX_set_info_callback := GetAddress('SSL_CTX_set_info_callback');
+  SSL_CTX_set_alpn_select_cb := GetAddress('SSL_CTX_set_alpn_select_cb');
+  SSL_CTX_set_alpn_protos := GetAddress('SSL_CTX_set_alpn_protos');
 
 
   BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect');

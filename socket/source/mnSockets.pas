@@ -276,10 +276,10 @@ begin
     SSL.SetSocket(FHandle);
 
     if Kind = skServer then
-      SSL.Handshake
+      SSL.ServerHandshake
     else
     begin
-      if not SSL.Connect then
+      if not SSL.ClientHandshake then
       begin
         raise EmnSocketException.Create('SSL Connect failed');
       end;

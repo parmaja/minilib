@@ -5,6 +5,12 @@ unit mnOpenSSL;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
+
+ {**
+    openssl s_client -connect community.cloudflare.com:443 -nextprotoneg ''
+    curl -v --http1.1 -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" "https://www.hepsiburada.com/" > 1.txt
+ *}
+
 {$M+}
 {$H+}
 {$IFDEF FPC}
@@ -84,6 +90,7 @@ type
 
   TSSL = record//class(TOpenSSLObject)
   //protected
+    bio_out: PBIO;
     Handle: PSSL;
     CTX: TContext;
     Connected: Boolean;
@@ -95,8 +102,8 @@ type
     procedure Free;
     procedure ShutDown;
     procedure SetSocket(ASocket: Integer);
-    function Connect: Boolean;
-    function Handshake: Boolean;
+    function ClientHandshake: Boolean;
+    function ServerHandshake: Boolean;
     procedure SetVerifyNone;
     //Return False if failed
     function Read(var Buf; Size: Integer; out ReadSize: Integer): TsslError;
@@ -160,15 +167,38 @@ implementation
 uses
   mnSockets;
 
-procedure debug_callback(const ssl: PSSL; where: cint; ret: cint); cdecl;
+const
+  sALPNProts: UTF8String = 'http/1.1, h2';
+
+function alpn_select_cb(ssl: PSSL; var outdata: PByte; var outlen: integer; const indata: PByte; inlen: Byte; arg: Pointer): Integer; cdecl;
+var
+  ret: Integer;
 begin
+  ret := SSL_select_next_proto(PUTF8Char(outdata), outlen, PUTF8Char(indata), inlen, PUTF8Char(sALPNProts), Length(sALPNProts));
+
+  if ret <> OPENSSL_NPN_NEGOTIATED then
+    Result := SSL_TLSEXT_ERR_NOACK
+  else
+    Result := SSL_TLSEXT_ERR_OK;
+end;
+
+procedure debug_callback(ssl: PSSL; where: cint; ret: cint); cdecl;
+var
+  s: UTF8String;
+begin
+  s := SSL_state_string_long(ssl);
+  Log.writeln(s);
+
+  s := SSL_state_string(ssl);
+  Log.writeln(s);
+
   case where of
-    SSL_CB_ALERT: Log.writeln('SSL alert: '+ SSL_alert_type_string_long(ret)+ ':'+ SSL_alert_desc_string_long(ret)+ ':'+ SSL_state_string(ssl));
+    SSL_CB_ALERT: Log.writeln('SSL alert: '+ SSL_alert_type_string_long(ret)+ ':'+ SSL_alert_desc_string_long(ret)+ ':');
     SSL_CB_LOOP: Log.writeln('SSL state: '+ SSL_state_string(ssl)+ ':'+ SSL_state_string_long(ssl));
-    SSL_CB_HANDSHAKE_START: Log.writeln('SSL handshake started: '+ SSL_state_string(ssl));
-    SSL_CB_HANDSHAKE_DONE: Log.writeln('SSL handshake completed: '+ SSL_state_string(ssl));
+    SSL_CB_HANDSHAKE_START: Log.writeln('SSL handshake started');
+    SSL_CB_HANDSHAKE_DONE: Log.writeln('SSL handshake completed');
     else
-      Log.writeln('SSL alert: '+ SSL_alert_type_string_long(ret)+ ':'+ SSL_alert_desc_string_long(ret)+ ':'+ SSL_state_string(ssl));
+      Log.writeln('SSL alert: '+ SSL_alert_type_string_long(ret)+ ':'+ SSL_alert_desc_string_long(ret));
       //Log.writeln('where %d ret %d state:', [where, ret]);
   end;
 end;
@@ -527,6 +557,8 @@ end;
 { TSSL }
 
 constructor TSSL.Init(ACTX: TContext);
+var
+  h: THandle;
 begin
   //inherited Create;
   {$ifdef FPC}
@@ -536,8 +568,17 @@ begin
   //SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
 
   Handle := SSL_new(CTX.Handle);
+
+  //when connect error to cloudflare site https://www.discogs.com/forum/thread/861907
+  //s := 'community.cloudflare.com';
+  //SSL_set_tlsext_host_name(Handle, PUTF8Char(s));
+
   {$ifdef DEBUG}
   //Log.WriteLn(SSL_get_version(Handle));
+  SSL_ctrl(Handle, SSL_CTRL_SET_DEBUG_LEVEL, SSL_DEBUG_CONNECT or SSL_DEBUG_HANDSHAKE or SSL_DEBUG_ERROR, nil);
+  bio_out := BIO_new_file('xdebugx.log', 'w');
+  SSL_set_bio(Handle, nil, bio_out);
+
   {$endif}
   Active := True;
 end;
@@ -560,11 +601,13 @@ end;
 
 procedure TSSL.Free;
 begin
+
   if Handle <> nil then
   begin
     SSL_free(Handle);
     Handle := nil;
   end;
+  //BIO_free_all(bio_out);
   Active := False;
 end;
 
@@ -574,12 +617,13 @@ begin
   SSL_set_fd(Handle, FSocket);
 end;
 
-function TSSL.Connect: Boolean;
+function TSSL.ClientHandshake: Boolean;
 var
   ret: Integer;
   s: string;
 begin
   ret := SSL_connect(Handle);
+
   if ret < 0  then
   begin
     Result := False;
@@ -594,7 +638,7 @@ begin
 
 end;
 
-function TSSL.Handshake: Boolean;
+function TSSL.ServerHandshake: Boolean;
 var
   ret, err: Integer;
 begin
@@ -602,7 +646,7 @@ begin
   if ret <= 0  then
   begin
     err := SSL_get_error(Handle, ret);
-    Log.WriteLn('Handshake: ' + ERR_error_string(err, nil));
+    Log.WriteLn('ServerHandshake: ' + ERR_error_string(err, nil));
     Result := False;
   end
   else
@@ -696,6 +740,7 @@ end;
 constructor TContext.Create(AMethod: TSSLMethod; Options: TContextOptions);
 var
   o: Cardinal;
+  s: UTF8String;
 begin
   inherited Create;
   FMethod := AMethod;
@@ -710,8 +755,11 @@ begin
     o := o or SSL_OP_NO_COMPRESSION;
 
   SSL_CTX_set_options(Handle, o);
-  SSL_CTX_set_min_proto_version(Handle, TLS1_3_VERSION);
-  SSL_CTX_set_max_proto_version(Handle, TLS1_3_VERSION);
+  //SSL_CTX_set_min_proto_version(Handle, TLS1_3_VERSION);
+  //SSL_CTX_set_max_proto_version(Handle, TLS1_3_VERSION);
+  SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
+  SSL_CTX_set_alpn_protos(Handle, PUTF8Char(sALPNProts), Length(sALPNProts));
+
   {$ifopt D+}
   SSL_CTX_set_info_callback(Handle, debug_callback);
   {$endif}
