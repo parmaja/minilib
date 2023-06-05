@@ -10,6 +10,9 @@ unit mnOpenSSL;
     openssl s_client -connect community.cloudflare.com:443 -nextprotoneg ''
     curl -v --http1.1 -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" "https://www.hepsiburada.com/" > 1.txt
     curl -v --http1.1 -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" "https://community.cloudflare.com" > 1.txt
+
+    //failed with 403
+    curl -v --http1.1 --no-alpn -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" "https://community.cloudflare.com" > 1.txt
  *}
 
 {$M+}
@@ -104,12 +107,14 @@ type
     constructor Init(ACTX: TContext); overload;
     constructor Init(ASSL: PSSL); overload;
     procedure SetHostName(AHostName: UTF8String);
+    procedure SetALPN(Alpns: TArray<string>);
     procedure Free;
     procedure ShutDown;
     procedure SetSocket(ASocket: Integer);
     function ClientHandshake: Boolean;
     function ServerHandshake: Boolean;
     procedure SetVerifyNone;
+    procedure SetVerifyPeer;
     //Return False if failed
     function Read(var Buf; Size: Integer; out ReadSize: Integer): TsslError;
     function Write(const Buf; Size: Integer; out WriteSize: Integer): Boolean;
@@ -174,6 +179,8 @@ uses
 
 const
   sALPNProts: UTF8String = 'http/1.1, h2';
+  sHttp1_1_ALPN: string = #08'http/1.1';
+  sHttp2_ALPN: string = #08'http/1.1'#2'h2';
 
 function alpn_select_cb(ssl: PSSL; var outdata: PByte; var outlen: integer; const indata: PByte; inlen: Byte; arg: Pointer): Integer; cdecl;
 var
@@ -588,6 +595,11 @@ begin
   Active := True;
 end;
 
+procedure TSSL.SetALPN(Alpns: TArray<string>);
+begin
+//  SSL_CTX_set_alpn_protos(CTX.Handle, PUTF8Char(sHttp1_1_ALPN), Length(sHttp1_1_ALPN));
+end;
+
 procedure TSSL.SetHostName(AHostName: UTF8String);
 begin
   //when connect error to cloudflare site https://www.discogs.com/forum/thread/861907
@@ -662,6 +674,11 @@ end;
 procedure TSSL.SetVerifyNone;
 begin
   SSL_set_verify(Handle, SSL_VERIFY_NONE, nil);
+end;
+
+procedure TSSL.SetVerifyPeer;
+begin
+  SSL_set_verify(Handle, SSL_VERIFY_PEER, nil);
 end;
 
 function TSSL.Read(var Buf; Size: Integer; out ReadSize: Integer): TsslError;
@@ -754,22 +771,28 @@ begin
   if Handle = nil then
     EmnOpenSSLException.Create('Can not create CTX handle');
 
+  {$ifopt D+}
+  SSL_CTX_set_info_callback(Handle, debug_callback);
+  {$endif}
+
+  //SSL_CTX_set_min_proto_version(Handle, TLS1_3_VERSION);
+  //SSL_CTX_set_max_proto_version(Handle, TLS1_3_VERSION);
+
+  //SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
+
+  //SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp1_1_ALPN)), Length(sHttp1_1_ALPN));
+  //SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp2_ALPN)), Length(sHttp2_ALPN));
+
   //o := SSL_OP_ALL or SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_SINGLE_DH_USE or SSL_OP_SINGLE_ECDH_USE or SSL_OP_CIPHER_SERVER_PREFERENCE;
   o := SSL_OP_ALL or SSL_OP_SINGLE_DH_USE;
+
+  o := o + SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION or SSL_MODE_RELEASE_BUFFERS;
 
   if coNoComppressing in Options then
     o := o or SSL_OP_NO_COMPRESSION;
 
   SSL_CTX_set_options(Handle, o);
-  //SSL_CTX_set_min_proto_version(Handle, TLS1_3_VERSION);
-  //SSL_CTX_set_max_proto_version(Handle, TLS1_3_VERSION);
 
-  SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
-  SSL_CTX_set_alpn_protos(Handle, PUTF8Char(sALPNProts), Length(sALPNProts));
-
-  {$ifopt D+}
-  SSL_CTX_set_info_callback(Handle, debug_callback);
-  {$endif}
 end;
 
 constructor TContext.Create(AMethodClass: TSSLMethodClass);

@@ -204,7 +204,7 @@ function HttpGetFileSize(URL: string; out FileSize: TFileSize): Boolean;
 implementation
 
 const
-  ProtocolVersion = 'HTTP/1.1';
+  ProtocolVersion = 'HTTP/1.1'; //* Capital letter
   sUserAgent = 'Mozilla/5.0';
 
 function HttpDownloadFile(URL: string; FileName: string): TFileSize;

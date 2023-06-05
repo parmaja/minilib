@@ -646,11 +646,10 @@ begin
     //c.UserAgent := 'curl/7.83.1';
     c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.Accept := '*/*';
+//    c.Request.Header.Add('x-forwarded-proto', 'https');
+//    c.Request.Header.Add('x-forwarded-port', '443');
     //c.Compressing := True;
-
     s := m.DataString;
-
-
 
     //c.GetString('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896', s);
     c.GetString('https://postman-echo.com/get?test=1', s);
@@ -659,15 +658,13 @@ begin
     //c.Get('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896');
     //c.ReadStream(m);
 
-
     Writeln('');
-    Writeln(c.Response.Head);
+    Writeln('>'+c.Response.Head);
     for var h in c.Response.Header do
       Writeln('>'+h.GetNameValue);
     Writeln(s);
 
     Writeln(c.Response.StatusCode.ToString);
-    Readln;
 
   finally
     c.Free;
@@ -827,10 +824,10 @@ begin
     //c.UserAgent := 'curl/7.83.1';
     c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.Accept := '*/*';
+//    c.Request.Header.Add('x-forwarded-proto', 'https');
+//    c.Request.Header.Add('x-forwarded-port', '443');
     //c.Compressing := True;
-
     s := m.DataString;
-
 
     //c.GetString('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896', s);
     c.GetString('https://community.cloudflare.com/', s);
@@ -840,14 +837,18 @@ begin
     //c.ReadStream(m);
 
 
-    Writeln(c.Response.Head);
+    Writeln('');
+//    Writeln('<'+c.Request.Head);
+    for var h in c.Request.Header do
+      Writeln('<'+h.GetNameValue);
+    Writeln('');
+    Writeln('>'+c.Response.Head);
     for var h in c.Response.Header do
-      Writeln(h.GetNameValue);
-
+      Writeln('>'+h.GetNameValue);
+    Writeln('');
     Writeln(s);
 
     Writeln(c.Response.StatusCode.ToString);
-    Readln;
 
   finally
     c.Free;
@@ -1067,7 +1068,10 @@ var
     Commands[Length(Commands) - 1].name := Name;
     Commands[Length(Commands) - 1].proc := proc;
   end;
+var
+  BypassList: Boolean;
 begin
+  BypassList := False;
   //InitOpenSSL;
   //if not FileExists(Application.Location + 'certificate.pem') then
     //MakeCert2('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
@@ -1106,10 +1110,14 @@ begin
 
       while true do
       begin
-        for n := 0 to Length(Commands) - 1 do
-          WriteLn(IntToStr(n + 1) + ': ' + Commands[n].name);
-        WriteLn('0: Type 0 to exit');
-        WriteLn;
+        if not BypassList then
+        begin
+          for n := 0 to Length(Commands) - 1 do
+            WriteLn(IntToStr(n + 1) + ': ' + Commands[n].name);
+          WriteLn('0: Type 0 to exit');
+          WriteLn;
+        end;
+        BypassList := False;
         Write('Enter command: ');
         s := '';
         ReadLn(s);
@@ -1128,6 +1136,7 @@ begin
           WriteLn;
           Info.Clear;
           Commands[n - 1].proc();
+          BypassList := True;
         end;
         WriteLn;
       end;

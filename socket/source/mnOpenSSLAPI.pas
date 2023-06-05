@@ -364,6 +364,7 @@ var
   SSL_alert_type_string_long: function(val: integer): PUTF8Char; cdecl;
   SSL_alert_desc_string_long: function(val: integer): PUTF8Char; cdecl;
   SSL_select_next_proto: function(var outdata: PUTF8Char; var outlen: Integer; server: PUTF8Char; serverlen: Integer; client: PUTF8Char; clientlen: Integer): Integer; cdecl;
+  SSL_get0_alpn_selected: procedure (ssl: PSSL; var outdata: PUTF8Char; var len: Integer); cdecl;
 
   SSL_CTX_new: function(Method: PSSL_METHOD): PSSL_CTX; cdecl;
   SSL_CTX_set_verify: procedure(ctx: PSSL_CTX; Mode: Integer; Callback: TSSLVerifyCallback); cdecl;
@@ -419,7 +420,6 @@ var
 
   PEM_read_bio_X509: function(bp: PBIO; x: PX509; cb: Ppem_password_cb; u: Pointer): PX509; cdecl;
   PEM_read_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; cb: Ppem_password_cb; u: Pointer): PEVP_PKEY; cdecl;
-
 
   ASN1_INTEGER_set_int64: function(a: PASN1_INTEGER; r: Int64): Integer; cdecl;
   ASN1_INTEGER_set: function(const a: PASN1_INTEGER; v: Integer): Integer; cdecl;
@@ -737,6 +737,7 @@ begin
   SSL_alert_type_string_long := GetAddress('SSL_alert_type_string_long');
   SSL_alert_desc_string_long := GetAddress('SSL_alert_desc_string_long');
   SSL_select_next_proto := GetAddress('SSL_select_next_proto');
+  SSL_get0_alpn_selected := GetAddress('SSL_get0_alpn_selected');
 
   SSL_get_peer_certificate := GetAddress('SSL_get_peer_certificate');
 
