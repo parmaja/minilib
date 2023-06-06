@@ -74,7 +74,7 @@ type
 
   { TCTX }
 
-  TContextOptions = set of (coNoComppressing, coALPN);
+  TContextOptions = set of (coNoComppressing, coALPN, coALPNHttp2);
 
   { TContext }
 
@@ -85,7 +85,7 @@ type
     FOwnMethod: Boolean; //created internally
   public
     constructor Create(AMethod: TSSLMethod; Options: TContextOptions = [coNoComppressing]); overload;
-    constructor Create(AMethodClass: TSSLMethodClass); overload;
+    constructor Create(AMethodClass: TSSLMethodClass; Options: TContextOptions = [coNoComppressing]); overload;
     destructor Destroy; override;
     procedure SetVerifyLocation(Location: utf8string);
     procedure SetVerifyFile(AFileName: utf8string);
@@ -154,14 +154,19 @@ type
   protected
     FCTX: TContext;
     CTXOwned: Boolean;
+    Active: Boolean;
   public
     constructor Create(ACTX: TContext = nil);
     destructor Destroy; override;
 
     //Host name with port like 'example.com:80';
     procedure SetHostName(AHostName: utf8string);
+    procedure SetHostPort(APort: utf8string);
+    procedure SetHost(AHost, APort: utf8string);
+
     procedure Connect;
     procedure Disconnect;
+    function Connected: Boolean;
     property CTX: TContext read FCTX;
   end;
 
@@ -502,12 +507,17 @@ end;
 
 { TBIOStreamSSL }
 
+function TBIOStreamSSL.Connected: Boolean;
+begin
+  Result := Active;
+end;
+
 constructor TBIOStreamSSL.Create(ACTX: TContext);
 begin
   inherited Create;
   if (ACTX = nil) then
   begin
-    FCTX := TContext.Create(TTLS_SSLClientMethod);
+    FCTX := TContext.Create(TTLS_SSLClientMethod, [coNoComppressing, coALPN{, coALPNHttp2}]);
     CTXOwned := True;
   end
   else
@@ -525,12 +535,23 @@ end;
 
 procedure TBIOStreamSSL.Disconnect;
 begin
+  Active := False;
+end;
 
+procedure TBIOStreamSSL.SetHost(AHost, APort: utf8string);
+begin
+  SetHostName(AHost);
+  SetHostPort(APort);
 end;
 
 procedure TBIOStreamSSL.SetHostName(AHostName: utf8string);
 begin
   BIO_set_conn_hostname(Handle, PUTF8Char(AHostName)); //Always return 1
+end;
+
+procedure TBIOStreamSSL.SetHostPort(APort: utf8string);
+begin
+  BIO_set_conn_port(Handle, PUTF8Char(APort)); //Always return 1
 end;
 
 procedure TBIOStreamSSL.Connect;
@@ -543,6 +564,7 @@ begin
   res := BIO_do_handshake(Handle);
   if res <> 1 then
     RaiseLastSSLError;
+  Active := True;
 end;
 
 { TBIOStreamFile }
@@ -811,8 +833,10 @@ begin
 
   if coALPN in Options then
   begin
-    ret := SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp1_1_ALPN)), Length(sHttp1_1_ALPN));
-    //ret := SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp2_ALPN)), Length(sHttp2_ALPN));
+    if coALPNHttp2 in Options then
+      ret := SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp2_ALPN)), Length(sHttp2_ALPN))
+    else
+      ret := SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp1_1_ALPN)), Length(sHttp1_1_ALPN));
     if ret <> 0  then
     begin
       err := SSL_get_error(Handle, ret);
@@ -832,9 +856,9 @@ begin
 
 end;
 
-constructor TContext.Create(AMethodClass: TSSLMethodClass);
+constructor TContext.Create(AMethodClass: TSSLMethodClass; Options: TContextOptions);
 begin
-  Create(AMethodClass.Create);
+  Create(AMethodClass.Create, Options);
   FOwnMethod := True;
 end;
 

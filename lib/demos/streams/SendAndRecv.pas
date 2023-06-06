@@ -737,12 +737,10 @@ end;
 
 procedure TTestStream.ExampleBIOPostmanEcho;
 var
-  m: TStringStream;
   c: TmnBIOHttpClient;
   s: string;
 begin
   //https://documenter.getpostman.com/view/5025623/SWTG5aqV
-  m := TStringStream.Create;
   c := TmnBIOHttpClient.Create;
   try
     //c.UserAgent := 'curl/7.83.1';
@@ -751,14 +749,12 @@ begin
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
     //c.Compressing := True;
-    s := m.DataString;
 
     //c.GetString('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896', s);
-    c.GetString('https://postman-echo.com/get?test=1', s);
     //c.GetString('https://raw.githubusercontent.com/paramjani12/paramjani12/main/README.md', s);
+    c.GetString('https://postman-echo.com/get?test=1', s);
+    //c.GetString('https://community.cloudflare.com/', s);
 
-    //c.Get('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896');
-    //c.ReadStream(m);
 
     Writeln('');
     Writeln('>'+c.Response.Head);
@@ -770,7 +766,6 @@ begin
 
   finally
     c.Free;
-    m.Free;
   end;
 end;
 

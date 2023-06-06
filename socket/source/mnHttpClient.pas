@@ -216,6 +216,7 @@ type
   protected
     function DoRead(var Buffer; Count: Longint): Longint; override;
     function DoWrite(const Buffer; Count: Longint): Longint; override;
+    function GetConnected: Boolean; override;
 
   public
     constructor Create;
@@ -892,7 +893,7 @@ procedure TmnBIOHttpStream.Connect;
 begin
   inherited;
   BIOStream := TBIOStreamSSL.Create;
-  BIOStream.SetHostName(Address+':'+Port);
+  BIOStream.SetHost(Address, Port);
   BIOStream.Connect;
 end;
 
@@ -921,6 +922,11 @@ end;
 function TmnBIOHttpStream.DoWrite(const Buffer; Count: Longint): Longint;
 begin
   Result := BIOStream.Write(Buffer, Count);
+end;
+
+function TmnBIOHttpStream.GetConnected: Boolean;
+begin
+  Result := BIOStream.Connected;
 end;
 
 function TmnBIOHttpStream.WaitToRead(Timeout: Longint): TmnConnectionError;
