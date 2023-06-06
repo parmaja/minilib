@@ -104,8 +104,8 @@
   BIO_SOCK_NONBLOCK                   = $08;
   BIO_SOCK_NODELAY                    = $10;
 
-  SSL_MODE_ENABLE_PARTIAL_WRITE       = $00000001;
-  SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER = $00000002;
+  SSL_MODE_ENABLE_PARTIAL_WRITE                 = $00000001;
+  SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER           = $00000002;
   SSL_MODE_AUTO_RETRY                           = $00000004;
   SSL_MODE_NO_AUTO_CHAIN                        = $00000008;
   SSL_MODE_RELEASE_BUFFERS                      = $00000010;

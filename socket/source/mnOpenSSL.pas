@@ -1,3 +1,4 @@
+
 unit mnOpenSSL;
 {**
  *  This file is part of the "Mini Library"/Sockets
@@ -73,7 +74,7 @@ type
 
   { TCTX }
 
-  TContextOptions = set of (coNoComppressing);
+  TContextOptions = set of (coNoComppressing, coALPN);
 
   { TContext }
 
@@ -151,12 +152,17 @@ type
 
   TBIOStreamSSL = class(TBIOStream) //Socket
   protected
-    CTX: TContext;
+    FCTX: TContext;
+    CTXOwned: Boolean;
   public
-    constructor Create(ACTX: TContext);
+    constructor Create(ACTX: TContext = nil);
+    destructor Destroy; override;
+
     //Host name with port like 'example.com:80';
     procedure SetHostName(AHostName: utf8string);
     procedure Connect;
+    procedure Disconnect;
+    property CTX: TContext read FCTX;
   end;
 
 procedure InitOpenSSL(All: Boolean = True);
@@ -499,8 +505,27 @@ end;
 constructor TBIOStreamSSL.Create(ACTX: TContext);
 begin
   inherited Create;
-  CTX := ACTX;
-  Handle := BIO_new_ssl_connect(CTX);
+  if (ACTX = nil) then
+  begin
+    FCTX := TContext.Create(TTLS_SSLClientMethod);
+    CTXOwned := True;
+  end
+  else
+    FCTX := ACTX;
+
+  Handle := BIO_new_ssl_connect(CTX.Handle);
+end;
+
+destructor TBIOStreamSSL.Destroy;
+begin
+  if CTXOwned then
+    FreeAndNil(FCTX);
+  inherited;
+end;
+
+procedure TBIOStreamSSL.Disconnect;
+begin
+
 end;
 
 procedure TBIOStreamSSL.SetHostName(AHostName: utf8string);
@@ -513,6 +538,9 @@ var
   res: Integer;
 begin
   res := BIO_do_connect(Handle);
+  if res <> 1 then
+    RaiseLastSSLError;
+  res := BIO_do_handshake(Handle);
   if res <> 1 then
     RaiseLastSSLError;
 end;
@@ -764,6 +792,7 @@ constructor TContext.Create(AMethod: TSSLMethod; Options: TContextOptions);
 var
   o: Cardinal;
   s: UTF8String;
+  ret , err: Integer;
 begin
   inherited Create;
   FMethod := AMethod;
@@ -780,8 +809,16 @@ begin
 
   //SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
 
-  //SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp1_1_ALPN)), Length(sHttp1_1_ALPN));
-  //SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp2_ALPN)), Length(sHttp2_ALPN));
+  if coALPN in Options then
+  begin
+    ret := SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp1_1_ALPN)), Length(sHttp1_1_ALPN));
+    //ret := SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp2_ALPN)), Length(sHttp2_ALPN));
+    if ret <> 0  then
+    begin
+      err := SSL_get_error(Handle, ret);
+      Log.WriteLn('Set Alpn: ' + ERR_error_string(err, nil));
+    end;
+  end;
 
   //o := SSL_OP_ALL or SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_SINGLE_DH_USE or SSL_OP_SINGLE_ECDH_USE or SSL_OP_CIPHER_SERVER_PREFERENCE;
   o := SSL_OP_ALL or SSL_OP_SINGLE_DH_USE;

@@ -22,19 +22,19 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, StrUtils,
+  SysUtils, Classes, StrUtils, mnOpenSSL,
   mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
   mnClients, mnStreams, mnStreamUtils;
 
 type
 
-  TmnHttpClient = class;
+  TmnCustomHttpClient = class;
 
   { TmnCustomHttpHeader }
 
   TmnCustomHttpHeader = class(TmodCommunicate)
   private
-    FClient: TmnHttpClient;
+    FClient: TmnCustomHttpClient;
 
     FAccept: UTF8String;
     FAcceptCharSet: UTF8String;
@@ -53,7 +53,7 @@ type
     FChunked: Boolean;
   protected
   public
-    constructor Create(AClient: TmnHttpClient); virtual;
+    constructor Create(AClient: TmnCustomHttpClient); virtual;
     destructor Destroy; override;
     procedure Clear; virtual;
     property Date: TDateTime read FDate write FDate;
@@ -71,7 +71,7 @@ type
 
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     property Chunked: Boolean read FChunked write FChunked;
-    property Client: TmnHttpClient read FClient;
+    property Client: TmnCustomHttpClient read FClient;
   end;
 
   { TmnHttpRequest }
@@ -115,26 +115,9 @@ type
     property StatusResult: string read GetStatusResult;
   end;
 
-  { TmnCustomHttpStream }
+  { TmnCustomHttpClient }
 
-  TmnHttpStream = class(TmnClientSocket)
-  private
-  protected
-  public
-    {$ifdef FPC}
-    function Seek(Offset: longint; Origin: Word): Integer; override;
-    {$else}
-      {$if CompilerVersion > 33}
-      function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; overload; override;
-      {$else}
-      function Seek(Offset: longint; Origin: Word): Integer; override;
-      {$ifend}
-    {$endif}
-  end;
-
-  { TmnHttpClient }
-
-  TmnHttpClient = class(TObject)
+  TmnCustomHttpClient = class abstract(TObject)
   private
     FCookies: TmnParams;
     FHost: UTF8String;
@@ -148,11 +131,13 @@ type
     FRequest: TmnHttpRequest;
     FResponse: TmnHttpResponse;
 
-    FStream: TmnHttpStream;
+    FStream: TmnConnectionStream;
   protected
     ChunkedProxy: TmnChunkStreamProxy;
     CompressProxy: TmnCompressStreamProxy;
-    function CreateStream: TmnHttpStream; virtual;
+    function DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream; virtual; abstract;
+
+    function CreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
     procedure FreeStream; virtual;
     procedure Receive; virtual;
   public
@@ -195,11 +180,65 @@ type
     property UseCompressing: Boolean read FUseCompressing write FUseCompressing;
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
     property UseKeepAlive: TmodKeepAlive read FUseKeepAlive write FUseKeepAlive default klvUndefined;
-    property Stream: TmnHttpStream read FStream;
+    property Stream: TmnConnectionStream read FStream;
+  end;
+
+  { TmnCustomHttpStream }
+
+  TmnHttpStream = class(TmnClientSocket)
+  private
+  protected
+  public
+    {$ifdef FPC}
+    function Seek(Offset: longint; Origin: Word): Integer; override;
+    {$else}
+      {$if CompilerVersion > 33}
+      function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; overload; override;
+      {$else}
+      function Seek(Offset: longint; Origin: Word): Integer; override;
+      {$ifend}
+    {$endif}
+  end;
+
+  { TmnHttpClient }
+
+  TmnHttpClient = class(TmnCustomHttpClient)
+  protected
+    function DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream; override;
+  end;
+
+  TmnBIOHttpStream = class(TmnConnectionStream)
+  protected
+    Address: string;
+    BindAddress: string;
+    Port: string;
+    BIOStream: TBIOStreamSSL;
+  protected
+    function DoRead(var Buffer; Count: Longint): Longint; override;
+    function DoWrite(const Buffer; Count: Longint): Longint; override;
+
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    function WaitToRead(Timeout: Longint): TmnConnectionError; override;
+    function WaitToWrite(Timeout: Longint): TmnConnectionError; override;
+
+    procedure Connect; override;
+    procedure Disconnect; override;
+  end;
+
+  { TmnBIOHttpClient }
+
+  TmnBIOHttpClient = class(TmnCustomHttpClient)
+  public
+    function DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream; override;
   end;
 
 function HttpDownloadFile(URL: string; FileName: string): TFileSize;
 function HttpGetFileSize(URL: string; out FileSize: TFileSize): Boolean;
+
+function BIO_HttpDownloadFile(URL: string; FileName: string): TFileSize;
 
 implementation
 
@@ -209,9 +248,21 @@ const
 
 function HttpDownloadFile(URL: string; FileName: string): TFileSize;
 var
-  aHttpClient: TmnHttpClient;
+  aHttpClient: TmnCustomHttpClient;
 begin
-  aHttpClient := TmnHttpClient.Create;
+  aHttpClient := TmnCustomHttpClient.Create;
+  try
+    Result := aHttpClient.GetFile(URL, FileName);
+  finally
+    FreeAndNil(aHttpClient);
+  end;
+end;
+
+function BIO_HttpDownloadFile(URL: string; FileName: string): TFileSize;
+var
+  aHttpClient: TmnCustomHttpClient;
+begin
+  aHttpClient := TmnBIOHttpClient.Create;
   try
     Result := aHttpClient.GetFile(URL, FileName);
   finally
@@ -221,9 +272,9 @@ end;
 
 function HttpGetFileSize(URL: string; out FileSize: TFileSize): Boolean;
 var
-  aHttpClient: TmnHttpClient;
+  aHttpClient: TmnCustomHttpClient;
 begin
-  aHttpClient := TmnHttpClient.Create;
+  aHttpClient := TmnCustomHttpClient.Create;
   try
     Result := aHttpClient.GetFileSize(URL, FileSize);
   finally
@@ -285,9 +336,9 @@ end;
 
 procedure SocketDownloadFile(URL: string; FileName: string);
 var
-  c: TmnHttpClient;
+  c: TmnCustomHttpClient;
 begin
-  c := TmnHttpClient.Create;
+  c := TmnCustomHttpClient.Create;
   try
     //c.Compressing := True;
     //m.SaveToFile('c:\temp\1.json');
@@ -352,7 +403,7 @@ end;
 
 { TmnCustomHttpHeader }
 
-constructor TmnCustomHttpHeader.Create(AClient: TmnHttpClient);
+constructor TmnCustomHttpHeader.Create(AClient: TmnCustomHttpClient);
 begin
   inherited Create;
   FClient := AClient;
@@ -523,30 +574,17 @@ begin
   Result := 0; // for loading from this stream like Image.loadfrom stream
 end;
 
-{ TmnHttpClient }
+{ TmnCustomHttpClient }
 
-function TmnHttpClient.Connected: Boolean;
+function TmnCustomHttpClient.Connected: Boolean;
 begin
   Result := FStream.Connected;
 end;
 
-procedure TmnHttpClient.Connect(const vURL: UTF8String);
+procedure TmnCustomHttpClient.Connect(const vURL: UTF8String);
 begin
   if FStream = nil then
-    FStream := CreateStream;
-
-  ParseURL(vURL, FProtocol, FHost, FPort, FPath);
-  Stream.Address := Host;
-  Stream.Port := Port;
-
-  Stream.Options := Stream.Options + [soNoDelay];
-  if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
-    Stream.Options := Stream.Options + [soSSL, soWaitBeforeRead]
-  else
-    Stream.Options := Stream.Options - [soSSL];
-
-  if SameText(Protocol, 'ws') or SameText(Protocol, 'wss') then
-    Stream.Options := Stream.Options + [soWebsocket];
+    FStream := CreateStream(vURL, FProtocol, FHost, FPort, FPath);
 
   case UseKeepAlive of
     klvUndefined: ; //TODO
@@ -561,7 +599,7 @@ begin
   Stream.Connect;
 end;
 
-function TmnHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
+function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 begin
   Connect(vUrl);
 
@@ -572,19 +610,14 @@ begin
     Receive;
 end;
 
-function TmnHttpClient.CreateStream: TmnHttpStream;
+function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
 begin
-  Result := TmnHttpStream.Create;
-  Result.EndOfLine      := sWinEndOfLine;
-  Result.ReadTimeout    := 5000;
-  Result.ConnectTimeout := 5000;
-  Result.WriteTimeout   := 5000;
-  Result.Options := Result.Options + [soWaitBeforeRead];
+  Result := DoCreateStream(vURL, vProtocol, vAddress, vPort, vParams);
   FRequest.Stream := Result;
   FResponse.Stream := Result;
 end;
 
-procedure TmnHttpClient.FreeStream;
+procedure TmnCustomHttpClient.FreeStream;
 begin
   FRequest.Stream := nil;
   FResponse.Stream := nil;
@@ -593,7 +626,7 @@ begin
   FreeAndNil(FStream);
 end;
 
-constructor TmnHttpClient.Create;
+constructor TmnCustomHttpClient.Create;
 begin
   inherited;
   FRequest := TmnHttpRequest.Create(Self);
@@ -603,7 +636,7 @@ begin
   FUserAgent := sUserAgent;
 end;
 
-destructor TmnHttpClient.Destroy;
+destructor TmnCustomHttpClient.Destroy;
 begin
   FreeStream;
   FreeAndNil(FRequest);
@@ -612,9 +645,9 @@ begin
   inherited;
 end;
 
-{ TmnHttpClient }
+{ TmnCustomHttpClient }
 
-function TmnHttpClient.Open(const vURL: UTF8String; SendAndReceive: Boolean): Boolean;
+function TmnCustomHttpClient.Open(const vURL: UTF8String; SendAndReceive: Boolean): Boolean;
 begin
   Connect(vUrl);
   if SendAndReceive then
@@ -626,24 +659,22 @@ begin
   Result := Stream.Connected;
 end;
 
-function TmnHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
+function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
 begin
   Result := Post(vURL, PByte(vData), Length(vData));
 end;
 
-procedure TmnHttpClient.ReceiveStream(AStream: TStream);
+procedure TmnCustomHttpClient.ReceiveStream(AStream: TStream);
 begin
   ReadStream(AStream);
 end;
 
-procedure TmnHttpClient.ReadStream(AStream: TStream; Count: Integer);
+procedure TmnCustomHttpClient.ReadStream(AStream: TStream; Count: Integer);
 begin
   FStream.ReadStream(AStream, Count);
 end;
 
-function TmnHttpClient.ReadStream(AStream: TStream): TFileSize;
-var
-  s: UTF8String;
+function TmnCustomHttpClient.ReadStream(AStream: TStream): TFileSize;
 begin
   if Response.KeepAlive then
   begin
@@ -654,7 +685,7 @@ begin
     Result := FStream.ReadStream(AStream, -1); //read complete stream
 end;
 
-procedure TmnHttpClient.Receive;
+procedure TmnCustomHttpClient.Receive;
 var
   s: string;
   aCompressClass: TmnCompressStreamProxyClass;
@@ -707,20 +738,20 @@ begin
   end;
 end;
 
-procedure TmnHttpClient.ReceiveMemoryStream(AStream: TStream);
+procedure TmnCustomHttpClient.ReceiveMemoryStream(AStream: TStream);
 begin
   ReceiveStream(AStream);
   AStream.Seek(0, soFromBeginning);
 end;
 
-procedure TmnHttpClient.Disconnect;
+procedure TmnCustomHttpClient.Disconnect;
 begin
   if FStream <> nil then
     FStream.Disconnect;
   FreeStream;
 end;
 
-function TmnHttpClient.GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
+function TmnCustomHttpClient.GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
 begin
   if Open(vURL) then
     Result := ReadStream(OutStream)
@@ -728,7 +759,7 @@ begin
     Result := 0;
 end;
 
-function TmnHttpClient.GetString(const vURL: UTF8String; var OutString: string): TFileSize;
+function TmnCustomHttpClient.GetString(const vURL: UTF8String; var OutString: string): TFileSize;
 var
   m: TMemoryStream;
   b: TBytes;
@@ -747,7 +778,7 @@ begin
   end;
 end;
 
-function TmnHttpClient.Get(const vURL: UTF8String): Boolean;
+function TmnCustomHttpClient.Get(const vURL: UTF8String): Boolean;
 begin
   Connect(vUrl);
   Request.SendGet;
@@ -757,7 +788,7 @@ begin
     Receive;
 end;
 
-function TmnHttpClient.GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
+function TmnCustomHttpClient.GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
 var
   f: TFileStream;
 begin
@@ -769,7 +800,7 @@ begin
   end;
 end;
 
-function TmnHttpClient.GetFileSize(vURL: string; out FileSize: TFileSize): Boolean;
+function TmnCustomHttpClient.GetFileSize(vURL: string; out FileSize: TFileSize): Boolean;
 var
   aSizeStr: string;
 begin
@@ -784,15 +815,133 @@ begin
   end;
 end;
 
-procedure TmnHttpClient.GetMemoryStream(const vURL: UTF8String; OutStream: TMemoryStream);
+procedure TmnCustomHttpClient.GetMemoryStream(const vURL: UTF8String; OutStream: TMemoryStream);
 begin
   GetStream(vURL, OutStream);
   OutStream.Seek(0, soFromBeginning);
 end;
 
-procedure TmnHttpClient.SendFile(const vURL: UTF8String; AFileName: UTF8String);
+procedure TmnCustomHttpClient.SendFile(const vURL: UTF8String; AFileName: UTF8String);
 begin
   //TODO
+end;
+
+{ TmnHttpClient }
+
+function TmnHttpClient.DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
+var
+  aStream: TmnHttpStream;
+begin
+  aStream := TmnHttpStream.Create;
+
+  aStream.EndOfLine      := sWinEndOfLine;
+  aStream.ReadTimeout    := 5000;
+  aStream.ConnectTimeout := 5000;
+  aStream.WriteTimeout   := 5000;
+  aStream.Options := aStream.Options + [soWaitBeforeRead];
+
+  ParseURL(vURL, FProtocol, FHost, FPort, FPath);
+  aStream.Address := Host;
+  aStream.Port := Port;
+
+  aStream.Options := aStream.Options + [soNoDelay];
+  if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
+    aStream.Options := aStream.Options + [soSSL, soWaitBeforeRead]
+  else
+    aStream.Options := aStream.Options - [soSSL];
+
+  if SameText(Protocol, 'ws') or SameText(Protocol, 'wss') then
+    aStream.Options := aStream.Options + [soWebsocket];
+
+  Result := aStream;
+end;
+
+{ TmnBIOHttpClient }
+
+function TmnBIOHttpClient.DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
+var
+  aStream: TmnBIOHttpStream;
+begin
+  aStream := TmnBIOHttpStream.Create;
+
+  aStream.EndOfLine      := sWinEndOfLine;
+  aStream.ReadTimeout    := 5000;
+  aStream.ConnectTimeout := 5000;
+  aStream.WriteTimeout   := 5000;
+  //aStream.Options := aStream.Options + [soWaitBeforeRead];
+
+  ParseURL(vURL, FProtocol, FHost, FPort, FPath);
+  aStream.Address := Host;
+  aStream.Port := Port;
+
+{  aStream.Options := aStream.Options + [soNoDelay];
+  if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
+    aStream.Options := aStream.Options + [soSSL, soWaitBeforeRead]
+  else
+    aStream.Options := aStream.Options - [soSSL];
+
+  if SameText(Protocol, 'ws') or SameText(Protocol, 'wss') then
+    aStream.Options := aStream.Options + [soWebsocket];
+ }
+  Result := aStream;
+end;
+
+{ TmnBIOHttpStream }
+
+procedure TmnBIOHttpStream.Connect;
+begin
+  inherited;
+  BIOStream := TBIOStreamSSL.Create;
+  BIOStream.SetHostName(Address+':'+Port);
+  BIOStream.Connect;
+end;
+
+constructor TmnBIOHttpStream.Create;
+begin
+  inherited Create;
+end;
+
+destructor TmnBIOHttpStream.Destroy;
+begin
+  FreeAndNil(BIOStream);
+  inherited;
+end;
+
+procedure TmnBIOHttpStream.Disconnect;
+begin
+  BIOStream.Disconnect;
+  inherited;
+end;
+
+function TmnBIOHttpStream.DoRead(var Buffer; Count: Longint): Longint;
+begin
+  Result := BIOStream.Read(Buffer, Count);
+end;
+
+function TmnBIOHttpStream.DoWrite(const Buffer; Count: Longint): Longint;
+begin
+  Result := BIOStream.Write(Buffer, Count);
+end;
+
+function TmnBIOHttpStream.WaitToRead(Timeout: Longint): TmnConnectionError;
+begin
+  Result := cerSuccess;
+  exit;
+
+  if BIOStream.GetSSL.Active then //testing
+  begin
+    if BIOStream.GetSSL.Pending then
+    begin
+      Result := cerSuccess;
+      exit;
+    end;
+  end;
+end;
+
+function TmnBIOHttpStream.WaitToWrite(Timeout: Longint): TmnConnectionError;
+begin
+  Result := cerSuccess;
+  exit;
 end;
 
 end.

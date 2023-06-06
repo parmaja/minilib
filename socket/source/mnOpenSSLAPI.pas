@@ -53,7 +53,11 @@ type
   POPENSSL_INIT_SETTINGS = ^TOPENSSL_INIT_SETTINGS;
 
   //PSLLObject = class(TObject);
-  PSLLObject = type Pointer;
+  {$ifdef FPC}
+  PSLLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
+  {$else}
+  PSLLObject = type of Pointer;
+  {$endif}
 
   PSSL = PSLLObject;
   PSSL_CTX = PSLLObject;
@@ -759,7 +763,6 @@ begin
   SSL_CTX_set_info_callback := GetAddress('SSL_CTX_set_info_callback');
   SSL_CTX_set_alpn_select_cb := GetAddress('SSL_CTX_set_alpn_select_cb');
   SSL_CTX_set_alpn_protos := GetAddress('SSL_CTX_set_alpn_protos');
-
 
   BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect');
 
