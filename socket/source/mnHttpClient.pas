@@ -251,7 +251,7 @@ function HttpDownloadFile(URL: string; FileName: string): TFileSize;
 var
   aHttpClient: TmnCustomHttpClient;
 begin
-  aHttpClient := TmnCustomHttpClient.Create;
+  aHttpClient := TmnHttpClient.Create;
   try
     Result := aHttpClient.GetFile(URL, FileName);
   finally
@@ -275,7 +275,7 @@ function HttpGetFileSize(URL: string; out FileSize: TFileSize): Boolean;
 var
   aHttpClient: TmnCustomHttpClient;
 begin
-  aHttpClient := TmnCustomHttpClient.Create;
+  aHttpClient := TmnHttpClient.Create;
   try
     Result := aHttpClient.GetFileSize(URL, FileSize);
   finally
