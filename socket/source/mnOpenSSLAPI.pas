@@ -56,7 +56,8 @@ type
   {$ifdef FPC}
   PSLLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
   {$else}
-  PSLLObject = type of Pointer;
+  PSLLObject = type Pointer;
+  //PSLLObject = type of Pointer; for check errors and not wrking with helper need check in future
   {$endif}
 
   PSSL = PSLLObject;

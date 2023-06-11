@@ -713,8 +713,6 @@ begin
       ChunkedProxy.Disable;
   end;
 
-
-
   if Response.Header.Field['Content-Encoding'].Have('gzip', [',']) then
     aCompressClass := TmnGzipStreamProxy
   else if Response.Header.Field['Content-Encoding'].Have('deflate', [',']) then

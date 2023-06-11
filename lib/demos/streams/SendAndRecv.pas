@@ -29,6 +29,8 @@ type
 
   TThreadReciever = class(TThread) //Server
   protected
+    procedure RunServer;
+    procedure RunHttp;
     procedure Execute; override;
   public
     Stream: TmnServerSocket;
@@ -56,6 +58,7 @@ type
     procedure ExampleSocketTestTimeout;
     procedure ExampleSocketTestCancel;
     procedure ExampleEchoServer;
+    procedure ExampleEchoAliveServer;
 
     procedure ExampleBIOPostmanEcho;
 
@@ -93,7 +96,7 @@ type
 
 const
   sMsg: AnsiString = '0123456789';
-  sPort: UTF8String = '443';
+  sPort: UTF8String = '8443';
   sHost = '127.0.0.1';
 
 
@@ -111,6 +114,7 @@ type
     QuickAck: Boolean;
     TestTimeOut: Longint;// = -1;
     SocketOptions: TmnsoOptions; //soWaitBeforeRead
+    Http: Boolean; //soWaitBeforeRead
     procedure Clear;
   end;
 
@@ -126,12 +130,8 @@ implementation
 { TThreadReciever }
 
 procedure TThreadReciever.Execute;
-var
-  s: UTF8String;
-  Count: Integer;
 begin
   try
-    Count := 0;
     Stream := TmnServerSocket.Create('', sPort); //if u pass address, server will listen only on this network
     Stream.ReadTimeout := info.TestTimeOut;
     Stream.CertificateFile := Application.Location + 'certificate.pem';
@@ -154,36 +154,15 @@ begin
 
     Stream.Connect;
     try
-      while true do
-      begin
-        Stream.ReadLineUTF8(s);
-        WriteLn('Server After read Line "' + s + '"');
-        if s = '' then
-        begin
-          WriteLn('Seem server socket canceled :(');
-          Break;
-        end;
-
-        if not Stream.Connected then
-          break;
-        if sMsg <> s then
-        begin
-          //Log.WriteLn('Error msg: ' + s);
-          //Break;
-        end;
-        if info.TestTimeOut > 0 then
-          Sleep(info.TestTimeOut * 2);
-
-        //Stream.WriteLine(sMsg);
-        Inc(Count);
-        if not Stream.Connected then
-          break;
-      end;
+      if info.Http then
+        RunHttp
+      else
+        RunServer;
       Stream.Disconnect;
     finally
       Stream.Free;
     end;
-    WriteLn('Server Count: ' + IntToStr(Count));
+    //WriteLn('Server Count: ' + IntToStr(Count));
     WriteLn('Server end execute');
   except
     on E: Exception do
@@ -253,6 +232,76 @@ begin
       WriteLn(E.Message);
       raise;
     end;
+  end;
+end;
+
+procedure TThreadReciever.RunHttp;
+
+  procedure _ReadHeader;
+  var
+    s: UTF8String;
+  begin
+    repeat
+      Stream.ReadLineUTF8(s);
+      WriteLn('Server read header "' + s + '"');
+    until s = '';
+  end;
+
+  procedure _WriteHeader;
+  begin
+    Stream.WriteLineUTF8('HTTP/1.1 200 OK');
+    Stream.WriteLineUTF8('content-length: 0');
+    //Stream.WriteLineUTF8('Connection: keep-alive');
+    Stream.WriteLineUTF8('Connection: close');
+    Stream.WriteLineUTF8('content-type: text/html; charset=UTF-8');
+    Stream.WriteLineUTF8('');
+  end;
+
+var
+  s: UTF8String;
+  Count: Integer;
+begin
+  Count := 0;
+  while true do
+  begin
+    if not Stream.Connected then
+      break;
+
+    _ReadHeader;
+    _WriteHeader;
+  end;
+end;
+
+procedure TThreadReciever.RunServer;
+var
+  s: UTF8String;
+  Count: Integer;
+begin
+  Count := 0;
+  while true do
+  begin
+    Stream.ReadLineUTF8(s);
+    WriteLn('Server After read Line "' + s + '"');
+    if s = '' then
+    begin
+      WriteLn('Seem server socket canceled :(');
+      Break;
+    end;
+
+    if not Stream.Connected then
+      break;
+    if sMsg <> s then
+    begin
+      //Log.WriteLn('Error msg: ' + s);
+      //Break;
+    end;
+    if info.TestTimeOut > 0 then
+      Sleep(info.TestTimeOut * 2);
+
+    //Stream.WriteLine(sMsg);
+    Inc(Count);
+    if not Stream.Connected then
+      break;
   end;
 end;
 
@@ -930,13 +979,26 @@ begin
   end;
 end;
 
-procedure TTestStream.ExampleEchoServer;
-var
-  WithServer, WithClient: boolean;
+procedure TTestStream.ExampleEchoAliveServer;
 begin
-  WithServer := True;
-  WithClient := False;
+  Info.Clear;
+  Info.Address := '127.0.0.1';
 
+  Info.NoDelay := True;
+  Info.KeepAlive := True;
+  Info.QuickAck := False;
+  Info.WaitBeforeRead := True;
+  Info.UseSSL := False;
+  Info.TestTimeOut := -1;
+  Info.CancelAfter := False;
+  Info.EndOfLine := #$D#$A;
+  Info.Http := True;
+
+  InternalExampleSocket(True, False);
+end;
+
+procedure TTestStream.ExampleEchoServer;
+begin
   Info.Clear;
   Info.Address := '127.0.0.1';
 
@@ -949,7 +1011,7 @@ begin
   Info.CancelAfter := False;
   Info.EndOfLine := #$D#$A;
 
-  InternalExampleSocket(WithServer, WithClient);
+  InternalExampleSocket(True, False);
 end;
 
 procedure TTestStream.ExampleGZImage;
@@ -1123,6 +1185,7 @@ begin
       AddProc('Example BIO Postman Echo ', ExampleBIOPostmanEcho);
       AddProc('Example Postman Echo ', ExamplePostmanEcho);
       AddProc('Example Echo Server ', ExampleEchoServer);
+      AddProc('Example Echo Keep Alive Server ', ExampleEchoAliveServer);
       AddProc('ExampleSocket: Socket threads', ExampleSocket);
       AddProc('ExampleTimeout: Socket threads', ExampleTimeout);
       AddProc('ExampleSocket: Socket OpenStreetMap', ExampleSocketOpenStreet);
@@ -1195,6 +1258,7 @@ end;
 procedure TmyInfo.Clear;
 begin
   Finalize(info);
+  FillChar(Self, SizeOf(Self), 0);
 end;
 
 end.
