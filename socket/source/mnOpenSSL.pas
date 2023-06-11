@@ -1,4 +1,3 @@
-
 unit mnOpenSSL;
 {**
  *  This file is part of the "Mini Library"/Sockets
@@ -74,7 +73,12 @@ type
 
   { TCTX }
 
-  TContextOptions = set of (coNoComppressing, coALPN, coALPNHttp2);
+  TContextOptions = set of (
+    coNoComppressing,
+    coALPN,
+    coALPNHttp2,
+    coDebug
+  );
 
   { TContext }
 
@@ -823,16 +827,16 @@ begin
     EmnOpenSSLException.Create('Can not create CTX handle');
 
   {$ifopt D+}
-  SSL_CTX_set_info_callback(Handle, debug_callback);
+  if coDebug in Options then
+    SSL_CTX_set_info_callback(Handle, debug_callback);
   {$endif}
 
   //SSL_CTX_set_min_proto_version(Handle, TLS1_3_VERSION);
   //SSL_CTX_set_max_proto_version(Handle, TLS1_3_VERSION);
 
-  //SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
-
   if coALPN in Options then
   begin
+    //SSL_CTX_set_alpn_select_cb(Handle, alpn_select_cb, nil);
     if coALPNHttp2 in Options then
       ret := SSL_CTX_set_alpn_protos(Handle, PUTF8Char(utf8string(sHttp2_ALPN)), Length(sHttp2_ALPN))
     else
