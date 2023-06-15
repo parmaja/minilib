@@ -402,6 +402,7 @@ type
   TmnFieldHelper = class helper for TmnField
   public
     function Have(AValue: String; vSeperators: TSysCharSet = [';']): Boolean;
+    function CreateSubValues(vSeperators: TSysCharSet = [';']): TStringList;
   end;
 
 function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
@@ -1258,6 +1259,12 @@ begin
 end;
 
 { TmnFieldHelper }
+
+function TmnFieldHelper.CreateSubValues(vSeperators: TSysCharSet): TStringList;
+begin
+  Result := TStringList.Create;
+  StrToStrings(AsString, Result, vSeperators, [' ']);
+end;
 
 function TmnFieldHelper.Have(AValue: String; vSeperators: TSysCharSet): Boolean;
 var

@@ -14,7 +14,7 @@ uses
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 type
-  TmnFormDataItem = class(TmnNamedObject)
+  TmnFormDataItem = class abstract(TmnNamedObject)
   public
     Header: TmnHeader;
     constructor Create(vHeader: TmnHeader);
@@ -45,7 +45,7 @@ type
 
   TmnFormData = class(TmnNamedObjectList<TmnFormDataItem>)
   public
-    Boundary: AnsiString;
+    Boundary: UTF8String;
     function Read(vStream: TmnBufferStream): Boolean;
   end;
 
@@ -69,13 +69,12 @@ begin
 end;
 
 { TmnFormData }
-
-procedure CopyString(out S: string; Buffer: Pointer; Len: Integer); inline;
+procedure CopyString(out S: utf8string; Buffer: Pointer; Len: Integer); inline;
 begin
   if Len <> 0 then
   begin
-    {$ifdef FPC}S := '';{$endif}
-    SetLength(S, Len div SizeOf(widechar));
+		S := '';
+    SetLength(S, Len div SizeOf(utf8char));
     Move(PByte(Buffer)^, PByte(S)^, Len);
   end
   else
@@ -84,28 +83,56 @@ end;
 
 function TmnFormData.Read(vStream: TmnBufferStream): Boolean;
 var
-  m: Boolean;
-  res: PByte;
+  Res: PByte;
   len: TFileSize;
-  S: string;
+  S: UTF8String;
   aHeader: TmnHeader;
   aType: string;
   aItem: TmnFormDataItem;
-
+  ContentType: TStringList;
+  Matched: Boolean;
+  aDataHeader: TmnHeader;
 begin
-  while not (cloRead in vStream.Done) do
-  begin
-    aHeader := TmnHeader.Create;
+  aHeader := TmnHeader.Create;
+  try
     aHeader.ReadHeader(vStream);
-    aType := aHeader['Content-Type'];
+    ContentType := aHeader.Field['Content-Type'].CreateSubValues;
+    if SameText(ContentType[0], 'multipart/form-data') then
+    begin
+      Boundary := UTF8Encode(ContentType.Values['boundary']);
+      Boundary := '--'+Boundary;
 
-//    ContentLength := Request.Header['Content-Length'].AsInteger;
-//    aHeader.
+      vStream.ReadLineUTF8(S, True);
+      if S = Boundary then
+      begin
+        while True do
+        begin
+          aDataHeader := TmnHeader.Create;
+          try
+            aDataHeader.ReadHeader(vStream);
+            vStream.ReadBufferUntil(@Boundary[1], Length(Boundary), True, Res, Len, Matched);
+            if Matched then
+            begin
+              aItem := TmnFormDataValue.Create(aDataHeader);
+              CopyString(S, Res, Len);
+              FreeMem(res);
+              Add(aItem);
+              aDataHeader := nil;
+              vStream.ReadLineUTF8(S, True);
+              if S = '--' then
+              begin
+                break;
+              end;
+            end;
+          finally
+            aDataHeader.Free; //if it nil it is ok
+          end
+        end;
+      end;
+    end;
+  finally
+    aHeader.Free;
   end;
-
-  Result := vStream.ReadBufferUntil(@Boundary[1], ByteLength(Boundary), True, res, len, m);
-  CopyString(S, res, len);
-  FreeMem(res);
 end;
 
 end.

@@ -15,6 +15,13 @@ unit mnStreams;
 {$ENDIF}
 //Change TFIleSize to TStreamSize (Longint)
 
+{$define NEW_EOF}
+{
+  Rules:
+
+    if stream read 0 byte but it is not eof , it mean `retry` or `timeout`
+}
+
 interface
 
 uses
@@ -38,7 +45,7 @@ type
 
   TmnStreamClose = set of (
     cloRead, //Mark is as EOF
-    cloData, //Mark is as end of data
+    cloData, //Mark is as end of data, Chunked or Boundary
     cloWrite //Flush buffer
   );
 

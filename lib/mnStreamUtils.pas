@@ -348,7 +348,6 @@ begin
   inherited;
   FChunkEnd := False;
   FReadSize := 0;
-
 end;
 
 procedure TmnChunkStreamProxy.CloseWrite;

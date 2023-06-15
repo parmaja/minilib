@@ -466,11 +466,13 @@ procedure TmnHttpRequest.SendCommand(Command: string; vData: PByte; vCount: Card
     //TFile.AppendAllText('c:\temp\h.Log', s+#13);
   end;
 
+  {$ifndef FPC}
   procedure _Write(const s: String); overload;
   begin
     _Write(UTF8Encode(s));
     //TFile.AppendAllText('c:\temp\h.Log', s+#13);
   end;
+  {$endif}
 
 var
   s: UTF8String;

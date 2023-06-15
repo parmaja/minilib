@@ -64,6 +64,7 @@
     </SearchPaths>
     <Linking>
       <Debugging>
+        <DebugInfoType Value="dsDwarf3"/>
         <UseValgrind Value="True"/>
       </Debugging>
     </Linking>
