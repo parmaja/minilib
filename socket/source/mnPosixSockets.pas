@@ -676,7 +676,7 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skClient, NetAddrToStr(sockaddr_in(aSockAddr).sin_addr), aHostName)
+    vSocket := TmnSocket.Create(aHandle, Options, skClient, NetAddrToStr(sockaddr_in(aAddr).sin_addr), aHostName)
   else
     vSocket := nil;
 end;
