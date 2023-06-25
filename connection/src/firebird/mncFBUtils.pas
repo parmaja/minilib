@@ -315,7 +315,7 @@ var
 
 var
   ExceptionName, ExceptionMsg: string;
-  ExceptionID: Long;
+  ExceptionID: Integer;
 begin
   Msg := '';
   { Get a local reference to the status vector.

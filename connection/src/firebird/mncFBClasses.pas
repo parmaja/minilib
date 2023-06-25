@@ -482,7 +482,7 @@ type
     procedure SetAsCurrency(AValue: Currency);
     procedure SetAsInt64(AValue: Int64);
     procedure SetAsDate(AValue: TDateTime);
-    procedure SetAsLong(AValue: Integer);
+    procedure SetAsLong(AValue: Long);
     procedure SetAsTime(AValue: TDateTime);
     procedure SetAsDateTime(AValue: TDateTime);
     procedure SetAsDouble(AValue: Double);
@@ -510,6 +510,8 @@ type
     procedure SetAsChar(const AValue: char);
     function GetBytes: TBytes;
     procedure SetBytes(const Value: TBytes);
+    function GetAsInteger: Integer;
+    procedure SetAsInteger(const Value: Integer);
   protected
     FDBHandle: PISC_DB_HANDLE;
     FTRHandle: PISC_TR_HANDLE;
@@ -548,7 +550,7 @@ type
     property AsCurrency: Currency read GetAsCurrency write SetAsCurrency;
     property AsInt64: Int64 read GetAsInt64 write SetAsInt64;
     property AsID: Int64 read GetAsInt64 write SetAsInt64; // More flixable names
-    property AsInteger: Integer read GetAsLong write SetAsLong;
+    property AsInteger: Integer read GetAsInteger write SetAsInteger;
     property AsLong: Long read GetAsLong write SetAsLong;
     property AsPointer: Pointer read GetAsPointer write SetAsPointer;
     property AsQuad: TISC_QUAD read GetAsQuad write SetAsQuad;
@@ -1296,6 +1298,11 @@ begin
     end;
 end;
 
+function TmncSQLVAR.GetAsInteger: Integer;
+begin
+  Result := Integer(GetAsLong);
+end;
+
 function TmncSQLVAR.GetAsDateTime: TDateTime;
 var
   tm_date: TCTimeStructure;
@@ -1706,6 +1713,12 @@ begin
   Modified := True;
 end;
 
+procedure TmncSQLVAR.SetAsInteger(const Value: Integer);
+begin
+  SetAsLong(Value);
+
+end;
+
 procedure TmncSQLVAR.SetAsDate(AValue: TDateTime);
 var
   tm_date: TCTimeStructure;
@@ -1730,7 +1743,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncSQLVAR.SetAsLong(AValue: Integer);
+procedure TmncSQLVAR.SetAsLong(AValue: Long);
 begin
   if IsNullable then
     IsNull := False;
