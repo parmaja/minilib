@@ -407,7 +407,7 @@ type
 
 function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
 function ParseURI(const URI: String; out Address, Params: string): Boolean;
-procedure ParseQuery(const Query: String; mnParams: TmnParams);
+procedure ParseQuery(const Query: String; mnParams: TmnFields);
 procedure ParseParamsEx(const Params: String; mnParams: TmnParams);
 
 
@@ -459,12 +459,12 @@ end;
 
 procedure ParseParamsEx(const Params: String; mnParams: TmnParams);
 begin
-  StrToStringsCallback(Params, mnParams, @ParamsCallBack, ['/'], [' ']);
+  StrToStringsCallback(Params, mnParams, @FieldsCallBack, ['/'], [' ']);
 end;
 
-procedure ParseQuery(const Query: String; mnParams: TmnParams);
+procedure ParseQuery(const Query: String; mnParams: TmnFields);
 begin
-  StrToStringsCallback(Query, mnParams, @ParamsCallBack, ['&'], [' ']);
+  StrToStringsCallback(Query, mnParams, @FieldsCallBack, ['&'], [' ']);
 end;
 
 function ParseAddress(const Request: String; out URIPath: string; out URIQuery: string): Boolean;
@@ -510,7 +510,7 @@ begin
   if Result then
     if URIQuery <> nil then
       //ParseParams(aParams, False);
-      StrToStringsCallback(URIParams, URIQuery, @ParamsCallBack, ['&'], [' ']);
+      StrToStringsCallback(URIParams, URIQuery, @FieldsCallBack, ['&'], [' ']);
 end;
 
 procedure ParsePath(const aRequest: String; out Name: String; out URIPath: string; out URIParams: string; URIQuery: TmnParams);

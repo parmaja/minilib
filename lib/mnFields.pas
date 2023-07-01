@@ -248,6 +248,7 @@ type
     function GetValues(const Index: string): Variant;
     function GetIField(const FieldName: string): IField;
     function GetCount: Integer;
+
   public
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
@@ -264,6 +265,7 @@ type
     function FindByName(const vName: string): TmnField; //with exception if not exists
     function IndexOfName(const vName: string): Integer;
     function RemoveByName(const vName: string): Boolean;
+    function ToString: string; override;
     //todo IndexOfName, IndexOf
     property FieldByName[const Index: string]: TmnField read FindByName;
     property Field[const Index: string]: TmnField read FindField;
@@ -946,6 +948,15 @@ end;
 procedure TmnFields.SetValues(const Index: string; const AValue: Variant);
 begin
   SetValue(Index, AValue);
+end;
+
+function TmnFields.ToString: string;
+var
+  f: TmnField;
+begin
+  Result := '';
+  for f in Self do
+    Result := Result + f.Name + '=' + f.AsString + #13;
 end;
 
 function TmnFields._AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};

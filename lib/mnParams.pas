@@ -92,7 +92,7 @@ type
     property Default: TmnSection read FDefault;
   end;
 
-procedure ParamsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+procedure FieldsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 
 implementation
 
@@ -159,7 +159,7 @@ begin
   end;
 end;
 
-procedure ParamsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+procedure FieldsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 var
   Name, Value: string;
   p: Integer;
@@ -175,12 +175,12 @@ begin
     Name := S;
     Value := '';
   end;
-  (TObject(Sender) as TmnParams).Add(Name, Value);
+  (TObject(Sender) as TmnFields).Add(Name, Value); //params inherite fields
 end;
 
 procedure TmnParams.SetAsString(const Value: string);
 begin
-  StrToStringsCallback(Value, Self, @ParamsCallBack, [Self.Delimiter], [' ']);
+  StrToStringsCallback(Value, Self, @FieldsCallBack, [Self.Delimiter], [' ']);
 end;
 
 constructor TmnParams.Create;

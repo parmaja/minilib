@@ -70,7 +70,6 @@ type
     FContentLength: Integer;
     FCompressClass: TmnCompressStreamProxyClass;
     FCompressProxy: TmnCompressStreamProxy;
-    FURIParams: TmnParams;
     FCookies: TmnParams;
     FRoot: string; //Document root folder
     FHost: string;
@@ -85,7 +84,6 @@ type
     constructor Create;
     destructor Destroy; override;
     property Cookies: TmnParams read FCookies;
-    property URIParams: TmnParams read FURIParams;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     //Compress on the fly, now we use deflate
     property ContentLength: Integer read FContentLength write FContentLength;
@@ -177,9 +175,29 @@ type
     constructor Create; override;
   end;
 
+  TmodWebEventProc = reference to procedure(vRequest: TmodRequest; vRespond: TmodHttpRespond; var vResult: TmodRespondResult);
+
+  TmodWebEventModule = class(TmodWebModule)
+  protected
+    FProc: TmodWebEventProc; //need discuss
+    procedure DoCreateCommands; override;
+  end;
+
+  TmodWebEventServer = class(TmodCustomWebServer)
+  public
+    constructor Create(const vPort: string; vProc: TmodWebEventProc);
+  end;
+
   {**
     Files Commands
   *}
+
+  { TmodHttpEventCommand }
+
+  TmodHttpEventCommand = class(TmodURICommand)
+  public
+    procedure RespondResult(var Result: TmodRespondResult); override;
+  end;
 
   { TmodHttpGetCommand }
 
@@ -302,14 +320,12 @@ begin
   inherited Create;
   FCookies := TmnParams.Create;
   FCookies.Delimiter := ';';
-  FURIParams := TmnParams.Create;
   FHttpResult := hrNone;
 end;
 
 destructor TmodHttpRespond.Destroy;
 begin
   FreeAndNil(FCookies);
-  FreeAndNil(FURIParams);
   inherited Destroy;
 end;
 
@@ -653,7 +669,7 @@ var
 begin
   inherited;
   Respond.Stream.WriteCommand('OK');
-  aFileName := Respond.URIParams.Values['FileName'];
+  aFileName := Request.Params.Values['FileName'];
   aFile := TFileStream.Create(Respond.Root + aFileName, fmCreate);
   try
     Respond.Stream.ReadStream(aFile, Request.ContentLength);
@@ -673,7 +689,7 @@ var
 begin
   inherited;
   Respond.Stream.WriteCommand('OK');
-  aFilter := Respond.URIParams.Values['Filter'];
+  aFilter := Request.Params.Values['Filter'];
   //aPath := IncludeTrailingPathDelimiter(Root);
   if aFilter = '' then
     aFilter := '*.*';
@@ -745,7 +761,7 @@ var
   Key: string;
 begin
   inherited;
-  ParseQuery(Request.Query, Respond.URIParams);
+  ParseQuery(Request.Query, Request.Params);
 
   //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
   Key := Request.Header.ReadString('Sec-WebSocket-Key');
@@ -845,6 +861,37 @@ begin
     hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
     hrServiceUnavailable: Result := Result + '503 Service Unavailable';
   end;
+end;
+
+{ TmodHttpEventCommand }
+
+procedure TmodHttpEventCommand.RespondResult(var Result: TmodRespondResult);
+begin
+  inherited;
+  TmodWebEventModule(Module).FProc(Request, Respond, Result);
+end;
+
+{ TmodWebEventServer }
+
+constructor TmodWebEventServer.Create(const vPort: string; vProc: TmodWebEventProc);
+var
+  aModule: TmodWebEventModule;
+begin
+  inherited Create;
+
+  aModule := TmodWebEventModule.Create('web', 'doc', ['http/1.1'], Modules);
+  aModule.FProc := vProc;
+
+  Modules.DefaultModule := aModule;
+  Port := vPort;
+end;
+
+{ TmodWebEventModule }
+
+procedure TmodWebEventModule.DoCreateCommands;
+begin
+  // inherited;
+  RegisterCommand('Event', TmodHttpEventCommand, true);
 end;
 
 initialization
