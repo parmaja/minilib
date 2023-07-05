@@ -145,7 +145,6 @@ type
 
     Flocked: Boolean;
     FJData: TJsonObject;
-    function GetJData: TJsonObject;
     function GetID: Int64;
     function GetLocked: Boolean;
     function GetRowIndex: Integer;
@@ -512,7 +511,6 @@ type
     FAppendPageTotals: Boolean;
     FHitAppendTitles: Boolean;
     FRows: TmnObjectList<TmnrRow>;
-    FRowData: TJSONObject;
     FTitleRow: TmnrRow; //default row data
 
     function GetNext: TmnrSection;
@@ -1771,14 +1769,6 @@ begin
   FSectionLoopWay     := slwAuto;
   FRows := TmnObjectList<TmnrRow>.Create;
   FRows.OwnsObjects := False;
-
-  FRowData := TJSONObject.Create;
-  FRowData.AddPair('Int', 1);
-  FRowData.AddPair('number', 1.225);
-  FRowData.AddPair('check', False);
-  FRowData.AddPair('Int2', 1);
-  FRowData.AddPair('number2', 1.225);
-  FRowData.AddPair('check2', True);
 end;
 
 destructor TmnrSection.Destroy;
@@ -1787,7 +1777,6 @@ begin
   FDesignRows.Free;
   FReferencesRows.Free;
   FreeAndNil(FRows);
-  FreeAndNil(FRowData);
   inherited;
 end;
 
@@ -1795,13 +1784,18 @@ function TmnrSection.DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 begin
   vParams.Reset;
 
+  var aData := TJSONObject.Create;
+  Report.RowsData.Add(aData);
+
+  vParams.Data := aData;
+
   if Assigned(FOnFetch) then
     FOnFetch(vParams)
   else
     Report.Fetch(Self, vParams);
 
 
-  if vParams.Data<>nil then Report.RowsData.Add(vParams.Data);
+  //if vParams.Data<>nil then Report.RowsData.Add(vParams.Data);
 
   Result := vParams.AcceptMode;
 end;
@@ -1823,6 +1817,12 @@ var
   p: TJSONPair;
   c: Integer;
 begin
+  //vParams.Data shared for all DesignRows
+  vParams.Data.AddPair('ID', vParams.ID);
+  //aRow.JData.AddPair('Number', vParams.Number);
+  vParams.Data.AddPair('Locked', vParams.Locked);
+  vParams.Data.AddPair('Index', vIndex);
+
   aDesignRow := DesignRows.First;
   if aDesignRow <> nil then
   begin
@@ -1832,30 +1832,11 @@ begin
       try
         aRow.FLocked    := vParams.Locked;
         aRow.FDesignRow := aDesignRow;
-
-        aRow.JData.AddPair('ID', vParams.ID);
-        //aRow.JData.AddPair('Number', vParams.Number);
-        aRow.JData.AddPair('Locked', vParams.Locked);
-        aRow.JData.AddPair('Index', vIndex);
-
-        if vParams.Data<>nil then
-        begin
-          {c := vParams.Data.Count;
-          while c<>0 do
-          begin
-            p := vParams.Data.Pairs[c-1];
-            THackJson(vParams.Data).FMembers.RemoveItem(p, FromEnd); //faster than clone but not safe
-            aRow.JData.AddPair(p);
-            Dec(c);
-          end;}
+        aRow.FJData     := vParams.Data;
 
 
-          for i:=0 to vParams.Data.Count-1 do
-            aRow.JData.AddPair(vParams.Data.Pairs[i].Clone as TJSONPair);
-        end;
+        //note vParams.data <> nil
 
-
-        //note data may be nil
         DoUpdateRowData(aRow, vParams.Data, aDesignRow.Next=nil);
 
         d := aDesignRow.First;
@@ -2391,7 +2372,7 @@ end;
 constructor TmnrRow.Create(vNodes: TmnrNode);
 begin
   inherited Create(vNodes);
-  FJData := TJSONObject.Create;
+
 end;
 
 procedure TmnrRow.DescaleCells;
@@ -2411,7 +2392,7 @@ end;
 
 destructor TmnrRow.Destroy;
 begin
-  FreeAndNil(FJData);
+
   inherited;
 end;
 
@@ -2484,18 +2465,6 @@ end;
 function TmnrRow.GetID: Int64;
 begin
   Result := JData.GetValue<Int64>('ID', 0);
-end;
-
-function TmnrRow.GetJData: TJsonObject;
-begin
-  {if FJData<>nil then
-    Result := FJData
-  else if Section<>nil then
-    Result := Section.FRowData
-  else
-    Result := nil;}
-  if FJData=nil then FJData := TJSONObject.Create;
-  Result := FJData;
 end;
 
 function TmnrRow.GetLast: TmnrCell;
