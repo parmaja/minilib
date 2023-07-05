@@ -71,7 +71,6 @@ type
     AcceptMode: TmnrAcceptMode;
     ID: Int64;
     Locked: Boolean;
-    _Data: TObject;
     Data: TJSONObject;
 
     procedure Reset; //call in new fetch
@@ -531,7 +530,7 @@ type
     function DoCreateSections: TmnrSections;
     function GetSections: TmnrSections;
 
-    procedure DoUpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean); virtual;
+    procedure DoUpdateRowData(vRow: TmnrRow; vData: TObject); virtual;
     function GetCaption: string; virtual;
     function GetReport: TmnrCustomReport;
     procedure DoBeginFill(vReference: TmnrReferencesRow); virtual;
@@ -1834,10 +1833,8 @@ begin
         aRow.FDesignRow := aDesignRow;
         aRow.FJData     := vParams.Data;
 
-
         //note vParams.data <> nil
-
-        DoUpdateRowData(aRow, vParams.Data, aDesignRow.Next=nil);
+        DoUpdateRowData(aRow, vParams.Data);
 
         d := aDesignRow.First;
         while d <> nil do
@@ -1981,7 +1978,7 @@ begin
   inherited SetNodes(Value);
 end;
 
-procedure TmnrSection.DoUpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean);
+procedure TmnrSection.DoUpdateRowData(vRow: TmnrRow; vData: TObject);
 begin
 
 end;
@@ -3746,7 +3743,6 @@ begin
   ID     := 0;
   Locked := False;
   Data   := nil;
-  _Data  := nil;
 end;
 
 initialization
