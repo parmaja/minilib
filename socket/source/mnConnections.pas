@@ -89,7 +89,8 @@ type
     procedure Prepare; virtual;
     procedure Process; virtual;
     procedure Unprepare; virtual;
-    procedure Stopped; virtual; //this run main thread called by Synchronize, so dont use it for hard code
+    //procedure Stopped; virtual; //this run main thread called by Synchronize, so dont use it for hard code //we used queue(nil, ...
+
     property Owner: TmnConnections read FOwner;
   protected
     procedure Execute; override;
@@ -197,7 +198,7 @@ begin
     end;
   finally
     Unprepare;
-    Synchronize(Stopped);//Synchronize not queue, to sure all other queue is processed
+    //Synchronize(Stopped);//Synchronize not queue, to sure all other queue is processed
 
     if FOwner <> nil then
       if FreeOnTerminate then
@@ -275,10 +276,6 @@ begin
 end;
 
 procedure TmnConnection.Unprepare;
-begin
-end;
-
-procedure TmnConnection.Stopped;
 begin
 end;
 

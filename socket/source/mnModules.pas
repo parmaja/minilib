@@ -772,7 +772,10 @@ end;
 procedure TmodModuleServer.DoIdle;
 begin
   inherited;
-  Modules.Idle;
+  if Modules<>nil then //not stoped
+  begin
+    Modules.Idle;
+  end;
 end;
 
 procedure TmodModuleServer.DoStart;

@@ -73,7 +73,6 @@ type
     FStream: TmnConnectionStream;
     function GetListener: TmnListener;
   protected
-    procedure DoStop; //* in main thread, nothing to do just to process all queue
     function GetConnected: Boolean; override;
     procedure Disconnect; virtual;
     procedure Prepare; override;
@@ -412,10 +411,6 @@ begin
   Result := Owner as TmnListener;
 end;
 
-procedure TmnServerConnection.DoStop;
-begin
-end;
-
 function TmnServerConnection.GetConnected: Boolean;
 begin
   Result := (FStream <> nil) and FStream.Connected;
@@ -442,7 +437,7 @@ end;
 procedure TmnServerConnection.Execute;
 begin
   inherited Execute;
-  Synchronize(DoStop); //* to process all queue
+
 end;
 
 procedure TmnServer.SetActive(const Value: Boolean);
@@ -509,7 +504,7 @@ end;
 
 procedure TmnListener.Changed;
 begin
-  Queue(PostChanged);
+  //Queue(PostChanged);
 end;
 
 procedure TmnListener.Connect;
@@ -628,7 +623,7 @@ begin
           begin
             aSocket.Context := Context;
             //aSocket.Prepare;
-          end;
+          end
         end
         else
         begin
@@ -646,6 +641,7 @@ begin
 
         if not Terminated then
         begin
+          //w.Start;
           if Connected and (Server <> nil) then
             Server.Idle(Self);
           if (aSocket = nil) then
@@ -677,6 +673,11 @@ begin
             finally
             end;
           end;
+          {w.Stop;
+          var i := w.ElapsedMilliseconds;
+          if i>1 then
+            OutputDebugString(PChar('next select' + i.ToString));
+          w.Reset;}
         end;
       finally
       end;
@@ -727,7 +728,7 @@ begin
     finally
       Leave;
     end;
-    Queue(PostLogs);
+    Queue(nil, PostLogs); //nil = queue not linked with this thread "RemoveQueuedEvents"
   end;
 end;
 
