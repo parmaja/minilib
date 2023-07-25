@@ -175,6 +175,7 @@ type
     constructor Create; override;
   end;
 
+  {$ifndef FPC}
   TmodWebEventProc = reference to procedure(vRequest: TmodRequest; vRespond: TmodHttpRespond; var vResult: TmodRespondResult);
 
   TmodWebEventModule = class(TmodWebModule)
@@ -198,6 +199,7 @@ type
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
   end;
+  {$endif}
 
   { TmodHttpGetCommand }
 
@@ -863,6 +865,7 @@ begin
   end;
 end;
 
+{$ifndef FPC}
 { TmodHttpEventCommand }
 
 procedure TmodHttpEventCommand.RespondResult(var Result: TmodRespondResult);
@@ -893,6 +896,7 @@ begin
   // inherited;
   RegisterCommand('Event', TmodHttpEventCommand, true);
 end;
+{$endif FPC}
 
 initialization
   modLock := TCriticalSection.Create;
