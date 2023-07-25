@@ -433,11 +433,11 @@ type
     procedure SetRealName(const Value: string);
     procedure SetHost(const Value: string);
 
-    procedure Opened; //opened by user, not really connected to the server
-    procedure Connected; //connected to the server, we must check if it initial or not
-    procedure Connecting; //just for notification
-    procedure Disconnected;
-    procedure Closed; //to clean up every thing, closed by user
+    procedure PostOpened; //opened by user, not really connected to the server
+    procedure PostConnected; //connected to the server, we must check if it initial or not
+    procedure PostConnecting; //just for notification
+    procedure PostDisconnected;
+    procedure PostClosed; //to clean up every thing, closed by user
 
     procedure SetReconnectTime(AValue: Integer);
     procedure SetUsername(const Value: string);
@@ -1772,19 +1772,19 @@ begin
         end
         else
           Log('Connecting '+ Host +' ...');
-        Queue(Client.Connecting);
+        Queue(Client.PostConnecting);
         FStream.Connect;
         if FStream.Connected then
         begin
           FInternalConnected := True;
           Log('Connected successed');
-          Queue(Client.Connected);
+          Queue(Client.PostConnected);
         end;
         Inc(Tries);
       except
         on E: Exception do
         begin
-          Log('Connected failed:' + E.Message);
+          Log('Connecting failed:' + E.Message);
           FreeAndNil(FStream);
         end;
       end;
@@ -1793,7 +1793,7 @@ begin
     begin
       FInternalConnected := False;
       Log('Disconnected');
-      Queue(Client.Disconnected);
+      Queue(Client.PostDisconnected);
     end;
   end;
 
@@ -1825,7 +1825,7 @@ end;
 procedure TmnIRCConnection.Prepare;
 begin
   inherited;
-  Synchronize(Client.Opened);
+  Synchronize(Client.PostOpened);
 end;
 
 procedure TmnIRCConnection.SendRaws;
@@ -1915,7 +1915,7 @@ begin
   Tries := 0;
   if Connected then
     Terminate;
-  Synchronize(Client.Closed);
+  Synchronize(Client.PostClosed);
   FreeAndNil(FStream);
 end;
 
@@ -2067,7 +2067,8 @@ end;
 
 function TmnIRCConnection.GetConnected: Boolean;
 begin
-  Result := not Terminated;
+  //Result := not Terminated;
+  Result := (FStream <> nil) and (FStream.Connected)
 end;
 
 procedure TmnIRCConnection.TerminatedSet;
@@ -2448,7 +2449,7 @@ begin
   SendRaw(Format('NOTICE %s :%s', [vChannel, vMsg]), prgReady);
 end;
 
-procedure TmnIRCClient.Closed;
+procedure TmnIRCClient.PostClosed;
 begin
   SetProgress(prgDisconnected);
   FSession.Nick := '';
@@ -2458,7 +2459,7 @@ begin
   DoClosed;
 end;
 
-procedure TmnIRCClient.Connected;
+procedure TmnIRCClient.PostConnected;
 var
   aNick: string;
 begin
@@ -2490,13 +2491,13 @@ begin
   DoConnected;
 end;
 
-procedure TmnIRCClient.Disconnected;
+procedure TmnIRCClient.PostDisconnected;
 begin
   SetProgress(prgDisconnected);
   DoDisconnected;
 end;
 
-procedure TmnIRCClient.Opened;
+procedure TmnIRCClient.PostOpened;
 begin
 end;
 
@@ -2520,7 +2521,7 @@ end;
 
 function TmnIRCClient.GetOnline: Boolean;
 begin
-  Result := (FConnection <> nil) and FConnection.Connected and FConnection.Active and (Progress > prgConnected);
+  Result := (FConnection <> nil) and FConnection.Active and FConnection.Connected and (Progress > prgConnected);
 end;
 
 function TmnIRCClient.GetActive: Boolean;
@@ -2567,7 +2568,7 @@ begin
   FHost := Value;
 end;
 
-procedure TmnIRCClient.Connecting;
+procedure TmnIRCClient.PostConnecting;
 begin
   SetProgress(prgConnecting);
 end;
