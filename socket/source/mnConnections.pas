@@ -69,7 +69,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    //procedure Stop; virtual; deprecated;
+
     property Count: Integer read GetCount;
     property LastID: Int64 read FLastID;
     property List: TmnConnectionList read FList;
@@ -106,7 +106,6 @@ type
 
     property Connected: Boolean read GetConnected;
 
-    //procedure Stop; virtual; deprecated;
     property ID: Integer read FID write FID;
   end;
 
@@ -136,10 +135,6 @@ begin
   FList.Free;
   inherited;
 end;
-
-{procedure TmnConnections.Stop;
-begin
-end;}
 
 procedure TmnConnections.Add(Connection: TmnConnection);
 begin

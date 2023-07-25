@@ -16,6 +16,11 @@
           <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
+      <Linking>
+        <Debugging>
+          <DebugInfoType Value="dsDwarf3"/>
+        </Debugging>
+      </Linking>
       <Other>
         <CompilerMessages>
           <IgnoredMessages idx5024="True"/>
