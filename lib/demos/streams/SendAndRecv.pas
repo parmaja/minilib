@@ -1200,7 +1200,7 @@ begin
   BypassList := False;
   //InitOpenSSL;
   //if not FileExists(Application.Location + 'certificate.pem') then
-    //MakeCert2('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
+  //MakeCert2('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
 
   ini := TIniFile.Create(Application.Location + 'Options.ini');
   try

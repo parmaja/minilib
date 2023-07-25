@@ -180,6 +180,8 @@ type
     constructor Create(AStream: TmnBufferStream);
   end;
 
+  TReadUntilCallback = procedure(const Buffer; Count: Longint; Writen: Longint);
+
   { TmnBufferStream }
 
   TmnBufferStream = class(TmnCustomStream)
@@ -229,6 +231,7 @@ type
     procedure Close(ACloseWhat: TmnStreamClose = [cloRead, cloWrite]);
 
     //* ABuffer is created you need to free it
+    //function ReadUntilCallback(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; Callback: TReadUntilCallback; out Matched: Boolean): Boolean;
     function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: PByte; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
     {$ifndef NEXTGEN}
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
@@ -1430,7 +1433,91 @@ begin
   CopyWideString(Buffer, Res, Len);
   FreeMem(Res);
 end;
+(*
+function TmnBufferStream.ReadUntilCallback(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; Callback: TReadUntilCallback; out Matched: Boolean): Boolean;
+var
+  aCount: Integer;
+  aBuf: TBytes;
 
+  function _IsMatch(vBI, vMI: Integer; out vErr: Boolean): Boolean;
+  var
+    b: Byte;
+    t: PByte;
+  begin
+    if vBI >= aCount then
+    begin
+      vErr := Read(b, 1)<>1;
+
+      if not vErr then
+      begin
+        if aCount=ABufferSize then
+        begin
+          ABufferSize := ABufferSize + ReadWriteBufferSize; { TODO : change ReadWriteBufferSize->FReadBuffer.Size }
+          ReallocMem(ABuffer, ABufferSize);
+        end;
+        t := ABuffer;
+        Inc(t, aCount);
+        t^ := b;
+        Inc(aCount);
+      end;
+    end
+    else
+      vErr := False;
+
+    if not vErr then
+      Result := ABuffer[vBI] = Match[vMI]
+    else
+      Result := False;
+  end;
+
+var
+  P: PByte;
+  mt: PByte;
+  Index: Integer;
+  MatchIndex: Integer;
+  aErr: Boolean;
+begin
+  if (Match = nil) or (MatchSize = 0) then
+    raise Exception.Create('Match is empty!');
+
+  Result := not (cloRead in Done);
+  Matched := False;
+
+  ABuffer := nil;
+  ABufferSize := 0;
+  aCount := 0;
+  Index := 0;
+  MatchIndex := 0;
+
+  while not Matched do
+  begin
+    if _IsMatch(Index + MatchIndex, MatchIndex, aErr) then
+    begin
+      Inc(MatchIndex);
+      if MatchIndex = MatchSize then
+      begin
+        Matched := True;
+      end;
+    end
+    else
+    begin
+      MatchIndex := 0;
+      Inc(Index);
+      if aErr then
+        Break;
+    end;
+  end;
+
+  if ExcludeMatch and Matched then
+    aCount := aCount - MatchSize;
+
+  ReAllocMem(ABuffer, aCount);
+  ABufferSize := aCount;
+
+  if not Matched and (cloRead in Done) and (ABufferSize = 0) then
+    Result := False;
+end;
+*)
 {$endif}
 
 procedure TmnWrapperStream.SetStream(const Value: TStream);

@@ -7,6 +7,7 @@ uses
   cthreads,
   {$ENDIF}
   Classes, SysUtils,
+  UnitTests,
   SendAndRecv;
 
 begin
