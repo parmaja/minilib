@@ -1,0 +1,19 @@
+POST / HTTP/1.1
+HOST: host.example.com
+Cookie: some_cookies...
+Connection: Keep-Alive
+Content-Type: multipart/form-data; boundary=12345
+
+--12345
+Content-Disposition: form-data; name="sometext"
+
+some text that you wrote in your html form ...
+--12345
+Content-Disposition: form-data; name="name_of_post_request" filename="filename.xyz"
+
+content of filename.xyz that you upload in your form with input[type=file]
+--12345
+Content-Disposition: form-data; name="image" filename="picture_of_sunset.jpg"
+
+content of picture_of_sunset.jpg ...
+--12345--
