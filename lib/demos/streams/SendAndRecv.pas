@@ -730,6 +730,7 @@ var
   aTextFile: TFileStream;
   Stream: TmnBufferStream;
   aFormData: TmnFormData;
+  aItm: TmnFormDataItem;
 begin
   aTextFile:=TFileStream.Create(Location + 'formdata1.txt', fmOpenRead);
   Stream := TmnWrapperStream.Create(aTextFile, True);
@@ -737,7 +738,14 @@ begin
     Stream.EndOfLine := sWinEndOfLine;
     aFormData := TmnFormData.Create;
     try
-      aFormData.Read(Stream);
+      //aFormData.Read(Stream);
+      aFormData.ReadCallback(Stream);
+      for aItm in aFormData do
+      begin
+        Writeln(aItm.Header.AsString);
+        Writeln(aItm.Name);
+      end;
+
     finally
       FreeAndNil(aFormData);
     end;
@@ -1010,7 +1018,7 @@ begin
   Info.Address := '127.0.0.1';
 
   Info.NoDelay := True;
-  Info.KeepAlive := True;
+  Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.WaitBeforeRead := True;
   Info.UseSSL := False;

@@ -46,6 +46,9 @@ type
   TmnFormData = class(TmnNamedObjectList<TmnFormDataItem>)
   public
     Boundary: UTF8String;
+    function NewItem(vStream: TmnBufferStream): TmnFormDataItem;
+    procedure ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
+    function ReadCallback(vStream: TmnBufferStream): Boolean;
     function Read(vStream: TmnBufferStream): Boolean;
   end;
 
@@ -81,6 +84,21 @@ begin
     S := '';
 end;
 
+function TmnFormData.NewItem(vStream: TmnBufferStream): TmnFormDataItem;
+var
+  h: TmnHeader;
+begin
+  h := TmnHeader.Create;
+  try
+    h.ReadHeader(vStream);
+    Result := TmnFormDataItem.Create(h);
+    Add(Result);
+  except
+    FreeAndNil(h);
+    raise;
+  end;
+end;
+
 function TmnFormData.Read(vStream: TmnBufferStream): Boolean;
 var
   Res: PByte;
@@ -100,11 +118,12 @@ begin
     if SameText(ContentType[0], 'multipart/form-data') then
     begin
       Boundary := UTF8Encode(ContentType.Values['boundary']);
-      Boundary := '--'+Boundary;
+      Boundary := '--' + Boundary;
 
       vStream.ReadLineUTF8(S, True);
       if S = Boundary then
       begin
+        Boundary := vStream.EndOfLine + Boundary;
         while True do
         begin
           aDataHeader := TmnHeader.Create;
@@ -114,8 +133,10 @@ begin
             if Matched then
             begin
               aItem := TmnFormDataValue.Create(aDataHeader);
+              //handle binary ?
               CopyString(S, Res, Len);
               FreeMem(res);
+              aItem.Name := s;
               Add(aItem);
               aDataHeader := nil;
               vStream.ReadLineUTF8(S, True);
@@ -133,6 +154,64 @@ begin
   finally
     aHeader.Free;
   end;
+end;
+
+function TmnFormData.ReadCallback(vStream: TmnBufferStream): Boolean;
+var
+  Res: PByte;
+  len: TFileSize;
+  S: UTF8String;
+  aHeader: TmnHeader;
+  aType: string;
+  aItem: TmnFormDataItem;
+  ContentType: TStringList;
+  Matched: Boolean;
+  aDataHeader: TmnHeader;
+begin
+  aHeader := TmnHeader.Create;
+  try
+    aHeader.ReadHeader(vStream);
+    ContentType := aHeader.Field['Content-Type'].CreateSubValues;
+    if SameText(ContentType[0], 'multipart/form-data') then
+    begin
+      Boundary := UTF8Encode(ContentType.Values['boundary']);
+      Boundary := '--' + Boundary;
+
+      vStream.ReadLineUTF8(S, True);
+      if S = Boundary then
+      begin
+        Boundary := vStream.EndOfLine + Boundary;
+        while True do
+        begin
+          aItem := NewItem(vStream);
+          vStream.ReadUntilCallback(aItem, @Boundary[1], Length(Boundary), True, ReadUntilCallback, Matched);
+
+          if not Matched then
+          begin
+            Last.Name := 'Error';
+            Exit(False);
+          end;
+
+          vStream.ReadLineUTF8(S, True);
+          if S = '--' then
+          begin
+            Exit(True);
+          end;
+        end;
+      end;
+    end;
+  finally
+    aHeader.Free;
+  end;
+  Result := False;
+end;
+
+procedure TmnFormData.ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
+var
+  s: string;
+begin
+  s := TEncoding.UTF8.GetString(PByte(Buffer), Count);
+  Last.Name := Last.Name + s;
 end;
 
 end.

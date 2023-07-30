@@ -180,7 +180,7 @@ type
     constructor Create(AStream: TmnBufferStream);
   end;
 
-  TReadUntilCallback = procedure(const Buffer; Count: Longint; Writen: Longint);
+  TReadUntilCallback = procedure(vData: TObject; const Buffer; Count: Longint) of object;
 
   { TmnBufferStream }
 
@@ -231,7 +231,7 @@ type
     procedure Close(ACloseWhat: TmnStreamClose = [cloRead, cloWrite]);
 
     //* ABuffer is created you need to free it
-    //function ReadUntilCallback(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; Callback: TReadUntilCallback; out Matched: Boolean): Boolean;
+    function ReadUntilCallback(vData: TObject; const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; Callback: TReadUntilCallback; out Matched: Boolean): Boolean;
     function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: PByte; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
     {$ifndef NEXTGEN}
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
@@ -1316,7 +1316,6 @@ end;
 function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: PByte; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
 var
   aCount: Integer;
-  aBuf: TBytes;
 
   function _IsMatch(vBI, vMI: Integer; out vErr: Boolean): Boolean;
   var
@@ -1433,11 +1432,13 @@ begin
   CopyWideString(Buffer, Res, Len);
   FreeMem(Res);
 end;
-(*
-function TmnBufferStream.ReadUntilCallback(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; Callback: TReadUntilCallback; out Matched: Boolean): Boolean;
+
+
+function TmnBufferStream.ReadUntilCallback(vData: TObject; const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; Callback: TReadUntilCallback; out Matched: Boolean): Boolean;
 var
   aCount: Integer;
   aBuf: TBytes;
+  aSize: Integer;
 
   function _IsMatch(vBI, vMI: Integer; out vErr: Boolean): Boolean;
   var
@@ -1446,16 +1447,16 @@ var
   begin
     if vBI >= aCount then
     begin
-      vErr := Read(b, 1)<>1;
+      vErr := Read(b, 1)<>1; { TODO : find way to improve this }
 
       if not vErr then
       begin
-        if aCount=ABufferSize then
+        if aCount=aSize then
         begin
-          ABufferSize := ABufferSize + ReadWriteBufferSize; { TODO : change ReadWriteBufferSize->FReadBuffer.Size }
-          ReallocMem(ABuffer, ABufferSize);
+          aSize := aSize + ReadWriteBufferSize;
+          SetLength(aBuf, aSize);
         end;
-        t := ABuffer;
+        t := PByte(aBuf);
         Inc(t, aCount);
         t^ := b;
         Inc(aCount);
@@ -1465,10 +1466,13 @@ var
       vErr := False;
 
     if not vErr then
-      Result := ABuffer[vBI] = Match[vMI]
+      Result := aBuf[vBI] = Match[vMI]
     else
       Result := False;
   end;
+
+const
+  sSize = 1024;
 
 var
   P: PByte;
@@ -1483,11 +1487,11 @@ begin
   Result := not (cloRead in Done);
   Matched := False;
 
-  ABuffer := nil;
-  ABufferSize := 0;
   aCount := 0;
   Index := 0;
   MatchIndex := 0;
+  aSize := sSize;
+  SetLength(aBuf, sSize);
 
   while not Matched do
   begin
@@ -1503,21 +1507,26 @@ begin
     begin
       MatchIndex := 0;
       Inc(Index);
-      if aErr then
-        Break;
+      if aErr  then
+        Break
+      else if (Index>=sSize) then
+      begin
+        Callback(vData, PByte(aBuf), aCount);
+        aCount := 0;
+        Index := 0;
+      end;
     end;
   end;
 
   if ExcludeMatch and Matched then
     aCount := aCount - MatchSize;
 
-  ReAllocMem(ABuffer, aCount);
-  ABufferSize := aCount;
+  Callback(vData, PByte(aBuf), aCount);
 
-  if not Matched and (cloRead in Done) and (ABufferSize = 0) then
+  if not Matched and (cloRead in Done) and (aSize = 0) then
     Result := False;
 end;
-*)
+
 {$endif}
 
 procedure TmnWrapperStream.SetStream(const Value: TStream);
