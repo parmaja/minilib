@@ -119,6 +119,10 @@
         <Filename Value="mnDON.pas"/>
         <UnitName Value="mnDON"/>
       </Item>
+      <Item>
+        <Filename Value="mnMultipartData.pas"/>
+        <UnitName Value="mnMultipartData"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

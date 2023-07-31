@@ -41,8 +41,7 @@ interface
 uses
   SysUtils, Classes, syncobjs, StrUtils, //NetEncoding, Hash,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
-  mnFields, mnParams,
-  mnModules;
+  mnFields, mnParams, mnMultipartData, mnModules;
 
 type
 
@@ -508,38 +507,6 @@ begin
 end;
 
 { TmodHttpGetCommand }
-
-function DocumentToContentType(FileName: string): string;
-var
-  Ext: string;
-begin
-  Ext := LowerCase(ExtractFileExt(FileName));
-  if Length(Ext) > 1 then
-    Ext := Copy(Ext, 2, Length(Ext));
-  if (Ext = 'htm') or (Ext = 'html') or (Ext = 'shtml') or (Ext = 'dhtml') then
-    Result := 'text/html'
-  else if Ext = 'gif' then
-    Result := 'image/gif'
-  else if Ext = 'bmp' then
-    Result := 'image/bmp'
-  else if (Ext = 'jpg') or (Ext = 'jpeg') then
-    Result := 'image/jpeg'
-  else if (Ext = 'png') then
-    Result := 'image/png'
-  else if Ext = 'txt' then
-    Result := 'text/plain'
-  else if Ext = 'svg' then
-    Result := 'image/svg+xml'
-  else if Ext = 'css' then
-    Result := 'text/css'
-  else if Ext = 'json' then
-    Result := 'application/json'
-  else if Ext = 'js' then
-    Result := 'text/javascript'
-  else
-    Result := 'application/binary';
-end;
-
 
 {function CompressSize(vData: PByte; vLen: Integer): TFileSize;
 var

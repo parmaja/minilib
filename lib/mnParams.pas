@@ -92,6 +92,35 @@ type
     property Default: TmnSection read FDefault;
   end;
 
+  { TmnHeaderField }
+
+  TmnHeaderField = class(TmnParam)
+    function GetFullString: String; override;
+  end;
+
+  { TmnHeader }
+
+  TmnHeader = class(TmnParams)
+  private
+    function GetValues(const vName: string): string;
+    procedure SetValues(const vName, Value: string);
+  protected
+    function CreateField: TmnField; override;
+  public
+    constructor Create;
+    procedure ReadHeader(Stream: TmnBufferStream);
+    procedure WriteHeader(Stream: TmnBufferStream);
+    property Values[const vName: string]: string read GetValues write SetValues; default;
+  end;
+
+  { TmnFieldHelper }
+
+  TmnFieldHelper = class helper for TmnField
+  public
+    function Have(AValue: String; vSeperators: TSysCharSet = [';']): Boolean;
+    function CreateSubValues(vSeperators: TSysCharSet = [';']): TStringList;
+  end;
+
 procedure FieldsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 
 implementation
@@ -440,6 +469,89 @@ end;
 function TmnConfig.ReadString(Name, Def: String): String;
 begin
   Result := ReadString('', Name, Def);
+end;
+
+{ TmnHeaderField }
+
+function TmnHeaderField.GetFullString: String;
+begin
+  Result := GetNameValue(': ');
+end;
+
+{ TmnHeader }
+
+constructor TmnHeader.Create;
+begin
+  inherited Create;
+  AutoRemove := True;
+end;
+
+function TmnHeader.CreateField: TmnField;
+begin
+  Result := TmnHeaderField.Create;
+end;
+
+function TmnHeader.GetValues(const vName: string): string;
+begin
+  Result := Field[vName].AsString;
+end;
+
+procedure TmnHeader.ReadHeader(Stream: TmnBufferStream);
+var
+  line: String;
+begin
+  if Stream <> nil then
+  begin
+    while not (cloRead in Stream.Done) do
+    begin
+      line := UTF8ToString(Stream.ReadLineUTF8);
+      if line = '' then
+        break
+      else
+      begin
+        AddItem(line, ':', True);
+      end;
+    end;
+  end;
+end;
+
+procedure TmnHeader.SetValues(const vName, Value: string);
+begin
+  SetValue(vName, Value);
+end;
+
+procedure TmnHeader.WriteHeader(Stream: TmnBufferStream);
+var
+  f: TmnField;
+begin
+  for f in Self do
+    Stream.WriteLineUTF8(f.AsString);
+end;
+
+{ TmnFieldHelper }
+
+function TmnFieldHelper.CreateSubValues(vSeperators: TSysCharSet): TStringList;
+begin
+  Result := TStringList.Create;
+  StrToStrings(AsString, Result, vSeperators, [' ']);
+end;
+
+function TmnFieldHelper.Have(AValue: String; vSeperators: TSysCharSet): Boolean;
+var
+  SubValues: TStringList;
+begin
+  if Self = nil then
+    Result := False
+  else
+  begin
+    SubValues := TStringList.Create;
+    try
+      StrToStrings(AsString, SubValues, vSeperators, [' ']);
+      Result := SubValues.IndexOf(AValue) >= 0;
+    finally
+      SubValues.Free;
+    end;
+  end;
 end;
 
 end.

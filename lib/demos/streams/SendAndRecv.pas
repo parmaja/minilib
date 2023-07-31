@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams, mnFormData, mnHttpClient, mnWebModules, mnFields,
+  mnUtils, mnStreams, mnMultipartData, mnHttpClient, mnWebModules, mnFields,
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 {$ifdef GUI}
@@ -653,18 +653,18 @@ procedure TTestStream.ExampleWriteFormData;
 var
   m: TMemoryStream;
   Stream: TmnBufferStream;
-  aFormData: TmnFormData;
-  aItm: TmnFormDataItem;
+  aFormData: TmnMultipartData;
+  aItm: TmnMultipartDataItem;
 begin
   m := TMemoryStream.Create;
   Stream := TmnWrapperStream.Create(m, False);
   try
     Stream.EndOfLine := sWinEndOfLine;
-    aFormData := TmnFormData.Create;
+    aFormData := TmnMultipartData.Create;
     try
       aFormData.Boundary := TGUID.NewGuid.ToString;
-      TmnFormDataValue.Create(aFormData).Value := 'test@code.com';
-      TmnFormDataFileName.Create(aFormData).FileName := 'image.jpg';
+      TmnMultipartDataValue.Create(aFormData).Value := 'test@code.com';
+      TmnMultipartDataFileName.Create(aFormData).FileName := 'image.jpg';
 
       aFormData.Write(Stream);
     finally
@@ -758,14 +758,14 @@ procedure TTestStream.ExampleReadFormData;
 var
   aTextFile: TFileStream;
   Stream: TmnBufferStream;
-  aFormData: TmnFormData;
-  aItm: TmnFormDataItem;
+  aFormData: TmnMultipartData;
+  aItm: TmnMultipartDataItem;
 begin
   aTextFile:=TFileStream.Create(Location + 'formdata1.txt', fmOpenRead);
   Stream := TmnWrapperStream.Create(aTextFile, True);
   try
     Stream.EndOfLine := sWinEndOfLine;
-    aFormData := TmnFormData.Create;
+    aFormData := TmnMultipartData.Create;
     try
       //aFormData.Read(Stream);
       aFormData.ReadCallback(Stream);

@@ -50,27 +50,6 @@ type
 
   TmodCommand = class;
 
-  { TmnHeaderField }
-
-  TmnHeaderField = class(TmnParam)
-    function GetFullString: String; override;
-  end;
-
-  { TmnHeader }
-
-  TmnHeader = class(TmnParams)
-  private
-    function GetValues(const vName: string): string;
-    procedure SetValues(const vName, Value: string);
-  protected
-    function CreateField: TmnField; override;
-  public
-    constructor Create;
-    procedure ReadHeader(Stream: TmnBufferStream);
-    procedure WriteHeader(Stream: TmnBufferStream);
-    property Values[const vName: string]: string read GetValues write SetValues; default;
-  end;
-
   TmodCommunicate = class abstract(TmnObject)
   private
     FHeader: TmnHeader;
@@ -398,14 +377,6 @@ type
     property Modules: TmodModules read FModules;
   end;
 
-  { TmnFieldHelper }
-
-  TmnFieldHelper = class helper for TmnField
-  public
-    function Have(AValue: String; vSeperators: TSysCharSet = [';']): Boolean;
-    function CreateSubValues(vSeperators: TSysCharSet = [';']): TStringList;
-  end;
-
 function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
 function ParseURI(const URI: String; out Address, Params: string): Boolean;
 procedure ParseQuery(const Query: String; mnParams: TmnFields);
@@ -635,63 +606,6 @@ end;
 procedure TmodRequest.Clear;
 begin
   Initialize(Info);
-end;
-
-{ TmnHeaderField }
-
-function TmnHeaderField.GetFullString: String;
-begin
-  Result := GetNameValue(': ');
-end;
-
-{ TmnHeader }
-
-constructor TmnHeader.Create;
-begin
-  inherited Create;
-  AutoRemove := True;
-end;
-
-function TmnHeader.CreateField: TmnField;
-begin
-  Result := TmnHeaderField.Create;
-end;
-
-function TmnHeader.GetValues(const vName: string): string;
-begin
-  Result := Field[vName].AsString;
-end;
-
-procedure TmnHeader.ReadHeader(Stream: TmnBufferStream);
-var
-  line: String;
-begin
-  if Stream <> nil then
-  begin
-    while not (cloRead in Stream.Done) do
-    begin
-      line := UTF8ToString(Stream.ReadLineUTF8);
-      if line = '' then
-        break
-      else
-      begin
-        AddItem(line, ':', True);
-      end;
-    end;
-  end;
-end;
-
-procedure TmnHeader.SetValues(const vName, Value: string);
-begin
-  SetValue(vName, Value);
-end;
-
-procedure TmnHeader.WriteHeader(Stream: TmnBufferStream);
-var
-  f: TmnField;
-begin
-  for f in Self do
-    Stream.WriteLineUTF8(f.AsString);
 end;
 
 { TmodModuleListener }
@@ -1266,32 +1180,6 @@ begin
     begin
       Result := Items[i];
       break;
-    end;
-  end;
-end;
-
-{ TmnFieldHelper }
-
-function TmnFieldHelper.CreateSubValues(vSeperators: TSysCharSet): TStringList;
-begin
-  Result := TStringList.Create;
-  StrToStrings(AsString, Result, vSeperators, [' ']);
-end;
-
-function TmnFieldHelper.Have(AValue: String; vSeperators: TSysCharSet): Boolean;
-var
-  SubValues: TStringList;
-begin
-  if Self = nil then
-    Result := False
-  else
-  begin
-    SubValues := TStringList.Create;
-    try
-      StrToStrings(AsString, SubValues, vSeperators, [' ']);
-      Result := SubValues.IndexOf(AValue) >= 0;
-    finally
-      SubValues.Free;
     end;
   end;
 end;
