@@ -67,6 +67,7 @@ type
   public
     constructor Create;
     procedure ReadHeader(Stream: TmnBufferStream);
+    procedure WriteHeader(Stream: TmnBufferStream);
     property Values[const vName: string]: string read GetValues write SetValues; default;
   end;
 
@@ -683,6 +684,14 @@ end;
 procedure TmnHeader.SetValues(const vName, Value: string);
 begin
   SetValue(vName, Value);
+end;
+
+procedure TmnHeader.WriteHeader(Stream: TmnBufferStream);
+var
+  f: TmnField;
+begin
+  for f in Self do
+    Stream.WriteLineUTF8(f.AsString);
 end;
 
 { TmodModuleListener }

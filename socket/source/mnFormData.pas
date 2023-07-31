@@ -14,24 +14,38 @@ uses
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 type
+  TmnFormData = class;
+
   TmnFormDataItem = class abstract(TmnNamedObject)
+  private
+    FForm: TmnFormData;
+  protected
+    procedure DoWrite(vStream: TmnBufferStream); virtual;
   public
     Header: TmnHeader;
-    constructor Create(vHeader: TmnHeader);
+    constructor Create(vForm: TmnFormData);
     destructor Destroy; override;
+    procedure Write(vStream: TmnBufferStream);
+    property Form: TmnFormData read FForm;
   end;
 
   TmnFormDataValue = class(TmnFormDataItem)
+  protected
+    procedure DoWrite(vStream: TmnBufferStream); override;
   public
     Value: string;
   end;
 
   TmnFormDataFileName = class(TmnFormDataItem)
+  protected
+    procedure DoWrite(vStream: TmnBufferStream); override;
   public
     FileName: string;
   end;
 
   TmnFormDataMemory = class(TmnFormDataItem)
+  protected
+    procedure DoWrite(vStream: TmnBufferStream); override;
   public
     FileName: string;
     Memory: TMemoryStream;
@@ -50,25 +64,38 @@ type
     procedure ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
     function ReadCallback(vStream: TmnBufferStream): Boolean;
     function Read(vStream: TmnBufferStream): Boolean;
+    function Write(vStream: TmnBufferStream): Boolean;
   end;
 
 implementation
 
 { TmnFormDataItem }
 
-constructor TmnFormDataItem.Create(vHeader: TmnHeader);
+constructor TmnFormDataItem.Create(vForm: TmnFormData);
 begin
   inherited Create;
-  if vHeader <> nil then
-    Header := vHeader
-  else
-    Header := TmnHeader.Create;
+  FForm := vForm;
+  Header := TmnHeader.Create;
+  FForm.Add(Self);
 end;
 
 destructor TmnFormDataItem.Destroy;
 begin
   FreeAndNil(Header);
   inherited;
+end;
+
+procedure TmnFormDataItem.DoWrite(vStream: TmnBufferStream);
+begin
+
+end;
+
+procedure TmnFormDataItem.Write(vStream: TmnBufferStream);
+begin
+  Header.WriteHeader(vStream);
+  vStream.WriteLineUTF8('');
+  DoWrite(vStream);
+  vStream.WriteLineUTF8('');
 end;
 
 { TmnFormData }
@@ -85,16 +112,12 @@ begin
 end;
 
 function TmnFormData.NewItem(vStream: TmnBufferStream): TmnFormDataItem;
-var
-  h: TmnHeader;
 begin
-  h := TmnHeader.Create;
+  Result := TmnFormDataItem.Create(Self);
   try
-    h.ReadHeader(vStream);
-    Result := TmnFormDataItem.Create(h);
-    Add(Result);
+    Result.Header.ReadHeader(vStream);
   except
-    FreeAndNil(h);
+    FreeAndNil(Result);
     raise;
   end;
 end;
@@ -126,13 +149,12 @@ begin
         Boundary := vStream.EndOfLine + Boundary;
         while True do
         begin
-          aDataHeader := TmnHeader.Create;
+          aItem := TmnFormDataValue.Create(Self);
           try
-            aDataHeader.ReadHeader(vStream);
+            aItem.Header.ReadHeader(vStream);
             vStream.ReadBufferUntil(@Boundary[1], Length(Boundary), True, Res, Len, Matched);
             if Matched then
             begin
-              aItem := TmnFormDataValue.Create(aDataHeader);
               //handle binary ?
               CopyString(S, Res, Len);
               FreeMem(res);
@@ -145,8 +167,9 @@ begin
                 break;
               end;
             end;
-          finally
-            aDataHeader.Free; //if it nil it is ok
+          except
+            FreeAndNil(aItem);
+            raise;
           end
         end;
       end;
@@ -212,6 +235,51 @@ var
 begin
   s := TEncoding.UTF8.GetString(PByte(Buffer), Count);
   Last.Name := Last.Name + s;
+end;
+
+function TmnFormData.Write(vStream: TmnBufferStream): Boolean;
+var
+  itm: TmnFormDataItem;
+begin
+
+  for itm in Self do
+  begin
+    vStream.WriteLineUTF8('--'+Boundary);
+    itm.Write(vStream);
+  end;
+  vStream.WriteLineUTF8('--'+Boundary+'--');
+end;
+
+{ TmnFormDataValue }
+
+procedure TmnFormDataValue.DoWrite(vStream: TmnBufferStream);
+begin
+  inherited;
+  vStream.WriteUTF8(Value);
+end;
+
+{ TmnFormDataFileName }
+
+procedure TmnFormDataFileName.DoWrite(vStream: TmnBufferStream);
+var
+  f: TFileStream;
+begin
+  inherited;
+  f := TFileStream.Create(FileName, fmOpenRead);
+  try
+    vStream.WriteStream(f, f.Size);
+  finally
+    f.Free;
+  end;
+
+end;
+
+{ TmnFormDataMemory }
+
+procedure TmnFormDataMemory.DoWrite(vStream: TmnBufferStream);
+begin
+  inherited;
+  vStream.WriteStream(Memory, Memory.Size);
 end;
 
 end.

@@ -60,6 +60,7 @@ type
     procedure ExampleEchoAliveServer;
 
     procedure ExampleBIOPostmanEcho;
+    procedure ExampleWriteFormData;
     procedure ExampleReadFormData;
 
     procedure ExamplePostmanEcho;
@@ -648,6 +649,34 @@ begin
   end;
 end;
 
+procedure TTestStream.ExampleWriteFormData;
+var
+  m: TMemoryStream;
+  Stream: TmnBufferStream;
+  aFormData: TmnFormData;
+  aItm: TmnFormDataItem;
+begin
+  m := TMemoryStream.Create;
+  Stream := TmnWrapperStream.Create(m, False);
+  try
+    Stream.EndOfLine := sWinEndOfLine;
+    aFormData := TmnFormData.Create;
+    try
+      aFormData.Boundary := TGUID.NewGuid.ToString;
+      TmnFormDataValue.Create(aFormData).Value := 'test@code.com';
+      TmnFormDataFileName.Create(aFormData).FileName := 'image.jpg';
+
+      aFormData.Write(Stream);
+    finally
+      FreeAndNil(aFormData);
+    end;
+
+    m.SaveToFile('formdata.txt');
+  finally
+    Stream.Free;
+  end;
+end;
+
 procedure TTestStream.ExampleHexLine;
 var
   Stream: TmnBufferStream;
@@ -1229,6 +1258,7 @@ begin
       AddProc('Socket Timout: Socket threads', ExampleSocketTestTimeout);
       AddProc('Socket Test Cancel', ExampleSocketTestCancel);
 
+      AddProc('Write FormData', ExampleWriteFormData);
       AddProc('Read FormData', ExampleReadFormData);
 
       AddProc('SmallBuffer: read write line with small buffer', ExampleSmallBuffer);
