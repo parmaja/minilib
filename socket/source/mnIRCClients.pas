@@ -2067,8 +2067,8 @@ end;
 
 function TmnIRCConnection.GetConnected: Boolean;
 begin
-  //Result := not Terminated;
-  Result := (FStream <> nil) and (FStream.Connected)
+  //Result := (FStream <> nil) and (FStream.Connected) //no, look at `while not Terminated and Connected do` in mnConnection, if stream not connected thread will stop
+  Result := Active;
 end;
 
 procedure TmnIRCConnection.TerminatedSet;
