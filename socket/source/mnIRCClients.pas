@@ -95,7 +95,7 @@ type
 
   TmnIRCClient = class;
 
-  TIRCProgress = (prgDisconnected, prgConnecting, prgConnected, prgReady);
+  TIRCProgress = (prgClosed, prgOpening, prgActive, prgReady);
 
   TIRCMsgType = (
     mtMessage,
@@ -278,7 +278,7 @@ type
 
   TIRCQueueRaws = class(TmnObjectList<TIRCRaw>)
   public
-    procedure Add(Raw: string; When: TIRCProgress = prgConnected); overload; //if MsgType log it will be log, if not it will be parsed
+    procedure Add(Raw: string; When: TIRCProgress = prgActive); overload; //if MsgType log it will be log, if not it will be parsed
   end;
 
   { TIRCUserName }
@@ -353,6 +353,7 @@ type
     FInternalConnected: Boolean; //True if connected, used to detected disconnected after connect
 
     Tries: Integer;
+    function GetStreamConnected: Boolean;
     function InitStream: Boolean;
     function CreateStream: TIRCSocketStream;
   protected
@@ -367,13 +368,13 @@ type
     procedure SendRaws;
 
     property Client: TmnIRCClient read FClient;
-    function GetConnected: Boolean; override;
+    function GetConnected: Boolean; override; //*TODO should be GetActive
+    property StreamConnected:Boolean read GetStreamConnected; //* we will remove it and use Connected instead when we replace getConnected with Active
     property Active: Boolean read FActive;
     procedure TerminatedSet; override;
   public
     constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
-    procedure Connect;
     property Host: string read FHost;
     property Port: string read FPort;
     property BindAddress: string read FBindAddress;
@@ -423,6 +424,7 @@ type
 
     function GetActive: Boolean;
     function GetOnline: Boolean;
+    function GetStreamConnected: Boolean;
 
     procedure SetAuthType(AValue: TIRCAuthType);
     procedure SetMapChannels(AValue: TStringList);
@@ -455,7 +457,7 @@ type
 
     procedure Log(S: string);
 
-    procedure SendRaw(vData: string; vQueueAt: TIRCProgress = prgDisconnected);
+    procedure SendRaw(vData: string; vQueueAt: TIRCProgress = prgClosed);
 
     procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: string); virtual;
 
@@ -517,6 +519,7 @@ type
     property UserCommands: TIRCUserCommands read FUserCommands;
     property Active: Boolean read GetActive;
     property Online: Boolean read GetOnline;
+    property StreamConnected: Boolean read GetStreamConnected;
   public
     property Title: string read FTitle write FTitle; //A Title name of Server, like 'freenode' or 'libra'
     property Host: string read FHost write SetHost;
@@ -1452,7 +1455,7 @@ end;
 
 procedure TRaw_UserCommand.Send(vChannel: string; vMsg: string);
 begin
-  Client.SendRaw(vMsg, prgConnected);
+  Client.SendRaw(vMsg, prgActive);
 end;
 
 { TNAMREPLY_IRCReceiver }
@@ -1531,7 +1534,7 @@ end;
 procedure TErrNicknameInUse_IRCReceiver.Receive(vCommand: TIRCCommand);
 begin
   with Client do
-    if Progress = prgConnected then
+    if Progress = prgActive then
     begin
       if NickIndex >= Nicks.Count then
         Quit('Nick conflict')
@@ -1800,6 +1803,11 @@ begin
   Result := (FStream <> nil) and FStream.Connected;
 end;
 
+function TmnIRCConnection.GetStreamConnected: Boolean;
+begin
+  Result := (FStream <> nil) and (FStream.Connected);
+end;
+
 function TmnIRCConnection.CreateStream: TIRCSocketStream;
 var
   Options: TmnsoOptions;
@@ -1834,7 +1842,7 @@ var
   Raw: string;
 begin
   i := 0;
-  while (FStream <> nil) and (FStream.Connected) and (i < Client.QueueSends.Count) do
+  while StreamConnected and (i < Client.QueueSends.Count) do
   begin
     if Client.QueueSends[i].When <= Client.Progress then
     begin
@@ -1845,7 +1853,7 @@ begin
       finally
         Lock.Leave;
       end;
-      if Connected then
+      if StreamConnected then
         SendRaw(Raw);
     end
     else
@@ -1872,7 +1880,7 @@ begin
       {$else}
       aLine := Trim(UTF8ToString(S));
       {$endif}
-      while Connected and not Terminated and (aLine <> '') do
+      while Active and FStream.Connected and not Terminated and (aLine <> '') do
       begin
         Log('<' + aLine);
         aCommand := ParseRaw(aLine);
@@ -1889,7 +1897,7 @@ begin
 
         SendRaws;
 
-        if FStream.Connected and not Terminated then
+        if Active and FStream.Connected and not Terminated then
         begin
           FStream.ReadLineUTF8(S, True);
           {$ifdef FPC}
@@ -1913,7 +1921,7 @@ procedure TmnIRCConnection.Unprepare;
 begin
   inherited;
   Tries := 0;
-  if Connected then
+  if StreamConnected then
     Terminate;
   Synchronize(Client.PostClosed);
   FreeAndNil(FStream);
@@ -2058,7 +2066,7 @@ end;
 
 procedure TmnIRCConnection.SendRaw(S: string);
 begin
-  if FStream.Connected then
+  if StreamConnected then
   begin
     FStream.WriteLineUTF8(S);
     Log('>'+S); //it is in main thread
@@ -2068,6 +2076,7 @@ end;
 function TmnIRCConnection.GetConnected: Boolean;
 begin
   //Result := (FStream <> nil) and (FStream.Connected) //no, look at `while not Terminated and Connected do` in mnConnection, if stream not connected thread will stop
+  //moved to GetStreamConnected
   Result := Active;
 end;
 
@@ -2089,11 +2098,6 @@ end;
 destructor TmnIRCConnection.Destroy;
 begin
   FreeAndNil(FDelayEvent);
-  inherited;
-end;
-
-procedure TmnIRCConnection.Connect;
-begin
   inherited;
 end;
 
@@ -2191,7 +2195,7 @@ begin
   begin
     Connection.FActive := False; //do not reconnect
 
-    if (FConnection.Connected) then
+    if (FConnection.StreamConnected) then
       Quit('Bye');
 
     FConnection.Terminate;
@@ -2205,7 +2209,7 @@ procedure TmnIRCClient.Open;
 begin
   DoBeforeOpen;
   NickIndex := 0;
-  if (Progress < prgConnecting) then
+  if (Progress < prgOpening) then
   begin
     if UseSSL then
       InitOpenSSL;
@@ -2235,7 +2239,7 @@ begin
   FUsername := 'username';
   FPassword := '';
 
-  FProgress := prgDisconnected;
+  FProgress := prgClosed;
   FReceivers := TIRCReceivers.Create(Self);
   FUserCommands :=TIRCUserCommands.Create(Self);
   FQueueSends := TIRCQueueRaws.Create(True);
@@ -2411,7 +2415,7 @@ end;
 
 procedure TmnIRCClient.Identify;
 begin
-  SendRaw(Format('NICKSERV IDENTIFY %s %s', [Username, Password]), prgConnected);
+  SendRaw(Format('NICKSERV IDENTIFY %s %s', [Username, Password]), prgActive);
 end;
 
 procedure TmnIRCClient.Join(Channel: string; Password: string);
@@ -2451,7 +2455,7 @@ end;
 
 procedure TmnIRCClient.PostClosed;
 begin
-  SetProgress(prgDisconnected);
+  SetProgress(prgClosed);
   FSession.Nick := '';
   FSession.AllowedUserModes := [];
   FSession.AllowedChannelModes := [];
@@ -2464,7 +2468,7 @@ var
   aNick: string;
 begin
   //Need to check if it first time connected or reconnected after forcefully disconnected
-  SetProgress(prgConnected);
+  SetProgress(prgActive);
   if Nicks.Count = 0 then
     raise Exception.Create('You should define nicknames list');
   aNick := Nicks[0];
@@ -2493,7 +2497,7 @@ end;
 
 procedure TmnIRCClient.PostDisconnected;
 begin
-  SetProgress(prgDisconnected);
+  SetProgress(prgClosed);
   DoDisconnected;
 end;
 
@@ -2505,7 +2509,7 @@ procedure TmnIRCClient.SetNick(const ANick: string);
 begin
   if ANick <> '' then
   begin
-    SendRaw(Format('NICK %s', [ANick]), prgConnected);
+    SendRaw(Format('NICK %s', [ANick]), prgActive);
   end;
 end;
 
@@ -2521,7 +2525,12 @@ end;
 
 function TmnIRCClient.GetOnline: Boolean;
 begin
-  Result := (FConnection <> nil) and FConnection.Active and FConnection.Connected and (Progress > prgConnected);
+  Result := Active and StreamConnected and (Progress > prgActive);
+end;
+
+function TmnIRCClient.GetStreamConnected: Boolean;
+begin
+  Result := (FConnection <> nil) and FConnection.StreamConnected;
 end;
 
 function TmnIRCClient.GetActive: Boolean;
@@ -2570,7 +2579,7 @@ end;
 
 procedure TmnIRCClient.PostConnecting;
 begin
-  SetProgress(prgConnecting);
+  SetProgress(prgOpening);
 end;
 
 procedure TmnIRCClient.SetUsername(const Value: string);
@@ -2606,7 +2615,7 @@ var
 begin
   ModeString := UserModeToString(Value);
   if Length(ModeString) > 0 then
-    SendRaw(Format('MODE %s %s', [FSession.Nick, ModeString]), prgConnected);
+    SendRaw(Format('MODE %s %s', [FSession.Nick, ModeString]), prgActive);
 end;
 
 procedure TmnIRCClient.SetChannelMode(const Value: TIRCChannelMode);

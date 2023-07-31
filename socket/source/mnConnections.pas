@@ -84,25 +84,19 @@ type
     FID: Integer;
     FOwner: TmnConnections;
   strict protected
-    function GetConnected: Boolean; virtual; abstract;
+    function GetConnected: Boolean; virtual; abstract; //* TODO: rename to GetActive
     procedure Created; virtual;
     procedure Prepare; virtual;
     procedure Process; virtual;
     procedure Unprepare; virtual;
-    //procedure Stopped; virtual; //this run main thread called by Synchronize, so dont use it for hard code //we used queue(nil, ...
 
     property Owner: TmnConnections read FOwner;
   protected
     procedure Execute; override;
-    //procedure SetStream(AValue: TmnConnectionStream);
     procedure HandleException(E: Exception); virtual;
   public
     constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
-
-    //procedure Connect; virtual;
-    //procedure Disconnect(Safe: Boolean = true); virtual; // don't raise exception, now by default true
-    //property Stream: TmnConnectionStream read FStream; //write SetStream; //not now
 
     property Connected: Boolean read GetConnected;
 
@@ -248,15 +242,8 @@ end;
 
 destructor TmnConnection.Destroy;
 begin
-  {if Connected then
-    Stop;}
   inherited;
 end;
-
-{procedure TmnConnection.Stop;
-begin
-  Terminate;
-end;}
 
 procedure TmnConnection.HandleException(E: Exception);
 begin
