@@ -113,8 +113,8 @@ type
   end;
 
   TmodeResult = (
-    erSuccess,
-    erKeepAlive //keep the stream connection alive, not the command
+    mrSuccess,
+    mrKeepAlive //keep the stream connection alive, not the command
     );
 
   TmodeResults = set of TmodeResult;
@@ -672,17 +672,16 @@ begin
           aRequest.Client := RemoteIP;
           Result := aModule.Execute(aRequest, Stream, Stream);
         finally
+          if Stream.Connected then
+          begin
+            if (mrKeepAlive in Result.Status) then
+              Stream.ReadTimeout := Result.Timout
+            else
+              Stream.Disconnect;
+          end;
         end;
     finally
       FreeAndNil(aRequest); //if create command then aRequest change to nil
-    end;
-
-    if Stream.Connected then
-    begin
-      if (erKeepAlive in Result.Status) then
-        Stream.ReadTimeout := Result.Timout
-      else
-        Stream.Disconnect;
     end;
   end;
 end;
@@ -980,7 +979,7 @@ var
 begin
   CreateCommands;
 
-  Result.Status := [erSuccess];
+  Result.Status := [mrSuccess];
 
 
   ParseHead(ARequest);
@@ -992,7 +991,7 @@ begin
   begin
     try
       Result := aCMD.Execute;
-      Result.Status := Result.Status + [erSuccess];
+      Result.Status := Result.Status + [mrSuccess];
     finally
       FreeAndNil(aCMD);
     end;

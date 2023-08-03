@@ -786,7 +786,7 @@ begin
         aParams.Free;
       end;
     end;
-    Result.Status := Result.Status + [erKeepAlive];
+    Result.Status := Result.Status + [mrKeepAlive];
   end;
 
   if Respond.CompressProxy <> nil then

@@ -20,6 +20,7 @@ unit mnStreams;
   Rules:
 
     if stream read 0 byte but it is not eof , it mean `retry` or `timeout`
+    remove retry in future
 }
 
 interface
