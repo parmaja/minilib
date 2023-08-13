@@ -156,6 +156,7 @@ function CollectStrings(Strings: array of string; Delimiter: Char = ','; Trailin
 function ReversePos(const SubStr, S : String): Integer; overload;
 function ReversePos(const SubStr, S: String; const Start: Integer): Integer; overload;
 
+
 {* VarReplace
   VarInit = '$'
   Example: VarReplace('c:\$project\$[name]';
@@ -238,6 +239,8 @@ function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: 
 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; TimeSeparator: Char = ':'; WithTime: Boolean = False): String; overload;
+function DateTimeToRFC822(vDateTime: TDateTime): string;
+
 function IsAllLowerCase(S: string): Boolean;
 
 //Zero Based
@@ -1679,6 +1682,24 @@ begin
     DecodeTime(DateTime, H, N, S, O);
     Result := Result + TimeDivider + AlignStr(IntToStr(H), 2, [alsRight],'0') + TimeSeparator + AlignStr(IntToStr(N), 2, [alsRight],'0') + TimeSeparator + AlignStr(IntToStr(S), 2, [alsRight], '0');
   end;
+end;
+
+function DateTimeToRFC822(vDateTime: TDateTime): string;
+const
+  MonthNames: array[1..12] of String =
+    (
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    );
+
+  DayNames: array[1..7] of string =
+    ('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat');
+
+var
+  aYear, aMonth, aDay: word;
+begin
+  DecodeDate(vDateTime, aYear, aMonth, aDay);
+  Result := DayNames[DayOfWeek(vDateTime)] +', ' + IntToStr(aDay) +' ' + MonthNames[aMonth] + ' ' + FormatDateTime('yyyy hh":"nn":"ss', vDateTime) +' ' + '+000';
 end;
 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char; TimeDivider: Char; WithTime: Boolean): String;
