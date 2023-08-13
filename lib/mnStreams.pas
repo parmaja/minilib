@@ -242,6 +242,7 @@ type
     function ReadLine(ExcludeEOL: Boolean = True): string; overload;
     function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLineUTF8(out S: utf8string; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLineUTF8(out S: string; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLineUTF8(ExcludeEOL: Boolean = True): UTF8String; overload;
     function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True): Boolean; overload;
 
@@ -1118,6 +1119,14 @@ begin
   Result := ReadBufferUntil(@eol[1], mnStreams.ByteLength(eol), ExcludeEOL, res, len, m);
   CopyUTF8String(S, res, len);
   FreeMem(res);
+end;
+
+function TmnBufferStream.ReadLineUTF8(out S: string; ExcludeEOL: Boolean): Boolean;
+var
+  u8: UTF8String;
+begin
+  Result := ReadLineUTF8(u8, ExcludeEOL);
+  S := u8;
 end;
 
 function TmnBufferStream.WriteLine: TFileSize;

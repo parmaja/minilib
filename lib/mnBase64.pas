@@ -19,23 +19,23 @@ interface
 uses
   SysUtils;
 
-{ Base64 encode and decode a string }
+{ Base64 encode and decode a UTF8String }
 
-function Base64Encode(const S: string): string;
-function Base64Decode(const S: string): string;
+function Base64Encode(const S: UTF8String): UTF8String;
+function Base64Decode(const S: UTF8String): UTF8String;
 
 {******************************************************************************}
 {******************************************************************************}
 implementation
 
 const
-  Base64Table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  Base64Table: UTF8String = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
-function Base64Encode(const S: string): string;
+function Base64Encode(const S: UTF8String): UTF8String;
 var
   i: integer;
-  InBuf: array[0..2] of byte;
-  OutBuf: array[0..3] of AnsiChar;
+  InBuf: array[0..2] of Byte;
+  OutBuf: array[0..3] of UTF8Char;
 begin
   SetLength(Result, ((Length(S) + 2) div 3) * 4);
   for i := 1 to ((Length(S) + 2) div 3) do
@@ -59,14 +59,14 @@ begin
     Result[Length(Result)] := '=';
 end;
 
-function Base64Decode(const S: string): string;
+function Base64Decode(const S: UTF8String): UTF8String;
 var
   i: integer;
   InBuf: array[0..3] of byte;
   OutBuf: array[0..2] of byte;
 begin
   if (Length(S) mod 4) <> 0 then
-    raise Exception.Create('Base64: Incorrect string format');
+    raise Exception.Create('Base64: Incorrect UTF8String format');
   SetLength(Result, ((Length(S) div 4) - 1) * 3);
   for i := 1 to ((Length(S) div 4) - 1) do
   begin
@@ -142,7 +142,7 @@ begin
       else
         InBuf[1] := 63;
       OutBuf[0] := (InBuf[0] shl 2) or ((InBuf[1] shr 4) and $03);
-      Result := Result + char(OutBuf[0]);
+      Result := Result + UTF8Char(OutBuf[0]);
     end
     else if InBuf[3] = 61 then
     begin
@@ -178,7 +178,7 @@ begin
         InBuf[2] := 63;
       OutBuf[0] := (InBuf[0] shl 2) or ((InBuf[1] shr 4) and $03);
       OutBuf[1] := (InBuf[1] shl 4) or ((InBuf[2] shr 2) and $0F);
-      Result := Result + char(OutBuf[0]) + char(OutBuf[1]);
+      Result := Result + UTF8Char(OutBuf[0]) + UTF8Char(OutBuf[1]);
     end
     else
     begin
@@ -225,7 +225,7 @@ begin
       OutBuf[0] := (InBuf[0] shl 2) or ((InBuf[1] shr 4) and $03);
       OutBuf[1] := (InBuf[1] shl 4) or ((InBuf[2] shr 2) and $0F);
       OutBuf[2] := (InBuf[2] shl 6) or (InBuf[3] and $3F);
-      Result := Result + Char(OutBuf[0]) + Char(OutBuf[1]) + Char(OutBuf[2]);
+      Result := Result + UTF8Char(OutBuf[0]) + UTF8Char(OutBuf[1]) + UTF8Char(OutBuf[2]);
     end;
   end;
 end;

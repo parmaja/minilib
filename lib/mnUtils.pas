@@ -1445,7 +1445,7 @@ procedure SpliteStr(const S, Separator: string; out Name, Value: string);
 var
   p: integer;
 begin
-  p := AnsiPos(Separator, S);
+  p := Pos(Separator, S);
   if P <> 0 then
   begin
     Name := Copy(s, 1, p - 1);
