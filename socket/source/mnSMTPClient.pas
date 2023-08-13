@@ -64,6 +64,7 @@ type
     FStream: TmnConnectionStream;
   protected
 
+    procedure EnableSSL; virtual;
     function DoCreateStream: TmnConnectionStream; virtual; abstract;
 
     function CreateStream: TmnConnectionStream;
@@ -111,6 +112,7 @@ type
 
   TmnSMTPClient = class(TmnCustomSMTPClient)
   protected
+    procedure EnableSSL; override;
     function DoCreateStream: TmnConnectionStream; override;
   end;
 
@@ -375,9 +377,20 @@ var
   end;
 
 var
+  Code: Integer;
+
+  procedure SendHello;
+  begin
+    //* Send Extended Hello
+    WriteCommand('EHLO', FDomainName);
+    Code := ReadRespond(FCapabilities);
+    Result := (Code >= 250) and (Code <= 259);
+  end;
+
+var
   Auths: TStringList;
   s: string;
-  i, Code: Integer;
+  i: Integer;
 begin
   Result := False;
 
@@ -389,50 +402,61 @@ begin
 
     FMaxSize := 0;
 
+    if UseSSL then
+      EnableSSL;
+
     Result := ReadRespond = 220;
     if Result then
+      SendHello;
+    if Result then
     begin
-      //* Send Extended Hello
-      WriteCommand('EHLO', FDomainName);
+      if not FSSLEnabled and CapabilityExists('STARTTLS') then
+      begin
+        WriteCommand('STARTTLS');
+        Result := ReadRespond = 220;
+        if Result then
+        begin
+          EnableSSL;
+          FSSLEnabled := True;
+          SendHello;
+        end;
+      end;
+    end
+    else//* Trying with none extended SMTP
+    begin
+      FExtended := False;
+      //* Trying again with normal Hello
+      WriteCommand('HELO', FDomainName);
       Code := ReadRespond(FCapabilities);
       Result := (Code >= 250) and (Code <= 259);
+    end;
 
-      if not Result then //* Trying with none extended SMTP
+    if Result and FExtended then
+    begin
+      if not ((Username = '') and (Password = '')) then
       begin
-        FExtended := False;
-        //* Trying again with normal Hello
-        WriteCommand('HELO', FDomainName);
-        Code := ReadRespond(FCapabilities);
-        Result := (Code >= 250) and (Code <= 259);
-      end;
-
-      if Result and FExtended then
-      begin
-        if not ((Username = '') and (Password = '')) then
-        begin
-          Auths := TStringList.Create;
-          try
-            Auths.Delimiter := ' ';
-            Auths.DelimitedText := GetCapability('AUTH');
-            for s in Auths do
-            begin
-              if SameText(s, 'LOGIN') then
-                AuthLogin
-              else if SameText(s, 'PLAIN') then
-                AuthPlain;
+        Auths := TStringList.Create;
+        try
+          Auths.Delimiter := ' ';
+          Auths.DelimitedText := GetCapability('AUTH');
+          for s in Auths do
+          begin
+            if SameText(s, 'LOGIN') then
+              AuthLogin
+            else if SameText(s, 'PLAIN') then
+              AuthPlain;
 {              if SameText(s, 'CRAM-MD5') then
-                AuthCramMD5}
+              AuthCramMD5}
 
-              if FAuthenticated then
-                break;
-            end;
-          finally
-            Auths.Free;
+            if FAuthenticated then
+              break;
           end;
+        finally
+          Auths.Free;
         end;
-
-        FMaxSize := StrToIntDef(GetCapability('SIZE'), 0);
       end;
+
+      FMaxSize := StrToIntDef(GetCapability('SIZE'), 0);
     end;
   finally
     Respond.Free;
@@ -444,6 +468,10 @@ begin
   if FStream <> nil then
     FStream.Disconnect;
   FreeStream;
+end;
+
+procedure TmnCustomSMTPClient.EnableSSL;
+begin
 end;
 
 function TmnCustomSMTPClient.SendForm(vFrom: string): Boolean;
@@ -531,6 +559,11 @@ begin
   aStream.Options := aStream.Options;// + [soNoDelay];
   //aStream.Options := aStream.Options + [soSSL, soWaitBeforeRead]
   Result := aStream;
+end;
+
+procedure TmnSMTPClient.EnableSSL;
+begin
+  (FStream as TmnSMTPStream).EnableSSL;
 end;
 
 end.

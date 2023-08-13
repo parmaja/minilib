@@ -103,6 +103,7 @@ type
 
     constructor Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAdress: string = ''; AHostName: string = '');
     destructor Destroy; override;
+    procedure EnableSSL;
     procedure Prepare; virtual; //TODO rename Connect;
     function Shutdown(How: TmnSocketStates): TmnError;
     function Close: TmnError;
@@ -169,6 +170,7 @@ type
     constructor Create; overload;
     constructor Create(vSocket: TmnCustomSocket); overload;
     destructor Destroy; override;
+    procedure EnableSSL;
     procedure Prepare; override;
     procedure Connect; override;
     //Disconnect can be called from out of thread like listener
@@ -264,11 +266,11 @@ begin
   inherited;
 end;
 
-procedure TmnCustomSocket.Prepare;
+procedure TmnCustomSocket.EnableSSL;
 begin
-  FPrepared := True;
-  if (soSSL in FOptions) and (FKind in [skClient, skServer]) then //Listener socket have no OpenSSL
+  if (FKind in [skClient, skServer]) and not SSL.Active then
   begin
+    FOptions :=  FOptions + [soSSL, soWaitBeforeRead];
     if Context = nil then
     begin
       if Kind = skServer then
@@ -283,7 +285,7 @@ begin
     SSL := TSSL.Init(Context);
 
     if (HostName<>'') then
-		  SSL.SetHostName(HostName);
+      SSL.SetHostName(HostName);
 
     SSL.SetSocket(FHandle);
 
@@ -296,6 +298,15 @@ begin
         raise EmnSocketException.Create('SSL Connect failed');
       end;
     end;
+  end;
+end;
+
+procedure TmnCustomSocket.Prepare;
+begin
+  FPrepared := True;
+  if (soSSL in FOptions) then //Listener socket have no OpenSSL
+  begin
+    EnableSSL;
   end;
 end;
 
@@ -485,6 +496,11 @@ begin
     Disconnect;
     Result := 0;
   end
+end;
+
+procedure TmnSocketStream.EnableSSL;
+begin
+  Socket.EnableSSL;
 end;
 
 procedure TmnSocketStream.DoCloseWrite;
