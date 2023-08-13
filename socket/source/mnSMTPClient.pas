@@ -20,7 +20,8 @@ unit mnSMTPClient;
 interface
 
 uses
-  SysUtils, Classes, StrUtils, mnOpenSSL,
+  SysUtils, Classes, StrUtils, DateUtils,
+  mnOpenSSL,
   mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs, mnBase64,
   mnClients, mnStreams, mnStreamUtils;
 
@@ -51,6 +52,7 @@ type
     FUserName: UTF8String;
     FPassword: UTF8String;
     FDomainName: string;
+    FXMailer: string;
     FUseSSL: Boolean;
 
     FExtended: Boolean;
@@ -85,7 +87,7 @@ type
     function SendTo(vTo: string): Boolean;
     procedure Disconnect;
 
-    function SendMail(const vFrom, vTo, vSubject:string; vBody: TStringList): Boolean;
+    function SendMail(const vFrom, vTo, vSubject: string; vBody: TStringList): Boolean;
 
     property Host: UTF8String read FHost write FHost;
     property Port: UTF8String read FPort write FPort;
@@ -93,6 +95,7 @@ type
     property Password: UTF8String read FPassword write FPassword;
     property Stream: TmnConnectionStream read FStream;
     property Capabilities: TStringList read FCapabilities;
+    property XMailer: string read FXMailer write FXMailer;
     property UseSSL: Boolean read FUseSSL write FUseSSL;
   end;
 
@@ -259,6 +262,7 @@ begin
   inherited;
   FCapabilities := TStringList.Create;
   FDomainName := 'localhost';
+  FXMailer := 'miniLib pascal library';
 end;
 
 destructor TmnCustomSMTPClient.Destroy;
@@ -454,7 +458,7 @@ begin
   Result := ReadRespond = 250;
 end;
 
-function TmnCustomSMTPClient.SendMail(const vFrom, vTo, vSubject:string; vBody: TStringList): Boolean;
+function TmnCustomSMTPClient.SendMail(const vFrom, vTo, vSubject: string; vBody: TStringList): Boolean;
 const
   Terminator = '.';
 var
@@ -478,6 +482,13 @@ begin
         Result := ReadRespond = 354;
         if not Result then
           Exit;
+
+        WriteLine('From: ' + vFrom);
+        WriteLine('To: ' + vTo);
+        WriteLine('Date: ' + DateTimeToRFC822(now));
+        WriteLine('Subject: ' + vSubject);
+        WriteLine('X-mailer: ' + XMailer);
+        WriteLine('');
 
         for i := 0 to vBody.Count - 1 do
         begin
