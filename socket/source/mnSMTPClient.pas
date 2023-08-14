@@ -116,8 +116,8 @@ type
     function DoCreateStream: TmnConnectionStream; override;
   end;
 
-function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: string): Boolean; overload;
-function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: TStringList): Boolean; overload;
+function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: string; UseSSL: Boolean = False): Boolean; overload;
+function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: TStringList; UseSSL: Boolean = False): Boolean; overload;
 
 implementation
 
@@ -148,7 +148,7 @@ begin
   Message := Copy(S, Count+1, MaxInt);
 end;
 
-function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: TStringList): Boolean;
+function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: TStringList; UseSSL: Boolean = False): Boolean;
 var
   SMTPClient: TmnSMTPClient;
   aHost, aPort: string;
@@ -162,13 +162,14 @@ begin
       SMTPClient.Port := '25';
     SMTPClient.UserName := vUsername;
     SMTPClient.Password := vPassword;
+    SMTPClient.UseSSL := UseSSL;
     SMTPClient.SendMail(vFrom, vTo, vSubject, vBody);
   finally
     SMTPClient.Free;
   end;
 end;
 
-function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: string): Boolean;
+function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: string; UseSSL: Boolean = False): Boolean;
 var
   Body: TStringList;
 begin
@@ -402,8 +403,11 @@ begin
 
     FMaxSize := 0;
 
-    if UseSSL then
+    if UseSSL and not FSSLEnabled then
+    begin
       EnableSSL;
+      FSSLEnabled := True;
+    end;
 
     Result := ReadRespond = 220;
     if Result then
@@ -505,7 +509,7 @@ begin
         SendTo(vTo);
         if not Result then
           Exit;
-        //SendData(vBody);
+
         WriteCommand('DATA');
         Result := ReadRespond = 354;
         if not Result then
@@ -556,8 +560,13 @@ begin
   if aStream.Port = '' then
     aStream.Port := '25';
 
-  aStream.Options := aStream.Options;// + [soNoDelay];
-  //aStream.Options := aStream.Options + [soSSL, soWaitBeforeRead]
+  if UseSSL then
+  begin
+    aStream.Options := aStream.Options + [soSSL, soWaitBeforeRead];
+    FSSLEnabled := True;
+  end
+  else
+    aStream.Options := aStream.Options;// + [soNoDelay];
   Result := aStream;
 end;
 
