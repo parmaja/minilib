@@ -394,13 +394,13 @@ var
     FAuthenticated := ReadRespond = 235;
   end;
 
-  function AuthPlain: Boolean;
+  procedure AuthPlain;
   var
     s: UTF8String;
   begin
     s := Utf8Char(0) + Username + Utf8Char(0) + Password;
     WriteLine('AUTH PLAIN ' + Base64Encode(s));
-    Result := ReadRespond = 235;
+    FAuthenticated := ReadRespond = 235;
   end;
 
 var
