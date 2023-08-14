@@ -64,15 +64,19 @@ function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSe
   Example
   StrToStringsExCallback(Memo1.Text, 1, self, @AddString, ['::', ';', #13#10, #13, #10, #0]);
   HINT: Put longest seperator first ::  befire ;
+  Return the count of Parts
 
 }
-function StrToStringsExCallback(Content: string; FromIndex: Integer; Sender: Pointer; const CallBackProc: TStrToStringsExCallbackProc; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer; overload;
+
+function StrToStringsExCallback(Content: string; FromIndex: Integer; Sender: Pointer; Separators: array of string; out MatchCount: Integer; const CallBackProc: TStrToStringsExCallbackProc; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer;
 function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
-function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex: Integer; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Boolean;
+
 //function StrToStringsEx(Content: string; Strings: TStrings; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
 
 procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
 procedure StrToStringsDequoteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+
+function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex, MatchCount: Integer; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Boolean;
 
 {
   examples:
@@ -377,7 +381,7 @@ begin
   if UpperCase(LeftStr(s, 1)) = UpperCase(Left) then
     start := Length(Left) + 1
   else
-    start := 0;
+    start := 1;
   if UpperCase(RightStr(s, 1)) = UpperCase(Right) then
     count := Length(Right)
   else
@@ -389,7 +393,15 @@ end;
 function EncloseStr(const S, Left, Right: string): string;
 begin
   if S <> '' then
-    Result := Left + S + Right
+  begin
+    if LeftStr(S, 1) = Left then
+      Result := S
+    else
+      Result := Left + S;
+
+    if RightStr(Result, 1) <> Right then
+      Result := Result + Right;
+  end
   else
     Result := '';
 end;
@@ -690,7 +702,7 @@ end;
 
 //Ex
 
-function StrToStringsExCallback(Content: string; FromIndex: Integer; Sender: Pointer; const CallBackProc: TStrToStringsExCallbackProc; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet; vOptions: TStrToStringsOptions): Integer;
+function StrToStringsExCallback(Content: string; FromIndex: Integer; Sender: Pointer; Separators: array of string; out MatchCount: Integer; const CallBackProc: TStrToStringsExCallbackProc; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet; vOptions: TStrToStringsOptions): Integer;
 var
   Start, Cur, SepLength: Integer;
   Resume: Boolean;
@@ -701,6 +713,7 @@ var
 begin
   Result := 0;
   Index := 0;
+  MatchCount := 0;
   if (@CallBackProc = nil) then
     raise Exception.Create('StrToStrings: CallBackProc is nil');
   Cur := FromIndex;
@@ -738,6 +751,7 @@ begin
             else if (StrInArray(Content, Cur, Separators, SepLength)) then
             begin
               Cur := Cur + SepLength - 1;
+              Inc(MatchCount);
               break;
             end
             else
@@ -783,13 +797,15 @@ begin
   TStrings(Sender).Add(S); //Be sure sender is TStrings
 end;
 
-function StrToStringsEx(Content: string; Strings: TStrings; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
+function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
+var
+  MatchCount: Integer;
 begin
   if (Strings = nil) then
     raise Exception.Create('StrToStrings: Strings is nil');
   Strings.BeginUpdate;
   try
-    Result := StrToStringsExCallback(Content, 0, Strings, StrToStringsExCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes, [stsoKeepEmpty]);
+    Result := StrToStringsExCallback(Content, 0, Strings, Separators, MatchCount, StrToStringsExCallbackProc, IgnoreInitialWhiteSpace, Quotes, [stsoKeepEmpty]);
   finally
     Strings.EndUpdate;
   end;
@@ -810,14 +826,14 @@ begin
   TResultString(Sender^).NextIndex := NextIndex;
 end;
 
-function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex: Integer; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Boolean;
+function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex, MatchCount: Integer; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Boolean;
 var
   r: TResultString;
 begin
   r.Found := '';
   r.CharIndex := 0;
   r.NextIndex := 0;
-  Result := StrToStringsExCallback(Content, FromIndex, @r, StrScanToCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes) > 0;
+  Result := StrToStringsExCallback(Content, FromIndex, @r, Separators, MatchCount, StrScanToCallbackProc, IgnoreInitialWhiteSpace, Quotes) > 0;
   S := r.Found;
   CharIndex := r.CharIndex;
   NextIndex := r.NextIndex;

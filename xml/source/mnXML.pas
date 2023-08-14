@@ -747,9 +747,11 @@ begin
 end;
 
 procedure TmnXMLAttributes.SetText(Value: string);
+var
+  MatchCount: Integer;
 begin
   Clear;
-  StrToStringsExCallback(Value, 0, Self, @AttrStrToStringsDeqouteCallbackProc, [' '], [' ', #0, #13, #10]);
+  StrToStringsExCallback(Value, 0, Self, [' '], MatchCount, AttrStrToStringsDeqouteCallbackProc, [' ', #0, #13, #10]);
 end;
 
 { TmnXMLAttribute }
