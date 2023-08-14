@@ -21,8 +21,8 @@ interface
 
 uses
   SysUtils, Classes, StrUtils, DateUtils,
-  mnOpenSSL,
-  mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs, mnBase64,
+  mnOpenSSL, mnLogs,
+  mnUtils, mnClasses, mnFields, mnParams, mnModules, mnSockets, mnJobs, mnBase64,
   mnClients, mnStreams, mnStreamUtils;
 
 type
@@ -84,7 +84,7 @@ type
     procedure Connect;
     function Open: Boolean;
     function Login: Boolean;
-    function SendForm(vFrom: string): Boolean;
+    function SendFrom(vFrom: string): Boolean;
     function SendTo(vTo: string): Boolean;
     procedure Disconnect;
 
@@ -115,6 +115,9 @@ type
     procedure EnableSSL; override;
     function DoCreateStream: TmnConnectionStream; override;
   end;
+
+// WithEnclose: < >
+function ParseEmail(EMailAddress: string; out Name, EMail: string; WithEnclose: Boolean = False): Boolean;
 
 function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: string; UseSSL: Boolean = False): Boolean; overload;
 function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: TStringList; UseSSL: Boolean = False): Boolean; overload;
@@ -148,10 +151,32 @@ begin
   Message := Copy(S, Count+1, MaxInt);
 end;
 
+//* "Zaher Dirkey"<zaherdirkey@gmail.com>
+
+function ParseEmail(EMailAddress: string; out Name, EMail: string; WithEnclose: Boolean = False): Boolean;
+var
+  Index, NextIndex, MatchCount: Integer;
+  Address: string;
+begin
+  Result := StrScanTo(EMailAddress, 1, Name, Index , NextIndex, MatchCount, ['<']);
+  Name := DequoteStr(Name);
+  EMail := MidStr(EMailAddress, NextIndex-1, MaxInt);
+  if EMail = '' then
+  begin
+    EMail := Name;
+    SpliteStr(Email, '@', Name, Address);
+  end;
+
+  if WithEnclose then
+    EMail := EncloseStr(EMail, '<', '>')
+  else
+    EMail := RemoveEncloseStr(EMail, '<', '>');
+end;
+
 function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: TStringList; UseSSL: Boolean = False): Boolean;
 var
   SMTPClient: TmnSMTPClient;
-  aHost, aPort: string;
+  aHost, aPort, aUserName, aUserMail: string;
 begin
   SpliteStr(vHost, ':', aHost, aPort);
   SMTPClient := TmnSMTPClient.Create;
@@ -160,7 +185,8 @@ begin
     SMTPClient.Port := aPort;
     if SMTPClient.Port = '' then
       SMTPClient.Port := '25';
-    SMTPClient.UserName := vUsername;
+    ParseEmail(vUsername, aUserName, aUserMail);
+    SMTPClient.UserName := aUserMail;
     SMTPClient.Password := vPassword;
     SMTPClient.UseSSL := UseSSL;
     SMTPClient.SendMail(vFrom, vTo, vSubject, vBody);
@@ -286,7 +312,7 @@ end;
 function TmnCustomSMTPClient.ReadLine(out s: String): Boolean;
 begin
   Result := FStream.ReadLineUTF8(s);
-  WriteLn('=> '+S);
+  Log.WriteLn('=> '+S);
 end;
 
 procedure TmnCustomSMTPClient.WriteCommand(Command: string; s: String = '');
@@ -300,7 +326,7 @@ end;
 procedure TmnCustomSMTPClient.WriteLine(s: Utf8String);
 begin
   FStream.WriteLineUTF8(s);
-  Writeln('<= '+s);
+  Log.Writeln('<= '+s);
 end;
 
 function TmnCustomSMTPClient.ReadRespond(Respond: TStringList = nil): Integer;
@@ -437,7 +463,8 @@ begin
 
     if Result and FExtended then
     begin
-      if not ((Username = '') and (Password = '')) then
+      FMaxSize := StrToIntDef(GetCapability('SIZE'), 0);
+      if (Username <> '') and (Password <> '') then
       begin
         Auths := TStringList.Create;
         try
@@ -455,12 +482,11 @@ begin
             if FAuthenticated then
               break;
           end;
+          Result := FAuthenticated;
         finally
           Auths.Free;
         end;
       end;
-
-      FMaxSize := StrToIntDef(GetCapability('SIZE'), 0);
     end;
   finally
     Respond.Free;
@@ -478,15 +504,25 @@ procedure TmnCustomSMTPClient.EnableSSL;
 begin
 end;
 
-function TmnCustomSMTPClient.SendForm(vFrom: string): Boolean;
+function TmnCustomSMTPClient.SendFrom(vFrom: string): Boolean;
+var
+  Name, EMail: string;
 begin
-  WriteCommand('Mail From:', '<' + vFrom + '>');
+  ParseEmail(vFrom, Name, EMail);
+  if EMail = '' then
+    raise Exception.Create('SMTP Client: From EMail is Empty');
+  WriteCommand('Mail From:', '<' + EMail + '>');
   Result := ReadRespond = 250;
 end;
 
 function TmnCustomSMTPClient.SendTo(vTo: string): Boolean;
+var
+  Name, EMail: string;
 begin
-  WriteCommand('RCPT TO:', '<' + vTo + '>');
+  ParseEmail(vTo, Name, EMail);
+  if EMail = '' then
+    raise Exception.Create('SMTP Client: To EMail is Empty');
+  WriteCommand('RCPT TO:', '<' + EMail + '>');
   Result := ReadRespond = 250;
 end;
 
@@ -500,44 +536,43 @@ begin
   Result := False;
   if Open then
   begin
-    if FStream.Connected then
-      if Login then
+    if Login then
+    begin
+      Result := SendFrom(vFrom);
+      if not Result then
+        Exit;
+      SendTo(vTo);
+      if not Result then
+        Exit;
+
+      WriteCommand('DATA');
+      Result := ReadRespond = 354;
+      if not Result then
+        Exit;
+
+      WriteLine('From: ' + vFrom);
+      WriteLine('To: ' + vTo);
+      WriteLine('Date: ' + DateTimeToRFC822(now));
+      WriteLine('Subject: ' + vSubject);
+      WriteLine('X-mailer: ' + XMailer);
+      WriteLine('');
+
+      for i := 0 to vBody.Count - 1 do
       begin
-        Result := SendForm(vFrom);
-        if not Result then
-          Exit;
-        SendTo(vTo);
-        if not Result then
-          Exit;
-
-        WriteCommand('DATA');
-        Result := ReadRespond = 354;
-        if not Result then
-          Exit;
-
-        WriteLine('From: ' + vFrom);
-        WriteLine('To: ' + vTo);
-        WriteLine('Date: ' + DateTimeToRFC822(now));
-        WriteLine('Subject: ' + vSubject);
-        WriteLine('X-mailer: ' + XMailer);
-        WriteLine('');
-
-        for i := 0 to vBody.Count - 1 do
+        line := vBody[i];
+        if line<>'' then
         begin
-          line := vBody[i];
-          if line<>'' then
-          begin
-            if line[1] = Terminator then
-              line := Terminator + line;
-          end;
-          WriteLine(Line);
+          if line[1] = Terminator then
+            line := Terminator + line;
         end;
-        WriteLine(Terminator);
-        Result := ReadRespond = 250;
-
-        WriteCommand('QUIT');
-        Result := ReadRespond = 221;
+        WriteLine(Line);
       end;
+      WriteLine(Terminator);
+      Result := ReadRespond = 250;
+
+      WriteCommand('QUIT');
+      Result := ReadRespond = 221;
+    end;
   end;
 end;
 

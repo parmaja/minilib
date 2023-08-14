@@ -3,10 +3,13 @@ program SampleSMTPClient;
 {$APPTYPE CONSOLE}
 
 uses
-  mnIRCClients,mnHttpClient, mnSMTPClient;
+  mnLogs, mnIRCClients, mnHttpClient, mnSMTPClient;
 
+var
+  Name, Email: string;
 begin
-  SMTPMail('localhost:25', 'smtp@localhost', 'syspwd', 'smtp@localhost', 'zaher@localhost', 'hello', 'as subject');
+  InstallConsoleLog;
+  SMTPMail('localhost:25', 'Admin<smtp@localhost>', 'syspwd', 'Admin<smtp@localhost>', '"Zaher Dirkey"<zaher@localhost>', 'hello', 'as subject');
   Write('Press Enter');
   Readln;
 end.
