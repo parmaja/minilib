@@ -604,7 +604,10 @@ end;
 
 function TmnConnectionStream.WaitToRead: Boolean;
 begin
-  Result := WaitToRead(ReadTimeout) = cerSuccess;
+  if Connected then
+    Result := WaitToRead(ReadTimeout) = cerSuccess
+  else
+    Result := False;
 end;
 
 function TmnConnectionStream.WaitToWrite: Boolean;

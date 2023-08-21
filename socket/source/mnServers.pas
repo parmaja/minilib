@@ -437,7 +437,6 @@ end;
 procedure TmnServerConnection.Execute;
 begin
   inherited Execute;
-
 end;
 
 procedure TmnServer.SetActive(const Value: Boolean);
