@@ -126,7 +126,8 @@ function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer
 function ContainsText(const SubStr, InStr: string): Boolean; deprecated 'Use StrUtils.ContainsText and swap params';
 
 //Same as Copy/MidStr but From To index
-function CopyStr(const AText: String; const AFromIndex, AToIndex: Integer): String; overload;
+//function CopyStr(const AText: String; const AFromIndex, AToIndex: Integer): String; overload; deprecated;
+function SubStr(const AText: String; AFromIndex, AToIndex: Integer): String; overload;
 {
   Index started from 0
 }
@@ -1414,8 +1415,16 @@ begin
   {$endif}
 end;
 
-function CopyStr(const AText: String; const AFromIndex, AToIndex: Integer): String;
+function SubStr(const AText: String; AFromIndex, AToIndex: Integer): String;
 begin
+  if AFromIndex = 0 then
+    AFromIndex := 1
+  else if AFromIndex < 0 then
+    AFromIndex := Length(AText) + AFromIndex;
+
+  if AToIndex <= 0 then
+    AToIndex := Length(AText) + AToIndex;
+
   Result := Copy(AText, AFromIndex, AToIndex - AFromIndex + 1);
 end;
 
