@@ -74,13 +74,13 @@ type
     function GetListener: TmnListener;
   protected
     function GetConnected: Boolean; override;
-    procedure Disconnect; virtual;
     procedure Prepare; override;
     procedure TerminatedSet; override;
     procedure Execute; override;
   public
     constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
     destructor Destroy; override;
+    procedure Disconnect; virtual;
     property Stream: TmnConnectionStream read FStream;
     property Listener: TmnListener read GetListener;
     property RemoteIP: string read FRemoteIP;
