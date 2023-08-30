@@ -1372,7 +1372,7 @@ var
 begin
   g := vPeriod < 0;
   vPeriod := abs(vPeriod);
-  d := trunc(vPeriod * SecsPerDay);
+  d := Round(vPeriod * SecsPerDay);
   h := d div 3600;
   d := (d  - (h *  3600));
   m := d div 60;
