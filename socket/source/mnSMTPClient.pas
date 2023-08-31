@@ -8,6 +8,7 @@ unit mnSMTPClient;
   *
   * Ref:
   *   https://www.samlogic.net/articles/smtp-commands-reference.htm
+  *   https://en.wikipedia.org/wiki/SMTP_Authentication
   * }
 
 {$H+}{$M+}
@@ -479,7 +480,17 @@ begin
             else if SameText(s, 'PLAIN') then
               AuthPlain;
 {              if SameText(s, 'CRAM-MD5') then
-              AuthCramMD5}
+              AuthCramMD5
+    PLAIN (Uses Base64 encoding)
+    LOGIN (Uses Base64 encoding)[11] (obsoleted in favor of PLAIN)
+    GSSAPI (Generic Security Services Application Program Interface)
+    DIGEST-MD5 (Digest access authentication)
+    MD5
+    CRAM-MD5
+    OAUTH10A (OAuth 1.0a HMAC-SHA1 tokens as defined in RFC 5849)
+    OAUTHBEARER (OAuth 2.0 bearer tokens as defined in RFC 6750)
+    XOAUTH2 [12]
+              }
 
             if FAuthenticated then
               break;
