@@ -88,8 +88,9 @@ var
 begin
   Ext := LowerCase(ExtractFileExt(FileName));
   if Length(Ext) > 1 then
-    Ext := Copy(Ext, 2, Length(Ext))
-  else if Ext = 'txt' then
+    Ext := Copy(Ext, 2, Length(Ext));
+
+  if Ext = 'txt' then
     Result := 'text/plan'
   else if (Ext = 'htm') or (Ext = 'html') or (Ext = 'shtml') or (Ext = 'dhtml') then
     Result := 'text/html'

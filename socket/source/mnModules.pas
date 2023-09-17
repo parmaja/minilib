@@ -162,7 +162,8 @@ type
     //property RespondResult: TmodRespondResult read FRespondResult;
 
     //Add new header, can dublicate
-    procedure AddHeader(AName, AValue: String); virtual;
+    procedure AddHeader(AName, AValue: String); overload; virtual;
+    procedure AddHeader(AName: string; Values: TStringDynArray); overload;
     //Update header by name but adding new value to old value
     procedure PutHeader(AName, AValue: String);
 
@@ -499,6 +500,21 @@ begin
 end;
 
 { TmodRespond }
+
+procedure TmodRespond.AddHeader(AName: string; Values: TStringDynArray);
+var
+  s, t: string;
+begin
+  t := '';
+  for s in Values do
+  begin
+    if t<>'' then
+      t := t + ', ';
+    t := t + s;
+  end;
+
+  AddHeader(AName, t);
+end;
 
 constructor TmodRespond.Create;
 begin
@@ -1005,7 +1021,7 @@ end;
 
 procedure TmodModule.PrepareRequest(ARequest: TmodRequest);
 begin
-  ARequest.Path := ARequest.Address; //path must be in module
+  ARequest.Path := ARequest.Address;
   ARequest.Params.Clear;
   ARequest.Params['Module'] := AliasName;
   DoPrepareRequest(ARequest);
