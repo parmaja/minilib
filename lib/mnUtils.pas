@@ -193,6 +193,9 @@ function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions = [
 }
 function ExpandToPath(FileName: string; Path: string; Root: string = ''): string;
 
+function StartsDelimiter(const vFileName: string): Boolean;
+function EndsDelimiter(const vFileName: string): Boolean;
+
 {
   EscapeString: Example
     EscapeString(Text, '\', [#13, #10, #9 , #8, '"'], ['r', 'n', 't', 'b', '"']);
@@ -1148,16 +1151,26 @@ begin
   end;
 end;
 
+function EndsDelimiter(const vFileName: string): Boolean;
+begin
+  Result := EndsStr('/', vFileName) or EndsStr('\', vFileName);
+end;
+
+function StartsDelimiter(const vFileName: string): Boolean;
+begin
+  Result := StartsStr('/', vFileName) or StartsStr('\', vFileName);
+end;
+
 function ExpandToPath(FileName: string; Path: string; Root: string): string;
 begin
   if (FileName <> '') then
   begin
-    if ((LeftStr(FileName, 3) = '../') or (LeftStr(FileName, 3) = '..\')) then
+    if StartsStr('../', FileName) or StartsStr('..\', FileName) then
       Result := ExpandFileName(IncludePathDelimiter(Root) + IncludePathDelimiter(Path) + FileName)
-    else if ((LeftStr(FileName, 2) = './') or (LeftStr(FileName, 2) = '.\')) then
+    else if StartsStr('./', FileName) or StartsStr('.\', FileName) then
       Result := IncludePathDelimiter(Root) + IncludePathDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
 {$ifdef MSWINDOWS}
-    else if ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
+    else if StartsDelimiter(FileName) then
       Result := ExtractFileDrive(Path) + FileName
 {$endif}
     else

@@ -78,13 +78,20 @@ type
     Client: String;
   end;
 
+  TmnRoute = class(TStringList)
+  private
+    function GetRoute(vIndex: Integer): string;
+  public
+    property Route[vIndex: Integer]: string read GetRoute; default;
+  end;
+
   { TmodRequest }
 
   TmodRequest = class(TmodCommunicate)
   private
     FContentLength: Integer;
     FParams: TmnFields;
-    FRoute: TStrings;
+    FRoute: TmnRoute;
     FPath: String;
   protected
     Info: TmodRequestInfo;
@@ -105,7 +112,7 @@ type
     property Client: String read Info.Client write Info.Client;
     property Path: String read FPath write FPath;
 
-    property Route: TStrings read FRoute write FRoute;
+    property Route: TmnRoute read FRoute write FRoute;
     property Params: TmnFields read FParams;
 
     property ContentLength: Integer read FContentLength write FContentLength;
@@ -254,14 +261,13 @@ type
     procedure DoCreateCommands; virtual;
     procedure CreateCommands;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
+    procedure DoPrepareRequest(ARequest: TmodRequest); virtual;
 
-    procedure DoFillParams(ARequest: TmodRequest); virtual;
-    procedure FillParams(ARequest: TmodRequest);
-    function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
     function Match(const ARequest: TmodRequest): Boolean; virtual;
+    procedure PrepareRequest(ARequest: TmodRequest);
+    function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
     procedure ReadHeader(AHeader: TmnHeader; Stream: TmnBufferStream); virtual;
-    procedure ParseHead(ARequest: TmodRequest); virtual;
     function RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
     procedure Log(S: String); virtual;
     procedure Start; virtual;
@@ -592,7 +598,7 @@ end;
 constructor TmodRequest.Create;
 begin
   inherited Create;
-  FRoute := TStringList.Create;
+  FRoute := TmnRoute.Create;
   FParams := TmnFields.Create;
 end;
 
@@ -888,15 +894,6 @@ begin
   inherited;
 end;
 
-procedure TmodModule.ParseHead(ARequest: TmodRequest);
-var
-  aAddress: string;
-begin
-  aAddress := ARequest.Address;
-  if (aAddress<>'') and StartsText(URLPathDelim, aAddress) then
-    aAddress := Copy(aAddress, 2, MaxInt);
-end;
-
 procedure TmodModule.CreateCommands;
 begin
   if Commands.Count = 0 then
@@ -942,18 +939,19 @@ procedure TmodModule.DoCreateCommands;
 begin
 end;
 
-procedure TmodModule.DoFillParams(ARequest: TmodRequest);
+procedure TmodModule.DoPrepareRequest(ARequest: TmodRequest);
 begin
-  if ARequest.Route.Count>0 then
+  //if ARequest.Route.Count>0 then
   begin
-    ARequest.Params['Module'] := ARequest.Route[0];
-    ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
+    //ARequest.Params['Module'] := ARequest.Route[0];
+    //ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
   end;
+  ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
 end;
 
 procedure TmodModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
 begin
-  vMatch := (AliasName<>'') and (ARequest.Params['Module'] = AliasName);
+  vMatch := (AliasName<>'') and (ARequest.Route[0] = AliasName);
 end;
 
 function TmodModule.Match(const ARequest: TmodRequest): Boolean;
@@ -982,7 +980,6 @@ begin
   Result.Status := [mrSuccess];
 
 
-  ParseHead(ARequest);
   ReadHeader(ARequest.Header, ARequestStream);
 
   aCmd := RequestCommand(ARequest, ARequestStream, ARespondStream);
@@ -1006,11 +1003,12 @@ begin
   end;
 end;
 
-procedure TmodModule.FillParams(ARequest: TmodRequest);
+procedure TmodModule.PrepareRequest(ARequest: TmodRequest);
 begin
-  ARequest.Path := ARequest.Address;
+  ARequest.Path := ARequest.Address; //path must be in module
   ARequest.Params.Clear;
-  DoFillParams(ARequest);
+  ARequest.Params['Module'] := AliasName;
+  DoPrepareRequest(ARequest);
 end;
 
 procedure TmodModule.SetAliasName(AValue: String);
@@ -1141,14 +1139,17 @@ begin
   for item in Self do
   begin
 
-    item.FillParams(ARequest); //always have params
+    //item.PrepareRequest(ARequest); //always have params
     if item.Match(ARequest) then
+    begin
+      item.PrepareRequest(ARequest);
       Exit(item);
+    end;
   end;
 
   if DefaultModule<>nil then
   begin
-    DefaultModule.FillParams(ARequest);
+    DefaultModule.PrepareRequest(ARequest);
     Result := DefaultModule;
   end;
 end;
@@ -1204,6 +1205,16 @@ begin
     FreeAndNil(FHeader);
     FHeader := AValue;
   end;
+end;
+
+{ TmnRoute }
+
+function TmnRoute.GetRoute(vIndex: Integer): string;
+begin
+  if vIndex<Count then
+    Result := Strings[vIndex]
+  else
+    Result := '';
 end;
 
 end.
