@@ -20,32 +20,49 @@ type
   private
     FData: TmnMultipartData;
   protected
+    procedure ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
+
+    procedure DoReadPrepare; virtual;
+    procedure DoReadUnPrepare; virtual;
+
     procedure DoPrepare; virtual;
+
     procedure DoWrite(vStream: TmnBufferStream); virtual;
+    procedure DoRead(const Buffer; Count: Longint); virtual;
     procedure Prepare;
   public
     Header: TmnHeader;
     constructor Create(vData: TmnMultipartData);
     destructor Destroy; override;
     procedure Write(vStream: TmnBufferStream);
+    function Read(vStream: TmnBufferStream; const vBoundary: utf8string): Boolean;
     property Data: TmnMultipartData read FData;
+  end;
+
+  TmnMultipartDataFileName = class(TmnMultipartDataItem)
+  protected
+    FFileStream: TFileStream;
+    procedure DoReadPrepare; override;
+    procedure DoReadUnPrepare; override;
+    procedure DoRead(const Buffer; Count: Integer); override;
+
+    procedure DoWrite(vStream: TmnBufferStream); override;
+    procedure DoPrepare; override;
+  public
+    FileName: string;
+    LocalFileName: string;
   end;
 
   TmnMultipartDataValue = class(TmnMultipartDataItem)
   protected
+    procedure DoRead(const Buffer; Count: Integer); override;
+
     procedure DoPrepare; override;
     procedure DoWrite(vStream: TmnBufferStream); override;
   public
     Value: string;
   end;
 
-  TmnMultipartDataFileName = class(TmnMultipartDataItem)
-  protected
-    procedure DoWrite(vStream: TmnBufferStream); override;
-    procedure DoPrepare; override;
-  public
-    FileName: string;
-  end;
 
   TmnMultipartDataMemory = class(TmnMultipartDataItem)
   protected
@@ -65,17 +82,18 @@ type
 
   TmnMultipartData = class(TmnNamedObjectList<TmnMultipartDataItem>)
   private
-    FBoundary: UTF8String;
+    FBoundary: string;
     FHttpHeader: Boolean;
+    FWorkPath: string;
+  protected
+    function DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TmnMultipartDataItem; virtual;
+    function CreateItem(vStream: TmnBufferStream): TmnMultipartDataItem;
   public
-    function NewItem(vStream: TmnBufferStream): TmnMultipartDataItem;
-    procedure ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
-    function ReadCallback(vStream: TmnBufferStream): Boolean;
     function Read(vStream: TmnBufferStream): Boolean;
     function Write(vStream: TmnBufferStream): Boolean;
-    property Boundary: UTF8String read FBoundary write FBoundary;
-    //* Write / Read http header
-    property HttpHeader: Boolean read FHttpHeader write FHttpHeader;
+
+    property Boundary: string read FBoundary write FBoundary;
+    property WorkPath: string read FWorkPath write FWorkPath;
   end;
 
 function DocumentToContentType(FileName: string): string;
@@ -122,7 +140,7 @@ constructor TmnMultipartDataItem.Create(vData: TmnMultipartData);
 begin
   inherited Create;
   FData := vData;
-  Header := TmnHeader.Create;
+  //Header := TmnHeader.Create; from new item
   FData.Add(Self);
 end;
 
@@ -139,10 +157,39 @@ end;
 
 procedure TmnMultipartDataItem.Prepare;
 begin
+  Header.Values['Content-Disposition'] := Format('form-data; name="%s"', [Name]);
+end;
 
+function TmnMultipartDataItem.Read(vStream: TmnBufferStream; const vBoundary: utf8string): Boolean;
+begin
+  DoReadPrepare;
+  try
+    vStream.ReadUntilCallback(Self, @vBoundary[1], Length(vBoundary), True, ReadUntilCallback, Result);
+  finally
+    DoReadUnPrepare;
+  end;
+end;
+
+procedure TmnMultipartDataItem.ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
+begin
+  DoRead(Buffer, Count);
 end;
 
 procedure TmnMultipartDataItem.DoPrepare;
+begin
+
+end;
+
+procedure TmnMultipartDataItem.DoRead(const Buffer; Count: Longint);
+begin
+end;
+
+procedure TmnMultipartDataItem.DoReadPrepare;
+begin
+
+end;
+
+procedure TmnMultipartDataItem.DoReadUnPrepare;
 begin
 
 end;
@@ -168,143 +215,75 @@ begin
     S := '';
 end;
 
-function TmnMultipartData.NewItem(vStream: TmnBufferStream): TmnMultipartDataItem;
+function TmnMultipartData.CreateItem(vStream: TmnBufferStream): TmnMultipartDataItem;
+var
+  aHeader: TmnHeader;
+  aDisposition: string;
+  s: string;
 begin
-  Result := TmnMultipartDataItem.Create(Self);
+  aHeader := TmnHeader.Create;
   try
-    Result.Header.ReadHeader(vStream);
+    aHeader.ReadHeader(vStream);
+
+    Result := DoCreateItem(vStream, aHeader);
+
+    aDisposition := aHeader['Content-Disposition'];
+
+    if Result=nil then
+    begin
+      if GetSubValue(aDisposition, 'filename', s) and (s<>'') then
+      begin
+        Result := TmnMultipartDataFileName.Create(Self);
+        TmnMultipartDataFileName(Result).FileName := s;
+      end
+      else
+        Result := TmnMultipartDataValue.Create(Self);
+    end;
+
+    GetSubValue(aDisposition, 'name', s);
+    Result.Name := s;
+    Result.Header := aHeader;
   except
-    FreeAndNil(Result);
+    FreeAndNil(aHeader);
     raise;
   end;
+
 end;
 
 function TmnMultipartData.Read(vStream: TmnBufferStream): Boolean;
 var
-  Res: PByte;
-  len: TFileSize;
-  S: UTF8String;
-  aHeader: TmnHeader;
-  aType: string;
   aItem: TmnMultipartDataItem;
-  ContentType: TStringList;
   Matched: Boolean;
   aDataHeader: TmnHeader;
-  aBoundary: UTF8String;
+  aBoundary: utf8string;
+  s: utf8string;
 begin
-  aHeader := TmnHeader.Create;
-  try
-    if HttpHeader then
-    begin
-      aHeader.ReadHeader(vStream);
-      ContentType := aHeader.Field['Content-Type'].CreateSubValues;
-      aBoundary := UTF8Encode(ContentType.Values['boundary']);
-      if aBoundary = '' then
-        aBoundary := Boundary
-    end;
+  aBoundary := '--' + UTF8Encode(aBoundary);
 
-    if SameText(ContentType[0], 'multipart/form-data') then
+  vStream.ReadLineUTF8(S, True);
+  if s = aBoundary then
+  begin
+    aBoundary := UTF8Encode(vStream.EndOfLine) + aBoundary;
+    while True do
     begin
-      aBoundary := '--' + aBoundary;
+      aItem := CreateItem(vStream);
+      Matched := aItem.Read(vStream, aBoundary);
+
+      if not Matched then
+      begin
+        aItem.Name := 'Error';
+        Exit(False);
+      end;
 
       vStream.ReadLineUTF8(S, True);
-      if S = aBoundary then
+      if S = '--' then
       begin
-        aBoundary := vStream.EndOfLine + aBoundary;
-        while True do
-        begin
-          aItem := TmnMultipartDataValue.Create(Self);
-          try
-            aItem.Header.ReadHeader(vStream);
-            vStream.ReadBufferUntil(@aBoundary[1], Length(aBoundary), True, Res, Len, Matched);
-            if Matched then
-            begin
-              //handle binary ?
-              CopyString(S, Res, Len);
-              FreeMem(res);
-              aItem.Name := s;
-              Add(aItem);
-              aDataHeader := nil;
-              vStream.ReadLineUTF8(S, True);
-              if S = '--' then
-              begin
-                break;
-              end;
-            end;
-          except
-            FreeAndNil(aItem);
-            raise;
-          end
-        end;
+        Exit(True);
       end;
     end;
-  finally
-    aHeader.Free;
   end;
-end;
 
-function TmnMultipartData.ReadCallback(vStream: TmnBufferStream): Boolean;
-var
-  Res: PByte;
-  len: TFileSize;
-  S: UTF8String;
-  aHeader: TmnHeader;
-  aType: string;
-  aItem: TmnMultipartDataItem;
-  ContentType: TStringList;
-  Matched: Boolean;
-  aDataHeader: TmnHeader;
-  aBoundary: UTF8String;
-begin
-  aHeader := TmnHeader.Create;
-  try
-    if HttpHeader then
-    begin
-      aHeader.ReadHeader(vStream);
-      ContentType := aHeader.Field['Content-Type'].CreateSubValues;
-      aBoundary := UTF8Encode(ContentType.Values['boundary']);
-      if aBoundary = '' then
-        aBoundary := Boundary;
-    end;
-    if SameText(ContentType[0], 'multipart/form-data') then
-    begin
-      aBoundary := '--' + aBoundary;
-
-      vStream.ReadLineUTF8(S, True);
-      if S = aBoundary then
-      begin
-        aBoundary := vStream.EndOfLine + aBoundary;
-        while True do
-        begin
-          aItem := NewItem(vStream);
-          vStream.ReadUntilCallback(aItem, @aBoundary[1], Length(aBoundary), True, ReadUntilCallback, Matched);
-
-          if not Matched then
-          begin
-            Last.Name := 'Error';
-            Exit(False);
-          end;
-
-          vStream.ReadLineUTF8(S, True);
-          if S = '--' then
-          begin
-            Exit(True);
-          end;
-        end;
-      end;
-    end;
-  finally
-    aHeader.Free;
-  end;
   Result := False;
-end;
-
-procedure TmnMultipartData.ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
-var
-  s: string;
-begin
-  s := TEncoding.UTF8.GetString(PByte(Buffer), Count);
-  Last.Name := Last.Name + s;
 end;
 
 function TmnMultipartData.Write(vStream: TmnBufferStream): Boolean;
@@ -328,6 +307,14 @@ begin
   Header.Values['Content-Type'] := 'text/plan';
 end;
 
+procedure TmnMultipartDataValue.DoRead(const Buffer; Count: Integer);
+var
+  s: string;
+begin
+  s := TEncoding.UTF8.GetString(PByte(Buffer), Count);
+  Value := Value + s;
+end;
+
 procedure TmnMultipartDataValue.DoWrite(vStream: TmnBufferStream);
 begin
   inherited;
@@ -339,7 +326,32 @@ end;
 procedure TmnMultipartDataFileName.DoPrepare;
 begin
   inherited;
+  Header.Values['Content-Disposition'] := Format('form-data; name="%s"; filename="%s"', [Name, FileName]);
   Header.Values['Content-Type'] := DocumentToContentType(FileName);
+end;
+
+procedure TmnMultipartDataFileName.DoRead(const Buffer; Count: Integer);
+begin
+  FFileStream.Write(PByte(Buffer)^, Count);
+end;
+
+procedure TmnMultipartDataFileName.DoReadPrepare;
+var
+  f: string;
+begin
+  LocalFileName := IncludePathDelimiter(Data.WorkPath);
+  ForceDirectories(LocalFileName);
+  LocalFileName := LocalFileName + FileName;
+
+  if FileExists(LocalFileName) then
+    DeleteFile(LocalFileName);
+
+  FFileStream := TFileStream.Create(LocalFileName, fmCreate);
+end;
+
+procedure TmnMultipartDataFileName.DoReadUnPrepare;
+begin
+  FreeAndNil(FFileStream);
 end;
 
 procedure TmnMultipartDataFileName.DoWrite(vStream: TmnBufferStream);

@@ -1129,7 +1129,7 @@ var
   u8: UTF8String;
 begin
   Result := ReadLineUTF8(u8, ExcludeEOL);
-  S := u8;
+  S := UTF8ToString(u8);
 end;
 
 function TmnBufferStream.WriteLine: TFileSize;

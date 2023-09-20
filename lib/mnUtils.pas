@@ -91,16 +91,20 @@ type
   );
 
 //*  -t --test cmd1 cmd2 -t: value -t:value -t value
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char> {= [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']};  ValueSeperators: TArray<Char> {= [':', '=']}; Options: TParseArgumentsOptions = [pargSmartSwitch]): Integer; overload;
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
+function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char> {= [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']};  ValueSeperators: TArray<Char> {= [':', '=']}; Options: TParseArgumentsOptions = [pargSmartSwitch]): Integer; overload;
+function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
 
 //*
-function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>{ = [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']}; ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
-function ParseArguments(Content: string; Strings: TStrings): Integer; overload;
+function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>{ = [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']}; ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
+function ParseArguments(const Content: string; Strings: TStrings): Integer; overload;
 
 //* Skip first param
 function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>{ = [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']}; ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
 function ParseCommandLine(Content: string; Strings: TStrings): Integer; overload;
+
+function GetSubValue(const Content, Name: string; out Value: string; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Boolean; overload;
+function GetSubValue(const Content, Name: string; out Value: string): Boolean; overload;
+
 
 {
   param1 param2 -s -w: value
@@ -843,12 +847,53 @@ begin
   NextIndex := r.NextIndex;
 end;
 
+type
+  TSubStrResult = record
+    Name: string;
+    Value: string;
+    Found: Boolean;
+  end;
+
+procedure GetSubValueCallbackProc(Sender: Pointer; Index: Integer; AName, AValue: string; IsSwitch: Boolean; var Resume: Boolean);
+var
+  p: ^TSubStrResult;
+begin
+  p := Sender;
+
+  if (AName = p.Name) then
+  begin
+    p.Value := AValue;
+    p.Found := True;
+    Resume := False;
+  end
+end;
+
+function GetSubValue(const Content, Name: string; out Value: string; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Boolean;
+var
+  r: TSubStrResult;
+begin
+  r.Found := False;
+  r.Name := Name;
+  r.Value := Name;
+
+  ParseArgumentsCallback(Content, @GetSubValueCallbackProc, @r, [], WhiteSpaces, Quotes, ValueSeperators);
+
+  Value := r.Value;
+  Result := r.Found;
+end;
+
+function GetSubValue(const Content, Name: string; out Value: string): Boolean; overload;
+begin
+  Result := GetSubValue(Content, Name, Value, [' ', ';', #9], ['"'], ['=']);
+end;
+
+
 {function StrToStringsEx(Content: string; Strings: TStrings; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
 begin
   Result := StrToStringsEx(Content, Strings, [#13, #10, #0], IgnoreInitialWhiteSpace, Quotes);
 end;}
 
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>; Options: TParseArgumentsOptions): Integer;
+function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>; Options: TParseArgumentsOptions): Integer;
 var
   Start, Cur: Integer;
   Resume: Boolean;
@@ -860,14 +905,16 @@ var
   NextIsValue: Boolean;
   IsSwitch: Boolean;
 begin
+  if (@CallBackProc = nil) then
+    raise Exception.Create('ParseArguments: CallBackProc is nil');
+
   IsSwitch := False;
   Result := 0;
   Index := 0;
   Name := '';
   Value := '';
   NextIsValue := False;
-  if (@CallBackProc = nil) then
-    raise Exception.Create('ParseArguments: CallBackProc is nil');
+
   if (Content <> '') then
   begin
     Cur := 1;
@@ -985,17 +1032,18 @@ begin
   end;
 end;
 
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
+function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
 begin
   Result := ParseArgumentsCallback(Content, @CallBackProc, Sender, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
 end;
 
-function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Integer;
+function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Integer;
 begin
   Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
-function ParseArguments(Content: string; Strings: TStrings): Integer;
+
+function ParseArguments(const Content: string; Strings: TStrings): Integer;
 begin
   Result := ParseArguments(Content, Strings, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
 end;
