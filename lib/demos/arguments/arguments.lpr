@@ -56,15 +56,15 @@ begin
   sText := 'build "c:\projects\project.pro" -t /s -v: " -z -d -r: value" test --value:testin --verbose=true platform=win32 compiler=dccarm -x=-x';
   //sText := '-w zaher test';
   //sText := '"-v":test'; //bug
-  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [' ', #9], [' ', #9], ['''','"'], [':', '=']);
+  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [pargDeqoute, pargKeepSwitch], [' ', #9], [' ', #9], ['''','"'], [':', '=']);
   WriteLn('--------');
   WriteLn('');
 
-  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [' ', #9], [' ', #9], ['''','"'], [':', '='], [pargKeepSwitch]);
+  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [pargKeepSwitch], [' ', #9], [' ', #9], ['''','"'], [':', '=']);
   WriteLn('--------');
   WriteLn('');
 
-  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [' ', #9], [' ', #9], ['''','"'], [':', '='], []);
+  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [], [' ', #9], [' ', #9], ['''','"'], [':', '=']);
   WriteLn('--------');
   WriteLn('');
 
