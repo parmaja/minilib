@@ -92,7 +92,7 @@ type
   );
 
 //*  -t --test cmd1 cmd2 -t: value -t:value -t value
-function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>{['-', '/']}; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']; Options: TParseArgumentsOptions = [pargSmartSwitch]): Integer; overload;
+function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>{['-', '/']}; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']; Options: TParseArgumentsOptions = [pargKeepSwitch]): Integer; overload;
 
 //*
 function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
