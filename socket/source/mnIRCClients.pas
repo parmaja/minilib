@@ -1,10 +1,8 @@
 unit mnIRCClients;
-{$M+}
-{$H+}
-{$IFDEF FPC}
-{$MODE delphi}
-{$ELSE}
-{$ENDIF}
+{$M+}{$H+}
+{$ifdef fpc}
+{$mode delphi}
+{$endif}
 {**
  *  This file is part of the "Mini Library"
  *  @license  MIT (https://opensource.org/licenses/MIT)

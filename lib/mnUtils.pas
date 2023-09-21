@@ -88,14 +88,15 @@ function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharI
 type
   TParseArgumentsOptions = set of (
     pargKeepSwitch,
+    pargDeqoute,
     pargValues //without name=value consider it as value
   );
 
 //*  -t --test cmd1 cmd2 -t: value -t:value -t value
-function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>{['-', '/']}; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']; Options: TParseArgumentsOptions = [pargKeepSwitch]): Integer; overload;
+function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>{['-', '/']}; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']; Options: TParseArgumentsOptions = [pargKeepSwitch, pargDeqoute]): Integer; overload;
 
 //*
-function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
+function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Options: TParseArgumentsOptions = [pargKeepSwitch, pargDeqoute]; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 
 //* Skip first param
 function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
@@ -802,7 +803,7 @@ begin
   TStrings(Sender).Add(S); //Be sure sender is TStrings
 end;
 
-function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
+function StrToStringsEx(Content: string; Strings: TStrings; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
 var
   MatchCount: Integer;
 begin
@@ -896,6 +897,7 @@ var
   S: string;
   NextIsValue: Boolean;
   IsSwitch: Boolean;
+  l: Integer;
 begin
   if (@CallBackProc = nil) then
     raise Exception.Create('ParseArguments: CallBackProc is nil');
@@ -923,6 +925,8 @@ begin
       begin
         QuoteChar := Content[Cur];
         Cur := Cur + 1;
+        if (pargDeqoute in Options) then
+          Start := Start + 1;
       end;
 
       while (Cur <= Length(Content)) and (not CharInSet(Content[Cur], WhiteSpaces) or (QuoteChar <> #0)) do
@@ -947,7 +951,12 @@ begin
 
       if (Cur >= Start) then
       begin
-        S := Copy(Content, Start + 1, Cur - Start - 1);
+        if (pargDeqoute in Options) and (QuoteChar <> #0) then
+          l := Cur - Start - 2
+        else
+          l := Cur - Start - 1;
+
+        S := Copy(Content, Start + 1, l);
         if S <> '' then
         begin
           if NextIsValue then
@@ -1000,9 +1009,9 @@ begin
             //run2.exe  name=value "name"=value name="value" "name=value"
 
             if (Value='') and not IsSwitch and (pargValues in Options) then
-              CallBackProc(Sender, Index, '', DequoteStr(Name), IsSwitch, Resume)
+              CallBackProc(Sender, Index, '', Name, IsSwitch, Resume)
             else
-              CallBackProc(Sender, Index, DequoteStr(Name), DequoteStr(Value), IsSwitch, Resume);
+              CallBackProc(Sender, Index, Name, Value, IsSwitch, Resume);
 
             IsSwitch := False;
             Index := Index + 1;
@@ -1021,21 +1030,16 @@ procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; AName, AValue: 
 begin
   with TObject(Sender) as TStrings do
   begin
-    if (AName <> '') and (AValue = '') then
-    begin
-      if IsSwitch then
-        Add(AName + NameValueSeparator)
-      else
-        Add(NameValueSeparator + AName)
-    end
+    if AValue <> '' then
+      Add(AName + NameValueSeparator + AValue)
     else
-      Add(AName + NameValueSeparator + AValue);
+      Add(AName);
   end;
 end;
 
-function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Terminals: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Options: TParseArgumentsOptions; Terminals: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
 begin
-  Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, Terminals, WhiteSpaces, Quotes, ValueSeperators);
+  Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, Terminals, WhiteSpaces, Quotes, ValueSeperators, Options);
 end;
 
 procedure CommandLineCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch: Boolean; var Resume: Boolean);
@@ -1083,15 +1087,15 @@ begin
     S := Strings[I];
     P := Pos(Strings.NameValueSeparator, S);
     if (P <> 0) then
-    begin
-      if (SameText(Copy(S, 1, P - 1), Switch))
-        or ((AltSwitch <> '') and (SameText(Copy(S, 1, P - 1), AltSwitch))) then
-        begin
-          Exit(True);
-        end;
-    end;
+      S := Copy(S, 1, P - 1)
+    else
+      S := Copy(S, 1, MaxInt);
+
+    if SameText(S, Switch) or ((AltSwitch <> '') and (SameText(S, AltSwitch))) then
+      Exit(True);
   end;
 end;
+
 
 function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean;
 var

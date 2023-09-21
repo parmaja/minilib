@@ -56,14 +56,22 @@ begin
   sText := 'build "c:\projects\project.pro" -t /s -v: " -z -d -r: value" test --value:testin --verbose=true platform=win32 compiler=dccarm -x=-x';
   //sText := '-w zaher test';
   //sText := '"-v":test'; //bug
-  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [' ', #9], ['''','"'], [':', '=']);
+  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [' ', #9], [' ', #9], ['''','"'], [':', '=']);
+  WriteLn('--------');
+  WriteLn('');
+
+  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [' ', #9], [' ', #9], ['''','"'], [':', '='], [pargKeepSwitch]);
+  WriteLn('--------');
+  WriteLn('');
+
+  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [' ', #9], [' ', #9], ['''','"'], [':', '='], []);
   WriteLn('--------');
   WriteLn('');
 
   list := TStringList.Create;
   files := TStringList.Create;
-  sText := 'test1 test1 -s -w -v: value1';
-  ParseArguments(sText, list);
+  sText := 'test1 test1 -s --silent -w -v: value1';
+  ParseArguments(sText, list, ['-', '/'], [pargKeepSwitch]);
   GetArgument(list, files);
 
   for i := 0 to list.Count-1 do
@@ -75,7 +83,7 @@ begin
 
   GetArgumentValue(list, s, 'v');
   WriteLn(s);
-  if GetArgumentSwitch(list, 's') then
+  if GetArgumentSwitch(list, '-s', '--silent') then
     WriteLn('s is exists')
   else
     WriteLn('s is NOT exists');
