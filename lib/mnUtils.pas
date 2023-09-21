@@ -87,23 +87,20 @@ function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharI
 }
 type
   TParseArgumentsOptions = set of (
-    pargSmartSwitch
+    pargKeepSwitch,
+    pargValues //without name=value consider it as value
   );
 
 //*  -t --test cmd1 cmd2 -t: value -t:value -t value
-function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char> {= [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']};  ValueSeperators: TArray<Char> {= [':', '=']}; Options: TParseArgumentsOptions = [pargSmartSwitch]): Integer; overload;
-function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
+function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>{['-', '/']}; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']; Options: TParseArgumentsOptions = [pargSmartSwitch]): Integer; overload;
 
 //*
-function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>{ = [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']}; ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
-function ParseArguments(const Content: string; Strings: TStrings): Integer; overload;
+function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 
 //* Skip first param
-function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>{ = [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']}; ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
-function ParseCommandLine(Content: string; Strings: TStrings): Integer; overload;
+function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 
-function GetSubValue(const Content, Name: string; out Value: string; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Boolean; overload;
-function GetSubValue(const Content, Name: string; out Value: string): Boolean; overload;
+function GetSubValue(const Content, Name: string; out Value: string; WhiteSpaces: TSysCharSet = [' ', ';', #9]; Quotes: TSysCharSet = ['"']; ValueSeperators: TSysCharSet = ['=']): Boolean; overload;
 
 
 {
@@ -868,7 +865,7 @@ begin
   end
 end;
 
-function GetSubValue(const Content, Name: string; out Value: string; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Boolean;
+function GetSubValue(const Content, Name: string; out Value: string; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Boolean;
 var
   r: TSubStrResult;
 begin
@@ -876,15 +873,10 @@ begin
   r.Name := Name;
   r.Value := Name;
 
-  ParseArgumentsCallback(Content, @GetSubValueCallbackProc, @r, [], WhiteSpaces, Quotes, ValueSeperators);
+  ParseArgumentsCallback(Content, @GetSubValueCallbackProc, @r, [], WhiteSpaces, WhiteSpaces, Quotes, ValueSeperators);
 
   Value := r.Value;
   Result := r.Found;
-end;
-
-function GetSubValue(const Content, Name: string; out Value: string): Boolean; overload;
-begin
-  Result := GetSubValue(Content, Name, Value, [' ', ';', #9], ['"'], ['=']);
 end;
 
 
@@ -893,7 +885,7 @@ begin
   Result := StrToStringsEx(Content, Strings, [#13, #10, #0], IgnoreInitialWhiteSpace, Quotes);
 end;}
 
-function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>; Options: TParseArgumentsOptions): Integer;
+function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; Terminals: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet; Options: TParseArgumentsOptions): Integer;
 var
   Start, Cur: Integer;
   Resume: Boolean;
@@ -920,20 +912,20 @@ begin
     Cur := 1;
     repeat
       //bypass white spaces
-      while (Cur <= Length(Content)) and CharInArray(Content[Cur], WhiteSpaces) do
+      while (Cur <= Length(Content)) and CharInSet(Content[Cur], WhiteSpaces) do
         Cur := Cur + 1;
 
       //start from the first char
       Start := Cur - 1;
       QuoteChar := #0;
 
-      if (Cur <= Length(Content)) and CharInArray(Content[Cur], Quotes) then
+      if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
       begin
         QuoteChar := Content[Cur];
         Cur := Cur + 1;
       end;
 
-      while (Cur <= Length(Content)) and (not CharInArray(Content[Cur], WhiteSpaces) or (QuoteChar <> #0)) do
+      while (Cur <= Length(Content)) and (not CharInSet(Content[Cur], WhiteSpaces) or (QuoteChar <> #0)) do
       begin
         if (QuoteChar <> #0) then
         begin
@@ -944,7 +936,7 @@ begin
           end;
         end
         //* if you removed -t:value will break
-        else if not NextIsValue and CharInArray(Content[Cur], ValueSeperators) then
+        else if not NextIsValue and CharInSet(Content[Cur], ValueSeperators) then
         begin
           Cur := Cur + 1;
           break;
@@ -969,7 +961,7 @@ begin
           begin
             Name := S;
             Value := '';
-            if {CharInArray(Name[1], Switches) and } CharInArray(Name[Length(Name)], ValueSeperators) then
+            if {CharInArray(Name[1], Switches) and } CharInSet(Name[Length(Name)], ValueSeperators) then
             begin
               Name := Copy(Name, 1, Length(Name) -1);
               { no i want to pass platform=win32 without switch char -
@@ -987,22 +979,31 @@ begin
             if CharInArray(Name[1], Switches) then
             begin
               IsSwitch := True;
-              if pargSmartSwitch in Options then
+
+              if pargKeepSwitch in Options then
+              begin
+                if (Name[1] = Name[2]) then
+                  Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
+
+                if Name[1] <> Switches[0] then //should be first element in Switches
+                  Name[1] := Switches[0];
+              end
+              else
               begin
                 if (Name[1] = Name[2]) then
                   Name := Copy(Name, 3, Length(Name)) //change double switch to one switch
                 else
                   Name := Copy(Name, 2, Length(Name));
-              end
-              else
-              begin
-                if (Name[1] = Name[2]) then
-                  Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
-                if Name[1] <> Switches[0] then //should be first element in Switches, but i cant convert it to array right now
-                  Name[1] := Switches[0];
               end;
             end;
-            CallBackProc(Sender, Index, DequoteStr(Name), DequoteStr(Value), IsSwitch, Resume);
+
+            //run2.exe  name=value "name"=value name="value" "name=value"
+
+            if (Value='') and not IsSwitch and (pargValues in Options) then
+              CallBackProc(Sender, Index, '', DequoteStr(Name), IsSwitch, Resume)
+            else
+              CallBackProc(Sender, Index, DequoteStr(Name), DequoteStr(Value), IsSwitch, Resume);
+
             IsSwitch := False;
             Index := Index + 1;
             Inc(Result);
@@ -1032,20 +1033,9 @@ begin
   end;
 end;
 
-function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
+function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Terminals: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
 begin
-  Result := ParseArgumentsCallback(Content, @CallBackProc, Sender, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
-end;
-
-function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Integer;
-begin
-  Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, WhiteSpaces, Quotes, ValueSeperators);
-end;
-
-
-function ParseArguments(const Content: string; Strings: TStrings): Integer;
-begin
-  Result := ParseArguments(Content, Strings, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
+  Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, Terminals, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
 procedure CommandLineCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch: Boolean; var Resume: Boolean);
@@ -1054,14 +1044,9 @@ begin
     ArgumentsCallbackProc(Sender, Index, Name, Value, IsSwitch, Resume);
 end;
 
-function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Integer;
+function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
 begin
-  Result := ParseArgumentsCallback(Content, @CommandLineCallbackProc, Strings, Switches, WhiteSpaces, Quotes, ValueSeperators);
-end;
-
-function ParseCommandLine(Content: string; Strings: TStrings): Integer;
-begin
-  Result := ParseCommandLine(Content, Strings, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
+  Result := ParseArgumentsCallback(Content, @CommandLineCallbackProc, Strings, Switches, WhiteSpaces, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
 function GetArgumentValue(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean;
