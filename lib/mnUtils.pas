@@ -874,7 +874,7 @@ begin
   r.Name := Name;
   r.Value := Name;
 
-  ParseArgumentsCallback(Content, @GetSubValueCallbackProc, @r, [], [], Terminals, WhiteSpaces, Quotes, ValueSeperators);
+  ParseArgumentsCallback(Content, @GetSubValueCallbackProc, @r, [], [pargDeqoute], Terminals, WhiteSpaces, Quotes, ValueSeperators);
 
   Value := r.Value;
   Result := r.Found;
@@ -898,6 +898,7 @@ var
   NextIsValue: Boolean;
   IsSwitch: Boolean;
   l: Integer;
+  aSkipLen: Integer;
 begin
   if (@CallBackProc = nil) then
     raise Exception.Create('ParseArguments: CallBackProc is nil');
@@ -918,26 +919,32 @@ begin
         Cur := Cur + 1;
 
       //start from the first char
-      Start := Cur - 1;
+      Start := Cur;
       QuoteChar := #0;
+      aSkipLen := 0;
 
-      if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
-      begin
-        QuoteChar := Content[Cur];
-        Cur := Cur + 1;
-        if (pargDeqoute in Options) then
-          Start := Start + 1;
-      end;
+     //if (pargDeqoute in Options) then
+          //Start := Start + 1;
 
-      while (Cur <= Length(Content)) and (not CharInSet(Content[Cur], WhiteSpaces) or (QuoteChar <> #0)) do
+      while (Cur <= Length(Content))  do
       begin
-        if (QuoteChar <> #0) then
+
+        if (QuoteChar = #0) and CharInSet(Content[Cur], Quotes) then
+        begin
+          QuoteChar := Content[Cur];
+        end
+        else if (QuoteChar <> #0) then
         begin
           if (Content[Cur] = QuoteChar) then
           begin
-            Cur := Cur + 1;
-            break;
+            QuoteChar := #0;
           end;
+        end
+        else if CharInSet(Content[Cur], Terminals) then
+        begin
+          Cur := Cur + 1;
+          aSkipLen := 1;
+          break;
         end
         //* if you removed -t:value will break
         else if not NextIsValue and CharInSet(Content[Cur], ValueSeperators) then
@@ -949,14 +956,20 @@ begin
         Cur := Cur + 1;
       end;
 
-      if (Cur >= Start) then
+      if (Cur > Start) then
       begin
-        if (pargDeqoute in Options) and (QuoteChar <> #0) then
+        {if (pargDeqoute in Options) and (QuoteChar <> #0) then
           l := Cur - Start - 2
         else
-          l := Cur - Start - 1;
+          l := Cur - Start - 1;}
+        l := Cur - Start - aSkipLen;
 
-        S := Copy(Content, Start + 1, l);
+        if (pargDeqoute in Options) and CharInSet(Content[Start], Quotes) and (Content[Start] = Content[Start+l-1]) then
+          S := Copy(Content, Start+1, l-2)
+        else
+          S := Copy(Content, Start, l);
+
+
         if S <> '' then
         begin
           if NextIsValue then
@@ -970,7 +983,7 @@ begin
           begin
             Name := S;
             Value := '';
-            if {CharInArray(Name[1], Switches) and } CharInSet(Name[Length(Name)], ValueSeperators) then
+            if CharInSet(Name[Length(Name)], ValueSeperators) then
             begin
               Name := Copy(Name, 1, Length(Name) -1);
               { no i want to pass platform=win32 without switch char -
@@ -985,7 +998,7 @@ begin
           if not NextIsValue then
           begin
             Resume := True;
-            if CharInArray(Name[1], Switches) then
+            if (Name<>'') and CharInArray(Name[1], Switches) then
             begin
               IsSwitch := True;
 
@@ -1019,7 +1032,7 @@ begin
             if not Resume then
               break;
           end;
-         end;
+        end
       end;
       //Cur := Cur + 1;
     until Cur > Length(Content);
