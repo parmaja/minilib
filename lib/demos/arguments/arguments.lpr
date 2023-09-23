@@ -6,7 +6,8 @@ uses
   {$IFDEF UNIX}
   cthreads,
   {$ENDIF}
-  Classes, SysUtils, CustApp, mnUtils;
+  Classes, SysUtils, CustApp, mnUtils,
+	TestUnit;
 
 type
 
@@ -16,83 +17,17 @@ type
   protected
     procedure DoRun; override;
   public
+
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     procedure WriteHelp; virtual;
   end;
 
-procedure MyArgumentsCallbackProc(Sender: Pointer; Index:Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
-begin
-  Writeln(Name + '=' + Value);
-end;
-
-{ TMyArguments }
-
 procedure TMyArguments.DoRun;
-var
-  ErrorMsg: String;
-  sText: string;
-  list: TStringList;
-  files: TStringList;
-  s: string;
-  i: Integer;
 begin
-  // quick check parameters
-  ErrorMsg :=CheckOptions('h', 'help');
-  if ErrorMsg <>'' then begin
-    ShowException(Exception.Create(ErrorMsg));
-    Terminate;
-    Exit;
-  end;
-
-  // parse parameters
-  if HasOption('h', 'help') then begin
-    WriteHelp;
-    Terminate;
-    Exit;
-  end;
-
-  //sText := '-t -s -v: value test';
-  sText := 'build "c:\projects\project.pro" -t /s -v: " -z -d -r: value" test --value:testin --verbose=true platform=win32 compiler=dccarm -x=-x';
-  //sText := '-w zaher test';
-  //sText := '"-v":test'; //bug
-  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [pargDeqoute, pargKeepSwitch], [' ', #9], [' ', #9], ['''','"'], [':', '=']);
-  WriteLn('--------');
-  WriteLn('');
-
-  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [pargKeepSwitch], [' ', #9], [' ', #9], ['''','"'], [':', '=']);
-  WriteLn('--------');
-  WriteLn('');
-
-  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [], [' ', #9], [' ', #9], ['''','"'], [':', '=']);
-  WriteLn('--------');
-  WriteLn('');
-
-  list := TStringList.Create;
-  files := TStringList.Create;
-  sText := 'test1 test1 -s --silent -w -v: value1';
-  ParseArguments(sText, list, ['-', '/'], [pargKeepSwitch]);
-  GetArgument(list, files);
-
-  for i := 0 to list.Count-1 do
-    WriteLn(list[i]);
-
-  WriteLn('--------');
-  for i := 0 to files.Count-1 do
-    WriteLn(files[i]);
-
-  GetArgumentValue(list, s, 'v');
-  WriteLn(s);
-  if GetArgumentSwitch(list, '-s', '--silent') then
-    WriteLn('s is exists')
-  else
-    WriteLn('s is NOT exists');
-
-  list.Free;
-  files.Free;
-  ReadLn();
-
-  // stop program loop
+  inherited DoRun;
+  RunTest;
+    // stop program loop
   Terminate;
 end;
 
@@ -119,6 +54,7 @@ begin
   Application :=TMyArguments.Create(nil);
   Application.Title :='Arguments';
   Application.Run;
+  ReadLn();
   Application.Free;
 end.
 

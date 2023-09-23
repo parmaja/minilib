@@ -15,6 +15,7 @@ unit mnUtils;
 {$ENDIF}
 {$M+}{$H+}
 
+{$RangeChecks+}
 {$ifdef mswindows}
 {$define windows}
 {$endif}
@@ -230,9 +231,8 @@ function ToUnixPathDelimiter(const S: string): string;
 
 //IncludePathDelimiter add the Delimiter when S not = ''
 function IncludePathDelimiter(const S: string): string;
-function IncludePathSeparator(const S: string): string; deprecated 'Use IncludePathDelimiter';
-function IncludeURLDelimiter(S: string): string;
 function ExcludePathDelimiter(Path: string): string;
+function IncludeURLDelimiter(S: string): string;
 
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
@@ -887,6 +887,8 @@ begin
 end;}
 
 function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; Options: TParseArgumentsOptions; Terminals: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+type
+  TParseState = (stName, stAssign, stValue);
 var
   Start, Cur: Integer;
   Resume: Boolean;
@@ -895,10 +897,9 @@ var
   Value: string;
   QuoteChar: Char;
   S: string;
-  NextIsValue: Boolean;
+  State: TParseState;
   IsSwitch: Boolean;
   l: Integer;
-  aSkipLen: Integer;
 begin
   if (@CallBackProc = nil) then
     raise Exception.Create('ParseArguments: CallBackProc is nil');
@@ -908,135 +909,114 @@ begin
   Index := 0;
   Name := '';
   Value := '';
-  NextIsValue := False;
+  State := stName;
 
-  if (Content <> '') then
-  begin
-    Cur := 1;
-    repeat
-      //bypass white spaces
-      while (Cur <= Length(Content)) and CharInSet(Content[Cur], WhiteSpaces) do
-        Cur := Cur + 1;
+  if (Content = '') then
+    Exit(0);
 
-      //start from the first char
-      Start := Cur;
-      QuoteChar := #0;
-      aSkipLen := 0;
+  Cur := 0;
+  repeat
+    Cur := Cur + 1;
+    //bypass white spaces
+    while (Cur <= Length(Content)) and CharInSet(Content[Cur], WhiteSpaces) do
+      Cur := Cur + 1;
 
-     //if (pargDeqoute in Options) then
-          //Start := Start + 1;
+    //start from the first char
+    Start := Cur;
+    QuoteChar := #0;
 
-      while (Cur <= Length(Content))  do
+    while True do
+    begin
+      if (Cur > Length(Content)) then
+        break
+      else if (QuoteChar = #0) and CharInSet(Content[Cur], Quotes) then
+        QuoteChar := Content[Cur]
+      else if (QuoteChar <> #0) then
       begin
-
-        if (QuoteChar = #0) and CharInSet(Content[Cur], Quotes) then
-        begin
-          QuoteChar := Content[Cur];
-        end
-        else if (QuoteChar <> #0) then
-        begin
-          if (Content[Cur] = QuoteChar) then
-          begin
-            QuoteChar := #0;
-          end;
-        end
-        else if CharInSet(Content[Cur], Terminals) then
-        begin
-          Cur := Cur + 1;
-          aSkipLen := 1;
-          break;
-        end
-        //* if you removed -t:value will break
-        else if not NextIsValue and CharInSet(Content[Cur], ValueSeperators) then
-        begin
-          Cur := Cur + 1;
-          break;
-        end;
-
-        Cur := Cur + 1;
+        if (Content[Cur] = QuoteChar) then
+          QuoteChar := #0;
+      end
+      else if CharInSet(Content[Cur], Terminals) then
+        break
+      //* if you removed -t:value will break
+      else if (State = stName) and CharInSet(Content[Cur], ValueSeperators) then
+      begin
+        State := stAssign;
+        //Cur := Cur + 1;
+        break;
       end;
+      Cur := Cur + 1;
+    end;
 
-      if (Cur > Start) then
+    if (Cur >= Start) then
+    begin
+      l := Cur - Start;
+
+      if l = 0 then
+        S := ''
+      else
       begin
-        {if (pargDeqoute in Options) and (QuoteChar <> #0) then
-          l := Cur - Start - 2
-        else
-          l := Cur - Start - 1;}
-        l := Cur - Start - aSkipLen;
-
-        if (pargDeqoute in Options) and CharInSet(Content[Start], Quotes) and (Content[Start] = Content[Start+l-1]) then
-          S := Copy(Content, Start+1, l-2)
+        if (pargDeqoute in Options) and CharInSet(Content[Start], Quotes) and (Content[Start] = Content[Start + l-1]) then
+          S := Copy(Content, Start+1, l - 2)
         else
           S := Copy(Content, Start, l);
+      end;
 
-
-        if S <> '' then
+      //if S <> '' then
+      begin
+        if State = stValue then
         begin
-          if NextIsValue then
-          begin
-{            if CharInArray(S[1], Switches) then //* hmmm maybe not //nop, what if i want value is minus
-              raise Exception.Create('Value excepted not a switch '+ S);}
-            Value := S;
-            NextIsValue := False;
-          end
+          Value := S;
+          State := stName;
+        end
+        else
+        begin
+          Name := S;
+          Value := '';
+          if State = stAssign then
+            State := stValue
           else
+            State := stName;
+        end;
+
+        if State = stName then
+        begin
+          Resume := True;
+          if (Name<>'') and CharInArray(Name[1], Switches) then
           begin
-            Name := S;
-            Value := '';
-            if CharInSet(Name[Length(Name)], ValueSeperators) then
+            IsSwitch := True;
+
+            if pargKeepSwitch in Options then
             begin
-              Name := Copy(Name, 1, Length(Name) -1);
-              { no i want to pass platform=win32 without switch char -
-              if not CharInArray(Name[1], Switches) then
-                Name := Switches[0] + Name;}
-              NextIsValue := True;
+              if (Name[1] = Name[2]) then
+                Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
+
+              if Name[1] <> Switches[0] then //should be first element in Switches
+                Name[1] := Switches[0];
             end
             else
-              NextIsValue := False;
-          end;
-
-          if not NextIsValue then
-          begin
-            Resume := True;
-            if (Name<>'') and CharInArray(Name[1], Switches) then
             begin
-              IsSwitch := True;
-
-              if pargKeepSwitch in Options then
-              begin
-                if (Name[1] = Name[2]) then
-                  Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
-
-                if Name[1] <> Switches[0] then //should be first element in Switches
-                  Name[1] := Switches[0];
-              end
+              if (Name[1] = Name[2]) then
+                Name := Copy(Name, 3, Length(Name)) //change double switch to one switch
               else
-              begin
-                if (Name[1] = Name[2]) then
-                  Name := Copy(Name, 3, Length(Name)) //change double switch to one switch
-                else
-                  Name := Copy(Name, 2, Length(Name));
-              end;
+                Name := Copy(Name, 2, Length(Name));
             end;
-
-            //run2.exe  name=value "name"=value name="value" "name=value"
-
-            if (Value='') and not IsSwitch and (pargValues in Options) then
-              CallBackProc(Sender, Index, '', Name, IsSwitch, Resume)
-            else
-              CallBackProc(Sender, Index, Name, Value, IsSwitch, Resume);
-
-            IsSwitch := False;
-            Index := Index + 1;
-            Inc(Result);
-            if not Resume then
-              break;
           end;
-        end
-      end;
-      //Cur := Cur + 1;
-    until Cur > Length(Content);
-  end;
+        end;
+        //run2.exe  name=value "name"=value name="value" "name=value"
+        if (Value='') and not IsSwitch and (pargValues in Options) then
+          CallBackProc(Sender, Index, '', Name, IsSwitch, Resume)
+        else
+          CallBackProc(Sender, Index, Name, Value, IsSwitch, Resume);
+
+        IsSwitch := False;
+        Index := Index + 1;
+        Inc(Result);
+        if not Resume then
+          break;
+      end
+    end;
+  until Cur > Length(Content);
 end;
 
 procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; AName, AValue: string; IsSwitch: Boolean; var Resume: Boolean);
@@ -1654,11 +1634,6 @@ begin
     Result := s + PathDelim
   else
     Result := s;
-end;
-
-function IncludePathSeparator(const S: string): string;
-begin
-  Result := IncludePathDelimiter(S);
 end;
 
 function IncludeURLDelimiter(S: string): string;
