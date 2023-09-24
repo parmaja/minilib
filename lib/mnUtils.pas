@@ -962,60 +962,57 @@ begin
           S := Copy(Content, Start, l);
       end;
 
-      //if S <> '' then
+      if State = stValue then
       begin
-        if State = stValue then
-        begin
-          Value := S;
-          State := stName;
-        end
+        Value := S;
+        State := stName;
+      end
+      else
+      begin
+        Name := S;
+        Value := '';
+        if State = stAssign then
+          State := stValue
         else
-        begin
-          Name := S;
-          Value := '';
-          if State = stAssign then
-            State := stValue
-          else
-            State := stName;
-        end;
+          State := stName;
+      end;
 
-        if State = stName then
+      if State = stName then
+      begin
+        Resume := True;
+        if (Name<>'') and CharInArray(Name[1], Switches) then
         begin
-          Resume := True;
-          if (Name<>'') and CharInArray(Name[1], Switches) then
+          IsSwitch := True;
+
+          if pargKeepSwitch in Options then
           begin
-            IsSwitch := True;
+            if (Name[1] = Name[2]) then
+              Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
 
-            if pargKeepSwitch in Options then
-            begin
-              if (Name[1] = Name[2]) then
-                Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
-
-              if Name[1] <> Switches[0] then //should be first element in Switches
-                Name[1] := Switches[0];
-            end
+            if Name[1] <> Switches[0] then //should be first element in Switches
+              Name[1] := Switches[0];
+          end
+          else
+          begin
+            if (Name[1] = Name[2]) then
+              Name := Copy(Name, 3, Length(Name)) //change double switch to one switch
             else
-            begin
-              if (Name[1] = Name[2]) then
-                Name := Copy(Name, 3, Length(Name)) //change double switch to one switch
-              else
-                Name := Copy(Name, 2, Length(Name));
-            end;
+              Name := Copy(Name, 2, Length(Name));
           end;
         end;
-        //run2.exe  name=value "name"=value name="value" "name=value"
-        if (Value='') and not IsSwitch and (pargValues in Options) then
-          CallBackProc(Sender, Index, '', Name, IsSwitch, Resume)
-        else
-          CallBackProc(Sender, Index, Name, Value, IsSwitch, Resume);
+      end;
+      //run2.exe  name=value "name"=value name="value" "name=value"
+      if (Value='') and not IsSwitch and (pargValues in Options) then
+        CallBackProc(Sender, Index, '', Name, IsSwitch, Resume)
+      else
+        CallBackProc(Sender, Index, Name, Value, IsSwitch, Resume);
 
-        IsSwitch := False;
-        Index := Index + 1;
-        Inc(Result);
-        if not Resume then
-          break;
-      end
-    end;
+      IsSwitch := False;
+      Index := Index + 1;
+      Inc(Result);
+      if not Resume then
+        break;
+    end
   until Cur > Length(Content);
 end;
 
