@@ -43,6 +43,8 @@ var
   end;
 
 begin
+  sText := 'x=1;;b;';
+  ParseColone;
   sText := 'a;;b';
   ParseColone;
   sText := 'a b  ';

@@ -942,7 +942,6 @@ begin
       else if (State = stName) and CharInSet(Content[Cur], ValueSeperators) then
       begin
         State := stAssign;
-        //Cur := Cur + 1;
         break;
       end;
       Cur := Cur + 1;
@@ -956,7 +955,7 @@ begin
         S := ''
       else
       begin
-        if (pargDeqoute in Options) and CharInSet(Content[Start], Quotes) and (Content[Start] = Content[Start + l-1]) then
+        if (pargDeqoute in Options) and CharInSet(Content[Start], Quotes) and (Content[Start] = Content[Start + l - 1]) then
           S := Copy(Content, Start+1, l - 2)
         else
           S := Copy(Content, Start, l);
@@ -989,7 +988,7 @@ begin
             if (Name[1] = Name[2]) then
               Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
 
-            if Name[1] <> Switches[0] then //should be first element in Switches
+            if Name[1] <> Switches[0] then //should be first element in Switches, convert / to -
               Name[1] := Switches[0];
           end
           else
@@ -1000,18 +999,19 @@ begin
               Name := Copy(Name, 2, Length(Name));
           end;
         end;
-      end;
-      //run2.exe  name=value "name"=value name="value" "name=value"
-      if (Value='') and not IsSwitch and (pargValues in Options) then
-        CallBackProc(Sender, Index, '', Name, IsSwitch, Resume)
-      else
-        CallBackProc(Sender, Index, Name, Value, IsSwitch, Resume);
+        //run2.exe  name=value "name"=value name="value" "name=value"
+        if (Value='') and not IsSwitch and (pargValues in Options) then
+          CallBackProc(Sender, Index, '', Name, IsSwitch, Resume)
+        else
+          CallBackProc(Sender, Index, Name, Value, IsSwitch, Resume);
 
-      IsSwitch := False;
-      Index := Index + 1;
-      Inc(Result);
-      if not Resume then
-        break;
+        IsSwitch := False;
+        Index := Index + 1;
+        Inc(Result);
+        if not Resume then
+          break;
+      end;
+
     end
   until Cur > Length(Content);
 end;
