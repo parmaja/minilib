@@ -43,6 +43,10 @@ var
   end;
 
 begin
+  sText := '""';
+  ParseColone;
+  sText := '-sss;b';
+  ParseColone;
   sText := 'x=1;;b;';
   ParseColone;
   sText := 'a;;b';
@@ -53,6 +57,9 @@ begin
   ParseSpace;
   sText := 'a;b;';
   ParseColone;
+  sText := '''your name is "belal"''';
+  ParseColone;
+
 
   //sText := '-t -s -v: value test';
   sText := 'build "c:\projects\project.pro" -t /s -v: " -z -d -r: value" test --value:testin --verbose=true platform=win32 compiler=dccarm -x=-x';

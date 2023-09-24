@@ -986,7 +986,7 @@ begin
 
           if pargKeepSwitch in Options then
           begin
-            if (Name[1] = Name[2]) then
+            if (Length(Name)>1) and (Name[1] = Name[2]) then
               Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
 
             if Name[1] <> Switches[0] then //should be first element in Switches, convert / to -
@@ -994,7 +994,7 @@ begin
           end
           else
           begin
-            if (Name[1] = Name[2]) then
+            if (Length(Name)>1) and (Name[1] = Name[2]) then
               Name := Copy(Name, 3, Length(Name)) //change double switch to one switch
             else
               Name := Copy(Name, 2, Length(Name));
