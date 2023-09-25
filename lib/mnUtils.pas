@@ -12,10 +12,10 @@ unit mnUtils;
 {$modeswitch arrayoperators}
 {$ModeSwitch advancedrecords}
 {$ModeSwitch typehelpers}
+{$RangeChecks+}
 {$ENDIF}
 {$M+}{$H+}
 
-{$RangeChecks+}
 {$ifdef mswindows}
 {$define windows}
 {$endif}
@@ -144,7 +144,8 @@ function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete:
 
 function StrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Boolean; overload;
 function StrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean = False): Boolean; overload;
-function CharInArray(const C: string; const ArrayOfChar : array of Char; CaseInsensitive: Boolean = False) : Boolean;
+function CharInArray(const C: Char; const ArrayOfChar : array of Char; CaseInsensitive: Boolean = False) : Boolean;
+function CharArrayToSet(const ArrayOfChar : TArray<Char>) : TSysCharSet;
 
 //vPeriod is a datetime not tickcount
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
@@ -1593,20 +1594,32 @@ begin
   Result := false;
 end;
 
-function CharInArray(const C: string; const ArrayOfChar: array of Char; CaseInsensitive: Boolean): Boolean;
+function CharArrayToSet(const ArrayOfChar : TArray<Char>) : TSysCharSet;
 var
- itm : String;
+  itm : Char;
 begin
+  Result := [];
   for itm in ArrayOfChar do
+    Include(Result, AnsiChar(itm));
+end;
+
+function CharInArray(const C: Char; const ArrayOfChar: array of Char; CaseInsensitive: Boolean): Boolean;
+var
+  itm : Char;
+begin
+  if CaseInsensitive then
   begin
-    if CaseInsensitive then
-    begin
+    for itm in ArrayOfChar do
       if UpperCase(C) = UpperCase(itm) then
         exit(true);
-    end
-    else if C = itm then
-       exit(true);
+  end
+  else
+  begin
+    for itm in ArrayOfChar do
+      if C = itm then
+        exit(true);
   end;
+
   Result := false;
 end;
 

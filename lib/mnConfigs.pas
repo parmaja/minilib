@@ -1298,7 +1298,7 @@ var
   aCurrentSection: TConfSection; //to add new sections not values, values will added to aValueSection
   aSubSection: TConfSection;
   aName: string;
-  l: string;
+  l: Char;
 begin
   //Clear; merge by default
   aCurrentSection := Self;
@@ -1315,7 +1315,7 @@ begin
       Line := Trim(aReader.ReadLine);
       if Line <> '' then
       begin
-        l := LeftStr(Line, 1);
+        l := Line[1];
         if CharInArray(l, cCommentChars) then
         begin
           if not IgnoreComments then
