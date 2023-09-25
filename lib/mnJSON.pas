@@ -120,7 +120,7 @@ type
     procedure CheckExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); inline;
     procedure Error(const Msg: string); inline;
     procedure ErrorNotExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); //not inline
-    public
+  public
     procedure Init(AParent: TObject; vAcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
     procedure Parse(const Content: String);
     procedure Finish;
