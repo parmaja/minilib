@@ -255,7 +255,7 @@ type
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(const FileName: string);
     procedure SaveToFile(const FileName: string);
-    function AddItem(S: string; Separator: string; TrimIt: Boolean = False): TmnField; overload;
+    function AddItem(S: string; Seperator: string; TrimIt: Boolean = False): TmnField; overload;
     function Add(AName, AValue: string): TmnField; overload;
     //This will split the name and value
     function Put(const AName, AValue: string): TmnField; overload;
@@ -906,13 +906,13 @@ begin
   Add(Result);
 end;
 
-function TmnFields.AddItem(S: string; Separator: string; TrimIt: Boolean): TmnField;
+function TmnFields.AddItem(S: string; Seperator: string; TrimIt: Boolean): TmnField;
 var
   p: Integer;
   aName: string;
   aValue: string;
 begin
-  p := Pos(Separator, S);
+  p := Pos(Seperator, S);
   if p > 0 then
   begin
     aName := Trim(Copy(S, 1, P - 1));

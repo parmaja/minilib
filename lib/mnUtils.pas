@@ -90,6 +90,7 @@ type
   TParseArgumentsOptions = set of (
     pargKeepSwitch,
     pargDeqoute,
+    pargTrim, //TODO
     pargValues //without name=value consider it as value
   );
 
@@ -957,7 +958,7 @@ begin
       else
       begin
         if (pargDeqoute in Options) and CharInSet(Content[Start], Quotes) and (Content[Start] = Content[Start + l - 1]) then
-          S := Copy(Content, Start+1, l - 2)
+          S := Copy(Content, Start + 1, l - 2)
         else
           S := Copy(Content, Start, l);
       end;
