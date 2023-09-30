@@ -10,7 +10,7 @@
         <MainUnitHasScaledStatement Value="False"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
-      <Title Value="Test Stream"/>
+      <Title Value="Headers"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
@@ -28,29 +28,15 @@
       <Item>
         <PackageName Value="MiniLib"/>
       </Item>
-      <Item>
-        <PackageName Value="MiniSockets"/>
-      </Item>
     </RequiredPackages>
     <Units>
       <Unit>
-        <Filename Value="TestStream.lpr"/>
+        <Filename Value="headers.lpr"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="header"/>
       </Unit>
       <Unit>
-        <Filename Value="..\..\mnStreams.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="..\..\mnStreamUtils.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="..\..\..\socket\source\mnWinSockets.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="SendAndRecv.pas"/>
+        <Filename Value="TestUnit.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
@@ -59,21 +45,23 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="TestStream"/>
+      <Filename Value="headers"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="D:\lab\pascal\minilib\lib\"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <CodeGeneration>
+      <Checks>
+        <RangeChecks Value="True"/>
+      </Checks>
+    </CodeGeneration>
     <Linking>
       <Debugging>
         <DebugInfoType Value="dsDwarf3"/>
-        <UseValgrind Value="True"/>
       </Debugging>
     </Linking>
-    <Other>
-      <CustomOptions Value="-dDEBUG"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions>

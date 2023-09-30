@@ -60,7 +60,6 @@ begin
   sText := '''your name is "belal"''';
   ParseColone;
 
-
   //sText := '-t -s -v: value test';
   sText := 'build "c:\projects\project.pro" -t /s -v: " -z -d -r: value" test --value:testin --verbose=true platform=win32 compiler=dccarm -x=-x';
   ParseSpace;
