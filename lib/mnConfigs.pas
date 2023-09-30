@@ -90,7 +90,7 @@ type
     FIsComment: Boolean;
     FName: string;
   public
-    function FullString(Separator: string = '='): String; virtual;
+    function FullString(Seperator: string = '='): String; virtual;
     property IsComment: Boolean read FIsComment;
     property Name: string read FName write FName;
   end;
@@ -163,7 +163,7 @@ type
   private
     FAttributes: TStringList;
     FAutoRemove: Boolean;
-    FSeparator: string;
+    FSeperator: string;
     FDelimiter: Char;
     FParent: TConfSection;
     FSections: TConfSections;
@@ -184,7 +184,7 @@ type
     function FindValue(AValue: String; AOptions: TConfOptions = []): TConfField; overload;
     function RequireField(const vName: string): TConfField; //find it if not exists create it
     function Add(AName, AValue: string): TConfField; overload;
-    function AddItem(S: string; Separator: string; TrimIt: Boolean = False): TConfField; overload;
+    function AddItem(S: string; Seperator: string; TrimIt: Boolean = False): TConfField; overload;
     function AddComment(S: string): TConfField; overload;
     function Find(const vName: string): TConfField; virtual; //no exception
     function Exists(const vName: string): Boolean;
@@ -218,8 +218,8 @@ type
     function Clone(Parented: Boolean; SectionName: string = ''): TConfSection; overload;
 
     //collect all fields that have no name into one string //TODO with names
-    function Collect(Separator: string): string; overload;
-    function Collect(SectionName: string; CollectSeparator: string): string; overload;
+    function Collect(Seperator: string): string; overload;
+    function Collect(SectionName: string; CollectSeperator: string): string; overload;
 
     procedure WriteTo(Writer: TConfWriter; Level: Integer); virtual;
 
@@ -231,7 +231,7 @@ type
 
     //AutoRemove remove field if Value = '' when use Values or SetValues
     property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
-    property Separator: string read FSeparator write FSeparator; //value
+    property Seperator: string read FSeperator write FSeperator; //value
     property Delimiter: Char read FDelimiter write FDelimiter; //eol
     property AsString: string read GetAsString write SetAsString;
     property Require[const Index: string]: TConfField read RequireField;
@@ -253,8 +253,6 @@ type
     destructor Destroy; override;
   end;
 
-procedure ParamsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
-function DequoteStr(Str: string; QuoteChar: string = #0): string;
 function ConnectStr(const S1, Sep: string; S2: string = ''): string;
 
 implementation
@@ -268,38 +266,6 @@ begin
   if (Result <> '') and (S2 <> '') then
     Result := Result + Sep;
   Result := Result + S2;
-end;
-
-function DequoteStr(Str: string; QuoteChar: string = #0): string;
-begin
-  if Str = '' then
-    Result := ''
-  else
-  begin
-    if (QuoteChar > #0) and (Str[1] = QuoteChar) then
-    begin
-      if Str[Length(Str)] =QuoteChar then
-        Result := MidStr(Str, 2, Length(Str) - 2)
-      else
-        Result := MidStr(Str, 2, Length(Str) - 1)
-    end
-    else if Str[1] = '"' then
-    begin
-      if Str[Length(Str)] = '"' then
-        Result := MidStr(Str, 2, Length(Str) - 2)
-      else
-        Result := MidStr(Str, 2, Length(Str) - 1)
-    end
-    else if Str[1] = '''' then
-    begin
-      if Str[Length(Str)] = '''' then
-        Result := MidStr(Str, 2, Length(Str) - 2)
-      else
-        Result := MidStr(Str, 2, Length(Str) - 1)
-    end
-    else
-      Result := Str;
-  end;
 end;
 
 { TConfWriter }
@@ -347,19 +313,19 @@ end;
 
 { TConfField }
 
-function TConfField.FullString(Separator: string): String;
+function TConfField.FullString(Seperator: string): String;
 begin
   if Name = '' then
   begin
     if IsComment then
       Result := Value
-    else if Pos(Separator, Value) > 0 then
+    else if Pos(Seperator, Value) > 0 then
       Result := '"' + Value + '"'
     else
       Result := Value;
   end
   else
-    Result := Name + Separator + Value;
+    Result := Name + Seperator + Value;
 end;
 
 { TConfSection }
@@ -652,7 +618,7 @@ begin
   begin
     if Result <> '' then
       Result := Result + Delimiter;
-    Result := Result + Item.Name + Separator + ' ' + Item.Value;
+    Result := Result + Item.Name + Seperator + ' ' + Item.Value;
   end;
 end;
 
@@ -749,7 +715,7 @@ begin
   FAttributes := TStringList.Create;
   FAttributes.Delimiter := ',';
   FAttributes.StrictDelimiter := True;
-  Separator := '=';
+  Seperator := '=';
   Delimiter := #13;
   AutoRemove := False;
 end;
@@ -824,7 +790,7 @@ begin
     for Field in Self do
       if not Field.IsComment then
       begin
-        S := Field.FullString(Separator);
+        S := Field.FullString(Seperator);
         if AllowDuplicate or (AStrings.IndexOf(S) < 0) then
           AStrings.Add(S);
       end;
@@ -960,7 +926,7 @@ begin
   end;
 end;
 
-function TConfSection.Collect(Separator: string): string;
+function TConfSection.Collect(Seperator: string): string;
 var
   i: Integer;
 begin
@@ -969,7 +935,7 @@ begin
     for i := 0 to Count-1 do
     begin
       if Items[i].Name = '' then
-        Result := ConnectStr(Result, Separator, Items[i].Value)
+        Result := ConnectStr(Result, Seperator, Items[i].Value)
     end;
 end;
 
@@ -992,7 +958,7 @@ begin
   Add(Result);
 end;
 
-function TConfSection.AddItem(S: string; Separator: string; TrimIt: Boolean): TConfField;
+function TConfSection.AddItem(S: string; Seperator: string; TrimIt: Boolean): TConfField;
 var
   p: Integer;
   aName: string;
@@ -1006,7 +972,7 @@ begin
   end
   else
   begin
-    p := Pos(Separator, S);
+    p := Pos(Seperator, S);
     if (p > 0) then
     begin
       aName := Trim(Copy(S, 1, P - 1));
@@ -1149,7 +1115,7 @@ begin
     Result := TConfSection.Create(nil);
 end;
 
-function TConfSection.Collect(SectionName: string; CollectSeparator: string): string;
+function TConfSection.Collect(SectionName: string; CollectSeperator: string): string;
 var
   ASection: TConfSection;
 begin
@@ -1158,7 +1124,7 @@ begin
   else
     ASection := Sections.Find(SectionName);
   if (ASection <> nil) then
-    Result := ASection.Collect(CollectSeparator)
+    Result := ASection.Collect(CollectSeperator)
   else
     Result := '';
 end;
@@ -1170,7 +1136,7 @@ var
 begin
   for aField in Self do
   begin
-    Writer.WriteLine(aField.FullString(Separator), Level);
+    Writer.WriteLine(aField.FullString(Seperator), Level);
   end;
 
   for aSection in Sections do
@@ -1319,7 +1285,7 @@ begin
         if CharInArray(l, cCommentChars) then
         begin
           if not IgnoreComments then
-            aValueSection.AddItem(Line, aCurrentSection.Separator, True);
+            aValueSection.AddItem(Line, aCurrentSection.Seperator, True);
         end
         else
         begin
@@ -1354,7 +1320,7 @@ begin
           else
           begin
             Line := ReplaceVariable(Line);
-            aValueSection.AddItem(Line, aCurrentSection.Separator, True);
+            aValueSection.AddItem(Line, aCurrentSection.Seperator, True);
           end
         end;
       end;

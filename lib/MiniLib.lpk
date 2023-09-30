@@ -123,6 +123,10 @@
         <Filename Value="mnMultipartData.pas"/>
         <UnitName Value="mnMultipartData"/>
       </Item>
+      <Item>
+        <Filename Value="mnHeaders.pas"/>
+        <UnitName Value="mnHeaders"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>
