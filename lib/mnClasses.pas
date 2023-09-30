@@ -120,6 +120,7 @@ type
     TmnNamedObjectList<_Object_: TmnNamedObject> = class(TmnObjectList<_Object_>)
     {$endif}
     private
+      FDicSize: Integer;
       FDic: TDictionary<string, _Object_>;
 
     protected
@@ -130,10 +131,13 @@ type
       procedure Notify(const Value: _Object_; Action: TCollectionNotification); override;
       {$endif}
     public
+      //Set DicSize to 0 for not creating hashing list
+      //if you use hashing list, you need to assign name to object on creation not after adding it to the list
+      constructor Create(ADicSize: Integer = 1024; FreeObjects : boolean = True); overload;
+      destructor Destroy; override;
       procedure AfterConstruction; override;
       function Find(const Name: string): _Object_;
       function IndexOfName(vName: string): Integer;
-      destructor Destroy; override;
       {$ifdef FPC} //not now
       procedure Clear; override;
       {$endif}
@@ -324,7 +328,8 @@ end;
 procedure TmnNamedObjectList<_Object_>.AfterConstruction;
 begin
   inherited;
-  FDic := TDictionary<string, _Object_>.Create(1024);
+  if FDicSize > 0 then
+    FDic := TDictionary<string, _Object_>.Create(FDicSize);
 end;
 
 destructor TmnNamedObjectList<_Object_>.Destroy;
@@ -351,7 +356,7 @@ begin
   else
   begin
     Result := nil;
-    if Name <> '' then
+		if Name <> '' then
       for i := 0 to Count - 1 do
       begin
         if SameText(Items[i].Name, Name) then
@@ -418,6 +423,12 @@ begin
   end
   else
     inherited;
+end;
+
+constructor TmnNamedObjectList<_Object_>.Create(ADicSize: Integer; FreeObjects: boolean);
+begin
+  inherited Create(FreeObjects);
+  FDicSize := ADicSize;
 end;
 
 { TmnObjectList.TmnObjectListEnumerator }
