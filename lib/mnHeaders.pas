@@ -49,9 +49,8 @@ type
 
   { TmnCustomHeaderItem }
 
-  TmnCustomHeaderItem = class abstract(TObject)
+  TmnCustomHeaderItem = class abstract(TmnNamedObject)
   private
-    FName: string;
     FText: string;
     FDelimiter: Char;
     FValueSeparator: Char;
@@ -96,7 +95,6 @@ type
     function Collect: string;
     procedure Clear;
 
-    property Name: string read FName write FName;
     property Value: string read GetValue;
     property AsInteger: Integer read GetAsInteger;
     function Find(AName: String): TmnCustomHeaderItem; inline;
@@ -113,6 +111,7 @@ type
     property Text: string read GetText write SetText;
     property Values[const vName: string]: string read GetValues write SetValues;
 		property Item[Index: string]: TmnCustomHeaderItem read GetItem; default;
+
   end;
 
   { TmnHeaderSubItem }
@@ -235,7 +234,7 @@ end;
 
 procedure TmnCustomHeaderItem.SetNameValue(const AName, AValue: string);
 begin
-  FName := AName;
+  Name := AName;
   FText := AValue;
 end;
 
@@ -272,7 +271,7 @@ end;
 procedure ParseHeadersCallback(Sender: Pointer; Index: Integer; AName, AValue: string; IsSwitch: Boolean; var Resume: Boolean);
 begin
   if (Index = 0) and (AName = '') then
-    TmnCustomHeaderItem(Sender).Add(Trim(TmnCustomHeaderItem(Sender).FName), Trim(AValue))
+    TmnCustomHeaderItem(Sender).Add(Trim(TmnCustomHeaderItem(Sender).Name), Trim(AValue))
   else
     TmnCustomHeaderItem(Sender).Add(Trim(AName), Trim(AValue));
 end;
@@ -346,7 +345,7 @@ end;
 function TmnCustomHeaderItem.Add(AName, AValue: string): TmnCustomHeaderItem;
 begin
   Result := CreateItem;
-  Result.FName := AName;
+  Result.Name := AName;
   Result.FText := AValue;
 end;
 
@@ -420,7 +419,7 @@ end;
 
 constructor TmnHeaderSubItem.Create;
 begin
-  FDelimiter := ';';
+  FDelimiter := ',';
   FValueSeparator := '=';
 end;
 
@@ -434,7 +433,7 @@ end;
 constructor TmnHeaderItem.Create;
 begin
   inherited Create;
-  FDelimiter := ',';
+  FDelimiter := ';';
   FValueSeparator := '=';
 end;
 

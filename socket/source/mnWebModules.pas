@@ -69,7 +69,6 @@ type
     FContentLength: Integer;
     FCompressClass: TmnCompressStreamProxyClass;
     FCompressProxy: TmnCompressStreamProxy;
-    FCookies: TmnParams;
     FRoot: string; //Document root folder
     FHost: string;
     FHttpResult: THttpResult;
@@ -82,7 +81,6 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    property Cookies: TmnParams read FCookies;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     //Compress on the fly, now we use deflate
     property ContentLength: Integer read FContentLength write FContentLength;
@@ -337,14 +335,12 @@ end;
 constructor TmodHttpRespond.Create;
 begin
   inherited Create;
-  FCookies := TmnParams.Create;
-  FCookies.Delimiter := ';';
   FHttpResult := hrNone;
 end;
 
 destructor TmodHttpRespond.Destroy;
 begin
-  FreeAndNil(FCookies);
+
   inherited Destroy;
 end;
 
@@ -367,8 +363,6 @@ end;
 procedure TmodHttpRespond.DoSendHeader;
 begin
   inherited;
-  if Cookies.Count > 0 then
-    AddHeader('Cookies', Cookies.AsString);
 end;
 
 function TmodHttpRespond.HeadText: string;

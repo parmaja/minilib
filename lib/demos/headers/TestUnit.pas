@@ -1,6 +1,8 @@
 unit TestUnit;
 
+{$ifdef fpc}
 {$mode delphi}{$H+}
+{$endif}
 
 interface
 
@@ -14,11 +16,13 @@ implementation
 procedure RunTest;
 var
   Header: TmnHeader;
+  itm: TmnCustomHeaderItem;
+  s: string;
 begin
   Header := TmnHeader.Create;
   try
     Header.Add('Host: www.domain.com');
-    Header.Add('User-Agent', 'UserAgent; Mozilla; Ver12354654');
+    Header.Add('User-Agent', 'windows; Mozilla; Ver12354654');
     WriteLn(Header.Count);
 
 
@@ -26,7 +30,16 @@ begin
     WriteLn(Header.Values['Host']);
     WriteLn(Header.Values['User-Agent']);
 
+
+
     WriteLn(Header['Host'].Value);
+    WriteLn(Header['User-Agent'].Value);
+    WriteLn(Header['User-Agent'].Items[1].Text);
+    for itm in  Header['User-Agent'].Items do
+      WriteLn(itm.Name);
+
+    //s := Header['User-Agent'];
+
 
 
     (*Header.Values['Host'] := 'www.domain.com';

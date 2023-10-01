@@ -54,12 +54,16 @@ type
   private
     FHeader: TmnHeader;
     FStream: TmnBufferStream;
+    FCookies: TStrings;
     procedure SetHeader(const AValue: TmnHeader);
   public
     constructor Create;
     destructor Destroy; override;
     property Stream: TmnBufferStream read FStream write FStream;
     property Header: TmnHeader read FHeader;
+    property Cookies: TStrings read FCookies;
+
+    procedure ReadHeader(Stream: TmnBufferStream);
   end;
 
   TmodRequestInfo = record
@@ -268,7 +272,7 @@ type
     procedure PrepareRequest(ARequest: TmodRequest);
     function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
-    procedure ReadHeader(AHeader: TmnHeader; Stream: TmnBufferStream); virtual;
+    procedure ReadHeader(ARequest: TmodRequest; Stream: TmnBufferStream); virtual;
     function RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
     procedure Log(S: String); virtual;
     procedure Start; virtual;
@@ -573,6 +577,12 @@ begin
     s := item.GetNameValue(': ');
     //WriteLn(s);
     Stream.WriteLineUTF8(S);
+  end;
+
+  if Cookies.Count<>0 then
+  begin
+    for S in Cookies do
+      Stream.WriteLineUTF8('Set-Cookie: ' + S);
   end;
 
   DoSendHeader; //enter after
@@ -897,11 +907,13 @@ begin
 
 end;
 
-procedure TmodModule.ReadHeader(AHeader: TmnHeader; Stream: TmnBufferStream);
+procedure TmodModule.ReadHeader(ARequest: TmodRequest; Stream: TmnBufferStream);
 begin
   if Stream <> nil then
   begin
-    AHeader.ReadHeader(Stream);
+    ARequest.ReadHeader(Stream);
+
+
   end;
 end;
 
@@ -996,7 +1008,7 @@ begin
   Result.Status := [mrSuccess];
 
 
-  ReadHeader(ARequest.Header, ARequestStream);
+  ReadHeader(ARequest, ARequestStream);
 
   aCmd := RequestCommand(ARequest, ARequestStream, ARespondStream);
 
@@ -1206,12 +1218,22 @@ constructor TmodCommunicate.Create;
 begin
   inherited Create;
   FHeader := TmnHeader.Create;
+  FCookies := TStringList.Create;
+  FCookies.Delimiter := ';';
 end;
 
 destructor TmodCommunicate.Destroy;
 begin
   FreeAndNil(FHeader);
+  FreeAndNil(FCookies);
   inherited;
+end;
+
+procedure TmodCommunicate.ReadHeader(Stream: TmnBufferStream);
+begin
+  Header.ReadHeader(Stream);
+
+  Cookies.DelimitedText := Header['Cookie'];
 end;
 
 procedure TmodCommunicate.SetHeader(const AValue: TmnHeader);
