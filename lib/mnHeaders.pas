@@ -49,16 +49,17 @@ uses
 type
   TmnHeaderItemOption = (
 	  hoMultiItem,  // can have more than one item
+    hoList, // no names just values set into name not value
+    hoGroupValues,
     hoEmptyValues
-
 	);
   TmnHeaderItemOptions = set of TmnHeaderItemOption;
 
   TmnHeaderList = class;
 
-  { TmnCustomHeaderItem }
+  { TmnHeaderItem }
 
-  TmnCustomHeaderItem = class abstract(TmnNamedObject)
+  TmnHeaderItem = class(TmnNamedObject)
   private
     FText: string;
     FDelimiter: Char;
@@ -71,21 +72,21 @@ type
 
       TmnHeaderItemsEnumerator = class(TObject)
       private
-        FList: TmnCustomHeaderItem;
+        FList: TmnHeaderItem;
         FIndex: Integer;
       public
-        constructor Create(AList: TmnCustomHeaderItem);
-        function GetCurrent: TmnCustomHeaderItem;
+        constructor Create(AList: TmnHeaderItem);
+        function GetCurrent: TmnHeaderItem;
         function MoveNext: Boolean;
-        property Current: TmnCustomHeaderItem read GetCurrent;
+        property Current: TmnHeaderItem read GetCurrent;
       end;
 
     function GetAsInteger: Integer;
-    function GetItemByName(Index: string): TmnCustomHeaderItem;
-    function GetItemByIndex(Index: Integer): TmnCustomHeaderItem;
+    function GetItemByName(Index: string): TmnHeaderItem;
+    function GetItemByIndex(Index: Integer): TmnHeaderItem;
     function GetItems: TmnHeaderList;
     function GetText: string;
-    function GetValue: string; virtual;
+    function GetValue: string;
     function GetValues(const vName: string): string;
     procedure SetText(AValue: string);
     procedure SetNameValue(const AName, AValue: string);
@@ -94,7 +95,7 @@ type
     Options: TmnHeaderItemOptions;
     procedure RequireItems;
     procedure Parse(AValue: String); virtual;
-    function CreateItem: TmnCustomHeaderItem; virtual;
+    function CreateItem: TmnHeaderItem; virtual;
     function GetCount: Integer;
   public
     constructor Create; virtual;
@@ -106,13 +107,13 @@ type
     procedure Clear;
 
     property AsInteger: Integer read GetAsInteger;
-    function Find(AName: String): TmnCustomHeaderItem; inline;
+    function Find(AName: String): TmnHeaderItem; inline;
 		function Have(AName: String): Boolean; inline;
     function IsExists: Boolean;
-    function AddItem(AName, AValue: string): TmnCustomHeaderItem; virtual;
-    function Change(AName, AValue: String): TmnCustomHeaderItem;
+    function AddItem(AName, AValue: string): TmnHeaderItem; virtual;
+    function Change(AName, AValue: String): TmnHeaderItem;
 
-    //class operator Implicit(n: TmnCustomHeaderItem): string;
+    //class operator Implicit(n: TmnHeaderItem): string;
 
     property Delimiter: Char read FDelimiter;
     property ValueSeparator: Char read FValueSeparator;
@@ -122,29 +123,25 @@ type
 
     property Items: TmnHeaderList read GetItems;
     property Values[const vName: string]: string read GetValues write SetValues;
-		property Item[Index: string]: TmnCustomHeaderItem read GetItemByName; default;
-    property ItemByIndex[Index: Integer]: TmnCustomHeaderItem read GetItemByIndex; {$ifndef FPC} default; {$endif Delphi}
+		property Item[Index: string]: TmnHeaderItem read GetItemByName; default;
+    property ItemByIndex[Index: Integer]: TmnHeaderItem read GetItemByIndex; //{$ifndef FPC} default; {$endif Delphi}
   end;
 
-  TmnCustomHeaderItemClass = class of TmnCustomHeaderItem;
+  TmnCustomHeaderItemClass = class of TmnHeaderItem;
 
   { TmnHeaderListItem }
 
-  TmnHeaderListItem = class(TmnCustomHeaderItem)
+  TmnHeaderListItem = class(TmnHeaderItem)
   protected
-    function CreateItem: TmnCustomHeaderItem; override;
-  public
-    constructor Create; override;
-  end;
-
-  TmnHeaderItem = class(TmnCustomHeaderItem)
+    function CreateItem: TmnHeaderItem; override;
+    procedure Parse(AValue: string); override;
   public
     constructor Create; override;
   end;
 
   { TmnHeaderList }
 
-  TmnHeaderList = class(TmnNamedObjectList<TmnCustomHeaderItem>)
+  TmnHeaderList = class(TmnNamedObjectList<TmnHeaderItem>)
   private
   public
   end;
@@ -168,13 +165,13 @@ type
   protected
     Dictionary: TmnHeaderDictionary;
   public
-    constructor Create; virtual;
+    constructor Create; override;
     destructor Destroy; override;
     procedure RegisterDictionary(const AName: string; AItemClass: TmnCustomHeaderItemClass; AOption: TmnHeaderItemOptions);
-    procedure CreateSubItem(const AName, AValue: string; out AItem: TmnCustomHeaderItem);
-    function Add(const S: string; TrimIt: Boolean = True): TmnCustomHeaderItem; overload;
-    function Add(const AName, AValue: string): TmnCustomHeaderItem; overload;
-    function AddItem(AName, AValue: string): TmnCustomHeaderItem; override;
+    procedure CreateSubItem(const AName, AValue: string; out AItem: TmnHeaderItem);
+    function Add(const S: string; TrimIt: Boolean = True): TmnHeaderItem; overload;
+    function Add(const AName, AValue: string): TmnHeaderItem; overload;
+    function AddItem(AName, AValue: string): TmnHeaderItem; override;
     procedure ReadHeader(Stream: TmnBufferStream);
     procedure WriteHeader(Stream: TmnBufferStream);
   end;
@@ -184,18 +181,33 @@ type
   THeader_ContentType = class(TmnHeaderListItem)
   public
     procedure Created; override;
-    function CreateItem: TmnCustomHeaderItem; override;
-    procedure Parse(AValue: string); override;
+    function CreateItem: TmnHeaderItem; override;
+  end;
+
+  { THeader_AcceptEncoding }
+
+  THeader_AcceptEncoding = class(TmnHeaderListItem)
+  public
+    procedure Created; override;
+    function CreateItem: TmnHeaderItem; override;
+  end;
+
+  { TmnWebHeader }
+
+  TmnWebHeader = class(TmnHeader)
+  public
+    constructor Create; override;
   end;
 
 implementation
 
 procedure ParseHeadersCallback(Sender: Pointer; Index: Integer; AName, AValue: string; IsSwitch: Boolean; var Resume: Boolean);
 begin
-  if (Index = 0) and (AName = '') then
-    TmnCustomHeaderItem(Sender).AddItem(Trim(TmnCustomHeaderItem(Sender).Name), Trim(AValue))
+  //if (Index = 0) and (AName = '') then
+  if (AName = '') then
+    TmnHeaderItem(Sender).AddItem(Trim(TmnHeaderItem(Sender).Name), Trim(AValue))
   else
-    TmnCustomHeaderItem(Sender).AddItem(Trim(AName), Trim(AValue));
+    TmnHeaderItem(Sender).AddItem(Trim(AName), Trim(AValue));
 end;
 
 { TmnHeader }
@@ -225,7 +237,7 @@ begin
   Dictionary.Add(AItem);
 end;
 
-procedure TmnHeader.CreateSubItem(const AName, AValue: string; out AItem: TmnCustomHeaderItem);
+procedure TmnHeader.CreateSubItem(const AName, AValue: string; out AItem: TmnHeaderItem);
 var
   c: TmnHeaderDictionaryItem;
 begin
@@ -241,7 +253,7 @@ begin
   AItem.Text := AValue;
 end;
 
-function TmnHeader.Add(const S: string; TrimIt: Boolean): TmnCustomHeaderItem;
+function TmnHeader.Add(const S: string; TrimIt: Boolean): TmnHeaderItem;
 var
   p: Integer;
   aName: string;
@@ -263,13 +275,13 @@ begin
   Result := Add(AName, AValue);
 end;
 
-function TmnHeader.Add(const AName, AValue: string): TmnCustomHeaderItem;
+function TmnHeader.Add(const AName, AValue: string): TmnHeaderItem;
 begin
   CreateSubItem(AName, AValue, Result);
   FItems.Add(Result);
 end;
 
-function TmnHeader.AddItem(AName, AValue: string): TmnCustomHeaderItem;
+function TmnHeader.AddItem(AName, AValue: string): TmnHeaderItem;
 begin
   Result := Add(AName, AValue);
 end;
@@ -295,7 +307,7 @@ end;
 
 procedure TmnHeader.WriteHeader(Stream: TmnBufferStream);
 var
-  f: TmnCustomHeaderItem;
+  f: TmnHeaderItem;
 begin
   for f in Self do
     Stream.WriteLineUTF8(f.Collect);
@@ -310,26 +322,46 @@ begin
   FValueSeparator := '=';
 end;
 
-function THeader_ContentType.CreateItem: TmnCustomHeaderItem;
+function THeader_ContentType.CreateItem: TmnHeaderItem;
 begin
   Result := TmnHeaderItem.Create;
   Result.FDelimiter := ',';
+  Result.FValueSeparator := #0;
 end;
 
-procedure THeader_ContentType.Parse(AValue: string);
+{ THeader_AcceptEncoding }
+
+procedure THeader_AcceptEncoding.Created;
 begin
-  FItems.Clear;
-  ParseArgumentsCallback(AValue, @ParseHeadersCallback, Self, [], [pargValues, pargDeqoute], [Delimiter], [' ', #9], ['"', ''''], [FValueSeparator]);
+  inherited;
+  FDelimiter := ',';
+  FValueSeparator := #0;
 end;
 
-{ TmnCustomHeaderItem }
+function THeader_AcceptEncoding.CreateItem: TmnHeaderItem;
+begin
+  Result := TmnHeaderListItem.Create;
+  Result.FDelimiter := ';';
+  Result.FValueSeparator := '=';
+end;
 
-function TmnCustomHeaderItem.GetItems: TmnHeaderList;
+{ TmnWebHeader }
+
+constructor TmnWebHeader.Create;
+begin
+  inherited;
+  RegisterDictionary('Content-Type', THeader_ContentType, []);
+  RegisterDictionary('Accept-Encoding', THeader_AcceptEncoding, []);
+end;
+
+{ TmnHeaderItem }
+
+function TmnHeaderItem.GetItems: TmnHeaderList;
 begin
   Result := FItems;
 end;
 
-function TmnCustomHeaderItem.GetText: string;
+function TmnHeaderItem.GetText: string;
 begin
   if Self = nil then
     Result := ''
@@ -337,48 +369,49 @@ begin
     Result := FText;
 end;
 
-function TmnCustomHeaderItem.GetValue: string;
+function TmnHeaderItem.GetValue: string;
 begin
   if Self = nil then
     Result := ''
   else
   begin
     if FItems <> nil then
-      Result := Item[Name].Text
+    begin
+      Result := Item[Name].Value;
+    end
     else
       Result := FText;
   end;
 end;
 
-function TmnCustomHeaderItem.GetValues(const vName: string): string;
+function TmnHeaderItem.GetValues(const vName: string): string;
 begin
   Result := Find(vName).Value;
 end;
 
-procedure TmnCustomHeaderItem.SetText(AValue: string);
+procedure TmnHeaderItem.SetText(AValue: string);
 begin
   if FText =AValue then
 	  Exit;
   FText := AValue;
-  if FItems <> nil then
-    Parse(AValue);
+  Parse(AValue);
 end;
 
-procedure TmnCustomHeaderItem.SetNameValue(const AName, AValue: string);
+procedure TmnHeaderItem.SetNameValue(const AName, AValue: string);
 begin
   Name := AName;
   Text := AValue;
 end;
 
-procedure TmnCustomHeaderItem.SetValues(const AName: string; AValue: string);
+procedure TmnHeaderItem.SetValues(const AName: string; AValue: string);
 var
-  AItem: TmnCustomHeaderItem;
+  AItem: TmnHeaderItem;
 begin
   AItem := Find(AName);
   if (AItem = nil) then
   begin
 	  if (AValue <> '') or (hoEmptyValues in Options) then
-      AItem := AddItem(AName, AValue)
+      AddItem(AName, AValue)
   end
   else
   begin
@@ -389,12 +422,12 @@ begin
   end;
 end;
 
-procedure TmnCustomHeaderItem.RequireItems;
+procedure TmnHeaderItem.RequireItems;
 begin
   FItems := TmnHeaderList.Create(0);
 end;
 
-function TmnCustomHeaderItem.GetItemByName(Index: string): TmnCustomHeaderItem;
+function TmnHeaderItem.GetItemByName(Index: string): TmnHeaderItem;
 begin
   if Index = '' then
     Result := Find(Name)
@@ -402,84 +435,84 @@ begin
     Result := Find(Index);
 end;
 
-function TmnCustomHeaderItem.GetItemByIndex(Index: Integer): TmnCustomHeaderItem;
+function TmnHeaderItem.GetItemByIndex(Index: Integer): TmnHeaderItem;
 begin
   Result := Items[Index];
 end;
 
-function TmnCustomHeaderItem.GetAsInteger: Integer;
+function TmnHeaderItem.GetAsInteger: Integer;
 begin
   Result := StrToIntDef(Value, 0);
 end;
 
-procedure TmnCustomHeaderItem.Parse(AValue: String);
+procedure TmnHeaderItem.Parse(AValue: String);
 begin
   FText := AValue;
 end;
 
-constructor TmnCustomHeaderItem.Create;
+constructor TmnHeaderItem.Create;
 begin
   inherited Create;
   FDelimiter := ';';
   FValueSeparator := '=';
 end;
 
-destructor TmnCustomHeaderItem.Destroy;
+destructor TmnHeaderItem.Destroy;
 begin
   FreeAndNil(FItems);
   inherited Destroy;
 end;
 
-function TmnCustomHeaderItem.CreateItem: TmnCustomHeaderItem;
+function TmnHeaderItem.CreateItem: TmnHeaderItem;
 begin
   Result := nil;
 end;
 
-function TmnCustomHeaderItem.GetNameValue(ADelimiter: string): String;
+function TmnHeaderItem.GetNameValue(ADelimiter: string): String;
 begin
   if ADelimiter = '' then
     ADelimiter := Delimiter;
   Result := Name + ADelimiter + Value;
 end;
 
-function TmnCustomHeaderItem.Collect: string;
+function TmnHeaderItem.Collect: string;
 begin
 
 end;
 
-procedure TmnCustomHeaderItem.Clear;
+procedure TmnHeaderItem.Clear;
 begin
   if FItems <> nil then
     FItems.Clear;
 end;
 
-function TmnCustomHeaderItem.Find(AName: String): TmnCustomHeaderItem;
+function TmnHeaderItem.Find(AName: String): TmnHeaderItem;
 begin
-  if FItems <> nil then
+  if (Self <> nil) and (FItems <> nil) then
     Result := Items.Find(AName)
   else
     Result := nil
 end;
 
-function TmnCustomHeaderItem.Have(AName: String): Boolean;
+function TmnHeaderItem.Have(AName: String): Boolean;
 begin
   Result := Find(AName) <> nil;
 end;
 
-function TmnCustomHeaderItem.IsExists: Boolean;
+function TmnHeaderItem.IsExists: Boolean;
 begin
-  Result := Self = nil;
+  Result := Self <> nil;
 end;
 
-function TmnCustomHeaderItem.AddItem(AName, AValue: string): TmnCustomHeaderItem;
+function TmnHeaderItem.AddItem(AName, AValue: string): TmnHeaderItem;
 begin
   Result := CreateItem;
   Result.Name := AName;
-  Result.FText := AValue;
+  Result.Text := AValue;
   Items.Add(Result);
 end;
 
-function TmnCustomHeaderItem.Change(AName, AValue: String): TmnCustomHeaderItem;
+function TmnHeaderItem.Change(AName, AValue: String): TmnHeaderItem;
 begin
   Result := Find(AName);
   if Result = nil then
@@ -488,36 +521,36 @@ begin
     Result.Text := AValue;
 end;
 
-{ TmnCustomHeaderItem }
+{ TmnHeaderItem }
 
-function TmnCustomHeaderItem.GetCount: Integer;
+function TmnHeaderItem.GetCount: Integer;
 begin
-  if FItems <> nil then
+  if (Self<> nil) and (FItems <> nil) then
     Result := FItems.Count
   else
     Result := 0;
 end;
 
-function TmnCustomHeaderItem.GetEnumerator: TmnHeaderItemsEnumerator;
+function TmnHeaderItem.GetEnumerator: TmnHeaderItemsEnumerator;
 begin
   Result := TmnHeaderItemsEnumerator.Create(Self);
 end;
 
-{ TmnCustomHeaderItem.TmnHeaderItemsEnumerator }
+{ TmnHeaderItem.TmnHeaderItemsEnumerator }
 
-constructor TmnCustomHeaderItem.TmnHeaderItemsEnumerator.Create(AList: TmnCustomHeaderItem);
+constructor TmnHeaderItem.TmnHeaderItemsEnumerator.Create(AList: TmnHeaderItem);
 begin
   inherited Create;
   FList := AList;
   FIndex := -1;
 end;
 
-function TmnCustomHeaderItem.TmnHeaderItemsEnumerator.GetCurrent: TmnCustomHeaderItem;
+function TmnHeaderItem.TmnHeaderItemsEnumerator.GetCurrent: TmnHeaderItem;
 begin
   Result := FList.Items[FIndex];
 end;
 
-function TmnCustomHeaderItem.TmnHeaderItemsEnumerator.MoveNext: Boolean;
+function TmnHeaderItem.TmnHeaderItemsEnumerator.MoveNext: Boolean;
 begin
   Inc(FIndex);
   Result := FIndex < FList.Count;
@@ -525,10 +558,33 @@ end;
 
 { TmnHeaderListItem }
 
-function TmnHeaderListItem.CreateItem: TmnCustomHeaderItem;
+function TmnHeaderListItem.CreateItem: TmnHeaderItem;
 begin
   Result := TmnHeaderItem.Create;
-  Items.Add(Result);
+end;
+
+procedure TmnHeaderListItem.Parse(AValue: string);
+var
+  aValueSeparators: TSysCharSet;
+  aDelimiters: TSysCharSet;
+  aOptions: TParseArgumentsOptions;
+begin
+  FItems.Clear;
+  if Delimiter = #0 then
+    aDelimiters := []
+  else
+    aDelimiters := [Delimiter];
+
+  if ValueSeparator = #0 then
+    aValueSeparators := []
+  else
+    aValueSeparators := [ValueSeparator];
+
+  aOptions := [pargDeqoute];
+  if not (hoList in Options) then
+    aOptions := aOptions + [pargValues];
+
+  ParseArgumentsCallback(AValue, @ParseHeadersCallback, Self, [], aOptions, aDelimiters, [' ', #9], ['"', ''''], aValueSeparators);
 end;
 
 constructor TmnHeaderListItem.Create;
@@ -537,13 +593,5 @@ begin
   RequireItems;
 end;
 
-{ TmnHeaderItem }
-
-constructor TmnHeaderItem.Create;
-begin
-  inherited;
-  FDelimiter := #0;
-  FValueSeparator := #0;
-end;
 
 end.

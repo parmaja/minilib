@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams, mnMultipartData, mnHttpClient, mnWebModules, mnFields,
+  mnUtils, mnStreams, mnMultipartData, mnHttpClient, mnWebModules, mnFields, mnHeaders,
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 {$ifdef GUI}
@@ -719,7 +719,7 @@ var
   m: TStringStream;
   c: TmnHttpClient;
   s: string;
-  h: TmnField;
+  h: TmnHeaderItem;
 begin
   //https://documenter.getpostman.com/view/5025623/SWTG5aqV
   m := TStringStream.Create;
@@ -768,10 +768,10 @@ begin
     aFormData := TmnMultipartData.Create;
     try
       //aFormData.Read(Stream);
-      aFormData.ReadCallback(Stream);
+      aFormData.Read(Stream);
       for aItm in aFormData do
       begin
-        Writeln(aItm.Header.AsString);
+        Writeln(aItm.Header.Collect);
         Writeln(aItm.Name);
       end;
 
@@ -848,7 +848,7 @@ procedure TTestStream.ExampleBIOPostmanEcho;
 var
   c: TmnBIOHttpClient;
   s: string;
-  h: TmnField;
+  h: TmnHeaderItem;
 begin
   //https://documenter.getpostman.com/view/5025623/SWTG5aqV
   c := TmnBIOHttpClient.Create;
@@ -963,7 +963,7 @@ var
   m: TStringStream;
   c: TmnHttpClient;
   s: string;
-  h: TmnField;
+  h: TmnHeaderItem;
 begin
   m := TStringStream.Create;
   c := TmnHttpClient.Create;
