@@ -17,24 +17,29 @@ procedure RunTest;
 var
   Header: TmnHeader;
   itm: TmnCustomHeaderItem;
-  s: string;
 begin
   Header := TmnHeader.Create;
   try
+    Header.RegisterDictionary('Content-Type', THeader_ContentType, []);
+    //Header.Add('Content-Type: multipart/form-data; boundary=0123456789');
+    Header.Values['Content-Type'] := 'multipart/form-data; boundary=0123456789';
     Header.Add('Host: www.domain.com');
     Header.Add('User-Agent', 'windows; Mozilla; Ver12354654');
+    Header.Values['Age'] := '24';
     WriteLn(Header.Count);
-
 
     WriteLn(Header.Items[0].Name + ': ' + Header.Items[0].Text);
     WriteLn(Header.Values['Host']);
+    WriteLn(Header.Values['Age']);
     WriteLn(Header.Values['User-Agent']);
 
     WriteLn(Header['Host'].Value);
     WriteLn(Header['User-Agent'].Value);
-    WriteLn(Header['User-Agent'].Items[1].Text);
-    for itm in  Header['User-Agent'].Items do
-      WriteLn(itm.Name);
+    WriteLn(Header['Content-Type'].Value);
+    WriteLn(Header['Content-Type'][''].Value);
+    WriteLn(Header['Content-Type']['boundary'].Value);
+    for itm in  Header['Content-Type'] do
+      WriteLn('> '+itm.Name);
 
     //s := Header['User-Agent'];
 

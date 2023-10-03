@@ -48,7 +48,8 @@ uses
 
 type
   TmnHeaderItemOption = (
-	  hoMultiItem  // can have more than one item
+	  hoMultiItem,  // can have more than one item
+    hoEmptyValues
 
 	);
   TmnHeaderItemOptions = set of TmnHeaderItemOption;
@@ -90,7 +91,7 @@ type
     procedure SetNameValue(const AName, AValue: string);
     procedure SetValues(const AName: string; AValue: string);
   protected
-    Option: TmnHeaderItemOptions;
+    Options: TmnHeaderItemOptions;
     procedure RequireItems;
     procedure Parse(AValue: String); virtual;
     function CreateItem: TmnCustomHeaderItem; virtual;
@@ -230,7 +231,10 @@ var
 begin
   c := Dictionary.Find(AName);
   if c <> nil then
-    AItem := c.ItemClass.Create
+  begin
+    AItem := c.ItemClass.Create;
+    AItem.Options := c.Options;
+  end
   else
     AItem := TmnHeaderItem.Create;
   AItem.Name := AName;
@@ -278,7 +282,7 @@ begin
   begin
     while not (cloRead in Stream.Done) do
     begin
-      line := UTF8ToString(Stream.ReadLineUTF8);
+      line := UTF8Decode(Stream.ReadLineUTF8);
       if line = '' then
         break
       else
@@ -363,20 +367,26 @@ end;
 procedure TmnCustomHeaderItem.SetNameValue(const AName, AValue: string);
 begin
   Name := AName;
-  FText := AValue;
+  Text := AValue;
 end;
 
 procedure TmnCustomHeaderItem.SetValues(const AName: string; AValue: string);
 var
-  Item: TmnCustomHeaderItem;
+  AItem: TmnCustomHeaderItem;
 begin
-  Item := Find(AName);
-  if Item = nil then
-    Item := AddItem(AName, AValue)
+  AItem := Find(AName);
+  if (AItem = nil) then
+  begin
+	  if (AValue <> '') or (hoEmptyValues in Options) then
+      AItem := AddItem(AName, AValue)
+  end
   else
-    Item.SetNameValue(AName, AValue)
-
-  //Items.SetItem(vName);
+  begin
+    if (AValue = '') and not (hoEmptyValues in Options) then
+      Items.Remove(AItem)
+    else
+      AItem.SetNameValue(AName, AValue)
+  end;
 end;
 
 procedure TmnCustomHeaderItem.RequireItems;
