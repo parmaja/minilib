@@ -30,8 +30,6 @@ begin
     WriteLn(Header.Values['Host']);
     WriteLn(Header.Values['User-Agent']);
 
-
-
     WriteLn(Header['Host'].Value);
     WriteLn(Header['User-Agent'].Value);
     WriteLn(Header['User-Agent'].Items[1].Text);

@@ -284,10 +284,17 @@ type
   //If set Resume to false it will stop loop
   TEnumFilesCallback = procedure(AObject: TObject; const FileName: string; Count, Level:Integer; IsDirectory: Boolean; var Resume: Boolean);
 
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
-function FirstFile(Path, Files: string): string;
-function DeleteFiles(Path, Files: string): Integer;
+procedure EnumFiles(FileList: TStrings; const Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
+function FirstFile(const Path, Files: string): string;
+function DeleteFiles(const Path, Files: string): Integer;
 function GetSizeOfFile(const vFile: string): Int64; //GetFileSize
+
+//mnMulDiv not using windows unit
+function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer; overload;
+function mnMulDiv(nNumber, nNumerator, nDenominator: Int64): Int64; overload;
+//propblem round(10.5) -> 10
+function mnRound(nNumber: Double): Int64; overload;
+
 
 var
   SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
@@ -1953,13 +1960,14 @@ begin
     Result := -1;
 end;
 
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions); overload;
+procedure EnumFiles(FileList: TStrings; const Folder, Filter: string; Options: TEnumFilesOptions); overload;
 var
   R: integer;
   SearchRec: TSearchRec;
+  aFolder: string;
 begin
-  Folder := IncludeTrailingPathDelimiter(Folder);
-  R := FindFirst(Folder + Filter, faAnyFile, SearchRec);
+  aFolder := IncludeTrailingPathDelimiter(Folder);
+  R := FindFirst(aFolder + Filter, faAnyFile, SearchRec);
   while R = 0 do
   begin
     if (((efDirectory in Options) and ((SearchRec.Attr and faDirectory) = faDirectory))
@@ -1967,7 +1975,7 @@ begin
       and ((SearchRec.Name <> '.') and (SearchRec.Name <> '..')) then
     begin
       if efFullPath in Options then
-        FileList.Add(Folder + SearchRec.Name)
+        FileList.Add(aFolder + SearchRec.Name)
       else
         FileList.Add(SearchRec.Name);
     end;
@@ -1976,7 +1984,7 @@ begin
   FindClose(SearchRec);
 end;
 
-function DeleteFiles(Path, Files: string): Integer;
+function DeleteFiles(const Path, Files: string): Integer;
 var
   FileList: TStringList;
   f: string;
@@ -1992,7 +2000,7 @@ begin
   end;
 end;
 
-function FirstFile(Path, Files: string): string;
+function FirstFile(const Path, Files: string): string;
 var
   FileList: TStringList;
 begin
@@ -2007,6 +2015,69 @@ begin
     FileList.Free;
   end;
 end;
+
+function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer; overload;
+const
+  Size = SizeOf(Integer);
+  Half = 1 shl (Size - 1);
+
+begin
+  var x := nNumber * nNumerator;
+  var r := x mod nDenominator; //Reaminder
+
+  Result := x div nDenominator;
+
+  if r<>0 then
+  begin
+    if r < 0 then r := - r;
+    var Temp := (r shl Size) div nDenominator;
+    if (Temp >= Half) then
+    begin
+      if Result < 0 then
+        Dec(Result)
+      else
+        Inc(Result);
+    end;
+  end;
+end;
+
+function mnMulDiv(nNumber, nNumerator, nDenominator: Int64): Int64; overload;
+const
+  Size = SizeOf(Int64);
+  Half = UInt64(1) shl (Size-1);
+
+var
+  Reaminder: Int64;
+  Temp: UInt64;
+begin
+  Result := MulDivInt64(nNumber, nNumerator, nDenominator, Reaminder);
+  if Reaminder<>0 then
+  begin
+    if Reaminder < 0 then Reaminder := - Reaminder;
+    Temp := UInt64(Reaminder shl Size) div UInt64(nDenominator);
+    if (Temp >= Half) then
+    begin
+      if Result < 0 then
+        Dec(Result)
+      else
+        Inc(Result);
+    end;
+  end;
+end;
+
+function mnRound(nNumber: Double): Int64; overload;
+begin
+  Result := Trunc(nNumber);
+  if Abs(Frac(nNumber))>=0.5 then
+  begin
+    if Result<0 then
+      Dec(Result)
+    else
+      Inc(Result);
+  end;
+
+end;
+
 
 initialization
   {$ifdef windows}

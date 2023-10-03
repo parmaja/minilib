@@ -172,6 +172,8 @@ type
     procedure PutHeader(AName, AValue: String);
 
     procedure SendHeader;
+
+    procedure ContentSent; virtual;
   end;
 
   TmodModule = class;
@@ -272,7 +274,8 @@ type
     procedure PrepareRequest(ARequest: TmodRequest);
     function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
-    procedure ReadHeader(ARequest: TmodRequest; Stream: TmnBufferStream); virtual;
+    procedure DoReadHeader(ARequest: TmodRequest); virtual;
+    procedure ReadHeader(ARequest: TmodRequest; Stream: TmnBufferStream);
     function RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
     procedure Log(S: String); virtual;
     procedure Start; virtual;
@@ -518,6 +521,14 @@ begin
   end;
 
   AddHeader(AName, t);
+end;
+
+procedure TmodRespond.ContentSent;
+begin
+  if not (resHeaderSent in FStates) then
+    raise TmodModuleException.Create('Header is not sent');
+
+  FStates := FStates + [resContentsSent];
 end;
 
 constructor TmodRespond.Create;
@@ -912,8 +923,7 @@ begin
   if Stream <> nil then
   begin
     ARequest.ReadHeader(Stream);
-
-
+    DoReadHeader(ARequest);
   end;
 end;
 
@@ -977,6 +987,11 @@ begin
   ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
 end;
 
+procedure TmodModule.DoReadHeader(ARequest: TmodRequest);
+begin
+
+end;
+
 procedure TmodModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
 begin
   vMatch := (AliasName<>'') and (ARequest.Route[0] = AliasName);
@@ -1035,6 +1050,8 @@ procedure TmodModule.PrepareRequest(ARequest: TmodRequest);
 begin
   ARequest.Path := ARequest.Address;
   ARequest.Params.Clear;
+  ParseQuery(ARequest.Query, ARequest.Params);
+
   ARequest.Params['Module'] := AliasName;
   DoPrepareRequest(ARequest);
 end;

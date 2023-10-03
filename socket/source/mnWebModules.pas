@@ -50,8 +50,8 @@ type
     hrNone,
     hrOK,
     hrError,
-    hrMovedTemporarily, //307
     hrFound, //302
+    hrMovedTemporarily, //307
     hrNotFound,
     hrSwitchingProtocols,
     hrServiceUnavailable
@@ -757,7 +757,6 @@ var
   Key: string;
 begin
   inherited;
-  ParseQuery(Request.Query, Request.Params);
 
   //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
   Key := Request.Header.ReadString('Sec-WebSocket-Key');
