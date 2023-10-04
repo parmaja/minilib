@@ -1017,6 +1017,7 @@ begin
         IsSwitch := False;
         Index := Index + 1;
         Inc(Result);
+
         if not Resume then
           break;
       end;
@@ -2016,21 +2017,22 @@ begin
   end;
 end;
 
-function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer; overload;
+function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer;
 const
   Size = SizeOf(Integer);
   Half = 1 shl (Size - 1);
-
+var
+  Temp, x, r: Integer;
 begin
-  var x := nNumber * nNumerator;
-  var r := x mod nDenominator; //Reaminder
+  x := nNumber * nNumerator;
+  r := x mod nDenominator; //Reaminder
 
   Result := x div nDenominator;
 
-  if r<>0 then
+  if r <> 0 then
   begin
     if r < 0 then r := - r;
-    var Temp := (r shl Size) div nDenominator;
+    Temp := (r shl Size) div nDenominator;
     if (Temp >= Half) then
     begin
       if Result < 0 then
@@ -2045,15 +2047,14 @@ function mnMulDiv(nNumber, nNumerator, nDenominator: Int64): Int64; overload;
 const
   Size = SizeOf(Int64);
   Half = UInt64(1) shl (Size-1);
-
 var
   Reaminder: Int64;
   Temp: UInt64;
 begin
-  Result := MulDivInt64(nNumber, nNumerator, nDenominator, Reaminder);
-  if Reaminder<>0 then
+  //Result := MulDivInt64(nNumber, nNumerator, nDenominator, Reaminder);
+  if Reaminder <> 0 then
   begin
-    if Reaminder < 0 then Reaminder := - Reaminder;
+    if Reaminder < 0 then Reaminder := -Reaminder;
     Temp := UInt64(Reaminder shl Size) div UInt64(nDenominator);
     if (Temp >= Half) then
     begin
