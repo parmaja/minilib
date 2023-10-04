@@ -2048,14 +2048,23 @@ const
   Size = SizeOf(Int64);
   Half = UInt64(1) shl (Size-1);
 var
-  Reaminder: Int64;
+  r: Int64;
   Temp: UInt64;
+  {$ifdef FPC}
+  x: Int64;
+  {$endif}
 begin
-  //Result := MulDivInt64(nNumber, nNumerator, nDenominator, Reaminder);
-  if Reaminder <> 0 then
+  {$ifdef FPC}
+  x := nNumber * nNumerator;
+  r := x mod nDenominator; //Reaminder
+  Result := x div nDenominator;
+  {$else}
+  Result := MulDivInt64(nNumber, nNumerator, nDenominator, r);
+  {$endif}
+  if r <> 0 then
   begin
-    if Reaminder < 0 then Reaminder := -Reaminder;
-    Temp := UInt64(Reaminder shl Size) div UInt64(nDenominator);
+    if r < 0 then r := -r;
+    Temp := UInt64(r shl Size) div UInt64(nDenominator);
     if (Temp >= Half) then
     begin
       if Result < 0 then
