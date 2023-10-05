@@ -215,6 +215,12 @@ type
     procedure RespondResult(var Result: TmodRespondResult); override;
   end;
 
+  //handle cors :)
+  TmodHttpOptionCommand = class(TmodHttpGetCommand)
+  public
+    procedure RespondResult(var Result: TmodRespondResult); override;
+  end;
+
   { TmodPutCommand }
 
   TmodPutCommand = class(TmodURICommand)
@@ -890,6 +896,23 @@ begin
   RegisterCommand('Event', TmodHttpEventCommand, true);
 end;
 {$endif FPC}
+
+{ TmodHttpOptionCommand }
+
+procedure TmodHttpOptionCommand.RespondResult(var Result: TmodRespondResult);
+begin
+  inherited;
+  Respond.HttpResult := hrOK;
+  Respond.PutHeader('Allow', 'OPTIONS, GET, HEAD, POST');
+  //PutHeader('Access-Control-Allow-Origin', 'origin');
+//  PutHeader('Access-Control-Allow-Headers', 'Origin, Accept, Accept-  Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Response-Time, X-PINGOTHER, X-CSRF-Token,Authorization');
+//  PutHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  Respond.PutHeader('server', 'cserp.web.service/v1');
+  Respond.PutHeader('Access-Control-Allow-Origin', '*');
+  Respond.PutHeader('Access-Control-Allow-Method', 'POST');
+  Respond.PutHeader('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type');
+
+end;
 
 initialization
   modLock := TCriticalSection.Create;
