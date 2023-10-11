@@ -102,6 +102,8 @@ type
     function ReadAsForeign: Integer;
     procedure WriteAsForeign(const Value: Integer);
     function ReadIsExists: Boolean;
+    function ReadAsAsUID: string;
+    procedure WriteAsUID(const Value: string);
   protected
     function GetValue: Variant; virtual; abstract;
     procedure SetValue(const AValue: Variant); virtual; abstract;
@@ -162,6 +164,7 @@ type
     property AsBytes: TBytes read ReadAsBytes write WriteAsBytes;
     property AsGuid: TGUID read ReadAsGuid write WriteAsGuid;
     property AsForeign: Integer read ReadAsForeign write WriteAsForeign; // alias for as integer for foreign fields
+    property AsUID: string read ReadAsAsUID write WriteAsUID; // alias for as integer for foreign fields
 
     property IsNull: Boolean read ReadIsNull write WriteIsNull;
     property IsExists: Boolean read ReadIsExists;
@@ -611,6 +614,11 @@ begin
   Result := AnsiString(GetAsString);
 end;
 
+function TmnCustomField.ReadAsAsUID: string;
+begin
+  Result := AsString;
+end;
+
 procedure TmnCustomField.WriteAsAnsiString(const AValue: ansistring);
 begin
   {$ifdef FPC}
@@ -797,6 +805,14 @@ end;
 function TmnCustomField.ReadAsUtf8String: UTF8String;
 begin
   Result := UTF8Encode(GetAsString); // the compiler will convert it
+end;
+
+procedure TmnCustomField.WriteAsUID(const Value: string);
+begin
+  if Value = '' then
+    Clear
+  else
+    AsString := Value;
 end;
 
 procedure TmnCustomField.WriteAsUtf8String(const AValue: UTF8String);

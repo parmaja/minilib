@@ -246,9 +246,7 @@ type
     procedure DoRequestChanged(Sender: TObject); override;
 
     property ProcessedSQL: TmncProcessedSQL read FProcessedSQL;
-
     function CreateProcessedSQL: TmncProcessedSQL; virtual;
-
   public
     constructor Create; override;
     destructor Destroy; override;
