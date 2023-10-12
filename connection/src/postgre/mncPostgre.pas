@@ -1993,13 +1993,13 @@ procedure TmncPGColumn.SetPGType(const Value: Integer);
 begin
   FPGType := Value;
   case Value of
-    Oid_Bool: FDataType := dtBoolean;
-    Oid_oid, Oid_int2, Oid_int4, Oid_int8: FDataType := dtInteger;
-    Oid_Money: FDataType := dtCurrency;
-    Oid_Float4, Oid_Float8: FDataType := dtCurrency;
-    Oid_Date: FDataType := dtDate;
-    Oid_Time, Oid_TimeStamp: FDataType := dtDateTime;
-    OID_NUMERIC: FDataType := dtCurrency;
+    Oid_Bool: DataType := dtBoolean;
+    Oid_oid, Oid_int2, Oid_int4, Oid_int8: DataType := dtInteger;
+    Oid_Money: DataType := dtCurrency;
+    Oid_Float4, Oid_Float8: DataType := dtCurrency;
+    Oid_Date: DataType := dtDate;
+    Oid_Time, Oid_TimeStamp: DataType := dtDateTime;
+    OID_NUMERIC: DataType := dtCurrency;
   end;
 end;
 
