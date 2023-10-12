@@ -261,16 +261,18 @@ type
 
   TmncItem = class abstract(TmnCustomField)
   private
+    FDataType: TmncDataType;
     FBlobType: TmncBlobType;
   protected
-    FDataType: TmncDataType;
     function GetAsText: string; override;
     procedure SetAsText(const AValue: string); override;
     property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
-    property DataType: TmncDataType read FDataType default dtUnknown;
+    property DataType: TmncDataType read FDataType write FDataType default dtUnknown;
+    procedure Created; override;
   public
     function IsNumber: Boolean;
     function GetName: string; virtual; abstract;
+
   published
   end;
 
@@ -450,12 +452,13 @@ type
   TmncParam = class(TmncCustomField)
   private
     FName: string;
-  protected
   public
     constructor Create; virtual;
     destructor Destroy; override;
     function GetName: string; override;
     property Name: string read FName write FName;
+
+    property DataType;
   end;
 
   { TmncCustomParams }
@@ -1689,6 +1692,13 @@ begin
 end;
 
 { TmncItem }
+
+procedure TmncItem.Created;
+begin
+  inherited;
+  FBlobType := blobBinary;
+  FDataType := dtUnknown;
+end;
 
 function TmncItem.GetAsText: string;
 begin
