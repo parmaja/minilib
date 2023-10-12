@@ -117,8 +117,8 @@ type
 
   TmnFieldHelper = class helper for TmnField
   public
-    function Have(AValue: String; vSeperators: TSysCharSet = [';']): Boolean;
-    function CreateSubValues(vSeperators: TSysCharSet = [';']): TStringList;
+    function Have(AValue: String; vSeparators: TSysCharSet = [';']): Boolean;
+    function CreateSubValues(vSeparators: TSysCharSet = [';']): TStringList;
   end;
 
 procedure FieldsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
@@ -530,13 +530,13 @@ end;
 
 { TmnFieldHelper }
 
-function TmnFieldHelper.CreateSubValues(vSeperators: TSysCharSet): TStringList;
+function TmnFieldHelper.CreateSubValues(vSeparators: TSysCharSet): TStringList;
 begin
   Result := TStringList.Create;
-  StrToStrings(AsString, Result, vSeperators, [' ']);
+  StrToStrings(AsString, Result, vSeparators, [' ']);
 end;
 
-function TmnFieldHelper.Have(AValue: String; vSeperators: TSysCharSet): Boolean;
+function TmnFieldHelper.Have(AValue: String; vSeparators: TSysCharSet): Boolean;
 var
   SubValues: TStringList;
 begin
@@ -546,7 +546,7 @@ begin
   begin
     SubValues := TStringList.Create;
     try
-      StrToStrings(AsString, SubValues, vSeperators, [' ']);
+      StrToStrings(AsString, SubValues, vSeparators, [' ']);
       Result := SubValues.IndexOf(AValue) >= 0;
     finally
       SubValues.Free;
