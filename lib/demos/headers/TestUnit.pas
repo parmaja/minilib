@@ -9,6 +9,16 @@ interface
 uses
   Classes, SysUtils, mnUtils, mnHeaders;
 
+{
+'Accept-Encoding'
+  Text = 'deflate, gzip; q=1.0';
+  Count = 2
+  Value = 'deflate'; //first one Items[0].Value
+    Name = 'deflate' Value = '';
+		Name = 'gzip' Value = '';
+      q='1.0';
+}
+
 procedure RunTest;
 
 implementation
@@ -19,9 +29,8 @@ var
   itm, itm2: TmnHeaderItem;
   s: string;
 begin
-  Header := TmnHeader.Create;
+  Header := TmnWebHeader.Create;
   try
-    Header.RegisterDictionary('Accept-Encoding', THeader_AcceptEncoding, [hoList]);
     //Header.Values['Accept-Encoding'] := 'deflate, gzip; q=1.0, *;q=0.5';
     Header.Values['Accept-Encoding'] := 'deflate, gzip; q=1.0';
     itm := Header['Accept-Encoding'];
@@ -30,8 +39,7 @@ begin
     WriteLn('AE: '+itm.Count.ToString);
     //WriteLn('AE: '+itm.Text);
 
-
-{    Header.RegisterDictionary('Content-Type', THeader_ContentType, []);
+{
     //Header.Add('Content-Type: multipart/form-data; boundary=0123456789');
     Header.Values['Content-Type'] := 'multipart/form-data; boundary=0123456789';
     Header.Add('Host: www.domain.com');

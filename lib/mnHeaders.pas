@@ -20,11 +20,11 @@ unit mnHeaders;
 {
 
 1
-	n: v
+  n: v
 2
-	n: v; n1=v1; n2=v2
+  n: v; n1=v1; n2=v2
 3
-	n: v,x,y; n1=l1,l2; n1=v3
+  n: v,x,y; n1=l1,l2; n1=v3
 
 
 1
@@ -48,11 +48,11 @@ uses
 
 type
   TmnHeaderItemOption = (
-	  hoMultiItem,  // can have more than one item
+    hoMultiItem,  // can have more than one item
     hoList, // no names just values set into name not value
     hoGroupValues,
-    hoEmptyValues
-	);
+    hoEmptyValues // Accept empty values
+  );
   TmnHeaderItemOptions = set of TmnHeaderItemOption;
 
   TmnHeaderList = class;
@@ -68,7 +68,7 @@ type
 
     type
 
-	    { TmnHeaderItemsEnumerator }
+      { TmnHeaderItemsEnumerator }
 
       TmnHeaderItemsEnumerator = class(TObject)
       private
@@ -108,7 +108,7 @@ type
 
     property AsInteger: Integer read GetAsInteger;
     function Find(AName: String): TmnHeaderItem; inline;
-		function Have(AName: String): Boolean; inline;
+    function Have(AName: String): Boolean; inline;
     function IsExists: Boolean;
     function AddItem(AName, AValue: string): TmnHeaderItem; virtual;
     function Change(AName, AValue: String): TmnHeaderItem;
@@ -123,7 +123,7 @@ type
 
     property Items: TmnHeaderList read GetItems;
     property Values[const vName: string]: string read GetValues write SetValues;
-		property Item[Index: string]: TmnHeaderItem read GetItemByName; default;
+    property Item[Index: string]: TmnHeaderItem read GetItemByName; default;
     property ItemByIndex[Index: Integer]: TmnHeaderItem read GetItemByIndex; //{$ifndef FPC} default; {$endif Delphi}
   end;
 
@@ -245,7 +245,7 @@ begin
   if c <> nil then
   begin
     AItem := c.ItemClass.Create;
-    AItem.Options := c.Options;
+    //AItem.Options := c.Options; //maybe in created
   end
   else
     AItem := TmnHeaderItem.Create;
@@ -336,6 +336,7 @@ begin
   inherited;
   FDelimiter := ',';
   FValueSeparator := #0;
+  Options := [hoList, hoGroupValues];
 end;
 
 function THeader_AcceptEncoding.CreateItem: TmnHeaderItem;
@@ -392,7 +393,7 @@ end;
 procedure TmnHeaderItem.SetText(AValue: string);
 begin
   if FText =AValue then
-	  Exit;
+    Exit;
   FText := AValue;
   Parse(AValue);
 end;
@@ -410,7 +411,7 @@ begin
   AItem := Find(AName);
   if (AItem = nil) then
   begin
-	  if (AValue <> '') or (hoEmptyValues in Options) then
+    if (AValue <> '') or (hoEmptyValues in Options) then
       AddItem(AName, AValue)
   end
   else
