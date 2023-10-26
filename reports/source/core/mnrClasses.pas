@@ -653,10 +653,15 @@ type
     procedure AppendRows(vRows: TmnrRows);
   end;
 
+  TRowsData = Class(TmnObjectList<TJSONObject>)
+  public
+    function CreateData: TJSONObject;
+  end;
+
   TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
   private
     FCanceled: Boolean;
-    FRowsData: TmnObjectList<TObject>;
+    FRowsData: TRowsData;
     FItems: TmnrRows;
     FSections: TmnrSections;
     FGroups: TmnrGroups;
@@ -741,7 +746,7 @@ type
     property Sections: TmnrSections read GetSections;
     property Groups: TmnrGroups read GetGroups;
     property Items: TmnrRows read GetItems;
-    property RowsData: TmnObjectList<TObject> read FRowsData;
+    property RowsData: TRowsData read FRowsData;
     procedure Load;
     procedure Cancel;
     property Working: Boolean read FWorking;
@@ -875,7 +880,7 @@ end;
 constructor TmnrCustomReport.Create;
 begin
   inherited Create;
-  FRowsData := TmnObjectList<TObject>.Create;
+  FRowsData := TRowsData.Create;
   FDesignLayouts := TmnrLayoutList.Create;
   FDesigningMode := False;
 
@@ -1782,19 +1787,12 @@ end;
 function TmnrSection.DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 begin
   vParams.Reset;
-
-  var aData := TJSONObject.Create;
-  Report.RowsData.Add(aData);
-
-  vParams.Data := aData;
+  vParams.Data := Report.RowsData.CreateData;
 
   if Assigned(FOnFetch) then
     FOnFetch(vParams)
   else
     Report.Fetch(Self, vParams);
-
-
-  //if vParams.Data<>nil then Report.RowsData.Add(vParams.Data);
 
   Result := vParams.AcceptMode;
 end;
@@ -3743,6 +3741,14 @@ begin
   ID     := 0;
   Locked := False;
   Data   := nil;
+end;
+
+{ TRowsData }
+
+function TRowsData.CreateData: TJSONObject;
+begin
+  Result := TJSONObject.Create;
+  Add(Result);
 end;
 
 initialization

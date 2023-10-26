@@ -149,7 +149,7 @@ type
     private
       FValue: string;
     public
-      constructor Create; virtual;
+      constructor Create(const vName, AValue: string); virtual; //must be virtual for generic function
       property Value: string read FValue write FValue;
     end;
 
@@ -476,12 +476,8 @@ begin
 end;
 
 function TmnNameValueObjectList<_Object_>.Add(Name, Value: string): _Object_;
-var
-  itm : _Object_;
 begin
-  Result := _Object_.Create;
-  Result.Name := Name;
-  Result.Value := Value;
+  Result := _Object_.Create(Name, Value);
   Add(Result);
 end;
 
@@ -500,9 +496,11 @@ end;
 
 { TmnNameValueObject }
 
-constructor TmnNameValueObject.Create;
+constructor TmnNameValueObject.Create(const vName, AValue: string);
 begin
   inherited Create;
+  Name := vName;
+  Value := AValue;
 end;
 
 { TmnNamedObject }
