@@ -653,9 +653,9 @@ type
     procedure AppendRows(vRows: TmnrRows);
   end;
 
-  TRowsData = Class(TmnObjectList<TJSONObject>)
+  TRowsData = Class(TmnObjectList<TObject>)
   public
-    function CreateData: TJSONObject;
+    function CreateJsonData: TJSONObject;
   end;
 
   TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
@@ -1787,7 +1787,7 @@ end;
 function TmnrSection.DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 begin
   vParams.Reset;
-  vParams.Data := Report.RowsData.CreateData;
+  vParams.Data := Report.RowsData.CreateJsonData;
 
   if Assigned(FOnFetch) then
     FOnFetch(vParams)
@@ -3745,7 +3745,7 @@ end;
 
 { TRowsData }
 
-function TRowsData.CreateData: TJSONObject;
+function TRowsData.CreateJsonData: TJSONObject;
 begin
   Result := TJSONObject.Create;
   Add(Result);
