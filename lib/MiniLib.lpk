@@ -29,6 +29,9 @@
         <CompilerMessages>
           <IgnoredMessages idx5024="True"/>
         </CompilerMessages>
+        <ConfigFile>
+          <WriteConfigFilePath Value="$(PkgOutDir)/fpclaz.cfg"/>
+        </ConfigFile>
       </Other>
     </CompilerOptions>
     <Description Value="MiniLib"/>
@@ -126,6 +129,26 @@
       <Item>
         <Filename Value="mnHeaders.pas"/>
         <UnitName Value="mnHeaders"/>
+      </Item>
+      <Item>
+        <Filename Value="ucp864.pas"/>
+        <UnitName Value="ucp864"/>
+      </Item>
+      <Item>
+        <Filename Value="ucp1250.pas"/>
+        <UnitName Value="ucp1250"/>
+      </Item>
+      <Item>
+        <Filename Value="ucp1252.pas"/>
+        <UnitName Value="ucp1252"/>
+      </Item>
+      <Item>
+        <Filename Value="ucp1256.pas"/>
+        <UnitName Value="ucp1256"/>
+      </Item>
+      <Item>
+        <Filename Value="ucputils.pas"/>
+        <UnitName Value="ucputils"/>
       </Item>
     </Files>
     <RequiredPkgs>

@@ -14,6 +14,9 @@ unit mnWebElements;//* BETA
 
 {
 
+    Application
+      Document
+
 ┌──────┬──────── Header ──────────────────────┐
 │ SideColumn                                  │
 │      │                                      │

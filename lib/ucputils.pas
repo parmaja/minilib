@@ -38,22 +38,22 @@ var
   FConverter: TucpConverter;
 
 {$IFDEF FPC}
-procedure Ansi2WideMove(source: pAnsiChar; var dest: widestring; len: SizeInt);
+procedure Ansi2WideMove(source: PAnsiChar; cp : TSystemCodePage; var dest: WideString; len:SizeInt);
 begin
   dest := ucpAnsiToUnicode(source);
 end;
 
-procedure Wide2AnsiMove(source: pwidechar; var dest: ansistring; len: SizeInt);
+procedure Wide2AnsiMove(source: PWideChar; var dest: RawByteString; cp : TSystemCodePage; len:SizeInt);
 begin
   dest := ucpUnicodeToAnsi(source);
 end;
 
-procedure Ansi2UnicodeMove(source: pAnsiChar; var dest: unicodestring; len: SizeInt);
+procedure Ansi2UnicodeMove(source: PAnsiChar; cp : TSystemCodePage; var dest: UnicodeString; len: SizeInt);
 begin
   dest := ucpAnsiToUnicode(source);
 end;
 
-procedure Unicode2AnsiMove(source: pUnicodeChar; var dest: ansistring; len: SizeInt);
+procedure Unicode2AnsiMove(source: punicodechar; var dest:RawByteString; cp : TSystemCodePage; len:SizeInt);
 begin
   dest := ucpUnicodeToAnsi(source);
 end;
