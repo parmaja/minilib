@@ -74,7 +74,7 @@ type
   { TCTX }
 
   TContextOptions = set of (
-    coNoComppressing,
+    coNoCompressing,
     coALPN,
     coALPNHttp2,
     coDebug
@@ -88,8 +88,8 @@ type
     FMethod: TSSLMethod;
     FOwnMethod: Boolean; //created internally
   public
-    constructor Create(AMethod: TSSLMethod; Options: TContextOptions = [coNoComppressing]); overload;
-    constructor Create(AMethodClass: TSSLMethodClass; Options: TContextOptions = [coNoComppressing]); overload;
+    constructor Create(AMethod: TSSLMethod; Options: TContextOptions = [coNoCompressing]); overload;
+    constructor Create(AMethodClass: TSSLMethodClass; Options: TContextOptions = []); overload;
     destructor Destroy; override;
     procedure SetVerifyLocation(Location: utf8string);
     procedure SetVerifyFile(AFileName: utf8string);
@@ -521,7 +521,7 @@ begin
   inherited Create;
   if (ACTX = nil) then
   begin
-    FCTX := TContext.Create(TTLS_SSLClientMethod, [coNoComppressing, coALPN{, coALPNHttp2}]);
+    FCTX := TContext.Create(TTLS_SSLClientMethod, [coNoCompressing, coALPN{, coALPNHttp2}]);
     CTXOwned := True;
   end
   else
@@ -853,7 +853,7 @@ begin
 
   o := o + SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION or SSL_MODE_RELEASE_BUFFERS;
 
-  if coNoComppressing in Options then
+  if coNoCompressing in Options then
     o := o or SSL_OP_NO_COMPRESSION;
 
   SSL_CTX_set_options(Handle, o);

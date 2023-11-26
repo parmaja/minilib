@@ -380,7 +380,7 @@ end;
 
 procedure TmodHttpPostCommand.RespondResult(var Result: TmodRespondResult);
 begin
-  if SameText(Request.Method, 'POST') then
+  {if SameText(Request.Method, 'POST') then
   begin
     if (Request.Header.Field['Content-Type'].Have('application/json')) then
     begin
@@ -398,7 +398,7 @@ begin
       Contents.Position := 0; //it is memory btw
       Contents.SaveToFile('c:\temp\1.txt');
     end;
-  end;
+  end;}
   inherited;
 end;
 
@@ -761,6 +761,7 @@ end;
 procedure TmodHttpCommand.Prepare(var Result: TmodRespondResult);
 var
   Key: string;
+  aKeepAlive: Boolean;
 begin
   inherited;
 
@@ -772,14 +773,17 @@ begin
     //Respond.AddHeader('Sec-WebSocket-Accept', Key);
   end;
 
-  if SameText(Respond.Header.ReadString('Connection'), 'Keep-Alive') then
+  aKeepAlive := (Module.UseKeepAlive = klvUndefined) and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive');
+  aKeepAlive := aKeepAlive or ((Module.UseKeepAlive = klvKeepAlive) and not SameText(Request.Header.ReadString('Connection'), 'close'));
+
+  if aKeepAlive then
   begin
     Respond.KeepAlive := True;
     Respond.AddHeader('Connection', 'Keep-Alive');
-    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
+    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 1000) + ', max=100');
   end;
 
-  if Module.UseCompressing then
+  if not aKeepAlive and Module.UseCompressing then
   begin
     if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
       Respond.CompressClass := TmnGzipStreamProxy
@@ -802,9 +806,9 @@ begin
   inherited;
   if not Respond.Header.Exists['Content-Length'] then
     Respond.KeepAlive := False;
-  if Respond.KeepAlive and (Module.UseKeepAlive in [klvUndefined, klvKeepAlive]) and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive') then
+
+  if Respond.KeepAlive then
   begin
-    Result.Timout := Module.KeepAliveTimeOut;
     if Request.Header.IsExists('Keep-Alive') then //idk if really sent from client
     begin
       aParams := TmnParams.Create;
@@ -817,7 +821,10 @@ begin
       finally
         aParams.Free;
       end;
-    end;
+    end
+    else
+      Result.Timout := Module.KeepAliveTimeOut;
+
     Result.Status := Result.Status + [mrKeepAlive];
   end;
 

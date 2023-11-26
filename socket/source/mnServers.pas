@@ -503,7 +503,7 @@ end;
 
 procedure TmnListener.Changed;
 begin
-  //Queue(PostChanged);
+  Queue(nil, PostChanged);
 end;
 
 procedure TmnListener.Connect;

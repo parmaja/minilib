@@ -951,6 +951,7 @@ end;
 
 constructor TDON_Pair.Create(AParent: TDON_Object_Value);
 begin
+  //where is inherited zaher:)
   FParent := AParent;
 end;
 
