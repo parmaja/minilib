@@ -21,7 +21,7 @@ uses
   {$ifdef FPC}
   StreamEx,
   {$else}
-  Windows,
+  //Windows,
   {$endif}
   mnUtils,
   {$ifdef minilib}

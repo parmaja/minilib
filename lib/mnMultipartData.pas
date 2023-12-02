@@ -46,7 +46,7 @@ type
     FFileStream: TFileStream;
     procedure DoReadPrepare; override;
     procedure DoReadUnPrepare; override;
-    procedure DoRead(const Buffer; Count: Integer); override;
+    procedure DoRead(const Buffer; Count: Longint); override;
 
     procedure DoWrite(vStream: TmnBufferStream); override;
     procedure DoPrepare; override;
@@ -60,7 +60,7 @@ type
   TmnMultipartDataValue = class(TmnMultipartDataItem)
   protected
     FValue: string;
-    procedure DoRead(const Buffer; Count: Integer); override;
+    procedure DoRead(const Buffer; Count: Longint); override;
 
     procedure DoPrepare; override;
     procedure DoWrite(vStream: TmnBufferStream); override;
@@ -331,7 +331,7 @@ begin
   Header.Values['Content-Type'] := 'text/plan';
 end;
 
-procedure TmnMultipartDataValue.DoRead(const Buffer; Count: Integer);
+procedure TmnMultipartDataValue.DoRead(const Buffer; Count: Longint);
 var
   s: string;
 begin
@@ -359,7 +359,7 @@ begin
   Header.Values['Content-Type'] := DocumentToContentType(FileName);
 end;
 
-procedure TmnMultipartDataFileName.DoRead(const Buffer; Count: Integer);
+procedure TmnMultipartDataFileName.DoRead(const Buffer; Count: Longint);
 begin
   FFileStream.Write(PByte(Buffer)^, Count);
 end;

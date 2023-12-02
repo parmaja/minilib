@@ -125,8 +125,8 @@ begin
   {$IFDEF MACOS}
   FLibraryName := ALibraryName + '.dylib';
   {$ELSE}
-{  if ExtractFileExt(ALibraryName) = '' then
-    ALibraryName := ALibraryName + '.so';}
+  if ExtractFileExt(ALibraryName) = '' then
+    ALibraryName := ALibraryName + '.so';
   FLibraryName := ALibraryName;
   {$ENDIF}
   {$ENDIF}

@@ -39,7 +39,7 @@ uses
   mnSockets, mnConnections, mnServers;
 
 const
-  cDefaultKeepAliveTimeOut = 5000; //TODO move module
+  cDefaultKeepAliveTimeOut = 50000; //TODO move module
   URLPathDelim  = '/';
 
 type
