@@ -613,12 +613,15 @@ begin
   if (Request.Path = '') or StartsDelimiter(Request.Path) or StartsStr('.', Request.Path) then
     aDocument := aRoot + Request.Path
   else
-    aDocument := aRoot + '\' +Request.Path;
-
-  aDocument := ExpandFileName(aDocument);
+    aDocument := IncludePathDelimiter(aRoot) + Request.Path;
 
 
-  aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
+  aRoot := CorrectPath(aRoot);
+  aDocument := CorrectPath(aDocument);
+
+  aRoot := ExpandFile(aRoot);
+  aDocument := ExpandFile(aDocument);
+
 
   if EndsDelimiter(aDocument) then //get the default file if it not defined
      aDocument := GetDefaultDocument(aDocument);

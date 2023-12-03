@@ -226,6 +226,8 @@ function DescapeString(const S: string; Esc: string; Chars: array of Char; Escap
 function EscapeStringC(const S: string): string;
 function DescapeStringC(const S: string): string;
 function ToUnixPathDelimiter(const S: string): string;
+function CorrectPath(const Path: string): string;
+function ExpandFile(const Name: string): string;
 
 //TODO pascal
 //function EscapeStringPas(const S: string): string;
@@ -1645,6 +1647,29 @@ end;
 function ToUnixPathDelimiter(const S: string): string;
 begin
   Result := StringReplace(S, '\', '/', [rfReplaceAll]);
+end;
+
+function CorrectPath(const Path: string): string;
+begin
+  {$IFDEF MSWINDOWS}
+  Result := StringReplace(Path, '/', PathDelim, [rfReplaceAll]);//correct it for linux
+  {$else}
+  Result := StringReplace(Path, '\', PathDelim, [rfReplaceAll]);//correct it for linux
+  {$endif MSWINDOWS}
+end;
+
+function ExpandFile(const Name: string): string;
+var
+  aEndsDelimiter: Boolean;
+begin
+  aEndsDelimiter := EndsDelimiter(Name);
+  Result := ExpandFileName(Name);
+
+  if aEndsDelimiter then
+  begin
+    //posix ExpandFileName remove last PathDelim;
+    Result := IncludePathDelimiter(Result);
+  end;
 end;
 
 function IncludePathDelimiter(const S: string): string;
