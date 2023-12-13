@@ -203,7 +203,8 @@ end;
 
 destructor TmnLockThread.Destroy;
 begin
-  FLock.Free;
+  FreeAndNil(FLock);
+
   inherited;
 end;
 

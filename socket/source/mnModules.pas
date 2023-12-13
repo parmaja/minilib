@@ -318,6 +318,7 @@ type
     FServer: TmodModuleServer;
     procedure SetEndOfLine(AValue: String);
   protected
+    function CheckRequest(const ARequest: string): Boolean; virtual;
     function GetActive: Boolean; virtual;
     procedure Created; override;
     procedure Start;
@@ -697,9 +698,17 @@ var
   Result: TmodRespondResult;
 begin
   inherited;
+  //need support peek :( for check request
   aRequestLine := TrimRight(UTF8ToString(Stream.ReadLineUTF8));
   if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
+
+    if not ModuleServer.Modules.CheckRequest(aRequestLine) then //check ssl connection on not ssl server need support peek :(
+    begin
+      Stream.Disconnect;
+      Exit;
+    end;
+
     aRequest := TmodRequest.Create;
     try
       ModuleServer.Modules.ParseHead(aRequest, aRequestLine);
@@ -1148,6 +1157,11 @@ end;
 procedure TmodModules.Log(S: String);
 begin
   Server.Listener.Log(S);
+end;
+
+function TmodModules.CheckRequest(const ARequest: string): Boolean;
+begin
+  Result := True;
 end;
 
 constructor TmodModules.Create(AServer: TmodModuleServer);

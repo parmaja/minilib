@@ -842,8 +842,8 @@ begin
       if UseSSL then
         InitOpenSSL;
       DoBeforeOpen;
+      FListener := CreateListener;
       try
-        FListener := CreateListener;
         FListener.FServer := Self;
         FListener.FPort := FPort;
         FListener.FAddress := FAddress;
@@ -855,11 +855,11 @@ begin
         FListener.Prepare;
         //FListener.Timeout := 500;
         DoStart;
-        Log('Server starting at port: ' + Port);
         FListener.Start;
+        Log('Server starting at port: ' + Port);
         FActive := True;
       except
-        FreeAndNil(FListener);
+        FreeAndNil(FListener); //case error because delphi call terminateset on free
         raise;
       end;
       DoAfterOpen;

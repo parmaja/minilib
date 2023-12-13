@@ -149,9 +149,15 @@ type
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
 
+
+  ThttpModules = class(TmodModules)
+  protected
+    function CheckRequest(const ARequest: string): Boolean; override;
+  end;
+
   { TmodWebModules }
 
-  TmodWebModules = class(TmodModules)
+  TmodWebModules = class(ThttpModules)
   protected
   public
     procedure ParseHead(ARequest: TmodRequest; const RequestLine: string); override;
@@ -922,6 +928,13 @@ begin
   Respond.PutHeader('Access-Control-Allow-Method', 'POST');
   Respond.PutHeader('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type');
 
+end;
+
+{ ThttpModules }
+
+function ThttpModules.CheckRequest(const ARequest: string): Boolean;
+begin
+  Result := Server.UseSSL or (ARequest[1]<>#$16);
 end;
 
 initialization
