@@ -103,6 +103,7 @@ type
     FSocket: TmnCustomSocket; //Listner socket waiting by call "select"
     FLogMessages: TStringList;
     FOptions: TmnsoOptions;
+    FLastCheck: UInt64;
     function GetConnected: Boolean;
     procedure SetOptions(AValue: TmnsoOptions);
   protected
@@ -118,10 +119,12 @@ type
     //You can use full path
     PrivateKeyFile: string;
     CertificateFile: string;
+    CertificateFileDate: TDateTime;
 
     procedure Connect;
     procedure Disconnect;
     function Accept: TmnCustomSocket;
+    procedure UpdateChanged;
   protected
     procedure PostLogs; //run in main thread by queue
     procedure PostChanged; //run in main thread by queue
@@ -147,6 +150,7 @@ type
     property Attempts: Integer read FAttempts write FAttempts;
     //it is ListenerTimeout not ReadTimeOut
     property Timeout: Integer read FTimeout write FTimeout default cListenerTimeout;
+    procedure ReloadContext;
   end;
 
   {**
@@ -620,6 +624,7 @@ begin
           aSocket := Accept;
           if aSocket <> nil then
           begin
+            UpdateChanged;
             aSocket.Context := Context;
             //aSocket.Prepare;
           end
@@ -643,6 +648,7 @@ begin
           //w.Start;
           if Connected and (Server <> nil) then
             Server.Idle(Self);
+
           if (aSocket = nil) then
           begin
 
@@ -705,6 +711,24 @@ begin
     FreeAndNil(Context);
 end;
 
+procedure TmnListener.UpdateChanged;
+const
+  sChangeInterval = 10 * 6000; //60s
+var
+  aDate: TDateTime;
+
+begin
+  if (GetTickCount64-FLastCheck)>sChangeInterval then
+  begin
+    FLastCheck := GetTickCount64;
+    FileAge(CertificateFile, aDate, True);
+    if CertificateFileDate<>aDate then
+    begin
+      ReloadContext;
+    end;
+  end;
+end;
+
 function TmnListener.GetConnected: Boolean;
 begin
   Result := (FSocket <> nil) and FSocket.Active;
@@ -736,8 +760,17 @@ begin
   if soSSL in Options then
   begin
     Context := TContext.Create(TTLS_SSLServerMethod);
-    Context.LoadCertFile(CertificateFile);
-    Context.LoadPrivateKeyFile(PrivateKeyFile);
+    ReloadContext;
+  end;
+end;
+
+procedure TmnListener.ReloadContext;
+begin
+  if soSSL in Options then
+  begin
+    FileAge(CertificateFile, CertificateFileDate, True);
+    Context.LoadCertFile(UTF8Encode(CertificateFile));
+    Context.LoadPrivateKeyFile(UTF8Encode(PrivateKeyFile));
     Context.CheckPrivateKey; //do not use this
     //Context.SetVerifyNone;
   end;
