@@ -34,7 +34,7 @@
 interface
 
 uses
-  SysUtils, Classes, StrUtils, Types,
+  SysUtils, Classes, StrUtils, Types,  DateUtils,
   mnClasses, mnStreams, mnFields, mnParams,
   mnSockets, mnConnections, mnServers;
 
@@ -166,8 +166,9 @@ type
     //property RespondResult: TmodRespondResult read FRespondResult;
 
     //Add new header, can dublicate
-    procedure AddHeader(AName, AValue: String); overload; virtual;
-    procedure AddHeader(AName: string; Values: TStringDynArray); overload;
+    procedure AddHeader(const AName: string; AValue: TDateTime); overload;
+    procedure AddHeader(const AName, AValue: String); overload; virtual;
+    procedure AddHeader(const AName: string; Values: TStringDynArray); overload;
     //Update header by name but adding new value to old value
     procedure PutHeader(AName, AValue: String);
 
@@ -509,7 +510,7 @@ end;
 
 { TmodRespond }
 
-procedure TmodRespond.AddHeader(AName: string; Values: TStringDynArray);
+procedure TmodRespond.AddHeader(const AName: string; Values: TStringDynArray);
 var
   s, t: string;
 begin
@@ -522,6 +523,16 @@ begin
   end;
 
   AddHeader(AName, t);
+end;
+
+procedure TmodRespond.AddHeader(const AName: string; AValue: TDateTime);
+var
+  s: string;
+  aDate: TDateTime;
+begin
+  aDate := TTimeZone.Local.ToUniversalTime(AValue);
+  s := FormatDateTime('ddd, dd mmm yyyy hh:nn:ss', aDate) + ' GMT';
+  AddHeader(AName, s);
 end;
 
 procedure TmodRespond.ContentSent;
@@ -558,7 +569,7 @@ begin
   Result := '';
 end;
 
-procedure TmodRespond.AddHeader(AName, AValue: String);
+procedure TmodRespond.AddHeader(const AName, AValue: String);
 begin
   if resContentsSent in FStates then
     raise TmodModuleException.Create('Content is sent');

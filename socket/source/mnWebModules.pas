@@ -40,6 +40,7 @@ interface
 
 uses
   SysUtils, Classes, syncobjs, StrUtils, //NetEncoding, Hash,
+  DateUtils,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams, mnMultipartData, mnModules;
 
@@ -51,6 +52,7 @@ type
     hrOK,
     hrError,
     hrFound, //302
+    hrNotModified,
     hrMovedTemporarily, //307
     hrNotFound,
     hrSwitchingProtocols,
@@ -563,11 +565,26 @@ procedure TmodHttpGetCommand.RespondDocument(const vDocument: string; var Result
 var
   aDocSize: Int64;
   aDocStream: TFileStream;
+  aDate: TDateTime;
+  aEtag, aFtag: string;
 begin
   if FileExists(vDocument) then
   begin
     if Active then
     begin
+      FileAge(vDocument, aDate);
+      aFtag := DateTimeToUnix(aDate).ToString;
+      aEtag := Request.Header['If-None-Match'];
+      if (aEtag<>'') and (aEtag=aFtag) then
+      begin
+        Respond.HttpResult := hrNotModified;
+        Respond.SendHeader;
+        Module.Log(vDocument+': not modified');
+
+        Exit;
+      end;
+
+
       aDocStream := TFileStream.Create(vDocument, fmOpenRead or fmShareDenyWrite);
       try
         {if Respond.KeepAlive then
@@ -577,6 +594,12 @@ begin
 
         Respond.HttpResult := hrOK;
 
+        //Respond.AddHeader('Cache-Control', 'max-age=600');
+        Respond.AddHeader('Cache-Control', 'max-age=600');
+        //Respond.AddHeader('Cache-Control', 'public');
+        //Respond.AddHeader('Date', Now);
+        Respond.AddHeader('Last-Modified', aDate);
+        Respond.AddHeader('ETag', aFtag);
         if Active then
         begin
           Respond.AddHeader('Content-Type', DocumentToContentType(vDocument));
@@ -875,6 +898,7 @@ begin
     hrNotFound: Result := Result + '404 NotFound';
     hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
     hrFound: Result := Result + '302 Found';
+    hrNotModified: Result := Result + '304 Not Modified';
     hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
     hrServiceUnavailable: Result := Result + '503 Service Unavailable';
   end;
