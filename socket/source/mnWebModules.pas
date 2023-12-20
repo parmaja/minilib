@@ -105,6 +105,10 @@ type
     procedure Unprepare(var Result: TmodRespondResult); override;
     procedure RespondResult(var Result: TmodRespondResult); override;
     function CreateRespond: TmodRespond; override;
+
+    procedure RespondNotFound;
+    procedure RespondNotActive;
+    procedure SendFile(const vFile: string);
   public
     destructor Destroy; override;
     property Respond: TmodHttpRespond read GetRespond;
@@ -117,7 +121,6 @@ type
     function GetModule: TmodWebModule;
   protected
     function GetDefaultDocument(Root: string): string;
-    procedure RespondNotFound;
     procedure RespondResult(var Result: TmodRespondResult); override;
     procedure Prepare(var Result: TmodRespondResult); override;
     procedure Created; override;
@@ -491,20 +494,6 @@ end;
 
 { TmodURICommand }
 
-procedure TmodURICommand.RespondNotFound;
-var
-  Body: string;
-begin
-  Respond.HttpResult := hrOK;
-  Respond.AddHeader('Content-Type', 'text/html');
-  Respond.SendHeader;
-  Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
-    '<BODY><H1>404 Not Found</H1>The requested URL ' +
-    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
-  Respond.Stream.WriteString(Body);
-  Respond.KeepAlive := False;
-end;
-
 function TmodURICommand.GetModule: TmodWebModule;
 begin
   Result := (inherited Module) as TmodWebModule;
@@ -562,59 +551,10 @@ end;}
 
 
 procedure TmodHttpGetCommand.RespondDocument(const vDocument: string; var Result: TmodRespondResult);
-var
-  aDocSize: Int64;
-  aDocStream: TFileStream;
-  aDate: TDateTime;
-  aEtag, aFtag: string;
 begin
   if FileExists(vDocument) then
   begin
-    if Active then
-    begin
-      FileAge(vDocument, aDate);
-      aFtag := DateTimeToUnix(aDate).ToString;
-      aEtag := Request.Header['If-None-Match'];
-      if (aEtag<>'') and (aEtag=aFtag) then
-      begin
-        Respond.HttpResult := hrNotModified;
-        Respond.SendHeader;
-        Module.Log(vDocument+': not modified');
-
-        Exit;
-      end;
-
-
-      aDocStream := TFileStream.Create(vDocument, fmOpenRead or fmShareDenyWrite);
-      try
-        {if Respond.KeepAlive then
-          aDocSize := CompressSize(PByte(aDocStream.Memory), aDocStream.Size)
-        else}
-          aDocSize := aDocStream.Size;
-
-        Respond.HttpResult := hrOK;
-
-        //Respond.AddHeader('Cache-Control', 'max-age=600');
-        Respond.AddHeader('Cache-Control', 'max-age=600');
-        //Respond.AddHeader('Cache-Control', 'public');
-        //Respond.AddHeader('Date', Now);
-        Respond.AddHeader('Last-Modified', aDate);
-        Respond.AddHeader('ETag', aFtag);
-        if Active then
-        begin
-          Respond.AddHeader('Content-Type', DocumentToContentType(vDocument));
-          if Respond.KeepAlive then
-            Respond.AddHeader('Content-Length', IntToStr(aDocSize));
-        end;
-
-        Respond.SendHeader;
-
-        if Active then
-          Respond.Stream.WriteStream(aDocStream);
-      finally
-        aDocStream.Free;
-      end;
-    end;
+    SendFile(vDocument);
   end
   else
     RespondNotFound;
@@ -870,6 +810,93 @@ procedure TmodHttpCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
   Log(Request.Client + ': ' + Request.Raw);
+end;
+
+procedure TmodHttpCommand.RespondNotActive;
+var
+  Body: string;
+begin
+  Respond.HttpResult := hrOK;
+  Respond.AddHeader('Content-Type', 'text/html');
+  Respond.SendHeader;
+  Body := '<HTML><HEAD><TITLE>404 Not Active</TITLE></HEAD>' +
+    '<BODY><H1>404 Not Found</H1>The requested URL ' +
+    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
+  Respond.Stream.WriteString(Body);
+  Respond.KeepAlive := False;
+end;
+
+procedure TmodHttpCommand.RespondNotFound;
+var
+  Body: string;
+begin
+  Respond.HttpResult := hrOK;
+  Respond.AddHeader('Content-Type', 'text/html');
+  Respond.SendHeader;
+  Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
+    '<BODY><H1>404 Not Found</H1>The requested URL ' +
+    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
+  Respond.Stream.WriteString(Body);
+  Respond.KeepAlive := False;
+end;
+
+
+procedure TmodHttpCommand.SendFile(const vFile: string);
+var
+  aDocSize: Int64;
+  aDocStream: TFileStream;
+  aDate: TDateTime;
+  aEtag, aFtag: string;
+begin
+  if Active then
+  begin
+    FileAge(vFile, aDate);
+    aFtag := DateTimeToUnix(aDate).ToString;
+    aEtag := Request.Header['If-None-Match'];
+    if (aEtag<>'') and (aEtag=aFtag) then
+    begin
+      Respond.HttpResult := hrNotModified;
+      Respond.SendHeader;
+      Log(vFile+': not modified');
+      Exit;
+    end;
+
+
+    aDocStream := TFileStream.Create(vFile, fmOpenRead or fmShareDenyWrite);
+    try
+      {if Respond.KeepAlive then
+        aDocSize := CompressSize(PByte(aDocStream.Memory), aDocStream.Size)
+      else}
+        aDocSize := aDocStream.Size;
+
+      Respond.HttpResult := hrOK;
+
+      //Respond.AddHeader('Cache-Control', 'max-age=600');
+      Respond.AddHeader('Cache-Control', 'max-age=600');
+      //Respond.AddHeader('Cache-Control', 'public');
+      //Respond.AddHeader('Date', Now);
+      Respond.AddHeader('Last-Modified', aDate);
+      Respond.AddHeader('ETag', aFtag);
+      if Active then
+      begin
+        Respond.AddHeader('Content-Type', DocumentToContentType(vFile));
+        if Respond.KeepAlive then
+          Respond.AddHeader('Content-Length', IntToStr(aDocSize));
+      end;
+
+      Respond.SendHeader;
+
+      if Active then
+        Respond.Stream.WriteStream(aDocStream);
+    finally
+      aDocStream.Free;
+    end;
+  end
+  else
+  begin
+    RespondNotActive;
+  end;
+
 end;
 
 function TmodHttpCommand.CreateRespond: TmodRespond;

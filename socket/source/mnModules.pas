@@ -50,18 +50,26 @@ type
 
   TmodCommand = class;
 
+  TmodHeader = class(TmnHeader)
+  public
+    function Domain: string;
+    function Origin: string;
+  end;
+
   TmodCommunicate = class abstract(TmnObject)
   private
-    FHeader: TmnHeader;
+    FHeader: TmodHeader;
     FStream: TmnBufferStream;
     FCookies: TStrings;
-    procedure SetHeader(const AValue: TmnHeader);
+    procedure SetHeader(const AValue: TmodHeader);
   public
     constructor Create;
     destructor Destroy; override;
     property Stream: TmnBufferStream read FStream write FStream;
-    property Header: TmnHeader read FHeader;
+    property Header: TmodHeader read FHeader;
     property Cookies: TStrings read FCookies;
+    procedure SetCookie(const vNameSpace, vName, Value: string);
+    function GetCookie(const vNameSpace, vName: string): string;
 
     procedure ReadHeader(Stream: TmnBufferStream);
   end;
@@ -402,6 +410,8 @@ procedure ParseParamsEx(const Params: String; mnParams: TmnParams);
 function ParseAddress(const Request: string; out URIPath: string; out URIQuery: string): Boolean; overload;
 function ParseAddress(const Request: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean; overload;
 procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
+function FormatHTTPDate(vDate: TDateTime): string;
+function ExtractDomain(const URI: string): string;
 
 implementation
 
@@ -508,6 +518,42 @@ begin
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
+function FormatHTTPDate(vDate: TDateTime): string;
+var
+  aDate: TDateTime;
+begin
+  aDate := TTimeZone.Local.ToUniversalTime(vDate);
+  Result := FormatDateTime('ddd, dd mmm yyyy hh:nn:ss', aDate) + ' GMT';
+end;
+
+function ExtractDomain(const URI: string): string;
+var
+  aStart, aCount, p: Integer;
+begin
+  if URI<>'' then
+  begin
+    aStart := 1;
+    if StartsText('http://', URI) then Inc(aStart, 7);
+    if StartsText('https://', URI) then Inc(aStart, 8);
+
+    aCount := Length(URI) - aStart + 1;
+
+    p := Pos(':', URI, aStart); //check for port
+    if (p<>0) then aCount := p - aStart;
+
+    p := Pos('/', URI, aStart);
+    if (p<>0) and ((p - aStart)<aCount) then aCount := p - aStart;
+
+
+    if aCount>0 then
+    begin
+      Exit(Copy(URI, aStart, aCount));
+    end;
+  end;
+
+  Result := '';
+end;
+
 { TmodRespond }
 
 procedure TmodRespond.AddHeader(const AName: string; Values: TStringDynArray);
@@ -526,13 +572,8 @@ begin
 end;
 
 procedure TmodRespond.AddHeader(const AName: string; AValue: TDateTime);
-var
-  s: string;
-  aDate: TDateTime;
 begin
-  aDate := TTimeZone.Local.ToUniversalTime(AValue);
-  s := FormatDateTime('ddd, dd mmm yyyy hh:nn:ss', aDate) + ' GMT';
-  AddHeader(AName, s);
+  AddHeader(AName, FormatHTTPDate(AValue));
 end;
 
 procedure TmodRespond.ContentSent;
@@ -1259,7 +1300,7 @@ end;
 constructor TmodCommunicate.Create;
 begin
   inherited Create;
-  FHeader := TmnHeader.Create;
+  FHeader := TmodHeader.Create;
   FCookies := TStringList.Create;
   FCookies.Delimiter := ';';
 end;
@@ -1271,6 +1312,14 @@ begin
   inherited;
 end;
 
+function TmodCommunicate.GetCookie(const vNameSpace, vName: string): string;
+begin
+  if vNameSpace<>'' then
+    Result := Cookies.Values[vNameSpace+'.'+vName]
+  else
+    Result := Cookies.Values[vName];
+end;
+
 procedure TmodCommunicate.ReadHeader(Stream: TmnBufferStream);
 begin
   Header.ReadHeader(Stream);
@@ -1278,7 +1327,15 @@ begin
   Cookies.DelimitedText := Header['Cookie'];
 end;
 
-procedure TmodCommunicate.SetHeader(const AValue: TmnHeader);
+procedure TmodCommunicate.SetCookie(const vNameSpace, vName, Value: string);
+begin
+  if vNameSpace<>'' then
+    Cookies.Values[vNameSpace+'.'+vName] := Value
+  else
+    Cookies.Values[vName] := Value;
+end;
+
+procedure TmodCommunicate.SetHeader(const AValue: TmodHeader);
 begin
   if FHeader <> AValue then
   begin
@@ -1295,6 +1352,26 @@ begin
     Result := Strings[vIndex]
   else
     Result := '';
+end;
+
+{ TmodHeader }
+
+function TmodHeader.Domain: string;
+var
+  s: string;
+begin
+  s := Origin;
+  if s<>'*' then
+    Result := ExtractDomain(s)
+  else
+    Result := '';
+end;
+
+function TmodHeader.Origin: string;
+begin
+  Result := Self['Origin'];
+  if Result='' then
+    Result := '*';
 end;
 
 end.
