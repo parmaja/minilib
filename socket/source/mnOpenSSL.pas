@@ -222,10 +222,10 @@ begin
   case where of
     SSL_CB_ALERT: Log.writeln('SSL alert: '+ SSL_alert_type_string_long(ret)+ ':'+ SSL_alert_desc_string_long(ret)+ ':');
     SSL_CB_LOOP: Log.writeln('SSL state: '+ SSL_state_string(ssl)+ ':'+ SSL_state_string_long(ssl));
-    SSL_CB_HANDSHAKE_START: Log.writeln('SSL handshake started');
-    SSL_CB_HANDSHAKE_DONE: Log.writeln('SSL handshake completed');
+    SSL_CB_HANDSHAKE_START: Log.writeln(lglDebug, 'SSL handshake started');
+    SSL_CB_HANDSHAKE_DONE: Log.writeln(lglDebug, 'SSL handshake completed');
     else
-      Log.writeln('SSL alert: '+ SSL_alert_type_string_long(ret)+ ':'+ SSL_alert_desc_string_long(ret));
+      Log.writeln(lglDebug, 'SSL alert: '+ SSL_alert_type_string_long(ret)+ ':'+ SSL_alert_desc_string_long(ret));
       //Log.writeln('where %d ret %d state:', [where, ret]);
   end;
 end;
@@ -700,13 +700,13 @@ begin
   begin
     Result := False;
     s := ERR_error_string(ERR_get_error(), nil);
-    Log.WriteLn('Connect: ' + s);
+    Log.WriteLn(lglDebug, 'Connect: ' + s);
   end
   else if ret = 0 then //error
     Result := False
   else
     Result := True;
-  Log.WriteLn('version: ' + SSL_get_version(Handle));
+  Log.WriteLn(lglDebug, 'version: ' + SSL_get_version(Handle));
 
 end;
 
@@ -718,7 +718,7 @@ begin
   if ret <= 0  then
   begin
     err := SSL_get_error(Handle, ret);
-    Log.WriteLn('ServerHandshake: ' + ERR_error_string(err, nil));
+    Log.WriteLn(lglDebug, 'ServerHandshake: ' + ERR_error_string(err, nil));
     Result := False;
   end
   else
@@ -755,8 +755,8 @@ begin
       Result := seClosed
     else if err = SSL_ERROR_SYSCALL then
     begin
-      Log.WriteLn('Read: ' + ERR_error_string(err, nil));
-      Log.WriteLn('Read: Socket Error: ' + IntToStr(errno));
+      Log.WriteLn(lglInfo, 'Read: ' + ERR_error_string(err, nil));
+      Log.WriteLn(lglInfo, 'Read: Socket Error: ' + IntToStr(errno));
       Result := seInvalid;
       //check time out
     end

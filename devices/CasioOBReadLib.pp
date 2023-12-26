@@ -56,11 +56,11 @@ const
   OBR_CHK_ON = $80000000;       { Calculate of check digit (OBROpen) }
   OBR_OUT_ON = $40000000;       { Output of check character (OBROpen) }
   
-	OBR_ENDCR = 0;	// CR
-	OBR_ENDLF = 1;		// LF
-	OBR_ENDCL = 2;		// CR + LF
-	OBR_ENDTAB = 3;		// TAB (HT)
-	OBR_ENDNULL = 4;	// NULL
+  OBR_ENDCR = 0;	// CR
+  OBR_ENDLF = 1;		// LF
+  OBR_ENDCL = 2;		// CR + LF
+  OBR_ENDTAB = 3;		// TAB (HT)
+  OBR_ENDNULL = 4;	// NULL
 
 
   function OBROpen(hWnd:HWND; dwMode:DWORD): integer; cdecl; external OBReadLibDLL;

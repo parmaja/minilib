@@ -522,7 +522,11 @@ function FormatHTTPDate(vDate: TDateTime): string;
 var
   aDate: TDateTime;
 begin
+  {$ifdef FPC}
+  aDate := NowUTC;
+  {$else}
   aDate := TTimeZone.Local.ToUniversalTime(vDate);
+  {$endif}
   Result := FormatDateTime('ddd, dd mmm yyyy hh:nn:ss', aDate) + ' GMT';
 end;
 

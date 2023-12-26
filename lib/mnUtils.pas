@@ -97,14 +97,13 @@ type
 //*  -t --test cmd1 cmd2 -t: value -t:value -t value
 function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>{['-', '/']}; Options: TParseArgumentsOptions = [pargKeepSwitch, pargDeqoute]; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 
+function GetSubValue(const Content, Name: string; out Value: string; Terminals: TSysCharSet = [';']; WhiteSpaces: TSysCharSet = [' ',#9]; Quotes: TSysCharSet = ['"']; ValueSeperators: TSysCharSet = ['=']): Boolean; overload;
+
 //*
 function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Options: TParseArgumentsOptions = [pargKeepSwitch, pargDeqoute]; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 
 //* Skip first param
 function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
-
-function GetSubValue(const Content, Name: string; out Value: string; Terminals: TSysCharSet = [';']; WhiteSpaces: TSysCharSet = [' ',#9]; Quotes: TSysCharSet = ['"']; ValueSeperators: TSysCharSet = ['=']): Boolean; overload;
-
 
 {
   param1 param2 -s -w: value

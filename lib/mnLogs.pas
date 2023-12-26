@@ -22,11 +22,20 @@ uses
 
 type
 
+  TLogLevel = (lglInfo, lglWarning, lglDebug);
+
   { ILog }
 
   ILog = interface(IInterface)
     ['{ADAAE11A-FEED-450C-818F-04915E7730AA}']
     procedure LogWrite(S: string);
+  end;
+
+  TLogDispatcherItem = class(TObject)
+  public
+    LogLevel: TLogLevel;
+    LogObject: TObject;
+    destructor Destroy; override;
   end;
 
   { TLogDispatcher }
@@ -36,15 +45,20 @@ type
   protected
   public
     destructor Destroy; override;
-    function Add(AObject: TObject): Integer;
-    procedure Write(S: string); overload;
-    procedure WriteLn(S: string); overload;
-    procedure WriteLn(S: string; vArgs: array of const); overload;
+    function Install(ALogLevel: TLogLevel; AObject: TObject): Integer;
+    function Add(AObject: TLogDispatcherItem): Integer;
+
+    procedure Write(LogLevel: TLogLevel; const S: string); overload;
+    procedure WriteLn(LogLevel: TLogLevel; const S: string); overload;
+
+    procedure Write(const S: string); overload; inline;
+    procedure WriteLn(const S: string); overload;
+    procedure WriteLn(const S: string; const vArgs: array of const); overload;
 
     procedure Write(R: TRect); overload;
     procedure Write(I: Integer); overload;
     procedure Write(X, Y: Integer); overload;
-    procedure Write(S: string; I: Integer); overload;
+    procedure Write(const S: string; I: Integer); overload;
   end;
 
   { TFileLog }
@@ -88,11 +102,11 @@ type
   public
   end;
 
-procedure InstallFileLog(FileName: string);
-procedure InstallEventLog(AEvent: TLogEvent);
-procedure UninstallEventLog(AEvent: TLogEvent);
-procedure InstallConsoleLog;
-procedure InstallDebugOutputLog;
+procedure InstallFileLog(FileName: string; LogLevel: TLogLevel = lglDebug);
+procedure InstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel = lglDebug);
+procedure UninstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel = lglDebug);
+procedure InstallConsoleLog(LogLevel: TLogLevel = lglDebug);
+procedure InstallDebugOutputLog(LogLevel: TLogLevel = lglDebug);
 {$ifdef FPC}
 procedure InstallExceptLog(WithIO: Boolean = False);
 {$endif}
@@ -115,17 +129,17 @@ begin
   Result := FLog;
 end;
 
-procedure InstallFileLog(FileName: string);
+procedure InstallFileLog(FileName: string; LogLevel: TLogLevel);
 begin
-  Log.Add(TFileLog.Create(FileName));
+  Log.Install(LogLevel, TFileLog.Create(FileName));
 end;
 
-procedure InstallEventLog(AEvent: TLogEvent);
+procedure InstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel);
 begin
-  Log.Add(TEventLog.Create(AEvent));
+  Log.Install(LogLevel, TEventLog.Create(AEvent));
 end;
 
-procedure UninstallEventLog(AEvent: TLogEvent);
+procedure UninstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel);
 var
   i: Integer;
 begin
@@ -143,14 +157,14 @@ begin
   raise Exception.Create('There is no Event install for it');
 end;
 
-procedure InstallConsoleLog;
+procedure InstallConsoleLog(LogLevel: TLogLevel);
 begin
-  Log.Add(TConsoleLog.Create);
+  Log.Install(LogLevel, TConsoleLog.Create);
 end;
 
-procedure InstallDebugOutputLog;
+procedure InstallDebugOutputLog(LogLevel: TLogLevel);
 begin
-  Log.Add(TDebugOutputLog.Create);
+  Log.Install(LogLevel, TDebugOutputLog.Create);
 end;
 
 {$ifdef FPC}
@@ -241,46 +255,60 @@ end;
 
 { TLogDispatcher }
 
+function TLogDispatcher.Add(AObject: TLogDispatcherItem): Integer;
+begin
+  Result := inherited Add(AObject);
+end;
+
 destructor TLogDispatcher.Destroy;
 begin
   FLog := nil;
   inherited;
 end;
 
-function TLogDispatcher.Add(AObject: TObject): Integer;
+function TLogDispatcher.Install(ALogLevel: TLogLevel; AObject: TObject): Integer;
+var
+  item: TLogDispatcherItem;
 begin
   {$ifndef FPC} //Delphi
   if not (AObject is TInterfacedPersistent) then
     raise Exception.Create('Object is not InterfacedPersistent');
   {$endif}
+
   if not Supports(AObject, ILog) then
     raise Exception.Create('Object is no ILog');
 
-  Result := inherited Add(AObject);
+  item := TLogDispatcherItem.Create;
+  item.LogLevel := ALogLevel;
+  item.LogObject := AObject;
+  Result := inherited Add(item);
 end;
 
-procedure TLogDispatcher.Write(S: string);
+procedure TLogDispatcher.Write(LogLevel: TLogLevel; const S: string);
 var
   i: Integer;
   ALog: ILog;
+  item: TLogDispatcherItem;
 begin
   Lock.Enter;
   try
     for i := 0 to Count -1 do
     begin
+      item := Items[i] as TLogDispatcherItem;
       {$ifdef FPC}
-      ALog := (Items[i] as ILog);
+      ALog := (item.LogObject as ILog);
       {$else}
-      ALog := (TInterfacedPersistent(Items[i]) as ILog);
+      ALog := (TInterfacedPersistent(item.LogObject) as ILog);
       {$endif}
-      ALog.LogWrite(S);
+      if item.LogLevel >= LogLevel then
+        ALog.LogWrite(S);
     end;
   finally
     Lock.Leave;
   end;
 end;
 
-procedure TLogDispatcher.WriteLn(S: string);
+procedure TLogDispatcher.WriteLn(const S: string);
 begin
   Write(s + #13#10);
 end;
@@ -300,12 +328,22 @@ begin
   Write(IntToStr(X) + ', ' + IntToStr(Y));
 end;
 
-procedure TLogDispatcher.Write(S: string; I: Integer);
+procedure TLogDispatcher.Write(const S: string; I: Integer);
 begin
   Write(S + ': ' + IntToStr(I));
 end;
 
-procedure TLogDispatcher.WriteLn(S: string; vArgs: array of const);
+procedure TLogDispatcher.Write(const S: string);
+begin
+  Write(lglInfo, S);
+end;
+
+procedure TLogDispatcher.WriteLn(LogLevel: TLogLevel; const S: string);
+begin
+  Write(LogLevel, s + #13#10);
+end;
+
+procedure TLogDispatcher.WriteLn(const S: string; const vArgs: array of const);
 begin
   Self.WriteLn(Format(s, vArgs));
 end;
@@ -365,6 +403,14 @@ begin
   a := StringReplace(s, #13#10, ' ', []);
   a := StringReplace(a, #13, ' ', []);
   InternalWrite(a + #13#10);
+end;
+
+{ TLogDispatcherItem }
+
+destructor TLogDispatcherItem.Destroy;
+begin
+  FreeAndNil(LogObject);
+  inherited;
 end;
 
 initialization
