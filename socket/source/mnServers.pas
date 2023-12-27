@@ -176,6 +176,7 @@ type
     function GetConnected: Boolean;
   protected
     IsDestroying: Boolean;
+    IsStopping: Boolean;
     function DoCreateListener: TmnListener; virtual;
     function CreateListener: TmnListener; virtual;
     procedure DoLog(const S: string); virtual;
@@ -201,8 +202,11 @@ type
     //Server.Log This called from outside of any threads, i mean you should be in the main thread to call it, if not use Listener.Log
     procedure Log(const S: string);
 
-    procedure Start; //alias for Open
-    procedure Stop; //alias for Close
+    procedure Start;
+    procedure Wait;
+    procedure Restart;
+    procedure Disconnect; //* Disconnect stop listener connection
+    procedure Stop;
 
     property Listener: TmnListener read FListener;
     property Count: Integer read GetCount;
@@ -478,7 +482,14 @@ end;
 function TmnServer.GetCount: Integer;
 begin
   if Listener <> nil then
-    Result := Listener.Count
+  begin
+    Listener.Enter;
+    try
+      Result := Listener.Count;
+    finally
+      Listener.Leave;
+    end;
+  end
   else
     Result := 0;
 end;
@@ -805,7 +816,7 @@ begin
       aConnection := List[0];
       aConnection.Terminate;
       aConnection.WaitFor;
-      Log('Connection Stopped #' + IntToStr(aConnection.ID));
+      //Log('Connection Stopped #' + IntToStr(aConnection.ID));
       aConnection.Free;
       List.Delete(0);
     end;
@@ -862,9 +873,21 @@ begin
   inherited;
 end;
 
+procedure TmnServer.Disconnect;
+begin
+  if Listener <> nil then
+    Listener.Disconnect;
+end;
+
 procedure TmnServer.Log(const S: string);
 begin
   DoLog(S);
+end;
+
+procedure TmnServer.Restart;
+begin
+  Stop;
+  Start;
 end;
 
 procedure TmnServer.Start;
@@ -911,22 +934,33 @@ procedure TmnServer.Stop;
 begin
   if (FListener <> nil) then
   begin
-    DoBeforeClose;
-    FListener.Terminate;
-    FListener.WaitFor;
-    Log('Listener Stopped');
+    if not IsStopping then
+    begin
+      IsStopping := True;
+      DoBeforeClose;
+      FListener.Terminate;
+      FListener.WaitFor;
+      Log('Listener Stopped');
 
-    //to process all queues
-    //in case of service ThreadID<>MainThreadID :)
-    TThread.Synchronize(nil, DoCheckSynchronize);
+      //to process all queues
+      //in case of service ThreadID<>MainThreadID :)
+      TThread.Synchronize(nil, DoCheckSynchronize);
 
-    FreeAndNil(FListener);
-    FActive := False;
-    DoAfterClose;
+      FreeAndNil(FListener);
+      FActive := False;
+      DoAfterClose;
+      IsStopping := False;
+      Log('Server stopped');
+    end;
   end;
-  Log('Server stopped');
   DoStop;
   //TThread.Synchronize(nil, DoCheckSynchronize);
+end;
+
+procedure TmnServer.Wait;
+begin
+  if Listener <> nil then
+    Listener.WaitFor;
 end;
 
 function TmnServer.DoCreateListener: TmnListener;
