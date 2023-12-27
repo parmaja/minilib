@@ -44,6 +44,7 @@ type
   private
   protected
   public
+    constructor Create;
     destructor Destroy; override;
     function Install(ALogLevel: TLogLevel; AObject: TObject): Integer;
     function Add(AObject: TLogDispatcherItem): Integer;
@@ -124,7 +125,7 @@ begin
   if not Assigned(FLog) then
   begin
     Lock := TCriticalSection.Create;
-    FLog := TLogDispatcher.Create(True);
+    FLog := TLogDispatcher.Create;
   end;
   Result := FLog;
 end;
@@ -260,6 +261,11 @@ begin
   Result := inherited Add(AObject);
 end;
 
+constructor TLogDispatcher.Create;
+begin
+  inherited Create(True);
+end;
+
 destructor TLogDispatcher.Destroy;
 begin
   FLog := nil;
@@ -310,7 +316,7 @@ end;
 
 procedure TLogDispatcher.WriteLn(const S: string);
 begin
-  Write(s + #13#10);
+  WriteLn(lglInfo, s);
 end;
 
 procedure TLogDispatcher.Write(R: TRect);
@@ -345,7 +351,7 @@ end;
 
 procedure TLogDispatcher.WriteLn(const S: string; const vArgs: array of const);
 begin
-  Self.WriteLn(Format(s, vArgs));
+  WriteLn(lglInfo, Format(s, vArgs));
 end;
 
 { TFileLog }
