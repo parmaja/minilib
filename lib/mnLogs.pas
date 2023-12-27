@@ -13,7 +13,7 @@ unit mnLogs;
 interface
 
 uses
-  {$ifdef WINDOWS} Windows, {$endif}
+  {$ifdef MSWINDOWS} Windows, {$endif}
   {$ifdef FPC}
   {$else}
   System.Types,
@@ -87,17 +87,17 @@ type
     constructor Create(AEvent: TLogEvent);
   end;
 
-  { TDebugOutputLog }
+  { TConsoleLog }
 
-  TDebugOutputLog = class(TInterfacedPersistent, ILog)
+  TConsoleLog = class(TInterfacedPersistent, ILog)
   private
     procedure LogWrite(S: string);
   public
   end;
 
-  { TConsoleLog }
+  { TDebugOutputLog }
 
-  TConsoleLog = class(TInterfacedPersistent, ILog)
+  TDebugOutputLog = class(TInterfacedPersistent, ILog)
   private
     procedure LogWrite(S: string);
   public
@@ -243,13 +243,13 @@ end;
 
 procedure TDebugOutputLog.LogWrite(S: string);
 begin
-  {$ifdef WINDOWS}
-  s := IntToStr(GetTickCount64) + ': ' +s;
-  {$ifdef FPC}
-  OutputDebugString(PAnsiChar(S));
-  {$else}
-  OutputDebugString(PWideChar(S));
-  {$endif}
+  {$ifdef MSWINDOWS}
+    s := IntToStr(TThread.GetTickCount64) + ': ' +s;
+    {$ifdef FPC}
+    OutputDebugString(PAnsiChar(S));
+    {$else}
+    OutputDebugStringW(PWideChar(S));
+    {$endif}
   {$else}
   {$endif}
 end;
