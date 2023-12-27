@@ -36,7 +36,7 @@ type
   TmnSocketStates = set of TmnSocketState;
   TmnError = (erSuccess, erTimeout, erClosed, erInvalid);
 
-  TSocketHandle = Integer;
+  TSocketHandle = NativeInt;
 
   TSelectCheck = (slRead, slWrite);
 
@@ -136,7 +136,7 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
 
-    function GetSocketError(Handle: Integer): Integer; virtual;
+    function GetSocketError(Handle: TSocketHandle): Integer; virtual;
 
     //Bind used by Listener of server
     procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
@@ -225,7 +225,7 @@ begin
   inherited;
 end;
 
-function TmnCustomWallSocket.GetSocketError(Handle: Integer): Integer;
+function TmnCustomWallSocket.GetSocketError(Handle: TSocketHandle): Integer;
 begin
   Result := 0;
 end;

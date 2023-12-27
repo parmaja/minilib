@@ -73,7 +73,7 @@ implementation
 
 const
   cBacklog = 5;
-  INVALID_SOCKET: Integer = -1;
+  INVALID_SOCKET: TSocketHandle = TSocketHandle(-1);
   SO_TRUE: Longbool = True;
 //  SO_FALSE:Longbool=False;
   TCP_QUICKACK = 12; //Some one said it is work on windows too
@@ -376,7 +376,7 @@ procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOpti
 var
   aHandle: TSocketHandle;
 begin
-  aHandle := WinSock2.Accept(ListenerHandle, nil, nil);
+  aHandle := TSocketHandle(WinSock2.accept(ListenerHandle, nil, nil)); //* Typecast it because in windows is usigned nativeint
   if aHandle = INVALID_SOCKET then
   begin
     vSocket := nil;
@@ -447,7 +447,7 @@ var
   aSockAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
   aHostEnt: PHostEnt;
 begin
-  aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  aHandle := TSocketHandle(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP));
 
   if aHandle <> INVALID_SOCKET then
   begin
@@ -515,7 +515,7 @@ var
 begin
   //* https://stackoverflow.com/questions/2605182/when-binding-a-client-tcp-socket-to-a-specific-local-port-with-winsock-so-reuse
 
-  aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  aHandle := TSocketHandle(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP));
   if aHandle <> INVALID_SOCKET then
   begin
     vErr := InitSocketOptions(aHandle, Options, ReadTimeout);
