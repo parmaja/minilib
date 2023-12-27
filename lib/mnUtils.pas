@@ -158,7 +158,7 @@ function EncloseStr(const S, Left, Right: string): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
 
-function ConcatString(const S1, Delimiter: string; S2: string = ''): string;
+function ConcatString(const S1, Delimiter: string; const S2: string = ''): string;
 function CollectStrings(Strings: TStrings; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
 function CollectStrings(Strings: array of string; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
 
@@ -219,8 +219,8 @@ const
   cDefEscapeStrings = ['b', 't', 'n', 'r', '\', '"'];
   cDefEscapePrefix = '\';
 
-function EscapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
-function DescapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
+function EscapeString(const S: string; const Esc: string; Chars: array of Char; Escapes: array of string): string;
+function DescapeString(const S: string; const Esc: string; Chars: array of Char; Escapes: array of string): string;
 
 function EscapeStringC(const S: string): string;
 function DescapeStringC(const S: string): string;
@@ -455,7 +455,7 @@ begin
   end;
 end;
 
-function ConcatString(const S1, Delimiter: string; S2: string): string;
+function ConcatString(const S1, Delimiter: string; const S2: string): string;
 begin
   Result := S1;
   if (Result <> '') and (S2 <> '') then
@@ -1259,7 +1259,7 @@ begin
   end;
 end;
 
-function EscapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
+function EscapeString(const S: string; const Esc: string; Chars: array of Char; Escapes: array of string): string;
   function InChars(const Char: Char): Integer;
   var
     i: Integer;
@@ -1316,7 +1316,7 @@ begin
   end;
 end;
 
-function DescapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
+function DescapeString(const S: string; const Esc: string; Chars: array of Char; Escapes: array of string): string;
   function InEscape(Start: Integer): Integer;
   var
     i: Integer;
