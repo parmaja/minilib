@@ -1218,10 +1218,12 @@ procedure TTestStream.DoRun;
 var
   s: UTF8String;
   n: Integer;
+
   Commands: array of record
     name: UTF8String;
     proc: TProcedureObject;
   end;
+
   procedure AddProc(Name: UTF8String; Proc: TProcedureObject);
   begin
     SetLength(Commands, Length(Commands) + 1);

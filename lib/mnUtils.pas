@@ -103,7 +103,7 @@ function GetSubValue(const Content, Name: string; out Value: string; Terminals: 
 function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Options: TParseArgumentsOptions = [pargKeepSwitch, pargDeqoute]; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 
 //* Skip first param
-function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
+function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload; deprecated 'not work in linux';
 
 {
   param1 param2 -s -w: value
@@ -114,8 +114,9 @@ function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<C
   -w=value
 }
 
-function GetArgumentValue(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean; overload;
-function GetArgumentSwitch(Strings: TStrings; Switch: string; AltSwitch: string = ''): Boolean; overload;
+//SwitchName: Use switch char too, like `-demon`
+function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitch: string = ''): Boolean; overload;
+function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitch: string = ''): Boolean; overload;
 
 //Get Param (non switch value by index)
 function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean; overload;
@@ -1054,7 +1055,7 @@ begin
   Result := ParseArgumentsCallback(Content, @CommandLineCallbackProc, Strings, Switches, [pargKeepSwitch, pargDeqoute], WhiteSpaces, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
-function GetArgumentValue(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean;
+function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitch: string = ''): Boolean;
 var
   I, P: Integer;
   S: string;
@@ -1067,7 +1068,7 @@ begin
     P := Pos(Strings.NameValueSeparator, S);
     if (P <> 0) then
     begin
-      if (SameText(Copy(S, 1, P - 1), Switch))
+      if (SameText(Copy(S, 1, P - 1), SwitchName))
         or ((AltSwitch <> '') and (SameText(Copy(S, 1, P - 1), AltSwitch))) then
         begin
           Value := Copy(S, p + 1, MaxInt);
@@ -1077,7 +1078,7 @@ begin
   end;
 end;
 
-function GetArgumentSwitch(Strings: TStrings; Switch: string; AltSwitch: string = ''): Boolean; overload;
+function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitch: string = ''): Boolean; overload;
 var
   I, P: Integer;
   S: string;
@@ -1092,11 +1093,10 @@ begin
     else
       S := Copy(S, 1, MaxInt);
 
-    if SameText(S, Switch) or ((AltSwitch <> '') and (SameText(S, AltSwitch))) then
+    if SameText(S, SwitchName) or ((AltSwitch <> '') and (SameText(S, AltSwitch))) then
       Exit(True);
   end;
 end;
-
 
 function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean;
 var
