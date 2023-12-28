@@ -67,11 +67,11 @@ type
   TFileLog = class(TInterfacedPersistent, ILog)
   private
     FFileName: string;
-    procedure InternalWrite(S: string);
+    procedure InternalWrite(const S: string);
     function OpenStream: TStream;
     procedure LogWrite(S: string);
   public
-    constructor Create(FileName: string);
+    constructor Create(const FileName: string);
     destructor Destroy; override;
   end;
 
@@ -356,7 +356,7 @@ end;
 
 { TFileLog }
 
-constructor TFileLog.Create(FileName: string);
+constructor TFileLog.Create(const FileName: string);
 begin
   inherited Create;
   FFileName := FileName
@@ -367,14 +367,16 @@ begin
   inherited;
 end;
 
-procedure TFileLog.InternalWrite(S: string);
+procedure TFileLog.InternalWrite(const S: string);
 var
   aStream: TStream;
+  u: UTF8String;
 begin
   aStream := OpenStream;
   if aStream <> nil then
   try
-    aStream.Write(PChar(s)^, Length(s));
+    u := UTF8Encode(s);
+    aStream.Write(PByte(u)^, Length(u));
   finally
     aStream.Free;
   end;
