@@ -116,6 +116,7 @@ type
     function loUnlink(vOID: Integer): Integer;
     function loCopy(vOID: Integer): Integer; overload;
     property Channel: string read FChannel write SetChannel; //TODO make new classes for it
+    procedure DoExecute(const vSQL: string); overload; override;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -124,7 +125,6 @@ type
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
     property Handle: PPGconn read FHandle;
-    procedure Execute(const vSQL: string); overload; override;
 
     procedure Interrupt;
     //TODO: Reconnect  use PQReset
@@ -927,7 +927,7 @@ procedure TmncPGConnection.DoResetConnection(PGResult: PPGresult; var vResume: B
 begin
 end;
 
-procedure TmncPGConnection.Execute(const vSQL: string);
+procedure TmncPGConnection.DoExecute(const vSQL: string);
 var
   s: utf8string;
   r: PPGresult;
