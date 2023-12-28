@@ -125,6 +125,7 @@ type
     procedure DoClone(vConn: TmncSQLConnection); virtual;
     function DoGetNextIDSQL(const vName: string; vStep: Integer): string; virtual; deprecated; //TODO move it to dervied class should not be here, wrong place
     function GetSequenceSQL: string; virtual;
+    procedure DoExecute(const vSQL: string); virtual;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -142,7 +143,7 @@ type
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); overload; virtual; abstract;
     procedure DropDatabase(CheckExists: Boolean = False); overload;
 
-    procedure Execute(const vSQL: string); overload; virtual;
+    procedure Execute(const vSQL: string); overload;
     procedure Execute(const vSQL: string; vArgs: array of const); overload;
 
     function Clone(const vResource: string; AutoConnect: Boolean = True): TmncSQLConnection; overload;
@@ -519,6 +520,11 @@ procedure TmncSQLConnection.DoClone(vConn: TmncSQLConnection);
 begin
 end;
 
+procedure TmncSQLConnection.DoExecute(const vSQL: string);
+begin
+  raise Exception.Create('Execute is not suported in ' + EngineName);
+end;
+
 constructor TmncSQLConnection.Create;
 begin
   inherited Create;
@@ -544,7 +550,8 @@ end;
 
 procedure TmncSQLConnection.Execute(const vSQL: string);
 begin
-  raise Exception.Create('Execute is not suported in ' + EngineName);
+  if Connected then
+    DoExecute(vSQL);
 end;
 
 function TmncSQLConnection.EnumDatabases: TStrings;

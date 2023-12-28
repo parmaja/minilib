@@ -55,18 +55,18 @@ type
     procedure CheckError(Error: Integer; const ExtraMsg: string = '');
     procedure DoInit; override;
     function DoGetNextIDSQL(const vName: string; vStep: Integer): string; override;
+    procedure DoExecute(const vSQL: string); override;
   public
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
-    function CreateTransaction: TmncSQLTransaction; overload; override; 
+    function CreateTransaction: TmncSQLTransaction; overload; override;
     procedure Interrupt;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean =False); override;
     function IsDatabaseExists(const vName: string): Boolean; override;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
     procedure Vacuum; override;
     function GetVersion: string;
-    procedure Execute(const vSQL: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property ReadCommited: Boolean read FReadCommited write SetReadCommited;
     property Synchronous: TmncSynchronous read FSynchronous write FSynchronous default syncDefault;
@@ -525,7 +525,7 @@ begin
     Execute('BEGIN');
 end;
 
-procedure TmncSQLiteConnection.Execute(const vSQL: string);
+procedure TmncSQLiteConnection.DoExecute(const vSQL: string);
 var
  lMsg  : PUtf8Char;
  s : Utf8String;
