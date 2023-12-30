@@ -102,8 +102,9 @@ function GetSubValue(const Content, Name: string; out Value: string; Terminals: 
 //*
 function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Options: TParseArgumentsOptions = [pargKeepSwitch, pargDeqoute]; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 
-//* Skip first param
-function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload; deprecated 'not work in linux';
+
+//Parse ParamStr to Strings
+procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> = []);
 
 {
   param1 param2 -s -w: value
@@ -1044,15 +1045,42 @@ begin
   Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, Options, Terminals, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
-procedure CommandLineCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch: Boolean; var Resume: Boolean);
+procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string>);
 begin
-  if Index > 0 then //ignore first param (exe file)
-    ArgumentsCallbackProc(Sender, Index, Name, Value, IsSwitch, Resume);
-end;
+  var NextIsValue: Boolean := False;
+  var arg: string;
+  for var i := 1 to ParamCount do
+  begin
+    //-----------
+    if NextIsValue then
+    begin
+      arg := arg + '=' + ParamStr(i);
+      NextIsValue := False;
+    end
+    else
+      arg := ParamStr(i);
 
-function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
-begin
-  Result := ParseArgumentsCallback(Content, @CommandLineCallbackProc, Strings, Switches, [pargKeepSwitch, pargDeqoute], WhiteSpaces, WhiteSpaces, Quotes, ValueSeperators);
+    if StartsText('/', arg) then
+      arg := '-' + Copy(arg, 2, MaxInt)
+    else if StartsText('--', arg) then
+      arg := Copy(arg, 2, MaxInt);
+
+    if EndsText('=', arg) or EndsText(':', arg) then
+    begin
+      arg := Copy(arg, 1, Length(arg)-1);
+      NextIsValue := True;
+    end
+    else if StrInArray(arg, KeyValues) then
+      NextIsValue := True;
+
+    if not NextIsValue then
+    begin
+      Arguments.Add(arg);
+      arg := '';
+    end;
+  end;
+  if arg <> '' then
+    Arguments.Add(arg);
 end;
 
 function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitch: string = ''): Boolean;
