@@ -42,6 +42,7 @@ type
 
   TLogDispatcher = class(TObjectList)
   private
+    FEnabled: Boolean;
   protected
   public
     constructor Create;
@@ -60,6 +61,8 @@ type
     procedure Write(I: Integer); overload;
     procedure Write(X, Y: Integer); overload;
     procedure Write(const S: string; I: Integer); overload;
+
+    property Enabled: Boolean read FEnabled write FEnabled;
   end;
 
   { TFileLog }
@@ -264,6 +267,7 @@ end;
 constructor TLogDispatcher.Create;
 begin
   inherited Create(True);
+  Enabled := True;
 end;
 
 destructor TLogDispatcher.Destroy;
@@ -296,6 +300,8 @@ var
   ALog: ILog;
   item: TLogDispatcherItem;
 begin
+  if not Enabled then
+    exit;
   Lock.Enter;
   try
     for i := 0 to Count -1 do

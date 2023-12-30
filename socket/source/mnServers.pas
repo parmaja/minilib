@@ -841,9 +841,9 @@ begin
       Sleep(1); //for breathing signals in system os
 
     end;
-    Log('before finally: TmnListener.TerminatedSet');
+    //Log('before finally: TmnListener.TerminatedSet');
   finally
-    Log('finally: TmnListener.TerminatedSet');
+    //Log('finally: TmnListener.TerminatedSet');
     Leave;
   end;
 end;
