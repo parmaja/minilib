@@ -40,6 +40,7 @@ type
     procedure InternalConnect(out vHandle: PMYSQL; vResource: string);
     procedure DoConnect; override;
     procedure DoDisconnect; override;
+    procedure DoExecute(const vSQL: string); override;
     function GetConnected:Boolean; override;
     procedure RaiseError(Error: Integer; const ExtraMsg: string = '');
     procedure CheckError(Error: Integer; const ExtraMsg: string = ''); overload;
@@ -61,7 +62,6 @@ type
     procedure Vacuum; override;
 
     function GetVersion: string;
-    procedure Execute(const vSQL: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property ReadCommited: Boolean read FReadCommited write SetReadCommited;
     property DBHandle: PMYSQL read FDBHandle;
@@ -648,7 +648,7 @@ begin
     Execute('BEGIN');
 end;
 
-procedure TmncMySQLConnection.Execute(const vSQL: string);
+procedure TmncMySQLConnection.DoExecute(const vSQL: string);
 begin
   CheckError(mysql_query(FDBHandle, PAnsiChar(vSQL)));
 end;
