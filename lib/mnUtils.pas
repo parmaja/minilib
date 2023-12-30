@@ -45,6 +45,7 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 type
   TStrToStringsCallbackProc = procedure(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
   TStrToStringsExCallbackProc = procedure(Sender: Pointer; Index, CharIndex, NextIndex: Integer; S: string; var Resume: Boolean);
+
   TArgumentsCallbackProc = procedure(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
 
 {**
@@ -97,14 +98,14 @@ type
 //*  -t --test cmd1 cmd2 -t: value -t:value -t value
 function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>{['-', '/']}; Options: TParseArgumentsOptions = [pargKeepSwitch, pargDeqoute]; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 
-function GetSubValue(const Content, Name: string; out Value: string; Terminals: TSysCharSet = [';']; WhiteSpaces: TSysCharSet = [' ',#9]; Quotes: TSysCharSet = ['"']; ValueSeperators: TSysCharSet = ['=']): Boolean; overload;
-
-//*
 function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Options: TParseArgumentsOptions = [pargKeepSwitch, pargDeqoute]; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
+function GetSubValue(const Content, Name: string; out Value: string; Terminals: TSysCharSet = [';']; WhiteSpaces: TSysCharSet = [' ',#9]; Quotes: TSysCharSet = ['"']; ValueSeperators: TSysCharSet = ['=']): Boolean; overload;
+//*
 
 
 //Parse ParamStr to Strings
-procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> = []);
+procedure ParseCommandArguments(Sender: Pointer; CallBackProc: TArgumentsCallbackProc; KeyValues: TArray<string> = []); overload;
+procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> = []); overload;
 
 {
   param1 param2 -s -w: value
@@ -116,8 +117,8 @@ procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> =
 }
 
 //SwitchName: Use switch char too, like `-demon`
-function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitch: string = ''): Boolean; overload;
-function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitch: string = ''): Boolean; overload;
+function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
+function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
 
 //Get Param (non switch value by index)
 function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean; overload;
@@ -1045,49 +1046,69 @@ begin
   Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, Options, Terminals, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
-procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string>);
+procedure ParseCommandArguments(Sender: Pointer; CallBackProc: TArgumentsCallbackProc; KeyValues: TArray<string>);
+var
+  Resume: Boolean;
+  NextIsValue: Boolean;
+  Name, Value: string;
+  i, c: Integer;
 begin
-  var NextIsValue: Boolean := False;
-  var arg: string;
-  for var i := 1 to ParamCount do
+  NextIsValue := False;
+  c := 0;
+  for i := 1 to ParamCount do
   begin
     //-----------
     if NextIsValue then
     begin
-      arg := arg + '=' + ParamStr(i);
+      Value := ParamStr(i);
       NextIsValue := False;
     end
     else
-      arg := ParamStr(i);
+      Name := ParamStr(i);
 
-    if StartsText('/', arg) then
-      arg := '-' + Copy(arg, 2, MaxInt)
-    else if StartsText('--', arg) then
-      arg := Copy(arg, 2, MaxInt);
+    if StartsText('/', Name) then
+      Name := '-' + Copy(Name, 2, MaxInt)
+    else if StartsText('--', Name) then
+      Name := Copy(Name, 2, MaxInt);
 
-    if EndsText('=', arg) or EndsText(':', arg) then
+    if EndsText('=', Name) or EndsText(':', Name) then
     begin
-      arg := Copy(arg, 1, Length(arg)-1);
+      Name := Copy(Name, 1, Length(Name)-1);
       NextIsValue := True;
     end
-    else if StrInArray(arg, KeyValues) then
+    else if StrInArray(Name, KeyValues) then
       NextIsValue := True;
 
     if not NextIsValue then
     begin
-      Arguments.Add(arg);
-      arg := '';
+      //Arguments.Add(arg);
+      Resume := True;
+      CallBackProc(Sender, c, Name, Value, StartsText('-', Name), Resume);
+      c := c + 1;
+      if not Resume then
+        break;
+      Name := '';
     end;
   end;
-  if arg <> '' then
-    Arguments.Add(arg);
+
+  if Name <> '' then
+    CallBackProc(Sender, c, Name, Value, StartsText('-', Name), Resume)
 end;
 
-function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitch: string = ''): Boolean;
+procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string>);
+begin
+  ParseCommandArguments(Arguments, ArgumentsCallbackProc, KeyValues);
+end;
+
+function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitchName: string = ''): Boolean;
 var
   I, P: Integer;
   S: string;
 begin
+  if StartsText('--', SwitchName) then
+    SwitchName := Copy(SwitchName, 2, MaxInt);
+  if StartsText('--', AltSwitchName) then
+    AltSwitchName := Copy(AltSwitchName, 2, MaxInt);
   Result := False;
   Value := '';
   for I := 0 to Strings.Count - 1 do
@@ -1097,7 +1118,7 @@ begin
     if (P <> 0) then
     begin
       if (SameText(Copy(S, 1, P - 1), SwitchName))
-        or ((AltSwitch <> '') and (SameText(Copy(S, 1, P - 1), AltSwitch))) then
+        or ((AltSwitchName <> '') and (SameText(Copy(S, 1, P - 1), AltSwitchName))) then
         begin
           Value := Copy(S, p + 1, MaxInt);
           Exit(True);
@@ -1106,12 +1127,16 @@ begin
   end;
 end;
 
-function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitch: string = ''): Boolean; overload;
+function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
 var
   I, P: Integer;
   S: string;
 begin
   Result := False;
+  if StartsText('--', SwitchName) then
+    SwitchName := Copy(SwitchName, 2, MaxInt);
+  if StartsText('--', AltSwitchName) then
+    AltSwitchName := Copy(AltSwitchName, 2, MaxInt);
   for I := 0 to Strings.Count - 1 do
   begin
     S := Strings[I];
@@ -1121,7 +1146,7 @@ begin
     else
       S := Copy(S, 1, MaxInt);
 
-    if SameText(S, SwitchName) or ((AltSwitch <> '') and (SameText(S, AltSwitch))) then
+    if SameText(S, SwitchName) or ((AltSwitchName <> '') and (SameText(S, AltSwitchName))) then
       Exit(True);
   end;
 end;
