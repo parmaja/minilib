@@ -104,7 +104,7 @@ function GetSubValue(const Content, Name: string; out Value: string; Terminals: 
 
 
 //Parse ParamStr to Strings
-procedure ParseCommandArguments(Sender: Pointer; CallBackProc: TArgumentsCallbackProc; KeyValues: TArray<string> = []); overload;
+procedure ParseCommandArguments(CallBackProc: TArgumentsCallbackProc; Sender: Pointer; KeyValues: TArray<string> = []); overload;
 procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> = []); overload;
 
 {
@@ -1046,12 +1046,12 @@ begin
   Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, Options, Terminals, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
-procedure ParseCommandArguments(Sender: Pointer; CallBackProc: TArgumentsCallbackProc; KeyValues: TArray<string>);
+procedure ParseCommandArguments(CallBackProc: TArgumentsCallbackProc; Sender: Pointer; KeyValues: TArray<string>);
 var
   Resume: Boolean;
   NextIsValue: Boolean;
   Name, Value: string;
-  i, c: Integer;
+  i, c, idx: Integer;
 begin
   NextIsValue := False;
   c := 0;
@@ -1064,24 +1064,37 @@ begin
       NextIsValue := False;
     end
     else
-      Name := ParamStr(i);
-
-    if StartsText('/', Name) then
-      Name := '-' + Copy(Name, 2, MaxInt)
-    else if StartsText('--', Name) then
-      Name := Copy(Name, 2, MaxInt);
-
-    if EndsText('=', Name) or EndsText(':', Name) then
     begin
-      Name := Copy(Name, 1, Length(Name)-1);
-      NextIsValue := True;
-    end
-    else if StrInArray(Name, KeyValues) then
-      NextIsValue := True;
+      Name := ParamStr(i);
+      Value := '';
+
+      if StartsText('/', Name) then
+        Name := '-' + Copy(Name, 2, MaxInt)
+      else if StartsText('--', Name) then
+        Name := Copy(Name, 2, MaxInt);
+
+      if EndsText('=', Name) or EndsText(':', Name) then
+      begin
+        Name := Copy(Name, 1, Length(Name)-1);
+        NextIsValue := True;
+      end
+      else if StrInArray(Name, KeyValues) then
+        NextIsValue := True
+      else
+      begin
+        idx := Pos('=', Name);
+        if idx<>0 then
+        begin
+          Value := Copy(Name, idx+1, MaxInt);
+          Name := Copy(Name, 1, idx-1);
+        end;
+      end;
+    end;
 
     if not NextIsValue then
     begin
       //Arguments.Add(arg);
+
       Resume := True;
       CallBackProc(Sender, c, Name, Value, StartsText('-', Name), Resume);
       c := c + 1;
@@ -1097,7 +1110,7 @@ end;
 
 procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string>);
 begin
-  ParseCommandArguments(Arguments, ArgumentsCallbackProc, KeyValues);
+  ParseCommandArguments(ArgumentsCallbackProc, Arguments, KeyValues);
 end;
 
 function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitchName: string = ''): Boolean;
