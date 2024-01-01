@@ -147,8 +147,8 @@ type
     constructor Create(AStream: TStream);
     destructor Destroy; override;
     procedure WriteEndOfLine;
-    procedure Write(S: string; Level: Integer); virtual;
-    procedure WriteLine(S: string; Level: Integer);
+    procedure Write(const S: string; Level: Integer); virtual;
+    procedure WriteLine(const S: string; Level: Integer);
     procedure Flush;
     property Count: Integer read FCount;
   end;
@@ -251,6 +251,10 @@ type
   public
     constructor Create(AParent: TConfSection = nil); override;
     destructor Destroy; override;
+    procedure WriteString(ASectionName, AName: string; Value: String; DeleteIfEmpty: Boolean = False; Overwrite: Boolean = True); overload;
+    procedure WriteInteger(ASectionName, AName: string; Value: Integer); overload;
+    procedure WriteInt64(ASectionName, AName: string; Value: Int64); overload;
+    procedure WriteBool(ASectionName, AName: string; Value: Boolean); overload;
   end;
 
 function ConnectStr(const S1, Sep: string; S2: string = ''): string;
@@ -283,15 +287,17 @@ begin
   inherited;
 end;
 
-procedure TConfWriter.Write(S: string; Level: Integer);
+procedure TConfWriter.Write(const S: string; Level: Integer);
 var
   u: Utf8String;
 begin
+  if (Level <= 1) then //Level 1 is 0 too , TODO option
+    Level := 0;
   u := StringOfChar(' ', Level * cTabSize) + S;
   FStream.Write(u[1], Length(u));
 end;
 
-procedure TConfWriter.WriteLine(S: string; Level: Integer);
+procedure TConfWriter.WriteLine(const S: string; Level: Integer);
 begin
   Write(S, Level);
   WriteEndOfLine;
@@ -1167,6 +1173,26 @@ end;
 destructor TConfFile.Destroy;
 begin
   inherited;
+end;
+
+procedure TConfFile.WriteBool(ASectionName, AName: string; Value: Boolean);
+begin
+  Sections.Require(ASectionName).WriteBool(AName, Value);
+end;
+
+procedure TConfFile.WriteInt64(ASectionName, AName: string; Value: Int64);
+begin
+  Sections.Require(ASectionName).WriteInt64(AName, Value);
+end;
+
+procedure TConfFile.WriteInteger(ASectionName, AName: string; Value: Integer);
+begin
+  Sections.Require(ASectionName).WriteInteger(AName, Value);
+end;
+
+procedure TConfFile.WriteString(ASectionName, AName, Value: String; DeleteIfEmpty, Overwrite: Boolean);
+begin
+  Sections.Require(ASectionName).WriteString(AName, Value, DeleteIfEmpty, Overwrite);
 end;
 
 function TConfSection.ReplaceVariable(S: string): string;
