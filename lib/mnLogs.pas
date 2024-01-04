@@ -22,7 +22,7 @@ uses
 
 type
 
-  TLogLevel = (lglInfo, lglWarning, lglDebug);
+  TLogLevel = (lglError, lglWarning, lglInfo, lglDebug);
 
   { ILog }
 
@@ -34,7 +34,7 @@ type
   TLogDispatcherItem = class(TObject)
   public
     LogLevel: TLogLevel;
-    LogObject: TObject;
+    LogObject: TInterfacedPersistent;
     destructor Destroy; override;
   end;
 
@@ -47,7 +47,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function Install(ALogLevel: TLogLevel; AObject: TObject): Integer;
+    function Install(ALogLevel: TLogLevel; AObject: TInterfacedPersistent): Integer;
     function Add(AObject: TLogDispatcherItem): Integer;
 
     procedure Write(LogLevel: TLogLevel; const S: string); overload;
@@ -276,7 +276,7 @@ begin
   inherited;
 end;
 
-function TLogDispatcher.Install(ALogLevel: TLogLevel; AObject: TObject): Integer;
+function TLogDispatcher.Install(ALogLevel: TLogLevel; AObject: TInterfacedPersistent): Integer;
 var
   item: TLogDispatcherItem;
 begin
@@ -307,11 +307,7 @@ begin
     for i := 0 to Count -1 do
     begin
       item := Items[i] as TLogDispatcherItem;
-      {$ifdef FPC}
       ALog := (item.LogObject as ILog);
-      {$else}
-      ALog := (TInterfacedPersistent(item.LogObject) as ILog);
-      {$endif}
       if item.LogLevel >= LogLevel then
         ALog.LogWrite(S);
     end;
