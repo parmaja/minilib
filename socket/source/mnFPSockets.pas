@@ -430,6 +430,7 @@ var
   time: ttimeval;
   DW: Integer;
 begin
+  Initialize(aHostAddress);
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
   aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
@@ -498,7 +499,7 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skClient, String(NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)), aHostName)
+    vSocket := TmnSocket.Create(aHandle, Options, skClient, String(NetAddrToStr(sockaddr_in(aAddr).sin_addr)), aHostName)
   else
     vSocket := nil;
 end;

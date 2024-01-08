@@ -543,7 +543,7 @@ const
   {* Information call declarations *}
   {*********************************}
 
-  {$i mncFBINf.inc}
+  {$i mncFBInf.inc}
 
   {$i mncFBError.inc}
 
