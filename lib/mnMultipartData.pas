@@ -133,6 +133,8 @@ begin
     Result := 'text/css'
   else if Ext = 'json' then
     Result := 'application/json'
+  else if Ext = 'pdf' then
+    Result := 'application/pdf'
   else if Ext = 'js' then
     Result := 'text/javascript'
   else

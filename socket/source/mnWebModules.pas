@@ -109,7 +109,8 @@ type
 
     procedure RespondNotFound;
     procedure RespondNotActive;
-    procedure SendFile(const vFile: string);
+    procedure SendFile(const vFile: string); overload;
+    procedure SendFile(const vFile, vType: string); overload;
   public
     destructor Destroy; override;
     property Respond: TmodHttpRespond read GetRespond;
@@ -813,36 +814,7 @@ begin
   Log(Request.Client + ': ' + Request.Raw);
 end;
 
-procedure TmodHttpCommand.RespondNotActive;
-var
-  Body: string;
-begin
-  Respond.HttpResult := hrOK;
-  Respond.AddHeader('Content-Type', 'text/html');
-  Respond.SendHeader;
-  Body := '<HTML><HEAD><TITLE>404 Not Active</TITLE></HEAD>' +
-    '<BODY><H1>404 Not Found</H1>The requested URL ' +
-    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
-  Respond.Stream.WriteString(Body);
-  Respond.KeepAlive := False;
-end;
-
-procedure TmodHttpCommand.RespondNotFound;
-var
-  Body: string;
-begin
-  Respond.HttpResult := hrOK;
-  Respond.AddHeader('Content-Type', 'text/html');
-  Respond.SendHeader;
-  Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
-    '<BODY><H1>404 Not Found</H1>The requested URL ' +
-    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
-  Respond.Stream.WriteString(Body);
-  Respond.KeepAlive := False;
-end;
-
-
-procedure TmodHttpCommand.SendFile(const vFile: string);
+procedure TmodHttpCommand.SendFile(const vFile, vType: string);
 var
   aDocSize: Int64;
   aDocStream: TFileStream;
@@ -880,7 +852,7 @@ begin
       Respond.AddHeader('ETag', aFtag);
       if Active then
       begin
-        Respond.AddHeader('Content-Type', DocumentToContentType(vFile));
+        Respond.PutHeader('Content-Type', vType);
         if Respond.KeepAlive then
           Respond.AddHeader('Content-Length', IntToStr(aDocSize));
       end;
@@ -898,6 +870,40 @@ begin
     RespondNotActive;
   end;
 
+end;
+
+procedure TmodHttpCommand.RespondNotActive;
+var
+  Body: string;
+begin
+  Respond.HttpResult := hrOK;
+  Respond.AddHeader('Content-Type', 'text/html');
+  Respond.SendHeader;
+  Body := '<HTML><HEAD><TITLE>404 Not Active</TITLE></HEAD>' +
+    '<BODY><H1>404 Not Found</H1>The requested URL ' +
+    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
+  Respond.Stream.WriteString(Body);
+  Respond.KeepAlive := False;
+end;
+
+procedure TmodHttpCommand.RespondNotFound;
+var
+  Body: string;
+begin
+  Respond.HttpResult := hrOK;
+  Respond.AddHeader('Content-Type', 'text/html');
+  Respond.SendHeader;
+  Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
+    '<BODY><H1>404 Not Found</H1>The requested URL ' +
+    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
+  Respond.Stream.WriteString(Body);
+  Respond.KeepAlive := False;
+end;
+
+
+procedure TmodHttpCommand.SendFile(const vFile: string);
+begin
+  SendFile(vFile, DocumentToContentType(vFile));
 end;
 
 function TmodHttpCommand.CreateRespond: TmodRespond;
