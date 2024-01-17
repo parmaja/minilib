@@ -341,8 +341,9 @@ type
     function Match(ARequest: TmodRequest): TmodModule; virtual;
     property DefaultProtocol: String read FDefaultProtocol write FDefaultProtocol;
 
-    function  Find<T: Class>: T; overload;
-    function  Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
+    function ServerUseSSL: Boolean;
+    function Find<T: Class>: T; overload;
+    function Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
 
     function Add(const Name, AliasName: String; AModule: TmodModule): Integer; overload;
     procedure Log(S: String); virtual;
@@ -1156,6 +1157,14 @@ begin
   AModule.Name := Name;
   AModule.AliasName := AliasName;
   Result := inherited Add(AModule);
+end;
+
+function TmodModules.ServerUseSSL: Boolean;
+begin
+  if Server<>nil then
+    Result := Server.UseSSL
+  else
+    Result := False;
 end;
 
 procedure TmodModules.SetEndOfLine(AValue: String);
