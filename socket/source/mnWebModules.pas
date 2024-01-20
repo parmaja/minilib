@@ -97,6 +97,8 @@ type
 
   { TmodHttpCommand }
 
+  TSendFileDisposition = (sdDefault, sdInline, sdAttachment);
+
   TmodHttpCommand = class abstract(TmodCommand)
   private
     function GetRespond: TmodHttpRespond;
@@ -110,7 +112,7 @@ type
     procedure RespondNotFound;
     procedure RespondNotActive;
     procedure SendFile(const vFile: string); overload;
-    procedure SendFile(const vFile, vType: string); overload;
+    procedure SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition = sdDefault); overload;
   public
     destructor Destroy; override;
     property Respond: TmodHttpRespond read GetRespond;
@@ -814,7 +816,7 @@ begin
   Log(Request.Client + ': ' + Request.Raw);
 end;
 
-procedure TmodHttpCommand.SendFile(const vFile, vType: string);
+procedure TmodHttpCommand.SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition);
 var
   aDocSize: Int64;
   aDocStream: TFileStream;
@@ -852,7 +854,12 @@ begin
       Respond.AddHeader('ETag', aFtag);
       if Active then
       begin
-        Respond.PutHeader('Content-Type', vType);
+        Respond.PutHeader('Content-Type', DocumentToContentType(vName));
+        case vDisposition of
+          sdInline: Respond.PutHeader('Content-Disposition', Format('inline; filename="%s"', [vName]));
+          sdAttachment: Respond.PutHeader('Content-Disposition', Format('attachment; filename="%s"', [vName]));
+        end;
+
         if Respond.KeepAlive then
           Respond.AddHeader('Content-Length', IntToStr(aDocSize));
       end;
@@ -903,7 +910,7 @@ end;
 
 procedure TmodHttpCommand.SendFile(const vFile: string);
 begin
-  SendFile(vFile, DocumentToContentType(vFile));
+  SendFile(vFile, ExtractFileName(vFile));
 end;
 
 function TmodHttpCommand.CreateRespond: TmodRespond;
