@@ -88,7 +88,7 @@ type
   private
     FBoundary: string;
     FHttpHeader: Boolean;
-    FWorkPath: string;
+    FTempPath: string;
   protected
     function DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TmnMultipartDataItem; virtual;
     function CreateItem(vStream: TmnBufferStream): TmnMultipartDataItem;
@@ -98,7 +98,7 @@ type
     function Find(const vName: string): TmnMultipartDataItem;
 
     property Boundary: string read FBoundary write FBoundary;
-    property WorkPath: string read FWorkPath write FWorkPath;
+    property TempPath: string read FTempPath write FTempPath;
   end;
 
 function DocumentToContentType(FileName: string): string;
@@ -370,7 +370,7 @@ procedure TmnMultipartDataFileName.DoReadPrepare;
 var
   f: string;
 begin
-  LocalFileName := IncludePathDelimiter(Data.WorkPath);
+  LocalFileName := IncludePathDelimiter(Data.TempPath);
   ForceDirectories(LocalFileName);
   LocalFileName := LocalFileName + FileName;
 
