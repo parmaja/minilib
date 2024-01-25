@@ -3665,7 +3665,8 @@ begin
     try
       for y in l do
       begin
-        if SameText(y.Name, vName) or SameText(y.Name+y.Number.ToString, vName) then //fix for adding number to name 22-11-2022 need back to sametext :)
+        if SameText(y.Name, vName) or ((Pos('.', vName)=0) and SameText(y.Name+y.Number.ToString, vName)) then //fix for adding number to name 22-11-2022 need back to sametext :)
+//        if SameText(y.Name, vName) then
           Exit(y)
       end;
       Result := nil;
