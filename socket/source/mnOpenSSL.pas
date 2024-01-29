@@ -140,9 +140,11 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    function GetBIO: PBIO;
     function GetSSL: TSSL;
     function Read(var Buffer; Count: Longint): Longint; override;
     function Write(const Buffer; Count: Longint): Longint; override;
+
   end;
 
   { TBIOStreamFile }
@@ -207,6 +209,20 @@ begin
     Result := SSL_TLSEXT_ERR_NOACK
   else
     Result := SSL_TLSEXT_ERR_OK;
+end;
+
+procedure SSL_CTX_msg_callback(write_p: integer; version: integer; content_type: integer; buf: pointer; len: Cardinal; ssl: PSSL; arg: pointer); cdecl;
+var
+  b: TBytes;
+  s: string;
+begin
+  if Len<>0 then
+  begin
+    SetLength(b, len);
+    Move(buf, b[0], len);
+    s := TEncoding.UTF8.GetString(b);
+    Log.WriteLn(s);
+  end;
 end;
 
 procedure debug_callback(ssl: PSSL; where: cint; ret: cint); cdecl;
@@ -506,7 +522,7 @@ end;
 
 procedure TTLS_SSLServerMethod.CreateHandle;
 begin
-  Handle := TLS_method();
+  Handle := TLS_server_method();
 end;
 
 { TBIOStreamSSL }
@@ -602,6 +618,11 @@ begin
     BIO_free(Handle);
 end;
 
+function TBIOStream.GetBIO: PBIO;
+begin
+  Result := Handle;
+end;
+
 function TBIOStream.GetSSL: TSSL;
 var
   ssl: PSSL;
@@ -642,11 +663,29 @@ begin
   Active := True;
 end;
 
+procedure SSL_msg_callback(write_p: integer; version: integer; content_type: integer; buf: pointer; len: Cardinal; ssl: PSSL; arg: pointer); cdecl;
+var
+  b: TBytes;
+  s: string;
+begin
+  if Len<>0 then
+  begin
+    SetLength(b, len);
+    Move(buf, b[0], len);
+    s := TEncoding.UTF8.GetString(b);
+    Log.WriteLn(s);
+  end;
+end;
+
+
 constructor TSSL.Init(ASSL: PSSL);
 begin
   //inherited Create;
   Handle := ASSL;
   Active := True;
+  {$ifopt D+}
+  //SSL_set_msg_callback(ASSL, SSL_msg_callback);
+  {$endif}
 end;
 
 procedure TSSL.SetALPN(Alpns: TArray<string>);
@@ -822,13 +861,17 @@ var
 begin
   inherited Create;
   FMethod := AMethod;
+  //SSL_library_init
   Handle := SSL_CTX_new(AMethod.Handle);
   if Handle = nil then
     EmnOpenSSLException.Create('Can not create CTX handle');
 
   {$ifopt D+}
   if coDebug in Options then
+  begin
+    SSL_CTX_set_msg_callback(Handle, SSL_CTX_msg_callback);
     SSL_CTX_set_info_callback(Handle, debug_callback);
+  end;
   {$endif}
 
   //SSL_CTX_set_min_proto_version(Handle, TLS1_3_VERSION);
@@ -856,8 +899,15 @@ begin
   if coNoCompressing in Options then
     o := o or SSL_OP_NO_COMPRESSION;
 
-  SSL_CTX_set_options(Handle, o);
+  o := o or SSL_OP_NO_SSLv2;
+  o := o or SSL_OP_NO_SSLv3;
 
+  { Set SSL_MODE_RELEASE_BUFFERS. This potentially greatly reduces memory
+       usage for no cost at all. */
+  SSL_CTX_set_mode(self->ctx, SSL_MODE_RELEASE_BUFFERS);
+  }
+
+  SSL_CTX_set_options(Handle, o);
 end;
 
 constructor TContext.Create(AMethodClass: TSSLMethodClass; Options: TContextOptions);
@@ -876,9 +926,47 @@ begin
 end;
 
 procedure TContext.LoadCertFile(FileName: utf8string);
+var
+  b: TBIOStreamFile;
+  sk: POPENSSL_STACK;
+  st: PX509_STORE;
+  info: PX509_INFO;
+  i, r: Integer;
 begin
+  {r := SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName));
+  if r <= 0 then
+  begin
+    var s := ERR_error_string(ERR_peek_error, nil);
+    raise EmnOpenSSLException.CreateFmt('fail to load certificate [%d]', [r]);
+  end;
+  Exit;}
+
   if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.Create('fail to load certificate');
+  Exit;
+
+  b := TBIOStreamFile.Create(FileName, 'r');
+  try
+    sk := PEM_X509_INFO_read_bio(b.GetBIO, nil, nil, nil);
+    try
+      st := SSL_CTX_get_cert_store(Handle);
+      if st<>nil then
+      begin
+        for i := 0 to OPENSSL_sk_num(sk)-1 do
+        begin
+          info := PX509_INFO(OPENSSL_sk_value(sk, i));
+          if info.x509<>nil then
+            r := X509_STORE_add_cert(st, info.x509);
+        end;
+      end;
+    finally
+      OPENSSL_sk_free(sk);
+    end;
+  finally
+    b.Free;
+  end;
+
+
 end;
 
 procedure TContext.LoadPrivateKeyFile(FileName: utf8string);
@@ -892,6 +980,7 @@ end;
 
 procedure TContext.CheckPrivateKey;
 begin
+  //SSL_CTX_set_options(Handle, SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3);
   if SSL_CTX_check_private_key(Handle) = 0 then
     raise EmnOpenSSLException.Create('Private key does not match the public certificate');
 end;

@@ -782,6 +782,7 @@ begin
     FileAge(CertificateFile, CertificateFileDate, True);
     Context.LoadCertFile(UTF8Encode(CertificateFile));
     Context.LoadPrivateKeyFile(UTF8Encode(PrivateKeyFile));
+
     Context.CheckPrivateKey; //do not use this
     //Context.SetVerifyNone;
   end;
