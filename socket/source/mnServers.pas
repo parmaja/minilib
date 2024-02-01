@@ -28,7 +28,8 @@ const
 
 type
 
-  { TmnServerSocket }
+{ TmnServerSocket }
+
 {
   TmnServerSocket Class is for beginner to play simple example of socket server, it accept one connection only
   If you want multiple connection, use TmnServer
@@ -117,6 +118,7 @@ type
   protected //OpenSSL
     Context: TContext;
     //You can use full path
+    FullChain: Boolean;
     PrivateKeyFile: string;
     CertificateFile: string;
     CertificateFileDate: TDateTime;
@@ -193,6 +195,7 @@ type
     //Idle is in Listener thread not in main thread
     procedure Idle(vListener: TmnListener);
   public
+    FullChain: Boolean;
     PrivateKeyFile: string;
     CertificateFile: string;
 
@@ -770,7 +773,7 @@ procedure TmnListener.Prepare;
 begin
   if soSSL in Options then
   begin
-    Context := TContext.Create(TTLS_SSLServerMethod);
+    Context := TContext.Create(TTLS_SSLServerMethod, [coNoCompressing, coServer]);
     ReloadContext;
   end;
 end;
@@ -780,7 +783,7 @@ begin
   if soSSL in Options then
   begin
     FileAge(CertificateFile, CertificateFileDate, True);
-    Context.LoadCertFile(UTF8Encode(CertificateFile));
+    Context.LoadCertFile(UTF8Encode(CertificateFile), FullChain);
     Context.LoadPrivateKeyFile(UTF8Encode(PrivateKeyFile));
 
     Context.CheckPrivateKey; //do not use this
@@ -906,6 +909,7 @@ begin
         FListener.FAddress := FAddress;
         if UseSSL then
           FListener.FOptions := FListener.FOptions + [soSSL];
+        FListener.FullChain := FullChain;
         FListener.PrivateKeyFile := PrivateKeyFile;
         FListener.CertificateFile := CertificateFile;
 
@@ -1059,7 +1063,7 @@ function TmnServerSocket.CreateSocket(out vErr: Integer): TmnCustomSocket;
 begin
   if soSSL in Options then
   begin
-    FContext := TContext.Create(TTLS_SSLServerMethod);
+    FContext := TContext.Create(TTLS_SSLServerMethod, [coServer, coNoCompressing]);
     FContext.LoadCertFile(CertificateFile);
     FContext.LoadPrivateKeyFile(PrivateKeyFile);
     FContext.CheckPrivateKey; //do not use this

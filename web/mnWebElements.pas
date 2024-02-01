@@ -48,7 +48,7 @@ unit mnWebElements;//* BETA
 interface
 
 uses
-  Classes, SysUtils, Contnrs, Variants,
+  Classes, SysUtils, Contnrs, Variants, RTTI,
   mnClasses;
 
 type

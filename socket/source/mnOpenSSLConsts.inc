@@ -314,8 +314,6 @@
   SSL_FILETYPE_ASN1      = X509_FILETYPE_ASN1;
   SSL_FILETYPE_PEM       = X509_FILETYPE_PEM;
 
-
-
   BIO_CTRL_RESET                       = 1;
   BIO_CTRL_EOF                         = 2;
   BIO_CTRL_INFO                        = 3;
