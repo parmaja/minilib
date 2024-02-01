@@ -78,7 +78,7 @@ type
     destructor Destroy; override;
   end;
 
-  TLogEvent = procedure(S: String) of object;
+  TLogEvent = procedure(const s: String) of object;
 
   { TEventLog }
 
@@ -149,9 +149,9 @@ var
 begin
   for i := 0 to log.Count -1 do
   begin
-    if Log[i] is TEventLog then
+    if (Log[i] as TLogDispatcherItem).LogObject is TEventLog then
     begin
-      if @(Log[i] as TEventLog).Event = @AEvent then
+      if @((Log[i] as TLogDispatcherItem).LogObject as TEventLog).Event = @AEvent then
       begin
         Log.Delete(i);
         exit;
