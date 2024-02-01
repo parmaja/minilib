@@ -74,6 +74,7 @@ type
   { TCTX }
 
   TContextOptions = set of (
+    coServer,
     coNoCompressing,
     coALPN,
     coALPNHttp2,
@@ -93,7 +94,8 @@ type
     destructor Destroy; override;
     procedure SetVerifyLocation(Location: utf8string);
     procedure SetVerifyFile(AFileName: utf8string);
-    procedure LoadCertFile(FileName: utf8string);
+    procedure LoadCertFile(FileName: utf8string; FullChain: Boolean = False);
+    procedure LoadFullCertFile(FileName: utf8string);
     procedure LoadPrivateKeyFile(FileName: utf8string);
     procedure CheckPrivateKey;
     procedure SetVerifyNone;
@@ -899,6 +901,9 @@ begin
   if coNoCompressing in Options then
     o := o or SSL_OP_NO_COMPRESSION;
 
+  if coServer in Options then
+    o := o or SSL_OP_CIPHER_SERVER_PREFERENCE;
+
   o := o or SSL_OP_NO_SSLv2;
   o := o or SSL_OP_NO_SSLv3;
 
@@ -925,7 +930,24 @@ begin
   inherited Destroy;
 end;
 
-procedure TContext.LoadCertFile(FileName: utf8string);
+procedure TContext.LoadCertFile(FileName: utf8string; FullChain: Boolean);
+var
+  b: TBIOStreamFile;
+  sk: POPENSSL_STACK;
+  st: PX509_STORE;
+  info: PX509_INFO;
+  i, r: Integer;
+begin
+  if FullChain then
+  begin
+    if SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName)) <= 0 then
+      raise EmnOpenSSLException.Create('fail to load full chain certificate');
+  end
+  else if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
+    raise EmnOpenSSLException.Create('fail to load certificate');
+end;
+
+procedure TContext.LoadFullCertFile(FileName: utf8string);
 var
   b: TBIOStreamFile;
   sk: POPENSSL_STACK;
@@ -965,8 +987,6 @@ begin
   finally
     b.Free;
   end;
-
-
 end;
 
 procedure TContext.LoadPrivateKeyFile(FileName: utf8string);
