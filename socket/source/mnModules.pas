@@ -263,7 +263,6 @@ type
     FCommands: TmodCommandClasses;
     FKeepAliveTimeOut: Integer;
     FModules: TmodModules;
-    FParams: TStringList;
     FProtocols: TArray<String>;
     FUseKeepAlive: TmodKeepAlive;
     FUseCompressing: Boolean;
@@ -301,7 +300,6 @@ type
 
     property Commands: TmodCommandClasses read FCommands;
     property Active: Boolean read GetActive;
-    property Params: TStringList read FParams;
     property Modules: TmodModules read FModules;
     property Protocols: TArray<String> read FProtocols;
     property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
@@ -1027,14 +1025,12 @@ begin
   FProtocols := AProtocols;
   FModules := AModules;
   FModules.Add(Self);
-  FParams := TStringList.Create;
   FCommands := TmodCommandClasses.Create(True);
   FKeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
 end;
 
 destructor TmodModule.Destroy;
 begin
-  FreeAndNil(FParams);
   FreeAndNil(FCommands);
   inherited;
 end;
