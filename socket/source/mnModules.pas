@@ -276,10 +276,10 @@ type
     procedure DoCreateCommands; virtual;
     procedure CreateCommands;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
-    procedure DoPrepareRequest(ARequest: TmodRequest); virtual;
+    procedure DoPrepareRequest(ARequest: TmodRequest; Fallback: Boolean); virtual;
 
     function Match(const ARequest: TmodRequest): Boolean; virtual;
-    procedure PrepareRequest(ARequest: TmodRequest);
+    procedure PrepareRequest(ARequest: TmodRequest; Fallback: Boolean);
     function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
     procedure DoReadHeader(ARequest: TmodRequest); virtual;
@@ -301,6 +301,7 @@ type
     property Commands: TmodCommandClasses read FCommands;
     property Active: Boolean read GetActive;
     property Modules: TmodModules read FModules;
+    //* use lower case in Protocols
     property Protocols: TArray<String> read FProtocols;
     property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
     property UseKeepAlive: TmodKeepAlive read FUseKeepAlive write FUseKeepAlive default klvUndefined;
@@ -1039,14 +1040,15 @@ procedure TmodModule.DoCreateCommands;
 begin
 end;
 
-procedure TmodModule.DoPrepareRequest(ARequest: TmodRequest);
+procedure TmodModule.DoPrepareRequest(ARequest: TmodRequest; Fallback: Boolean);
 begin
   //if ARequest.Route.Count>0 then
   begin
     //ARequest.Params['Module'] := ARequest.Route[0];
     //ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
   end;
-  ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
+  if (AliasName <> '') and not Fallback then //* now what if
+    ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
 end;
 
 procedure TmodModule.DoReadHeader(ARequest: TmodRequest);
@@ -1065,7 +1067,7 @@ var
 begin
   //Result := SameText(AliasName, ARequest.Module) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
   Result := False;
-  if ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols)) then
+  if ((Protocols = nil) or StrInArray(LowerCase(ARequest.Protocol), Protocols)) then
   begin
     DoMatch(ARequest, Result);
   end;
@@ -1108,14 +1110,14 @@ begin
   end;
 end;
 
-procedure TmodModule.PrepareRequest(ARequest: TmodRequest);
+procedure TmodModule.PrepareRequest(ARequest: TmodRequest; Fallback: Boolean);
 begin
   ARequest.Path := ARequest.Address;
   ARequest.Params.Clear;
   ParseQuery(ARequest.Query, ARequest.Params);
 
   ARequest.Params['Module'] := AliasName;
-  DoPrepareRequest(ARequest);
+  DoPrepareRequest(ARequest, Fallback);
 end;
 
 procedure TmodModule.SetAliasName(AValue: String);
@@ -1262,14 +1264,14 @@ begin
     //item.PrepareRequest(ARequest); //always have params
     if item.Match(ARequest) then
     begin
-      item.PrepareRequest(ARequest);
+      item.PrepareRequest(ARequest, False);
       Exit(item);
     end;
   end;
 
   if DefaultModule<>nil then
   begin
-    DefaultModule.PrepareRequest(ARequest);
+    DefaultModule.PrepareRequest(ARequest, True);
     Result := DefaultModule;
   end;
 end;

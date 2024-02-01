@@ -126,7 +126,7 @@ end;
 
 destructor TmnConnections.Destroy;
 begin
-  FList.Free;
+  FreeAndNil(FList);
   inherited;
 end;
 

@@ -783,9 +783,8 @@ begin
   if soSSL in Options then
   begin
     FileAge(CertificateFile, CertificateFileDate, True);
-    Context.LoadCertFile(UTF8Encode(CertificateFile), FullChain);
     Context.LoadPrivateKeyFile(UTF8Encode(PrivateKeyFile));
-
+    Context.LoadCertFile(UTF8Encode(CertificateFile), FullChain);
     Context.CheckPrivateKey; //do not use this
     //Context.SetVerifyNone;
   end;

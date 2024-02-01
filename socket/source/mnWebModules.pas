@@ -151,13 +151,12 @@ type
     procedure Log(S: string); override;
     procedure InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean); override;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); override;
-    procedure DoPrepareRequest(ARequest: TmodRequest); override;
+    procedure DoPrepareRequest(ARequest: TmodRequest; Fallback: Boolean); override;
   public
     destructor Destroy; override;
     property DocumentRoot: string read FDocumentRoot write SetDocumentRoot;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
-
 
   ThttpModules = class(TmodModules)
   protected
@@ -181,6 +180,14 @@ type
   end;
 
   TmodWebServer = class(TmodCustomWebServer)
+  protected
+  public
+    constructor Create; override;
+  end;
+
+  { TmodChallengeServer }
+
+  TmodChallengeServer = class(TmodCustomWebServer)
   protected
   public
     constructor Create; override;
@@ -461,12 +468,13 @@ begin
   }
 end;
 
-procedure TmodWebModule.DoPrepareRequest(ARequest: TmodRequest);
+procedure TmodWebModule.DoPrepareRequest(ARequest: TmodRequest; Fallback: Boolean);
 begin
   //inherited;
 
   ARequest.Command := ARequest.Method;
-  ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);
+  if (AliasName <> '') and not Fallback then
+    ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);
 end;
 
 procedure TmodWebModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
@@ -476,7 +484,7 @@ begin
   vMatch := ARequest.Route[0] = AliasName;
 end;
 
-procedure TmodWebModule.InternalError(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream; var Handled: Boolean);
+procedure TmodWebModule.InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean);
 begin
   inherited;
   ARespondStream.WriteLineUTF8('HTTP/1.1 500 Internal Server Error');
@@ -579,22 +587,19 @@ begin
 
 *)
 
-
   aRoot := ExcludePathDelimiter(Respond.Root);
 
-
-  if (Request.Path = '') or StartsDelimiter(Request.Path) or StartsStr('.', Request.Path) then
+  //if (Request.Path = '') or StartsDelimiter(Request.Path) or StartsStr('.', Request.Path) then
+  if (Request.Path = '') or StartsDelimiter(Request.Path) or StartsStr('./', Request.Path) or StartsStr('../', Request.Path) then //* some file or folder names starts with . like '.well-known/acme-challenge/'
     aDocument := aRoot + Request.Path
   else
     aDocument := IncludePathDelimiter(aRoot) + Request.Path;
-
 
   aRoot := CorrectPath(aRoot);
   aDocument := CorrectPath(aDocument);
 
   aRoot := ExpandFile(aRoot);
   aDocument := ExpandFile(aDocument);
-
 
   if EndsDelimiter(aDocument) then //get the default file if it not defined
      aDocument := GetDefaultDocument(aDocument);
@@ -709,6 +714,15 @@ constructor TmodWebServer.Create;
 begin
   inherited;
   Modules.DefaultModule := TmodWebModule.Create('web', 'doc', ['http/1.1'], Modules);
+  Port := '80';
+end;
+
+{ TmodChallengeServer }
+
+constructor TmodChallengeServer.Create;
+begin
+  inherited Create;
+  Modules.DefaultModule := TmodWebModule.Create('', 'doc', ['http/1.1'], Modules);
   Port := '80';
 end;
 

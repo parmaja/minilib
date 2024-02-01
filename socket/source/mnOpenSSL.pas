@@ -95,6 +95,7 @@ type
     procedure SetVerifyLocation(Location: utf8string);
     procedure SetVerifyFile(AFileName: utf8string);
     procedure LoadCertFile(FileName: utf8string; FullChain: Boolean = False);
+    procedure LoadFullChainCertFile(FileName: utf8string);
     procedure LoadFullCertFile(FileName: utf8string);
     procedure LoadPrivateKeyFile(FileName: utf8string);
     procedure CheckPrivateKey;
@@ -913,6 +914,8 @@ begin
   }
 
   SSL_CTX_set_options(Handle, o);
+
+  //SSL_CTX_set_cipher_list(Handle, 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256');
 end;
 
 constructor TContext.Create(AMethodClass: TSSLMethodClass; Options: TContextOptions);
@@ -932,19 +935,32 @@ end;
 
 procedure TContext.LoadCertFile(FileName: utf8string; FullChain: Boolean);
 var
-  b: TBIOStreamFile;
-  sk: POPENSSL_STACK;
-  st: PX509_STORE;
-  info: PX509_INFO;
-  i, r: Integer;
+  s: string;
 begin
   if FullChain then
   begin
     if SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName)) <= 0 then
-      raise EmnOpenSSLException.Create('fail to load full chain certificate');
+    begin
+      s := ERR_error_string(ERR_peek_error, nil);
+      raise EmnOpenSSLException.CreateFmt('fail to load full chain certificate [%s]', [s]);
+    end;
   end
   else if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
-    raise EmnOpenSSLException.Create('fail to load certificate');
+  begin
+    s := ERR_error_string(ERR_peek_error, nil);
+    raise EmnOpenSSLException.CreateFmt('fail to load certificate [%s]', [s]);
+  end;
+end;
+
+procedure TContext.LoadFullChainCertFile(FileName: utf8string);
+var
+  s: string;
+begin
+  if SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName)) <= 0 then
+  begin
+    s := ERR_error_string(ERR_peek_error, nil);
+    raise EmnOpenSSLException.CreateFmt('fail to load full chain certificate [%s]', [s]);
+  end;
 end;
 
 procedure TContext.LoadFullCertFile(FileName: utf8string);

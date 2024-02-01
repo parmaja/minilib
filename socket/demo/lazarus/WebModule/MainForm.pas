@@ -27,6 +27,7 @@ type
   { TMain }
 
   TMain = class(TForm)
+    ChallengeSSLChk: TCheckBox;
     Label5: TLabel;
     MakeCertBtn: TButton;
     ModuleNameEdit: TEdit;
@@ -62,13 +63,16 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    Server: TmodWebServer;
+    ChallengeServer: TmodWebServer;
+    HttpServer: TmodWebServer;
     FMax:Integer;
+    procedure Start;
     procedure UpdateStatus;
-    procedure ModuleServerBeforeOpen(Sender: TObject);
-    procedure ModuleServerAfterClose(Sender: TObject);
-    procedure ModuleServerChanged(Listener: TmnListener);
-    procedure ModuleServerLog(const S: String);
+    procedure ChallengeServerBeforeOpen(Sender: TObject);
+    procedure HttpServerBeforeOpen(Sender: TObject);
+    procedure HttpServerAfterClose(Sender: TObject);
+    procedure HttpServerChanged(Listener: TmnListener);
+    procedure ServerLog(const S: String);
   public
   end;
 
@@ -81,11 +85,18 @@ implementation
 
 procedure TMain.StartBtnClick(Sender: TObject);
 begin
+  Start;
+end;
+
+procedure TMain.Start;
+begin
   if UseSSLChk.Checked then
-    ModuleServerLog('use https://localhost:' + PortEdit.Text + '/doc/')
+    ServerLog('use https://localhost:' + PortEdit.Text + '/doc/')
   else
-    ModuleServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
-  Server.Start;
+    ServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
+  if ChallengeSSLChk.Checked then
+    ChallengeServer.Start;
+  HttpServer.Start;
 end;
 
 procedure TMain.FormHide(Sender: TObject);
@@ -122,31 +133,38 @@ end;
 
 procedure TMain.StopBtnClick(Sender: TObject);
 begin
-  Server.Stop;
+  HttpServer.Stop;
+  ChallengeServer.Stop;
   StartBtn.Enabled:=true;
   MaxOfThreadsLabel.Caption := '0';
   LastIDLabel.Caption := '0';
 end;
 
-procedure TMain.ModuleServerBeforeOpen(Sender: TObject);
+procedure TMain.HttpServerBeforeOpen(Sender: TObject);
 var
   aRoot:string;
   aWebModule: TmodWebModule;
 begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
+
   aRoot := RootEdit.Text;
   if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
-  aWebModule := Server.Modules.Find<TmodWebModule>;
+
+  aWebModule := HttpServer.Modules.Find<TmodWebModule>;
   if aWebModule <> nil then
   begin
-    aWebModule.DocumentRoot := aRoot;
     aWebModule.AliasName := ModuleNameEdit.Text;
+    aWebModule.DocumentRoot := aRoot;
+
   end;
-  Server.Port := PortEdit.Text;
+  HttpServer.Port := PortEdit.Text;
+  HttpServer.CertificateFile := Application.Location + 'fullchain.pem';
+  HttpServer.PrivateKeyFile := Application.Location + 'privkey.pem';
+  HttpServer.FullChain := True;
   //Server.Address := '127.0.0.1';
-  Server.UseSSL := UseSSLChk.Checked;
+  HttpServer.UseSSL := UseSSLChk.Checked;
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;
@@ -204,12 +222,17 @@ var
 var
   aAutoRun:Boolean;
 begin
-  Server := TmodWebServer.Create;
-  Server.OnBeforeOpen := ModuleServerBeforeOpen;
-  Server.OnAfterClose := ModuleServerAfterClose;
-  Server.OnChanged :=  ModuleServerChanged;
-  Server.OnLog := ModuleServerLog;
-  Server.Logging := True;
+  InstallEventLog(ServerLog);
+  ChallengeServer := TmodWebServer.Create;
+  ChallengeServer.OnLog := ServerLog;
+  ChallengeServer.OnBeforeOpen := ChallengeServerBeforeOpen;
+
+  HttpServer := TmodWebServer.Create;
+  HttpServer.OnBeforeOpen := HttpServerBeforeOpen;
+  HttpServer.OnAfterClose := HttpServerAfterClose;
+  HttpServer.OnChanged :=  HttpServerChanged;
+  HttpServer.OnLog := ServerLog;
+  HttpServer.Logging := True;
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
@@ -217,12 +240,16 @@ begin
     PortEdit.Text := GetOption('port', '81');
     ModuleNameEdit.Text := GetOption('module', 'doc');
     UseSSLChk.Checked := GetOption('ssl', false);
+    ChallengeSSLChk.Checked := GetOption('challenge', False);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
     aIni.Free;
   end;
+
   if aAutoRun then
-     Server.Start;
+  begin
+    Start;
+  end;
 end;
 
 procedure TMain.FormDestroy(Sender: TObject);
@@ -235,25 +262,43 @@ begin
     aIni.WriteString('options', 'port', PortEdit.Text);
     aIni.WriteString('options', 'module', ModuleNameEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
+    aIni.WriteBool('options', 'challenge', ChallengeSSLChk.Checked);
   finally
     aIni.Free;
   end;
-  FreeAndNil(Server);
+  FreeAndNil(HttpServer);
+  FreeAndNil(ChallengeServer);
+  UninstallEventLog(ServerLog);
 end;
 
 procedure TMain.UpdateStatus;
 begin
-  NumberOfThreads.Caption := IntToStr(Server.Listener.Count);
-  LastIDLabel.Caption := IntToStr(Server.Listener.LastID);
+  NumberOfThreads.Caption := IntToStr(HttpServer.Listener.Count);
+  LastIDLabel.Caption := IntToStr(HttpServer.Listener.LastID);
 end;
 
-procedure TMain.ModuleServerAfterClose(Sender: TObject);
+procedure TMain.ChallengeServerBeforeOpen(Sender: TObject);
+var
+  aWebModule: TmodWebModule;
+begin
+  aWebModule := ChallengeServer.Modules.Find<TmodWebModule>;
+  if aWebModule <> nil then
+  begin
+   //.well-known/acme-challenge/
+    aWebModule.AliasName := '';//'.well-known';
+    aWebModule.DocumentRoot := Application.Location + 'cert';
+  end;
+  ChallengeServer.UseSSL := False;
+  ChallengeServer.Port := '80';
+end;
+
+procedure TMain.HttpServerAfterClose(Sender: TObject);
 begin
 	StartBtn.Enabled := True;
   StopBtn.Enabled := False;
 end;
 
-procedure TMain.ModuleServerChanged(Listener: TmnListener);
+procedure TMain.HttpServerChanged(Listener: TmnListener);
 begin
   if FMax < Listener.Count then
     FMax := Listener.Count;
@@ -261,7 +306,7 @@ begin
   UpdateStatus;
 end;
 
-procedure TMain.ModuleServerLog(const S: String);
+procedure TMain.ServerLog(const S: String);
 begin
   Memo.Lines.Add(s);
 end;

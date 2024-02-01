@@ -56,7 +56,8 @@ type
     soSSL,  //Use OpenSSL 1.1.1
     soSSLDebug, //* TODO
     soWebsocket  //Use OpenSSL 1.1.1
-    );
+  );
+
   TmnsoOptions = set of TmnsoOption;
 
   TmnSocketParams = record //TODO
