@@ -418,6 +418,7 @@ var
   SSL_CTX_set_options: function(ctx: PSSL_CTX; Options: culong): culong; cdecl;
   SSL_CTX_load_verify_locations: function(ctx: PSSL_CTX; CAfile: PUTF8Char; CApath: PUTF8Char): Integer; cdecl;
   SSL_CTX_free: procedure(ctx: PSSL_CTX); cdecl;
+  SSL_CTX_set_cipher_list: function(ctx: PSSL_CTX; const str: PUTF8Char): Integer; cdecl;
   SSL_CTX_use_certificate_file: function(ctx: PSSL_CTX; afile: PUTF8Char; atype: Integer): Integer; cdecl;
   SSL_CTX_use_certificate_chain_file: function(ctx: PSSL_CTX; const afile: PUTF8Char): Integer; cdecl;
   SSL_CTX_use_PrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
@@ -429,8 +430,6 @@ var
   SSL_CTX_set_alpn_protos: function(ctx: PSSL_CTX; prots: PUTF8Char; len: integer): Integer; cdecl;
 
   SSL_CTX_get_cert_store: function(ctx: PSSL_CTX): PX509_STORE; cdecl;
-  X509_STORE_add_cert: function(ctx: PX509_STORE; x: PX509): integer; cdecl;
-
 
   TLS_method: function(): PSSL_METHOD; cdecl;
   TLS_client_method: function(): PSSL_METHOD; cdecl;
@@ -453,7 +452,7 @@ var
   X509_EXTENSION_free: procedure(a: PX509_EXTENSION); cdecl;
   X509_set_issuer_name: function(x: PX509; name: PX509_NAME): Integer; cdecl;
   X509_to_X509_REQ: function(x: PX509; pkey: PEVP_PKEY; md: PEVP_MD): PX509_REQ; cdecl;
-
+  X509_STORE_add_cert: function(ctx: PX509_STORE; x: PX509): integer; cdecl;
 
   X509V3_set_ctx: procedure(ctx: PX509V3_CTX; issuer: PX509; subject: PX509; req: PX509_REQ; crl: PX509_CRL; flags: integer); cdecl;
 
@@ -809,8 +808,9 @@ begin
   SSL_CTX_set_options := GetAddress('SSL_CTX_set_options');
   SSL_CTX_load_verify_locations := GetAddress('SSL_CTX_load_verify_locations');
   SSL_CTX_free := GetAddress('SSL_CTX_free');
+  SSL_CTX_set_cipher_list := GetAddress('SSL_CTX_set_cipher_list');
   SSL_CTX_use_certificate_file := GetAddress('SSL_CTX_use_certificate_file');
-  SSL_CTX_use_certificate_chain_file := GetAddress('SSL_CTX_use_certificate_file');
+  SSL_CTX_use_certificate_chain_file := GetAddress('SSL_CTX_use_certificate_chain_file');
 
   SSL_CTX_use_PrivateKey_file := GetAddress('SSL_CTX_use_PrivateKey_file');
   SSL_CTX_use_RSAPrivateKey_file := GetAddress('SSL_CTX_use_RSAPrivateKey_file');
