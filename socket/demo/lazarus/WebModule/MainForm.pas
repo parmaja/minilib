@@ -63,7 +63,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    ChallengeServer: TmodWebServer;
+    ChallengeServer: TmodAcmeChallengeServer;
     HttpServer: TmodWebServer;
     FMax:Integer;
     procedure Start;
@@ -222,7 +222,7 @@ var
   aAutoRun:Boolean;
 begin
   InstallEventLog(ServerLog);
-  ChallengeServer := TmodWebServer.Create;
+  ChallengeServer := TmodAcmeChallengeServer.Create;
   ChallengeServer.OnLog := ServerLog;
   ChallengeServer.OnBeforeOpen := ChallengeServerBeforeOpen;
 
@@ -283,12 +283,11 @@ begin
   aWebModule := ChallengeServer.Modules.Find<TmodWebModule>;
   if aWebModule <> nil then
   begin
-   //.well-known/acme-challenge/
-    aWebModule.AliasName := '';//'.well-known';
-    aWebModule.DocumentRoot := Application.Location + 'cert';
+    //.well-known/acme-challenge/
+    //aWebModule.AliasName := '.well-known';
+    aWebModule.DocumentRoot := Application.Location + 'cert/.well-known/';
+    //* use certbot folder to "Application.Location + cert" because certbot will create folder .well-known
   end;
-  ChallengeServer.UseSSL := False;
-  ChallengeServer.Port := '80';
 end;
 
 procedure TMain.HttpServerAfterClose(Sender: TObject);

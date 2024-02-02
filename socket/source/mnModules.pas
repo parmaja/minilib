@@ -260,6 +260,7 @@ type
   TmodModule = class(TmnNamedObject)
   private
     FAliasName: String;
+    FDefaultModule: Boolean;
     FCommands: TmodCommandClasses;
     FKeepAliveTimeOut: Integer;
     FModules: TmodModules;
@@ -293,7 +294,9 @@ type
     procedure Idle; virtual;
     procedure InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean); virtual;
   public
-    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules); virtual;
+    //Default fallback module should have no alias name
+    //Protocols all should lowercase
+    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules; AsDefault: Boolean = False); virtual;
     destructor Destroy; override;
     function Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodRespondResult;
     function RegisterCommand(vName: String; CommandClass: TmodCommandClass; AFallback: Boolean = False): Integer; overload;
@@ -307,6 +310,7 @@ type
     property UseKeepAlive: TmodKeepAlive read FUseKeepAlive write FUseKeepAlive default klvUndefined;
     property UseCompressing: Boolean read FUseCompressing write FUseCompressing;
     property AliasName: String read FAliasName write SetAliasName;
+    property DefaultModule: Boolean read FDefaultModule write FDefaultModule;
   end;
 
   TmodModuleClass = class of TmodModule;
@@ -320,7 +324,6 @@ type
     FEOFOnError: Boolean;
     FActive: Boolean;
     FEndOfLine: String;
-    FDefaultModule: TmodModule;
     FDefaultProtocol: String;
     FInit: Boolean;
     FServer: TmodModuleServer;
@@ -342,6 +345,7 @@ type
 
     function ServerUseSSL: Boolean;
     function Find<T: Class>: T; overload;
+    function Find<T: Class>(const AName: string): T; overload;
     function Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
 
     function Add(const Name, AliasName: String; AModule: TmodModule): Integer; overload;
@@ -349,7 +353,6 @@ type
 
     property Active: Boolean read GetActive;
     property EndOfLine: String read FEndOfLine write SetEndOfLine; //TODO move to module
-    property DefaultModule: TmodModule read FDefaultModule write FDefaultModule;
   end;
 
   //--- Server ---
@@ -439,7 +442,7 @@ end;
 
 function ParseURI(const URI: String; out Address, Params: string): Boolean;
 var
-  I, J: Integer;
+  J: Integer;
 begin
   J := Pos('?', URI);
   if J > 0 then
@@ -755,7 +758,7 @@ var
 begin
   inherited;
   //need support peek :( for check request
-  aRequestLine := TrimRight(UTF8ToString(Stream.ReadLineUTF8));
+  aRequestLine := TrimRight(UTF8ToString(Stream.ReadLineUTF8)); //* TODO do we need UTF8ToString?
   if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
 
@@ -1018,11 +1021,12 @@ begin
   Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
 end;
 
-constructor TmodModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules);
+constructor TmodModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules; AsDefault: Boolean);
 begin
   inherited Create;
   Name := AName;
   FAliasName := AAliasName;
+  FDefaultModule := AsDefault;
   FProtocols := AProtocols;
   FModules := AModules;
   FModules.Add(Self);
@@ -1042,12 +1046,7 @@ end;
 
 procedure TmodModule.DoPrepareRequest(ARequest: TmodRequest; Fallback: Boolean);
 begin
-  //if ARequest.Route.Count>0 then
-  begin
-    //ARequest.Params['Module'] := ARequest.Route[0];
-    //ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
-  end;
-  if (AliasName <> '') and not Fallback then //* now what if
+  if (AliasName <> '') and not Fallback then
     ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
 end;
 
@@ -1062,8 +1061,6 @@ begin
 end;
 
 function TmodModule.Match(const ARequest: TmodRequest): Boolean;
-var
-  p: TmnParams;
 begin
   //Result := SameText(AliasName, ARequest.Module) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
   Result := False;
@@ -1255,24 +1252,33 @@ end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;
 var
-  item: TmodModule;
+  item, aModule, aLast: TmodModule;
+  aFallback: Boolean;
 begin
   Result := nil;
+  aModule := nil;
+  aFallback := False;
+  aLast := nil;
   for item in Self do
   begin
-
-    //item.PrepareRequest(ARequest); //always have params
     if item.Match(ARequest) then
     begin
-      item.PrepareRequest(ARequest, False);
-      Exit(item);
-    end;
+      aModule := item;
+      break;
+    end
+    else if item.DefaultModule and (item.AliasName = '') then //* find fallback module without aliasname
+      aLast := item;
   end;
 
-  if DefaultModule<>nil then
+  aFallback := (aModule = nil);
+  if aFallback then
+    aModule := aLast;
+
+  if aModule <> nil then
   begin
-    DefaultModule.PrepareRequest(ARequest, True);
-    Result := DefaultModule;
+    //item.PrepareRequest(ARequest); //always have params
+    aModule.PrepareRequest(ARequest, aFallback);
+    Result := aModule;
   end;
 end;
 
@@ -1290,6 +1296,22 @@ begin
     end;
   end;
 end;
+
+function TmodModules.Find<T>(const AName: string): T;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if (Items[i] is T) and SameText(AName, Items[i].Name) then
+    begin
+      Result := Items[i] as T;
+      break;
+    end;
+  end;
+end;
+
 
 function TmodModules.Find(const ModuleClass: TmodModuleClass): TmodModule;
 var

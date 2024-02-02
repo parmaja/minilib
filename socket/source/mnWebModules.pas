@@ -29,11 +29,16 @@ headers[1]->Connection: Close
 headers[2]
 -------------------
 
+Notes:
+
+  Last module without AliasName is the fallback module
+
 *}
 
 {**
   Ref: https://www.ntu.edu.sg/home/ehchua/programming/webprogramming/HTTP_Basics.html
 *}
+
 
 
 interface
@@ -171,12 +176,13 @@ type
     procedure ParseHead(ARequest: TmodRequest; const RequestLine: string); override;
   end;
 
-  { TmodWebServer }
+  { TmodCustomWebServer }
 
   TmodCustomWebServer = class(TmodModuleServer)
   protected
     function CreateModules: TmodModules; override;
   public
+    procedure AddAcmeChallenge(const AName: string = '.well-known'; const ADocumentRoot: string = '');
   end;
 
   TmodWebServer = class(TmodCustomWebServer)
@@ -185,9 +191,9 @@ type
     constructor Create; override;
   end;
 
-  { TmodChallengeServer }
+  { TmodAcmeChallengeServer }
 
-  TmodChallengeServer = class(TmodCustomWebServer)
+  TmodAcmeChallengeServer = class(TmodCustomWebServer)
   protected
   public
     constructor Create; override;
@@ -713,22 +719,32 @@ end;
 constructor TmodWebServer.Create;
 begin
   inherited;
-  Modules.DefaultModule := TmodWebModule.Create('web', 'doc', ['http/1.1'], Modules);
+  TmodWebModule.Create('web', 'doc', ['http/1.1'], Modules, True);
   Port := '80';
 end;
 
-{ TmodChallengeServer }
+{ TmodAcmeChallengeServer }
 
-constructor TmodChallengeServer.Create;
+constructor TmodAcmeChallengeServer.Create;
 begin
   inherited Create;
-  Modules.DefaultModule := TmodWebModule.Create('', 'doc', ['http/1.1'], Modules);
-  Port := '80';
+  AddAcmeChallenge;
 end;
 
 function TmodCustomWebServer.CreateModules: TmodModules;
 begin
   Result := TmodWebModules.Create(Self);
+end;
+
+procedure TmodCustomWebServer.AddAcmeChallenge(const AName: string; const ADocumentRoot: string);
+begin
+  //* http://localhost/.well-known/acme-challenge/index.html
+  with TmodWebModule.Create(AName, '.well-known', ['http/1.1'], Modules, False) do
+  begin
+    DocumentRoot := ADocumentRoot;
+  end;
+  //* use certbot folder to "Application.Location + 'cert'" because certbot will create folder .well-known
+  Port := '80';
 end;
 
 { TmodHttpCommand }
@@ -872,6 +888,7 @@ begin
         case vDisposition of
           sdInline: Respond.PutHeader('Content-Disposition', Format('inline; filename="%s"', [vName]));
           sdAttachment: Respond.PutHeader('Content-Disposition', Format('attachment; filename="%s"', [vName]));
+          else;
         end;
 
         if Respond.KeepAlive then
@@ -948,6 +965,7 @@ function THttpResultHelper.ToString: string;
 begin
   Result := 'HTTP/1.1 ';
   case Self of
+    hrNone: Result := '';
     hrOK: Result := Result + '200 OK';
     hrError: Result := Result + '500 Internal Server Error';
     hrUnauthorized: Result := Result + '401 Unauthorized';
