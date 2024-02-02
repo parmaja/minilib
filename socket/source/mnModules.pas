@@ -263,6 +263,7 @@ type
     FDefaultModule: Boolean;
     FCommands: TmodCommandClasses;
     FKeepAliveTimeOut: Integer;
+    FLevel: Integer;
     FModules: TmodModules;
     FProtocols: TArray<String>;
     FUseKeepAlive: TmodKeepAlive;
@@ -311,6 +312,7 @@ type
     property UseCompressing: Boolean read FUseCompressing write FUseCompressing;
     property AliasName: String read FAliasName write SetAliasName;
     property DefaultModule: Boolean read FDefaultModule write FDefaultModule;
+    property Level: Integer read FLevel write FLevel;
   end;
 
   TmodModuleClass = class of TmodModule;
@@ -1171,10 +1173,16 @@ begin
   FEndOfLine := AValue;
 end;
 
+function ModuleCompareLevel(Item1, Item2: Pointer): Integer;
+begin
+  Result := TmodModule(Item1).Level - TmodModule(Item2).Level;
+end;
+
 procedure TmodModules.Start;
 var
   aModule: TmodModule;
 begin
+  Sort(ModuleCompareLevel); //* sort it before run
   for aModule in Self do
     aModule.Start;
   FActive := True;

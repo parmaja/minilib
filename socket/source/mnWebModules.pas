@@ -741,6 +741,7 @@ begin
   //* http://localhost/.well-known/acme-challenge/index.html
   with TmodWebModule.Create(AName, '.well-known', ['http/1.1'], Modules, False) do
   begin
+    Level := -1;
     DocumentRoot := ADocumentRoot;
   end;
   //* use certbot folder to "Application.Location + 'cert'" because certbot will create folder .well-known
