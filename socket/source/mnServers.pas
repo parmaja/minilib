@@ -49,8 +49,8 @@ type
     procedure FreeSocket; override;
     function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
   public
-    PrivateKeyFile: string;
     CertificateFile: string;
+    PrivateKeyFile: string;
     constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = [soNoDelay]);
     destructor Destroy; override;
     property Port: string read FPort write SetPort;
@@ -118,9 +118,8 @@ type
   protected //OpenSSL
     Context: TContext;
     //You can use full path
-    FullChain: Boolean;
-    PrivateKeyFile: string;
     CertificateFile: string;
+    PrivateKeyFile: string;
     CertificateFileDate: TDateTime;
 
     procedure Connect;
@@ -195,9 +194,8 @@ type
     //Idle is in Listener thread not in main thread
     procedure Idle(vListener: TmnListener);
   public
-    FullChain: Boolean;
-    PrivateKeyFile: string;
     CertificateFile: string;
+    PrivateKeyFile: string;
 
     constructor Create;
     procedure BeforeDestruction; override;
@@ -783,8 +781,8 @@ begin
   if soSSL in Options then
   begin
     FileAge(CertificateFile, CertificateFileDate, True);
+    Context.LoadFullChainFile(UTF8Encode(CertificateFile));
     Context.LoadPrivateKeyFile(UTF8Encode(PrivateKeyFile));
-    Context.LoadCertFile(UTF8Encode(CertificateFile), FullChain);
     Context.CheckPrivateKey; //do not use this
     //Context.SetVerifyNone;
   end;
@@ -858,8 +856,8 @@ begin
   inherited Create;
   FAddress := '0.0.0.0';
   //FAddress := '';
-  PrivateKeyFile := 'privatekey.pem';
   CertificateFile := 'certificate.pem';
+  PrivateKeyFile := 'privatekey.pem';
   IdleInterval := cIdleInterval;
   FIdleTick := TThread.GetTickCount64;
 end;
@@ -908,9 +906,8 @@ begin
         FListener.FAddress := FAddress;
         if UseSSL then
           FListener.FOptions := FListener.FOptions + [soSSL];
-        FListener.FullChain := FullChain;
-        FListener.PrivateKeyFile := PrivateKeyFile;
         FListener.CertificateFile := CertificateFile;
+        FListener.PrivateKeyFile := PrivateKeyFile;
 
         FListener.Prepare;
         //FListener.Timeout := 500;
@@ -1063,7 +1060,7 @@ begin
   if soSSL in Options then
   begin
     FContext := TContext.Create(TTLS_SSLServerMethod, [coServer, coNoCompressing]);
-    FContext.LoadCertFile(CertificateFile);
+    FContext.LoadFullChainFile(CertificateFile);
     FContext.LoadPrivateKeyFile(PrivateKeyFile);
     FContext.CheckPrivateKey; //do not use this
     //Context.SetVerifyNone;

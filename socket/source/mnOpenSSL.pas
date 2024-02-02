@@ -94,9 +94,9 @@ type
     destructor Destroy; override;
     procedure SetVerifyLocation(Location: utf8string);
     procedure SetVerifyFile(AFileName: utf8string);
-    procedure LoadCertFile(FileName: utf8string; FullChain: Boolean = False);
-    procedure LoadFullChainCertFile(FileName: utf8string);
-    procedure LoadFullCertFile(FileName: utf8string);
+    procedure LoadCertFile(FileName: utf8string);
+    procedure LoadFullChainFile(FileName: utf8string);
+    //procedure LoadFullCertFile(FileName: utf8string);
     procedure LoadPrivateKeyFile(FileName: utf8string);
     procedure CheckPrivateKey;
     procedure SetVerifyNone;
@@ -933,26 +933,18 @@ begin
   inherited Destroy;
 end;
 
-procedure TContext.LoadCertFile(FileName: utf8string; FullChain: Boolean);
+procedure TContext.LoadCertFile(FileName: utf8string);
 var
   s: string;
 begin
-  if FullChain then
-  begin
-    if SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName)) <= 0 then
-    begin
-      s := ERR_error_string(ERR_peek_error, nil);
-      raise EmnOpenSSLException.CreateFmt('fail to load full chain certificate [%s]', [s]);
-    end;
-  end
-  else if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
+  if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
   begin
     s := ERR_error_string(ERR_peek_error, nil);
     raise EmnOpenSSLException.CreateFmt('fail to load certificate [%s]', [s]);
   end;
 end;
 
-procedure TContext.LoadFullChainCertFile(FileName: utf8string);
+procedure TContext.LoadFullChainFile(FileName: utf8string);
 var
   s: string;
 begin
@@ -962,7 +954,7 @@ begin
     raise EmnOpenSSLException.CreateFmt('fail to load full chain certificate [%s]', [s]);
   end;
 end;
-
+(*
 procedure TContext.LoadFullCertFile(FileName: utf8string);
 var
   b: TBIOStreamFile;
@@ -1004,7 +996,7 @@ begin
     b.Free;
   end;
 end;
-
+*)
 procedure TContext.LoadPrivateKeyFile(FileName: utf8string);
 var
   i: Integer;

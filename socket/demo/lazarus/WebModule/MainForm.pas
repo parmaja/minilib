@@ -162,7 +162,6 @@ begin
   HttpServer.Port := PortEdit.Text;
   HttpServer.CertificateFile := Application.Location + 'fullchain.pem';
   HttpServer.PrivateKeyFile := Application.Location + 'privkey.pem';
-  HttpServer.FullChain := True;
   //Server.Address := '127.0.0.1';
   HttpServer.UseSSL := UseSSLChk.Checked;
 end;
