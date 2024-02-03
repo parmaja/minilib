@@ -30,7 +30,13 @@ uses
 
 type
 
-  EmnOpenSSLException = Exception;
+  { EmnOpenSSLException }
+
+  EmnOpenSSLException = class(Exception)
+  public
+    constructor CreateLastError(const msg : string); overload;
+  end;
+
   { TOpenSSLObject }
 
   TsslError = (seSuccess, seTimeout, seClosed, seInvalid);
@@ -96,6 +102,7 @@ type
     procedure SetVerifyFile(AFileName: utf8string);
     procedure LoadCertFile(FileName: utf8string);
     procedure LoadFullChainFile(FileName: utf8string);
+    procedure LoadPFXFile(FileName, Password: utf8string);
     //procedure LoadFullCertFile(FileName: utf8string);
     procedure LoadPrivateKeyFile(FileName: utf8string);
     procedure CheckPrivateKey;
@@ -598,6 +605,16 @@ begin
   Handle := BIO_new_file(PUTF8Char(AFileName), PUTF8Char(Mode));
 end;
 
+{ EmnOpenSSLException }
+
+constructor EmnOpenSSLException.CreateLastError(const msg: string);
+var
+  s: string;
+begin
+  s := ERR_error_string(ERR_peek_error, nil);
+  raise EmnOpenSSLException.CreateFmt(msg + ' [%s]', [s]);
+end;
+
 { TOpenSSLObject }
 
 constructor TOpenSSLObject.Create;
@@ -934,26 +951,53 @@ begin
 end;
 
 procedure TContext.LoadCertFile(FileName: utf8string);
-var
-  s: string;
 begin
   if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
-  begin
-    s := ERR_error_string(ERR_peek_error, nil);
-    raise EmnOpenSSLException.CreateFmt('fail to load certificate [%s]', [s]);
-  end;
+    raise EmnOpenSSLException.CreateLastError('fail to load certificate');
 end;
 
 procedure TContext.LoadFullChainFile(FileName: utf8string);
-var
-  s: string;
 begin
   if SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName)) <= 0 then
-  begin
-    s := ERR_error_string(ERR_peek_error, nil);
-    raise EmnOpenSSLException.CreateFmt('fail to load full chain certificate [%s]', [s]);
+    raise EmnOpenSSLException.CreateLastError('fail to load full chain certificate');
+end;
+
+//https://stackoverflow.com/questions/6371775/how-to-load-a-pkcs12-file-in-openssl-programmatically
+procedure TContext.LoadPFXFile(FileName, Password: utf8string);
+var
+  bio: PBIO;
+  p12: PKCS12;
+//	ca: PSLLObject;
+  aPrivateKey: PEVP_PKEY;
+  aCertificate: PX509;
+begin
+  bio := BIO_new_file(PUTF8Char(FileName), PUTF8Char('rb'));
+  if (bio = nil) then
+    raise EmnOpenSSLException.CreateLastError('Error reading file by BIO_new_file');
+
+  try
+    p12 := d2i_PKCS12_bio(bio, nil);
+    if p12 = nil then
+      raise EmnOpenSSLException.CreateLastError('fail to load d2i_PKCS12_bio certificate');
+    try
+      if PKCS12_parse(p12, PUTF8Char(Password), aPrivateKey, aCertificate, nil) <=0 then
+        raise EmnOpenSSLException.CreateLastError('Error PKCS12_parse');
+      if (SSL_CTX_use_certificate(Handle, aCertificate) <= 0) then
+        raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
+      if SSL_CTX_use_PrivateKey(Handle, aPrivateKey) <= 0 then
+        raise EmnOpenSSLException.Create('fail to load private key');
+
+      //TODO Not sure if i can free it here or keep it in the object
+      EVP_PKEY_free(aPrivateKey);
+      X509_free(aCertificate);
+    finally
+		  PKCS12_free(p12);
+    end;
+  finally
+    BIO_free(bio);
   end;
 end;
+
 (*
 procedure TContext.LoadFullCertFile(FileName: utf8string);
 var
@@ -965,10 +1009,7 @@ var
 begin
   {r := SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName));
   if r <= 0 then
-  begin
-    var s := ERR_error_string(ERR_peek_error, nil);
-    raise EmnOpenSSLException.CreateFmt('fail to load certificate [%d]', [r]);
-  end;
+    raise EmnOpenSSLException.CreateLastError('fail to load certificate);
   Exit;}
 
   if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
@@ -998,11 +1039,8 @@ begin
 end;
 *)
 procedure TContext.LoadPrivateKeyFile(FileName: utf8string);
-var
-  i: Integer;
 begin
-  i := SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM);
-  if i <= 0 then
+  if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.Create('fail to load private key');
 end;
 

@@ -54,6 +54,8 @@ type
 
   //PSLLObject = class(TObject);
   {$ifdef FPC}
+  //SSLObject = record;
+  //PSLLObject = type ^SSLObject; //* Unfortunately FPC have no `type of` :(
   PSLLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
   {$else}
   PSLLObject = type Pointer;
@@ -88,6 +90,8 @@ type
   PPEC_KEY = ^PEC_KEY;
   PEC_KEY_METHOD = PSLLObject;
   PPEC_KEY_METHOD = ^PEC_KEY_METHOD;
+
+  PKCS12 = PSLLObject;
 
   PBIO_METHOD = PSLLObject;
   PPBIO_METHOD = ^PBIO_METHOD;
@@ -419,8 +423,10 @@ var
   SSL_CTX_load_verify_locations: function(ctx: PSSL_CTX; CAfile: PUTF8Char; CApath: PUTF8Char): Integer; cdecl;
   SSL_CTX_free: procedure(ctx: PSSL_CTX); cdecl;
   SSL_CTX_set_cipher_list: function(ctx: PSSL_CTX; const str: PUTF8Char): Integer; cdecl;
+  SSL_CTX_use_certificate: function(ctx: PSSL_CTX; x: PX509): Integer; cdecl;
   SSL_CTX_use_certificate_file: function(ctx: PSSL_CTX; afile: PUTF8Char; atype: Integer): Integer; cdecl;
   SSL_CTX_use_certificate_chain_file: function(ctx: PSSL_CTX; const afile: PUTF8Char): Integer; cdecl;
+  SSL_CTX_use_PrivateKey: function(ctx: PSSL_CTX; const pkey: PEVP_PKEY): Integer; cdecl;
   SSL_CTX_use_PrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
   SSL_CTX_check_private_key: function(ctx: PSSL_CTX): Integer; cdecl;
   SSL_CTX_use_RSAPrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
@@ -542,6 +548,7 @@ var
   BIO_push: function(b: PBIO; append: PBIO): PBIO; cdecl;
   BIO_set_flags: function(b: PBIO; flags: Integer): integer; cdecl;
   BIO_test_flags: function(b: PBIO; flags: Integer): integer; cdecl;
+  //BIO_read_filename: function(b: PBIO; filename: PUTF8Char): Integer; cdecl;
   BIO_free_all: procedure(b: PBIO); cdecl;
   BIO_free: function(bio: PBIO): Integer; cdecl;
 
@@ -587,9 +594,14 @@ var
   EC_KEY_generate_key: function(key: PEC_KEY): Integer; cdecl;
 
   PEM_read_bio_ECPrivateKey: function(bp: PBIO; x: PPEC_KEY; cb: Ppem_password_cb; u: Pointer): PEC_KEY; cdecl;
+
   ECDSA_size: function(eckey: PEC_KEY): Integer; cdecl;
   ECDSA_sign: function(&type: Integer; dgst: PByte; dgstlen: Integer; sig: PByte; siglen: PCardinal; eckey: PEC_KEY): Integer; cdecl;
 
+  d2i_PKCS12_bio: function(bp: PBIO; a: Pointer): PKCS12; cdecl; //return PKCS12
+
+  PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; var pkey: PEVP_PKEY; var cert: PX509; ca: Pointer): Integer; cdecl;
+  PKCS12_free: procedure(a: PKCS12); cdecl;
 
   //Aliases functions
 
@@ -809,9 +821,11 @@ begin
   SSL_CTX_load_verify_locations := GetAddress('SSL_CTX_load_verify_locations');
   SSL_CTX_free := GetAddress('SSL_CTX_free');
   SSL_CTX_set_cipher_list := GetAddress('SSL_CTX_set_cipher_list');
+  SSL_CTX_use_certificate := GetAddress('SSL_CTX_use_certificate');
   SSL_CTX_use_certificate_file := GetAddress('SSL_CTX_use_certificate_file');
   SSL_CTX_use_certificate_chain_file := GetAddress('SSL_CTX_use_certificate_chain_file');
 
+  SSL_CTX_use_PrivateKey := GetAddress('SSL_CTX_use_PrivateKey');
   SSL_CTX_use_PrivateKey_file := GetAddress('SSL_CTX_use_PrivateKey_file');
   SSL_CTX_use_RSAPrivateKey_file := GetAddress('SSL_CTX_use_RSAPrivateKey_file');
   SSL_CTX_check_private_key := GetAddress('SSL_CTX_check_private_key');
@@ -914,6 +928,7 @@ begin
   BIO_f_base64 := GetAddress('BIO_f_base64');
   BIO_set_flags := GetAddress('BIO_set_flags');
   BIO_test_flags := GetAddress('BIO_test_flags');
+  //BIO_read_filename := GetAddress('BIO_read_filename');
   BIO_free := GetAddress('BIO_free');
   BIO_free_all := GetAddress('BIO_free_all');
   BIO_write := GetAddress('BIO_write');
@@ -928,14 +943,12 @@ begin
   OPENSSL_sk_num := GetAddress('OPENSSL_sk_num');
   OPENSSL_sk_value := GetAddress('OPENSSL_sk_value');
 
-
   ASN1_STRING_new := GetAddress('ASN1_STRING_new');
   ASN1_STRING_set := GetAddress('ASN1_STRING_set');
   GENERAL_NAME_new := GetAddress('GENERAL_NAME_new');
   GENERAL_NAME_set0_value := GetAddress('GENERAL_NAME_set0_value');
   ASN1_OCTET_STRING_new := GetAddress('ASN1_OCTET_STRING_new');
   ASN1_OCTET_STRING_set := GetAddress('ASN1_OCTET_STRING_set');
-
 
   BIO_s_mem := GetAddress('BIO_s_mem');
   HMAC := GetAddress('HMAC');
@@ -980,8 +993,13 @@ begin
   EC_KEY_generate_key := GetAddress('EC_KEY_generate_key');
 
   PEM_read_bio_ECPrivateKey := GetAddress('PEM_read_bio_ECPrivateKey');
+
   ECDSA_size := GetAddress('ECDSA_size');
   ECDSA_sign := GetAddress('ECDSA_sign');
+
+  d2i_PKCS12_bio := GetAddress('d2i_PKCS12_bio');
+  PKCS12_parse := GetAddress('PKCS12_parse');
+  PKCS12_free := GetAddress('PKCS12_free');
 end;
 
 function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt;

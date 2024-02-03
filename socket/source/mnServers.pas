@@ -49,6 +49,7 @@ type
     procedure FreeSocket; override;
     function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
   public
+    CertPassword: string;
     CertificateFile: string;
     PrivateKeyFile: string;
     constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = [soNoDelay]);
@@ -118,6 +119,7 @@ type
   protected //OpenSSL
     Context: TContext;
     //You can use full path
+    CertPassword: string;
     CertificateFile: string;
     PrivateKeyFile: string;
     CertificateFileDate: TDateTime;
@@ -194,6 +196,7 @@ type
     //Idle is in Listener thread not in main thread
     procedure Idle(vListener: TmnListener);
   public
+    CertPassword: string;
     CertificateFile: string;
     PrivateKeyFile: string;
 
@@ -781,8 +784,15 @@ begin
   if soSSL in Options then
   begin
     FileAge(CertificateFile, CertificateFileDate, True);
-    Context.LoadFullChainFile(UTF8Encode(CertificateFile));
-    Context.LoadPrivateKeyFile(UTF8Encode(PrivateKeyFile));
+    if SameText(ExtractFileExt(CertificateFile), '.pfx') then
+    begin
+      Context.LoadPFXFile(UTF8Encode(CertificateFile), CertPassword);
+    end
+    else
+    begin
+      Context.LoadFullChainFile(UTF8Encode(CertificateFile));
+      Context.LoadPrivateKeyFile(UTF8Encode(PrivateKeyFile));
+    end;
     Context.CheckPrivateKey; //do not use this
     //Context.SetVerifyNone;
   end;
@@ -907,6 +917,7 @@ begin
         if UseSSL then
           FListener.FOptions := FListener.FOptions + [soSSL];
         FListener.CertificateFile := CertificateFile;
+        FListener.CertPassword := CertPassword;
         FListener.PrivateKeyFile := PrivateKeyFile;
 
         FListener.Prepare;

@@ -18,7 +18,7 @@ interface
 
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
-  mnLogs,
+  mnLogs, mnUtils,
   StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSL,
   LResources, Buttons, Menus;
 
@@ -63,6 +63,9 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
+    CertPassword: string;
+    CertFile: string;
+    PrivateKeyFile: string;
     ChallengeServer: TmodAcmeChallengeServer;
     HttpServer: TmodWebServer;
     FMax:Integer;
@@ -160,10 +163,16 @@ begin
 
   end;
   HttpServer.Port := PortEdit.Text;
-  HttpServer.CertificateFile := Application.Location + 'fullchain.pem';
-  HttpServer.PrivateKeyFile := Application.Location + 'privkey.pem';
+  if UseSSLChk.Checked then
+  begin
+    //HttpServer.CertificateFile := Application.Location + '\acme\fullchain.pem';
+    //HttpServer.PrivateKeyFile := Application.Location + '\acme\privkey.pem';
+    HttpServer.UseSSL := True;
+    HttpServer.CertificateFile := CertFile;
+    HttpServer.CertPassword := CertPassword;
+    HttpServer.PrivateKeyFile := PrivateKeyFile;
+  end;
   //Server.Address := '127.0.0.1';
-  HttpServer.UseSSL := UseSSLChk.Checked;
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;
@@ -241,6 +250,9 @@ begin
     UseSSLChk.Checked := GetOption('ssl', false);
     ChallengeSSLChk.Checked := GetOption('challenge', False);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
+    CertPassword := GetOption('cert_password', '');
+    CertFile := CorrectPath(ExpandToPath(GetOption('certificate', './certificate.pem'), Application.Location));
+    PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), Application.Location));
   finally
     aIni.Free;
   end;
