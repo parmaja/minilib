@@ -35,6 +35,7 @@ interface
 
 uses
   SysUtils, Classes, StrUtils, Types,  DateUtils,
+  Generics.Defaults,
   mnClasses, mnStreams, mnFields, mnParams,
   mnSockets, mnConnections, mnServers;
 
@@ -260,7 +261,6 @@ type
   TmodModule = class(TmnNamedObject)
   private
     FAliasName: String;
-    FDefaultModule: Boolean;
     FCommands: TmodCommandClasses;
     FKeepAliveTimeOut: Integer;
     FLevel: Integer;
@@ -278,10 +278,10 @@ type
     procedure DoCreateCommands; virtual;
     procedure CreateCommands;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
-    procedure DoPrepareRequest(ARequest: TmodRequest; Fallback: Boolean); virtual;
+    procedure DoPrepareRequest(ARequest: TmodRequest); virtual;
 
     function Match(const ARequest: TmodRequest): Boolean; virtual;
-    procedure PrepareRequest(ARequest: TmodRequest; Fallback: Boolean);
+    procedure PrepareRequest(ARequest: TmodRequest);
     function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
     procedure DoReadHeader(ARequest: TmodRequest); virtual;
@@ -297,7 +297,7 @@ type
   public
     //Default fallback module should have no alias name
     //Protocols all should lowercase
-    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules; AsDefault: Boolean = False); virtual;
+    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules); virtual;
     destructor Destroy; override;
     function Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodRespondResult;
     function RegisterCommand(vName: String; CommandClass: TmodCommandClass; AFallback: Boolean = False): Integer; overload;
@@ -311,7 +311,6 @@ type
     property UseKeepAlive: TmodKeepAlive read FUseKeepAlive write FUseKeepAlive default klvUndefined;
     property UseCompressing: Boolean read FUseCompressing write FUseCompressing;
     property AliasName: String read FAliasName write SetAliasName;
-    property DefaultModule: Boolean read FDefaultModule write FDefaultModule;
     property Level: Integer read FLevel write FLevel;
   end;
 
@@ -1023,12 +1022,11 @@ begin
   Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
 end;
 
-constructor TmodModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules; AsDefault: Boolean);
+constructor TmodModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules);
 begin
   inherited Create;
   Name := AName;
   FAliasName := AAliasName;
-  FDefaultModule := AsDefault;
   FProtocols := AProtocols;
   FModules := AModules;
   FModules.Add(Self);
@@ -1046,9 +1044,9 @@ procedure TmodModule.DoCreateCommands;
 begin
 end;
 
-procedure TmodModule.DoPrepareRequest(ARequest: TmodRequest; Fallback: Boolean);
+procedure TmodModule.DoPrepareRequest(ARequest: TmodRequest);
 begin
-  if (AliasName <> '') and not Fallback then
+  if (AliasName <> '') then
     ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
 end;
 
@@ -1109,14 +1107,14 @@ begin
   end;
 end;
 
-procedure TmodModule.PrepareRequest(ARequest: TmodRequest; Fallback: Boolean);
+procedure TmodModule.PrepareRequest(ARequest: TmodRequest);
 begin
   ARequest.Path := ARequest.Address;
   ARequest.Params.Clear;
   ParseQuery(ARequest.Query, ARequest.Params);
 
   ARequest.Params['Module'] := AliasName;
-  DoPrepareRequest(ARequest, Fallback);
+  DoPrepareRequest(ARequest);
 end;
 
 procedure TmodModule.SetAliasName(AValue: String);
@@ -1182,7 +1180,14 @@ procedure TmodModules.Start;
 var
   aModule: TmodModule;
 begin
+  {$ifdef FPC}
   Sort(ModuleCompareLevel); //* sort it before run
+  {$else}
+  Sort(TComparer<TmodModule>.Construct(function(const Left, Right: TmodModule): Integer
+  begin
+    Result := Left.Level-Right.Level;
+  end)); //* sort it before run
+  {$endif}
   for aModule in Self do
     aModule.Start;
   FActive := True;
@@ -1252,7 +1257,7 @@ begin
   ParseRaw(RequestLine, ARequest.Info.Method, ARequest.Info.Protocol, ARequest.Info.URI);
   ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Query);
 
-  if (ARequest.Address<>'') and StartsText(URLPathDelim, ARequest.Address) then
+  if (ARequest.Address<>'') and (ARequest.Address<>'/') and StartsText(URLPathDelim, ARequest.Address) then
     ARequest.Address := Copy(ARequest.Address, 2, MaxInt);
 
   StrToStrings(ARequest.Address, ARequest.Route, ['/']);
@@ -1261,31 +1266,28 @@ end;
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;
 var
   item, aModule, aLast: TmodModule;
-  aFallback: Boolean;
 begin
   Result := nil;
   aModule := nil;
-  aFallback := False;
   aLast := nil;
   for item in Self do
   begin
-    if item.Match(ARequest) then
+    if (item.AliasName <> '') and item.Match(ARequest) then
     begin
       aModule := item;
       break;
     end
-    else if item.DefaultModule and (item.AliasName = '') then //* find fallback module without aliasname
+    else if (item.AliasName = '') then //* find fallback module without aliasname
       aLast := item;
   end;
 
-  aFallback := (aModule = nil);
-  if aFallback then
+  if aModule = nil then
     aModule := aLast;
 
   if aModule <> nil then
   begin
     //item.PrepareRequest(ARequest); //always have params
-    aModule.PrepareRequest(ARequest, aFallback);
+    aModule.PrepareRequest(ARequest);
     Result := aModule;
   end;
 end;

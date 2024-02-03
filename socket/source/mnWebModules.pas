@@ -156,7 +156,7 @@ type
     procedure Log(S: string); override;
     procedure InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean); override;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); override;
-    procedure DoPrepareRequest(ARequest: TmodRequest; Fallback: Boolean); override;
+    procedure DoPrepareRequest(ARequest: TmodRequest); override;
   public
     destructor Destroy; override;
     property DocumentRoot: string read FDocumentRoot write SetDocumentRoot;
@@ -474,12 +474,12 @@ begin
   }
 end;
 
-procedure TmodWebModule.DoPrepareRequest(ARequest: TmodRequest; Fallback: Boolean);
+procedure TmodWebModule.DoPrepareRequest(ARequest: TmodRequest);
 begin
   //inherited;
 
   ARequest.Command := ARequest.Method;
-  if (AliasName <> '') and not Fallback then
+  if (AliasName <> '') then
     ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);
 end;
 
@@ -719,7 +719,7 @@ end;
 constructor TmodWebServer.Create;
 begin
   inherited;
-  TmodWebModule.Create('web', 'doc', ['http/1.1'], Modules, True);
+  TmodWebModule.Create('web', 'doc', ['http/1.1'], Modules);
   Port := '80';
 end;
 
@@ -739,7 +739,7 @@ end;
 procedure TmodCustomWebServer.AddAcmeChallenge(const AName: string; const ADocumentRoot: string);
 begin
   //* http://localhost/.well-known/acme-challenge/index.html
-  with TmodWebModule.Create(AName, '.well-known', ['http/1.1'], Modules, False) do
+  with TmodWebModule.Create(AName, '.well-known', ['http/1.1'], Modules) do
   begin
     Level := -1;
     DocumentRoot := ADocumentRoot;
@@ -921,7 +921,7 @@ begin
   Body := '<HTML><HEAD><TITLE>404 Not Active</TITLE></HEAD>' +
     '<BODY><H1>404 Not Found</H1>The requested URL ' +
     ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
-  Respond.Stream.WriteString(Body);
+  Respond.Stream.WriteUTF8(UTF8Encode(Body));
   Respond.KeepAlive := False;
 end;
 
@@ -935,7 +935,7 @@ begin
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
     '<BODY><H1>404 Not Found</H1>The requested URL ' +
     ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
-  Respond.Stream.WriteString(Body);
+  Respond.Stream.WriteUTF8(UTF8Encode(Body));
   Respond.KeepAlive := False;
 end;
 
@@ -999,7 +999,6 @@ begin
   aModule := TmodWebEventModule.Create('web', 'doc', ['http/1.1'], Modules);
   aModule.FProc := vProc;
 
-  Modules.DefaultModule := aModule;
   Port := vPort;
 end;
 
