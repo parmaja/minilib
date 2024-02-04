@@ -7,6 +7,8 @@ unit mnConfigs;
  * @version   1.0
  *}
 
+ { TODO : function for find in sections }
+
 {$ifdef FPC}
 {$mode delphi}{$H+}
 {$ModeSwitch ArrayOperators}
