@@ -988,6 +988,13 @@ begin
       if PKCS12_parse(p12, PUTF8Char(Password), FPrivateKey, FCertificate, nil) <=0 then
         raise EmnOpenSSLException.CreateLastError('Error PKCS12_parse');
 
+      {var wbio := BIO_new_file(PUTF8Char('c:\temp\1.pem'), PUTF8Char('wb'));
+      try
+        PEM_write_bio_X509(wbio, FCertificate);
+      finally
+        BIO_free(wbio);
+      end;}
+
       if (SSL_CTX_use_certificate(Handle, FCertificate) <= 0) then
         raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
       if SSL_CTX_use_PrivateKey(Handle, FPrivateKey) <= 0 then
