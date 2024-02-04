@@ -600,7 +600,7 @@ var
 
   d2i_PKCS12_bio: function(bp: PBIO; a: Pointer): PKCS12; cdecl; //return PKCS12
 
-  PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; var pkey: PEVP_PKEY; var cert: PX509; ca: Pointer): Integer; cdecl;
+  PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; out pkey: PEVP_PKEY; out cert: PX509; ca: Pointer): Integer; cdecl;
   PKCS12_free: procedure(a: PKCS12); cdecl;
 
   //Aliases functions

@@ -94,6 +94,8 @@ type
     Handle: PSSL_CTX;
     FMethod: TSSLMethod;
     FOwnMethod: Boolean; //created internally
+    FPrivateKey: PEVP_PKEY;
+    FCertificate: PX509;
   public
     constructor Create(AMethod: TSSLMethod; Options: TContextOptions = [coNoCompressing]); overload;
     constructor Create(AMethodClass: TSSLMethodClass; Options: TContextOptions = []); overload;
@@ -943,6 +945,8 @@ end;
 
 destructor TContext.Destroy;
 begin
+  EVP_PKEY_free(FPrivateKey);
+  X509_free(FCertificate);
   if FOwnMethod then
     FMethod.Free;
   if Handle <> nil then
@@ -968,8 +972,6 @@ var
   bio: PBIO;
   p12: PKCS12;
 //	ca: PSLLObject;
-  aPrivateKey: PEVP_PKEY;
-  aCertificate: PX509;
 begin
   bio := BIO_new_file(PUTF8Char(FileName), PUTF8Char('rb'));
   if (bio = nil) then
@@ -980,16 +982,18 @@ begin
     if p12 = nil then
       raise EmnOpenSSLException.CreateLastError('fail to load d2i_PKCS12_bio certificate');
     try
-      if PKCS12_parse(p12, PUTF8Char(Password), aPrivateKey, aCertificate, nil) <=0 then
+      EVP_PKEY_free(FPrivateKey);
+      X509_free(FCertificate);
+
+      if PKCS12_parse(p12, PUTF8Char(Password), FPrivateKey, FCertificate, nil) <=0 then
         raise EmnOpenSSLException.CreateLastError('Error PKCS12_parse');
-      if (SSL_CTX_use_certificate(Handle, aCertificate) <= 0) then
+
+      if (SSL_CTX_use_certificate(Handle, FCertificate) <= 0) then
         raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
-      if SSL_CTX_use_PrivateKey(Handle, aPrivateKey) <= 0 then
+      if SSL_CTX_use_PrivateKey(Handle, FPrivateKey) <= 0 then
         raise EmnOpenSSLException.Create('fail to load private key');
 
       //TODO Not sure if i can free it here or keep it in the object
-      EVP_PKEY_free(aPrivateKey);
-      X509_free(aCertificate);
     finally
 		  PKCS12_free(p12);
     end;
@@ -998,46 +1002,6 @@ begin
   end;
 end;
 
-(*
-procedure TContext.LoadFullCertFile(FileName: utf8string);
-var
-  b: TBIOStreamFile;
-  sk: POPENSSL_STACK;
-  st: PX509_STORE;
-  info: PX509_INFO;
-  i, r: Integer;
-begin
-  {r := SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName));
-  if r <= 0 then
-    raise EmnOpenSSLException.CreateLastError('fail to load certificate);
-  Exit;}
-
-  if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
-    raise EmnOpenSSLException.Create('fail to load certificate');
-  Exit;
-
-  b := TBIOStreamFile.Create(FileName, 'r');
-  try
-    sk := PEM_X509_INFO_read_bio(b.GetBIO, nil, nil, nil);
-    try
-      st := SSL_CTX_get_cert_store(Handle);
-      if st<>nil then
-      begin
-        for i := 0 to OPENSSL_sk_num(sk)-1 do
-        begin
-          info := PX509_INFO(OPENSSL_sk_value(sk, i));
-          if info.x509<>nil then
-            r := X509_STORE_add_cert(st, info.x509);
-        end;
-      end;
-    finally
-      OPENSSL_sk_free(sk);
-    end;
-  finally
-    b.Free;
-  end;
-end;
-*)
 procedure TContext.LoadPrivateKeyFile(FileName: utf8string);
 begin
   if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
@@ -1046,9 +1010,8 @@ end;
 
 procedure TContext.CheckPrivateKey;
 begin
-  //SSL_CTX_set_options(Handle, SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3);
   if SSL_CTX_check_private_key(Handle) = 0 then
-    raise EmnOpenSSLException.Create('Private key does not match the public certificate');
+    raise EmnOpenSSLException.CreateLastError('Private key does not match the public certificate');
 end;
 
 procedure TContext.SetVerifyFile(AFileName: utf8string);
@@ -1059,10 +1022,9 @@ begin
 end;
 
 procedure TContext.SetVerifyLocation(Location: utf8string);
-var
-  err: Integer;
 begin
-  err := SSL_CTX_load_verify_locations(Handle, nil, PUTF8Char(Location));
+  if SSL_CTX_load_verify_locations(Handle, nil, PUTF8Char(Location)) <=0 then
+    raise EmnOpenSSLException.CreateLastError('Private key does not match the public certificate');
 end;
 
 procedure TContext.SetVerifyNone;
