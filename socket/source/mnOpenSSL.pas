@@ -971,7 +971,11 @@ procedure TContext.LoadPFXFile(FileName, Password: utf8string);
 var
   bio: PBIO;
   p12: PKCS12;
-//	ca: PSLLObject;
+//  pkey: PEVP_PKEY;
+//  store: PX509_STORE;
+  cert: PX509;
+  chain: PSLLObject;
+  c, i: Integer;
 begin
   bio := BIO_new_file(PUTF8Char(FileName), PUTF8Char('rb'));
   if (bio = nil) then
@@ -985,22 +989,48 @@ begin
       EVP_PKEY_free(FPrivateKey);
       X509_free(FCertificate);
 
-      if PKCS12_parse(p12, PUTF8Char(Password), FPrivateKey, FCertificate, nil) <=0 then
-        raise EmnOpenSSLException.CreateLastError('Error PKCS12_parse');
-
-      {var wbio := BIO_new_file(PUTF8Char('c:\temp\1.pem'), PUTF8Char('wb'));
+      chain := OPENSSL_sk_new_null;
       try
-        PEM_write_bio_X509(wbio, FCertificate);
+        if PKCS12_parse(p12, PUTF8Char(Password), FPrivateKey, FCertificate, chain) <=0 then
+          raise EmnOpenSSLException.CreateLastError('Error PKCS12_parse');
+
+        if SSL_CTX_use_PrivateKey(Handle, FPrivateKey) <= 0 then
+          raise EmnOpenSSLException.Create('fail to load private key');
+
+        if (SSL_CTX_use_certificate(Handle, FCertificate) <= 0) then
+           raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
+
+        {pkey := EVP_PKEY_new;
+        if pkey = nil then
+          raise EmnOpenSSLException.CreateLastError('Error EVP_PKEY_new');
+
+
+        if (EVP_PKEY_copy_parameters(pkey, FPrivateKey) <=0) then
+          raise EmnOpenSSLException.CreateLastError('Error EVP_PKEY_copy_parameters');
+
+        store := X509_STORE_new();
+        if store = nil then
+          raise EmnOpenSSLException.CreateLastError('Error X509_STORE_new');
+  }
+        c := OPENSSL_sk_num(chain);
+        for  i := 0 to c-1 do
+        begin
+            cert := OPENSSL_sk_value(chain, i);
+            if SSL_CTX_add_extra_chain_cert(Handle, cert) <=0 then
+              raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_add_extra_chain_cert');
+        end;
+
+        {var wbio := BIO_new_file(PUTF8Char('c:\temp\1.pem'), PUTF8Char('wb'));
+        try
+          PEM_write_bio_X509(wbio, FCertificate);
+        finally
+          BIO_free(wbio);
+        end;}
+
       finally
-        BIO_free(wbio);
-      end;}
-
-      if (SSL_CTX_use_certificate(Handle, FCertificate) <= 0) then
-        raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
-      if SSL_CTX_use_PrivateKey(Handle, FPrivateKey) <= 0 then
-        raise EmnOpenSSLException.Create('fail to load private key');
-
-      //TODO Not sure if i can free it here or keep it in the object
+        OPENSSL_sk_free(chain);
+      end;
+      // https://stackoverflow.com/questions/43119053/does-ssl-ctx-use-certificate-copy-used-certificate-bytes
     finally
 		  PKCS12_free(p12);
     end;
