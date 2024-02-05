@@ -200,6 +200,7 @@ function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf
 function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
 function ECDSASignBase64(const vData, vKey: utf8string): UTF8String; overload;
 function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
+procedure X509SaveToFile(X509: PX509; const FileName: string);
 
 implementation
 
@@ -258,6 +259,17 @@ begin
   end;
 end;
 
+procedure X509SaveToFile(X509: PX509; const FileName: string);
+var
+  bio: PBIO;
+begin
+  bio := BIO_new_file(PUTF8Char(FileName), PUTF8Char('wb'));
+  try
+    PEM_write_bio_X509(bio, X509);
+  finally
+    BIO_free(bio);
+  end;
+end;
 
 function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
 var
@@ -1007,13 +1019,6 @@ begin
             if SSL_CTX_add_extra_chain_cert(Handle, cert) <=0 then
               raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_add_extra_chain_cert');
         end;
-
-        {var wbio := BIO_new_file(PUTF8Char('c:\temp\1.pem'), PUTF8Char('wb'));
-        try
-          PEM_write_bio_X509(wbio, FCertificate);
-        finally
-          BIO_free(wbio);
-        end;}
 
       finally
         OPENSSL_sk_free(chain);
