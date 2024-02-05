@@ -54,10 +54,12 @@ type
 
   //PSLLObject = class(TObject);
   {$ifdef FPC}
-  //SSLObject = record;
-  //PSLLObject = type ^SSLObject; //* Unfortunately FPC have no `type of` :(
-  PSLLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
+  SSLObject = record end;
+  PSLLObject = type ^SSLObject; //* Unfortunately FPC have no `type of` :(
+  //PSLLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
   {$else}
+//  SSLObject = record end;
+//  PSLLObject = ^SSLObject; //* Unfortunately FPC have no `type of` :(
   PSLLObject = type Pointer;
   //PSLLObject = type of Pointer; for check errors and not wrking with helper need check in future
   {$endif}
@@ -120,7 +122,7 @@ type
   //CTX_TEST 0x1
   //X509V3_CTX_REPLACE 0x2
 
-  Tv3_ext_ctx = packed record
+  TV3_ext_ctx = packed record
       flags: Integer;
       issuer_cert: PX509;
       subject_cert: PX509;
@@ -130,67 +132,67 @@ type
       db: Pointer;
     // Maybe more here
   end;
-  Pv3_ext_ctx = ^Tv3_ext_ctx;
+  Pv3_ext_ctx = ^TV3_ext_ctx;
 
-  TX509V3_CTX = Tv3_ext_ctx;
+  TX509V3_CTX = TV3_ext_ctx;
   PX509V3_CTX = ^TX509V3_CTX;
 
   POPENSSL_STACK = PSLLObject;
   PPOPENSSL_STACK = ^POPENSSL_STACK;
 
-  asn1_string_st = record
+  TASN1_string = record
     length: Integer;
     &type: Integer;
     data: PByte;
     flags: Integer;
   end;
 
-  ASN1_INTEGER = asn1_string_st;
+  ASN1_INTEGER = TASN1_string;
   PASN1_INTEGER = ^ASN1_INTEGER;
   PPASN1_INTEGER = ^PASN1_INTEGER;
-  ASN1_ENUMERATED = asn1_string_st;
+  ASN1_ENUMERATED = TASN1_string;
   PASN1_ENUMERATED = ^ASN1_ENUMERATED;
   PPASN1_ENUMERATED = ^PASN1_ENUMERATED;
-  ASN1_BIT_STRING = asn1_string_st;
+  ASN1_BIT_STRING = TASN1_string;
   PASN1_BIT_STRING = ^ASN1_BIT_STRING;
   PPASN1_BIT_STRING = ^PASN1_BIT_STRING;
-  ASN1_OCTET_STRING = asn1_string_st;
+  ASN1_OCTET_STRING = TASN1_string;
   PASN1_OCTET_STRING = ^ASN1_OCTET_STRING;
   PPASN1_OCTET_STRING = ^PASN1_OCTET_STRING;
-  ASN1_PRINTABLESTRING = asn1_string_st;
+  ASN1_PRINTABLESTRING = TASN1_string;
   PASN1_PRINTABLESTRING = ^ASN1_PRINTABLESTRING;
   PPASN1_PRINTABLESTRING = ^PASN1_PRINTABLESTRING;
-  ASN1_T61STRING = asn1_string_st;
+  ASN1_T61STRING = TASN1_string;
   PASN1_T61STRING = ^ASN1_T61STRING;
   PPASN1_T61STRING = ^PASN1_T61STRING;
-  ASN1_IA5STRING = asn1_string_st;
+  ASN1_IA5STRING = TASN1_string;
   PASN1_IA5STRING = ^ASN1_IA5STRING;
   PPASN1_IA5STRING = ^PASN1_IA5STRING;
-  ASN1_GENERALSTRING = asn1_string_st;
+  ASN1_GENERALSTRING = TASN1_string;
   PASN1_GENERALSTRING = ^ASN1_GENERALSTRING;
   PPASN1_GENERALSTRING = ^PASN1_GENERALSTRING;
-  ASN1_UNIVERSALSTRING = asn1_string_st;
+  ASN1_UNIVERSALSTRING = TASN1_string;
   PASN1_UNIVERSALSTRING = ^ASN1_UNIVERSALSTRING;
   PPASN1_UNIVERSALSTRING = ^PASN1_UNIVERSALSTRING;
-  ASN1_BMPSTRING = asn1_string_st;
+  ASN1_BMPSTRING = TASN1_string;
   PASN1_BMPSTRING = ^ASN1_BMPSTRING;
   PPASN1_BMPSTRING = ^PASN1_BMPSTRING;
-  ASN1_UTCTIME = asn1_string_st;
+  ASN1_UTCTIME = TASN1_string;
   PASN1_UTCTIME = ^ASN1_UTCTIME;
   PPASN1_UTCTIME = ^PASN1_UTCTIME;
-  ASN1_TIME = asn1_string_st;
+  ASN1_TIME = TASN1_string;
   PASN1_TIME = ^ASN1_TIME;
   PPASN1_TIME = ^PASN1_TIME;
-  ASN1_GENERALIZEDTIME = asn1_string_st;
+  ASN1_GENERALIZEDTIME = TASN1_string;
   PASN1_GENERALIZEDTIME = ^ASN1_GENERALIZEDTIME;
   PPASN1_GENERALIZEDTIME = ^PASN1_GENERALIZEDTIME;
-  ASN1_VISIBLESTRING = asn1_string_st;
+  ASN1_VISIBLESTRING = TASN1_string;
   PASN1_VISIBLESTRING = ^ASN1_VISIBLESTRING;
   PPASN1_VISIBLESTRING = ^PASN1_VISIBLESTRING;
-  ASN1_UTF8STRING = asn1_string_st;
+  ASN1_UTF8STRING = TASN1_string;
   PASN1_UTF8STRING = ^ASN1_UTF8STRING;
   PPASN1_UTF8STRING = ^PASN1_UTF8STRING;
-  ASN1_STRING = asn1_string_st;
+  ASN1_STRING = TASN1_string;
   PASN1_STRING = ^ASN1_STRING;
   PPASN1_STRING = ^PASN1_STRING;
   ASN1_BOOLEAN = Integer;
@@ -207,15 +209,13 @@ type
   Pstack_st_X509_EXTENSION = PSLLObject;
   PPstack_st_X509_EXTENSION = ^Pstack_st_X509_EXTENSION;
 
-  ASN1_ENCODING_st = record
+  TASN1_ENCODING = record
     enc: PByte;
     len: Integer;
     modified: Integer;
   end;
 
-  ASN1_ENCODING = ASN1_ENCODING_st;
-
-  asn1_string_table_st = record
+  TASN1_string_table = record
     nid: Integer;
     minsize: Integer;
     maxsize: Integer;
@@ -223,20 +223,17 @@ type
     flags: Cardinal;
   end;
 
-  ASN1_STRING_TABLE = asn1_string_table_st;
-  PASN1_STRING_TABLE = ^ASN1_STRING_TABLE;
+  PASN1_STRING_TABLE = ^TASN1_STRING_TABLE;
   PPASN1_STRING_TABLE = ^PASN1_STRING_TABLE;
 
-  PASN1_TYPE = ^ASN1_TYPE;
+  PASN1_TYPE = ^TASN1_TYPE;
   PPASN1_TYPE = ^PASN1_TYPE;
 
-  otherName_st = record
+  TOtherName= record
     type_id: PASN1_OBJECT;
     value: PASN1_TYPE;
   end;
-
-  OTHERNAME = otherName_st;
-  POTHERNAME = ^OTHERNAME;
+  POTHERNAME = ^TOTHERNAME;
   PPOTHERNAME = ^POTHERNAME;
 
   _anonymous_type_1 = record
@@ -265,13 +262,11 @@ type
   end;
   P_anonymous_type_1 = ^_anonymous_type_1;
 
-  EDIPartyName_st = record
+  TEDIPartyName = record
     nameAssigner: PASN1_STRING;
     partyName: PASN1_STRING;
   end;
-
-  EDIPARTYNAME = EDIPartyName_st;
-  PEDIPARTYNAME = ^EDIPARTYNAME;
+  PEDIPARTYNAME = ^TEDIPARTYNAME;
   PPEDIPARTYNAME = ^PEDIPARTYNAME;
 
   _anonymous_type_5 = record
@@ -294,36 +289,31 @@ type
   end;
   P_anonymous_type_5 = ^_anonymous_type_5;
 
-
-  buf_mem_st = record
+  TBuf_mem= record
     length: NativeUInt;
     data: PUTF8Char;
     max: NativeUInt;
     flags: Cardinal;
   end;
-  BUF_MEM = buf_mem_st;
-  PBUF_MEM = ^BUF_MEM;
+  PBuf_mem = ^TBuf_mem;
 
-  asn1_type_st = record
+  TAsn1_type = record
     &type: Integer;
     value: _anonymous_type_1;
   end;
 
-  ASN1_TYPE = asn1_type_st;
-
-  GENERAL_NAME_st = record
+  TGENERAL_NAME = record
     &type: Integer;
     d: _anonymous_type_5;
   end;
 
-  GENERAL_NAME = GENERAL_NAME_st;
-  PGENERAL_NAME = ^GENERAL_NAME;
+  PGENERAL_NAME = ^TGENERAL_NAME;
   PPGENERAL_NAME = ^PGENERAL_NAME;
 
   PX509_ALGOR = PSLLObject;
   EVP_CIPHER_INFO = PSLLObject;
 
-  private_key_st = record
+  TPrivate_Key = record
     version: integer;
     enc_algor: PX509_ALGOR;
     enc_pkey: PASN1_OCTET_STRING;
@@ -334,10 +324,10 @@ type
     cipher: EVP_CIPHER_INFO;
   end;
 
-  X509_PKEY = private_key_st;
+  X509_PKEY = TPrivate_Key;
   PX509_PKEY = ^X509_PKEY;
 
-  X509_info_st = record
+  TX509_info = record
     x509: PX509;
     crl: PX509_CRL;
     x_pkey: PX509_PKEY;
@@ -346,7 +336,7 @@ type
     enc_data: PUtf8Char;
   end;
 
-  X509_INFO = X509_info_st;
+  X509_INFO = TX509_info;
   PX509_INFO = ^X509_INFO;
   PPX509_INFO = ^PX509_INFO;
 
@@ -388,7 +378,6 @@ var
   SSL_get_verify_result: function(ssl: PSSL): clong; cdecl;
   SSL_set_msg_callback: procedure(ssl: PSSL; cb: SSL_set_msg_callback_cb); cdecl;
   SSL_CTX_set_msg_callback: procedure(ctx: PSSL_CTX; cb: SSL_CTX_set_msg_callback_cb); cdecl;
-
 
   SSL_ctrl: function(ssl: PSSL; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
   SSL_new: function(ctx: PSSL_CTX): PSSL; cdecl;
@@ -647,6 +636,7 @@ var
   function sk_X509_value(const skX509: POPENSSL_STACK; index: Integer): PX509;
 
   procedure OpenSSL_add_all_algorithms;
+
 const
   TLS1_VERSION    = $0301;
   TLS1_1_VERSION  = $0302;
@@ -654,7 +644,6 @@ const
   TLS1_3_VERSION  = $0304;
   TLS_MAX_VERSION = TLS1_3_VERSION;
   TLS_ANY_VERSION = $10000;
-
 
 var
   OpenSSLLib: TmnOpenSSLLib = nil;

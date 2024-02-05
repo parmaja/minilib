@@ -156,7 +156,6 @@ type
     function GetSSL: TSSL;
     function Read(var Buffer; Count: Longint): Longint; override;
     function Write(const Buffer; Count: Longint): Longint; override;
-
   end;
 
   { TBIOStreamFile }
@@ -233,7 +232,7 @@ begin
   begin
     SetLength(b, len);
     Move(buf, b[0], len);
-    s := TEncoding.UTF8.GetString(b);
+    s := TEncoding.UTF8.GetString(b); //TODO Check it in FPC
     Log.WriteLn(s);
   end;
 end;
@@ -292,7 +291,6 @@ begin
 
 	//BIO_set_close(bio, BIO_NOCLOSE);
 	BIO_free_all(bio);
-
 end;
 
 function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
@@ -307,6 +305,7 @@ begin
   try
     aKey := PEM_read_bio_ECPrivateKey(bio, nil, nil, nil);
     try
+      {$ifdef FPC}Result := nil;{$endif}
       aLen := ECDSA_size(aKey);
       SetLength(Result, aLen);
 
@@ -325,7 +324,7 @@ var
   b: TBytes;
 begin
   b := ECDSASign(vData, vKey);
-  Result := BioBase64Encode(PByte(b[0]), Length(b));
+  Result := BioBase64Encode(PByte(b[0]), Length(b)); //TODO check warning in FPC
   //Result := tnet
 end;
 
@@ -891,7 +890,6 @@ end;
 constructor TContext.Create(AMethod: TSSLMethod; Options: TContextOptions);
 var
   o: Cardinal;
-  s: UTF8String;
   ret , err: Integer;
 begin
   inherited Create;
@@ -1045,10 +1043,9 @@ begin
 end;
 
 procedure TContext.SetVerifyFile(AFileName: utf8string);
-var
-  err: Integer;
 begin
-  err := SSL_CTX_load_verify_locations(Handle, PUTF8Char(AFileName), nil);
+  if SSL_CTX_load_verify_locations(Handle, PUTF8Char(AFileName), nil) <0 then
+    raise EmnOpenSSLException.CreateLastError('SSL_CTX_load_verify_locations');
 end;
 
 procedure TContext.SetVerifyLocation(Location: utf8string);
