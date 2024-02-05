@@ -281,6 +281,7 @@ begin
 	b64 := BIO_new(BIO_f_base64());
 	bio := BIO_new(BIO_s_mem());
 	bio := BIO_push(b64, bio);
+
 	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); //Ignore newlines - write everything in one line
 	BIO_write(bio, vBuf, vLen);
 	BIO_flush(bio);
@@ -1012,10 +1013,10 @@ begin
         if (SSL_CTX_use_certificate(Handle, FCertificate) <= 0) then
            raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
 
-        c := OPENSSL_sk_num(chain);
+        c := sk_X509_num(chain);
         for  i := 0 to c-1 do
         begin
-            cert := OPENSSL_sk_value(chain, i);
+            cert := sk_X509_value(chain, i);
             if SSL_CTX_add_extra_chain_cert(Handle, cert) <=0 then
               raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_add_extra_chain_cert');
         end;

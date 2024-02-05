@@ -573,9 +573,6 @@ var
   OPENSSL_sk_value: function(sk: POPENSSL_STACK; idx: integer): Pointer; cdecl;
   OPENSSL_sk_free: procedure(sk: POPENSSL_STACK); cdecl;
 
-  //sk_X509_num: function(const sk: POPENSSL_STACK): Integer; cdecl;
-  //sk_X509_value: function(const sk: POPENSSL_STACK; index: Integer): PX509; cdecl;
-
   ASN1_STRING_set: function(str: PASN1_STRING; data: Pointer; len: Integer): Integer; cdecl;
   ASN1_STRING_new: function(): PASN1_STRING; cdecl;
   ASN1_OCTET_STRING_new: function():PASN1_OCTET_STRING; cdecl;
@@ -646,6 +643,9 @@ var
   function SSL_CTX_add_extra_chain_cert(ctx: PSSL_CTX; x509:PX509): Integer;
   function SSL_CTX_clear_extra_chain_certs(ctx: PSSL_CTX): Integer;
 
+  function sk_X509_num(const skX509: POPENSSL_STACK): Integer;
+  function sk_X509_value(const skX509: POPENSSL_STACK; index: Integer): PX509;
+
   procedure OpenSSL_add_all_algorithms;
 const
   TLS1_VERSION    = $0301;
@@ -667,6 +667,16 @@ type
     tv_sec: Longint;
     tv_usec: Longint;
   end;
+
+function sk_X509_num(const skX509: POPENSSL_STACK): Integer;
+begin
+  Result := OPENSSL_sk_num(skX509);
+end;
+
+function sk_X509_value(const skX509: POPENSSL_STACK; index: Integer): PX509;
+begin
+  Result := OPENSSL_sk_Value(skX509, Index);
+end;
 
 procedure OpenSSL_add_all_algorithms;
 begin
