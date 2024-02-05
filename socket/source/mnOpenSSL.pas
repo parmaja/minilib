@@ -967,12 +967,12 @@ begin
 end;
 
 //https://stackoverflow.com/questions/6371775/how-to-load-a-pkcs12-file-in-openssl-programmatically
+// https://stackoverflow.com/questions/43119053/does-ssl-ctx-use-certificate-copy-used-certificate-bytes
+
 procedure TContext.LoadPFXFile(FileName, Password: utf8string);
 var
   bio: PBIO;
   p12: PKCS12;
-//  pkey: PEVP_PKEY;
-//  store: PX509_STORE;
   cert: PX509;
   chain: PSLLObject;
   c, i: Integer;
@@ -1000,18 +1000,6 @@ begin
         if (SSL_CTX_use_certificate(Handle, FCertificate) <= 0) then
            raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
 
-        {pkey := EVP_PKEY_new;
-        if pkey = nil then
-          raise EmnOpenSSLException.CreateLastError('Error EVP_PKEY_new');
-
-
-        if (EVP_PKEY_copy_parameters(pkey, FPrivateKey) <=0) then
-          raise EmnOpenSSLException.CreateLastError('Error EVP_PKEY_copy_parameters');
-
-        store := X509_STORE_new();
-        if store = nil then
-          raise EmnOpenSSLException.CreateLastError('Error X509_STORE_new');
-  }
         c := OPENSSL_sk_num(chain);
         for  i := 0 to c-1 do
         begin
@@ -1030,7 +1018,6 @@ begin
       finally
         OPENSSL_sk_free(chain);
       end;
-      // https://stackoverflow.com/questions/43119053/does-ssl-ctx-use-certificate-copy-used-certificate-bytes
     finally
 		  PKCS12_free(p12);
     end;
