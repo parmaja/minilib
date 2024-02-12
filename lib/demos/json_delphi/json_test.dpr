@@ -127,19 +127,21 @@ end;
 procedure Run2;
 begin
   var m := TMemoryStream.Create;
-  var Serializer := TStreamSerializer.Create(m);
+  var Serializer := TStreamSerializer.Create(m, True);
   var j := TDON_Object_Value.Create(nil);
   try
-    j.AddPair('name', 'test');
+    j.AddPair('name', '„Õ„œ');
+    j.AddPair('code', '01025');
 
+    Serializer.Compact := True;
     Serializer.Serialize(TJsonSerializeGernerator, j);
     //JSon4.Serialize(Writer, True, 0);
-    Serializer.Free;
 
     var s:= TEncoding.Unicode.GetString(PByte(m.Memory), m.Size);
     Writeln(s);
 
   finally
+    Serializer.Free;
     j.Free;
     m.Free;
   end;

@@ -34,7 +34,7 @@ interface
 uses
 {$IFDEF windows}Windows, {$ENDIF}
   Classes, SysUtils, StrUtils, DateUtils, Types, Character,
-  mnClasses, mnUtils, mnJSON, mnFields;
+  mnClasses, mnUtils, mnJSON, mnFields, mnStreams;
 
 type
   TSerializeGernerator = class;
@@ -45,12 +45,14 @@ type
   TSerializer = class abstract(TObject)
   public
     TabWidth: Integer;
+    Compact: Boolean;
     constructor Create;
     procedure Serialize(AGerneratorClass: TSerializeGerneratorClass; AObject: TObject);
     procedure Add(const S: string); overload; virtual; abstract;
     procedure Add(Level: Integer = 1; S: string = ''); overload;
-    procedure Add(const S: string; LastOne:Boolean; Separator: string; AddNewLine: Boolean = False); overload;
-    procedure NewLine; virtual; abstract;
+    procedure Add(const S: string; LastOne:Boolean; Separator: string); overload;
+    procedure NewLine; virtual;
+    procedure Flush; virtual;
   end;
 
   { TStringsSerializer }
@@ -62,7 +64,7 @@ type
   public
     constructor Create(Strings: TStrings);
     destructor Destroy; override;
-    procedure Flush;
+    procedure Flush; override;
     procedure Add(const S: string); override;
     procedure NewLine; override;
   end;
@@ -71,14 +73,12 @@ type
 
   TStreamSerializer = class(TSerializer)
   private
-    FStram: TStream;
-    FLine: string;
+    FStream: TStream;
+    FIsUTF8: Boolean;
   public
-    constructor Create(vStream: TStream);
+    constructor Create(vStream: TStream; vIsUTF8: Boolean);
     destructor Destroy; override;
-    procedure Flush;
     procedure Add(const S: string); override;
-    procedure NewLine; override;
   end;
 
   //-------
@@ -477,13 +477,11 @@ end;
 
 { TSerializer }
 
-procedure TSerializer.Add(const S: string; LastOne:Boolean; Separator: string; AddNewLine: Boolean);
+procedure TSerializer.Add(const S: string; LastOne:Boolean; Separator: string);
 begin
   Add(S);
   if not LastOne then
     Add(Separator);
-  if AddNewLine then
-    NewLine;
 end;
 
 constructor TSerializer.Create;
@@ -492,17 +490,32 @@ begin
   TabWidth := 4;
 end;
 
+procedure TSerializer.Flush;
+begin
+
+end;
+
+procedure TSerializer.NewLine;
+begin
+  if not Compact then
+    Add(sLineBreak);
+end;
+
 procedure TSerializer.Serialize(AGerneratorClass: TSerializeGerneratorClass; AObject: TObject);
 var
   Gernerator: TSerializeGernerator;
 begin
   Gernerator := AGerneratorClass.Create(Self);
   Gernerator.Generate(AObject, True, 0);
+  Flush;
 end;
 
 procedure TSerializer.Add(Level: Integer; S: string);
 begin
-  Add(StringOfChar(' ', Level * TabWidth) + S);
+  if Compact then
+    Add(S)
+  else
+    Add(StringOfChar(' ', Level * TabWidth) + S);
 end;
 
 { TStringsSerializer }
@@ -515,7 +528,6 @@ end;
 
 destructor TStringsSerializer.Destroy;
 begin
-  Flush;
   inherited;
 end;
 
@@ -1239,9 +1251,16 @@ var
 begin
   if AClass = TDON_Pair then
   begin
-    Serializer.Add(Level, QuoteStr((AObject as TDON_Pair).Name, '"') + ': ');
+    if Serializer.Compact then //need fix asp
+      Serializer.Add(Level, QuoteStr((AObject as TDON_Pair).Name, '"') + ':')
+    else
+      Serializer.Add(Level, QuoteStr((AObject as TDON_Pair).Name, '"') + ': ');
+
     if (AObject as TDON_Pair).Value = nil then
-      Serializer.Add('null', LastOne, ',', True)
+    begin
+      Serializer.Add('null', LastOne, ',');
+      Serializer.NewLine;
+    end
     else
       Generate((AObject as TDON_Pair).Value, LastOne, Level);
   end
@@ -1297,13 +1316,25 @@ begin
   else if AClass = TDON_Root then
     Generate((AObject as TDON_Root).Value, LastOne, Level)
   else if AClass = TDON_String_Value then
-    Serializer.Add(QuoteStr(EscapeStringC((AObject as TDON_String_Value).Value), '"'), LastOne, ',', True)
+  begin
+    Serializer.Add(QuoteStr(EscapeStringC((AObject as TDON_String_Value).Value), '"'), LastOne, ',');
+    Serializer.NewLine;
+  end
   else if AClass = TDON_Identifier_Value then
-    Serializer.Add((AObject as TDON_Identifier_Value).Value, LastOne, ',', True)
+  begin
+    Serializer.Add((AObject as TDON_Identifier_Value).Value, LastOne, ',');
+    Serializer.NewLine;
+  end
   else if AClass = TDON_Number_Value then
-    Serializer.Add(FloatToStr((AObject as TDON_Number_Value).Value), LastOne, ',', True)
+  begin
+    Serializer.Add(FloatToStr((AObject as TDON_Number_Value).Value), LastOne, ',');
+    Serializer.NewLine;
+  end
   else if AClass = TDON_Boolean_Value then
-    Serializer.Add(BoolToStr((AObject as TDON_Boolean_Value).Value, True), LastOne, ',', True)
+  begin
+    Serializer.Add(BoolToStr((AObject as TDON_Boolean_Value).Value, True), LastOne, ',');
+    Serializer.NewLine;
+  end
   else if AClass.ClassParent <> nil then //if we cant find it we take parent class
     Generate(AClass.ClassParent, AObject, LastOne, Level);
 end;
@@ -1313,34 +1344,27 @@ end;
 procedure TStreamSerializer.Add(const S: string);
 begin
   inherited;
-  FLine := FLine + S;
-
+  if FIsUTF8 then
+  begin
+    FStream.WriteUtf8(UTF8Encode(s));
+  end
+  else
+  begin
+    FStream.WriteString(s);
+  end;
 end;
 
-constructor TStreamSerializer.Create(vStream: TStream);
+constructor TStreamSerializer.Create(vStream: TStream; vIsUTF8: Boolean);
 begin
   inherited Create;
-  FStram := vStream;
+  FStream := vStream;
 end;
 
 destructor TStreamSerializer.Destroy;
 begin
-  Flush;
   inherited;
 end;
 
-procedure TStreamSerializer.Flush;
-begin
-  if FLine <> '' then
-    NewLine;
-end;
-
-procedure TStreamSerializer.NewLine;
-begin
-  FStram.WriteData(FLine);
-  FStram.WriteData(#13#10);
-  FLine := '';
-end;
 
 initialization
 end.
