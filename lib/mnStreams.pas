@@ -263,6 +263,7 @@ type
     function WriteRawByte(const S: UTF8String): TFileSize; overload;
     function WriteUTF8(const S: UTF8String): TFileSize; overload;
     function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
+    function WriteLineUTF8(const Utf8Bytes: TBytes): TFileSize; overload; //bytes encoded utf8
     {$ifndef FPC}
     function WriteLineUTF8(const S: string): TFileSize; overload;
     {$endif}
@@ -884,6 +885,20 @@ function TmnBufferStream.WriteLineUTF8(const S: string): TFileSize;
 begin
   Result := WriteLineUTF8(UTF8Encode(s));
 end;
+
+function TmnBufferStream.WriteLineUTF8(const Utf8Bytes: TBytes): TFileSize;
+begin
+  if Length(Utf8Bytes)<>0 then
+    Result := Write(Pointer(Utf8Bytes)^, Length(Utf8Bytes))
+  else
+    Result := 0;
+
+  if EndOfLine <> '' then
+  begin
+    Result := Result + WriteUTF8(EndOfLine);
+  end;
+end;
+
 {$endif}
 
 function TmnBufferStream.WriteLine(const S: ansistring): TFileSize;
@@ -985,9 +1000,10 @@ end;
 
 function TmnBufferStream.WriteUTF8(const S: UTF8String): TFileSize;
 begin
-  Result := 0;
   if s <> '' then
-    Result := Write(PByte(S)^, Length(S));
+    Result := Write(PByte(S)^, Length(S))
+  else
+    Result := 0;
 end;
 
 procedure TmnBufferStream.ReadCommand(out Command: string; out Params: string);
