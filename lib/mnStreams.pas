@@ -54,6 +54,12 @@ type
   EmnStreamExceptionAbort = class(Exception); //can be ignored by ide
   TmnBufferStream = class;
 
+  TStreamHelper = class helper for TStream
+    function WriteBytes(vData: TBytes): TFileSize;
+    function WriteString(const vData: string): TFileSize;
+    function WriteUtf8(const vData: UTF8String): TFileSize;
+  end;
+
   { TmnCustomStream }
 
   TmnCustomStream = class(TStream)
@@ -70,7 +76,6 @@ type
     function ReadString(out S: string; Count: TFileSize = 0): Boolean; overload;
     function ReadBytes(Count: TFileSize = 0): TBytes; overload;
     function ReadBufferBytes(Count: TFileSize = 0): TBytes; overload; deprecated 'use ReadBytes';
-    function WriteString(const Value: String): TFileSize; overload;
     //Use copy from to stream
     function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
@@ -261,7 +266,6 @@ type
     function WriteLine(const S: unicodestring): TFileSize; overload;
 
     function WriteRawByte(const S: UTF8String): TFileSize; overload;
-    function WriteUTF8(const S: UTF8String): TFileSize; overload;
     function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
     function WriteLineUTF8(const Utf8Bytes: TBytes): TFileSize; overload; //bytes encoded utf8
     {$ifndef FPC}
@@ -625,11 +629,6 @@ begin
 end;
 
 { TmnBufferStream }
-
-function TmnCustomStream.WriteString(const Value: String): TFileSize;
-begin
-  Result := Write(PByte(Value)^, mnStreams.ByteLength(Value));
-end;
 
 function TmnCustomStream.GetConnected: Boolean;
 begin
@@ -996,14 +995,6 @@ begin
     if Value[i] <> '' then //stupid delphi always add empty line in last of TStringList
       Result := Result + WriteLine(Value[i]);
   end;
-end;
-
-function TmnBufferStream.WriteUTF8(const S: UTF8String): TFileSize;
-begin
-  if s <> '' then
-    Result := Write(PByte(S)^, Length(S))
-  else
-    Result := 0;
 end;
 
 procedure TmnBufferStream.ReadCommand(out Command: string; out Params: string);
@@ -1870,6 +1861,33 @@ begin
   inherited Create;
   FStream := AStream;
 end;
+
+{ TStreamHelper }
+
+function TStreamHelper.WriteBytes(vData: TBytes): TFileSize;
+begin
+  if Length(vData)<>0 then
+    Result := Write(vData[0], Length(vData))
+  else
+    Result := 0;
+end;
+
+function TStreamHelper.WriteString(const vData: string): TFileSize;
+begin
+  if vData<>'' then
+    Result := Write(PByte(vData)^, mnStreams.ByteLength(vData))
+  else
+    Result := 0;
+end;
+
+function TStreamHelper.WriteUtf8(const vData: UTF8String): TFileSize;
+begin
+  if vData<>'' then
+    Result := Write(PByte(vData)^, Length(vData))
+  else
+    Result := 0;
+end;
+
 
 end.
 

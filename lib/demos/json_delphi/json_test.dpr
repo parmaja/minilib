@@ -124,6 +124,27 @@ begin
 end;
 {$endif}
 
+procedure Run2;
+begin
+  var m := TMemoryStream.Create;
+  var Serializer := TStreamSerializer.Create(m);
+  var j := TDON_Object_Value.Create(nil);
+  try
+    j.AddPair('name', 'test');
+
+    Serializer.Serialize(TJsonSerializeGernerator, j);
+    //JSon4.Serialize(Writer, True, 0);
+    Serializer.Free;
+
+    var s:= TEncoding.Unicode.GetString(PByte(m.Memory), m.Size);
+    Writeln(s);
+
+  finally
+    j.Free;
+    m.Free;
+  end;
+end;
+
 procedure Run;
 var
   Lines: TStringList;
@@ -245,7 +266,7 @@ begin
   //HookCode(@TObject.FreeInstance, @HookedObjectFreeInstance);
   try
     try
-      Run;
+      Run2;
     except
       on E: Exception do
         Writeln(E.ClassName, ': ', E.Message);

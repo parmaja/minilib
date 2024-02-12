@@ -67,6 +67,20 @@ type
     procedure NewLine; override;
   end;
 
+  { TStringsSerializer }
+
+  TStreamSerializer = class(TSerializer)
+  private
+    FStram: TStream;
+    FLine: string;
+  public
+    constructor Create(vStream: TStream);
+    destructor Destroy; override;
+    procedure Flush;
+    procedure Add(const S: string); override;
+    procedure NewLine; override;
+  end;
+
   //-------
 
   TSerializeGernerator = class abstract(TObject)
@@ -1292,6 +1306,40 @@ begin
     Serializer.Add(BoolToStr((AObject as TDON_Boolean_Value).Value, True), LastOne, ',', True)
   else if AClass.ClassParent <> nil then //if we cant find it we take parent class
     Generate(AClass.ClassParent, AObject, LastOne, Level);
+end;
+
+{ TStreamSerializer }
+
+procedure TStreamSerializer.Add(const S: string);
+begin
+  inherited;
+  FLine := FLine + S;
+
+end;
+
+constructor TStreamSerializer.Create(vStream: TStream);
+begin
+  inherited Create;
+  FStram := vStream;
+end;
+
+destructor TStreamSerializer.Destroy;
+begin
+  Flush;
+  inherited;
+end;
+
+procedure TStreamSerializer.Flush;
+begin
+  if FLine <> '' then
+    NewLine;
+end;
+
+procedure TStreamSerializer.NewLine;
+begin
+  FStram.WriteData(FLine);
+  FStram.WriteData(#13#10);
+  FLine := '';
 end;
 
 initialization
