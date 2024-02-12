@@ -137,6 +137,7 @@ type
     constructor Create(vColumn: TmncColumn); override;
     destructor Destroy; override;
     property SQLVAR: TmncSQLVAR read FSQLVAR write FSQLVAR;
+
   end;
 
   { TmncFBFields }

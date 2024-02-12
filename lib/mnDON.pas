@@ -347,8 +347,8 @@ type
     procedure Created; override;
     destructor Destroy; override;
     function Add(Value: TDON_Value): TDON_Value; overload;
-    function Add(Value: String): TDON_Value; overload;
-    procedure Add(Values: array of const); overload;
+    function Add(const Value: String): TDON_Value; overload;
+    procedure Add(const Values: array of const); overload;
 
     property Items: TDON_List read FItems;
     property Count: Integer read GetCount;
@@ -779,7 +779,7 @@ end;
 
 { TDON_Array_Value }
 
-procedure TDON_Array_Value.Add(Values: array of const);
+procedure TDON_Array_Value.Add(const Values: array of const);
 var
   i : Integer;
 begin
@@ -803,7 +803,7 @@ begin
   end;
 end;
 
-function TDON_Array_Value.Add(Value: String): TDON_Value;
+function TDON_Array_Value.Add(const Value: String): TDON_Value;
 begin
   Result := TDON_String_Value.Create(Self, Value);
   Add(Result);

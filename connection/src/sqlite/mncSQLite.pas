@@ -957,13 +957,17 @@ begin
           end
           else
           begin
-            str := sqlite3_column_text(FStatment, i);
+            v.i := sqlite3_column_bytes(FStatment, i);
+            SetLength(str, v.i);
+            Move(PByte(sqlite3_column_text(FStatment, i))^, PByte(str)^, v.i);
             aCurrent.Add(i, str);
           end;
         end
         else
         begin
-          str := sqlite3_column_text(FStatment, i);
+          v.i := sqlite3_column_bytes(FStatment, i);
+          SetLength(str, v.i);
+          Move(PByte(sqlite3_column_text(FStatment, i))^, PByte(str)^, v.i);
           aCurrent.Add(i, str);
         end;
       end;
