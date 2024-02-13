@@ -80,6 +80,7 @@ type
         tkNone,
         tkString,
         tkEscape,
+        tkEscapeChar,
         tkNumber,
         tkIdentifire,
         tkReturn //End of line to escape #10
@@ -109,6 +110,7 @@ type
 
       Token: TToken;
       StringBuffer: String;
+      EscapeBuffer: String;
       StartString: Integer;
       Index: Integer;
       Options: TJSONParseOptions;
@@ -287,6 +289,30 @@ begin
             Next;
           Token := tkNone;
         end;
+        tkEscapeChar:
+        begin
+          if Length(EscapeBuffer) < 4 then
+          begin
+            if (jsoStrict in Options) then
+            begin
+              if CharInSet(Ch, [#0, #10, #13]) then
+                Error('End of line in string!');
+            end;
+            EscapeBuffer := EscapeBuffer + Ch;
+            Next;
+        end
+          else
+          begin
+            if EscapeBuffer <> '' then
+            begin
+              StringBuffer := StringBuffer + ConvertFromUtf32(StrToInt('$'+EscapeBuffer));
+              EscapeBuffer := '';
+            end;
+            StartString := Index;
+            Token := tkString;
+//            Next;
+          end;
+        end;
         tkEscape:
         begin
           if (jsoStrict in Options) then
@@ -303,14 +329,16 @@ begin
             '0': StringBuffer := StringBuffer + #0;
             'u':
             begin
-              //TODO: unicode escape
+              EscapeBuffer := '';
+              Token := tkEscapeChar;
             end
             else
               StringBuffer := StringBuffer + Ch;
           end;
           Next;
           StartString := Index;
-          Token := tkString;
+          if Token = tkEscape then //* not in \u
+            Token := tkString;
         end;
         tkString:
           begin
