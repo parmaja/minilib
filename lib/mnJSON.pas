@@ -147,7 +147,9 @@ begin
     raise Exception.Create(ErrorMessage);
   end
   else
-    ErrorMessage := AError;
+  begin
+    ErrorMessage := AError + ' :: column: '+ Column.ToString;
+  end;
   if not (jsoSafe in Options) then
     raise Exception.Create(ErrorMessage)
 end;
@@ -166,7 +168,7 @@ begin
       exNext: Result := Result + ' comma `,`';
     end;
 
-    RaiseError(Result)
+    Error(Result)
   end;
 
   if not (Context in AContexts) then
@@ -177,7 +179,7 @@ begin
       Error('Expected in Array')
     else
       Error('Expected in Pairs');
-    RaiseError(Result);
+    Error(Result);
   end;
 end;
 
