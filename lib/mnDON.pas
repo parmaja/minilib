@@ -40,12 +40,18 @@ type
   TSerializeGernerator = class;
   TSerializeGerneratorClass = class of TSerializeGernerator;
 
+  TSerializerOption = (
+    sroCompact,
+    sroSmartName  //* export names without qoutaions if not have space
+  );
+  TSerializerOptions = set of TSerializerOption;
+
   { TSerializer }
 
   TSerializer = class abstract(TObject)
   public
     TabWidth: Integer;
-    Compact: Boolean;
+    Options: TSerializerOptions;
     constructor Create;
     procedure Serialize(AGerneratorClass: TSerializeGerneratorClass; AObject: TObject);
     procedure Add(const S: string); overload; virtual; abstract;
@@ -497,7 +503,7 @@ end;
 
 procedure TSerializer.NewLine;
 begin
-  if not Compact then
+  if not (sroCompact in Options) then
     Add(sLineBreak);
 end;
 
@@ -512,7 +518,7 @@ end;
 
 procedure TSerializer.Add(Level: Integer; S: string);
 begin
-  if Compact then
+  if (sroCompact in Options) then
     Add(S)
   else
     Add(StringOfChar(' ', Level * TabWidth) + S);
@@ -531,21 +537,27 @@ begin
   inherited;
 end;
 
-procedure TStringsSerializer.Flush;
-begin
-  if FLine <> '' then
-    NewLine;
-end;
-
 procedure TStringsSerializer.Add(const S: string);
 begin
   FLine := FLine + S;
 end;
 
+procedure TStringsSerializer.Flush;
+begin
+  if FLine <> '' then
+  begin
+    FStrings.Add(FLine);
+    FLine := '';
+  end;
+end;
+
 procedure TStringsSerializer.NewLine;
 begin
-  FStrings.Add(FLine);
-  FLine := '';
+  if not (sroCompact in Options) then
+  begin
+    FStrings.Add(FLine);
+    FLine := '';
+  end;
 end;
 
 { TDON_Number_Value }
@@ -1248,13 +1260,23 @@ procedure TJsonSerializeGernerator.Generate(AClass: TClass; AObject: TObject; La
 var
   p: TDON_Pair;
   v: TDON_Value;
+
+  function GetName(const AName: string): string;
+  begin
+    if (sroSmartName in Serializer.Options) and (Pos(' ', AName) <= 0) then
+      Result := AName
+    else
+      Result := QuoteStr(AName, '"');
+    if (sroCompact in Serializer.Options) then //need fix asp
+      Result := Result + ':'
+    else
+      Result := Result + ': ';
+  end;
+
 begin
   if AClass = TDON_Pair then
   begin
-    if Serializer.Compact then //need fix asp
-      Serializer.Add(Level, QuoteStr((AObject as TDON_Pair).Name, '"') + ':')
-    else
-      Serializer.Add(Level, QuoteStr((AObject as TDON_Pair).Name, '"') + ': ');
+    Serializer.Add(Level, GetName((AObject as TDON_Pair).Name));
 
     if (AObject as TDON_Pair).Value = nil then
     begin

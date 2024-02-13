@@ -222,8 +222,8 @@ const
   cDefEscapeStrings = ['b', 't', 'n', 'r', '\', '"'];
   cDefEscapePrefix = '\';
 
-function EscapeString(const S: string; const Esc: string; Chars: array of Char; Escapes: array of string): string;
-function DescapeString(const S: string; const Esc: string; Chars: array of Char; Escapes: array of string): string;
+function EscapeString(const S: string; const Esc: string; Chars: array of Char; const Escapes: array of string): string;
+function DescapeString(const S: string; const Esc: string; Chars: array of Char; const Escapes: array of string): string;
 
 function EscapeStringC(const S: string): string;
 function DescapeStringC(const S: string): string;
@@ -1325,7 +1325,7 @@ begin
   end;
 end;
 
-function EscapeString(const S: string; const Esc: string; Chars: array of Char; Escapes: array of string): string;
+function EscapeString(const S: string; const Esc: string; Chars: array of Char; const Escapes: array of string): string;
   function InChars(const Char: Char): Integer;
   var
     i: Integer;
@@ -1382,7 +1382,7 @@ begin
   end;
 end;
 
-function DescapeString(const S: string; const Esc: string; Chars: array of Char; Escapes: array of string): string;
+function DescapeString(const S: string; const Esc: string; Chars: array of Char; const Escapes: array of string): string;
   function InEscape(Start: Integer): Integer;
   var
     i: Integer;
