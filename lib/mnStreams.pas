@@ -884,6 +884,7 @@ function TmnBufferStream.WriteLineUTF8(const S: string): TFileSize;
 begin
   Result := WriteLineUTF8(UTF8Encode(s));
 end;
+{$endif}
 
 function TmnBufferStream.WriteLineUTF8(const Utf8Bytes: TBytes): TFileSize;
 begin
@@ -897,8 +898,6 @@ begin
     Result := Result + WriteUTF8(EndOfLine);
   end;
 end;
-
-{$endif}
 
 function TmnBufferStream.WriteLine(const S: ansistring): TFileSize;
 begin

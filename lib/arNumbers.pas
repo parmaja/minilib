@@ -4,7 +4,7 @@ unit arNumber;
  * Extended Arabic figures numbers
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author     Zaher Dirkey <zaher@parmaja.com>
+ * @author     Zaher Dirkey
  */
 }
 interface
