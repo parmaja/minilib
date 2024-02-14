@@ -273,6 +273,7 @@ type
 function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload;
 function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload;
 function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload;
+function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_UTF8): string; overload;
 
 //TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
@@ -1938,6 +1939,11 @@ end;
 function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string;
 begin
   Result := TEncoding.CodePageEncoding(CodePage).GetString(Value, Size);
+end;
+
+function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_UTF8): string; overload;
+begin
+  Result := StringOf(@Value[Start], Size, CodePage);
 end;
 
 function StringOf(const Value: array of Byte; CodePage: Word): string;

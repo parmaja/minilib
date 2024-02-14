@@ -109,8 +109,8 @@ type
       ColumnNumber: Int64;
 
       Token: TToken;
-      StringBuffer: String;
-      EscapeBuffer: String;
+      StringBuffer: UTF8String;
+      EscapeBuffer: UTF8String;
       StartString: Integer;
       Index: Integer;
       Options: TJSONParseOptions;
@@ -124,11 +124,12 @@ type
     procedure ErrorNotExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); //not inline
   public
     procedure Init(AParent: TObject; vAcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
-    procedure Parse(const Content: String);
+    procedure Parse(const Content: PByte; Size: Integer; Start: Integer = 0); overload;
+    procedure Parse(const Content: UTF8String); overload;
     procedure Finish;
   end;
 
-procedure JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+procedure JsonParseCallback(const Content: UTF8String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 
 implementation
 
@@ -246,6 +247,11 @@ begin
     Error('Expected EOF');
 end;
 
+procedure TmnJSONParser.Parse(const Content: UTF8String);
+begin
+  Parse(@Content[1], Length(Content));
+end;
+
 procedure TmnJSONParser.Pop; {$ifdef FPC} inline; {$endif}
 begin
   if StackIndex = 0 then
@@ -259,31 +265,33 @@ begin
   {$endif}
 end;
 
-procedure TmnJSONParser.Parse(const Content: String);
+procedure TmnJSONParser.Parse(const Content: PByte; Size: Integer; Start: Integer = 0);
 var
+  Ch: UTF8Char;
   AObject: TObject;
-
-var
-  Len: Int64;
-  Ch: Char;
+  function CopyString(const Value: PByte; Start, Count: Integer): UTF8String;
+  begin
+    if Count = 0 then
+      Result := ''
+    else
+    begin
+      SetLength(Result, Count);
+      CopyMemory(@Result[1], @Value[Start], Count);
+    end;
+  end;
 begin
-  if Content = '' then
-    exit;
-
   if (@AcquireProc = nil) then
     Error('JSON Parser: Acquire is nil');
   if (Parent = nil) then
     Error('JSON Parser: Parent is nil');
 
-  Index := 1;
-  Len := Length(Content);
-
+  Index := Start;
   StartString := -1; //* for strings
 
   Token := tkNone;
   try
     repeat
-      Ch := Content[Index];
+      Ch := UTF8Char(Content[Index]);
       case Token of
         tkReturn:
         begin
@@ -349,12 +357,12 @@ begin
               if Expect = exName then
               begin
                 //Creating a Pair Item
-                AcquireProc(Parent, StringBuffer + Copy(Content, StartString, Index - StartString), aqPair, Pair);
+                AcquireProc(Parent, StringBuffer + CopyString(Content, StartString, Index - StartString), aqPair, Pair);
                 Expect := exAssign;
               end
               else if Expect = exValue then
               begin
-                AcquireProc(Parent, StringBuffer + Copy(Content, StartString, Index - StartString), aqString, AObject);
+                AcquireProc(Parent, StringBuffer + CopyString(Content, StartString, Index - StartString), aqString, AObject);
                 Expect := exNext;
               end
               else
@@ -372,7 +380,7 @@ begin
 
               if Ch = '\' then
               begin
-                StringBuffer := StringBuffer + Copy(Content, StartString, Index - StartString);
+                StringBuffer := StringBuffer + CopyString(Content, StartString, Index - StartString);
                 StartString := Index + 1;
                 Token := tkEscape;
               end
@@ -388,12 +396,12 @@ begin
               if Expect = exName then
               begin
                 //Creating a Pair Item
-                AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqPair, Pair);
+                AcquireProc(Parent, CopyString(Content, StartString, Index - StartString), aqPair, Pair);
                 Expect := exAssign;
               end
               else if Expect = exValue then
               begin
-                AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqIdentifier, AObject);
+                AcquireProc(Parent, CopyString(Content, StartString, Index - StartString), aqIdentifier, AObject);
                 Expect := exNext;
               end
               else
@@ -411,7 +419,7 @@ begin
             begin
               if Expect = exValue then
               begin
-                AcquireProc(Parent, Copy(Content, StartString, Index - StartString), aqNumber, AObject);
+                AcquireProc(Parent, CopyString(Content, StartString, Index - StartString), aqNumber, AObject);
                 Expect := exNext;
               end
               else
@@ -520,14 +528,16 @@ begin
                 Expect := exEnd
               else
                 Expect := exNext;
-            end
+            end;
             else
+            begin
               Error('Illigal character: ' + Ch + ' '+ IntToHex(ord(Ch)));
+            end
           end;
           Next;
         end;
       end;
-    until (Ch=#0) or (Index > Len);
+    until (Ch=#0) or (Index >= Size);
   except
     on E: Exception do
     begin
@@ -539,7 +549,7 @@ begin
   end;
 end;
 
-procedure JsonParseCallback(const Content: String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+procedure JsonParseCallback(const Content: UTF8String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 var
   JSONParser: TmnJSONParser;
 begin

@@ -167,7 +167,7 @@ begin
     try
       WriteLn('Loading: ' + FileName);
       Lines.LoadFromFile(FileName);
-      var s := Lines.Text;
+      var s : UTF8String := Lines.Text;
 
       LogBeginTick;
       var Json3 := JsonParseStringValue(s);
