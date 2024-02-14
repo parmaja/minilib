@@ -6,7 +6,7 @@ program json_test;
 
 uses
   System.SysUtils, Windows, Classes,
-  Json, ioUtils,
+  Json, ioUtils, mnLogs,
   mnUtils, prmClasses, mnConfigs,
   mnFields,
   mnDON, mnJSON;
@@ -133,7 +133,7 @@ begin
     j.AddPair('name', '„Õ„œ');
     j.AddPair('code', '01025');
 
-    Serializer.Compact := True;
+    Serializer.Options := [sroCompact];
     Serializer.Serialize(TJsonSerializeGernerator, j);
     //JSon4.Serialize(Writer, True, 0);
 
@@ -173,6 +173,11 @@ begin
       var Json3 := JsonParseStringValue(s);
       LogEndTick('Test mnJSON');
       Json3.Free;
+
+      LogBeginTick;
+      var jjj := json.TJSONObject.ParseJSONValue(s);
+      LogEndTick('Test Delphi Json');
+      jjj.Free;
 
       LogBeginTick;
       var d_json := json.TJSONObject.Create;
@@ -264,11 +269,13 @@ end;
 
 begin
   Application := TObject.Create;
+  InstallConsoleLog;
   //HookCode(@TObject.NewInstance, @HookedObjectNewInstance);
   //HookCode(@TObject.FreeInstance, @HookedObjectFreeInstance);
   try
     try
-      Run2;
+      //Run2;
+      Run;
     except
       on E: Exception do
         Writeln(E.ClassName, ': ', E.Message);

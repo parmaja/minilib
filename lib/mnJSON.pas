@@ -444,7 +444,7 @@ begin
               StartString := Index;
               Token := tkIdentifire;
             end;
-            '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+            '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9': //may start with . ?
             begin
               CheckExpected([exValue, exEnd]);
               StartString := Index;
