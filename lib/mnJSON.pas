@@ -39,7 +39,8 @@ interface
 
 uses
 {$IFDEF windows}Windows, {$ENDIF}
-  Classes, SysUtils, StrUtils, DateUtils, Types, Character, mnUtils;
+  Classes, SysUtils, StrUtils, DateUtils, Types, Character,
+  mnUtils;
 
 type
   TJSONParseOption = (
@@ -133,6 +134,8 @@ type
   end;
 
 procedure JsonParseCallback(const Content: UTF8String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+
+function JsonLintFile(const FileName: string; Options: TJSONParseOptions = []): string; //Return Error message
 
 implementation
 
@@ -286,8 +289,8 @@ var
 begin
   if (@AcquireProc = nil) then
     Error('JSON Parser: Acquire is nil');
-  if (Parent = nil) then
-    Error('JSON Parser: Parent is nil');
+{  if (Parent = nil) then //* nope Linting pass nil
+    Error('JSON Parser: Parent is nil');}
 
   Index := Start;
   StartString := -1; //* for strings
@@ -561,6 +564,36 @@ begin
   JSONParser.Init(AParent, AcquireProc, vOptions);
   JSONParser.Parse(Content);
   JSONParser.Finish;
+end;
+
+procedure JsonLintAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+begin
+  AObject := nil;
+end;
+
+procedure JsonLintString(const S: string; Options: TJSONParseOptions);
+begin
+  try
+    JsonParseCallback(s, nil, JsonLintAcquireCallback, Options);
+  except
+    on E: Exception do
+    begin
+      raise;
+    end;
+  end
+end;
+
+function JsonLintFile(const FileName: string; Options: TJSONParseOptions = []): string; //Return Error message
+begin
+  Result := '';
+  try
+    JsonLintString(LoadFileString(FileName), Options);
+  except
+    on E: Exception do
+    begin
+      Result := E.Message;
+    end;
+  end;
 end;
 
 initialization

@@ -386,25 +386,10 @@ function JsonParseFileValue(const FileName: string; Options: TJSONParseOptions =
 
 procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
 
-function JsonLintFile(const FileName: string; Options: TJSONParseOptions = []): string; //Return Error message
-
 //Used in JSON parser
 procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 
 implementation
-
-function LoadFileString(FileName: string): string;
-var
-  Stream : TStringStream;
-begin
-  Stream := TStringStream.Create('' , TUTF8Encoding.Create);
-  try
-    Stream.LoadFromFile(FileName);
-    Result := Stream.DataString;
-  finally
-    Stream.Free;
-  end;
-end;
 
 function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
 
@@ -510,41 +495,6 @@ begin
     //JSon4.Serialize(Writer, True, 0);
   finally
     Serializer.Free;
-  end;
-end;
-
-procedure JsonLintAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
-begin
-  AObject := nil;
-end;
-
-function JsonLintString(const S: string; Options: TJSONParseOptions): TDON_Pair;
-begin
-  Result := TDON_Root.Create(nil);
-  try
-    JsonParseCallback(s, Result, JsonLintAcquireCallback, Options);
-  except
-    on E: Exception do
-    begin
-      FreeAndNil(Result);
-      raise;
-    end;
-  end
-end;
-
-function JsonLintFile(const FileName: string; Options: TJSONParseOptions = []): string; //Return Error message
-var
-  Pair: TDON_Pair;
-begin
-  Result := '';
-  try
-    Pair := JsonLintString(LoadFileString(FileName), Options);
-    FreeAndNil(Pair);
-  except
-    on E: Exception do
-    begin
-      Result := E.Message;
-    end;
   end;
 end;
 

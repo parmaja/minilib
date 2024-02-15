@@ -166,6 +166,7 @@ begin
   try
     Lines := TStringList.Create;
     try
+      JsonLintFile(FileName);
       WriteLn('Loading: ' + FileName);
       Lines.LoadFromFile(FileName);
       var s : UTF8String := Lines.Text;

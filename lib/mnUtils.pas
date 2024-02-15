@@ -294,13 +294,13 @@ procedure EnumFiles(FileList: TStrings; const Folder, Filter: string; Options: T
 function FirstFile(const Path, Files: string): string;
 function DeleteFiles(const Path, Files: string): Integer;
 function GetSizeOfFile(const vFile: string): Int64; //GetFileSize
+function LoadFileString(FileName: string): string;
 
 //mnMulDiv not using windows unit
 function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer; overload;
 function mnMulDiv(nNumber, nNumerator, nDenominator: Int64): Int64; overload;
 //propblem round(10.5) -> 10
 function mnRound(nNumber: Double): Int64; overload;
-
 
 var
   SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
@@ -2120,6 +2120,19 @@ begin
       Result := ''
   finally
     FileList.Free;
+  end;
+end;
+
+function LoadFileString(FileName: string): string;
+var
+  Stream : TStringStream;
+begin
+  Stream := TStringStream.Create('' , TUTF8Encoding.Create);
+  try
+    Stream.LoadFromFile(FileName);
+    Result := Stream.DataString;
+  finally
+    Stream.Free;
   end;
 end;
 
