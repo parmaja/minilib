@@ -283,7 +283,7 @@ begin
 end;
 
 begin
-  //ReportMemoryLeaksOnShutdown := True;
+  ReportMemoryLeaksOnShutdown := True;
   Application := TObject.Create;
   InstallConsoleLog;
   //HookCode(@TObject.NewInstance, @HookedObjectNewInstance);

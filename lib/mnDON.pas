@@ -307,6 +307,7 @@ type
     procedure SetValue(const AValue: Variant); override;
   public
     constructor Create(AParent: TDON_Object_Value);
+    destructor Destroy; override;
     function ReleaseValue: TDON_Value;
   published
     property Value: TDON_Value read FValue write SetPairValue;
@@ -388,7 +389,7 @@ procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
 function JsonLintFile(const FileName: string; Options: TJSONParseOptions = []): string; //Return Error message
 
 //Used in JSON parser
-procedure JsonAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 
 implementation
 
@@ -405,11 +406,65 @@ begin
   end;
 end;
 
+function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
+
+  procedure CreateValue(VT: TDONType; const s: string; out res: TObject); inline;
+  begin
+    res := nil;
+    case VT of
+      //donNumber: res := TDON_Number_Value.Create(nil, StrToFloatDef(s, 0));
+      donNumber: res := TDON_String_Value.Create(nil, s);
+      donIdentifier: res := TDON_Identifier_Value.Create(nil, s);
+      donBoolean: res := TDON_Boolean_Value.Create(nil, StrToBoolDef(s, False));
+      donString: res := TDON_String_Value.Create(nil, s);
+      donObject: res := TDON_Object_Value.Create(nil);
+      donArray: res := TDON_Array_Value.Create(nil);
+    end;
+  end;
+
+begin
+  Result := nil;
+  if AParentObject = nil then
+    raise Exception.Create('Can not set value to nil object');
+
+  if (AParentObject is TDON_Pair) then
+  begin
+     if (AParentObject as TDON_Pair).Value <> nil then
+      raise Exception.Create('Value is already set and it is not array: ' + AParentObject.ClassName);
+    CreateValue(AType, AValue, Result);
+    (AParentObject as TDON_Pair).Value  :=  TDON_Value(Result);
+  end
+  {else if (AParentObject is TDON_Object_Value) then
+  begin
+    Result := (AParentObject as TDON_Object_Value).CreatePair(AValue);
+  end}
+  else if (AParentObject is TDON_Array_Value) then
+  begin
+    CreateValue(AType, AValue, Result);
+    (AParentObject as TDON_Array_Value).Add(TDON_Value(Result));
+  end
+  else
+    raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);
+end;
+
+procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+begin
+  case ValueType of
+    aqPair: (AParentObject as TDON_Object_Value).AcquirePair(Value, AObject);
+    aqObject: AObject := donAcquireValue(AParentObject, Value, donObject);
+    aqArray: AObject := donAcquireValue(AParentObject, Value, donArray);
+    aqString: AObject := donAcquireValue(AParentObject, Value, donString);
+    aqIdentifier: AObject := donAcquireValue(AParentObject, Value, donIdentifier);
+    aqNumber: AObject := donAcquireValue(AParentObject, Value, donNumber);
+    aqBoolean: AObject := donAcquireValue(AParentObject, Value, donBoolean);
+  end;
+end;
+
 function JsonParseStringPair(const S: utf8string; Options: TJSONParseOptions): TDON_Pair;
 begin
   Result := TDON_Root.Create(nil);
   try
-    JsonParseCallback(s, Result, JsonAcquireCallback, Options);
+    JsonParseCallback(s, Result, JsonParseAcquireCallback, Options);
   except
     on E: Exception do
     begin
@@ -458,11 +513,16 @@ begin
   end;
 end;
 
+procedure JsonLintAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+begin
+  AObject := nil;
+end;
+
 function JsonLintString(const S: string; Options: TJSONParseOptions): TDON_Pair;
 begin
   Result := TDON_Root.Create(nil);
   try
-    JsonParseCallback(s, Result, JsonAcquireCallback, Options);
+    JsonParseCallback(s, Result, JsonLintAcquireCallback, Options);
   except
     on E: Exception do
     begin
@@ -996,8 +1056,14 @@ end;
 
 constructor TDON_Pair.Create(AParent: TDON_Object_Value);
 begin
-  //where is inherited zaher:)
+  //where is inherited zaher :)
   FParent := AParent;
+end;
+
+destructor TDON_Pair.Destroy;
+begin
+  FreeAndNil(FValue);
+  inherited;
 end;
 
 function TDON_Pair.FindItem(const Name: string): TDON_Value;
@@ -1033,60 +1099,6 @@ end;
 procedure TDON_Pair.SetValue(const AValue: Variant);
 begin
   AsString := AValue;
-end;
-
-function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
-
-  procedure CreateValue(VT: TDONType; const s: string; out res: TObject); inline;
-  begin
-    res := nil;
-    case VT of
-      //donNumber: res := TDON_Number_Value.Create(nil, StrToFloatDef(s, 0));
-      donNumber: res := TDON_String_Value.Create(nil, s);
-      donIdentifier: res := TDON_Identifier_Value.Create(nil, s);
-      donBoolean: res := TDON_Boolean_Value.Create(nil, StrToBoolDef(s, False));
-      donString: res := TDON_String_Value.Create(nil, s);
-      donObject: res := TDON_Object_Value.Create(nil);
-      donArray: res := TDON_Array_Value.Create(nil);
-    end;
-  end;
-
-begin
-  Result := nil;
-  if AParentObject = nil then
-    raise Exception.Create('Can not set value to nil object');
-
-  if (AParentObject is TDON_Pair) then
-  begin
-     if (AParentObject as TDON_Pair).Value <> nil then
-      raise Exception.Create('Value is already set and it is not array: ' + AParentObject.ClassName);
-    CreateValue(AType, AValue, Result);
-    (AParentObject as TDON_Pair).Value  :=  TDON_Value(Result);
-  end
-  {else if (AParentObject is TDON_Object_Value) then
-  begin
-    Result := (AParentObject as TDON_Object_Value).CreatePair(AValue);
-  end}
-  else if (AParentObject is TDON_Array_Value) then
-  begin
-    CreateValue(AType, AValue, Result);
-    (AParentObject as TDON_Array_Value).Add(TDON_Value(Result));
-  end
-  else
-    raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);
-end;
-
-procedure JsonAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
-begin
-  case ValueType of
-    aqPair: (AParentObject as TDON_Object_Value).AcquirePair(Value, AObject);
-    aqObject: AObject := donAcquireValue(AParentObject, Value, donObject);
-    aqArray: AObject := donAcquireValue(AParentObject, Value, donArray);
-    aqString: AObject := donAcquireValue(AParentObject, Value, donString);
-    aqIdentifier: AObject := donAcquireValue(AParentObject, Value, donIdentifier);
-    aqNumber: AObject := donAcquireValue(AParentObject, Value, donNumber);
-    aqBoolean: AObject := donAcquireValue(AParentObject, Value, donBoolean);
-  end;
 end;
 
 { TDON_Boolean_Value }
