@@ -11,7 +11,7 @@ unit mnDON;
   *
   *}
 
-{$A8,B-,C+,E-,F-,G+,H+,I+,J-,K-,M-,N-,O+,P+,Q-,R-,S-,T-,U-,V+,W-,X+,Z1}
+{$A8,C+,O+,W-,Z1}
 {$STRINGCHECKS OFF}
 {$IFDEF FPC}
 {$MODE delphi}

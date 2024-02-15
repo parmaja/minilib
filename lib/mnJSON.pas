@@ -13,6 +13,9 @@ unit mnJSON;
   *
   * }
 
+{$A8,C+,O+,W-,Z1}
+{$STRINGCHECKS OFF}
+
 {$IFDEF FPC}
 {$MODE delphi}
 {$ModeSwitch arrayoperators}
