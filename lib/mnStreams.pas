@@ -55,8 +55,9 @@ type
   TmnBufferStream = class;
 
   TStreamHelper = class helper for TStream
-    function WriteBytes(vData: TBytes): TFileSize;
-    function WriteString(const vData: string): TFileSize;
+    function WriteBytes(const vData: TBytes): TFileSize;
+    function WriteString(const vData: string): TFileSize; overload;
+    function WriteString(const vData: string; vUTF8: Boolean): TFileSize; overload;
     function WriteUtf8(const vData: UTF8String): TFileSize;
   end;
 
@@ -1863,7 +1864,7 @@ end;
 
 { TStreamHelper }
 
-function TStreamHelper.WriteBytes(vData: TBytes): TFileSize;
+function TStreamHelper.WriteBytes(const vData: TBytes): TFileSize;
 begin
   if Length(vData)<>0 then
     Result := Write(vData[0], Length(vData))
@@ -1875,6 +1876,19 @@ function TStreamHelper.WriteString(const vData: string): TFileSize;
 begin
   if vData<>'' then
     Result := Write(PByte(vData)^, mnStreams.ByteLength(vData))
+  else
+    Result := 0;
+end;
+
+function TStreamHelper.WriteString(const vData: string; vUTF8: Boolean): TFileSize;
+begin
+  if vData<>'' then
+  begin
+    if vUTF8 then
+      Result := WriteBytes(TEncoding.UTF8.GetBytes(vData))
+    else
+      Result := WriteString(vData)
+  end
   else
     Result := 0;
 end;

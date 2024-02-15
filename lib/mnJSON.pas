@@ -36,7 +36,7 @@ interface
 
 uses
 {$IFDEF windows}Windows, {$ENDIF}
-  Classes, SysUtils, StrUtils, DateUtils, Types, Character;
+  Classes, SysUtils, StrUtils, DateUtils, Types, Character, mnUtils;
 
 type
   TJSONParseOption = (
@@ -269,16 +269,17 @@ procedure TmnJSONParser.Parse(const Content: PByte; Size: Integer; Start: Intege
 var
   Ch: UTF8Char;
   AObject: TObject;
-  function CopyString(const Value: PByte; Start, Count: Integer): UTF8String;
+
+  function CopyString(const Value: PByte; Start, Count: Integer): String; inline;
   begin
     if Count = 0 then
       Result := ''
     else
     begin
-      SetLength(Result, Count);
-      CopyMemory(@Result[1], @Value[Start], Count);
+      Result := TEncoding.Unicode.GetString(Value, Start, Count);
     end;
   end;
+
 begin
   if (@AcquireProc = nil) then
     Error('JSON Parser: Acquire is nil');
@@ -367,7 +368,8 @@ begin
               end
               else
                 CheckExpected([exName, exValue], [Context]);
-              StringBuffer := '';
+              if StringBuffer<>'' then
+                StringBuffer := '';
               Token := tkNone;
             end
             else

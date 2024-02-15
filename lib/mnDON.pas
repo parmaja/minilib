@@ -11,6 +11,8 @@ unit mnDON;
   *
   *}
 
+{$A8,B-,C+,E-,F-,G+,H+,I+,J-,K-,M-,N-,O+,P+,Q-,R-,S-,T-,U-,V+,W-,X+,Z1}
+{$STRINGCHECKS OFF}
 {$IFDEF FPC}
 {$MODE delphi}
 {$ModeSwitch arrayoperators}
@@ -375,8 +377,8 @@ type
   published
   end;
 
-function JsonParseStringPair(const S: string; Options: TJSONParseOptions = []): TDON_Pair;
-function JsonParseStringValue(const S: string; Options: TJSONParseOptions = []): TDON_Value;
+function JsonParseStringPair(const S: utf8string; Options: TJSONParseOptions = []): TDON_Pair;
+function JsonParseStringValue(const S: utf8string; Options: TJSONParseOptions = []): TDON_Value;
 
 function JsonParseFilePair(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair;
 function JsonParseFileValue(const FileName: string; Options: TJSONParseOptions = []): TDON_Value;
@@ -403,7 +405,7 @@ begin
   end;
 end;
 
-function JsonParseStringPair(const S: string; Options: TJSONParseOptions): TDON_Pair;
+function JsonParseStringPair(const S: utf8string; Options: TJSONParseOptions): TDON_Pair;
 begin
   Result := TDON_Root.Create(nil);
   try
@@ -417,12 +419,17 @@ begin
   end
 end;
 
-function JsonParseStringValue(const S: string; Options: TJSONParseOptions): TDON_Value;
+function JsonParseStringValue(const S: utf8string; Options: TJSONParseOptions): TDON_Value;
 var
   Pair: TDON_Pair;
 begin
   Pair := JsonParseStringPair(S, Options);
-  Result := Pair.ReleaseValue;
+  try
+    if Pair<>nil then
+      Result := Pair.ReleaseValue;
+  finally
+    Pair.Free;
+  end;
 end;
 
 function JsonParseFilePair(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair;
@@ -1013,9 +1020,14 @@ end;
 
 function TDON_Pair.ReleaseValue: TDON_Value;
 begin
-  Result := FValue;
-  Result.FParent := Self;
-  FValue := nil;
+  if FValue<>nil then
+  begin
+    Result := FValue;
+    Result.FParent := Self;
+    FValue := nil;
+  end
+  else
+    Result := nil;
 end;
 
 procedure TDON_Pair.SetValue(const AValue: Variant);
@@ -1024,20 +1036,21 @@ begin
 end;
 
 function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
-var
-  v: TDON_Value;
-  procedure CreateValue;
+
+  procedure CreateValue(VT: TDONType; const s: string; out res: TObject); inline;
   begin
-    case AType of
-      donNumber: v :=  TDON_Number_Value.Create(nil, StrToFloatDef(AValue, 0));
-      donIdentifier: v :=  TDON_Identifier_Value.Create(nil, AValue);
-      donBoolean: v :=  TDON_Boolean_Value.Create(nil, StrToBoolDef(AValue, False));
-      donString: v :=  TDON_String_Value.Create(nil, AValue);
-      donObject: v := TDON_Object_Value.Create(nil);
-      donArray: v := TDON_Array_Value.Create(nil);
+    res := nil;
+    case VT of
+      //donNumber: res := TDON_Number_Value.Create(nil, StrToFloatDef(s, 0));
+      donNumber: res := TDON_String_Value.Create(nil, s);
+      donIdentifier: res := TDON_Identifier_Value.Create(nil, s);
+      donBoolean: res := TDON_Boolean_Value.Create(nil, StrToBoolDef(s, False));
+      donString: res := TDON_String_Value.Create(nil, s);
+      donObject: res := TDON_Object_Value.Create(nil);
+      donArray: res := TDON_Array_Value.Create(nil);
     end;
-    Result := v;
   end;
+
 begin
   Result := nil;
   if AParentObject = nil then
@@ -1047,8 +1060,8 @@ begin
   begin
      if (AParentObject as TDON_Pair).Value <> nil then
       raise Exception.Create('Value is already set and it is not array: ' + AParentObject.ClassName);
-    CreateValue;
-    (AParentObject as TDON_Pair).Value  :=  v;
+    CreateValue(AType, AValue, Result);
+    (AParentObject as TDON_Pair).Value  :=  TDON_Value(Result);
   end
   {else if (AParentObject is TDON_Object_Value) then
   begin
@@ -1056,8 +1069,8 @@ begin
   end}
   else if (AParentObject is TDON_Array_Value) then
   begin
-    CreateValue;
-    (AParentObject as TDON_Array_Value).Add(v);
+    CreateValue(AType, AValue, Result);
+    (AParentObject as TDON_Array_Value).Add(TDON_Value(Result));
   end
   else
     raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);

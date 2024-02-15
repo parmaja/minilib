@@ -263,7 +263,8 @@ function IsAllLowerCase(S: string): Boolean;
 type
   TEncodingHelper = class helper for TEncoding
   public
-    function GetString(Bytes: PByte; ByteCount: Integer): String; overload;
+    function GetString(Bytes: PByte; ByteCount: Integer): String; overload; inline;
+    function GetString(Bytes: PByte; Start, ByteCount: Integer): String; overload; inline;
     class function CodePageEncoding(CodePage: Word): TEncoding;
     {$ifdef FPC}
     function GetString(Bytes: array of Byte): String; overload;
@@ -1919,6 +1920,15 @@ begin
   end
 end;
 
+function TEncodingHelper.GetString(Bytes: PByte; Start, ByteCount: Integer): String;
+begin
+  if ByteCount<>0 then
+    Result := GetString(@Bytes[Start], ByteCount)
+  else
+    Result := '';
+end;
+
+
 {$ifdef FPC}
 function TEncodingHelper.GetString(Bytes: array of Byte): String;
 var
@@ -2181,9 +2191,7 @@ begin
     else
       Inc(Result);
   end;
-
 end;
-
 
 initialization
   {$ifdef windows}

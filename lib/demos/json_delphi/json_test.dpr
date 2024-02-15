@@ -1,5 +1,6 @@
 program json_test;
 
+{$A8,B-,C+,E-,F-,G+,H+,I+,J-,K-,M-,N-,O+,P+,Q-,R-,S-,T-,U-,V+,W-,X+,Z1}
 {$APPTYPE CONSOLE}
 
 {$R *.res}
@@ -7,7 +8,7 @@ program json_test;
 uses
   System.SysUtils, Windows, Classes,
   Json, ioUtils, mnLogs,
-  mnUtils, prmClasses, mnConfigs,
+  mnUtils, prmClasses, mnConfigs, pmpUtils, pmpClasses,
   mnFields,
   mnDON, mnJSON;
 
@@ -177,7 +178,21 @@ begin
       LogBeginTick;
       var jjj := json.TJSONObject.ParseJSONValue(s);
       LogEndTick('Test Delphi Json');
+
+      LogBeginTick;
+      var ss := jjj.ToString;
+      LogEndTick('Test Delphi ToString');
+
+      LogBeginTick;
+      var m := TMemoryStream.Create;
+      jjj.SaveToStream(m, False);
+      LogEndTick('Test Delphi save stream');
+      m.SaveToFile('c:\temp\1.json');
+      m.Free;
       jjj.Free;
+
+      Exit;
+
 
       LogBeginTick;
       var d_json := json.TJSONObject.Create;
@@ -268,6 +283,7 @@ begin
 end;
 
 begin
+  //ReportMemoryLeaksOnShutdown := True;
   Application := TObject.Create;
   InstallConsoleLog;
   //HookCode(@TObject.NewInstance, @HookedObjectNewInstance);
