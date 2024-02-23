@@ -11,13 +11,17 @@ unit mnXMLWriter;
 {$H+}
 {$IFDEF FPC}
 {$mode delphi}
-{$modeswitch functionreferences}{$modeswitch anonymousfunctions}
+{$modeswitch functionreferences}
+{$modeswitch anonymousfunctions}
+{$modeswitch advancedrecords}
+{$modeswitch typehelpers}
+{$modeswitch multihelpers}
 {$ENDIF}
 
 interface
 
 uses
-  Classes, SysUtils, mnClasses, mnXML, mnXMLUtils;
+  Classes, SysUtils, mnClasses, mnXML, mnXMLUtils, mnStreams;
 
 const
   cMaxLine = 40;

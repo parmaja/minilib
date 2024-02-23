@@ -12,6 +12,11 @@ unit mnStreams;
 {$IFDEF FPC}
 {$mode delphi}
 {$WARN 5024 off : Parameter "$1" not used}
+{$modeswitch functionreferences}
+{$modeswitch anonymousfunctions}
+{$modeswitch advancedrecords}
+{$modeswitch typehelpers}
+{$modeswitch multihelpers}
 {$ENDIF}
 //Change TFIleSize to TStreamSize (Longint)
 
@@ -41,8 +46,17 @@ const
   sGSEndOfLine = #$1E;
 
 type
-  TTimeoutMode = (tmConnect, tmRead, tmWrite);
   TFileSize = Longint;
+
+  TStreamHelper = class helper for TStream
+  public
+    function WriteBytes(const vData: TBytes): TFileSize;
+    function WriteString(const vData: string): TFileSize; overload;
+    function WriteString(const vData: string; vUTF8: Boolean): TFileSize; overload;
+    function WriteUtf8(const vData: UTF8String): TFileSize;
+  end;
+
+  TTimeoutMode = (tmConnect, tmRead, tmWrite);
 
   TmnStreamClose = set of (
     cloRead, //Mark is as EOF
@@ -53,13 +67,6 @@ type
   EmnStreamException = class(Exception);
   EmnStreamExceptionAbort = class(Exception); //can be ignored by ide
   TmnBufferStream = class;
-
-  TStreamHelper = class helper for TStream
-    function WriteBytes(const vData: TBytes): TFileSize;
-    function WriteString(const vData: string): TFileSize; overload;
-    function WriteString(const vData: string; vUTF8: Boolean): TFileSize; overload;
-    function WriteUtf8(const vData: UTF8String): TFileSize;
-  end;
 
   { TmnCustomStream }
 
@@ -374,6 +381,14 @@ var
 
 implementation
 
+function TStreamHelper.WriteUtf8(const vData: UTF8String): TFileSize;
+begin
+  if vData<>'' then
+    Result := Write(PByte(vData)^, Length(vData))
+  else
+    Result := 0;
+end;
+
 procedure CopyUTF8String(out S: utf8string; Buffer: Pointer; Len: Integer); inline;
 begin
   if Len <> 0 then
@@ -461,6 +476,37 @@ begin
 end;
 
 {$endif}
+
+{ TStreamHelper }
+
+function TStreamHelper.WriteBytes(const vData: TBytes): TFileSize;
+begin
+  if Length(vData)<>0 then
+    Result := Write(vData[0], Length(vData))
+  else
+    Result := 0;
+end;
+
+function TStreamHelper.WriteString(const vData: string): TFileSize;
+begin
+  if vData<>'' then
+    Result := Write(PByte(vData)^, mnStreams.ByteLength(vData))
+  else
+    Result := 0;
+end;
+
+function TStreamHelper.WriteString(const vData: string; vUTF8: Boolean): TFileSize;
+begin
+  if vData<>'' then
+  begin
+    if vUTF8 then
+      Result := WriteBytes(TEncoding.UTF8.GetBytes(vData))
+    else
+      Result := WriteString(vData)
+  end
+  else
+    Result := 0;
+end;
 
 { TmnStreamProxy }
 
@@ -1861,46 +1907,6 @@ begin
   inherited Create;
   FStream := AStream;
 end;
-
-{ TStreamHelper }
-
-function TStreamHelper.WriteBytes(const vData: TBytes): TFileSize;
-begin
-  if Length(vData)<>0 then
-    Result := Write(vData[0], Length(vData))
-  else
-    Result := 0;
-end;
-
-function TStreamHelper.WriteString(const vData: string): TFileSize;
-begin
-  if vData<>'' then
-    Result := Write(PByte(vData)^, mnStreams.ByteLength(vData))
-  else
-    Result := 0;
-end;
-
-function TStreamHelper.WriteString(const vData: string; vUTF8: Boolean): TFileSize;
-begin
-  if vData<>'' then
-  begin
-    if vUTF8 then
-      Result := WriteBytes(TEncoding.UTF8.GetBytes(vData))
-    else
-      Result := WriteString(vData)
-  end
-  else
-    Result := 0;
-end;
-
-function TStreamHelper.WriteUtf8(const vData: UTF8String): TFileSize;
-begin
-  if vData<>'' then
-    Result := Write(PByte(vData)^, Length(vData))
-  else
-    Result := 0;
-end;
-
 
 end.
 

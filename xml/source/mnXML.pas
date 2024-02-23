@@ -9,6 +9,7 @@ unit mnXML;
 
 {$IFDEF FPC}
 {$mode delphi}
+{$modeswitch multihelpers}
 {$ENDIF}
 {$H+}{$M+}
 
