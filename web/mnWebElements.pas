@@ -53,7 +53,7 @@ uses
 
 type
 
-  TmnwElement = class;
+  TmnwSchema = class;
 
   TmnwObject = class;
   TmnwObjectClass = class of TmnwObject;
@@ -65,21 +65,23 @@ type
     FComment: String;
     FName: String;
     FParent: TmnwObject;
-    FRoot: TmnwElement;
+    FRoot: TmnwSchema;
     FTags: String;
   protected
+    procedure Update; virtual;
     procedure Added(Item: TmnwObject); override;
     procedure Check; virtual;
     function FindObject(ObjectClass: TmnwObjectClass; AName: string; RaiseException: Boolean = false): TmnwObject;
   public
-    constructor Create(AParent: TmnwObject; AName: String);
-
+    constructor Create; virtual;
+    function Add<O: TmnwObject>(): O;
+    procedure LinkTo(AParent: TmnwObject);
     function Find(const Name: string): TmnwObject;
     function IndexOfName(vName: string): Integer;
 
     property Comment: String read FComment write FComment;
     function This: TmnwObject; //I wish i have templates/meta programming in pascal
-    property Root: TmnwElement read FRoot;
+    property Root: TmnwSchema read FRoot;
     property Parent: TmnwObject read FParent;
 
     property Name: String read FName write FName;
@@ -98,15 +100,15 @@ type
     Index: Integer;
     constructor Create;
     destructor Destroy; override;
-    procedure Add(S: string; Options: TmnwCallbackObjectOptions = []); overload; virtual; abstract;
-    procedure Add(Level: Integer; S: string; Options: TmnwCallbackObjectOptions = []); overload;
+    procedure Write(S: string; Options: TmnwCallbackObjectOptions = []); overload; virtual; abstract;
+    procedure Write(Level: Integer; S: string; Options: TmnwCallbackObjectOptions = []); overload;
     property CallbackObject: TObject read FCallbackObject write FCallbackObject;
     property Params: TStringList read FParams;
   end;
 
-  { TmnwElement }
+  { TmnwSchema }
 
-  TmnwElement = class(TmnwObject)
+  TmnwSchema = class(TmnwObject)
   protected
   public
     type
@@ -119,7 +121,6 @@ type
       TmnwRenderer = class(TObject)
       private
       protected
-        function VarBoolToStr(Value: Variant): string; virtual;
         procedure DefaultRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer);
         function DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean; virtual;
       public
@@ -139,6 +140,7 @@ type
       private
         FRendererClass: TmnwRendererClass;
       protected
+        procedure Update; override;
         procedure SetRendererClass(AValue: TmnwRendererClass); virtual;
         property RendererClass: TmnwRendererClass read FRendererClass write SetRendererClass;
         procedure Created; override;
@@ -152,8 +154,6 @@ type
       private
         FVersion: integer;
       public
-        constructor Create(Amnw: TmnwElement; AName: String);
-        function This: TDocument;
         property Version: integer read FVersion write FVersion;
       end;
 
@@ -161,20 +161,19 @@ type
 
       TPage = class(TmnwWebObject)
       public
-        constructor Create(ADatabase: TDocument; AName: String);
-        function This: TPage;
+      end;
+
+      TParagraph = class(TmnwWebObject)
+      public
       end;
 
       { TContainer }
 
-      TContainer = class(TmnwWebObject)
+      TContainer = class abstract(TmnwWebObject)
       protected
         procedure Added(Item: TmnwObject); override;
         procedure SetRendererClass(AValue: TmnwRendererClass); override;
       public
-        Prefix: string; //used to added to Renderd name, need more tests
-        constructor Create(ASchema: TPage; AName: String; APrefix: string = '');
-        function This: TContainer;
       end;
 
       { Break }
@@ -211,13 +210,8 @@ type
 
   protected
   public
-    constructor Create(AName: String); virtual;
+    constructor Create(AName: String); overload;
     destructor Destroy; override;
-    function This: TmnwElement;
-
-    function AddDocument(AName: String): TDocument;
-    function AddHtml(ADatabase: TDocument; AName: String): TPage;
-    function AddContainer(ASchema: TPage; AName: String): TContainer;
 
     function Render(Callback: TmnwCallbackObject): Boolean; overload;
     function Render(vCallback: TStrings): Boolean; overload;
@@ -233,62 +227,53 @@ type
 {-----------------    STANDARD    ----------------------}
 {-------------------------------------------------------}
 
-  TmnwElementClass = class of TmnwElement;
+  TmnwSchemaClass = class of TmnwSchema;
 
-  TmnwStandard = class(TmnwElement)
+  { TmnwHTML }
+
+  TmnwHTML = class(TmnwSchema)
   protected
   public
     type
 
-      { TDatabaseStd }
+      { TDocumentStd }
 
-      TDatabaseStd = class(TmnwRenderer)
+      TDocumentHtml = class(TmnwRenderer)
       public
+        function DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
-      { TSchemaStd }
+      { TPageStd }
 
-      TSchemaStd = class(TmnwRenderer)
+      TPageHTML = class(TmnwRenderer)
       public
-      end;
-
-      TRenderPlace = (
-        gnpNone,
-        gnpAttribute,
-        gnpInternal,
-        gnpExternal
-      );
-
-      TRenderOptions = record
-        RenderPlace: TRenderPlace;
+        function DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TContainerStd }
 
       TContainerStd = class(TmnwContainerRenderer)
-      public
-        RenderOptions: TRenderOptions;
-        constructor Create; override;
-
+      protected
         function DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean; override;
+      public
+        constructor Create; override;
       end;
-
+    public
+      procedure Created; override;
   end;
 
 function LevelStr(vLevel: Integer): String;
-function ValueToStr(vValue: Variant): string;
 
 implementation
 
-{ TmnwStandard.TContainerStd }
+{ TmnwHTML.TContainerStd }
 
-constructor TmnwStandard.TContainerStd.Create;
+constructor TmnwHTML.TContainerStd.Create;
 begin
   inherited Create;
-  RenderOptions.RenderPlace := gnpInternal;
 end;
 
-function TmnwStandard.TContainerStd.DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean;
+function TmnwHTML.TContainerStd.DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean;
 var
   o: TmnwObject;
   AContainer: TContainer;
@@ -299,6 +284,8 @@ begin
   begin
   end;
 end;
+
+{ TmnwHTML }
 
 { TmnwCallbackObject }
 
@@ -314,24 +301,14 @@ begin
   inherited Destroy;
 end;
 
-procedure TmnwCallbackObject.Add(Level: Integer; S: string; Options: TmnwCallbackObjectOptions);
+procedure TmnwCallbackObject.Write(Level: Integer; S: string; Options: TmnwCallbackObjectOptions);
 begin
-  Add(LevelStr(Level) + S, Options);
+  Write(LevelStr(Level) + S, Options);
 end;
 
-{ TmnwElement.TmnwRenderer }
+{ TmnwSchema.TmnwRenderer }
 
-function TmnwElement.TmnwRenderer.VarBoolToStr(Value: Variant): string;
-begin
-  if VarType(Value) = varBoolean then
-    Result := BoolToStr(Boolean(Value), true)
-  else if VarType(Value) = VarString then
-    Result := Value
-  else
-    Result := BoolToStr(Integer(Value) <> 0, true)
-end;
-
-procedure TmnwElement.TmnwRenderer.DefaultRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer);
+procedure TmnwSchema.TmnwRenderer.DefaultRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer);
 var
   o: TmnwObject;
 begin
@@ -339,38 +316,44 @@ begin
     (o as TmnwWebObject).Render(Callback, vLevel);
 end;
 
-function TmnwElement.TmnwRenderer.DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean;
+function TmnwSchema.TmnwRenderer.DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean;
 begin
   Result := False;
 end;
 
-procedure TmnwElement.TmnwRenderer.Render(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer);
+procedure TmnwSchema.TmnwRenderer.Render(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer);
 begin
   if not DoRender(AObject, Callback, vLevel) then
     DefaultRender(AObject, Callback, vLevel);
 end;
 
-constructor TmnwElement.TmnwRenderer.Create;
+constructor TmnwSchema.TmnwRenderer.Create;
 begin
   inherited Create;
 end;
 
-{ TmnwElement.TmnwWebObject }
+{ TmnwSchema.TmnwWebObject }
 
-procedure TmnwElement.TmnwWebObject.SetRendererClass(AValue: TmnwRendererClass);
+procedure TmnwSchema.TmnwWebObject.Update;
+begin
+  inherited;
+  if (FRoot <> nil) then
+    RendererClass := (Root as TmnwSchema).ObjectClasses.FindRenderer(TmnwObjectClass(ClassType));
+end;
+
+procedure TmnwSchema.TmnwWebObject.SetRendererClass(AValue: TmnwRendererClass);
 begin
   if FRendererClass =AValue then Exit;
   FRendererClass :=AValue;
 end;
 
-procedure TmnwElement.TmnwWebObject.Created;
+procedure TmnwSchema.TmnwWebObject.Created;
 begin
   inherited Created;
-  if (FRoot <> nil) then
-    RendererClass := (Root as TmnwElement).ObjectClasses.FindRenderer(TmnwObjectClass(ClassType));
+  //Update;
 end;
 
-procedure TmnwElement.TmnwWebObject.Render(Callback: TmnwCallbackObject; vLevel: Integer);
+procedure TmnwSchema.TmnwWebObject.Render(Callback: TmnwCallbackObject; vLevel: Integer);
 var
   Renderer: TmnwRenderer;
 begin
@@ -385,9 +368,9 @@ begin
   end;
 end;
 
-{ TmnwElement.TRegObjects }
+{ TmnwSchema.TRegObjects }
 
-function TmnwElement.TRegObjects.FindDerived(AObjectClass: TmnwObjectClass): TmnwObjectClass;
+function TmnwSchema.TRegObjects.FindDerived(AObjectClass: TmnwObjectClass): TmnwObjectClass;
 var
   o: TRegObject;
 begin
@@ -402,7 +385,7 @@ begin
   end;
 end;
 
-function TmnwElement.TRegObjects.FindRenderer(AObjectClass: TmnwObjectClass): TmnwRendererClass;
+function TmnwSchema.TRegObjects.FindRenderer(AObjectClass: TmnwObjectClass): TmnwRendererClass;
 var
   o: TRegObject;
 begin
@@ -417,42 +400,45 @@ begin
   end;
 end;
 
-{ TmnwElement }
-
-constructor TmnwElement.Create(AName: String);
+procedure TmnwHTML.Created;
 begin
-  inherited Create(nil, AName);
+  inherited Created;
+  RegisterRenderer(TDocument ,TDocumentHtml);
+  RegisterRenderer(TPage, TPageHTML);
+end;
+
+{ TmnwHTML.TDocumentHtml }
+
+function TmnwHTML.TDocumentHtml.DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean;
+begin
+  Result := inherited DoRender(AObject, Callback, vLevel);
+end;
+
+{ TmnwHTML.TPageHTML }
+
+function TmnwHTML.TPageHTML.DoRender(AObject: TmnwWebObject; Callback: TmnwCallbackObject; vLevel: Integer): Boolean;
+begin
+  Callback.Write('<Body>');
+  Result := inherited DoRender(AObject, Callback, vLevel);
+  Callback.Write('<Body/>');
+end;
+
+{ TmnwSchema }
+
+constructor TmnwSchema.Create(AName: String);
+begin
+  inherited Create;
   FRoot := Self;
   FObjectClasses := TRegObjects.Create;
 end;
 
-destructor TmnwElement.Destroy;
+destructor TmnwSchema.Destroy;
 begin
   FreeAndNil(FObjectClasses);
   inherited Destroy;
 end;
 
-function TmnwElement.This: TmnwElement;
-begin
-  Result := Self;
-end;
-
-function TmnwElement.AddDocument(AName: String): TDocument;
-begin
-  Result := TDocument.Create(Self, AName);
-end;
-
-function TmnwElement.AddHTML(ADatabase: TDocument; AName: String): TPage;
-begin
-  Result := TPage.Create(ADatabase, AName);
-end;
-
-function TmnwElement.AddContainer(ASchema: TPage; AName: String): TContainer;
-begin
-  Result := TContainer.Create(ASchema, AName);
-end;
-
-procedure TmnwElement.RegisterRenderer(AObjectClass: TmnwObjectClass; ARendererClass: TmnwRendererClass);
+procedure TmnwSchema.RegisterRenderer(AObjectClass: TmnwObjectClass; ARendererClass: TmnwRendererClass);
 var
   aRegObject: TRegObject;
 begin
@@ -464,40 +450,17 @@ end;
 
 { TContainer }
 
-function TmnwElement.TContainer.This: TContainer;
-begin
-  Result := Self;
-end;
-
-procedure TmnwElement.TContainer.Added(Item: TmnwObject);
+procedure TmnwSchema.TContainer.Added(Item: TmnwObject);
 begin
   inherited Added(Item);
 end;
 
-procedure TmnwElement.TContainer.SetRendererClass(AValue: TmnwRendererClass);
+procedure TmnwSchema.TContainer.SetRendererClass(AValue: TmnwRendererClass);
 begin
   if not (AValue.InheritsFrom(TmnwContainerRenderer)) then
     raise Exception.Create('Renderer should be ContainerRenderer');
 
   inherited SetRendererClass(AValue);
-end;
-
-constructor TmnwElement.TContainer.Create(ASchema: TPage; AName: String; APrefix: string);
-begin
-  inherited Create(ASchema, AName);
-  Prefix := APrefix;
-end;
-
-{ TPage }
-
-function TmnwElement.TPage.This: TPage;
-begin
-  Result := Self;
-end;
-
-constructor TmnwElement.TPage.Create(ADatabase: TDocument; AName: String);
-begin
-  inherited Create(ADatabase, AName);
 end;
 
 { TmnwObject }
@@ -507,9 +470,15 @@ begin
   Result := Self;
 end;
 
+procedure TmnwObject.Update;
+begin
+
+end;
+
 procedure TmnwObject.Added(Item: TmnwObject);
 begin
-  inherited Added(Item);
+  inherited;
+  Item.Update;
 end;
 
 procedure TmnwObject.Check;
@@ -558,6 +527,20 @@ begin
     raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
 end;
 
+constructor TmnwObject.Create;
+begin
+  inherited Create;
+  FName := ClassName();
+end;
+
+function TmnwObject.Add<O>: O;
+begin
+  Result := O.Create;
+  Result.FParent := Self;
+  Result.FRoot := FRoot;
+  inherited Add(Result);
+end;
+
 function TmnwObject.IndexOfName(vName: string): Integer;
 var
   i: integer;
@@ -592,10 +575,8 @@ begin
     Result := '''''';
 end;
 
-constructor TmnwObject.Create(AParent: TmnwObject; AName: String);
+procedure TmnwObject.LinkTo(AParent: TmnwObject);
 begin
-  inherited Create;
-  FName := AName;
   if AParent <> nil then
   begin
     FParent := AParent;
@@ -605,16 +586,6 @@ begin
 end;
 
 { TDocument }
-
-function TmnwElement.TDocument.This: TDocument;
-begin
-  Result := Self;
-end;
-
-constructor TmnwElement.TDocument.Create(Amnw: TmnwElement; AName: String);
-begin
-  inherited Create(Amnw, AName);
-end;
 
 type
 
@@ -627,7 +598,7 @@ type
     Callback: TStrings; //Reference to Callback
     constructor Create(ACallback: TStrings);
     destructor Destroy; override;
-    procedure Add(S: string; Options: TmnwCallbackObjectOptions = []); override;
+    procedure Write(S: string; Options: TmnwCallbackObjectOptions = []); override;
   end;
 
 { TmnwWebCallbackObject }
@@ -641,11 +612,11 @@ end;
 destructor TmnwWebCallbackObject.Destroy;
 begin
   if Buffer <> '' then
-    Add('', [cboEndLine]);
+    Write('', [cboEndLine]);
   inherited Destroy;
 end;
 
-procedure TmnwWebCallbackObject.Add(S: string; Options: TmnwCallbackObjectOptions);
+procedure TmnwWebCallbackObject.Write(S: string; Options: TmnwCallbackObjectOptions);
 begin
   Buffer := Buffer + S;
   {if (cboEndChunk in Options) and (Callback.Count > 0) then
@@ -663,7 +634,7 @@ begin
   end;
 end;
 
-function TmnwElement.Render(vCallback: TStrings): Boolean;
+function TmnwSchema.Render(vCallback: TStrings): Boolean;
 var
   CallbackCB: TmnwWebCallbackObject;
 begin
@@ -676,7 +647,7 @@ begin
   Result := True;
 end;
 
-function TmnwElement.Render(Callback: TmnwCallbackObject): Boolean;
+function TmnwSchema.Render(Callback: TmnwCallbackObject): Boolean;
 var
   AParams: TStringList;
   o: TmnwObject;

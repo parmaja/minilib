@@ -14,27 +14,46 @@ program project1;
 {$ENDIF}
 
 uses
+  SysUtils, StrUtils, Classes,
   mnWebElements;
 
-function CreateORM(ORMClass: TmncORMClass): TmnwElement;
+function CreateDocument(SchemaClass: TmnwSchemaClass): TmnwSchema;
 begin
-  if ORMClass = nil then
+  if SchemaClass = nil then
     Result := nil
   else
   begin
-    Result := TmnwElement.Create('App');
+    Result := SchemaClass.Create('HelloWorld');
     with Result do
     begin
-      with TDatabase.Create(This, 'Document') do
-        with TSchema.Create(This, '') do begin
-
-          with TTable.Create(This, 'Companies') do begin
-
+      with This.Add<TmnwSchema.TDocument> do
+      begin
+        with This.Add<TmnwSchema.TPage> do
+        begin
+        end;
+        with This.Add<TmnwSchema.TParagraph> do
+        begin
+        end;
+      end;
     end;
   end;
 end;
 
+var
+  Schema: TmnwSchema;
+  Strings: TStringList;
+  s: string;
 begin
-
+  Strings:=TStringList.Create;
+  try
+    Schema := CreateDocument(TmnwHTML);
+    Schema.Render(Strings);
+    for s in Strings do
+      WriteLn(s);
+  finally
+    FreeAndNil(Strings);
+  end;
+  WriteLn('Press Enter to exit');
+  ReadLn;
 end.
 
