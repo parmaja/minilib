@@ -12,48 +12,18 @@ program project1;
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
+{$APPTYPE CONSOLE}
 
 uses
-  SysUtils, StrUtils, Classes,
-  mnWebElements;
+  SysUtils,
+  TestHtml;
 
-function CreateDocument(SchemaClass: TmnwSchemaClass): TmnwSchema;
 begin
-  if SchemaClass = nil then
-    Result := nil
-  else
-  begin
-    Result := SchemaClass.Create('HelloWorld');
-    with Result do
-    begin
-      with This.Add<TmnwSchema.TDocument> do
-      begin
-        with This.Add<TmnwSchema.TPage> do
-        begin
-        end;
-        with This.Add<TmnwSchema.TParagraph> do
-        begin
-        end;
-      end;
-    end;
-  end;
-end;
-
-var
-  Schema: TmnwSchema;
-  Strings: TStringList;
-  s: string;
-begin
-  Strings:=TStringList.Create;
   try
-    Schema := CreateDocument(TmnwHTML);
-    Schema.Render(Strings);
-    for s in Strings do
-      WriteLn(s);
-  finally
-    FreeAndNil(Strings);
+    Run;
+  except
+    on E: Exception do
+      Writeln(E.ClassName, ': ', E.Message);
   end;
-  WriteLn('Press Enter to exit');
-  ReadLn;
 end.
 
