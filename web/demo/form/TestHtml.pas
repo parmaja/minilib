@@ -72,6 +72,7 @@ end;
 
 procedure TmyHtml.Compose;
 begin
+  Name := 'HelloWorld';
   with Add<TDocument>() do
   begin
     with Add<TPage>() do
@@ -96,7 +97,7 @@ var
 begin
   Strings := TStringList.Create;
   try
-    HTML:= TmyHtml.Create('HelloWorld');
+    HTML:= TmyHtml.Create;
     HTML.Render(TmyRendererHtml, Strings);
     for s in Strings do
       WriteLn(s);

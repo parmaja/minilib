@@ -83,7 +83,7 @@ type
     function FindObject(ObjectClass: TmnwObjectClass; AName: string; RaiseException: Boolean = false): TmnwObject;
   public
     constructor Create; virtual;
-    function Add<O: TmnwObject>(const AName: String = ''): O;
+    function Add<O: TmnwObject>(const AName: String = ''): O; overload;
     function Find(const Name: string): TmnwObject;
     function IndexOfName(vName: string): Integer;
 
@@ -133,7 +133,7 @@ type
 
   protected
   public
-    constructor Create(AName: String); overload;
+    constructor Create; override;
     destructor Destroy; override;
 
     function Render(Context: TmnwContext): Boolean; overload;
@@ -418,7 +418,7 @@ end;
 
 { TmnwSchema }
 
-constructor TmnwSchema.Create(AName: String);
+constructor TmnwSchema.Create;
 begin
   inherited Create;
   FRoot := Self;
@@ -599,7 +599,6 @@ end;
 
 function TmnwSchema.Render(RendererClass: TmnwRendererClass; AStrings: TStrings): Boolean;
 var
-  Writer: TmnwStringsWriter;
   Context: TmnwContext;
 begin
   Context.Writer := TmnwStringsWriter.Create(AStrings);
