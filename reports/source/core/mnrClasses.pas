@@ -1149,7 +1149,6 @@ procedure TmnrCustomReport.ExportHTML(const vStream: TStream);
 var
   r: TmnrRow;
   n: TmnrCell;
-  s: TStringBuilder;
   l: TmnrRowList;
 
 begin
@@ -1810,9 +1809,6 @@ var
   aRow: TmnrRow;
   //c: TmnrCell;
   Accepted: Boolean;
-  i: Integer;
-  p: TJSONPair;
-  c: Integer;
 begin
   //vParams.Data shared for all DesignRows
   vParams.Data.AddPair('ID', vParams.ID);
