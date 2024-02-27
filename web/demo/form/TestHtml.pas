@@ -20,7 +20,7 @@ uses
   mnWebElements;
 
 type
-  TmyHtml = class(TmnwSchema)
+  TmyHtml = class(TmnwHTML)
   private
   public
     type
@@ -30,7 +30,8 @@ type
       end;
 
   protected
-    procedure Created;
+    procedure Created; override;
+  public
     procedure Compose; override;
   end;
 
@@ -71,11 +72,11 @@ end;
 
 procedure TmyHtml.Compose;
 begin
-  with This.Add<TmnwHTML.TDocument> do
+  with Add<TDocument>() do
   begin
-    with This.Add<TmnwHTML.TPage> do
+    with Add<TPage>() do
     begin
-      with This.Add<TmyHtml.TMyTag>('MyTag1') do
+      with Add<TMyTag>('MyTag1') do
       begin
       end;
     end;
@@ -89,14 +90,14 @@ end;
 
 procedure Run;
 var
-  Schema: TmnwSchema;
+  HTML: TmnwSchema;
   Strings: TStringList;
   s: string;
 begin
   Strings := TStringList.Create;
   try
-    Schema := TmyHtml.Create('HelloWorld');
-    Schema.Render(TmyRendererHtml, Strings);
+    HTML:= TmyHtml.Create('HelloWorld');
+    HTML.Render(TmyRendererHtml, Strings);
     for s in Strings do
       WriteLn(s);
   finally

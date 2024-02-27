@@ -196,7 +196,7 @@ type
 
   TmnwSchemaClass = class of TmnwSchema;
 
-  TmnwHTML =class(TmnwElement)
+  TmnwHTML =class(TmnwSchema)
   public
     type
       TContainer = class;
@@ -237,10 +237,9 @@ type
       private
       public
       end;
-
   end;
 
-
+  { TmnwRendererHTML }
 
   TmnwRendererHTML = class(TmnwRenderer)
   protected
@@ -401,16 +400,20 @@ end;
 
 procedure TmnwRendererHTML.TDocumentHtml.DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
 begin
+  Context.Writer.Write('<html>', [cboEndLine]);
+  Context.Writer.Write('<head>', [cboEndLine]);
+  Context.Writer.Write('</head>', [cboEndLine]);
   inherited;
+  Context.Writer.Write('</html>', [cboEndLine]);
 end;
 
 { TmnwRendererHTML.TPageHTML }
 
 procedure TmnwRendererHTML.TPageHTML.DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
 begin
-  Context.Writer.Write('<Body>', [cboEndLine]);
+  Context.Writer.Write('<body>', [cboEndLine]);
   inherited;
-  Context.Writer.Write('</Body>', [cboEndLine]);
+  Context.Writer.Write('</body>', [cboEndLine]);
 end;
 
 { TmnwSchema }
@@ -514,7 +517,7 @@ begin
   FName := ClassName();
 end;
 
-function TmnwObject.Add<O>(const AName: String = ''): O;
+function TmnwObject.Add<O>(const AName: String): O;
 begin
   Result := O.Create;
   Result.FName := AName;
@@ -522,7 +525,7 @@ begin
     Result.FName := ClassName;
   Result.FParent := Self;
   Result.FRoot := FRoot;
-  inherited Add(Result);
+  Add(Result);
 end;
 
 function TmnwObject.IndexOfName(vName: string): Integer;
@@ -627,7 +630,7 @@ begin
 
       if (Context.Renderer <> nil) then
       begin
-        RendererClass := Context.Renderer.ObjectClasses.FindRenderer(TmnwObjectClass(ClassType));
+        RendererClass := Context.Renderer.ObjectClasses.FindRenderer(TmnwObjectClass(AElement.ClassType));
         if RendererClass <> nil then
         begin
           Renderer := RendererClass.Create;
