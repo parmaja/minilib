@@ -149,11 +149,11 @@ type
   protected
     function GetModified: Boolean;
     function DoCreateField(vColumn: TmncColumn): TmncField; override;
-    procedure Detach; override;
   public
     constructor Create(vColumns: TmncColumns); override;
     destructor Destroy; override;
     procedure Clear; override;
+    procedure Detach;
     property Items[Index: Integer]: TmncFBField read GetItem;
     property SQLDA: PXSQLDA read FSQLDA;
   end;
@@ -207,7 +207,7 @@ type
   protected
     function GetModified: Boolean;
     function CreateParam: TmncParam; override;
-    procedure Detach; override;
+    procedure Detach;
   public
     property Items[Index: Integer]: TmncFBParam read GetItem;
   end;

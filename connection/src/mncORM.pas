@@ -37,10 +37,10 @@ type
     procedure Check; virtual;
     function FindObject(ObjectClass: TormObjectClass; AName: string; RaiseException: Boolean = false): TormObject;
   public
-    constructor Create(AParent: TormObject; AName: String);
+    constructor Create(AParent: TormObject; const AName: String);
 
     function Find(const Name: string): TormObject;
-    function IndexOfName(vName: string): Integer;
+    function IndexOfName(const vName: string): Integer;
 
     property Comment: String read FComment write FComment;
     function This: TormObject; //I wish i have templates/meta programming in pascal
@@ -1243,7 +1243,7 @@ begin
   end;
   ReferenceInfo.UpdateOption := ReferenceInfoStr.UpdateOption;
   ReferenceInfo.DeleteOption := ReferenceInfoStr.DeleteOption;
-  inherited Check;
+  inherited;
 end;
 
 function TmncORM.TField.Table: TTable;
@@ -1442,7 +1442,7 @@ begin
     raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
 end;
 
-function TormObject.IndexOfName(vName: string): Integer;
+function TormObject.IndexOfName(const vName: string): Integer;
 var
   i: integer;
 begin
@@ -1476,7 +1476,7 @@ begin
     Result := '''''';
 end;
 
-constructor TormObject.Create(AParent: TormObject; AName: String);
+constructor TormObject.Create(AParent: TormObject; const AName: String);
 begin
   inherited Create;
   FName := AName;

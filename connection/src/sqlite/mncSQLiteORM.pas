@@ -154,8 +154,6 @@ begin
           +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 end;
 
-{ TmncSQLiteORM }
-
 class function TmncSQLiteORM.FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
 begin
   case FieldType of

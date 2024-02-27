@@ -30,7 +30,7 @@ unit mncConnections;
     use Dictonary hash list for Fields
     remove Retain
     Can we assign params before prepare?
-    detach to record (clone)
+    --detach to record (clone)--
     Nested Fields (for REST)
       CMD.Fields['Name'].AsString
       CMD.Fields['Data', 'Name'].AsString
@@ -394,7 +394,6 @@ type
   protected
     //Called before release it, good to deattach the handles
   public
-    procedure Detach; virtual; //move to TmncRecord
   end;
 
   { TmncField }
@@ -598,7 +597,6 @@ type
     function Step: Boolean; //Execute and Next for while loop() without using next at end of loop block //TODO not yet
     procedure Close;
     procedure Clear; virtual;
-    //Detach make Fields or Params unrelated to DB handles, you can use them in salfty in arrays
     procedure Reset; virtual; //Reset and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     property Done: Boolean read FDone; //EOF :)
     property Ready: Boolean read FReady; //BOF :)
@@ -606,9 +604,6 @@ type
     procedure HitDone(vCondition: Boolean); overload;
     procedure HitUnready; //Make it FReady False
 
-
-    function DetachFields: TmncFields;
-    function DetachParams: TmncParams;
     property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
     property Parsed: Boolean read FParsed;
     property Prepared: Boolean read FPrepared;
@@ -1048,19 +1043,6 @@ begin
   FPrepared := True;
   if Params <> nil then
     Params.Clean;
-end;
-
-function TmncCommand.DetachFields: TmncFields;
-begin
-  FFields.Detach;
-  Result := FFields;
-  FFields := nil;
-end;
-
-function TmncCommand.DetachParams: TmncParams;
-begin
-  Result := FParams;
-  FParams := nil;
 end;
 
 procedure TmncCommand.SetActive(const Value: Boolean);
@@ -1683,12 +1665,6 @@ end;
 procedure TmncTransactions.SetItem(Index: Integer; const Value: TmncTransaction);
 begin
   inherited Items[Index] := Value;
-end;
-
-{ TmncCustomFields }
-
-procedure TmncCustomFields<T>.Detach;
-begin
 end;
 
 { TmncItem }
