@@ -20,7 +20,8 @@ uses
   mnWebElements;
 
 type
-  TmyHtml = class(TmnwHTML)
+  TmyHtml = class(TmnwSchema)
+  private
   public
     type
       TMyTag = class(TmnwElement)
@@ -28,11 +29,20 @@ type
       public
       end;
 
-      TMyTagHTML = class(TmnwRenderer)
+  protected
+    procedure Created;
+    procedure Compose; override;
+  end;
+
+  TmyRendererHtml = class(TmnwRendererHTML)
+  public
+    type
+      TMyTagHTML = class(TmnwElementRenderer)
       public
-        function DoRender(AElement: TmnwElement; WriterObject: TmnwWriterObject; vLevel: Integer): Boolean; override;
+        procedure DoRender(AElement: TmnwElement; AContext: TmnwContext; vLevel: Integer); override;
       end;
 
+  protected
     procedure Created; override;
   end;
 
@@ -40,26 +50,41 @@ procedure Run;
 
 implementation
 
-function CreateDocument(SchemaClass: TmnwSchemaClass): TmnwSchema;
+{ TmyHtml }
+
+procedure TmyRendererHtml.Created;
 begin
-  if SchemaClass = nil then
-    Result := nil
-  else
+  inherited;
+  RegisterRenderer(TmyHTML.TMyTag, TMyTagHTML);
+end;
+
+{ TmyHtml.TMyTagHTML }
+
+procedure TmyRendererHtml.TMyTagHTML.DoRender(AElement: TmnwElement; AContext: TmnwContext; vLevel: Integer);
+begin
+  AContext.Writer.Write('<'+AElement.Name+'>', [cboEndLine]);
+  inherited;
+  AContext.Writer.Write('</'+AElement.Name+'>', [cboEndLine]);
+end;
+
+{ TmyHtml }
+
+procedure TmyHtml.Compose;
+begin
+  with This.Add<TmnwHTML.TDocument> do
   begin
-    Result := SchemaClass.Create('HelloWorld');
-    with Result do
+    with This.Add<TmnwHTML.TPage> do
     begin
-      with This.Add<TmnwSchema.TDocument> do
+      with This.Add<TmyHtml.TMyTag>('MyTag1') do
       begin
-        with This.Add<TmnwSchema.TPage> do
-        begin
-        end;
-        with This.Add<TmyHtml.TMyTag>('MyTag1') do
-        begin
-        end;
       end;
     end;
   end;
+end;
+
+procedure TmyHtml.Created;
+begin
+  inherited;
 end;
 
 procedure Run;
@@ -70,8 +95,8 @@ var
 begin
   Strings := TStringList.Create;
   try
-    Schema := CreateDocument(TmyHtml);
-    Schema.Render(Strings);
+    Schema := TmyHtml.Create('HelloWorld');
+    Schema.Render(TmyRendererHtml, Strings);
     for s in Strings do
       WriteLn(s);
   finally
@@ -79,23 +104,6 @@ begin
   end;
   WriteLn( 'Press Enter to exit');
   ReadLn;
-end;
-
-{ TmyHtml }
-
-procedure TmyHtml.Created;
-begin
-  inherited;
-  RegisterRenderer(TMyTag, TMyTagHTML);
-end;
-
-{ TmyHtml.TMyTagHTML }
-
-function TmyHtml.TMyTagHTML.DoRender(AElement: TmnwElement; WriterObject: TmnwWriterObject; vLevel: Integer): Boolean;
-begin
-  WriterObject.Write('<'+AElement.Name+'>', [cboEndLine]);
-  inherited;
-  WriterObject.Write('</'+AElement.Name+'>', [cboEndLine]);
 end;
 
 end.
