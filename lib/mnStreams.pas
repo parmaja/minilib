@@ -45,6 +45,12 @@ const
   sMacEndOfLine = #$0D;
   sGSEndOfLine = #$1E;
 
+  {$ifdef MSWINDOWS}
+  sNativeEndOfLine = sWinEndOfLine;
+  {$else}
+  sNativeEndOfLine = sUnixEndOfLine;
+  {$endif}
+
 type
   TFileSize = Longint;
 

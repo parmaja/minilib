@@ -49,7 +49,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, Variants, RTTI,
-  mnClasses;
+  mnClasses, mnStreams;
 
 type
 
@@ -59,37 +59,40 @@ type
   TmnwWriter = class;
   TmnwRendererClass = class of TmnwRenderer;
 
-  TmnwObject = class;
-  TmnwObjectClass = class of TmnwObject;
+  TmnwElementClass = class of TmnwElement;
 
   TmnwContext = record
     Renderer: TmnwRenderer;
     Writer: TmnwWriter;
   end;
 
-  { TmnwObject }
+  { TmnwElement }
 
-  TmnwObject = class(TmnObjectList<TmnwObject>)
+  TmnwElement = class(TmnObjectList<TmnwElement>)
   private
     FComment: String;
     FName: String;
-    FParent: TmnwObject;
+    FParent: TmnwElement;
     FRoot: TmnwSchema;
     FTags: String;
   protected
     procedure Update; virtual;
-    procedure Added(Item: TmnwObject); override;
+    procedure Added(Item: TmnwElement); override;
     procedure Check; virtual;
-    function FindObject(ObjectClass: TmnwObjectClass; AName: string; RaiseException: Boolean = false): TmnwObject;
+    function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
+    procedure DoCompose; virtual;
   public
     constructor Create; virtual;
-    function Add<O: TmnwObject>(const AName: String = ''): O; overload;
-    function Find(const Name: string): TmnwObject;
+    function Add<O: TmnwElement>(const AName: String = ''): O; overload;
+    function Find(const Name: string): TmnwElement;
     function IndexOfName(vName: string): Integer;
 
-    function This: TmnwObject; //I wish i have templates/meta programming in pascal
+    function This: TmnwElement; //I wish i have templates/meta programming in pascal
     property Root: TmnwSchema read FRoot;
-    property Parent: TmnwObject read FParent;
+    property Parent: TmnwElement read FParent;
+
+    procedure Render(Context: TmnwContext; vLevel: Integer);
+    procedure Compose;
 
     property Name: String read FName write FName;
     property Tags: String read FTags write FTags; //etc: 'Key,Data'
@@ -102,31 +105,27 @@ type
 
   TmnwWriter = class(TObject)
   private
-    FParams: TStringList;
-    FElement: TObject;
+    FName: string;
+    FStream: TStream;
   public
-    Index: Integer;
-    constructor Create;
-    destructor Destroy; override;
-    procedure Write(S: string; Options: TmnwWriterOptions = []); overload; virtual; abstract;
-    procedure Write(Level: Integer; S: string; Options: TmnwWriterOptions = []); overload;
-    property Element: TObject read FElement write FElement;
-    property Params: TStringList read FParams;
+    constructor Create(AName: string; AStream: TStream);
+    procedure Write(const S: string; Options: TmnwWriterOptions = []);
+    property Stream: TStream read FStream write FStream;
+    property Name: string read FName write FName;
   end;
 
-  { TmnwElement }
+  { TmnwOutput }
 
-  TmnwElement = class(TmnwObject)
+  TmnwOutput = class(TmnNamedObjectList<TmnwWriter>)
   private
-  protected
-    procedure Created; override;
   public
-    procedure Render(Context: TmnwContext; vLevel: Integer);
+    procedure Write(const Target, S: string; Options: TmnwWriterOptions = []); overload;
+    procedure Write(const Target, S: string; Level: Integer; Options: TmnwWriterOptions); overload;
   end;
 
   { TmnwSchema }
 
-  TmnwSchema = class(TmnwObject)
+  TmnwSchema = class(TmnwElement)
   protected
   public
   private
@@ -138,11 +137,9 @@ type
 
     function Render(Context: TmnwContext): Boolean; overload;
     function Render(RendererClass: TmnwRendererClass; AStrings: TStrings): Boolean; overload;
-
-    procedure Compose; virtual; abstract;
   end;
 
-  TmnwRenderer = class(TmnwObject)
+  TmnwRenderer = class(TmnwElement)
   public
     type
       { TmnwElementRenderer }
@@ -167,7 +164,7 @@ type
 
       TRegObject = class(TObject)
       public
-        ObjectClass: TmnwObjectClass;
+        ObjectClass: TmnwElementClass;
         RendererClass: TmnwElementRendererClass;
       end;
 
@@ -175,8 +172,8 @@ type
 
       TRegObjects = class(TmnObjectList<TRegObject>)
       public
-        function FindDerived(AObjectClass: TmnwObjectClass): TmnwObjectClass;
-        function FindRenderer(AObjectClass: TmnwObjectClass): TmnwElementRendererClass;
+        function FindDerived(AObjectClass: TmnwElementClass): TmnwElementClass;
+        function FindRenderer(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
       end;
   protected
     FObjectClasses: TRegObjects;
@@ -185,7 +182,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
-    procedure RegisterRenderer(AObjectClass: TmnwObjectClass; ARendererClass: TmnwElementRendererClass);
+    procedure RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass);
     property ObjectClasses: TRegObjects read FObjectClasses;
 
   end;
@@ -223,7 +220,7 @@ type
 
       TContainer = class abstract(TmnwElement)
       protected
-        procedure Added(Item: TmnwObject); override;
+        procedure Added(Item: TmnwElement); override;
       public
       end;
 
@@ -290,28 +287,27 @@ end;
 
 { TmnwWriter }
 
-constructor TmnwWriter.Create;
+{ TmnwOutput }
+
+procedure TmnwOutput.Write(const Target, S: string; Options: TmnwWriterOptions);
+var
+  Writer: TmnwWriter;
 begin
-  inherited Create;
-  FParams := TStringList.Create;
+  Writer := Find(Target);
+  if Writer <> nil then
+    Writer.Write(S, Options);
 end;
 
-destructor TmnwWriter.Destroy;
+procedure TmnwOutput.Write(const Target, S: string; Level: Integer; Options: TmnwWriterOptions);
 begin
-  FreeAndNil(FParams);
-  inherited Destroy;
-end;
-
-procedure TmnwWriter.Write(Level: Integer; S: string; Options: TmnwWriterOptions);
-begin
-  Write(LevelStr(Level) + S, Options);
+  Write(Target, LevelStr(Level) + S, Options);
 end;
 
 { TmnwRenderer.TmnwElementRenderer }
 
 procedure TmnwRenderer.TmnwElementRenderer.DefaultRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
 var
-  o: TmnwObject;
+  o: TmnwElement;
 begin
   for o in AElement do
     (o as TmnwElement).Render(Context, vLevel);
@@ -332,11 +328,6 @@ begin
   inherited Create;
 end;
 
-procedure TmnwElement.Created;
-begin
-  inherited Created;
-end;
-
 procedure TmnwElement.Render(Context: TmnwContext; vLevel: Integer);
 var
   Renderer: TmnwRenderer.TmnwElementRenderer;
@@ -344,12 +335,12 @@ var
 begin
   if (Context.Renderer <> nil) then
   begin
-    RendererClass := Context.Renderer.ObjectClasses.FindRenderer(TmnwObjectClass(ClassType));
+    RendererClass := Context.Renderer.ObjectClasses.FindRenderer(TmnwElementClass(ClassType));
     if RendererClass <> nil then
     begin
       Renderer := RendererClass.Create;
       try
-        Renderer.Render(self, Context, vLevel);
+        Renderer.Render(Self, Context, vLevel);
       finally
         Renderer.Free;
       end;
@@ -359,7 +350,7 @@ end;
 
 { TmnwSchema.TRegObjects }
 
-function TmnwRenderer.TRegObjects.FindDerived(AObjectClass: TmnwObjectClass): TmnwObjectClass;
+function TmnwRenderer.TRegObjects.FindDerived(AObjectClass: TmnwElementClass): TmnwElementClass;
 var
   o: TRegObject;
 begin
@@ -374,7 +365,7 @@ begin
   end;
 end;
 
-function TmnwRenderer.TRegObjects.FindRenderer(AObjectClass: TmnwObjectClass): TmnwElementRendererClass;
+function TmnwRenderer.TRegObjects.FindRenderer(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
 var
   o: TRegObject;
 begin
@@ -430,7 +421,7 @@ begin
   inherited;
 end;
 
-procedure TmnwRenderer.RegisterRenderer(AObjectClass: TmnwObjectClass; ARendererClass: TmnwElementRendererClass);
+procedure TmnwRenderer.RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass);
 var
   aRegObject: TRegObject;
 begin
@@ -442,38 +433,38 @@ end;
 
 { TContainer }
 
-procedure TmnwHTML.TContainer.Added(Item: TmnwObject);
+procedure TmnwHTML.TContainer.Added(Item: TmnwElement);
 begin
   inherited Added(Item);
 end;
 
-{ TmnwObject }
+{ TmnwElement }
 
-function TmnwObject.This: TmnwObject;
+function TmnwElement.This: TmnwElement;
 begin
   Result := Self;
 end;
 
-procedure TmnwObject.Update;
+procedure TmnwElement.Update;
 begin
 
 end;
 
-procedure TmnwObject.Added(Item: TmnwObject);
+procedure TmnwElement.Added(Item: TmnwElement);
 begin
   inherited;
   Item.Update;
 end;
 
-procedure TmnwObject.Check;
+procedure TmnwElement.Check;
 var
-  o: TmnwObject;
+  o: TmnwElement;
 begin
   for o in Self do
     o.Check;
 end;
 
-function TmnwObject.Find(const Name: string): TmnwObject;
+function TmnwElement.Find(const Name: string): TmnwElement;
 var
   i: Integer;
 begin
@@ -488,9 +479,9 @@ begin
   end;
 end;
 
-function TmnwObject.FindObject(ObjectClass: TmnwObjectClass; AName: string; RaiseException: Boolean): TmnwObject;
+function TmnwElement.FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean): TmnwElement;
 var
-  o: TmnwObject;
+  o: TmnwElement;
 begin
   Result := nil;
   for o in Self do
@@ -511,13 +502,17 @@ begin
     raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
 end;
 
-constructor TmnwObject.Create;
+procedure TmnwElement.DoCompose;
+begin
+end;
+
+constructor TmnwElement.Create;
 begin
   inherited Create;
   FName := ClassName();
 end;
 
-function TmnwObject.Add<O>(const AName: String): O;
+function TmnwElement.Add<O>(const AName: String): O;
 begin
   Result := O.Create;
   Result.FName := AName;
@@ -528,7 +523,7 @@ begin
   Add(Result);
 end;
 
-function TmnwObject.IndexOfName(vName: string): Integer;
+function TmnwElement.IndexOfName(vName: string): Integer;
 var
   i: integer;
 begin
@@ -549,73 +544,55 @@ begin
   Result := StringOfChar(' ', vLevel * 4);
 end;
 
-{ TDocument }
-
-type
-
-  { TmnwStringsWriter }
-
-  TmnwStringsWriter = class(TmnwWriter)
-  private
-    Buffer: string;
-  public
-    Output: TStrings; //Reference to Output
-    constructor Create(AOutput: TStrings);
-    destructor Destroy; override;
-    procedure Write(S: string; Options: TmnwWriterOptions = []); override;
-  end;
-
-{ TmnwStringsWriter }
-
-constructor TmnwStringsWriter.Create(AOutput: TStrings);
-begin
-  inherited Create;
-  Output := AOutput;
-end;
-
-destructor TmnwStringsWriter.Destroy;
-begin
-  if Buffer <> '' then
-    Write('', [cboEndLine]);
-  inherited Destroy;
-end;
-
-procedure TmnwStringsWriter.Write(S: string; Options: TmnwWriterOptions);
-begin
-  Buffer := Buffer + S;
-  {if (cboEndChunk in Options) and (Output.Count > 0) then
-    Buffer := Buffer + ';';}
-  if (cboEndLine in Options) or (cboEndChunk in Options) then
-  begin
-    if Buffer <> '' then
-      Output.Add(Buffer);
-    Buffer := '';
-  end;
-  if (cboEndChunk in Options) and (Output.Count > 0) then
-  begin
-//    Output.Add(' ');
-  end;
-end;
+{ TmnwSchema }
 
 function TmnwSchema.Render(RendererClass: TmnwRendererClass; AStrings: TStrings): Boolean;
 var
   Context: TmnwContext;
+  AStringStream: TStringStream;
 begin
-  Context.Writer := TmnwStringsWriter.Create(AStrings);
+  AStringStream := TStringStream.Create();
+  Context.Writer := TmnwWriter.Create('', AStringStream);
   Context.Renderer := RendererClass.Create;
   try
     Render(Context);
+    AStrings.Text := AStringStream.DataString;
   finally
     FreeAndNil(Context.Writer);
     FreeAndNil(Context.Renderer);
+    FreeAndNil(AStringStream);
   end;
   Result := True;
+end;
+
+procedure TmnwElement.Compose;
+var
+  o: TmnwElement;
+begin
+  DoCompose;
+  for o in Self do
+    o.Compose;
+end;
+
+constructor TmnwWriter.Create(AName: string; AStream: TStream);
+begin
+  inherited Create;
+  FName := AName;
+  FStream := AStream;
+end;
+
+procedure TmnwWriter.Write(const S: string; Options: TmnwWriterOptions);
+begin
+  if (cboEndLine in Options) then
+    FStream.WriteString(S + sEndOfLine)
+  else
+    FStream.WriteString(S)
 end;
 
 function TmnwSchema.Render(Context: TmnwContext): Boolean;
 var
   AParams: TStringList;
-  o: TmnwObject;
+  o: TmnwElement;
   AElement: TmnwElement;
   Renderer: TmnwRenderer.TmnwElementRenderer;
   RendererClass: TmnwRenderer.TmnwElementRendererClass;
@@ -629,7 +606,7 @@ begin
 
       if (Context.Renderer <> nil) then
       begin
-        RendererClass := Context.Renderer.ObjectClasses.FindRenderer(TmnwObjectClass(AElement.ClassType));
+        RendererClass := Context.Renderer.ObjectClasses.FindRenderer(TmnwElementClass(AElement.ClassType));
         if RendererClass <> nil then
         begin
           Renderer := RendererClass.Create;

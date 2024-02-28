@@ -20,6 +20,9 @@ uses
   mnWebElements;
 
 type
+
+  { TmyHtml }
+
   TmyHtml = class(TmnwHTML)
   private
   public
@@ -31,8 +34,8 @@ type
 
   protected
     procedure Created; override;
+    procedure DoCompose; override;
   public
-    procedure Compose; override;
   end;
 
   TmyRendererHtml = class(TmnwRendererHTML)
@@ -70,7 +73,7 @@ end;
 
 { TmyHtml }
 
-procedure TmyHtml.Compose;
+procedure TmyHtml.DoCompose;
 begin
   Name := 'HelloWorld';
   with Add<TDocument>() do
