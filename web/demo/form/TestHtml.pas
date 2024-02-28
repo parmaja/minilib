@@ -66,9 +66,9 @@ end;
 
 procedure TmyRendererHtml.TMyTagHTML.DoRender(AElement: TmnwElement; AContext: TmnwContext; vLevel: Integer);
 begin
-  AContext.Writer.Write('<'+AElement.Name+'>', [cboEndLine]);
+  AContext.Output.Write('html', '<'+AElement.Name+'>', [cboEndLine]);
   inherited;
-  AContext.Writer.Write('</'+AElement.Name+'>', [cboEndLine]);
+  AContext.Output.Write('html', '</'+AElement.Name+'>', [cboEndLine]);
 end;
 
 { TmyHtml }

@@ -57,13 +57,14 @@ type
   TmnwRenderer = class;
   TmnwElement = class;
   TmnwWriter = class;
+  TmnwOutput = class;
   TmnwRendererClass = class of TmnwRenderer;
 
   TmnwElementClass = class of TmnwElement;
 
   TmnwContext = record
     Renderer: TmnwRenderer;
-    Writer: TmnwWriter;
+    Output: TmnwOutput;
   end;
 
   { TmnwElement }
@@ -285,8 +286,6 @@ begin
   inherited;
 end;
 
-{ TmnwWriter }
-
 { TmnwOutput }
 
 procedure TmnwOutput.Write(const Target, S: string; Options: TmnwWriterOptions);
@@ -391,20 +390,20 @@ end;
 
 procedure TmnwRendererHTML.TDocumentHtml.DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
 begin
-  Context.Writer.Write('<html>', [cboEndLine]);
-  Context.Writer.Write('<head>', [cboEndLine]);
-  Context.Writer.Write('</head>', [cboEndLine]);
+  Context.Output.Write('html', '<html>', [cboEndLine]);
+  Context.Output.Write('html', '<head>', [cboEndLine]);
+  Context.Output.Write('html', '</head>', [cboEndLine]);
   inherited;
-  Context.Writer.Write('</html>', [cboEndLine]);
+  Context.Output.Write('html', '</html>', [cboEndLine]);
 end;
 
 { TmnwRendererHTML.TPageHTML }
 
 procedure TmnwRendererHTML.TPageHTML.DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
 begin
-  Context.Writer.Write('<body>', [cboEndLine]);
+  Context.Output.Write('html', '<body>', [cboEndLine]);
   inherited;
-  Context.Writer.Write('</body>', [cboEndLine]);
+  Context.Output.Write('html', '</body>', [cboEndLine]);
 end;
 
 { TmnwSchema }
@@ -550,16 +549,20 @@ function TmnwSchema.Render(RendererClass: TmnwRendererClass; AStrings: TStrings)
 var
   Context: TmnwContext;
   AStringStream: TStringStream;
+  Writer: TmnwWriter;
 begin
   AStringStream := TStringStream.Create();
-  Context.Writer := TmnwWriter.Create('', AStringStream);
+  Writer := TmnwWriter.Create('html', AStringStream);
+  Context.Output := TmnwOutput.Create;
+  Context.Output.Add(Writer);
   Context.Renderer := RendererClass.Create;
   try
     Render(Context);
     AStrings.Text := AStringStream.DataString;
   finally
-    FreeAndNil(Context.Writer);
+    FreeAndNil(Context.Output);
     FreeAndNil(Context.Renderer);
+//    FreeAndNil(Writer);
     FreeAndNil(AStringStream);
   end;
   Result := True;
@@ -584,7 +587,7 @@ end;
 procedure TmnwWriter.Write(const S: string; Options: TmnwWriterOptions);
 begin
   if (cboEndLine in Options) then
-    FStream.WriteString(S + sEndOfLine)
+    FStream.WriteString(S + sWinEndOfLine)
   else
     FStream.WriteString(S)
 end;
