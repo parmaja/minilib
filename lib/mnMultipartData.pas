@@ -101,17 +101,22 @@ type
     property TempPath: string read FTempPath write FTempPath;
   end;
 
-function DocumentToContentType(FileName: string): string;
+function DocumentToContentType(const Name: string): string;
 
 implementation
 
-function DocumentToContentType(FileName: string): string;
+function DocumentToContentType(const Name: string): string;
 var
   Ext: string;
 begin
-  Ext := LowerCase(ExtractFileExt(FileName));
-  if Length(Ext) > 1 then
-    Ext := Copy(Ext, 2, Length(Ext));
+  if Pos('.', Name) = 0 then
+    Ext := Name
+  else
+  begin
+    Ext := LowerCase(ExtractFileExt(Name));
+    if Length(Ext) > 1 then
+      Ext := Copy(Ext, 2, Length(Ext));
+  end;
 
   if Ext = 'txt' then
     Result := 'text/plan'

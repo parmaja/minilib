@@ -59,7 +59,8 @@ type
     function WriteBytes(const vData: TBytes): TFileSize;
     function WriteString(const vData: string): TFileSize; overload;
     function WriteString(const vData: string; vUTF8: Boolean): TFileSize; overload;
-    function WriteUtf8(const vData: UTF8String): TFileSize;
+    function WriteUtf8(const vData: UTF8String): TFileSize; deprecated;
+    function WriteUtf8String(const vData: UTF8String): TFileSize; inline;
   end;
 
   TTimeoutMode = (tmConnect, tmRead, tmWrite);
@@ -388,6 +389,14 @@ var
 implementation
 
 function TStreamHelper.WriteUtf8(const vData: UTF8String): TFileSize;
+begin
+  if vData<>'' then
+    Result := Write(PByte(vData)^, Length(vData))
+  else
+    Result := 0;
+end;
+
+function TStreamHelper.WriteUtf8String(const vData: UTF8String): TFileSize;
 begin
   if vData<>'' then
     Result := Write(PByte(vData)^, Length(vData))
