@@ -49,7 +49,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, Variants, RTTI,
-  mnClasses, mnStreams;
+	mnUtils, mnClasses, mnStreams;
 
 type
 
@@ -62,6 +62,16 @@ type
 
   TmnwElementClass = class of TmnwElement;
 
+  TmnwAttribute = class(TmnNameValueObject)
+  end;
+
+  { TmnwAttributes }
+
+  TmnwAttributes = class(TmnNameValueObjectList<TmnwAttribute>)
+  public
+    function GetText(WithExtraSpace: Boolean = False): string;
+  end;
+
   TmnwContext = record
     Renderer: TmnwRenderer;
     Output: TmnwOutput;
@@ -71,11 +81,15 @@ type
 
   TmnwElement = class(TmnObjectList<TmnwElement>)
   private
-    FComment: String;
-    FName: String;
-    FParent: TmnwElement;
     FRoot: TmnwSchema;
+    FParent: TmnwElement;
+
+    FComment: String;
+    FID: String;
+    FName: String;
+    FStyle: String;
     FTags: String;
+    FAttributes: TmnwAttributes;
   protected
     procedure Update; virtual;
     procedure Added(Item: TmnwElement); override;
@@ -84,7 +98,8 @@ type
     procedure DoCompose; virtual;
   public
     constructor Create; virtual;
-    function Add<O: TmnwElement>(const AName: String = ''): O; overload;
+    destructor Destroy; override;
+    function Add<O: TmnwElement>(const AName: String = ''; const AID: String = ''): O; overload;
     function Find(const Name: string): TmnwElement;
     function IndexOfName(vName: string): Integer;
 
@@ -96,23 +111,24 @@ type
     procedure Compose;
 
     property Name: String read FName write FName;
+    property Style: String read FStyle write FStyle;
+    property ID: String read FID write FID;
     property Tags: String read FTags write FTags; //etc: 'Key,Data'
     property Comment: String read FComment write FComment;
+    property Attributes: TmnwAttributes read FAttributes;
   end;
 
   { TmnwWriter }
 
   TmnwWriterOptions = set of (cboEndLine, cboEndChunk, cboMore);
 
-  TmnwWriter = class(TObject)
+  TmnwWriter = class(TmnNamedObject)
   private
-    FName: string;
     FStream: TStream;
   public
     constructor Create(AName: string; AStream: TStream);
-    procedure Write(const S: string; Options: TmnwWriterOptions = []);
+    procedure Write(const S: string; Options: TmnwWriterOptions = []); virtual;
     property Stream: TStream read FStream write FStream;
-    property Name: string read FName write FName;
   end;
 
   { TmnwOutput }
@@ -137,25 +153,30 @@ type
     destructor Destroy; override;
 
     function Render(Context: TmnwContext): Boolean; overload;
+    function Render(RendererClass: TmnwRendererClass; AOutput: TmnwOutput): Boolean; overload;
+    function Render(RendererClass: TmnwRendererClass; AStream: TStream): Boolean; overload;
     function Render(RendererClass: TmnwRendererClass; AStrings: TStrings): Boolean; overload;
   end;
+
+  { TmnwElementRenderer }
+
+  TmnwElementRenderer = class(TObject)
+  private
+  protected
+    procedure DefaultRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+    procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); virtual;
+    procedure DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes); virtual;
+  public
+    procedure Render(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+    constructor Create; virtual; //usfull for creating it by RendererClass.Create
+    procedure CollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes);
+  end;
+
+  TmnwElementRendererClass = class of TmnwElementRenderer;
 
   TmnwRenderer = class(TmnwElement)
   public
     type
-      { TmnwElementRenderer }
-
-      TmnwElementRenderer = class(TObject)
-      private
-      protected
-        procedure DefaultRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
-        procedure DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer); virtual;
-      public
-        procedure Render(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
-        constructor Create; virtual; //usfull for creating it by RendererClass.Create
-      end;
-
-      TmnwElementRendererClass = class of TmnwElementRenderer;
 
       TmnwContainerRenderer = class(TmnwElementRenderer)
       protected
@@ -188,13 +209,15 @@ type
 
   end;
 
+  TmnwSchemaClass = class of TmnwSchema;
+
+  TDirection = (dirUnkown, dirLTR, dirRTL);
+
 {-------------------------------------------------------}
 {-----------------    STANDARD    ----------------------}
 {-------------------------------------------------------}
 
-  TmnwSchemaClass = class of TmnwSchema;
-
-  TmnwHTML =class(TmnwSchema)
+  THTML =class(TmnwSchema)
   public
     type
       TContainer = class;
@@ -203,13 +226,12 @@ type
 
       TDocument = class(TmnwElement)
       private
+        FTitle: string;
         FVersion: integer;
       public
+        Direction: TDirection;
         property Version: integer read FVersion write FVersion;
-      end;
-
-      TParagraph = class(TmnwElement)
-      public
+        property Title: string read FTitle write FTitle;
       end;
 
       //* Custom Tag
@@ -229,6 +251,17 @@ type
       public
       end;
 
+      TParagraph = class(TmnwElement)
+      public
+        Text: string;
+      end;
+
+      TImage = class(TmnwElement)
+      public
+        Source: string;
+        Width, Height: double;
+      end;
+
       { Break }
 
       TBreak = class(TmnwElement)
@@ -237,24 +270,32 @@ type
       end;
   end;
 
-  { TmnwRendererHTML }
+  { TmnwHTMLRenderer }
 
-  TmnwRendererHTML = class(TmnwRenderer)
+  TmnwHTMLRenderer = class(TmnwRenderer)
   protected
   public
     type
+
+      { TElementHTML }
+
+      TElementHTML = class(TmnwElementRenderer)
+      protected
+      end;
+
       { TDocumentHTML }
 
-      TDocumentHtml = class(TmnwElementRenderer)
-      public
-        procedure DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer); override;
+      TDocumentHTML = class(TElementHTML)
+      protected
+        procedure DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes); override;
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
       end;
 
       { TContainerHTML }
 
       TContainerHTML = class abstract(TmnwContainerRenderer)
       protected
-        procedure DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer); override;
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
       public
         constructor Create; override;
       end;
@@ -263,7 +304,21 @@ type
 
       TPageHTML = class(TContainerHTML)
       public
-        procedure DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer); override;
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
+      end;
+
+      { TParagrapHTML }
+
+      TParagrapHTML = class(TElementHTML)
+      public
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
+      end;
+
+      { TBreakHTML }
+
+      TBreakHTML = class(TElementHTML)
+      public
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
       end;
 
     protected
@@ -274,14 +329,14 @@ function LevelStr(vLevel: Integer): String;
 
 implementation
 
-{ TmnwHTML.TContainerHTML }
+{ THTML.TContainerHTML }
 
-constructor TmnwRendererHTML.TContainerHTML.Create;
+constructor TmnwHTMLRenderer.TContainerHTML.Create;
 begin
   inherited Create;
 end;
 
-procedure TmnwRendererHTML.TContainerHTML.DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+procedure TmnwHTMLRenderer.TContainerHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
 begin
   inherited;
 end;
@@ -302,9 +357,26 @@ begin
   Write(Target, LevelStr(Level) + S, Options);
 end;
 
-{ TmnwRenderer.TmnwElementRenderer }
+{ TmnwAttributes }
 
-procedure TmnwRenderer.TmnwElementRenderer.DefaultRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+function TmnwAttributes.GetText(WithExtraSpace: Boolean): string;
+var
+  a: TmnwAttribute;
+begin
+  Result := '';
+  for a in Self do
+  begin
+    if Result <> '' then
+      Result := Result + ' ';
+    Result := Result + a.Name + '='+ QuoteStr(a.Value, '"');
+  end;
+  if Result <> '' then
+    Result := ' ' + Result;
+end;
+
+{ TmnwElementRenderer }
+
+procedure TmnwElementRenderer.DefaultRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
 var
   o: TmnwElement;
 begin
@@ -312,25 +384,46 @@ begin
     (o as TmnwElement).Render(Context, vLevel);
 end;
 
-procedure TmnwRenderer.TmnwElementRenderer.DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+procedure TmnwElementRenderer.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
 begin
   DefaultRender(AElement, Context, vLevel);
 end;
 
-procedure TmnwRenderer.TmnwElementRenderer.Render(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+procedure TmnwElementRenderer.DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes);
 begin
-  DoRender(AElement, Context, vLevel);
 end;
 
-constructor TmnwRenderer.TmnwElementRenderer.Create;
+procedure TmnwElementRenderer.Render(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+var
+  lAttributes: TmnwAttributes;
+begin
+  lAttributes := TmnwAttributes.Create;
+  try
+    CollectAttributes(AElement, lAttributes);
+    DoRender(AElement, lAttributes, Context, vLevel);
+  finally
+    lAttributes.Free;
+  end;
+end;
+
+constructor TmnwElementRenderer.Create;
 begin
   inherited Create;
 end;
 
+procedure TmnwElementRenderer.CollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes);
+begin
+  if AElement.ID <> '' then
+    Attributes.Values['ID'] := AElement.ID;
+  if AElement.Name <> '' then
+    Attributes.Values['Name'] := AElement.Name;
+  DoCollectAttributes(AElement, Attributes);
+end;
+
 procedure TmnwElement.Render(Context: TmnwContext; vLevel: Integer);
 var
-  Renderer: TmnwRenderer.TmnwElementRenderer;
-  RendererClass: TmnwRenderer.TmnwElementRendererClass;
+  Renderer: TmnwElementRenderer;
+  RendererClass: TmnwElementRendererClass;
 begin
   if (Context.Renderer <> nil) then
   begin
@@ -379,31 +472,69 @@ begin
   end;
 end;
 
-procedure TmnwRendererHTML.Created;
+procedure TmnwHTMLRenderer.Created;
 begin
   inherited Created;
-  RegisterRenderer(TmnwHTML.TDocument ,TDocumentHtml);
-  RegisterRenderer(TmnwHTML.TPage, TPageHTML);
+  RegisterRenderer(THTML.TDocument ,TDocumentHTML);
+  RegisterRenderer(THTML.TPage, TPageHTML);
+  RegisterRenderer(THTML.TParagraph, TParagrapHTML);
+  RegisterRenderer(THTML.TBreak, TBreakHTML);
 end;
 
-{ TmnwRendererHTML.TDocumentHtml }
+{ TmnwHTMLRenderer.TDocumentHTML }
 
-procedure TmnwRendererHTML.TDocumentHtml.DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+procedure TmnwHTMLRenderer.TDocumentHTML.DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes);
+var
+  e: THTML.TDocument;
 begin
-  Context.Output.Write('html', '<html>', [cboEndLine]);
+  e := AElement as THTML.TDocument;
+  if e.Direction = dirRTL then
+    Attributes.Values['dir'] := 'rtl'
+  else if E.Direction = dirLTR then
+    Attributes.Values['dir'] := 'ltr'
+end;
+
+procedure TmnwHTMLRenderer.TDocumentHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
+var
+  e: THTML.TDocument;
+begin
+  e := AElement as THTML.TDocument;
+  Context.Output.Write('html', '<html' + Attributes.GetText(True) + '>', [cboEndLine]);
+  Context.Output.Write('html', '<title>'+ e.Title + '</title>', [cboEndLine]);
   Context.Output.Write('html', '<head>', [cboEndLine]);
+  //* Collect head from childs
   Context.Output.Write('html', '</head>', [cboEndLine]);
   inherited;
   Context.Output.Write('html', '</html>', [cboEndLine]);
 end;
 
-{ TmnwRendererHTML.TPageHTML }
+{ TmnwHTMLRenderer.TPageHTML }
 
-procedure TmnwRendererHTML.TPageHTML.DoRender(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+procedure TmnwHTMLRenderer.TPageHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
 begin
   Context.Output.Write('html', '<body>', [cboEndLine]);
   inherited;
   Context.Output.Write('html', '</body>', [cboEndLine]);
+end;
+
+{ TmnwHTMLRenderer.TParagrapHTML }
+
+procedure TmnwHTMLRenderer.TParagrapHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
+var
+  E: THTML.TParagraph;
+begin
+  E := AElement as THTML.TParagraph;
+  Context.Output.Write('html', '<p>', []);
+  Context.Output.Write('html', E.Text, []);
+  inherited;
+  Context.Output.Write('html', '</p>', [cboEndLine]);
+end;
+
+{ TmnwHTMLRenderer.TBreakHTML }
+
+procedure TmnwHTMLRenderer.TBreakHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
+begin
+  Context.Output.Write('html', '</br>', [cboEndLine]);
 end;
 
 { TmnwSchema }
@@ -432,7 +563,7 @@ end;
 
 { TContainer }
 
-procedure TmnwHTML.TContainer.Added(Item: TmnwElement);
+procedure THTML.TContainer.Added(Item: TmnwElement);
 begin
   inherited Added(Item);
 end;
@@ -508,15 +639,21 @@ end;
 constructor TmnwElement.Create;
 begin
   inherited Create;
-  FName := ClassName();
+  FName := '';
+  FAttributes := TmnwAttributes.Create;
 end;
 
-function TmnwElement.Add<O>(const AName: String): O;
+destructor TmnwElement.Destroy;
+begin
+  FreeAndNil(FAttributes);
+  inherited;
+end;
+
+function TmnwElement.Add<O>(const AName: String; const AID: String): O;
 begin
   Result := O.Create;
   Result.FName := AName;
-  if Result.FName = '' then
-    Result.FName := ClassName;
+  Result.FID := AID;
   Result.FParent := Self;
   Result.FRoot := FRoot;
   Add(Result);
@@ -545,27 +682,47 @@ end;
 
 { TmnwSchema }
 
-function TmnwSchema.Render(RendererClass: TmnwRendererClass; AStrings: TStrings): Boolean;
+function TmnwSchema.Render(RendererClass: TmnwRendererClass; AOutput: TmnwOutput): Boolean;
 var
   Context: TmnwContext;
-  AStringStream: TStringStream;
-  Writer: TmnwWriter;
 begin
-  AStringStream := TStringStream.Create();
-  Writer := TmnwWriter.Create('html', AStringStream);
-  Context.Output := TmnwOutput.Create;
-  Context.Output.Add(Writer);
+  Context.Output := AOutput;
   Context.Renderer := RendererClass.Create;
   try
-    Render(Context);
-    AStrings.Text := AStringStream.DataString;
+    Result := Render(Context);
   finally
-    FreeAndNil(Context.Output);
     FreeAndNil(Context.Renderer);
-//    FreeAndNil(Writer);
-    FreeAndNil(AStringStream);
   end;
   Result := True;
+end;
+
+function TmnwSchema.Render(RendererClass: TmnwRendererClass; AStream: TStream): Boolean;
+var
+  Writer: TmnwWriter;
+  Output: TmnwOutput;
+begin
+  Writer := TmnwWriter.Create('html', AStream);
+  Output := TmnwOutput.Create;
+  Output.Add(Writer);
+  try
+    Result := Render(RendererClass, Output);
+  finally
+    FreeAndNil(Output);
+  end;
+  Result := True;
+end;
+
+function TmnwSchema.Render(RendererClass: TmnwRendererClass; AStrings: TStrings): Boolean;
+var
+  AStringStream: TStringStream;
+begin
+  AStringStream := TStringStream.Create;
+  try
+    Result := Render(RendererClass, AStringStream);
+    AStrings.Text := AStringStream.DataString;
+  finally
+    FreeAndNil(AStringStream);
+  end;
 end;
 
 procedure TmnwElement.Compose;
@@ -580,16 +737,16 @@ end;
 constructor TmnwWriter.Create(AName: string; AStream: TStream);
 begin
   inherited Create;
-  FName := AName;
+  Name := AName;
   FStream := AStream;
 end;
 
 procedure TmnwWriter.Write(const S: string; Options: TmnwWriterOptions);
 begin
   if (cboEndLine in Options) then
-    FStream.WriteString(S + sWinEndOfLine)
+    FStream.WriteUtf8String(S + sWinEndOfLine)
   else
-    FStream.WriteString(S)
+    FStream.WriteUtf8String(S)
 end;
 
 function TmnwSchema.Render(Context: TmnwContext): Boolean;
@@ -597,8 +754,8 @@ var
   AParams: TStringList;
   o: TmnwElement;
   AElement: TmnwElement;
-  Renderer: TmnwRenderer.TmnwElementRenderer;
-  RendererClass: TmnwRenderer.TmnwElementRendererClass;
+  Renderer: TmnwElementRenderer;
+  RendererClass: TmnwElementRendererClass;
 begin
   Check;
   AParams := TStringList.Create;

@@ -142,7 +142,7 @@ type
 
   { TmodWebModule }
 
-  TmodWebModule = class(TmodModule)
+  TmodWebModule = class abstract(TmodModule)
   private
     //FServer: TmodWebServer;
     procedure SetDefaultDocument(AValue: TStringList);
@@ -151,7 +151,6 @@ type
     FDocumentRoot: string;
     FDefaultDocument: TStringList;
     procedure Created; override;
-    procedure DoCreateCommands; override;
 
     procedure Log(S: string); override;
     procedure InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean); override;
@@ -161,6 +160,13 @@ type
     destructor Destroy; override;
     property DocumentRoot: string read FDocumentRoot write SetDocumentRoot;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
+  end;
+
+  { TmodWebFileModule }
+
+  TmodWebFileModule = class(TmodWebModule)
+  protected
+    procedure DoRegisterCommands; override;
   end;
 
   ThttpModules = class(TmodModules)
@@ -205,7 +211,7 @@ type
   TmodWebEventModule = class(TmodWebModule)
   protected
     FProc: TmodWebEventProc; //need discuss
-    procedure DoCreateCommands; override;
+    procedure DoRegisterCommands; override;
   end;
 
   TmodWebEventServer = class(TmodCustomWebServer)
@@ -458,26 +464,9 @@ begin
   FDefaultDocument.Add('default.htm');
 end;
 
-procedure TmodWebModule.DoCreateCommands;
-begin
-  inherited;
-  //use post and get as same command
-  RegisterCommand('GET', TmodHttpGetCommand, true);
-  //RegisterCommand('GET', TmodHttpPostCommand, true);
-  RegisterCommand('POST', TmodHttpPostCommand, true);
-  RegisterCommand('Info', TmodServerInfoCommand);
-  {
-  RegisterCommand('GET', TmodHttpGetCommand);
-  RegisterCommand('PUT', TmodPutCommand);
-  RegisterCommand('DIR', TmodDirCommand);
-  RegisterCommand('DEL', TmodDeleteFileCommand);
-  }
-end;
-
 procedure TmodWebModule.DoPrepareRequest(ARequest: TmodRequest);
 begin
   //inherited;
-
   ARequest.Command := ARequest.Method;
   if (AliasName <> '') then
     ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);
@@ -486,7 +475,6 @@ end;
 procedure TmodWebModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
 begin
   //inherited;
-
   vMatch := ARequest.Route[0] = AliasName;
 end;
 
@@ -508,6 +496,24 @@ procedure TmodWebModule.Log(S: string);
 begin
   inherited;
   Modules.Log(S);
+end;
+
+{ TmodWebFileModule }
+
+procedure TmodWebFileModule.DoRegisterCommands;
+begin
+  inherited;
+  //use post and get as same command
+  RegisterCommand('GET', TmodHttpGetCommand, true);
+  //RegisterCommand('GET', TmodHttpPostCommand, true);
+  RegisterCommand('POST', TmodHttpPostCommand, true);
+  RegisterCommand('Info', TmodServerInfoCommand);
+  {
+  RegisterCommand('GET', TmodHttpGetCommand);
+  RegisterCommand('PUT', TmodPutCommand);
+  RegisterCommand('DIR', TmodDirCommand);
+  RegisterCommand('DEL', TmodDeleteFileCommand);
+  }
 end;
 
 { TmodURICommand }
@@ -719,7 +725,7 @@ end;
 constructor TmodWebServer.Create;
 begin
   inherited;
-  TmodWebModule.Create('web', 'doc', ['http/1.1'], Modules);
+  TmodWebFileModule.Create('web', 'doc', ['http/1.1'], Modules);
   Port := '80';
 end;
 
@@ -739,7 +745,7 @@ end;
 procedure TmodCustomWebServer.AddAcmeChallenge(const AName: string; const ADocumentRoot: string);
 begin
   //* http://localhost/.well-known/acme-challenge/index.html
-  with TmodWebModule.Create(AName, '.well-known', ['http/1.1'], Modules) do
+  with TmodWebFileModule.Create(AName, '.well-known', ['http/1.1'], Modules) do
   begin
     Level := -1;
     DocumentRoot := ADocumentRoot;
@@ -1004,7 +1010,7 @@ end;
 
 { TmodWebEventModule }
 
-procedure TmodWebEventModule.DoCreateCommands;
+procedure TmodWebEventModule.DoRegisterCommands;
 begin
   // inherited;
   RegisterCommand('Event', TmodHttpEventCommand, true);

@@ -275,8 +275,9 @@ type
     function GetActive: Boolean; virtual;
     function GetCommandClass(var CommandName: String): TmodCommandClass; virtual;
     procedure Created; override;
-    procedure DoCreateCommands; virtual;
-    procedure CreateCommands;
+    procedure DoCreateCommands; virtual; deprecated;
+    procedure DoRegisterCommands; virtual;
+    procedure RegisterCommands;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
     procedure DoPrepareRequest(ARequest: TmodRequest); virtual;
 
@@ -297,7 +298,7 @@ type
   public
     //Default fallback module should have no alias name
     //Protocols all should lowercase
-    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules); virtual;
+    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules = nil); virtual;
     destructor Destroy; override;
     function Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodRespondResult;
     function RegisterCommand(vName: String; CommandClass: TmodCommandClass; AFallback: Boolean = False): Integer; overload;
@@ -338,6 +339,7 @@ type
     procedure Init;
     procedure Idle;
     property Server: TmodModuleServer read FServer;
+    procedure Added(Item: TmodModule); override;
   public
     constructor Create(AServer: TmodModuleServer);
     procedure ParseHead(ARequest: TmodRequest; const RequestLine: String); virtual;
@@ -1001,10 +1003,13 @@ begin
   inherited;
 end;
 
-procedure TmodModule.CreateCommands;
+procedure TmodModule.RegisterCommands;
 begin
   if Commands.Count = 0 then
-    DoCreateCommands;
+  begin
+    DoRegisterCommands;
+    DoCreateCommands; //* TO DELETE
+  end;
 end;
 
 procedure TmodModule.Start;
@@ -1028,8 +1033,11 @@ begin
   Name := AName;
   FAliasName := AAliasName;
   FProtocols := AProtocols;
-  FModules := AModules;
-  FModules.Add(Self);
+  if AModules <> nil then
+  begin
+    FModules := AModules;//* nope, Add will assign it
+    FModules.Add(Self);
+  end;
   FCommands := TmodCommandClasses.Create(True);
   FKeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
 end;
@@ -1041,6 +1049,10 @@ begin
 end;
 
 procedure TmodModule.DoCreateCommands;
+begin
+end;
+
+procedure TmodModule.DoRegisterCommands;
 begin
 end;
 
@@ -1079,7 +1091,7 @@ var
   aCMD: TmodCommand;
   aHandled: Boolean;
 begin
-  CreateCommands;
+  RegisterCommands;
 
   Result.Status := [mrSuccess];
 
@@ -1213,6 +1225,12 @@ var
 begin
   for aModule in Self do
     aModule.Idle;
+end;
+
+procedure TmodModules.Added(Item: TmodModule);
+begin
+  inherited Added(Item);
+  Item.FModules := Self;
 end;
 
 procedure TmodModules.Init;

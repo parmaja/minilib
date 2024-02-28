@@ -23,7 +23,7 @@ type
 
   { TmyHtml }
 
-  TmyHtml = class(TmnwHTML)
+  TmyHome = class(TmnwHTMLSchema)
   private
   public
     type
@@ -38,7 +38,7 @@ type
   public
   end;
 
-  TmyRendererHtml = class(TmnwRendererHTML)
+  TmyHomeRenderer = class(TmnwHTMLRenderer)
   public
     type
       TMyTagHTML = class(TmnwElementRenderer)
@@ -54,26 +54,26 @@ procedure Run;
 
 implementation
 
-{ TmyHtml }
+{ TmyHome }
 
-procedure TmyRendererHtml.Created;
+procedure TmyHomeRenderer.Created;
 begin
   inherited;
-  RegisterRenderer(TmyHTML.TMyTag, TMyTagHTML);
+  RegisterRenderer(TmyHome.TMyTag, TMyTagHTML);
 end;
 
-{ TmyHtml.TMyTagHTML }
+{ TmyHome.TMyTagHTML }
 
-procedure TmyRendererHtml.TMyTagHTML.DoRender(AElement: TmnwElement; AContext: TmnwContext; vLevel: Integer);
+procedure TmyHomeRenderer.TMyTagHTML.DoRender(AElement: TmnwElement; AContext: TmnwContext; vLevel: Integer);
 begin
   AContext.Output.Write('html', '<'+AElement.Name+'>', [cboEndLine]);
   inherited;
   AContext.Output.Write('html', '</'+AElement.Name+'>', [cboEndLine]);
 end;
 
-{ TmyHtml }
+{ TmyHome }
 
-procedure TmyHtml.DoCompose;
+procedure TmyHome.DoCompose;
 begin
   Name := 'HelloWorld';
   with Add<TDocument>() do
@@ -87,7 +87,7 @@ begin
   end;
 end;
 
-procedure TmyHtml.Created;
+procedure TmyHome.Created;
 begin
   inherited;
 end;
@@ -100,8 +100,8 @@ var
 begin
   Strings := TStringList.Create;
   try
-    HTML:= TmyHtml.Create;
-    HTML.Render(TmyRendererHtml, Strings);
+    HTML:= TmyHome.Create;
+    HTML.Render(TmyHomeRenderer, Strings);
     for s in Strings do
       WriteLn(s);
   finally
