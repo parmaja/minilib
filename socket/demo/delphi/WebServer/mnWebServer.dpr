@@ -1,13 +1,13 @@
 program mnWebServer;
 
 uses
-//  FastMM4,
   Forms,
   Windows,
   SysUtils,
   mnStreams,
   mnClients,
-  MainForm in 'MainForm.pas' {Main};
+  MainForm in 'MainForm.pas' {Main},
+  HomeModules in '..\..\lazarus\WebModule\HomeModules.pas';
 
 {$R *.RES}
 

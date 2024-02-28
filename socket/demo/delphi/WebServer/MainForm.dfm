@@ -52,6 +52,8 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
+    ExplicitTop = 151
+    ExplicitWidth = 430
   end
   object StartBtn: TButton
     Left = 368
@@ -63,6 +65,7 @@ object Main: TMain
     Default = True
     TabOrder = 0
     OnClick = StartBtnClick
+    ExplicitLeft = 364
   end
   object RootEdit: TEdit
     Left = 46
@@ -74,6 +77,7 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 2
     Text = 'c:\offline\'
+    ExplicitWidth = 313
   end
   object StopBtn: TButton
     Left = 368
@@ -85,6 +89,7 @@ object Main: TMain
     Enabled = False
     TabOrder = 5
     OnClick = StopBtnClick
+    ExplicitLeft = 364
   end
   object PortEdit: TEdit
     Left = 46
@@ -114,12 +119,14 @@ object Main: TMain
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
+    ExplicitTop = 117
+    ExplicitWidth = 430
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
       Top = 6
       Width = 60
-      Height = 22
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -144,7 +151,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 22
+      Height = 25
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -164,7 +171,7 @@ object Main: TMain
       Left = 101
       Top = 6
       Width = 20
-      Height = 22
+      Height = 25
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -184,7 +191,7 @@ object Main: TMain
       Left = 127
       Top = 6
       Width = 60
-      Height = 22
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -209,7 +216,7 @@ object Main: TMain
       Left = 35
       Top = 6
       Width = 60
-      Height = 22
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -258,6 +265,7 @@ object Main: TMain
     Default = True
     TabOrder = 7
     OnClick = Button1Click
+    ExplicitLeft = 364
   end
   object UseSSLChk: TCheckBox
     Left = 108
@@ -287,8 +295,9 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 10
     Text = 'c:\offline\'
+    ExplicitWidth = 196
   end
-  object KeeyAliveChk: TCheckBox
+  object KeepAliveChk: TCheckBox
     Left = 8
     Top = 77
     Width = 97

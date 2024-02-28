@@ -11,6 +11,7 @@ interface
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
   mnOpenSSLUtils, mnOpenSSL, mnLogs, mnHttpClient, mnOpenSSLAPI,
+  mnModules,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules;
 
 type
@@ -35,7 +36,7 @@ type
     Button2: TButton;
     ModuleNameEdit: TEdit;
     Label5: TLabel;
-    KeeyAliveChk: TCheckBox;
+    KeepAliveChk: TCheckBox;
     CompressChk: TCheckBox;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
@@ -96,7 +97,10 @@ begin
   begin
     aWebModule.DocumentRoot := aRoot;
     aWebModule.AliasName := ModuleNameEdit.Text;
-    aWebModule.UseKeepAlive := KeeyAliveChk.Checked;
+    if KeepAliveChk.Checked then
+      aWebModule.UseKeepAlive := klvKeepAlive
+    else
+      aWebModule.UseKeepAlive := klvUndefined;
     aWebModule.UseCompressing := CompressChk.Checked;
   end;
   Server.Port := PortEdit.Text;
@@ -195,7 +199,7 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Compressing := True;
+    HttpClient.UseCompressing := True;
     //HttpClient.UserAgent := 'blalbla';
     //HttpClient.Compressing := True;
     HttpClient.GetMemoryStream('http://127.0.0.1:81/html/laz-logo.png', MemoryStream);
@@ -256,7 +260,7 @@ begin
     PortEdit.Text := GetOption('port', '81');
     UseSSLChk.Checked := GetOption('ssl', false);
     StayOnTopChk.Checked := GetOption('on_top', false);
-    KeeyAliveChk.Checked := GetOption('keep_alive', false);
+    KeepAliveChk.Checked := GetOption('keep_alive', false);
     CompressChk.Checked := GetOption('compress', false);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
@@ -277,7 +281,7 @@ begin
     aIni.WriteString('options', 'Port', PortEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'on_top', StayOnTopChk.Checked);
-    aIni.WriteBool('options', 'keep_alive', KeeyAliveChk.Checked);
+    aIni.WriteBool('options', 'keep_alive', KeepAliveChk.Checked);
     aIni.WriteBool('options', 'compress', CompressChk.Checked);
   finally
     aIni.Free;

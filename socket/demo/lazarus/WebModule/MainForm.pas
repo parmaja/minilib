@@ -19,7 +19,8 @@ interface
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
   mnLogs, mnUtils,
-  StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSL,
+  StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSL, mnBootstraps,
+  HomeModules,
   LResources, Buttons, Menus;
 
 type
@@ -241,6 +242,7 @@ begin
   HttpServer.OnChanged :=  HttpServerChanged;
   HttpServer.OnLog := ServerLog;
   HttpServer.Logging := True;
+  HttpServer.Modules.Add(THomeModule.Create('home', 'home', ['http/1.1']));
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
