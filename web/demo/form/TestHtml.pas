@@ -43,7 +43,7 @@ type
     type
       TMyTagHTML = class(TmnwElementRenderer)
       public
-        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext); override;
       end;
 
   protected
@@ -64,11 +64,11 @@ end;
 
 { TmyHome.TMyTagHTML }
 
-procedure TmyHomeRenderer.TMyTagHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
+procedure TmyHomeRenderer.TMyTagHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext);
 begin
-  Context.Output.Write('html', '<'+AElement.Name+'>', [cboEndLine]);
+  Context.Output.Write('html', '<'+AElement.Name+'>', [woOpenTag, woEndLine]);
   inherited;
-  Context.Output.Write('html', '</'+AElement.Name+'>', [cboEndLine]);
+  Context.Output.Write('html', '</'+AElement.Name+'>', [woCloseTag, woEndLine]);
 end;
 
 { TmyHome }

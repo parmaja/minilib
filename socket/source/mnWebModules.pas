@@ -77,8 +77,8 @@ type
     FContentLength: Integer;
     FCompressClass: TmnCompressStreamProxyClass;
     FCompressProxy: TmnCompressStreamProxy;
-    FRoot: string; //Document root folder
-    FHost: string;
+    FHomePath: string; //Document root folder
+    FHostURL: string;
     FHttpResult: THttpResult;
     procedure SetCompressClass(AValue: TmnCompressStreamProxyClass);
     procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
@@ -96,8 +96,8 @@ type
     property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
     property HttpResult: THttpResult read FHttpResult write FHttpResult;
     //Document root folder
-    property Root: string read FRoot;
-    property Host: string read FHost;
+    property HomePath: string read FHomePath;
+    property HostURL: string read FHostURL;
   end;
 
   { TmodHttpCommand }
@@ -123,11 +123,13 @@ type
     property Respond: TmodHttpRespond read GetRespond;
   end;
 
+  TmodWebFileModule = class;
+
   { TmodURICommand }
 
   TmodURICommand = class(TmodHttpCommand)
   private
-    function GetModule: TmodWebModule;
+    function GetModule: TmodWebFileModule;
   protected
     function GetDefaultDocument(Root: string): string;
     procedure RespondResult(var Result: TmodRespondResult); override;
@@ -135,7 +137,7 @@ type
     procedure Created; override;
   public
     destructor Destroy; override;
-    property Module: TmodWebModule read GetModule;
+    property Module: TmodWebFileModule read GetModule;
   end;
 
   TmodWebServer = class;
@@ -144,12 +146,9 @@ type
 
   TmodWebModule = class abstract(TmodModule)
   private
-    //FServer: TmodWebServer;
-    procedure SetDefaultDocument(AValue: TStringList);
     procedure SetHomePath(AValue: string);
   protected
     FHomePath: string;
-    FDefaultDocument: TStringList;
     procedure Created; override;
 
     procedure Log(S: string); override;
@@ -160,14 +159,19 @@ type
     destructor Destroy; override;
     property DocumentRoot: string read FHomePath write SetHomePath; //deprecated;
     property HomePath: string read FHomePath write SetHomePath;
-    property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
 
   { TmodWebFileModule }
 
   TmodWebFileModule = class(TmodWebModule)
   protected
+    FDefaultDocument: TStringList;
+    procedure SetDefaultDocument(AValue: TStringList);
     procedure DoRegisterCommands; override;
+    procedure Created; override;
+  public
+    destructor Destroy; override;
+    property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
 
   ThttpModules = class(TmodModules)
@@ -446,23 +450,12 @@ begin
   FHomePath := AValue;
 end;
 
-procedure TmodWebModule.SetDefaultDocument(AValue: TStringList);
-begin
-  FDefaultDocument.Assign(AValue);
-end;
-
 procedure TmodWebModule.Created;
 begin
   inherited;
-  FDefaultDocument := TStringList.Create;
   UseKeepAlive := klvUndefined;
   UseCompressing := True;
-
   FHomePath := '';
-  FDefaultDocument.Add('index.html');
-  FDefaultDocument.Add('index.htm');
-  FDefaultDocument.Add('default.html');
-  FDefaultDocument.Add('default.htm');
 end;
 
 procedure TmodWebModule.DoPrepareRequest(ARequest: TmodRequest);
@@ -489,7 +482,6 @@ end;
 
 destructor TmodWebModule.Destroy;
 begin
-  FreeAndNil(FDefaultDocument);
   inherited Destroy;
 end;
 
@@ -500,6 +492,11 @@ begin
 end;
 
 { TmodWebFileModule }
+
+procedure TmodWebFileModule.SetDefaultDocument(AValue: TStringList);
+begin
+  FDefaultDocument.Assign(AValue);
+end;
 
 procedure TmodWebFileModule.DoRegisterCommands;
 begin
@@ -517,11 +514,27 @@ begin
   }
 end;
 
+procedure TmodWebFileModule.Created;
+begin
+  inherited;
+  FDefaultDocument := TStringList.Create;
+  FDefaultDocument.Add('index.html');
+  FDefaultDocument.Add('index.htm');
+  FDefaultDocument.Add('default.html');
+  FDefaultDocument.Add('default.htm');
+end;
+
+destructor TmodWebFileModule.Destroy;
+begin
+  FreeAndNil(FDefaultDocument);
+  inherited;
+end;
+
 { TmodURICommand }
 
-function TmodURICommand.GetModule: TmodWebModule;
+function TmodURICommand.GetModule: TmodWebFileModule;
 begin
-  Result := (inherited Module) as TmodWebModule;
+  Result := (inherited Module) as TmodWebFileModule;
 end;
 
 function TmodURICommand.GetDefaultDocument(Root: string): string;
@@ -548,8 +561,8 @@ end;
 procedure TmodURICommand.Prepare(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.FRoot := Module.HomePath;
-  Respond.FHost := Request.Header.ReadString('Host');
+  Respond.FHomePath := Module.HomePath;
+  Respond.FHostURL := Request.Header.ReadString('Host');
 end;
 
 procedure TmodURICommand.Created;
@@ -587,7 +600,7 @@ end;
 
 procedure TmodHttpGetCommand.RespondResult(var Result: TmodRespondResult);
 var
-  aDocument, aRoot: string;
+  aDocument, aHomePath: string;
 begin
 (*
 
@@ -600,24 +613,24 @@ begin
 
 *)
 
-  aRoot := ExcludePathDelimiter(Respond.Root);
+  aHomePath := ExcludePathDelimiter(Respond.HomePath);
 
   //if (Request.Path = '') or StartsDelimiter(Request.Path) or StartsStr('.', Request.Path) then
   if (Request.Path = '') or StartsDelimiter(Request.Path) or StartsStr('./', Request.Path) or StartsStr('../', Request.Path) then //* some file or folder names starts with . like '.well-known/acme-challenge/'
-    aDocument := aRoot + Request.Path
+    aDocument := aHomePath + Request.Path
   else
-    aDocument := IncludePathDelimiter(aRoot) + Request.Path;
+    aDocument := IncludePathDelimiter(aHomePath) + Request.Path;
 
-  aRoot := CorrectPath(aRoot);
+  aHomePath := CorrectPath(aHomePath);
   aDocument := CorrectPath(aDocument);
 
-  aRoot := ExpandFile(aRoot);
+  aHomePath := ExpandFile(aHomePath);
   aDocument := ExpandFile(aDocument);
 
   if EndsDelimiter(aDocument) then //get the default file if it not defined
      aDocument := GetDefaultDocument(aDocument);
 
-  if not StartsStr(aRoot, aDocument) then //check if out of root :)
+  if not StartsStr(aHomePath, aDocument) then //check if out of root :)
   begin
     Respond.HttpResult := hrError;
   end
@@ -666,7 +679,7 @@ begin
   inherited;
   Respond.Stream.WriteCommand('OK');
   aFileName := Request.Params.Values['FileName'];
-  aFile := TFileStream.Create(Respond.Root + aFileName, fmCreate);
+  aFile := TFileStream.Create(Respond.HomePath + aFileName, fmCreate);
   try
     Respond.Stream.ReadStream(aFile, Request.ContentLength);
   finally
@@ -708,7 +721,7 @@ var
   aFileName: string;
 begin
   inherited;
-  aFileName := IncludeTrailingPathDelimiter(Respond.Root) + Request.Path;
+  aFileName := IncludeTrailingPathDelimiter(Respond.HomePath) + Request.Path;
   if FileExists(aFileName) then
     DeleteFile(aFileName);
   Respond.Stream.WriteCommand('OK');
