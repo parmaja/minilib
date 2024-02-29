@@ -23,6 +23,9 @@ uses
 
 type
   TmodBootstrapModule = class(TmodWebModule)
+  public
+    CachePath: string;
+    HomeUrl: string;
   end;
 
   TmnwBootstrap = class(THTML)

@@ -49,7 +49,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, Variants, RTTI,
-	mnUtils, mnClasses, mnStreams;
+	mnUtils, mnClasses, mnStreams, mnLogs;
 
 type
 
@@ -88,7 +88,6 @@ type
     FID: String;
     FName: String;
     FStyle: String;
-    FTags: String;
     FAttributes: TmnwAttributes;
   protected
     procedure Update; virtual;
@@ -107,13 +106,14 @@ type
     property Root: TmnwSchema read FRoot;
     property Parent: TmnwElement read FParent;
 
+    function GetPath: string; virtual;
+
     procedure Render(Context: TmnwContext; vLevel: Integer);
     procedure Compose;
 
     property Name: String read FName write FName;
     property Style: String read FStyle write FStyle;
     property ID: String read FID write FID;
-    property Tags: String read FTags write FTags; //etc: 'Key,Data'
     property Comment: String read FComment write FComment;
     property Attributes: TmnwAttributes read FAttributes;
   end;
@@ -152,7 +152,6 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
-    function Render(Context: TmnwContext): Boolean; overload;
     function Render(RendererClass: TmnwRendererClass; AOutput: TmnwOutput): Boolean; overload;
     function Render(RendererClass: TmnwRendererClass; AStream: TStream): Boolean; overload;
     function Render(RendererClass: TmnwRendererClass; AStrings: TStrings): Boolean; overload;
@@ -168,6 +167,7 @@ type
     procedure DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes); virtual;
   public
     procedure Render(AElement: TmnwElement; Context: TmnwContext; vLevel: Integer);
+    procedure Respond(AElement: TmnwElement; AStream: TStream); virtual;
     constructor Create; virtual; //usfull for creating it by RendererClass.Create
     procedure CollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes);
   end;
@@ -259,7 +259,17 @@ type
       TImage = class(TmnwElement)
       public
         Source: string;
+        AltText: string;
         Width, Height: double;
+      end;
+
+      { TMemoryImage }
+
+      TMemoryImage = class(TImage)
+      public
+        Data: TMemoryStream;
+        constructor Create; override;
+        destructor Destroy; override;
       end;
 
       { Break }
@@ -318,6 +328,23 @@ type
 
       TBreakHTML = class(TElementHTML)
       public
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
+      end;
+
+      { TImageHTML }
+
+      TImageHTML = class(TElementHTML)
+      public
+        procedure DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes); override;
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
+      end;
+
+      { TMemoryImageHTML }
+
+      TMemoryImageHTML = class(TImageHTML)
+      public
+        procedure Respond(AElement: TmnwElement; AStream: TStream); override;
+        procedure DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes); override;
         procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
       end;
 
@@ -381,7 +408,9 @@ var
   o: TmnwElement;
 begin
   for o in AElement do
-    (o as TmnwElement).Render(Context, vLevel);
+  begin
+    o.Render(Context, vLevel);
+  end;
 end;
 
 procedure TmnwElementRenderer.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
@@ -404,6 +433,10 @@ begin
   finally
     lAttributes.Free;
   end;
+end;
+
+procedure TmnwElementRenderer.Respond(AElement: TmnwElement; AStream: TStream);
+begin
 end;
 
 constructor TmnwElementRenderer.Create;
@@ -464,10 +497,14 @@ begin
   Result := TmnwElementRenderer;
   for o in Self do
   begin
-    if AObjectClass.InheritsFrom(o.ObjectClass) then
+    if AObjectClass = o.ObjectClass then
     begin
       Result := o.RendererClass;
       break;
+    end
+    else if AObjectClass.InheritsFrom(o.ObjectClass) then
+    begin
+      Result := o.RendererClass;
     end;
   end;
 end;
@@ -479,6 +516,9 @@ begin
   RegisterRenderer(THTML.TPage, TPageHTML);
   RegisterRenderer(THTML.TParagraph, TParagrapHTML);
   RegisterRenderer(THTML.TBreak, TBreakHTML);
+  RegisterRenderer(THTML.TBreak, TBreakHTML);
+  RegisterRenderer(THTML.TImage, TImageHTML);
+  RegisterRenderer(THTML.TMemoryImage, TMemoryImageHTML);
 end;
 
 { TmnwHTMLRenderer.TDocumentHTML }
@@ -521,11 +561,11 @@ end;
 
 procedure TmnwHTMLRenderer.TParagrapHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
 var
-  E: THTML.TParagraph;
+  e: THTML.TParagraph;
 begin
-  E := AElement as THTML.TParagraph;
+  e := AElement as THTML.TParagraph;
   Context.Output.Write('html', '<p>', []);
-  Context.Output.Write('html', E.Text, []);
+  Context.Output.Write('html', e.Text, []);
   inherited;
   Context.Output.Write('html', '</p>', [cboEndLine]);
 end;
@@ -537,13 +577,55 @@ begin
   Context.Output.Write('html', '</br>', [cboEndLine]);
 end;
 
+{ TmnwHTMLRenderer.TImageHTML }
+
+procedure TmnwHTMLRenderer.TImageHTML.DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes);
+begin
+  Attributes['src'] := (AElement as THTML.TImage).Source;
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TImageHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
+var
+  e: THTML.TImage;
+begin
+  e := AElement as THTML.TImage;
+  Context.Output.Write('html', '<img '+Attributes.GetText(True)+'>', []);
+  Context.Output.Write('html', e.AltText, []);
+  inherited;
+  Context.Output.Write('html', '</img>', [cboEndLine]);
+end;
+
+{ TmnwHTMLRenderer.TMemoryImageHTML }
+
+procedure TmnwHTMLRenderer.TMemoryImageHTML.Respond(AElement: TmnwElement; AStream: TStream);
+begin
+  AStream.CopyFrom((AElement as THTML.TMemoryImage).Data, 0);
+end;
+
+procedure TmnwHTMLRenderer.TMemoryImageHTML.DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes);
+begin
+  inherited;
+  Attributes['src'] := AElement.GetPath;
+end;
+
+procedure TmnwHTMLRenderer.TMemoryImageHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
+var
+  e: THTML.TMemoryImage;
+begin
+  e := AElement as THTML.TMemoryImage;
+  Context.Output.Write('html', '<img '+Attributes.GetText(True)+'>', []);
+  Context.Output.Write('html', e.AltText, []);
+  inherited;
+  Context.Output.Write('html', '</img>', [cboEndLine]);
+end;
+
 { TmnwSchema }
 
 constructor TmnwSchema.Create;
 begin
   inherited Create;
   FRoot := Self;
-  Compose;
 end;
 
 destructor TmnwSchema.Destroy;
@@ -568,11 +650,33 @@ begin
   inherited Added(Item);
 end;
 
+{ THTML.TMemoryImage }
+
+constructor THTML.TMemoryImage.Create;
+begin
+  inherited;
+  Data := TMemoryStream.Create;
+end;
+
+destructor THTML.TMemoryImage.Destroy;
+begin
+  FreeAndNil(Data);
+  inherited;
+end;
+
 { TmnwElement }
 
 function TmnwElement.This: TmnwElement;
 begin
   Result := Self;
+end;
+
+function TmnwElement.GetPath: string;
+begin
+  if (Parent <>nil) and (Name <> '') then
+    Result := IncludeURLDelimiter(Parent.GetPath) + Name
+  else
+    Result := '';
 end;
 
 procedure TmnwElement.Update;
@@ -686,14 +790,15 @@ function TmnwSchema.Render(RendererClass: TmnwRendererClass; AOutput: TmnwOutput
 var
   Context: TmnwContext;
 begin
+  Result := False;
   Context.Output := AOutput;
   Context.Renderer := RendererClass.Create;
   try
-    Result := Render(Context);
+    Render(Context, 0);
+    Result := True;
   finally
     FreeAndNil(Context.Renderer);
   end;
-  Result := True;
 end;
 
 function TmnwSchema.Render(RendererClass: TmnwRendererClass; AStream: TStream): Boolean;
@@ -747,42 +852,6 @@ begin
     FStream.WriteUtf8String(S + sWinEndOfLine)
   else
     FStream.WriteUtf8String(S)
-end;
-
-function TmnwSchema.Render(Context: TmnwContext): Boolean;
-var
-  AParams: TStringList;
-  o: TmnwElement;
-  AElement: TmnwElement;
-  Renderer: TmnwElementRenderer;
-  RendererClass: TmnwElementRendererClass;
-begin
-  Check;
-  AParams := TStringList.Create;
-  try
-    for o in Self do
-    begin
-      AElement := (o as TmnwElement);
-
-      if (Context.Renderer <> nil) then
-      begin
-        RendererClass := Context.Renderer.ObjectClasses.FindRenderer(TmnwElementClass(AElement.ClassType));
-        if RendererClass <> nil then
-        begin
-          Renderer := RendererClass.Create;
-          try
-            Renderer.Render(AElement, Context, 0);
-          finally
-            Renderer.Free;
-          end;
-        end;
-      end;
-    end;
-
-  finally
-    FreeAndNil(AParams);
-  end;
-  Result := True;
 end;
 
 { TmnwRenderer }

@@ -148,6 +148,7 @@ procedure TMain.HttpServerBeforeOpen(Sender: TObject);
 var
   aRoot:string;
   aWebModule: TmodWebModule;
+  aHomeModule: THomeModule;
 begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
@@ -156,6 +157,15 @@ begin
   if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
 
+  aHomeModule := HttpServer.Modules.Find<THomeModule>;
+  if aHomeModule <> nil then
+  begin
+    aHomeModule.AliasName := 'home';
+    aHomeModule.DocumentRoot := aRoot;
+    aHomeModule.CachePath := ExtractFilePath(Application.ExeName) + 'cache';
+    aHomeModule.HomeUrl := 'http://localhost:' + PortEdit.Text;
+  end;
+
   aWebModule := HttpServer.Modules.Find<TmodWebModule>;
   if aWebModule <> nil then
   begin
@@ -163,6 +173,7 @@ begin
     aWebModule.DocumentRoot := aRoot;
 
   end;
+
   HttpServer.Port := PortEdit.Text;
   if UseSSLChk.Checked then
   begin

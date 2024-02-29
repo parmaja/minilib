@@ -23,7 +23,7 @@ type
 
   { TmyHtml }
 
-  TmyHome = class(TmnwHTMLSchema)
+  TmyHome = class(THTML)
   private
   public
     type
@@ -43,7 +43,7 @@ type
     type
       TMyTagHTML = class(TmnwElementRenderer)
       public
-        procedure DoRender(AElement: TmnwElement; AContext: TmnwContext; vLevel: Integer); override;
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer); override;
       end;
 
   protected
@@ -64,11 +64,11 @@ end;
 
 { TmyHome.TMyTagHTML }
 
-procedure TmyHomeRenderer.TMyTagHTML.DoRender(AElement: TmnwElement; AContext: TmnwContext; vLevel: Integer);
+procedure TmyHomeRenderer.TMyTagHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext; vLevel: Integer);
 begin
-  AContext.Output.Write('html', '<'+AElement.Name+'>', [cboEndLine]);
+  Context.Output.Write('html', '<'+AElement.Name+'>', [cboEndLine]);
   inherited;
-  AContext.Output.Write('html', '</'+AElement.Name+'>', [cboEndLine]);
+  Context.Output.Write('html', '</'+AElement.Name+'>', [cboEndLine]);
 end;
 
 { TmyHome }
@@ -76,11 +76,13 @@ end;
 procedure TmyHome.DoCompose;
 begin
   Name := 'HelloWorld';
-  with Add<TDocument>() do
+  with This.Add<TDocument>('html') do
   begin
-    with Add<TPage>() do
+    Title := 'MyHome';
+    Direction := dirLTR;
+    with This.Add<TPage>('page') do
     begin
-      with Add<TMyTag>('MyTag1') do
+      with This.Add<TMyTag>('MyTag1') do
       begin
       end;
     end;
@@ -101,6 +103,7 @@ begin
   Strings := TStringList.Create;
   try
     HTML:= TmyHome.Create;
+    HTML.Compose;
     HTML.Render(TmyHomeRenderer, Strings);
     for s in Strings do
       WriteLn(s);
