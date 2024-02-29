@@ -146,9 +146,9 @@ type
   private
     //FServer: TmodWebServer;
     procedure SetDefaultDocument(AValue: TStringList);
-    procedure SetDocumentRoot(AValue: string);
+    procedure SetHomePath(AValue: string);
   protected
-    FDocumentRoot: string;
+    FHomePath: string;
     FDefaultDocument: TStringList;
     procedure Created; override;
 
@@ -158,7 +158,8 @@ type
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
   public
     destructor Destroy; override;
-    property DocumentRoot: string read FDocumentRoot write SetDocumentRoot;
+    property DocumentRoot: string read FHomePath write SetHomePath; //deprecated;
+    property HomePath: string read FHomePath write SetHomePath;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
 
@@ -188,7 +189,7 @@ type
   protected
     function CreateModules: TmodModules; override;
   public
-    procedure AddAcmeChallenge(const AName: string = '.well-known'; const ADocumentRoot: string = '');
+    procedure AddAcmeChallenge(const AName: string = '.well-known'; const AHomePath: string = '');
   end;
 
   TmodWebServer = class(TmodCustomWebServer)
@@ -438,11 +439,11 @@ end;
 
 { TmodWebModule }
 
-procedure TmodWebModule.SetDocumentRoot(AValue: string);
+procedure TmodWebModule.SetHomePath(AValue: string);
 begin
-  if FDocumentRoot =AValue then Exit;
-
-  FDocumentRoot :=AValue;
+  if FHomePath = AValue then
+	  exit;
+  FHomePath := AValue;
 end;
 
 procedure TmodWebModule.SetDefaultDocument(AValue: TStringList);
@@ -457,7 +458,7 @@ begin
   UseKeepAlive := klvUndefined;
   UseCompressing := True;
 
-  FDocumentRoot := '';
+  FHomePath := '';
   FDefaultDocument.Add('index.html');
   FDefaultDocument.Add('index.htm');
   FDefaultDocument.Add('default.html');
@@ -547,7 +548,7 @@ end;
 procedure TmodURICommand.Prepare(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.FRoot := Module.DocumentRoot;
+  Respond.FRoot := Module.HomePath;
   Respond.FHost := Request.Header.ReadString('Host');
 end;
 
@@ -742,13 +743,13 @@ begin
   Result := TmodWebModules.Create(Self);
 end;
 
-procedure TmodCustomWebServer.AddAcmeChallenge(const AName: string; const ADocumentRoot: string);
+procedure TmodCustomWebServer.AddAcmeChallenge(const AName: string; const AHomePath: string);
 begin
   //* http://localhost/.well-known/acme-challenge/index.html
   with TmodWebFileModule.Create(AName, '.well-known', ['http/1.1'], Modules) do
   begin
     Level := -1;
-    DocumentRoot := ADocumentRoot;
+    HomePath := AHomePath;
   end;
   //* use certbot folder to "Application.Location + 'cert'" because certbot will create folder .well-known
   Port := '80';

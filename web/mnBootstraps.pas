@@ -25,7 +25,8 @@ type
   TmodBootstrapModule = class(TmodWebModule)
   public
     CachePath: string;
-    HomeUrl: string;
+    HomeURL: string;
+    HostURL: string;
   end;
 
   TmnwBootstrap = class(THTML)

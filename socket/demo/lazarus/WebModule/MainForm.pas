@@ -146,32 +146,32 @@ end;
 
 procedure TMain.HttpServerBeforeOpen(Sender: TObject);
 var
-  aRoot:string;
+  aHomePath: string;
   aWebModule: TmodWebModule;
   aHomeModule: THomeModule;
 begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
 
-  aRoot := RootEdit.Text;
-  if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
-    aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
+  aHomePath := RootEdit.Text;
+  if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
+    aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
 
   aHomeModule := HttpServer.Modules.Find<THomeModule>;
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := 'home';
-    aHomeModule.DocumentRoot := aRoot;
+    aHomeModule.HomePath := aHomePath;
+    aHomeModule.HostURL := 'http://localhost:' + PortEdit.Text;
+    aHomeModule.HomeUrl := aHomeModule.HostURL + '/' + aHomeModule.AliasName;
     aHomeModule.CachePath := ExtractFilePath(Application.ExeName) + 'cache';
-    aHomeModule.HomeUrl := 'http://localhost:' + PortEdit.Text;
   end;
 
   aWebModule := HttpServer.Modules.Find<TmodWebModule>;
   if aWebModule <> nil then
   begin
     aWebModule.AliasName := ModuleNameEdit.Text;
-    aWebModule.DocumentRoot := aRoot;
-
+    aWebModule.HomePath := aHomePath;
   end;
 
   HttpServer.Port := PortEdit.Text;
@@ -310,7 +310,7 @@ begin
   begin
     //.well-known/acme-challenge/
     //aWebModule.AliasName := '.well-known';
-    aWebModule.DocumentRoot := Application.Location + 'cert/.well-known/';
+    aWebModule.HomePath := Application.Location + 'cert/.well-known/';
     //* use certbot folder to "Application.Location + cert" because certbot will create folder .well-known
   end;
 end;

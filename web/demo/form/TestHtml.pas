@@ -80,11 +80,8 @@ begin
   begin
     Title := 'MyHome';
     Direction := dirLTR;
-    with This.Add<TPage>('page') do
+    with This.Add<TMyTag>('MyTag1') do
     begin
-      with This.Add<TMyTag>('MyTag1') do
-      begin
-      end;
     end;
   end;
 end;
@@ -99,16 +96,19 @@ var
   HTML: TmnwSchema;
   Strings: TStringList;
   s: string;
+  Renderer: TmyHomeRenderer;
 begin
   Strings := TStringList.Create;
   try
     HTML:= TmyHome.Create;
     HTML.Compose;
-    HTML.Render(TmyHomeRenderer, Strings);
+    Renderer := TmyHomeRenderer.Create;
+    HTML.Render(Renderer, Strings);
     for s in Strings do
       WriteLn(s);
   finally
     FreeAndNil(Strings);
+    FreeAndNil(Renderer);
   end;
   WriteLn( 'Press Enter to exit');
   ReadLn;
