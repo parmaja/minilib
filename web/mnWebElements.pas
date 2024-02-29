@@ -341,7 +341,7 @@ type
 
       { TMemoryImageHTML }
 
-      TMemoryImageHTML = class(TImageHTML)
+      TMemoryImageHTML = class(TElementHTML)
       public
         procedure Respond(AElement: TmnwElement; AStream: TStream); override;
         procedure DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes); override;
@@ -497,7 +497,7 @@ begin
   Result := TmnwElementRenderer;
   for o in Self do
   begin
-    if AObjectClass = o.ObjectClass then
+    if AObjectClass.ClassType = o.ObjectClass.ClassType then
     begin
       Result := o.RendererClass;
       break;
