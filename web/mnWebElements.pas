@@ -73,6 +73,7 @@ type
   end;
 
   TmnwContext = record
+    DataObject: TObject;
     Renderer: TmnwRenderer;
     Output: TmnwOutput;
   end;
@@ -90,6 +91,7 @@ type
     FComment: String;
     FID: String;
     FName: String;
+    FStyleClass: String;
     FStyle: String;
     FAttributes: TmnwAttributes;
   protected
@@ -99,6 +101,7 @@ type
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
     procedure DoCompose; virtual;
   public
+    Composed: Boolean;
     constructor Create; virtual;
     destructor Destroy; override;
     function Add<O: TmnwElement>(const AName: String = ''; const AID: String = ''): O; overload;
@@ -117,6 +120,7 @@ type
 
     property Route: String read FRoute write FRoute;
     property Name: String read FName write FName;
+    property StyleClass: String read FStyleClass write FStyleClass;
     property Style: String read FStyle write FStyle;
     property ID: String read FID write FID;
     property Comment: String read FComment write FComment;
@@ -158,9 +162,9 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
-    function Render(Renderer: TmnwRenderer; AOutput: TmnwOutput): Boolean; overload;
-    function Render(Renderer: TmnwRenderer; AStream: TStream): Boolean; overload;
-    function Render(Renderer: TmnwRenderer; AStrings: TStrings): Boolean; overload;
+    function Render(Renderer: TmnwRenderer; DataObject: TObject; AOutput: TmnwOutput): Boolean; overload;
+    function Render(Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): Boolean; overload;
+    function Render(Renderer: TmnwRenderer; DataObject: TObject; AStrings: TStrings): Boolean; overload;
   end;
 
   { TmnwElementRenderer }
@@ -205,7 +209,8 @@ type
       TRegObjects = class(TmnObjectList<TRegObject>)
       public
         function FindDerived(AObjectClass: TmnwElementClass): TmnwElementClass;
-        function FindRenderer(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
+        function Find(AObjectClass: TmnwElementClass; Nearst: Boolean = True): TRegObject;
+        function FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
       end;
   protected
     FObjectClasses: TRegObjects;
@@ -214,8 +219,8 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
 
-    procedure RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass);
-    function FindRenderer(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
+    procedure RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False);
+    function FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
     function CreateRenderer(AObjectClass: TmnwElementClass): TmnwElementRenderer; overload;
     function CreateRenderer(AObject: TmnwElement): TmnwElementRenderer; overload;
 
@@ -224,6 +229,22 @@ type
   end;
 
   TmnwSchemaClass = class of TmnwSchema;
+
+  TmnwSchemaObject = class(TmnNamedObject)
+  public
+    Schema: TmnwSchema;
+  end;
+
+  { TmnwSchemas }
+
+  TmnwSchemas = class(TmnNamedObjectList<TmnwSchemaObject>)
+  protected
+    procedure DoRespond(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream); virtual;
+  public
+    procedure RegisterSchema(AName: string; Schema: TmnwSchema);
+    function Respond(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): TmnwSchema;
+    function Render(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): TmnwSchema;
+  end;
 
   TDirection = (dirUnkown, dirLTR, dirRTL);
 
@@ -234,10 +255,13 @@ type
   THTML =class(TmnwSchema)
   public
     type
+      THTMLElement = class(TmnwElement)
+
+      end;
 
       { TContainer }
 
-      TContainer = class abstract(TmnwElement)
+      TContainer = class abstract(THTMLElement)
       protected
         procedure Added(Item: TmnwElement); override;
       public
@@ -245,7 +269,7 @@ type
 
       { TDocument }
 
-      TDocument = class(TmnwElement)
+      TDocument = class(THTMLElement)
       private
         FTitle: string;
         FVersion: integer;
@@ -256,16 +280,35 @@ type
       end;
 
       //* Custom Tag
-      TTag = class(TmnwElement)
+      TTag = class(THTMLElement)
       public
       end;
 
-      TParagraph = class(TmnwElement)
+      TParagraph = class(THTMLElement)
       public
         Text: string;
       end;
 
-      TImage = class(TmnwElement)
+      { TEdit }
+
+      TInput = class(THTMLElement)
+      public
+        Caption: string;
+        Text: string;
+        PlaceHolder: string;
+        EditType: string;
+        Width, Height: double;
+        procedure Created; override;
+      end;
+
+      { TInputPassword }
+
+      TInputPassword = class(TInput)
+      public
+        procedure Created; override;
+      end;
+
+      TImage = class(THTMLElement)
       public
         Source: string;
         AltText: string;
@@ -283,7 +326,7 @@ type
 
       { Break }
 
-      TBreak = class(TmnwElement)
+      TBreak = class(THTMLElement)
       private
       public
       end;
@@ -300,6 +343,7 @@ type
 
       TElementHTML = class(TmnwElementRenderer)
       protected
+        procedure AddHeader(AElement: TmnwElement; Context: TmnwContext); virtual;
       end;
 
       { TDocumentHTML }
@@ -329,6 +373,17 @@ type
       TBreakHTML = class(TElementHTML)
       public
         procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext); override;
+      end;
+
+      { TInputHTML }
+
+      TInputHTML = class(TElementHTML)
+      public
+        procedure DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes); override;
+        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext); override;
+      end;
+
+      TInputPasswordHTML = class(TInputHTML)
       end;
 
       { TImageHTML }
@@ -436,6 +491,10 @@ begin
     Attributes.Values['id'] := AElement.ID;
   if AElement.Name <> '' then
     Attributes.Values['name'] := AElement.Name;
+  if AElement.StyleClass <> '' then
+    Attributes.Values['classname'] := AElement.StyleClass;
+  if AElement.Style <> '' then
+    Attributes.Values['style'] := AElement.Style;
   DoCollectAttributes(AElement, Attributes);
 end;
 
@@ -474,23 +533,86 @@ begin
   end;
 end;
 
-function TmnwRenderer.TRegObjects.FindRenderer(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
+function TmnwRenderer.TRegObjects.Find(AObjectClass: TmnwElementClass; Nearst: Boolean): TRegObject;
+var
+  o: TRegObject;
+  i: Integer;
+begin
+  Result := nil;
+  for i:= Count - 1  downto 0 do
+  begin
+    o := Items[i];
+    if AObjectClass = o.ObjectClass then
+    begin
+      Result := o;
+      break;
+    end
+    else if Nearst and AObjectClass.InheritsFrom(o.ObjectClass) then
+    begin
+      Result := o;
+    end;
+  end;
+end;
+
+function TmnwRenderer.TRegObjects.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
 var
   o: TRegObject;
 begin
-  Result := TmnwElementRenderer;
-  for o in Self do
+  o := Find(AObjectClass);
+  if o <> nil then
+    Result := o.RendererClass
+  else
+    Result := TmnwElementRenderer;
+end;
+
+{ TmnwSchemas }
+
+procedure TmnwSchemas.DoRespond(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream);
+begin
+
+end;
+
+procedure TmnwSchemas.RegisterSchema(AName: string; Schema: TmnwSchema);
+var
+  SchemaObject: TmnwSchemaObject;
+begin
+  SchemaObject:=TmnwSchemaObject.Create;
+  SchemaObject.Name := AName;
+	SchemaObject.Schema := Schema;
+  inherited Add(SchemaObject);
+end;
+
+function TmnwSchemas.Respond(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): TmnwSchema;
+var
+  SchemaObject: TmnwSchemaObject;
+begin
+  {    aPath := Request.Path;
+      Delete(aPath, 1, 1);
+      (Module as THomeModule).HomeSchema.FindByPath(aPath);}
+  SchemaObject := Find(Route);
+  if SchemaObject <> nil then
   begin
-    if AObjectClass = o.ObjectClass then
-    begin
-      Result := o.RendererClass;
-      break;
-    end
-    else if AObjectClass.InheritsFrom(o.ObjectClass) then
-    begin
-      Result := o.RendererClass;
-    end;
-  end;
+    Result := SchemaObject.Schema;
+  end
+  else
+    Result := First.Schema;
+
+  Result.Render(Renderer, DataObject, AStream);
+end;
+
+function TmnwSchemas.Render(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): TmnwSchema;
+var
+  SchemaObject: TmnwSchemaObject;
+begin
+  SchemaObject := Find(Route);
+  if SchemaObject <> nil then
+  begin
+    Result := SchemaObject.Schema;
+  end
+  else
+    Result := First.Schema;
+
+  Result.Render(Renderer, DataObject, AStream);
 end;
 
 procedure TmnwHTMLRenderer.Created;
@@ -499,9 +621,16 @@ begin
   RegisterRenderer(THTML.TDocument ,TDocumentHTML);
   RegisterRenderer(THTML.TParagraph, TParagrapHTML);
   RegisterRenderer(THTML.TBreak, TBreakHTML);
-  RegisterRenderer(THTML.TBreak, TBreakHTML);
+  RegisterRenderer(THTML.TInput, TInputHTML);
+  RegisterRenderer(THTML.TInputPassword, TInputPasswordHTML);
   RegisterRenderer(THTML.TImage, TImageHTML);
   RegisterRenderer(THTML.TMemoryImage, TMemoryImageHTML);
+end;
+
+{ TmnwHTMLRenderer.TElementHTML }
+
+procedure TmnwHTMLRenderer.TElementHTML.AddHeader(AElement: TmnwElement; Context: TmnwContext);
+begin
 end;
 
 { TmnwHTMLRenderer.TDocumentHTML }
@@ -520,13 +649,30 @@ end;
 procedure TmnwHTMLRenderer.TDocumentHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext);
 var
   e: THTML.TDocument;
+  o: TmnwElement;
+  r: TElementHTML;
 begin
   e := AElement as THTML.TDocument;
+  Log.WriteLn(ClassName);
   Context.Output.Write('html', '<!DOCTYPE html>', [woEndLine]);
   Context.Output.Write('html', '<html' + Attributes.GetText(True) + '>', [woOpenTag, woEndLine]);
   Context.Output.Write('html', '<head>', [woOpenTag, woEndLine]);
   Context.Output.Write('html', '<title>'+ e.Title + '</title>', [woEndLine]);
+  AddHeader(AElement, Context);
   //* Collect head from childs
+  {for o in AElement do
+  begin
+    if o is THTML.THTMLElement then
+    begin
+      r := Renderer.CreateRenderer(o) as TElementHTML;
+      try
+        r.AddHeader(o, Context);
+      finally
+        r.free;
+      end;
+    end;
+  end;}
+
   Context.Output.Write('html', '</head>', [woCloseTag, woEndLine]);
   Context.Output.Write('html', '<body>', [woOpenTag, woEndLine]);
   inherited;
@@ -552,6 +698,26 @@ end;
 procedure TmnwHTMLRenderer.TBreakHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext);
 begin
   Context.Output.Write('html', '<br />', [woEndLine]);
+end;
+
+{ TmnwHTMLRenderer.TInputHTML }
+
+procedure TmnwHTMLRenderer.TInputHTML.DoCollectAttributes(AElement: TmnwElement; Attributes: TmnwAttributes);
+begin
+  Attributes['placeholder'] := (AElement as THTML.TInput).PlaceHolder;
+  Attributes['type'] := (AElement as THTML.TInput).EditType;
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TInputHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext);
+var
+  e: THTML.TInput;
+begin
+  e := AElement as THTML.TInput;
+  if e.Caption <> '' then
+    Context.Output.Write('html', '<label for="'+e.Name+'" >' + e.Caption + '</label>', [woOpenTag, woCloseTag, woEndLine]);
+  Context.Output.Write('html', '<input '+ Attributes.GetText(True)+' />', [woOpenTag, woCloseTag, woEndLine]);
+  inherited;
 end;
 
 { TmnwHTMLRenderer.TImageHTML }
@@ -610,26 +776,40 @@ begin
   inherited;
 end;
 
-procedure TmnwRenderer.RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass);
+procedure TmnwRenderer.RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean);
 var
   aRegObject: TRegObject;
 begin
-  aRegObject := TRegObject.Create;
-  aRegObject.ObjectClass := AObjectClass;
-  aRegObject.RendererClass := ARendererClass;
-  ObjectClasses.Add(aRegObject);
+  aRegObject := ObjectClasses.Find(AObjectClass, False);
+  if aRegObject <> nil then
+  begin
+    log.WriteLn('Replacing : '+AObjectClass.ClassName);
+    if Replace and (AObjectClass.InheritsFrom(aRegObject.ObjectClass)) then
+      aRegObject.RendererClass := ARendererClass
+    else
+      raise Exception.Create('You can reregister same class: '+ AObjectClass.ClassName);
+  end
+  else
+  begin
+    //TmnwElementRendererClass: FindRenderer(AObjectClass);
+    log.WriteLn(AObjectClass.ClassName);
+    aRegObject := TRegObject.Create;
+    aRegObject.ObjectClass := AObjectClass;
+    aRegObject.RendererClass := ARendererClass;
+    ObjectClasses.Add(aRegObject);
+  end;
 end;
 
-function TmnwRenderer.FindRenderer(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
+function TmnwRenderer.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
 begin
-  Result := ObjectClasses.FindRenderer(AObjectClass);
+  Result := ObjectClasses.FindRendererClass(AObjectClass);
 end;
 
 function TmnwRenderer.CreateRenderer(AObjectClass: TmnwElementClass): TmnwElementRenderer;
 var
   RendererClass: TmnwElementRendererClass;
 begin
-  RendererClass := FindRenderer(AObjectClass);
+  RendererClass := FindRendererClass(AObjectClass);
   if RendererClass <> nil then
     Result := RendererClass.Create(Self)
   else
@@ -646,6 +826,22 @@ end;
 procedure THTML.TContainer.Added(Item: TmnwElement);
 begin
   inherited Added(Item);
+end;
+
+{ THTML.TInput }
+
+procedure THTML.TInput.Created;
+begin
+  inherited;
+  EditType := 'text';
+end;
+
+{ THTML.TInputPassword }
+
+procedure THTML.TInputPassword.Created;
+begin
+  inherited;
+  EditType := 'password';
 end;
 
 { THTML.TMemoryImage }
@@ -806,18 +1002,32 @@ end;
 
 { TmnwSchema }
 
-function TmnwSchema.Render(Renderer: TmnwRenderer; AOutput: TmnwOutput): Boolean;
+function TmnwSchema.Render(Renderer: TmnwRenderer; DataObject: TObject; AOutput: TmnwOutput): Boolean;
 var
   Context: TmnwContext;
 begin
   Result := False;
   Context.Output := AOutput;
   Context.Renderer := Renderer;
+  Context.DataObject := DataObject;
   Render(Context);
   Result := True;
 end;
 
-function TmnwSchema.Render(Renderer: TmnwRenderer; AStream: TStream): Boolean;
+function TmnwSchema.Render(Renderer: TmnwRenderer; DataObject: TObject; AStrings: TStrings): Boolean;
+var
+  AStringStream: TStringStream;
+begin
+  AStringStream := TStringStream.Create;
+  try
+    Result := Render(Renderer, DataObject, AStringStream);
+    AStrings.Text := AStringStream.DataString;
+  finally
+    FreeAndNil(AStringStream);
+  end;
+end;
+
+function TmnwSchema.Render(Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): Boolean;
 var
   Writer: TmnwWriter;
   Output: TmnwOutput;
@@ -826,24 +1036,11 @@ begin
   Output := TmnwOutput.Create;
   Output.Add(Writer);
   try
-    Result := Render(Renderer, Output);
+    Result := Render(Renderer, DataObject, Output);
   finally
     FreeAndNil(Output);
   end;
   Result := True;
-end;
-
-function TmnwSchema.Render(Renderer: TmnwRenderer; AStrings: TStrings): Boolean;
-var
-  AStringStream: TStringStream;
-begin
-  AStringStream := TStringStream.Create;
-  try
-    Result := Render(Renderer, AStringStream);
-    AStrings.Text := AStringStream.DataString;
-  finally
-    FreeAndNil(AStringStream);
-  end;
 end;
 
 procedure TmnwElement.Compose;
@@ -853,6 +1050,7 @@ begin
   DoCompose;
   for o in Self do
     o.Compose;
+  Composed := True;
 end;
 
 constructor TmnwWriter.Create(AName: string; AStream: TStream);
