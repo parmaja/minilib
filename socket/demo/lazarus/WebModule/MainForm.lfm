@@ -36,7 +36,7 @@ object Main: TMain
     ParentFont = False
     ReadOnly = True
     ScrollBars = ssVertical
-    TabOrder = 0
+    TabOrder = 1
   end
   object Panel1: TPanel
     Left = 0
@@ -47,7 +47,7 @@ object Main: TMain
     BevelOuter = bvNone
     ClientHeight = 116
     ClientWidth = 536
-    TabOrder = 1
+    TabOrder = 0
     object Panel2: TPanel
       Left = 0
       Height = 26
@@ -67,7 +67,7 @@ object Main: TMain
         Anchors = [akTop, akRight]
         BorderSpacing.InnerBorder = 4
         Caption = 'Exit'
-        TabOrder = 0
+        TabOrder = 2
         OnClick = ExitBtnClick
       end
       object StopBtn: TButton
@@ -90,7 +90,8 @@ object Main: TMain
         Align = alLeft
         BorderSpacing.InnerBorder = 4
         Caption = '&Start'
-        TabOrder = 2
+        Default = True
+        TabOrder = 0
         OnClick = StartBtnClick
       end
       object MakeCertBtn: TButton
@@ -101,7 +102,6 @@ object Main: TMain
         Align = alRight
         BorderSpacing.InnerBorder = 4
         Caption = 'Make Cert'
-        Default = True
         TabOrder = 3
         OnClick = MakeCertBtnClick
       end
@@ -132,7 +132,7 @@ object Main: TMain
       Top = 6
       Width = 480
       Anchors = [akTop, akLeft, akRight]
-      TabOrder = 0
+      TabOrder = 1
       Text = '.\html'
     end
     object PortEdit: TEdit
@@ -140,7 +140,7 @@ object Main: TMain
       Height = 21
       Top = 34
       Width = 78
-      TabOrder = 1
+      TabOrder = 3
       Text = '81'
     end
     object Panel3: TPanel
@@ -152,7 +152,7 @@ object Main: TMain
       BevelOuter = bvNone
       ClientHeight = 26
       ClientWidth = 536
-      TabOrder = 3
+      TabOrder = 0
       object LastIDLabel: TLabel
         Left = 135
         Height = 20
@@ -299,11 +299,11 @@ object Main: TMain
       OnChange = StayOnTopChkChange
     end
     object ChallengeSSLChk: TCheckBox
-      Left = 202
+      Left = 218
       Height = 17
       Top = 36
-      Width = 100
-      Caption = 'Challenge Server'
+      Width = 130
+      Caption = 'Challenge Server on 80'
       TabOrder = 7
     end
   end

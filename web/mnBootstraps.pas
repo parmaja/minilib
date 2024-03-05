@@ -45,7 +45,7 @@ type
 
     TBSDocumentHTML = class(TDocumentHTML)
     public
-      procedure AddHeader(AElement: TmnwElement; Context: TmnwContext); override;
+      procedure AddHead(AElement: TmnwElement; Context: TmnwContext); override;
     end;
 
   public
@@ -71,10 +71,12 @@ end;
 
 { TmnwBootstrapRenderer.TBSInputHTML }
 
-procedure TmnwBootstrapRenderer.TBSDocumentHTML.AddHeader(AElement: TmnwElement; Context: TmnwContext);
+procedure TmnwBootstrapRenderer.TBSDocumentHTML.AddHead(AElement: TmnwElement; Context: TmnwContext);
 begin
-  Context.Output.Write('html', '<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">', [woEndLine]);
-  Context.Output.Write('html', '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>', [woEndLine]);
+  Context.Output.WriteLn('html', '<meta charset="UTF-8">');
+  Context.Output.WriteLn('html', '<meta name="viewport" content="width=device-width, initial-scale=1">');
+  Context.Output.WriteLn('html', '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
+  Context.Output.WriteLn('html', '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
   inherited;
 end;
 
