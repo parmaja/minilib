@@ -861,12 +861,12 @@ var
   e: THTML.TContainer;
 begin
   e := AElement as THTML.TContainer;
-  Context.Output.WriteLn('html', '<div class="container mt-4">', [woOpenTag]);
-  Context.Output.WriteLn('html', '<div class="col-md-9">', [woOpenTag]);
+  Context.Output.WriteLn('html', '<div class="container mt-3">', [woOpenTag]);
+  //Context.Output.WriteLn('html', '<div class="col-md-9">', [woOpenTag]);
   Context.Output.WriteLn('html', '<main>', [woOpenTag]);
   inherited;
   Context.Output.WriteLn('html', '</main>', [woCloseTag]);
-  Context.Output.WriteLn('html', '</div>', [woCloseTag]);
+  //Context.Output.WriteLn('html', '</div>', [woCloseTag]);
   Context.Output.WriteLn('html', '</div>', [woCloseTag]);
 end;
 
