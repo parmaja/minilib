@@ -63,15 +63,25 @@ type
 
   TmnwElementClass = class of TmnwElement;
 
+  { TmnwAttribute }
+
   TmnwAttribute = class(TmnNameValueObject)
+  public
+    function CreateSubValues(vSeparators: TSysCharSet = [' ']): TStringList;
   end;
 
   { TmnwAttributes }
 
-  TmnwParams = class(TmnNameValueObjectList<TmnwAttribute>)
+  TmnwAttributes = class(TmnNameValueObjectList<TmnwAttribute>)
   public
     function GetText(WithExtraSpace: Boolean = False): string;
+    function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
+    function SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
+    function UnsetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
+    procedure Created; override;
   end;
+
+  { TmnwContext }
 
   TmnwContext = record
     DataObject: TObject;
@@ -79,10 +89,11 @@ type
     Output: TmnwOutput;
   end;
 
+  { TmnwScope }
+
   TmnwScope = record
     Element: TmnwElement;
-    Attributes: TmnwParams;
-    Classes: TmnwParams;
+    Attributes: TmnwAttributes;
   end;
 
   TmnwObject = class(TmnNamedObject);
@@ -104,7 +115,7 @@ type
     FName: String;
     FStyleClass: String;
     FStyle: String;
-    FAttributes: TmnwParams;
+    FAttributes: TmnwAttributes;
   protected
     procedure Update; virtual;
     procedure Added(Item: TmnwElement); override;
@@ -116,7 +127,7 @@ type
     constructor Create; virtual; overload;
     constructor Create(AEmbed: Boolean); overload;
     destructor Destroy; override;
-    function Add<O: TmnwElement>(const AName: String = ''; const AID: String = ''): O; overload;
+    function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;
     function Find(const Name: string): TmnwElement;
     function IndexOfName(vName: string): Integer;
 
@@ -143,7 +154,7 @@ type
     property Active: Boolean read FActive write FActive;
     //* Embed render it directly not by loop like THeader
     property Embed: Boolean read FEmbed;
-    property Attributes: TmnwParams read FAttributes;
+    property Attributes: TmnwAttributes read FAttributes;
   end;
 
   { TmnwWriter }
@@ -232,7 +243,7 @@ type
       end;
   protected
     FObjectClasses: TRegObjects;
-    FParams: TmnwParams;
+    FParams: TmnwAttributes;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -243,7 +254,7 @@ type
     function CreateRenderer(AObject: TmnwElement): TmnwElementRenderer; overload;
 
     property ObjectClasses: TRegObjects read FObjectClasses;
-    property Params: TmnwParams read FParams;
+    property Params: TmnwAttributes read FParams;
   end;
 
   TmnwSchemaClass = class of TmnwSchema;
@@ -525,9 +536,9 @@ begin
   Write(Target, S, Options + [woEndLine]);
 end;
 
-{ TmnwParams }
+{ TmnwAttributes }
 
-function TmnwParams.GetText(WithExtraSpace: Boolean): string;
+function TmnwAttributes.GetText(WithExtraSpace: Boolean): string;
 var
   a: TmnwAttribute;
 begin
@@ -541,6 +552,87 @@ begin
   if Result <> '' then
     Result := ' ' + Result;
 end;
+
+function TmnwAttributes.HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet): Boolean;
+var
+  SubValues: TStringList;
+  aAttribute: TmnwAttribute;
+begin
+  aAttribute := Find(AName);
+  Result := aAttribute <> nil;
+  if Result then
+  begin
+    SubValues := aAttribute.CreateSubValues(vSeparators);
+    try
+      Result := SubValues.IndexOf(AValue) >= 0;
+    finally
+      SubValues.Free;
+    end;
+  end;
+end;
+
+function TmnwAttributes.SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet): Boolean;
+var
+  SubValues: TStringList;
+  aAttribute: TmnwAttribute;
+begin
+  aAttribute := Find(AName);
+  Result := aAttribute <> nil;
+  if not Result then
+  begin
+    aAttribute := TmnwAttribute.Create(AName, '');
+    Add(aAttribute);
+  end;
+
+  SubValues := aAttribute.CreateSubValues(vSeparators);
+  try
+    Result := SubValues.IndexOf(AValue)<0;
+    if Result then
+    begin
+      SubValues.Add(AValue);
+      SubValues.Delimiter := ' ';
+      aAttribute.Value := SubValues.DelimitedText;
+    end;
+  finally
+    SubValues.Free;
+  end;
+end;
+
+function TmnwAttributes.UnsetSubValue(const AName, AValue: String; vSeparators: TSysCharSet): Boolean;
+var
+  SubValues: TStringList;
+  i: Integer;
+  aAttribute: TmnwAttribute;
+begin
+  aAttribute := Find(AName);
+  Result := aAttribute = nil;
+  if not Result then
+  begin
+    SubValues := aAttribute.CreateSubValues(vSeparators);
+    try
+      i := SubValues.IndexOf(AValue);
+      Result := i>=0;
+      if Result then
+      begin
+        SubValues.Delete(i);
+        SubValues.Delimiter := ' ';
+        aAttribute.Value := SubValues.DelimitedText;
+        if AutoRemove and (aAttribute.Value = '') then
+          Remove(aAttribute);
+      end;
+    finally
+      SubValues.Free;
+    end;
+  end;
+end;
+
+procedure TmnwAttributes.Created;
+begin
+  inherited;
+  //AutoRemove := True; //no AltTxt in image should writen even if it empty
+end;
+
+{ TmnwScope }
 
 { TmnwElementRenderer }
 
@@ -580,8 +672,7 @@ var
   aParent: TmnwElementRenderer;
   aScope: TmnwScope;
 begin
-  aScope.Attributes := TmnwParams.Create;
-  aScope.Classes := TmnwParams.Create;
+  aScope.Attributes := TmnwAttributes.Create;
   aScope.Element := AElement;
   try
     CollectAttributes(aScope);
@@ -602,7 +693,6 @@ begin
     end;
   finally
     aScope.Attributes.Free;
-    aScope.Classes.Free;
   end;
 end;
 
@@ -619,14 +709,21 @@ end;
 procedure TmnwElementRenderer.CollectAttributes(Scope: TmnwScope);
 begin
   if Scope.Element.ID <> '' then
-    Scope.Attributes.Values['id'] := Scope.Element.ID;
+    Scope.Attributes['id'] := Scope.Element.ID;
   if Scope.Element.Name <> '' then
-    Scope.Attributes.Values['name'] := Scope.Element.Name;
-  if Scope.Element.StyleClass <> '' then
-    Scope.Attributes.Values['classname'] := Scope.Element.StyleClass;
+    Scope.Attributes['name'] := Scope.Element.Name;
   if Scope.Element.Style <> '' then
-    Scope.Attributes.Values['style'] := Scope.Element.Style;
+    Scope.Attributes['style'] := Scope.Element.Style;
+  if Scope.Element.StyleClass <> '' then
+    Scope.Attributes.SetSubValue('class', Scope.Element.StyleClass);
   DoCollectAttributes(Scope);
+end;
+
+function TmnwAttribute.CreateSubValues(vSeparators: TSysCharSet): TStringList;
+begin
+  Result := TStringList.Create;
+  if Self <> nil then
+    StrToStrings(Value, Result, vSeparators, []);
 end;
 
 procedure TmnwElement.Render(Context: TmnwContext);
@@ -795,7 +892,7 @@ begin
     Scope.Attributes['dir'] := 'rtl'
   else if E.Direction = dirLTR then
     Scope.Attributes['dir'] := 'ltr';
-  Scope.Attributes['language'] := 'en'
+  Scope.Attributes['lang'] := 'en'
 end;
 
 procedure TmnwHTMLRenderer.TDocumentHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
@@ -900,7 +997,7 @@ end;
 procedure TmnwHTMLRenderer.TFormHTML.DoBeforeChildRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Output.WriteLn('html', '<div>', [woOpenTag]);
-  Scope.Attributes['class'] := 'form-control';
+  Scope.Attributes.SetSubValue('class', 'form-control');
   inherited;
 end;
 
@@ -939,7 +1036,7 @@ end;
 
 procedure TmnwHTMLRenderer.TBreakHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
-  Context.Output.WriteLn('html', '<br />');
+  Context.Output.WriteLn('html', '<br>');
 end;
 
 { TmnwHTMLRenderer.TInputHTML }
@@ -957,8 +1054,8 @@ var
 begin
   e := Scope.Element as THTML.TInput;
   if e.Caption <> '' then
-    Context.Output.WriteLn('html', '<label for="'+e.Name+'" >' + e.Caption + '</label>', [woOpenTag, woCloseTag]);
-  Context.Output.WriteLn('html', '<input '+ Scope.Attributes.GetText(True)+' />', [woOpenTag, woCloseTag]);
+    Context.Output.WriteLn('html', '<label for="'+e.ID+'" >' + e.Caption + '</label>', [woOpenTag, woCloseTag]);
+  Context.Output.WriteLn('html', '<input'+ Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -967,14 +1064,13 @@ end;
 procedure TmnwHTMLRenderer.TImageHTML.DoCollectAttributes(Scope: TmnwScope);
 begin
   Scope.Attributes['src'] := (Scope.Element as THTML.TImage).Source;
-  if (Scope.Element as THTML.TImage).AltText <> '' then
-    Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
+  Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText; //* always set
   inherited;
 end;
 
 procedure TmnwHTMLRenderer.TImageHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
-  Context.Output.WriteLn('html', '<img ' + Scope.Attributes.GetText(True)+' />', [woOpenTag, woCloseTag]);
+  Context.Output.WriteLn('html', '<img' + Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -989,8 +1085,7 @@ procedure TmnwHTMLRenderer.TMemoryImageHTML.DoCollectAttributes(Scope: TmnwScope
 begin
   inherited;
   Scope.Attributes['src'] := IncludeURLDelimiter(TmnwHTMLRenderer(Renderer).HomeUrl) + Scope.Element.GetPath;
-  if (Scope.Element as THTML.TImage).AltText <> '' then
-    Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
+  Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
 end;
 
 procedure TmnwHTMLRenderer.TMemoryImageHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
@@ -998,7 +1093,7 @@ var
   e: THTML.TMemoryImage;
 begin
   e := Scope.Element as THTML.TMemoryImage;
-  Context.Output.WriteLn('html', '<img '+ Scope.Attributes.GetText(True)+' />', [woOpenTag, woCloseTag]);
+  Context.Output.WriteLn('html', '<img '+ Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -1219,7 +1314,7 @@ begin
   FVisible := True;
   FActive := True;
   FName := '';
-  FAttributes := TmnwParams.Create;
+  FAttributes := TmnwAttributes.Create;
 end;
 
 constructor TmnwElement.Create(AEmbed: Boolean);
@@ -1234,11 +1329,11 @@ begin
   inherited;
 end;
 
-function TmnwElement.Add<O>(const AName: String; const AID: String): O;
+function TmnwElement.Add<O>(const AID: String = ''; const AName: String = ''): O;
 begin
   Result := O.Create;
-  Result.FName := AName;
   Result.FID := AID;
+  Result.FName := AName;
   Result.FParent := Self;
   Result.FRoot := FRoot;
   Add(Result);
@@ -1353,7 +1448,7 @@ constructor TmnwRenderer.Create;
 begin
   inherited;
   FObjectClasses := TRegObjects.Create;
-  FParams := TmnwParams.Create;
+  FParams := TmnwAttributes.Create;
 end;
 
 destructor TmnwRenderer.Destroy;

@@ -63,8 +63,8 @@ begin
   Route := 'welcome';
   with This.Add<TDocument> do
   begin
-    Name := 'document';
-    //Route := 'document';
+    //Name := 'document';
+    Route := 'document';
     Title := 'MyHome';
     Direction := dirLTR;
 
@@ -101,9 +101,9 @@ begin
             Caption := 'Password';
           end;
 
-          {This.Add<TBreak>;
+          This.Add<TBreak>;
 
-          with This.Add<TMemoryImage> do
+          {with This.Add<TMemoryImage> do
           begin
             Name := 'logo';
             Route := 'logo';

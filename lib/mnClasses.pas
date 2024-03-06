@@ -149,7 +149,7 @@ type
     private
       FValue: string;
     public
-      constructor Create(const vName, AValue: string); virtual; //must be virtual for generic function
+      constructor Create(const vName: string; const AValue: string = ''); virtual; //must be virtual for generic function
       property Value: string read FValue write FValue;
     end;
 
@@ -161,11 +161,13 @@ type
     TmnNameValueObjectList<_Object_: TmnNameValueObject> = class(TmnNamedObjectList<_Object_>)
     {$endif}
     private
+      FAutoRemove: Boolean;
       function GetValues(Index: string): string;
       procedure SetValues(Index: string; AValue: string);
     public
       function Add(Name, Value: string): _Object_; overload;
       property Values[Index: string]: string read GetValues write SetValues; default;
+      property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     end;
 
 implementation
@@ -469,10 +471,18 @@ var
   itm : _Object_;
 begin
   itm := Find(Index);
-  if itm <> nil then
-    itm.Value := AValue
+  if AutoRemove and (AValue = '') then
+  begin
+    if (itm <> nil) then
+      Remove(itm);
+  end
   else
-    Add(Index, AValue);
+  begin
+    if itm <> nil then
+      itm.Value := AValue
+    else
+      Add(Index, AValue);
+  end;
 end;
 
 function TmnNameValueObjectList<_Object_>.Add(Name, Value: string): _Object_;
@@ -485,7 +495,6 @@ end;
 
 procedure TmnObject.Created;
 begin
-
 end;
 
 procedure TmnObject.AfterConstruction;
