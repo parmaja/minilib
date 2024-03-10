@@ -883,7 +883,7 @@ begin
     begin
       Respond.HttpResult := hrNotModified;
       Respond.SendHeader;
-      Log(vFile+': not modified');
+      //Log(vFile+': not modified');
       Exit;
     end;
 

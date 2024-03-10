@@ -18,12 +18,12 @@
       Document
 
 ┌──────┬──────── Header ──────────────────────┐
-│ SideColumn                                  │
+│ Column                                      │
 │      │                                      │
 ├──────┴──────────────────────────────────────┤
 │ Navigator/Menu                              │
 ├────────────┬─ Content ─────────────┬────────┤
-│ SideColumn │                       │ PeerColumn
+│ ASideColumn │                      │ PeerColumn
 │            │ ┌─ TabControl ──────┐ │        │
 │            │ │ Tab │    │        │ │        │
 │            │ ├─────┴────┴────────┤ │        │
@@ -98,6 +98,8 @@ type
 
   TmnwObject = class(TmnNamedObject);
 
+  TmnwRequestState = (rsBeforeRequest, rsAfterRequest);
+
   { TmnwElement }
 
   TmnwElement = class(TmnObjectList<TmnwElement>)
@@ -121,6 +123,8 @@ type
     procedure Added(Item: TmnwElement); override;
     procedure Check; virtual;
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
+    procedure DoState(RequestState: TmnwRequestState); virtual;
+    procedure State(RequestState: TmnwRequestState);
     procedure DoCompose; virtual;
   public
     Composed: Boolean;
@@ -1283,6 +1287,16 @@ begin
     raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
 end;
 
+procedure TmnwElement.DoState(RequestState: TmnwRequestState);
+begin
+
+end;
+
+procedure TmnwElement.State(RequestState: TmnwRequestState);
+begin
+
+end;
+
 function TmnwElement.FindByPath(const APath: string): TmnwElement;
 var
   o: TmnwElement;
@@ -1329,7 +1343,7 @@ begin
   inherited;
 end;
 
-function TmnwElement.Add<O>(const AID: String = ''; const AName: String = ''): O;
+function TmnwElement.Add<O>(const AID: String; const AName: String): O;
 begin
   Result := O.Create;
   Result.FID := AID;
