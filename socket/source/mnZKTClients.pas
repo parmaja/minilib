@@ -32,7 +32,7 @@ unit mnZKTClients;
 interface
 
 uses
-  Classes, SysUtils, StrUtils,
+  Classes, SysUtils, StrUtils, pmpUtils,
   mnClasses, mnClients, mnSockets;
 
 const
@@ -142,7 +142,7 @@ type
     Start: LongWord; //5050827d;
     Size: LongWord;
     Header: TZKHeader;
-    function DataSize: Integer;
+    function DataSize: LongWord;
   end;
 
   PZKPayload = ^TZKPayload;
@@ -233,6 +233,7 @@ type
     procedure Dump;
     {$ifdef DEBUG}
     procedure DumpHex(BytesInLine: Integer = 0);
+    function DumpHexs(BytesInLine: Integer = 0): string;
     {$endif}
   end;
 
@@ -317,7 +318,7 @@ end;
 
 { TZKPayload }
 
-function TZKPayload.DataSize: Integer;
+function TZKPayload.DataSize: LongWord;
 begin
   Result := Self.Size - SizeOf(Self.Header);
 end;
@@ -483,6 +484,27 @@ begin
   end;
   WriteLn('');
 end;
+
+function TByteHelper.DumpHexs(BytesInLine: Integer): string;
+var
+  i: Integer;
+  c: Integer;
+begin
+  Result := '';
+  c := 0;
+  for i := 0  to Count -1 do
+  begin
+    Result := Result + IntToHex(Self[i], 2);
+    Inc(c);
+    if (BytesInLine > 0) and (c >= (BytesInLine)) then
+    begin
+      c := 0;
+      Result := Result + #13;
+    end;
+  end;
+  Result := Result + #13;
+end;
+
 {$endif}
 
 { TZKClient }
@@ -595,7 +617,8 @@ begin
             ReceivePayload(Payload);
             if Payload.Header.Command = CMD_DATA then
             begin
-              ReceiveBytes(aBuf, PayLoad.DataSize);
+              ReceiveBuffer(aSize, SizeOf(aSize)); //tested with small date
+              ReceiveBytes(aBuf, aSize);
               RespondData := RespondData + aBuf;
 
               aWholeSize := aWholeSize - PayLoad.DataSize;
@@ -866,7 +889,8 @@ begin
   Result := ExecCommand(CMD_ATTLOG_RRQ, NewReplyID, nil, Payload, Data);
   if Result then
   begin
-    //Data.DumpHex(40);
+    //var s := Data.DumpHexs(40);
+    //TextToFile(UTF8Encode(s), 'c:\temp\dump.txt');
     PAtt := Pointer(Data);
     i := Data.Count div SizeOf(TZKAttData);
     while i > 0 do
