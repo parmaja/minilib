@@ -32,7 +32,7 @@ unit mnZKTClients;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, pmpUtils,
+  Classes, SysUtils, StrUtils,
   mnClasses, mnClients, mnSockets;
 
 const
