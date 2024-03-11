@@ -139,7 +139,7 @@ object Main: TMain
       Width = 20
       Caption = 'Port'
     end
-    object RootEdit: TEdit
+    object HomePathEdit: TEdit
       Left = 47
       Height = 21
       Top = 6

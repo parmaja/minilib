@@ -19,7 +19,7 @@ type
   TMain = class(TForm)
     Memo: TMemo;
     StartBtn: TButton;
-    RootEdit: TEdit;
+    HomePathEdit: TEdit;
     Label1: TLabel;
     StopBtn: TButton;
     Label2: TLabel;
@@ -91,7 +91,7 @@ var
 begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
-  aHomePath := RootEdit.Text;
+  aHomePath := HomePathEdit.Text;
   if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
     aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
 
@@ -268,7 +268,7 @@ begin
 
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
-    RootEdit.Text := GetOption('root', '.\html');
+    HomePathEdit.Text := GetOption('homepath', '.\html');
     AliasNameEdit.Text := GetOption('alias', 'doc');
     PortEdit.Text := GetOption('port', '81');
     UseSSLChk.Checked := GetOption('ssl', false);
@@ -289,7 +289,7 @@ var
 begin
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
-    aIni.WriteString('options', 'DocumentRoot', RootEdit.Text);
+    aIni.WriteString('options', 'homepath', HomePathEdit.Text);
     aIni.WriteString('options', 'alias', AliasNameEdit.Text);
     aIni.WriteString('options', 'Port', PortEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
@@ -322,7 +322,7 @@ end;
 procedure TMain.HttpServerAfterOpen(Sender: TObject);
 begin
   if UseSSLChk.Checked then
-    ShellExecute(Handle, 'Open', PWideChar('https://localhost/'+AliasNameEdit.Text), nil, nil, 0)
+    ShellExecute(Handle, 'Open', PWideChar('https://localhost:'+PortEdit.Text+'/'+AliasNameEdit.Text), nil, nil, 0)
   else
     ShellExecute(Handle, 'Open', PWideChar('http://localhost:'+PortEdit.Text+'/'+AliasNameEdit.Text), nil, nil, 0);
 end;

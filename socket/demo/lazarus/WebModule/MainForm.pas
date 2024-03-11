@@ -50,7 +50,7 @@ type
     Panel2: TPanel;
     Panel3: TPanel;
     PortEdit: TEdit;
-    RootEdit: TEdit;
+    HomePathEdit: TEdit;
     StartBtn: TButton;
     StopBtn: TButton;
     StayOnTopChk: TCheckBox;
@@ -154,7 +154,7 @@ begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
 
-  aHomePath := RootEdit.Text;
+  aHomePath := HomePathEdit.Text;
   if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
     aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
 
@@ -257,7 +257,7 @@ begin
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
-    RootEdit.Text := GetOption('root', '.\html');
+    HomePathEdit.Text := GetOption('homepath', '.\html');
     PortEdit.Text := GetOption('port', '81');
     AliasNameEdit.Text := GetOption('alias', 'doc');
     UseSSLChk.Checked := GetOption('ssl', false);
@@ -270,10 +270,8 @@ begin
     aIni.Free;
   end;
 
-  if aAutoRun then
-  begin
+  if AutoRunChk.Checked then
     Start;
-  end;
 end;
 
 procedure TMain.FormDestroy(Sender: TObject);
@@ -282,9 +280,9 @@ var
 begin
   aIni := TIniFile.Create(Application.Location+'config.ini');
   try
-    aIni.WriteString('options', 'root', RootEdit.Text);
-    aIni.WriteString('options', 'port', PortEdit.Text);
+    aIni.WriteString('options', 'homepath', HomePathEdit.Text);
     aIni.WriteString('options', 'alias', AliasNameEdit.Text);
+    aIni.WriteString('options', 'port', PortEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'challenge', ChallengeSSLChk.Checked);
     aIni.WriteBool('options', 'autorun', AutoRunChk.Checked);

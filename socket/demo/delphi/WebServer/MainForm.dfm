@@ -66,7 +66,7 @@ object Main: TMain
     OnClick = StartBtnClick
     ExplicitLeft = 360
   end
-  object RootEdit: TEdit
+  object HomePathEdit: TEdit
     Left = 46
     Top = 6
     Width = 313
