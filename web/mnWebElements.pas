@@ -128,7 +128,7 @@ type
     procedure DoCompose; virtual;
   public
     Composed: Boolean;
-    constructor Create; virtual; overload;
+    constructor Create; overload; virtual;
     constructor Create(AEmbed: Boolean); overload;
     destructor Destroy; override;
     function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;

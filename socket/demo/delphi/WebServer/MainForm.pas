@@ -12,7 +12,8 @@ uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
   mnOpenSSLUtils, mnOpenSSL, mnLogs, mnHttpClient, mnOpenSSLAPI,
   mnModules,
-  Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules;
+  Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules,
+  HomeModules;
 
 type
   TMain = class(TForm)
@@ -47,13 +48,13 @@ type
     procedure Button2Click(Sender: TObject);
   private
     FMax:Integer;
-    Server: TmodWebServer;
+    HttpServer: TmodWebServer;
     procedure UpdateStatus;
-    procedure ModuleServerBeforeOpen(Sender: TObject);
-    procedure ModuleServerAfterOpen(Sender: TObject);
-    procedure ModuleServerAfterClose(Sender: TObject);
-    procedure ModuleServerChanged(Listener: TmnListener);
-    procedure ModuleServerLog(const S: string);
+    procedure HttpServerBeforeOpen(Sender: TObject);
+    procedure HttpServerAfterOpen(Sender: TObject);
+    procedure HttpServerAfterClose(Sender: TObject);
+    procedure HttpServerChanged(Listener: TmnListener);
+    procedure HttpServerLog(const S: string);
   public
   end;
 
@@ -66,52 +67,63 @@ implementation
 
 procedure TMain.StartBtnClick(Sender: TObject);
 begin
-  Server.Start;
+  HttpServer.Start;
 end;
 
 procedure TMain.StopBtnClick(Sender: TObject);
 begin
-  Server.Stop;
+  HttpServer.Stop;
   StartBtn.Enabled := true;
 end;
 
 procedure TMain.UpdateStatus;
 begin
-  NumberOfThreads.Caption := IntToStr(Server.Listener.Count);
-  LastIDLabel.Caption := IntToStr(Server.Listener.LastID);
+  NumberOfThreads.Caption := IntToStr(HttpServer.Listener.Count);
+  LastIDLabel.Caption := IntToStr(HttpServer.Listener.LastID);
 end;
 
-procedure TMain.ModuleServerBeforeOpen(Sender: TObject);
+procedure TMain.HttpServerBeforeOpen(Sender: TObject);
 var
-  aRoot:string;
-  aWebModule: TmodWebModule;
+  aHomePath: string;
+  aDocModule: TmodWebModule;
+  aHomeModule: THomeModule;
 begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
-  aRoot := RootEdit.Text;
-  if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
-    aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
+  aHomePath := RootEdit.Text;
+  if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
+    aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
 
-  aWebModule := Server.Modules.Find<TmodWebModule>;
-  if aWebModule <> nil then
+  aHomeModule := HttpServer.Modules.Find<THomeModule>;
+  if aHomeModule <> nil then
   begin
-    aWebModule.DocumentRoot := aRoot;
-    aWebModule.AliasName := ModuleNameEdit.Text;
-    if KeepAliveChk.Checked then
-      aWebModule.UseKeepAlive := klvKeepAlive
-    else
-      aWebModule.UseKeepAlive := klvUndefined;
-    aWebModule.UseCompressing := CompressChk.Checked;
+    aHomeModule.AliasName := 'home';
+    aHomeModule.HomePath := aHomePath;
+    aHomeModule.HostURL := 'http://localhost:' + PortEdit.Text;
+    aHomeModule.HomeUrl := aHomeModule.HostURL + '/' + aHomeModule.AliasName;
+    aHomeModule.CachePath := ExtractFilePath(Application.ExeName) + 'cache';
   end;
-  Server.Port := PortEdit.Text;
 
-  Server.UseSSL := UseSSLChk.Checked;
+  aDocModule := HttpServer.Modules.Find<TmodWebModule>;
+  if aDocModule <> nil then
+  begin
+    aDocModule.HomePath := aHomePath;
+    aDocModule.AliasName := ModuleNameEdit.Text;
+    if KeepAliveChk.Checked then
+      aDocModule.UseKeepAlive := klvKeepAlive
+    else
+      aDocModule.UseKeepAlive := klvUndefined;
+    aDocModule.UseCompressing := CompressChk.Checked;
+  end;
+  HttpServer.Port := PortEdit.Text;
 
-  Server.CertificateFile := 'server.crt';
-  Server.PrivateKeyFile := 'server.private.key';
+  HttpServer.UseSSL := UseSSLChk.Checked;
 
-  //Server.CertificateFile := 'certificate.pem';
-  //Server.PrivateKeyFile := 'key.pem';
+  HttpServer.CertificateFile := 'HttpServer.crt';
+  HttpServer.PrivateKeyFile := 'HttpServer.private.key';
+
+  //HttpServer.CertificateFile := 'certificate.pem';
+  //HttpServer.PrivateKeyFile := 'key.pem';
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/', '-']; Seprator: Char = ' '; IgnoreCase: Boolean = true): Boolean;
@@ -175,9 +187,9 @@ begin
     s.WriteString('alt_names', 'address', 'MyAddress');
     s.WriteString('alt_names', 'category', 'Industry');
 
-    MakeCert2('server.crt', 'server.private.key', 'minilib', 'parmaja', 'SY', '', 2048, 0, 100);
+    MakeCert2('HttpServer.crt', 'HttpServer.private.key', 'minilib', 'parmaja', 'SY', '', 2048, 0, 100);
 
-    //MakeCert2('server', s);
+    //MakeCert2('HttpServer', s);
     {if MakeCert(s) then
     begin
       aPubKey := s.ReadString('Result', 'PubKey', '');
@@ -245,13 +257,15 @@ var
 var
   aAutoRun:Boolean;
 begin
-  Server := TmodWebServer.Create;
-  Server.OnBeforeOpen := ModuleServerBeforeOpen;
-  Server.OnAfterOpen := ModuleServerAfterOpen;
-  Server.OnAfterClose := ModuleServerAfterClose;
-  Server.OnChanged :=  ModuleServerChanged;
-  Server.OnLog := ModuleServerLog;
-  Server.Logging := True;
+  HttpServer := TmodWebServer.Create;
+  HttpServer.OnBeforeOpen := HttpServerBeforeOpen;
+  HttpServer.OnAfterOpen := HttpServerAfterOpen;
+  HttpServer.OnAfterClose := HttpServerAfterClose;
+  HttpServer.OnChanged :=  HttpServerChanged;
+  HttpServer.OnLog := HttpServerLog;
+  HttpServer.Logging := True;
+
+  HttpServer.Modules.Add(THomeModule.Create('home', 'home', ['http/1.1']));
 
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
@@ -267,7 +281,7 @@ begin
     aIni.Free;
   end;
   if aAutoRun then
-     Server.Start;
+     HttpServer.Start;
 end;
 
 procedure TMain.FormDestroy(Sender: TObject);
@@ -286,7 +300,7 @@ begin
   finally
     aIni.Free;
   end;
-  FreeAndNil(Server);
+  FreeAndNil(HttpServer);
 end;
 
 procedure TMain.StayOnTopChkClick(Sender: TObject);
@@ -299,13 +313,13 @@ begin
       SWP_NOSIZE or SWP_NOACTIVATE);
 end;
 
-procedure TMain.ModuleServerAfterClose(Sender: TObject);
+procedure TMain.HttpServerAfterClose(Sender: TObject);
 begin
   StartBtn.Enabled := True;
   StopBtn.Enabled := False;
 end;
 
-procedure TMain.ModuleServerAfterOpen(Sender: TObject);
+procedure TMain.HttpServerAfterOpen(Sender: TObject);
 begin
   if UseSSLChk.Checked then
     ShellExecute(Handle, 'Open', PWideChar('https://127.0.0.1/web'), nil, nil, 0)
@@ -313,7 +327,7 @@ begin
     ShellExecute(Handle, 'Open', PWideChar('http://127.0.0.1:'+PortEdit.Text+'/web'), nil, nil, 0);
 end;
 
-procedure TMain.ModuleServerChanged(Listener: TmnListener);
+procedure TMain.HttpServerChanged(Listener: TmnListener);
 begin
   if FMax < Listener.Count then
     FMax := Listener.Count;
@@ -321,7 +335,7 @@ begin
   UpdateStatus;
 end;
 
-procedure TMain.ModuleServerLog(const s: string);
+procedure TMain.HttpServerLog(const s: string);
 begin
   Memo.Lines.Add(s);
 end;

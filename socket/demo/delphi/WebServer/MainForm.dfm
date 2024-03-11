@@ -13,7 +13,6 @@ object Main: TMain
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   ParentBiDiMode = False
-  Position = poDesigned
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
@@ -294,7 +293,7 @@ object Main: TMain
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
     TabOrder = 10
-    Text = 'c:\offline\'
+    Text = 'doc'
     ExplicitWidth = 196
   end
   object KeepAliveChk: TCheckBox

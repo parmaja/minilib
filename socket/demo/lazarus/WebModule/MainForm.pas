@@ -147,7 +147,7 @@ end;
 procedure TMain.HttpServerBeforeOpen(Sender: TObject);
 var
   aHomePath: string;
-  aWebModule: TmodWebModule;
+  aDocModule: TmodWebModule;
   aHomeModule: THomeModule;
 begin
   StartBtn.Enabled := False;
@@ -167,11 +167,11 @@ begin
     aHomeModule.CachePath := ExtractFilePath(Application.ExeName) + 'cache';
   end;
 
-  aWebModule := HttpServer.Modules.Find<TmodWebModule>;
-  if aWebModule <> nil then
+  aDocModule := HttpServer.Modules.Find<TmodWebModule>;
+  if aDocModule <> nil then
   begin
-    aWebModule.AliasName := ModuleNameEdit.Text;
-    aWebModule.HomePath := aHomePath;
+    aDocModule.AliasName := ModuleNameEdit.Text;
+    aDocModule.HomePath := aHomePath;
   end;
 
   HttpServer.Port := PortEdit.Text;
@@ -253,6 +253,7 @@ begin
   HttpServer.OnChanged :=  HttpServerChanged;
   HttpServer.OnLog := ServerLog;
   HttpServer.Logging := True;
+
   HttpServer.Modules.Add(THomeModule.Create('home', 'home', ['http/1.1']));
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
@@ -303,14 +304,14 @@ end;
 
 procedure TMain.ChallengeServerBeforeOpen(Sender: TObject);
 var
-  aWebModule: TmodWebModule;
+  aDocModule: TmodWebModule;
 begin
-  aWebModule := ChallengeServer.Modules.Find<TmodWebModule>;
-  if aWebModule <> nil then
+  aDocModule := ChallengeServer.Modules.Find<TmodWebModule>;
+  if aDocModule <> nil then
   begin
     //.well-known/acme-challenge/
-    //aWebModule.AliasName := '.well-known';
-    aWebModule.HomePath := Application.Location + 'cert/.well-known/';
+    //aDocModule.AliasName := '.well-known';
+    aDocModule.HomePath := Application.Location + 'cert/.well-known/';
     //* use certbot folder to "Application.Location + cert" because certbot will create folder .well-known
   end;
 end;
