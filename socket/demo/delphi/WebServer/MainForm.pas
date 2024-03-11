@@ -35,10 +35,11 @@ type
     Button1: TButton;
     UseSSLChk: TCheckBox;
     Button2: TButton;
-    ModuleNameEdit: TEdit;
+    AliasNameEdit: TEdit;
     Label5: TLabel;
     KeepAliveChk: TCheckBox;
     CompressChk: TCheckBox;
+    AutoRunChk: TCheckBox;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
@@ -108,7 +109,7 @@ begin
   if aDocModule <> nil then
   begin
     aDocModule.HomePath := aHomePath;
-    aDocModule.AliasName := ModuleNameEdit.Text;
+    aDocModule.AliasName := AliasNameEdit.Text;
     if KeepAliveChk.Checked then
       aDocModule.UseKeepAlive := klvKeepAlive
     else
@@ -243,7 +244,7 @@ var
     Result := aIni.ReadBool('options', AName, ADefault);
   end;
 
-  function GetSwitch(AName, ADefault:string): string;//if found in cmd mean it is true
+  function GetSwitch(AName, ADefault: string): string;//if found in cmd mean it is true
   var
     s:string;
   begin
@@ -254,8 +255,6 @@ var
       Result := aIni.ReadString('options',AName, ADefault);
   end;
 
-var
-  aAutoRun:Boolean;
 begin
   HttpServer := TmodWebServer.Create;
   HttpServer.OnBeforeOpen := HttpServerBeforeOpen;
@@ -270,17 +269,17 @@ begin
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
     RootEdit.Text := GetOption('root', '.\html');
-    ModuleNameEdit.Text := GetOption('ModuleName', 'doc');
+    AliasNameEdit.Text := GetOption('alias', 'doc');
     PortEdit.Text := GetOption('port', '81');
     UseSSLChk.Checked := GetOption('ssl', false);
     StayOnTopChk.Checked := GetOption('on_top', false);
     KeepAliveChk.Checked := GetOption('keep_alive', false);
     CompressChk.Checked := GetOption('compress', false);
-    aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
+    AutoRunChk.Checked := StrToBoolDef(GetSwitch('autorun', ''), False);
   finally
     aIni.Free;
   end;
-  if aAutoRun then
+  if AutoRunChk.Checked then
      HttpServer.Start;
 end;
 
@@ -291,12 +290,13 @@ begin
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
     aIni.WriteString('options', 'DocumentRoot', RootEdit.Text);
-    aIni.WriteString('options', 'ModuleName', ModuleNameEdit.Text);
+    aIni.WriteString('options', 'alias', AliasNameEdit.Text);
     aIni.WriteString('options', 'Port', PortEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'on_top', StayOnTopChk.Checked);
     aIni.WriteBool('options', 'keep_alive', KeepAliveChk.Checked);
     aIni.WriteBool('options', 'compress', CompressChk.Checked);
+    aIni.WriteBool('options', 'autorun', AutoRunChk.Checked);
   finally
     aIni.Free;
   end;
@@ -322,9 +322,9 @@ end;
 procedure TMain.HttpServerAfterOpen(Sender: TObject);
 begin
   if UseSSLChk.Checked then
-    ShellExecute(Handle, 'Open', PWideChar('https://127.0.0.1/web'), nil, nil, 0)
+    ShellExecute(Handle, 'Open', PWideChar('https://localhost/'+AliasNameEdit.Text), nil, nil, 0)
   else
-    ShellExecute(Handle, 'Open', PWideChar('http://127.0.0.1:'+PortEdit.Text+'/web'), nil, nil, 0);
+    ShellExecute(Handle, 'Open', PWideChar('http://localhost:'+PortEdit.Text+'/'+AliasNameEdit.Text), nil, nil, 0);
 end;
 
 procedure TMain.HttpServerChanged(Listener: TmnListener);

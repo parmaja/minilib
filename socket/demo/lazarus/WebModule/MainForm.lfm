@@ -22,8 +22,8 @@ object Main: TMain
   OnHide = FormHide
   object Memo: TMemo
     Left = 0
-    Height = 250
-    Top = 116
+    Height = 242
+    Top = 124
     Width = 536
     Align = alClient
     Anchors = [akLeft, akBottom]
@@ -40,28 +40,31 @@ object Main: TMain
   end
   object Panel1: TPanel
     Left = 0
-    Height = 116
+    Height = 124
     Top = 0
     Width = 536
     Align = alTop
     BevelOuter = bvNone
-    ClientHeight = 116
+    ClientHeight = 124
     ClientWidth = 536
     TabOrder = 0
     object Panel2: TPanel
       Left = 0
-      Height = 26
-      Top = 90
+      Height = 39
+      Top = 85
       Width = 536
       Align = alBottom
       BevelOuter = bvNone
-      ClientHeight = 26
+      ChildSizing.LeftRightSpacing = 5
+      ChildSizing.TopBottomSpacing = 5
+      ChildSizing.HorizontalSpacing = 3
+      ClientHeight = 39
       ClientWidth = 536
       TabOrder = 2
       object ExitBtn: TButton
-        Left = 475
-        Height = 26
-        Top = 0
+        Left = 470
+        Height = 29
+        Top = 5
         Width = 61
         Align = alRight
         Anchors = [akTop, akRight]
@@ -71,9 +74,9 @@ object Main: TMain
         OnClick = ExitBtnClick
       end
       object StopBtn: TButton
-        Left = 60
-        Height = 26
-        Top = 0
+        Left = 68
+        Height = 29
+        Top = 5
         Width = 60
         Align = alLeft
         BorderSpacing.InnerBorder = 4
@@ -83,9 +86,9 @@ object Main: TMain
         OnClick = StopBtnClick
       end
       object StartBtn: TButton
-        Left = 0
-        Height = 26
-        Top = 0
+        Left = 5
+        Height = 29
+        Top = 5
         Width = 60
         Align = alLeft
         BorderSpacing.InnerBorder = 4
@@ -95,15 +98,25 @@ object Main: TMain
         OnClick = StartBtnClick
       end
       object MakeCertBtn: TButton
-        Left = 382
-        Height = 26
-        Top = 0
+        Left = 374
+        Height = 29
+        Top = 5
         Width = 93
         Align = alRight
         BorderSpacing.InnerBorder = 4
         Caption = 'Make Cert'
         TabOrder = 3
         OnClick = MakeCertBtnClick
+      end
+      object AutoRunChk: TCheckBox
+        Left = 131
+        Height = 29
+        Top = 5
+        Width = 63
+        Align = alLeft
+        Caption = 'Auto Run'
+        TabOrder = 4
+        OnChange = StayOnTopChkChange
       end
     end
     object Label1: TLabel
@@ -146,7 +159,7 @@ object Main: TMain
     object Panel3: TPanel
       Left = 0
       Height = 26
-      Top = 64
+      Top = 59
       Width = 536
       Align = alBottom
       BevelOuter = bvNone
@@ -274,7 +287,7 @@ object Main: TMain
       Caption = 'Use SSL'
       TabOrder = 4
     end
-    object ModuleNameEdit: TEdit
+    object AliasNameEdit: TEdit
       Left = 384
       Height = 21
       Top = 34

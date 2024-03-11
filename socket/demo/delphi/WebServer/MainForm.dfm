@@ -55,7 +55,7 @@ object Main: TMain
     ExplicitWidth = 430
   end
   object StartBtn: TButton
-    Left = 368
+    Left = 364
     Top = 6
     Width = 60
     Height = 22
@@ -64,22 +64,22 @@ object Main: TMain
     Default = True
     TabOrder = 0
     OnClick = StartBtnClick
-    ExplicitLeft = 364
+    ExplicitLeft = 360
   end
   object RootEdit: TEdit
     Left = 46
     Top = 6
-    Width = 317
+    Width = 313
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
     TabOrder = 2
     Text = 'c:\offline\'
-    ExplicitWidth = 313
+    ExplicitWidth = 309
   end
   object StopBtn: TButton
-    Left = 368
+    Left = 364
     Top = 30
     Width = 60
     Height = 22
@@ -88,7 +88,7 @@ object Main: TMain
     Enabled = False
     TabOrder = 5
     OnClick = StopBtnClick
-    ExplicitLeft = 364
+    ExplicitLeft = 360
   end
   object PortEdit: TEdit
     Left = 46
@@ -120,6 +120,9 @@ object Main: TMain
     TabOrder = 6
     ExplicitTop = 117
     ExplicitWidth = 430
+    DesignSize = (
+      434
+      34)
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
@@ -253,9 +256,19 @@ object Main: TMain
       Layout = tlCenter
       ExplicitHeight = 13
     end
+    object AutoRunChk: TCheckBox
+      Left = 337
+      Top = 11
+      Width = 97
+      Height = 17
+      Anchors = [akTop, akRight]
+      Caption = 'AutoRun'
+      TabOrder = 0
+      OnClick = StayOnTopChkClick
+    end
   end
   object Button1: TButton
-    Left = 368
+    Left = 364
     Top = 53
     Width = 60
     Height = 22
@@ -264,7 +277,7 @@ object Main: TMain
     Default = True
     TabOrder = 7
     OnClick = Button1Click
-    ExplicitLeft = 364
+    ExplicitLeft = 360
   end
   object UseSSLChk: TCheckBox
     Left = 108
@@ -284,17 +297,17 @@ object Main: TMain
     TabOrder = 9
     OnClick = Button2Click
   end
-  object ModuleNameEdit: TEdit
+  object AliasNameEdit: TEdit
     Left = 162
     Top = 31
-    Width = 200
+    Width = 196
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
     TabOrder = 10
     Text = 'doc'
-    ExplicitWidth = 196
+    ExplicitWidth = 192
   end
   object KeepAliveChk: TCheckBox
     Left = 8

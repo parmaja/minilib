@@ -31,7 +31,8 @@ type
     ChallengeSSLChk: TCheckBox;
     Label5: TLabel;
     MakeCertBtn: TButton;
-    ModuleNameEdit: TEdit;
+    AliasNameEdit: TEdit;
+    AutoRunChk: TCheckBox;
     UseSSLChk: TCheckBox;
     ExitBtn: TButton;
     Label1: TLabel;
@@ -170,7 +171,7 @@ begin
   aDocModule := HttpServer.Modules.Find<TmodWebModule>;
   if aDocModule <> nil then
   begin
-    aDocModule.AliasName := ModuleNameEdit.Text;
+    aDocModule.AliasName := AliasNameEdit.Text;
     aDocModule.HomePath := aHomePath;
   end;
 
@@ -239,8 +240,6 @@ var
       Result := aIni.ReadString('options',AName, ADefault);
   end;
 
-var
-  aAutoRun:Boolean;
 begin
   InstallEventLog(ServerLog);
   ChallengeServer := TmodAcmeChallengeServer.Create;
@@ -260,13 +259,13 @@ begin
   try
     RootEdit.Text := GetOption('root', '.\html');
     PortEdit.Text := GetOption('port', '81');
-    ModuleNameEdit.Text := GetOption('module', 'doc');
+    AliasNameEdit.Text := GetOption('alias', 'doc');
     UseSSLChk.Checked := GetOption('ssl', false);
     ChallengeSSLChk.Checked := GetOption('challenge', False);
-    aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
     CertPassword := GetOption('cert_password', '');
     CertFile := CorrectPath(ExpandToPath(GetOption('certificate', './certificate.pem'), Application.Location));
     PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), Application.Location));
+    AutoRunChk.Checked := StrToBoolDef(GetSwitch('autorun', ''), False);
   finally
     aIni.Free;
   end;
@@ -285,9 +284,10 @@ begin
   try
     aIni.WriteString('options', 'root', RootEdit.Text);
     aIni.WriteString('options', 'port', PortEdit.Text);
-    aIni.WriteString('options', 'module', ModuleNameEdit.Text);
+    aIni.WriteString('options', 'alias', AliasNameEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'challenge', ChallengeSSLChk.Checked);
+    aIni.WriteBool('options', 'autorun', AutoRunChk.Checked);
   finally
     aIni.Free;
   end;
