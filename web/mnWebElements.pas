@@ -289,6 +289,10 @@ type
   public
     type
       THTMLElement = class(TmnwElement)
+      protected
+        procedure DoRespond(DataObject: TObject; AStream: TStream); virtual;
+      public
+        procedure Respond(DataObject: TObject; AStream: TStream);
       end;
 
       { TContent }
@@ -302,6 +306,12 @@ type
       THeader = class;
       TFooter = class;
       TContainer = class;
+
+      TDirectFile = class(THTMLElement)
+      public
+        FileName: string;
+        procedure DoRespond(DataObject: TObject; AStream: TStream); override;
+      end;
 
       { TDocument }
 
@@ -1469,6 +1479,23 @@ destructor TmnwRenderer.Destroy;
 begin
   FreeAndNil(FObjectClasses);
   FreeAndNil(FParams);
+  inherited;
+end;
+
+{ THTML.THTMLElement }
+
+procedure THTML.THTMLElement.DoRespond(DataObject: TObject; AStream: TStream);
+begin
+end;
+
+procedure THTML.THTMLElement.Respond(DataObject: TObject; AStream: TStream);
+begin
+end;
+
+{ THTML.TDirectFile }
+
+procedure THTML.TDirectFile.DoRespond(DataObject: TObject; AStream: TStream);
+begin
   inherited;
 end;
 

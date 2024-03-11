@@ -20,6 +20,16 @@ type
     Module: THomeModule;
   end;
 
+  { TFilesSchema }
+
+  TFilesSchema = class(TCustomHomeSchema)
+  private
+  public
+  protected
+    procedure DoCompose; override;
+  public
+  end;
+
   { THomeSchema }
 
   THomeSchema = class(TCustomHomeSchema)
@@ -165,6 +175,28 @@ begin
   FreeAndNil(HomeSchema);
   FreeAndNil(Schemas);
   inherited;
+end;
+
+{ TfilesSchema }
+
+procedure TfilesSchema.DoCompose;
+begin
+  inherited;
+  Name := 'files';
+  Route := 'files';
+  with This.Add<TDocument> do
+  begin
+    //Name := 'document';
+    Route := 'index';
+    Title := 'Index';
+  end;
+
+  with This.Add<TDirectFile> do
+  begin
+    Name := 'jquery';
+    Route := 'jquery';
+    FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
+  end;
 end;
 
 end.
