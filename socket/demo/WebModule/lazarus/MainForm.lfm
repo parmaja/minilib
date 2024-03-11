@@ -1,0 +1,331 @@
+object Main: TMain
+  Left = 907
+  Height = 366
+  Top = 243
+  Width = 536
+  HorzScrollBar.Page = 206
+  VertScrollBar.Page = 207
+  BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
+  Caption = 'Module Web Server'
+  ClientHeight = 366
+  ClientWidth = 536
+  Font.CharSet = ARABIC_CHARSET
+  Font.Color = clBlack
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Pitch = fpVariable
+  Menu = MainMenu
+  LCLVersion = '3.99.0.0'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnHide = FormHide
+  object Memo: TMemo
+    Left = 0
+    Height = 242
+    Top = 124
+    Width = 536
+    Align = alClient
+    Anchors = [akLeft, akBottom]
+    Font.CharSet = ARABIC_CHARSET
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    ParentFont = False
+    ReadOnly = True
+    ScrollBars = ssVertical
+    TabOrder = 1
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 124
+    Top = 0
+    Width = 536
+    Align = alTop
+    BevelOuter = bvNone
+    ClientHeight = 124
+    ClientWidth = 536
+    TabOrder = 0
+    object Panel2: TPanel
+      Left = 0
+      Height = 39
+      Top = 85
+      Width = 536
+      Align = alBottom
+      BevelOuter = bvNone
+      ChildSizing.LeftRightSpacing = 5
+      ChildSizing.TopBottomSpacing = 5
+      ChildSizing.HorizontalSpacing = 3
+      ClientHeight = 39
+      ClientWidth = 536
+      TabOrder = 2
+      object ExitBtn: TButton
+        Left = 470
+        Height = 29
+        Top = 5
+        Width = 61
+        Align = alRight
+        Anchors = [akTop, akRight]
+        BorderSpacing.InnerBorder = 4
+        Caption = 'Exit'
+        TabOrder = 2
+        OnClick = ExitBtnClick
+      end
+      object StopBtn: TButton
+        Left = 68
+        Height = 29
+        Top = 5
+        Width = 60
+        Align = alLeft
+        BorderSpacing.InnerBorder = 4
+        Caption = 'S&top'
+        Enabled = False
+        TabOrder = 1
+        OnClick = StopBtnClick
+      end
+      object StartBtn: TButton
+        Left = 5
+        Height = 29
+        Top = 5
+        Width = 60
+        Align = alLeft
+        BorderSpacing.InnerBorder = 4
+        Caption = '&Start'
+        Default = True
+        TabOrder = 0
+        OnClick = StartBtnClick
+      end
+      object MakeCertBtn: TButton
+        Left = 374
+        Height = 29
+        Top = 5
+        Width = 93
+        Align = alRight
+        BorderSpacing.InnerBorder = 4
+        Caption = 'Make Cert'
+        TabOrder = 3
+        OnClick = MakeCertBtnClick
+      end
+      object AutoRunChk: TCheckBox
+        Left = 131
+        Height = 29
+        Top = 5
+        Width = 63
+        Align = alLeft
+        Caption = 'Auto Run'
+        TabOrder = 4
+        OnChange = StayOnTopChkChange
+      end
+    end
+    object Label1: TLabel
+      Left = 15
+      Height = 13
+      Top = 11
+      Width = 23
+      Caption = 'Root'
+      Font.CharSet = ARABIC_CHARSET
+      Font.Color = clBlack
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Pitch = fpVariable
+      ParentFont = False
+    end
+    object Label2: TLabel
+      Left = 18
+      Height = 13
+      Top = 37
+      Width = 20
+      Caption = 'Port'
+    end
+    object HomePathEdit: TEdit
+      Left = 47
+      Height = 21
+      Top = 6
+      Width = 480
+      Anchors = [akTop, akLeft, akRight]
+      TabOrder = 1
+      Text = '.\html'
+    end
+    object PortEdit: TEdit
+      Left = 47
+      Height = 21
+      Top = 34
+      Width = 78
+      TabOrder = 3
+      Text = '81'
+    end
+    object Panel3: TPanel
+      Left = 0
+      Height = 26
+      Top = 59
+      Width = 536
+      Align = alBottom
+      BevelOuter = bvNone
+      ClientHeight = 26
+      ClientWidth = 536
+      TabOrder = 0
+      object LastIDLabel: TLabel
+        Left = 135
+        Height = 20
+        Top = 3
+        Width = 60
+        Align = alLeft
+        AutoSize = False
+        BorderSpacing.Around = 3
+        Caption = '0'
+        Color = 13224393
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = 13
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentColor = False
+        ParentFont = False
+        ShowAccelChar = False
+        Transparent = False
+      end
+      object Label4: TLabel
+        Left = 98
+        Height = 20
+        Top = 3
+        Width = 34
+        Align = alLeft
+        BorderSpacing.Around = 3
+        Caption = 'Last ID'
+        Font.CharSet = ARABIC_CHARSET
+        Font.Color = clBlack
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentFont = False
+      end
+      object Label3: TLabel
+        Left = 198
+        Height = 20
+        Top = 3
+        Width = 20
+        Align = alLeft
+        BorderSpacing.Around = 3
+        Caption = 'Max'
+        Font.CharSet = ARABIC_CHARSET
+        Font.Color = clBlack
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentFont = False
+      end
+      object MaxOfThreadsLabel: TLabel
+        Left = 221
+        Height = 20
+        Top = 3
+        Width = 60
+        Align = alLeft
+        AutoSize = False
+        BorderSpacing.Around = 3
+        Caption = '0'
+        Color = 13224393
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = 13
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentColor = False
+        ParentFont = False
+        ShowAccelChar = False
+        Transparent = False
+      end
+      object NumberOfThreads: TLabel
+        Left = 35
+        Height = 20
+        Top = 3
+        Width = 60
+        Align = alLeft
+        AutoSize = False
+        BorderSpacing.Around = 3
+        Caption = '0'
+        Color = 13224393
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = 13
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentColor = False
+        ParentFont = False
+        ShowAccelChar = False
+        Transparent = False
+        OnClick = NumberOfThreadsClick
+      end
+      object NumberOfThreadsLbl: TLabel
+        Left = 3
+        Height = 20
+        Top = 3
+        Width = 29
+        Align = alLeft
+        BorderSpacing.Around = 3
+        Caption = 'Count'
+        Font.CharSet = ARABIC_CHARSET
+        Font.Color = clBlack
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentFont = False
+      end
+    end
+    object UseSSLChk: TCheckBox
+      Left = 138
+      Height = 17
+      Top = 36
+      Width = 56
+      Caption = 'Use SSL'
+      TabOrder = 4
+    end
+    object AliasNameEdit: TEdit
+      Left = 384
+      Height = 21
+      Top = 34
+      Width = 78
+      TabOrder = 5
+      Text = 'doc'
+    end
+    object Label5: TLabel
+      Left = 357
+      Height = 13
+      Top = 36
+      Width = 22
+      Caption = 'Alias'
+    end
+    object StayOnTopChk: TCheckBox
+      Left = 466
+      Height = 17
+      Top = 36
+      Width = 53
+      Caption = 'On Top'
+      TabOrder = 6
+      OnChange = StayOnTopChkChange
+    end
+    object ChallengeSSLChk: TCheckBox
+      Left = 218
+      Height = 17
+      Top = 36
+      Width = 130
+      Caption = 'Challenge Server on 80'
+      TabOrder = 7
+    end
+  end
+  object MainMenu: TMainMenu
+    Left = 441
+    Top = 132
+    object MenuItem1: TMenuItem
+      Caption = 'Exit'
+      OnClick = MenuItem1Click
+    end
+  end
+end
