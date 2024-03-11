@@ -32,7 +32,7 @@ type
 
   { THomeSchema }
 
-  THomeSchema = class(TCustomHomeSchema)
+  TWellcomeSchema = class(TCustomHomeSchema)
   private
   public
   protected
@@ -56,7 +56,7 @@ type
     procedure Start; override;
     procedure Created; override;
   public
-    HomeSchema: THomeSchema;
+    WellcomeSchema: TWellcomeSchema;
     Schemas: TmnwSchemas;
     //LoginSchema: TLoginSchema;
     destructor Destroy; override;
@@ -64,9 +64,9 @@ type
 
 implementation
 
-{ THomeSchema }
+{ TWellcomeSchema }
 
-procedure THomeSchema.DoCompose;
+procedure TWellcomeSchema.DoCompose;
 begin
   inherited;
   Name := 'welcome';
@@ -158,21 +158,21 @@ procedure THomeModule.Created;
 begin
   inherited;
   Schemas := TmnwSchemas.Create;
-  HomeSchema := THomeSchema.Create;
-  HomeSchema.Module := Self;
-  Schemas.RegisterSchema(HomeSchema.Route, HomeSchema);
+  WellcomeSchema := TWellcomeSchema.Create;
+  WellcomeSchema.Module := Self;
+  Schemas.RegisterSchema(WellcomeSchema.Route, WellcomeSchema);
 end;
 
 procedure THomeModule.Start;
 begin
   inherited;
-  HomeSchema.Clear;
-  HomeSchema.Compose;
+  WellcomeSchema.Clear;
+  WellcomeSchema.Compose;
 end;
 
 destructor THomeModule.Destroy;
 begin
-  FreeAndNil(HomeSchema);
+  FreeAndNil(WellcomeSchema);
   FreeAndNil(Schemas);
   inherited;
 end;
