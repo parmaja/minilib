@@ -132,6 +132,7 @@ type
     CheckSum: WORD;
     SessionID: WORD; //or some data on respond
     ReplyID: WORD;
+    procedure Log;
   end;
 
   PZKHeader = ^TZKHeader;
@@ -143,6 +144,7 @@ type
     Size: LongWord;
     Header: TZKHeader;
     function DataSize: LongWord;
+    procedure Log;
   end;
 
   PZKPayload = ^TZKPayload;
@@ -235,6 +237,7 @@ type
     procedure DumpHex(BytesInLine: Integer = 0);
     function DumpHexs(BytesInLine: Integer = 0): string;
     {$endif}
+    procedure SaveToFile(const vFile: string);
   end;
 
   TZKSocketStream = Class(TmnClientSocketStream)
@@ -340,6 +343,13 @@ Device->PC
 
 *}
 
+procedure TZKPayload.Log;
+begin
+  Write('Start:', Start, ', Size:', Size, '  ');
+  Header.Log;
+  Writeln('');
+end;
+
 { TByteHelper }
 
 procedure TByteHelper.Clear;
@@ -436,6 +446,17 @@ end;
 function TByteHelper.GetWord(Index: Integer): WORD;
 begin
   Result := PWord(@Self[Index])^;
+end;
+
+procedure TByteHelper.SaveToFile(const vFile: string);
+begin
+  var m := TMemoryStream.Create;
+  try
+    m.Write(Self[0], Length(Self));
+    m.SaveToFile(vFile);
+  finally
+    m.Free;
+  end;
 end;
 
 function TByteHelper.GetDWord(Index: Integer): LongWord;
@@ -617,13 +638,19 @@ begin
             ReceivePayload(Payload);
             if Payload.Header.Command = CMD_DATA then
             begin
-              ReceiveBuffer(aSize, SizeOf(aSize)); //tested with small date
-              ReceiveBytes(aBuf, aSize);
+              if Payload.Header.SessionID=0 then
+              begin
+                ReceiveBuffer(aSize, SizeOf(aSize)); //tested with small date
+                ReceiveBytes(aBuf, Payload.DataSize-SizeOf(aSize));
+              end
+              else
+                ReceiveBytes(aBuf, Payload.DataSize);
+
               RespondData := RespondData + aBuf;
 
-              aWholeSize := aWholeSize - PayLoad.DataSize;
+              {aWholeSize := aWholeSize - PayLoad.DataSize;
               if aWholeSize<aPageSize then
-                aReadSize := aWholeSize;
+                aReadSize := aWholeSize;}
             end
             else if Payload.Header.Command = CMD_ACK_OK then
               Break
@@ -1009,6 +1036,13 @@ begin
   Result := ExecCommand(CMD_CLEAR_ATTLOG, NewReplyID);
 end;
 
+{ TZKHeader }
+
+procedure TZKHeader.Log;
+begin
+  Write('Command:', Command, ', CheckSum:', CheckSum, ', SessionID:', SessionID, ', ReplyID: ', ReplyID);
+end;
+
 {
 AttLog
 CMD_ATTLOG_RRQ
@@ -1032,6 +1066,7 @@ CMD_USERTEMP_RRQ
 
 
 }
+
 
 end.
 
