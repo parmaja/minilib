@@ -92,7 +92,6 @@ type
 
   TmnOnLog = procedure(const S: string) of object;
   TmnOnListenerNotify = procedure(Listener: TmnListener) of object;
-  TmnOnListenerAcceptNotify = procedure(Listener: TmnListener; vConnection: TmnServerConnection) of object;
 
   { TmnListener }
 
@@ -100,8 +99,6 @@ type
   private
     FServer: TmnServer;
     FTimeout: Integer;
-    FAttempts: Integer;
-    FTries: Integer;
     FSocket: TmnCustomSocket; //Listner socket waiting by call "select"
     FLogMessages: TStringList;
     FOptions: TmnsoOptions;
@@ -149,8 +146,6 @@ type
     property Connected: Boolean read GetConnected;
     property Socket: TmnCustomSocket read FSocket;
     property Options: TmnsoOptions read FOptions write SetOptions;
-    //if listener connection down by network it will reconnect again
-    property Attempts: Integer read FAttempts write FAttempts;
     //it is ListenerTimeout not ReadTimeOut
     property Timeout: Integer read FTimeout write FTimeout default cListenerTimeout;
     procedure ReloadContext;
@@ -184,7 +179,6 @@ type
     function CreateListener: TmnListener; virtual;
     procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
-    procedure DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection); virtual;
     procedure DoIdle; virtual; //no connection found after time out:)
     procedure DoBeforeOpen; virtual;
     procedure DoAfterOpen; virtual;
@@ -269,11 +263,9 @@ type
     FOnAfterClose: TNotifyEvent;
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnListenerNotify;
-    FOnAccepted: TmnOnListenerAcceptNotify;
   protected
     procedure DoLog(const S: string); override;
     procedure DoChanged(vListener: TmnListener); override;
-    procedure DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection); override;
     procedure DoBeforeOpen; override;
     procedure DoAfterOpen; override;
     procedure DoBeforeClose; override;
@@ -285,7 +277,6 @@ type
     property OnBeforeClose: TNotifyEvent read FOnBeforeClose write FOnBeforeClose;
     property OnLog: TmnOnLog read FOnLog write FOnLog;
     property OnChanged: TmnOnListenerNotify read FOnChanged write FOnChanged;
-    property OnAccepted: TmnOnListenerAcceptNotify read FOnAccepted write FOnAccepted;
   end;
 
 implementation
@@ -349,16 +340,6 @@ begin
   begin
     if Assigned(FOnChanged) then
       FOnChanged(vListener);
-  end;
-end;
-
-procedure TmnEventServer.DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection);
-begin
-  inherited;
-  if not (IsDestroying) then
-  begin
-    if Assigned(FOnAccepted) then
-      FOnAccepted(vListener, vConnection);
   end;
 end;
 
@@ -470,10 +451,6 @@ begin
   CheckSynchronize
 end;
 
-procedure TmnServer.DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection);
-begin
-end;
-
 procedure TmnServer.DoBeforeClose;
 begin
 end;
@@ -547,7 +524,6 @@ begin
   inherited Create;
   FreeOnTerminate := False;
   FLogMessages := TStringList.Create;
-  FAttempts := 0;
   FTimeout := cListenerTimeout;
 end;
 
@@ -627,7 +603,6 @@ var
 begin
 
   try
-    FTries := FAttempts;
     Connect;
     if Connected then
       Changed;
@@ -641,7 +616,6 @@ begin
           begin
             UpdateChanged;
             aSocket.Context := Context;
-            //aSocket.Prepare;
           end
         end
         else
@@ -668,30 +642,27 @@ begin
           begin
 
             //only if we need retry mode, attempt to connect new socket, for 3 times as example, that if socket disconnected for wiered reason
-            if (not Connected) and (FAttempts > 0) and (FTries > 0) then
+            {if (not Connected) and (FAttempts > 0) and (FTries > 0) then
             begin
               FTries := FTries - 1;
               Connect;
-            end; //else we will not continue look at "while" conditions
+            end; //else we will not continue look at "while" conditions}
           end
           else
           begin
+            //check to make this in new thread
             try
-              Enter; //because we add connection to a thread list
-              try
-                aConnection := CreateConnection(aSocket) as TmnServerConnection;
-                aConnection.FRemoteIP := aSocket.GetRemoteAddress;
-                //aConnection.Stream.ReadTimeout ////hmmmm
-                //aConnection.Prepare
-                if FServer <> nil then
-                  FServer.DoAccepted(Self, aConnection);
-              finally
-                Leave;
+              aConnection := CreateConnection(aSocket) as TmnServerConnection;
+              aConnection.FRemoteIP := aSocket.GetRemoteAddress;
+            except
+              on E: Exception do
+              begin
+                Log(E.Message);
+                aConnection := nil;
               end;
-              //Log('Starting: ' + aConnection.ClassName);
-              aConnection.Start; //moved here need some test
-            finally
             end;
+            if aConnection<>nil then
+              aConnection.Start;
           end;
           {w.Stop;
           var i := w.ElapsedMilliseconds;
@@ -815,7 +786,6 @@ begin
     for i := 0 to List.Count - 1 do
     begin
       List[i].FreeOnTerminate := False; //I will kill you
-//      List[i].Terminate;
     end;
   finally
     Leave;
