@@ -449,8 +449,10 @@ begin
 end;
 
 procedure TByteHelper.SaveToFile(const vFile: string);
+var
+  m: TMemoryStream;
 begin
-  var m := TMemoryStream.Create;
+  m := TMemoryStream.Create;
   try
     m.Write(Self[0], Length(Self));
     m.SaveToFile(vFile);

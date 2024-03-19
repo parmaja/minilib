@@ -679,7 +679,9 @@ end;
 
 function TmnCustomHttpClient.ReadStream(AStream: TStream): TFileSize;
 begin
-  if Response.KeepAlive then
+  if Response.Chunked and (Response.ContentLength=0) then
+    Result := FStream.ReadStream(AStream, -1)
+  else if Response.KeepAlive then
   begin
     // and (Response.ContentLength<>0) nop and Response.ContentLength=0 checked in read stream
     Result := FStream.ReadStream(AStream, Response.ContentLength);
