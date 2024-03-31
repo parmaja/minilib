@@ -280,10 +280,13 @@ type
     property Params: TmnwAttributes read FParams;
   end;
 
+  { TmnwSchemaObject }
+
   TmnwSchemaObject = class(TmnNamedObject)
   public
     SchemaClass: TmnwSchemaClass;
     Schema: TmnwSchema;
+    destructor Destroy; override;
   end;
 
   { TmnwSchemas }
@@ -292,6 +295,7 @@ type
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
   public
+    destructor Destroy; override;
     procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
     function Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream): TmnwElement;
     function Render(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream): TmnwSchema;
@@ -885,7 +889,20 @@ begin
     Result := TmnwElementRenderer;
 end;
 
+{ TmnwSchemaObject }
+
+destructor TmnwSchemaObject.Destroy;
+begin
+  FreeAndNil(Schema);
+  inherited;
+end;
+
 { TmnwSchemas }
+
+destructor TmnwSchemas.Destroy;
+begin
+  inherited;
+end;
 
 procedure TmnwSchemas.RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
 var
@@ -962,7 +979,6 @@ begin
   begin
     Result.Respond(Route, Renderer, Sender, AStream);
   end;
-
 end;
 
 procedure TmnwSchemas.SchemaCreated(Schema: TmnwSchema);
@@ -1332,9 +1348,9 @@ end;
 
 destructor THTML.TDocument.Destroy;
 begin
-  FreeAndNil(FHeader);
+{  FreeAndNil(FHeader);
   FreeAndNil(FFooter);
-  FreeAndNil(FContainer);
+  FreeAndNil(FContainer);}
   inherited;
 end;
 
@@ -1372,7 +1388,7 @@ procedure THTML.TMemoryImage.DoRespond(Route: string; ARenderer: TmnwRenderer; S
 begin
   (Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', DocumentToContentType(FileName));
   Data.Seek(0, soBeginning);
-  AStream.CopyFrom(Data);
+  AStream.CopyFrom(Data, 0);
 end;
 
 procedure THTML.TMemoryImage.LoadFromFile(AFileName: string);
