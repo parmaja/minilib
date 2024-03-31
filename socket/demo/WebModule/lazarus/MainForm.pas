@@ -18,7 +18,7 @@ interface
 
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
-  mnLogs, mnUtils,
+  mnLogs, mnUtils, rtti,
   StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSL, mnBootstraps,
   HomeModules,
   LResources, Buttons, Menus;

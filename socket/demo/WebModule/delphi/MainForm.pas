@@ -39,7 +39,9 @@ type
     Label5: TLabel;
     KeepAliveChk: TCheckBox;
     CompressChk: TCheckBox;
+    AutoOpenChk: TCheckBox;
     AutoRunChk: TCheckBox;
+    OpenBtn: TButton;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
@@ -47,9 +49,11 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure OpenBtnClick(Sender: TObject);
   private
     FMax:Integer;
     HttpServer: TmodWebServer;
+    procedure OpenURL;
     procedure UpdateStatus;
     procedure HttpServerBeforeOpen(Sender: TObject);
     procedure HttpServerAfterOpen(Sender: TObject);
@@ -106,6 +110,7 @@ begin
   end;
 
   aDocModule := HttpServer.Modules.Find<TmodWebModule>;
+
   if aDocModule <> nil then
   begin
     aDocModule.HomePath := aHomePath;
@@ -256,6 +261,7 @@ var
   end;
 
 begin
+  InstallEventLog(HttpServerLog);
   HttpServer := TmodWebServer.Create;
   HttpServer.OnBeforeOpen := HttpServerBeforeOpen;
   HttpServer.OnAfterOpen := HttpServerAfterOpen;
@@ -276,6 +282,7 @@ begin
     KeepAliveChk.Checked := GetOption('keep_alive', false);
     CompressChk.Checked := GetOption('compress', false);
     AutoRunChk.Checked := StrToBoolDef(GetSwitch('autorun', ''), False);
+    AutoOpenChk.Checked := StrToBoolDef(GetSwitch('autoopen', ''), False);
   finally
     aIni.Free;
   end;
@@ -297,6 +304,7 @@ begin
     aIni.WriteBool('options', 'keep_alive', KeepAliveChk.Checked);
     aIni.WriteBool('options', 'compress', CompressChk.Checked);
     aIni.WriteBool('options', 'autorun', AutoRunChk.Checked);
+    aIni.WriteBool('options', 'autoopen', AutoOpenChk.Checked);
   finally
     aIni.Free;
   end;
@@ -321,10 +329,8 @@ end;
 
 procedure TMain.HttpServerAfterOpen(Sender: TObject);
 begin
-  if UseSSLChk.Checked then
-    ShellExecute(Handle, 'Open', PWideChar('https://localhost:'+PortEdit.Text+'/'+AliasNameEdit.Text), nil, nil, 0)
-  else
-    ShellExecute(Handle, 'Open', PWideChar('http://localhost:'+PortEdit.Text+'/'+AliasNameEdit.Text), nil, nil, 0);
+  if AutoOpenChk.Checked then
+    OpenURL;
 end;
 
 procedure TMain.HttpServerChanged(Listener: TmnListener);
@@ -338,6 +344,19 @@ end;
 procedure TMain.HttpServerLog(const s: string);
 begin
   Memo.Lines.Add(s);
+end;
+
+procedure TMain.OpenBtnClick(Sender: TObject);
+begin
+  OpenURL;
+end;
+
+procedure TMain.OpenURL;
+begin
+  if UseSSLChk.Checked then
+    ShellExecute(Handle, 'Open', PWideChar('https://localhost:'+PortEdit.Text+'/'+AliasNameEdit.Text), nil, nil, 0)
+  else
+    ShellExecute(Handle, 'Open', PWideChar('http://localhost:'+PortEdit.Text+'/'+AliasNameEdit.Text), nil, nil, 0);
 end;
 
 end.

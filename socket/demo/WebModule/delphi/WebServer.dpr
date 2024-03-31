@@ -13,7 +13,7 @@ uses
 
 begin
   Application.Initialize;
-  if FindCmdLineSwitch('hide',true) then
+  if FindCmdLineSwitch('hide', true) then
   begin
     Application.ShowMainForm:=false;
     ShowWindow(Application.Handle,SW_HIDE);

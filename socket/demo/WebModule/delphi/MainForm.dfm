@@ -3,8 +3,8 @@ object Main: TMain
   Top = 554
   BiDiMode = bdLeftToRight
   Caption = 'Mini Web Server'
-  ClientHeight = 359
-  ClientWidth = 434
+  ClientHeight = 388
+  ClientWidth = 439
   Color = clBtnFace
   CustomTitleBar.CaptionAlignment = taCenter
   Font.Charset = DEFAULT_CHARSET
@@ -16,22 +16,22 @@ object Main: TMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    434
-    359)
+    439
+    388)
   TextHeight = 13
   object Label1: TLabel
-    Left = 7
+    Left = 10
     Top = 8
-    Width = 23
+    Width = 53
     Height = 13
-    Caption = 'Root'
+    Caption = 'Home Path'
   end
   object Label2: TLabel
-    Left = 9
+    Left = 10
     Top = 33
-    Width = 19
+    Width = 51
     Height = 13
-    Caption = 'Port'
+    Caption = 'HTTP Port'
   end
   object Label5: TLabel
     Left = 134
@@ -42,10 +42,11 @@ object Main: TMain
   end
   object Memo: TMemo
     Left = 0
-    Top = 152
-    Width = 434
-    Height = 207
+    Top = 153
+    Width = 439
+    Height = 235
     Align = alBottom
+    Anchors = [akLeft, akTop, akRight, akBottom]
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
     ReadOnly = True
@@ -53,9 +54,10 @@ object Main: TMain
     TabOrder = 1
     ExplicitTop = 151
     ExplicitWidth = 430
+    ExplicitHeight = 207
   end
   object StartBtn: TButton
-    Left = 364
+    Left = 369
     Top = 6
     Width = 60
     Height = 22
@@ -67,19 +69,19 @@ object Main: TMain
     ExplicitLeft = 360
   end
   object HomePathEdit: TEdit
-    Left = 46
+    Left = 88
     Top = 6
-    Width = 313
+    Width = 276
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
     TabOrder = 2
     Text = 'c:\offline\'
-    ExplicitWidth = 309
+    ExplicitWidth = 271
   end
   object StopBtn: TButton
-    Left = 364
+    Left = 369
     Top = 30
     Width = 60
     Height = 22
@@ -91,9 +93,9 @@ object Main: TMain
     ExplicitLeft = 360
   end
   object PortEdit: TEdit
-    Left = 46
+    Left = 88
     Top = 30
-    Width = 75
+    Width = 33
     Height = 21
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
@@ -101,7 +103,7 @@ object Main: TMain
     Text = '81'
   end
   object StayOnTopChk: TCheckBox
-    Left = 8
+    Left = 10
     Top = 52
     Width = 97
     Height = 17
@@ -111,24 +113,22 @@ object Main: TMain
   end
   object Panel3: TPanel
     Left = 0
-    Top = 118
-    Width = 434
+    Top = 119
+    Width = 439
     Height = 34
     Align = alBottom
+    Anchors = [akLeft, akTop, akRight]
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
     ExplicitTop = 117
     ExplicitWidth = 430
-    DesignSize = (
-      434
-      34)
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
       Top = 6
       Width = 60
-      Height = 25
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -153,7 +153,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 25
+      Height = 22
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -173,7 +173,7 @@ object Main: TMain
       Left = 101
       Top = 6
       Width = 20
-      Height = 25
+      Height = 22
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -193,7 +193,7 @@ object Main: TMain
       Left = 127
       Top = 6
       Width = 60
-      Height = 25
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -218,7 +218,7 @@ object Main: TMain
       Left = 35
       Top = 6
       Width = 60
-      Height = 25
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -256,20 +256,10 @@ object Main: TMain
       Layout = tlCenter
       ExplicitHeight = 13
     end
-    object AutoRunChk: TCheckBox
-      Left = 337
-      Top = 11
-      Width = 97
-      Height = 17
-      Anchors = [akTop, akRight]
-      Caption = 'AutoRun'
-      TabOrder = 0
-      OnClick = StayOnTopChkClick
-    end
   end
   object Button1: TButton
-    Left = 364
-    Top = 53
+    Left = 369
+    Top = 56
     Width = 60
     Height = 22
     Anchors = [akTop, akRight]
@@ -289,18 +279,19 @@ object Main: TMain
     OnClick = StayOnTopChkClick
   end
   object Button2: TButton
-    Left = 287
-    Top = 53
-    Width = 75
+    Left = 304
+    Top = 57
+    Width = 60
     Height = 22
+    Anchors = [akTop, akRight]
     Caption = 'Test'
     TabOrder = 9
     OnClick = Button2Click
   end
   object AliasNameEdit: TEdit
     Left = 162
-    Top = 31
-    Width = 196
+    Top = 30
+    Width = 201
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     BiDiMode = bdLeftToRight
@@ -310,7 +301,7 @@ object Main: TMain
     ExplicitWidth = 192
   end
   object KeepAliveChk: TCheckBox
-    Left = 8
+    Left = 10
     Top = 77
     Width = 97
     Height = 17
@@ -326,5 +317,33 @@ object Main: TMain
     Caption = 'Compress'
     TabOrder = 12
     OnClick = StayOnTopChkClick
+  end
+  object AutoOpenChk: TCheckBox
+    Left = 108
+    Top = 101
+    Width = 141
+    Height = 17
+    Caption = 'Auto Open web page'
+    TabOrder = 13
+    OnClick = StayOnTopChkClick
+  end
+  object AutoRunChk: TCheckBox
+    Left = 10
+    Top = 101
+    Width = 97
+    Height = 17
+    Caption = 'AutoRun'
+    TabOrder = 14
+    OnClick = StayOnTopChkClick
+  end
+  object OpenBtn: TButton
+    Left = 369
+    Top = 91
+    Width = 60
+    Height = 22
+    Anchors = [akTop, akRight]
+    Caption = 'Open'
+    TabOrder = 15
+    OnClick = OpenBtnClick
   end
 end

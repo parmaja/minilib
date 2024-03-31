@@ -123,6 +123,9 @@ type
     property Respond: TmodHttpRespond read GetRespond;
   end;
 
+  TmodWebSocketCommand = class(TmodCommand)
+  end;
+
   TmodWebFileModule = class;
 
   { TmodURICommand }
@@ -152,10 +155,13 @@ type
     procedure Created; override;
 
     procedure Log(S: string); override;
-    procedure InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean); override;
+    procedure InternalError(ARequest: TmodRequest; AStream: TmnBufferStream; var Handled: Boolean); override;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); override;
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
   public
+    HomeURL: string;
+    HostURL: string;
+    CachePath: string;
     destructor Destroy; override;
     property DocumentRoot: string read FHomePath write SetHomePath; //deprecated;
     property HomePath: string read FHomePath write SetHomePath;
@@ -234,6 +240,7 @@ type
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
   end;
+
   {$endif}
 
   { TmodHttpGetCommand }
@@ -463,7 +470,9 @@ begin
   //inherited;
   ARequest.Command := ARequest.Method;
   if (AliasName <> '') then
-    ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);
+  begin
+    ARequest.Path := DeleteSubPath(ARequest.Route[0], ARequest.Path);
+  end;
 end;
 
 procedure TmodWebModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
@@ -472,11 +481,11 @@ begin
   vMatch := ARequest.Route[0] = AliasName;
 end;
 
-procedure TmodWebModule.InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean);
+procedure TmodWebModule.InternalError(ARequest: TmodRequest; AStream: TmnBufferStream; var Handled: Boolean);
 begin
   inherited;
-  ARespondStream.WriteLineUTF8('HTTP/1.1 500 Internal Server Error');
-  ARespondStream.WriteLineUTF8('');
+  AStream.WriteLineUTF8('HTTP/1.1 500 Internal Server Error');
+  AStream.WriteLineUTF8('');
   Handled := True;
 end;
 
@@ -602,6 +611,7 @@ procedure TmodHttpGetCommand.RespondResult(var Result: TmodRespondResult);
 var
   aDocument, aHomePath: string;
 begin
+
 (*
 
   '/web'               path = ''
@@ -974,7 +984,7 @@ end;
 
 procedure TmodWebModules.ParseHead(ARequest: TmodRequest; const RequestLine: string);
 begin
-  inherited ParseHead(ARequest, RequestLine);
+  inherited;
   ARequest.URI := URIDecode(ARequest.URI);
   //ARequest.ParsePath(ARequest.URI); duplicate in parse head :)
   ARequest.Command := ARequest.Method;
@@ -1000,6 +1010,7 @@ begin
 end;
 
 {$ifndef FPC}
+
 { TmodHttpEventCommand }
 
 procedure TmodHttpEventCommand.RespondResult(var Result: TmodRespondResult);

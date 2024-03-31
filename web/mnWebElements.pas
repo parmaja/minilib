@@ -49,7 +49,8 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, Variants, RTTI,
-	mnUtils, mnClasses, mnStreams, mnLogs;
+	mnUtils, mnClasses, mnStreams, mnLogs,
+  mnMultipartData, mnModules, mnWebModules;
 
 type
 
@@ -84,7 +85,7 @@ type
   { TmnwContext }
 
   TmnwContext = record
-    DataObject: TObject;
+    Sender: TObject;
     Renderer: TmnwRenderer;
     Output: TmnwOutput;
   end;
@@ -100,11 +101,15 @@ type
 
   TmnwRequestState = (rsBeforeRequest, rsAfterRequest);
 
+  TmnwElementKind = set of(
+    elEmbed, //* created by parent
+    elInternal //* do not render we will call it manually
+  );
+
   { TmnwElement }
 
   TmnwElement = class(TmnObjectList<TmnwElement>)
   private
-    FEmbed: Boolean;
     FEnabled: Boolean;
     FVisible: Boolean;
     FActive: Boolean;
@@ -118,6 +123,7 @@ type
     FStyleClass: String;
     FStyle: String;
     FAttributes: TmnwAttributes;
+    FKind: TmnwElementKind;
   protected
     procedure Update; virtual;
     procedure Added(Item: TmnwElement); override;
@@ -126,13 +132,17 @@ type
     procedure DoState(RequestState: TmnwRequestState); virtual;
     procedure State(RequestState: TmnwRequestState);
     procedure DoCompose; virtual;
+    procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream); virtual;
+    property Kind: TmnwElementKind read FKind;
   public
     Composed: Boolean;
     constructor Create; overload; virtual;
-    constructor Create(AEmbed: Boolean); overload;
+    constructor Create(AKind: TmnwElementKind; Parent: TmnwElement = nil); overload;
     destructor Destroy; override;
     function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;
     function Find(const Name: string): TmnwElement;
+    function FindByRoute(const Route: string): TmnwElement;
+    function FindByPath(const APath: string): TmnwElement;
     function IndexOfName(vName: string): Integer;
 
     function This: TmnwElement; //I wish i have templates/meta programming in pascal
@@ -141,10 +151,16 @@ type
 
     function GetPath: string; virtual;
 
-    function FindByPath(const APath: string): TmnwElement;
     function CreateRender(Context: TmnwContext): TmnwElementRenderer;
-    procedure Render(Context: TmnwContext);
     procedure Compose;
+
+    procedure Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream);
+
+    procedure Render(Context: TmnwContext); overload;
+
+    function Render(Renderer: TmnwRenderer; Sender: TObject; AOutput: TmnwOutput): Boolean; overload;
+    function Render(Renderer: TmnwRenderer; Sender: TObject; AStream: TStream): Boolean; overload;
+    function Render(Renderer: TmnwRenderer; Sender: TObject; AStrings: TStrings): Boolean; overload;
 
     property Route: String read FRoute write FRoute;
     property Name: String read FName write FName;
@@ -157,7 +173,6 @@ type
     //* Active render it
     property Active: Boolean read FActive write FActive;
     //* Embed render it directly not by loop like THeader
-    property Embed: Boolean read FEmbed;
     property Attributes: TmnwAttributes read FAttributes;
   end;
 
@@ -193,14 +208,14 @@ type
   private
 
   protected
+    procedure DoRespond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream); override;
   public
     constructor Create; override;
     destructor Destroy; override;
 
-    function Render(Renderer: TmnwRenderer; DataObject: TObject; AOutput: TmnwOutput): Boolean; overload;
-    function Render(Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): Boolean; overload;
-    function Render(Renderer: TmnwRenderer; DataObject: TObject; AStrings: TStrings): Boolean; overload;
   end;
+
+  TmnwSchemaClass = class of TmnwSchema;
 
   { TmnwElementRenderer }
 
@@ -248,11 +263,14 @@ type
   protected
     FObjectClasses: TRegObjects;
     FParams: TmnwAttributes;
+    {$ifndef FPC}
+    procedure RegisterClasses(ASchemaClass: TmnwSchemaClass);
+    {$endif}
   public
     constructor Create; virtual;
     destructor Destroy; override;
 
-    procedure RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False);
+    procedure RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = True);
     function FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
     function CreateRenderer(AObjectClass: TmnwElementClass): TmnwElementRenderer; overload;
     function CreateRenderer(AObject: TmnwElement): TmnwElementRenderer; overload;
@@ -261,10 +279,9 @@ type
     property Params: TmnwAttributes read FParams;
   end;
 
-  TmnwSchemaClass = class of TmnwSchema;
-
   TmnwSchemaObject = class(TmnNamedObject)
   public
+    SchemaClass: TmnwSchemaClass;
     Schema: TmnwSchema;
   end;
 
@@ -272,11 +289,11 @@ type
 
   TmnwSchemas = class(TmnNamedObjectList<TmnwSchemaObject>)
   protected
-    procedure DoRespond(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream); virtual;
+    procedure SchemaCreated(Schema: TmnwSchema); virtual;
   public
-    procedure RegisterSchema(AName: string; Schema: TmnwSchema);
-    function Respond(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): TmnwSchema;
-    function Render(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): TmnwSchema;
+    procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
+    function Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream): TmnwElement;
+    function Render(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream): TmnwSchema;
   end;
 
   TDirection = (dirUnkown, dirLTR, dirRTL);
@@ -290,9 +307,7 @@ type
     type
       THTMLElement = class(TmnwElement)
       protected
-        procedure DoRespond(DataObject: TObject; AStream: TStream); virtual;
       public
-        procedure Respond(DataObject: TObject; AStream: TStream);
       end;
 
       { TContent }
@@ -310,7 +325,6 @@ type
       TDirectFile = class(THTMLElement)
       public
         FileName: string;
-        procedure DoRespond(DataObject: TObject; AStream: TStream); override;
       end;
 
       { TDocument }
@@ -398,10 +412,15 @@ type
       { TMemoryImage }
 
       TMemoryImage = class(TImage)
-      public
+      protected
         Data: TMemoryStream;
+        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream); override;
+      public
+        FileName: string;
+        FilePath: string;
         constructor Create; override;
         destructor Destroy; override;
+        procedure LoadFromFile(AFileName: string);
       end;
 
       { Break }
@@ -436,7 +455,7 @@ type
 
       { TDocumentHTML }
 
-      TDocumentHTML = class(TElementHTML)
+      TDocument = class(TElementHTML)
       protected
         procedure DoCollectAttributes(Scope: TmnwScope); override;
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -444,21 +463,21 @@ type
 
       { THeaderHTML }
 
-      THeaderHTML = class(TElementHTML)
+      THeader = class(TElementHTML)
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TFooterHTML }
 
-      TFooterHTML = class(TElementHTML)
+      TFooter = class(TElementHTML)
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TContainerHTML }
 
-      TContainerHTML = class abstract(TElementHTML)
+      TContainer = class abstract(TElementHTML)
       protected
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -466,7 +485,7 @@ type
 
       { TCardHTML }
 
-      TCardHTML = class abstract(TElementHTML)
+      TCard = class abstract(TElementHTML)
       protected
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -474,7 +493,7 @@ type
 
       { TFormHTML }
 
-      TFormHTML = class abstract(TElementHTML)
+      TForm = class abstract(TElementHTML)
       protected
         procedure DoBeforeChildRender(Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoAfterChildRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -484,32 +503,32 @@ type
 
       { TParagraphHTML }
 
-      TParagraphHTML = class(TElementHTML)
+      TParagraph = class(TElementHTML)
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TBreakHTML }
 
-      TBreakHTML = class(TElementHTML)
+      TBreak = class(TElementHTML)
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TInputHTML }
 
-      TInputHTML = class(TElementHTML)
+      TInput = class(TElementHTML)
       public
         procedure DoCollectAttributes(Scope: TmnwScope); override;
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      TInputPasswordHTML = class(TInputHTML)
+      TInputPassword = class(TInput)
       end;
 
       { TImageHTML }
 
-      TImageHTML = class(TElementHTML)
+      TImage = class(TElementHTML)
       public
         procedure DoCollectAttributes(Scope: TmnwScope); override;
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -517,7 +536,7 @@ type
 
       { TMemoryImageHTML }
 
-      TMemoryImageHTML = class(TElementHTML)
+      TMemoryImage = class(TElementHTML)
       public
         procedure Respond(AElement: TmnwElement; AStream: TStream); override;
         procedure DoCollectAttributes(Scope: TmnwScope); override;
@@ -532,7 +551,57 @@ type
 
 function LevelStr(vLevel: Integer): String;
 
+{$ifndef FPC}
+type
+  TCacheClassObject = class(TObject)
+  public
+    ObjectClass: TClass;
+  end;
+
+  { TRegObjects }
+
+  TCacheClassObjects = class(TmnObjectList<TCacheClassObject>)
+  public
+    procedure AddClass(ObjectClass: TClass);
+  end;
+
+var
+  CacheClassObjects: TCacheClassObjects = nil;
+
+procedure CacheClasses;
+{$endif}
+
 implementation
+
+{$ifndef FPC}
+procedure CacheClasses;
+var
+  Context: TRTTIContext;
+  rTypes: TArray<TRttiType>;
+  rType: TRttiType;
+begin
+  if CacheClassObjects <> nil then
+    exit;
+  CacheClassObjects := TCacheClassObjects.Create;
+  Context := TRTTIContext.Create;
+  try
+    rTypes := Context.GetTypes;
+    for rType in rTypes do
+      if (rType.TypeKind = tkClass) and rType.IsInstance
+        and (rType.AsInstance.MetaclassType.InheritsFrom(TmnwElement)
+            or
+            rType.AsInstance.MetaclassType.InheritsFrom(TmnwRenderer)
+            )
+        then
+      begin
+        CacheClassObjects.AddClass(TmnwElementClass(rType.AsInstance.MetaclassType));
+//        log.WriteLn(rType.ToString);
+      end;
+  finally
+    Context.Free;
+  end;
+end;
+{$endif}
 
 { TmnwOutput }
 
@@ -656,7 +725,8 @@ var
 begin
   for o in Scope.Element do
   begin
-    o.Render(Context);
+    if not (elInternal in o.Kind) then
+      o.Render(Context);
   end;
 end;
 
@@ -817,40 +887,89 @@ end;
 
 { TmnwSchemas }
 
-procedure TmnwSchemas.DoRespond(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream);
-begin
-
-end;
-
-procedure TmnwSchemas.RegisterSchema(AName: string; Schema: TmnwSchema);
+procedure TmnwSchemas.RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
 var
   SchemaObject: TmnwSchemaObject;
 begin
-  SchemaObject:=TmnwSchemaObject.Create;
+  SchemaObject := TmnwSchemaObject.Create;
   SchemaObject.Name := AName;
-	SchemaObject.Schema := Schema;
+	SchemaObject.SchemaClass := SchemaClass;
   inherited Add(SchemaObject);
 end;
 
-function TmnwSchemas.Respond(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): TmnwSchema;
+function TmnwSchemas.Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream): TmnwElement;
 var
   SchemaObject: TmnwSchemaObject;
+  aElement: TmnwElement;
+  aPath: string;
+  Routes: TStringList;
+  i: Integer;
+  aRoute: string;
 begin
-  {    aPath := Request.Path;
-      Delete(aPath, 1, 1);
-      (Module as THomeModule).HomeSchema.FindByPath(aPath);}
-  SchemaObject := Find(Route);
-  if SchemaObject <> nil then
-  begin
-    Result := SchemaObject.Schema;
-  end
-  else
-    Result := First.Schema;
+  Routes := TStringList.Create;
+  try
+    i := 0;
+    StrToStrings(Route, Routes, ['/']);
+    if (i<Routes.Count) then
+    begin
+      aRoute := Routes[i];
+      inc(i);
+      SchemaObject := Find(aRoute);
+    end
+    else
+      SchemaObject := nil;
 
-  Result.Render(Renderer, DataObject, AStream);
+    if SchemaObject = nil then
+      SchemaObject := First;
+
+    if SchemaObject <> nil then
+    begin
+      DeleteSubPath(aRoute, Route);
+      if SchemaObject.Schema = nil then
+      begin
+        SchemaObject.Schema := SchemaObject.SchemaClass.Create;
+        SchemaObject.Schema.Route := Route;
+        SchemaCreated(SchemaObject.Schema);
+        SchemaObject.Schema.Compose;
+      end;
+      aElement := SchemaObject.Schema;
+    end
+    else
+      aElement := nil;
+
+    if aElement <> nil then
+    begin
+      Result := aElement;
+      while i < Routes.Count do
+      begin
+        aRoute := Routes[i];
+        aElement := aElement.FindByRoute(aRoute);
+        if aElement = nil then
+          break
+        else
+        begin
+          DeleteSubPath(aRoute, Route);
+          Result := aElement;
+        end;
+        inc(i);
+      end;
+    end;
+  finally
+    Routes.Free;
+  end;
+
+  if Result <> nil then
+  begin
+    Result.Respond(Route, Renderer, Sender, AStream);
+  end;
+
 end;
 
-function TmnwSchemas.Render(Route: string; Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): TmnwSchema;
+procedure TmnwSchemas.SchemaCreated(Schema: TmnwSchema);
+begin
+end;
+
+function TmnwSchemas.Render(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream): TmnwSchema;
 var
   SchemaObject: TmnwSchemaObject;
 begin
@@ -862,24 +981,25 @@ begin
   else
     Result := First.Schema;
 
-  Result.Render(Renderer, DataObject, AStream);
+  Result.Render(Renderer, Sender, AStream);
 end;
 
 procedure TmnwHTMLRenderer.Created;
 begin
   inherited Created;
-  RegisterRenderer(THTML.TDocument ,TDocumentHTML);
-  RegisterRenderer(THTML.TParagraph, TParagraphHTML);
-  RegisterRenderer(THTML.TBreak, TBreakHTML);
-  RegisterRenderer(THTML.TInput, TInputHTML);
-  RegisterRenderer(THTML.TInputPassword, TInputPasswordHTML);
-  RegisterRenderer(THTML.TImage, TImageHTML);
-  RegisterRenderer(THTML.TMemoryImage, TMemoryImageHTML);
-  RegisterRenderer(THTML.THeader, THeaderHTML);
-  RegisterRenderer(THTML.TFooter, TFooterHTML);
-  RegisterRenderer(THTML.TContainer, TContainerHTML);
-  RegisterRenderer(THTML.TCard, TCardHTML);
-  RegisterRenderer(THTML.TForm, TFormHTML);
+  //RegisterClasses(THTML);
+  RegisterRenderer(THTML.TDocument ,TDocument);
+  RegisterRenderer(THTML.TParagraph, TParagraph);
+  RegisterRenderer(THTML.TBreak, TBreak);
+  RegisterRenderer(THTML.TInput, TInput);
+  RegisterRenderer(THTML.TInputPassword, TInputPassword);
+  RegisterRenderer(THTML.TImage, TImage);
+  RegisterRenderer(THTML.TMemoryImage, TMemoryImage);
+  RegisterRenderer(THTML.THeader, THeader);
+  RegisterRenderer(THTML.TFooter, TFooter);
+  RegisterRenderer(THTML.TContainer, TContainer);
+  RegisterRenderer(THTML.TCard, TCard);
+  RegisterRenderer(THTML.TForm, TForm);
 end;
 
 { TmnwHTMLRenderer.TElementHTML }
@@ -897,7 +1017,7 @@ end;
 
 { TmnwHTMLRenderer.TDocumentHTML }
 
-procedure TmnwHTMLRenderer.TDocumentHTML.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TDocument.DoCollectAttributes(Scope: TmnwScope);
 var
   e: THTML.TDocument;
 begin
@@ -909,7 +1029,7 @@ begin
   Scope.Attributes['lang'] := 'en'
 end;
 
-procedure TmnwHTMLRenderer.TDocumentHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TDocument.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TDocument;
 //  o: TmnwElement;
@@ -947,7 +1067,7 @@ end;
 
 { TmnwHTMLRenderer.THeaderHTML }
 
-procedure TmnwHTMLRenderer.THeaderHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.THeader.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THeader;
 begin
@@ -961,7 +1081,7 @@ end;
 
 { TmnwHTMLRenderer.TFooterHTML }
 
-procedure TmnwHTMLRenderer.TFooterHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TFooter.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TFooter;
 begin
@@ -975,7 +1095,7 @@ end;
 
 { TmnwHTMLRenderer.TContainerHTML }
 
-procedure TmnwHTMLRenderer.TContainerHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TContainer.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TContainer;
 begin
@@ -991,7 +1111,7 @@ end;
 
 { TmnwHTMLRenderer.TCardHTML }
 
-procedure TmnwHTMLRenderer.TCardHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TCard.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TCard;
 begin
@@ -1008,20 +1128,20 @@ end;
 
 { TmnwHTMLRenderer.TFormHTML }
 
-procedure TmnwHTMLRenderer.TFormHTML.DoBeforeChildRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TForm.DoBeforeChildRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Output.WriteLn('html', '<div>', [woOpenTag]);
   Scope.Attributes.SetSubValue('class', 'form-control');
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TFormHTML.DoAfterChildRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TForm.DoAfterChildRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Output.WriteLn('html', '</div>', [woCloseTag]);
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TFormHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TForm.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TForm;
 begin
@@ -1034,7 +1154,7 @@ end;
 
 { TmnwHTMLRenderer.TParagraphHTML }
 
-procedure TmnwHTMLRenderer.TParagraphHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TParagraph.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TParagraph;
 begin
@@ -1048,21 +1168,21 @@ end;
 
 { TmnwHTMLRenderer.TBreakHTML }
 
-procedure TmnwHTMLRenderer.TBreakHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TBreak.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Output.WriteLn('html', '<br>');
 end;
 
 { TmnwHTMLRenderer.TInputHTML }
 
-procedure TmnwHTMLRenderer.TInputHTML.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TInput.DoCollectAttributes(Scope: TmnwScope);
 begin
   Scope.Attributes['placeholder'] := (Scope.Element as THTML.TInput).PlaceHolder;
   Scope.Attributes['type'] := (Scope.Element as THTML.TInput).EditType;
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TInputHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TInput.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TInput;
 begin
@@ -1075,14 +1195,14 @@ end;
 
 { TmnwHTMLRenderer.TImageHTML }
 
-procedure TmnwHTMLRenderer.TImageHTML.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TImage.DoCollectAttributes(Scope: TmnwScope);
 begin
   Scope.Attributes['src'] := (Scope.Element as THTML.TImage).Source;
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText; //* always set
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TImageHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TImage.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Output.WriteLn('html', '<img' + Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
   inherited;
@@ -1090,19 +1210,19 @@ end;
 
 { TmnwHTMLRenderer.TMemoryImageHTML }
 
-procedure TmnwHTMLRenderer.TMemoryImageHTML.Respond(AElement: TmnwElement; AStream: TStream);
+procedure TmnwHTMLRenderer.TMemoryImage.Respond(AElement: TmnwElement; AStream: TStream);
 begin
   AStream.CopyFrom((AElement as THTML.TMemoryImage).Data, 0);
 end;
 
-procedure TmnwHTMLRenderer.TMemoryImageHTML.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TMemoryImage.DoCollectAttributes(Scope: TmnwScope);
 begin
   inherited;
   Scope.Attributes['src'] := IncludeURLDelimiter(TmnwHTMLRenderer(Renderer).HomeUrl) + Scope.Element.GetPath;
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
 end;
 
-procedure TmnwHTMLRenderer.TMemoryImageHTML.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TMemoryImage.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TMemoryImage;
 begin
@@ -1117,12 +1237,37 @@ constructor TmnwSchema.Create;
 begin
   inherited Create;
   FRoot := Self;
+  {$ifndef FPC}
+  CacheClasses;
+  {$endif}
 end;
 
 destructor TmnwSchema.Destroy;
 begin
   inherited;
 end;
+
+procedure TmnwSchema.DoRespond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream);
+begin
+  Render(Renderer, Sender, AStream);
+end;
+
+{$ifndef FPC}
+procedure TmnwRenderer.RegisterClasses(ASchemaClass: TmnwSchemaClass);
+var
+  aObjectClass: TCacheClassObject;
+  aName, aClassName: string;
+begin
+  aClassName := ClassName;
+  for aObjectClass in CacheClassObjects do
+  begin
+    aName := SubStr(aObjectClass.ObjectClass.ClassName, '.', 1);
+    if (aName = aClassName) then
+    begin
+    end;
+  end;
+end;
+{$endif}
 
 procedure TmnwRenderer.RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean);
 var
@@ -1180,9 +1325,9 @@ end;
 constructor THTML.TDocument.Create;
 begin
   inherited;
-  FHeader := THeader.Create(True);
-  FFooter := TFooter.Create(True);
-  FContainer := TContainer.Create(True);
+  FHeader := THeader.Create([elEmbed, elInternal], Self);
+  FFooter := TFooter.Create([elEmbed, elInternal], Self);
+  FContainer := TContainer.Create([elEmbed, elInternal], Self);
 end;
 
 destructor THTML.TDocument.Destroy;
@@ -1221,6 +1366,20 @@ destructor THTML.TMemoryImage.Destroy;
 begin
   FreeAndNil(Data);
   inherited;
+end;
+
+procedure THTML.TMemoryImage.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream);
+begin
+  (Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', DocumentToContentType(FileName));
+  Data.Seek(0, soBeginning);
+  AStream.CopyFrom(Data);
+end;
+
+procedure THTML.TMemoryImage.LoadFromFile(AFileName: string);
+begin
+  Data.LoadFromFile(AFileName);
+  FileName := ExtractFileName(AFileName);
+  FilePath := ExtractFilePath(AFileName);
 end;
 
 { TmnwElement }
@@ -1327,7 +1486,30 @@ begin
   end;
 end;
 
+function TmnwElement.FindByRoute(const Route: string): TmnwElement;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if (Items[i].Route <> '') then
+    begin
+      if SameText(Items[i].Route, Route) then
+        Result := Items[i];
+    end
+    else
+      Result := Items[i].FindByRoute(Route);
+    if Result <> nil then
+      break;
+  end;
+end;
+
 procedure TmnwElement.DoCompose;
+begin
+end;
+
+procedure TmnwElement.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream);
 begin
 end;
 
@@ -1341,10 +1523,12 @@ begin
   FAttributes := TmnwAttributes.Create;
 end;
 
-constructor TmnwElement.Create(AEmbed: Boolean);
+constructor TmnwElement.Create(AKind: TmnwElementKind; Parent: TmnwElement = nil);
 begin
   Create;
-  FEmbed := True;
+  FKind := AKind;
+  if Parent <> nil then
+    Parent.Add(Self);
 end;
 
 destructor TmnwElement.Destroy;
@@ -1384,34 +1568,37 @@ begin
   Result := StringOfChar(' ', vLevel * 4);
 end;
 
-{ TmnwSchema }
-
-function TmnwSchema.Render(Renderer: TmnwRenderer; DataObject: TObject; AOutput: TmnwOutput): Boolean;
+function TmnwElement.Render(Renderer: TmnwRenderer; Sender: TObject; AOutput: TmnwOutput): Boolean;
 var
   Context: TmnwContext;
 begin
   Result := False;
   Context.Output := AOutput;
   Context.Renderer := Renderer;
-  Context.DataObject := DataObject;
+  Context.Sender := Sender;
   Render(Context);
   Result := True;
 end;
 
-function TmnwSchema.Render(Renderer: TmnwRenderer; DataObject: TObject; AStrings: TStrings): Boolean;
+function TmnwElement.Render(Renderer: TmnwRenderer; Sender: TObject; AStrings: TStrings): Boolean;
 var
   AStringStream: TStringStream;
 begin
   AStringStream := TStringStream.Create;
   try
-    Result := Render(Renderer, DataObject, AStringStream);
+    Result := Render(Renderer, Sender, AStringStream);
     AStrings.Text := AStringStream.DataString;
   finally
     FreeAndNil(AStringStream);
   end;
 end;
 
-function TmnwSchema.Render(Renderer: TmnwRenderer; DataObject: TObject; AStream: TStream): Boolean;
+procedure TmnwElement.Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TStream);
+begin
+  DoRespond(Route, Renderer, Sender, AStream);
+end;
+
+function TmnwElement.Render(Renderer: TmnwRenderer; Sender: TObject; AStream: TStream): Boolean;
 var
   Writer: TmnwWriter;
   Output: TmnwOutput;
@@ -1420,7 +1607,7 @@ begin
   Output := TmnwOutput.Create;
   Output.Add(Writer);
   try
-    Result := Render(Renderer, DataObject, Output);
+    Result := Render(Renderer, Sender, Output);
   finally
     FreeAndNil(Output);
   end;
@@ -1482,21 +1669,19 @@ begin
   inherited;
 end;
 
-{ THTML.THTMLElement }
+{$ifndef FPC}
+{ TCacheClassObjects }
 
-procedure THTML.THTMLElement.DoRespond(DataObject: TObject; AStream: TStream);
+procedure TCacheClassObjects.AddClass(ObjectClass: TClass);
+var
+  aObject: TCacheClassObject;
 begin
+  aObject:=TCacheClassObject.Create;
+  aObject.ObjectClass := ObjectClass;
+  inherited Add(aObject);
 end;
+{$endif}
 
-procedure THTML.THTMLElement.Respond(DataObject: TObject; AStream: TStream);
-begin
-end;
-
-{ THTML.TDirectFile }
-
-procedure THTML.TDirectFile.DoRespond(DataObject: TObject; AStream: TStream);
-begin
-  inherited;
-end;
-
+initialization
+finalization
 end.

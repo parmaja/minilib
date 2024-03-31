@@ -22,12 +22,6 @@ uses
   mnFields, mnParams, mnMultipartData, mnModules, mnWebModules, mnWebElements;
 
 type
-  TmodBootstrapModule = class(TmodWebModule)
-  public
-    CachePath: string;
-    HomeURL: string;
-    HostURL: string;
-  end;
 
   { TmnwBootstrap }
 
@@ -43,7 +37,7 @@ type
     type
     { TBSDocumentHTML }
 
-    TBSDocumentHTML = class(TDocumentHTML)
+    TDocument = class(TmnwHTMLRenderer.TDocument)
     public
       procedure AddHead(AElement: TmnwElement; Context: TmnwContext); override;
     end;
@@ -66,12 +60,12 @@ end;
 procedure TmnwBootstrapRenderer.Created;
 begin
   inherited;
-  RegisterRenderer(THTML.TDocument, TBSDocumentHTML, True);
+  RegisterRenderer(THTML.TDocument, TDocument);
 end;
 
 { TmnwBootstrapRenderer.TBSInputHTML }
 
-procedure TmnwBootstrapRenderer.TBSDocumentHTML.AddHead(AElement: TmnwElement; Context: TmnwContext);
+procedure TmnwBootstrapRenderer.TDocument.AddHead(AElement: TmnwElement; Context: TmnwContext);
 begin
   Context.Output.WriteLn('html', '<meta charset="UTF-8">');
   Context.Output.WriteLn('html', '<meta name="viewport" content="width=device-width, initial-scale=1">');

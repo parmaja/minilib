@@ -60,9 +60,14 @@ type
   TmodCommunicate = class abstract(TmnObject)
   private
     FHeader: TmodHeader;
-    FStream: TmnBufferStream;
+    FStream: TmnBufferStream; //*todo TmnConnectionStream
     FCookies: TStrings;
+    FWritingStarted: Boolean;
     procedure SetHeader(const AValue: TmodHeader);
+    procedure OnWriting(vCount: Longint);
+  protected
+    procedure SetStream(AStream: TmnConnectionStream);
+    procedure StartWriting; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -168,6 +173,7 @@ type
     procedure DoSendHeader; virtual;
     procedure DoHeaderSent; virtual;
     procedure SendHead;
+    procedure StartWriting; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -198,7 +204,7 @@ type
 
   { TmodCommand }
 
-  TmodCommand = class(TmnObject)
+  TmodCommand = class(TmnNamedObject)
   private
     FModule: TmodModule;
     FRespond: TmodRespond;
@@ -217,7 +223,7 @@ type
 
     procedure Log(S: String); virtual;
   public
-    constructor Create(AModule: TmodModule; ARequest: TmodRequest; RequestStream: TmnBufferStream = nil; RespondStream: TmnBufferStream = nil); virtual;
+    constructor Create(AModule: TmodModule; ARequest: TmodRequest; aStream: TmnConnectionStream = nil); virtual;
     destructor Destroy; override;
 
     property Active: Boolean read GetActive;
@@ -229,7 +235,6 @@ type
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     property Request: TmodRequest read FRequest;
     property Respond: TmodRespond read FRespond;
-
   end;
 
   TmodCommandClass = class of TmodCommand;
@@ -270,12 +275,12 @@ type
     FUseCompressing: Boolean;
     procedure SetAliasName(AValue: String);
   protected
+    CommandRegistered: Boolean;
     FFallbackCommand: TmodCommandClass;
     //Name here will corrected with registered item name for example Get -> GET
     function GetActive: Boolean; virtual;
     function GetCommandClass(var CommandName: String): TmodCommandClass; virtual;
     procedure Created; override;
-    procedure DoCreateCommands; virtual; deprecated;
     procedure DoRegisterCommands; virtual;
     procedure RegisterCommands;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
@@ -283,24 +288,24 @@ type
 
     function Match(const ARequest: TmodRequest): Boolean; virtual;
     procedure PrepareRequest(ARequest: TmodRequest);
-    function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
+    function CreateCommand(CommandName: String; ARequest: TmodRequest; AStream: TmnConnectionStream = nil): TmodCommand; overload;
 
     procedure DoReadHeader(ARequest: TmodRequest); virtual;
     procedure ReadHeader(ARequest: TmodRequest; Stream: TmnBufferStream);
-    function RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
+    function RequestCommand(ARequest: TmodRequest; AStream: TmnConnectionStream): TmodCommand; virtual;
     procedure Log(S: String); virtual;
     procedure Start; virtual;
     procedure Stop; virtual;
     procedure Reload; virtual;
     procedure Init; virtual;
     procedure Idle; virtual;
-    procedure InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean); virtual;
+    procedure InternalError(ARequest: TmodRequest; AStream: TmnBufferStream; var Handled: Boolean); virtual;
   public
     //Default fallback module should have no alias name
     //Protocols all should lowercase
     constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules = nil); virtual;
     destructor Destroy; override;
-    function Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodRespondResult;
+    function Execute(ARequest: TmodRequest; AStream: TmnConnectionStream = nil): TmodRespondResult;
     function RegisterCommand(vName: String; CommandClass: TmodCommandClass; AFallback: Boolean = False): Integer; overload;
 
     property Commands: TmodCommandClasses read FCommands;
@@ -418,6 +423,7 @@ function ParseAddress(const Request: string; out URIPath: string; out URIParams:
 procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
 function FormatHTTPDate(vDate: TDateTime): string;
 function ExtractDomain(const URI: string): string;
+function DeleteSubPath(const SubKey, Path: string): string;
 
 implementation
 
@@ -564,6 +570,14 @@ begin
   Result := '';
 end;
 
+function DeleteSubPath(const SubKey, Path: string): string;
+begin
+  if StartsText(URLPathDelim, Path) then
+    Result := Copy(Path, Length(URLPathDelim) + Length(SubKey) + 1, MaxInt)
+  else
+    Result := Copy(Path, Length(SubKey) + 1, MaxInt);;
+end;
+
 { TmodRespond }
 
 procedure TmodRespond.AddHeader(const AName: string; Values: TStringDynArray);
@@ -675,6 +689,12 @@ begin
   Stream.WriteLineUTF8(Utf8string(s));}
 end;
 
+procedure TmodRespond.StartWriting;
+begin
+  inherited;
+  SendHeader;
+end;
+
 procedure TmodRespond.SendHead;
 begin
   if resHeadSent in FStates then
@@ -782,9 +802,9 @@ begin
       end
       else
         try
-          aRequest.FStream := Stream;
+          aRequest.SetStream(Stream);
           aRequest.Client := RemoteIP;
-          Result := aModule.Execute(aRequest, Stream, Stream);
+          Result := aModule.Execute(aRequest, Stream);
         finally
           if Stream.Connected then
           begin
@@ -876,14 +896,14 @@ end;
 
 { TmodCommand }
 
-constructor TmodCommand.Create(AModule: TmodModule; ARequest: TmodRequest; RequestStream: TmnBufferStream; RespondStream: TmnBufferStream);
+constructor TmodCommand.Create(AModule: TmodModule; ARequest: TmodRequest; aStream: TmnConnectionStream = nil);
 begin
   inherited Create;
   FModule := AModule;
   FRequest := ARequest; //do not free
 
   FRespond := CreateRespond;
-  FRespond.FStream := RequestStream;
+  FRespond.SetStream(AStream);
 end;
 
 destructor TmodCommand.Destroy;
@@ -944,7 +964,7 @@ end;
 
 { TmodModule }
 
-function TmodModule.CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodCommand;
+function TmodModule.CreateCommand(CommandName: String; ARequest: TmodRequest; AStream: TmnConnectionStream = nil): TmodCommand;
 var
   //  aName: string;
   aClass: TmodCommandClass;
@@ -954,7 +974,8 @@ begin
   aClass := GetCommandClass(CommandName);
   if aClass <> nil then
   begin
-    Result := aClass.Create(Self, ARequest, ARequestStream, ARespondStream);
+    Result := aClass.Create(Self, ARequest, AStream);
+    Result.Name := CommandName;
   end
   else
     Result := nil;
@@ -984,7 +1005,7 @@ begin
 
 end;
 
-procedure TmodModule.InternalError(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; var Handled: Boolean);
+procedure TmodModule.InternalError(ARequest: TmodRequest; AStream: TmnBufferStream; var Handled: Boolean);
 begin
 
 end;
@@ -1008,8 +1029,8 @@ begin
   if Commands.Count = 0 then
   begin
     DoRegisterCommands;
-    DoCreateCommands; //* TO DELETE
   end;
+  CommandRegistered := True;
 end;
 
 procedure TmodModule.Start;
@@ -1022,9 +1043,9 @@ begin
 
 end;
 
-function TmodModule.RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand;
+function TmodModule.RequestCommand(ARequest: TmodRequest; AStream: TmnConnectionStream): TmodCommand;
 begin
-  Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
+  Result := CreateCommand(ARequest.Command, ARequest, AStream);
 end;
 
 constructor TmodModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules);
@@ -1048,10 +1069,6 @@ begin
   inherited;
 end;
 
-procedure TmodModule.DoCreateCommands;
-begin
-end;
-
 procedure TmodModule.DoRegisterCommands;
 begin
 end;
@@ -1059,7 +1076,7 @@ end;
 procedure TmodModule.DoPrepareRequest(ARequest: TmodRequest);
 begin
   if (AliasName <> '') then
-    ARequest.Path := Copy(ARequest.Address, Length(ARequest.Route[0]) + 1, MaxInt);;
+    ARequest.Path := DeleteSubPath(ARequest.Route[0], ARequest.Path);
 end;
 
 procedure TmodModule.DoReadHeader(ARequest: TmodRequest);
@@ -1086,19 +1103,19 @@ procedure TmodModule.Log(S: String);
 begin
 end;
 
-function TmodModule.Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodRespondResult;
+function TmodModule.Execute(ARequest: TmodRequest; AStream: TmnConnectionStream): TmodRespondResult;
 var
   aCMD: TmodCommand;
   aHandled: Boolean;
 begin
-  RegisterCommands;
+  if not CommandRegistered then
+    RegisterCommands;
 
   Result.Status := [mrSuccess];
 
+  ReadHeader(ARequest, AStream);
 
-  ReadHeader(ARequest, ARequestStream);
-
-  aCmd := RequestCommand(ARequest, ARequestStream, ARespondStream);
+  aCmd := RequestCommand(ARequest, AStream);
 
   if aCMD <> nil then
   begin
@@ -1112,7 +1129,7 @@ begin
   else
   begin
     aHandled := False;
-    InternalError(ARequest, ARequestStream, ARespondStream, aHandled);
+    InternalError(ARequest, AStream, aHandled);
 
     if not aHandled then
       raise TmodModuleException.Create('Can not find command or fallback command: ' + ARequest.Command);
@@ -1121,7 +1138,6 @@ end;
 
 procedure TmodModule.PrepareRequest(ARequest: TmodRequest);
 begin
-  ARequest.Path := ARequest.Address;
   ARequest.Params.Clear;
   ParseQuery(ARequest.Query, ARequest.Params);
 
@@ -1275,10 +1291,23 @@ begin
   ParseRaw(RequestLine, ARequest.Info.Method, ARequest.Info.Protocol, ARequest.Info.URI);
   ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Query);
 
-  if (ARequest.Address<>'') and (ARequest.Address<>'/') and StartsText(URLPathDelim, ARequest.Address) then
-    ARequest.Address := Copy(ARequest.Address, 2, MaxInt);
+  //zaher: @zaher,belal, I dont like it
+  if (ARequest.Address <> '') and (ARequest.Address <> '/') and StartsText(URLPathDelim, ARequest.Address) then
+    ARequest.Path := Copy(ARequest.Address, 2, MaxInt)
+  else
+    ARequest.Path := ARequest.Address;
 
-  StrToStrings(ARequest.Address, ARequest.Route, ['/']);
+  StrToStrings(ARequest.Path, ARequest.Route, ['/']);
+
+
+{  if (ARequest.Address<>'') and (ARequest.Address<>'/') then
+  begin
+    if StartsText(URLPathDelim, ARequest.Address) then
+      StrToStrings(Copy(ARequest.Address, 2, MaxInt), ARequest.Route, ['/'])
+    else
+      StrToStrings(ARequest.Address, ARequest.Route, ['/']);
+  end;}
+
 end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;
@@ -1370,6 +1399,7 @@ destructor TmodCommunicate.Destroy;
 begin
   FreeAndNil(FHeader);
   FreeAndNil(FCookies);
+  SetStream(nil);
   inherited;
 end;
 
@@ -1379,6 +1409,15 @@ begin
     Result := Cookies.Values[vNameSpace+'.'+vName]
   else
     Result := Cookies.Values[vName];
+end;
+
+procedure TmodCommunicate.OnWriting(vCount: Longint);
+begin
+  if not FWritingStarted then
+  begin
+    FWritingStarted := True;
+    StartWriting;
+  end;
 end;
 
 procedure TmodCommunicate.ReadHeader(Stream: TmnBufferStream);
@@ -1403,6 +1442,19 @@ begin
     FreeAndNil(FHeader);
     FHeader := AValue;
   end;
+end;
+
+procedure TmodCommunicate.SetStream(AStream: TmnConnectionStream);
+begin
+  if (FStream <> nil) and (FStream is TmnConnectionStream) then
+    (FStream as TmnConnectionStream).OnWriting := nil;
+  FStream := AStream;
+  if FStream <> nil then
+    AStream.OnWriting := OnWriting;
+end;
+
+procedure TmodCommunicate.StartWriting;
+begin
 end;
 
 { TmnRoute }

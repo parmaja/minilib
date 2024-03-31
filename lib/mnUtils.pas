@@ -1582,7 +1582,7 @@ end;
 
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer): String;
 begin
-  if Str='' then
+  if Str = '' then
     Result := ''
   else
     Result := SubStr(Str, vSeperator, vIndex, vIndex);

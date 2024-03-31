@@ -92,18 +92,17 @@ type
     function ReadBytes(Count: TFileSize = 0): TBytes; overload;
     function ReadBufferBytes(Count: TFileSize = 0): TBytes; overload; deprecated 'use ReadBytes';
     //Use copy from to stream
-    function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
-    function ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
     function WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
+
+    function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
+    function ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
 
     function CopyToStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline; //alias
     function CopyFromStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline;
 
-
     property Connected: Boolean read GetConnected;
     property Done: TmnStreamClose read FDone;
-
 
     function Read(var Buffer; Count: longint): longint; override;
     function Write(const Buffer; Count: longint): longint; override;
@@ -159,9 +158,9 @@ type
     function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override; final;
   end;
 
-  { TBuffer }
+  { TmnBuffer }
 
-  TmnStreamBuffer = class(TObject)
+  TmnBuffer = class(TObject)
   protected
     function DoRead(var vBuffer; vCount: Longint): Longint; virtual;
     function DoWrite(const vBuffer; vCount: Longint): Longint; virtual;
@@ -207,8 +206,8 @@ type
 
   TmnBufferStream = class(TmnCustomStream)
   protected
-    FReadBuffer: TmnStreamBuffer;
-    FWriteBuffer: TmnStreamBuffer;
+    FReadBuffer: TmnBuffer;
+    FWriteBuffer: TmnBuffer;
   strict private
     FEndOfLine: string;
     //FZeroClose: Boolean;
@@ -233,6 +232,8 @@ type
     procedure DoFlush; virtual;
     procedure DoCloseRead; virtual;
     procedure DoCloseWrite; virtual;
+    procedure Writing(Count: Longint); virtual;
+    procedure Reading(Count: Longint); virtual;
     function GetEndOfStream: Boolean;
     function GetConnected: Boolean; override;
 
@@ -327,7 +328,7 @@ type
     function DoWrite(const Buffer; Count: Longint): Longint; override;
 
   public
-    constructor Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True); overload; virtual;
+    constructor Create(AStream: TStream; AEndOfLine: string; Owned: Boolean = True); overload; virtual;
     constructor Create(AStream: TStream; Owned: Boolean = True); overload;
     destructor Destroy; override;
     property StreamOwned: Boolean read FStreamOwned write FStreamOwned default False;
@@ -335,6 +336,8 @@ type
   end;
 
   TmnWrapperStreamClass = class of TmnWrapperStream;
+
+  TOnWriting = procedure(vCount: Longint) of object;
 
   { TmnConnectionStream }
 
@@ -345,6 +348,9 @@ type
     FReadTimeout: Integer;
     FWriteTimeout: Integer;
     FConnectTimeout: Integer;
+    FOnWriting: TOnWriting;
+  protected
+    procedure Writing(vCount: Longint); override;
   public
     constructor Create;
     procedure Prepare; virtual;
@@ -359,8 +365,9 @@ type
 
     property ReadTimeout: Integer read FReadTimeout write FReadTimeout;
     property WriteTimeout: Integer read FWriteTimeout write FWriteTimeout;
-
     property ConnectTimeout: Integer read FConnectTimeout write FConnectTimeout; //not here
+
+    property OnWriting: TOnWriting read FOnWriting write FOnWriting;
   end;
 
   { TmnStreamHexProxy }
@@ -680,6 +687,13 @@ end;
 function TmnConnectionStream.WaitToWrite: Boolean;
 begin
   Result := WaitToWrite(WriteTimeout) = cerSuccess;
+end;
+
+procedure TmnConnectionStream.Writing(vCount: Longint);
+begin
+  inherited;
+  if Assigned(FOnWriting) then
+    FOnWriting(vCount);
 end;
 
 function TmnConnectionStream.Seek(Offset: Longint; Origin: Word): Longint;
@@ -1058,6 +1072,10 @@ begin
   end;
 end;
 
+procedure TmnBufferStream.Writing(Count: Longint);
+begin
+end;
+
 procedure TmnBufferStream.ReadCommand(out Command: string; out Params: string);
 var
   s: string;
@@ -1285,8 +1303,8 @@ constructor TmnBufferStream.Create(AEndOfLine: string);
 begin
   inherited Create;
   //FZeroClose := True;
-  FReadBuffer := TmnStreamBuffer.Create(Self);
-  FWriteBuffer := TmnStreamBuffer.Create(Self);
+  FReadBuffer := TmnBuffer.Create(Self);
+  FWriteBuffer := TmnBuffer.Create(Self);
 
 
   FReadBuffer.Size := ReadWriteBufferSize;
@@ -1306,6 +1324,10 @@ end;}
 procedure TmnBufferStream.ReadError;
 begin
   Close([cloRead]);
+end;
+
+procedure TmnBufferStream.Reading(Count: Longint);
+begin
 end;
 
 procedure TmnBufferStream.DoFlush;
@@ -1631,7 +1653,7 @@ begin
   Result := FStream.Write(Buffer, Count);//TODO must be buffered
 end;
 
-constructor TmnWrapperStream.Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True);
+constructor TmnWrapperStream.Create(AStream: TStream; AEndOfLine: string; Owned: Boolean = True);
 begin
   inherited Create(AEndOfLine);
   if AStream = nil then
@@ -1761,9 +1783,9 @@ begin
   Result := True;
 end;
 
-{ TmnStreamBuffer }
+{ TmnBuffer }
 
-function TmnStreamBuffer.CheckBuffer: Boolean;
+function TmnBuffer.CheckBuffer: Boolean;
 begin
   if Buffer = nil then
     CreateBuffer;
@@ -1774,18 +1796,18 @@ begin
   Result := (Pos < Stop);
 end;
 
-function TmnStreamBuffer.Count: Cardinal;
+function TmnBuffer.Count: Cardinal;
 begin
   Result := Stop - Pos;
 end;
 
-constructor TmnStreamBuffer.Create(vStream: TmnBufferStream);
+constructor TmnBuffer.Create(vStream: TmnBufferStream);
 begin
   inherited Create;
   Stream := vStream;
 end;
 
-procedure TmnStreamBuffer.CreateBuffer;
+procedure TmnBuffer.CreateBuffer;
 begin
   if Buffer <> nil then
     raise Exception.Create('Do you want to recreate stream buffer!!!');
@@ -1794,23 +1816,25 @@ begin
   Stop := Buffer;
 end;
 
-destructor TmnStreamBuffer.Destroy;
+destructor TmnBuffer.Destroy;
 begin
   FreeBuffer;
   inherited;
 end;
 
-function TmnStreamBuffer.DoRead(var vBuffer; vCount: Longint): Longint;
+function TmnBuffer.DoRead(var vBuffer; vCount: Longint): Longint;
 begin
   Result := Stream.DoRead(vBuffer, vCount);
+  Stream.Reading(vCount);
 end;
 
-function TmnStreamBuffer.DoWrite(const vBuffer; vCount: Longint): Longint;
+function TmnBuffer.DoWrite(const vBuffer; vCount: Longint): Longint;
 begin
+  Stream.Writing(vCount);
   Result := Stream.DoWrite(vBuffer, vCount);
 end;
 
-procedure TmnStreamBuffer.FreeBuffer;
+procedure TmnBuffer.FreeBuffer;
 begin
   FreeMem(Buffer);
   Buffer := nil;
@@ -1818,7 +1842,7 @@ begin
   Stop := nil;
 end;
 
-function TmnStreamBuffer.LoadBuffer: TFileSize;
+function TmnBuffer.LoadBuffer: TFileSize;
 begin
   if Pos < Stop then
     raise EmnStreamException.Create('Buffer is not empty to load');
@@ -1832,7 +1856,7 @@ begin
     Close([cloRead]);}
 end;
 
-function TmnStreamBuffer.Read(var vBuffer; vCount: Longint): Longint;
+function TmnBuffer.Read(var vBuffer; vCount: Longint): Longint;
 var
   c, aCount, aLoaded, aTry: Longint;
   P: PByte;
@@ -1876,7 +1900,7 @@ begin
   Result := aCount;
 end;
 
-function TmnStreamBuffer.Write(const vBuffer; vCount: Longint): Longint;
+function TmnBuffer.Write(const vBuffer; vCount: Longint): Longint;
 begin
   Result := DoWrite(vBuffer, vCount)
 end;
