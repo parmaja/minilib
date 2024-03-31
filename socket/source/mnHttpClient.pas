@@ -616,14 +616,14 @@ end;
 function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
 begin
   Result := DoCreateStream(vURL, vProtocol, vAddress, vPort, vParams);
-  FRequest.Stream := Result;
-  FResponse.Stream := Result;
+  FRequest.SetStream(Result);
+  FResponse.SetStream(Result);
 end;
 
 procedure TmnCustomHttpClient.FreeStream;
 begin
-  FRequest.Stream := nil;
-  FResponse.Stream := nil;
+  FRequest.SetStream(nil);
+  FResponse.SetStream(nil);
   ChunkedProxy := nil;
   CompressProxy := nil;
   FreeAndNil(FStream);

@@ -139,6 +139,7 @@ type
     constructor Create; overload; virtual;
     constructor Create(AKind: TmnwElementKind; Parent: TmnwElement = nil); overload;
     destructor Destroy; override;
+    procedure Add(O: TmnwElement); overload;
     function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;
     function Find(const Name: string): TmnwElement;
     function FindByRoute(const Route: string): TmnwElement;
@@ -442,10 +443,9 @@ type
   TmnwHTMLRenderer = class(TmnwRenderer)
   protected
   public
-
   type
 
-      { TElementHTML }
+      { TElement }
 
       TElementHTML = class(TmnwElementRenderer)
       protected
@@ -453,7 +453,7 @@ type
         procedure DoBeforeRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TDocumentHTML }
+      { TDocument }
 
       TDocument = class(TElementHTML)
       protected
@@ -461,21 +461,21 @@ type
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { THeaderHTML }
+      { THeader }
 
       THeader = class(TElementHTML)
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TFooterHTML }
+      { TFooter }
 
       TFooter = class(TElementHTML)
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TContainerHTML }
+      { TContainer }
 
       TContainer = class abstract(TElementHTML)
       protected
@@ -483,7 +483,7 @@ type
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TCardHTML }
+      { TCard }
 
       TCard = class abstract(TElementHTML)
       protected
@@ -491,7 +491,7 @@ type
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TFormHTML }
+      { TForm }
 
       TForm = class abstract(TElementHTML)
       protected
@@ -501,21 +501,21 @@ type
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TParagraphHTML }
+      { TParagraph }
 
       TParagraph = class(TElementHTML)
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TBreakHTML }
+      { TBreak }
 
       TBreak = class(TElementHTML)
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TInputHTML }
+      { TInput }
 
       TInput = class(TElementHTML)
       public
@@ -526,7 +526,7 @@ type
       TInputPassword = class(TInput)
       end;
 
-      { TImageHTML }
+      { TImage }
 
       TImage = class(TElementHTML)
       public
@@ -534,7 +534,7 @@ type
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TMemoryImageHTML }
+      { TMemoryImage }
 
       TMemoryImage = class(TElementHTML)
       public
@@ -1393,7 +1393,10 @@ function TmnwElement.GetPath: string;
 begin
   if (Parent <> nil) then
   begin
-    Result := IncludeURLDelimiter(Parent.GetPath)+Route;
+    if Route <> '' then
+      Result := IncludeURLDelimiter(Parent.GetPath) + Route
+    else
+      Result := Parent.GetPath;
   end
   else
     Result := Route;
@@ -1537,13 +1540,18 @@ begin
   inherited;
 end;
 
+procedure TmnwElement.Add(O: TmnwElement);
+begin
+  O.FParent := Self;
+  O.FRoot := FRoot;
+  inherited Add(O);
+end;
+
 function TmnwElement.Add<O>(const AID: String; const AName: String): O;
 begin
   Result := O.Create;
   Result.FID := AID;
   Result.FName := AName;
-  Result.FParent := Self;
-  Result.FRoot := FRoot;
   Add(Result);
 end;
 
