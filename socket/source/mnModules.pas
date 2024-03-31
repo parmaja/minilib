@@ -533,6 +533,9 @@ begin
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
+var
+  DefFormatSettings : TFormatSettings;
+
 function FormatHTTPDate(vDate: TDateTime): string;
 var
   aDate: TDateTime;
@@ -542,7 +545,7 @@ begin
   {$else}
   aDate := TTimeZone.Local.ToUniversalTime(vDate);
   {$endif}
-  Result := FormatDateTime('ddd, dd mmm yyyy hh:nn:ss', aDate, TFormatSettings.Invariant) + ' GMT';
+  Result := FormatDateTime('ddd, dd mmm yyyy hh:nn:ss', aDate, DefFormatSettings) + ' GMT';
 end;
 
 function ExtractDomain(const URI: string): string;
@@ -1485,4 +1488,6 @@ begin
     Result := '*';
 end;
 
+initialization
+  DefFormatSettings := TFormatSettings.Invariant;
 end.
