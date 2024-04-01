@@ -103,7 +103,8 @@ type
 
   TmnwElementKind = set of(
     elEmbed, //* created by parent
-    elInternal //* do not render we will call it manually
+    elInternal, //* do not render we will call it manually
+    elFallback //* if no child have the route name, it take the respond
   );
 
   { TmnwElement }
@@ -133,7 +134,6 @@ type
     procedure State(RequestState: TmnwRequestState);
     procedure DoCompose; virtual;
     procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream); virtual;
-    property Kind: TmnwElementKind read FKind;
   public
     Composed: Boolean;
     constructor Create; overload; virtual;
@@ -175,6 +175,7 @@ type
     property Active: Boolean read FActive write FActive;
     //* Embed render it directly not by loop like THeader
     property Attributes: TmnwAttributes read FAttributes;
+    property Kind: TmnwElementKind read FKind write FKind;
   end;
 
   { TmnwWriter }
@@ -335,6 +336,12 @@ type
 
       TFile = class(THTMLElement)
       public
+        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream); override;
+      end;
+
+      TAssets = class(THTMLElement)
+      public
+        HomePath: string;
         procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream); override;
       end;
 
@@ -1528,6 +1535,8 @@ begin
     if Result <> nil then
       break;
   end;
+  if (Result = nil) and (elFallback in Kind) then
+    Result := Self;
 end;
 
 procedure TmnwElement.DoCompose;
@@ -1739,6 +1748,27 @@ begin
   if FileExists(Route) then
   begin
     fs := TFileStream.Create(Route, fmOpenRead);
+    try
+      AStream.CopyFrom(fs, 0);
+    finally
+      fs.Free;
+    end;
+  end;
+end;
+
+{ THTML.TAssets }
+
+procedure THTML.TAssets.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream);
+var
+  fs: TFileStream;
+  aFileName: string;
+begin
+  inherited;
+  (Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', DocumentToContentType(Route));
+  aFileName := IncludePathDelimiter(HomePath) + Route;
+  if FileExists(aFileName) then
+  begin
+    fs := TFileStream.Create(aFileName, fmOpenRead);
     try
       AStream.CopyFrom(fs, 0);
     finally

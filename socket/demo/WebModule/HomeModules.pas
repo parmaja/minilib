@@ -141,7 +141,7 @@ begin
         begin
           Name := 'file_logo';
 //          Route := 'logo';
-          Source := IncludeURLDelimiter(Module.HomeURL)+'assets/file/logo.png';
+          Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
         end;
       end;
 
@@ -218,11 +218,12 @@ begin
   inherited;
   Name := 'Assets';
   Route := 'assets';
-  with This.Add<TDocument> do
+  with This.Add<TAssets> do
   begin
+    HomePath := Module.HomePath;
+    Kind := Kind + [elFallback];
     //Name := 'document';
-//    Route := 'index';
-    Title := 'Index';
+//    Route := '';
   end;
 
   with This.Add<TDirectFile> do
@@ -237,12 +238,6 @@ begin
     Name := 'logo';
     Route := 'logo';
     FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
-  end;
-
-  with This.Add<TFile> do
-  begin
-    Name := 'file';
-    Route := 'file';
   end;
 end;
 
