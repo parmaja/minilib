@@ -25,9 +25,8 @@ type
 
   { TmnwBootstrap }
 
-  TmnwBootstrap = class(THTML)
+  TmnwBootstrapHTML = class(THTML)
   public
-    procedure Created; override;
   end;
 
   { TmnwBootstrapRenderer }
@@ -47,13 +46,6 @@ type
   end;
 
 implementation
-
-{ TmnwBootstrap }
-
-procedure TmnwBootstrap.Created;
-begin
-  inherited;
-end;
 
 { TmnwBootstrapRenderer }
 

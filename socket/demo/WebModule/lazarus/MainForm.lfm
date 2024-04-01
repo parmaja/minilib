@@ -5,6 +5,7 @@ object Main: TMain
   Width = 536
   HorzScrollBar.Page = 206
   VertScrollBar.Page = 207
+  AlphaBlend = True
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Module Web Server'

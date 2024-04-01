@@ -330,6 +330,12 @@ type
       TDirectFile = class(THTMLElement)
       public
         FileName: string;
+        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream); override;
+      end;
+
+      TFile = class(THTMLElement)
+      public
+        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream); override;
       end;
 
       { TDocument }
@@ -977,7 +983,7 @@ begin
 
   if Result <> nil then
   begin
-    Result.Respond(Route, Renderer, Sender, AStream);
+    Result.Respond(aRoute, Renderer, Sender, AStream);
   end;
 end;
 
@@ -1705,6 +1711,41 @@ begin
   inherited Add(aObject);
 end;
 {$endif}
+
+{ THTML.TDirectFile }
+
+procedure THTML.TDirectFile.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream);
+var
+  fs: TFileStream;
+begin
+  inherited;
+  (Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', DocumentToContentType(FileName));
+  fs := TFileStream.Create(FileName, fmOpenRead);
+  try
+    AStream.CopyFrom(fs, 0);
+  finally
+    fs.Free;
+  end;
+end;
+
+{ THTML.TFile }
+
+procedure THTML.TFile.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TStream);
+var
+  fs: TFileStream;
+begin
+  inherited;
+  (Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', DocumentToContentType(Route));
+  if FileExists(Route) then
+  begin
+    fs := TFileStream.Create(Route, fmOpenRead);
+    try
+      AStream.CopyFrom(fs, 0);
+    finally
+      fs.Free;
+    end;
+  end;
+end;
 
 initialization
 finalization

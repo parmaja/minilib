@@ -15,7 +15,7 @@ uses
 type
   THomeModule = class;
 
-  TCustomHomeSchema = class(TmnwBootstrap)
+  TCustomHomeSchema = class(TmnwBootstrapHTML)
   public
     Module: THomeModule;
   end;
@@ -129,6 +129,20 @@ begin
           Route := 'logo';
           LoadFromFile(IncludePathDelimiter(Module.HomePath) + 'logo.png');
         end;
+
+        with This.Add<TImage> do
+        begin
+          Name := 'logo';
+//          Route := 'logo';
+            Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo';
+        end;
+
+        with This.Add<TImage> do
+        begin
+          Name := 'file_logo';
+//          Route := 'logo';
+          Source := IncludeURLDelimiter(Module.HomeURL)+'assets/file/logo.png';
+        end;
       end;
 
     end;
@@ -187,6 +201,7 @@ begin
   Schemas := THomeSchemas.Create;
   Schemas.Module := Self;
   Schemas.RegisterSchema('welcome', TWelcomeSchema);
+  Schemas.RegisterSchema('assets', TAssetsSchema);
   Schemas.RegisterSchema('login', TLoginSchema);
 end;
 
@@ -206,7 +221,7 @@ begin
   with This.Add<TDocument> do
   begin
     //Name := 'document';
-    Route := 'index';
+//    Route := 'index';
     Title := 'Index';
   end;
 
@@ -222,6 +237,12 @@ begin
     Name := 'logo';
     Route := 'logo';
     FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
+  end;
+
+  with This.Add<TFile> do
+  begin
+    Name := 'file';
+    Route := 'file';
   end;
 end;
 
