@@ -224,20 +224,19 @@ begin
     Kind := Kind + [elFallback];
     //Name := 'document';
 //    Route := '';
-  end;
+    with This.Add<TDirectFile> do
+    begin
+      Name := 'jquery';
+      Route := 'jquery';
+      FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
+    end;
 
-  with This.Add<TDirectFile> do
-  begin
-    Name := 'jquery';
-    Route := 'jquery';
-    FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
-  end;
-
-  with This.Add<TDirectFile> do
-  begin
-    Name := 'logo';
-    Route := 'logo';
-    FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
+    with This.Add<TDirectFile> do
+    begin
+      Name := 'logo';
+      Route := 'logo';
+      FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
+    end;
   end;
 end;
 

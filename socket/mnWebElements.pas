@@ -1729,7 +1729,7 @@ var
 begin
   inherited;
   (Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', DocumentToContentType(FileName));
-  fs := TFileStream.Create(FileName, fmOpenRead);
+  fs := TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead);
   try
     AStream.CopyFrom(fs, 0);
   finally
@@ -1768,7 +1768,7 @@ begin
   aFileName := IncludePathDelimiter(HomePath) + Route;
   if FileExists(aFileName) then
   begin
-    fs := TFileStream.Create(aFileName, fmOpenRead);
+    fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
     try
       AStream.CopyFrom(fs, 0);
     finally
