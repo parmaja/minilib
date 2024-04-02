@@ -562,7 +562,7 @@ procedure TmnListener.PostLogs;
 var
   b: Boolean;
   s: String;
-begin
+ begin
   if FServer <> nil then
   repeat
     Enter;

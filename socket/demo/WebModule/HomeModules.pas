@@ -106,8 +106,8 @@ begin
       Comment := 'Image from another module';
       Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
     end;
-    Header.Active := True;
-    Footer.Active := True;
+    Header.Use := True;
+    Footer.Use := True;
 
     with Container do
     begin
@@ -268,8 +268,8 @@ begin
       Comment := 'Image from another module';
       Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
     end;
-    Header.Active := True;
-    Footer.Active := True;
+    Header.Use := True;
+    Footer.Use := True;
 
     with Container do
     begin

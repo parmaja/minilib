@@ -18,6 +18,7 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, Variants, Contnrs, StrUtils,
+  mnLogs,
   mnUtils, mnStreams, mnClasses, mnFields;
 
 type
@@ -505,6 +506,7 @@ begin
     while not (cloRead in Stream.Done) do
     begin
       line := UTF8ToString(Stream.ReadLineUTF8);
+      log.WriteLn(line);
       if line = '' then
         break
       else

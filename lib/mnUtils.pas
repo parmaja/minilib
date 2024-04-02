@@ -283,6 +283,10 @@ function String2Hex(const vData: string): string; overload;
 function String2Hex(const vData: PByte; vCount: Integer): string; overload;
 function Hex2String(const vData: string): string; overload;
 
+function ByteToBinStr(Value: Byte): string;
+function DataToBinStr(var Data; Size: Integer; Separator: string = ''): string;
+
+
 //Files Utils
 
 type
@@ -2032,6 +2036,35 @@ begin
     Inc(p);
     P^ := Convert[Buffer[I] and $F];
     Inc(p);
+  end;
+end;
+
+function ByteToBinStr(Value: Byte): string;
+var
+  i: Integer;
+begin
+  SetLength(Result, 8);
+  for i := 1 to 8 do begin
+    if (Value shr (8-i)) and 1 = 0 then begin
+      Result[i] := '0'
+    end else begin
+      Result[i] := '1';
+    end;
+  end;
+end;
+
+function DataToBinStr(var Data; Size: Integer; Separator: string): string;
+var
+  P: PByte;
+begin
+  Result := '';
+  P := @Data;
+  while Size > 0 do
+  begin
+    Dec(Size);
+    if (Result <> '') then
+      Result := Result + Separator;
+    Result := Result + ByteToBinStr(P[Size]);
   end;
 end;
 

@@ -5,6 +5,7 @@ unit mnWebModules;
  * @license   modifiedLGPL (modified of mod://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+ * @author    Belal Hamed <belal, belalhamed@gmail.com>
  *}
 
 {$M+}
@@ -44,7 +45,9 @@ Notes:
 interface
 
 uses
-  SysUtils, Classes, syncobjs, StrUtils, //NetEncoding, Hash,
+  SysUtils, Classes, syncobjs, StrUtils, //
+  NetEncoding,
+  Hash,
   DateUtils,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams, mnMultipartData, mnModules;
@@ -73,28 +76,34 @@ type
 
   TmodHttpRespond = class(TmodRespond)
   private
+    FWebSocket: Boolean;
     FKeepAlive: Boolean;
     FContentLength: Integer;
     FCompressClass: TmnCompressStreamProxyClass;
     FCompressProxy: TmnCompressStreamProxy;
+    FProtcolClass: TmnProtcolStreamProxyClass;
+    FProtcolProxy: TmnProtcolStreamProxy;
     FHomePath: string; //Document root folder
     FHostURL: string;
     FHttpResult: THttpResult;
     procedure SetCompressClass(AValue: TmnCompressStreamProxyClass);
     procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
+    procedure SetHttpResult(const Value: THttpResult);
+    procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
   protected
     function HeadText: string; override;
-    procedure DoSendHeader; override;
     procedure DoHeaderSent; override;
   public
     constructor Create;
-    destructor Destroy; override;
+    property WebSocket: Boolean read FWebSocket write FWebSocket;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     //Compress on the fly, now we use deflate
     property ContentLength: Integer read FContentLength write FContentLength;
     property CompressClass: TmnCompressStreamProxyClass read FCompressClass write SetCompressClass;
     property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
-    property HttpResult: THttpResult read FHttpResult write FHttpResult;
+    property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
+    property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy;
+    property HttpResult: THttpResult read FHttpResult write SetHttpResult;
     //Document root folder
     property HomePath: string read FHomePath;
     property HostURL: string read FHostURL;
@@ -123,7 +132,7 @@ type
     property Respond: TmodHttpRespond read GetRespond;
   end;
 
-  TmodWebSocketCommand = class(TmodCommand)
+  TmodWebSocketCommand = class(TmodHttpCommand)
   end;
 
   TmodWebFileModule = class;
@@ -326,7 +335,7 @@ end;
 //TODO slow function needs to improvements
 //https://stackoverflow.com/questions/1549213/whats-the-correct-encoding-of-http-get-request-strings
 
-{
+
 function HashWebSocketKey(const key: string): string;
 var
   b: TBytes;
@@ -334,7 +343,7 @@ begin
   b := THashSHA1.GetHashBytes(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
   Result := TNetEncoding.Base64String.EncodeBytesToString(b);
 end;
-}
+
 
 function URIDecode(const S: AnsiString; CodePage: Word = CP_UTF8): string;
 var
@@ -377,6 +386,18 @@ begin
   FCompressClass := AValue;
 end;
 
+procedure TmodHttpRespond.SetHttpResult(const Value: THttpResult);
+begin
+  if resHeaderSent in States then
+    raise TmodModuleException.Create('Header is already sent');
+  FHttpResult := Value;
+end;
+
+procedure TmodHttpRespond.SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
+begin
+  FProtcolClass := Value;
+end;
+
 procedure TmodHttpRespond.SetsCompressProxy(AValue: TmnCompressStreamProxy);
 begin
   if FCompressProxy <> nil then
@@ -388,12 +409,6 @@ constructor TmodHttpRespond.Create;
 begin
   inherited Create;
   FHttpResult := hrNone;
-end;
-
-destructor TmodHttpRespond.Destroy;
-begin
-
-  inherited Destroy;
 end;
 
 procedure TmodHttpRespond.DoHeaderSent;
@@ -410,11 +425,6 @@ begin
     else
       CompressProxy.Enable;
   end;
-end;
-
-procedure TmodHttpRespond.DoSendHeader;
-begin
-  inherited;
 end;
 
 function TmodHttpRespond.HeadText: string;
@@ -797,43 +807,65 @@ end;
 
 procedure TmodHttpCommand.Prepare(var Result: TmodRespondResult);
 var
-  Key: string;
   aKeepAlive: Boolean;
+  WSHash: string;
+  WebSocket: Boolean;
 begin
   inherited;
 
-  //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
-  Key := Request.Header.ReadString('Sec-WebSocket-Key');
-  if Key <> '' then
+  if Request.Header.Field['Connection'].Have('Upgrade', [',']) then
   begin
-    //Key := HashWebSocketKey(Key);
-    //Respond.AddHeader('Sec-WebSocket-Accept', Key);
+    if Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
+    begin
+      WSHash := Request.Header['Sec-WebSocket-Key']; //* dGhlIHNhbXBsZSBub25jZQ==
+      if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
+      begin
+        Respond.HttpResult := hrSwitchingProtocols;
+        Respond.SendHead;
+        Respond.Stream.WriteLineUTF8('Upgrade: websocket');
+        Respond.Stream.WriteLineUTF8('Connection: Upgrade');
+        Respond.Stream.WriteLineUTF8('Sec-WebSocket-Accept: ' + HashWebSocketKey(WSHash));
+        Respond.ClearHeader;
+        Respond.KeepAlive := True;
+        Respond.ProtcolClass := TmnWebSocket13StreamProxy;
+        Respond.FProtcolProxy := Respond.ProtcolClass.Create;
+        Respond.WebSocket := True;
+        Respond.Stream.AddProxy(Respond.ProtcolProxy);
+        Result.Status := Result.Status + [mrKeepAlive];
+
+      //Respond.AddHeader('Sec-WebSocket-Accept', Key);
+    //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
+      end;
+    end;
   end;
 
-  aKeepAlive := (Module.UseKeepAlive = klvUndefined) and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive');
-  aKeepAlive := aKeepAlive or ((Module.UseKeepAlive = klvKeepAlive) and not SameText(Request.Header.ReadString('Connection'), 'close'));
-
-  if aKeepAlive then
+  if not Respond.WebSocket then
   begin
-    Respond.KeepAlive := True;
-    Respond.AddHeader('Connection', 'Keep-Alive');
-    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 1000) + ', max=100');
-  end;
+    aKeepAlive := (Module.UseKeepAlive = klvUndefined) and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive');
+    aKeepAlive := aKeepAlive or ((Module.UseKeepAlive = klvKeepAlive) and not SameText(Request.Header.ReadString('Connection'), 'close'));
 
-  if not aKeepAlive and Module.UseCompressing then
-  begin
-    if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
-      Respond.CompressClass := TmnGzipStreamProxy
-    else if Request.Header.Field['Accept-Encoding'].Have('deflate', [',']) then
-      Respond.CompressClass := TmnDeflateStreamProxy
-    else
-      Respond.CompressClass := nil;
-    if Respond.CompressClass <> nil then
-      Respond.AddHeader('Content-Encoding', Respond.CompressClass.GetCompressName);
-  end;
+    if aKeepAlive then
+    begin
+      Respond.KeepAlive := True;
+      Respond.AddHeader('Connection', 'Keep-Alive');
+      Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 1000) + ', max=100');
+    end;
 
-  if (Request.Header.Field['Content-Length'].IsExists) then
-    Request.ContentLength := Request.Header.Field['Content-Length'].AsInteger;
+    if not aKeepAlive and Module.UseCompressing then
+    begin
+      if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
+        Respond.CompressClass := TmnGzipStreamProxy
+      else if Request.Header.Field['Accept-Encoding'].Have('deflate', [',']) then
+        Respond.CompressClass := TmnDeflateStreamProxy
+      else
+        Respond.CompressClass := nil;
+      if Respond.CompressClass <> nil then
+        Respond.AddHeader('Content-Encoding', Respond.CompressClass.GetCompressName);
+    end;
+
+    if (Request.Header.Field['Content-Length'].IsExists) then
+      Request.ContentLength := Request.Header.Field['Content-Length'].AsInteger;
+  end;
 end;
 
 procedure TmodHttpCommand.Unprepare(var Result: TmodRespondResult);

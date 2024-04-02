@@ -1,11 +1,15 @@
 unit mnMultipartData;
-
-{$ifdef FPC}
-{$mode Delphi}
-{$endif}
-{$M+}
-{$H+}
-
+{$M+}{$H+}
+{$ifdef FPC}{$mode delphi}{$endif}
+{**
+ *  This file is part of the "Mini Library"
+ *
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
+ * @author    Belal Hamed <belal, belalhamed@gmail.com>
+ *
+}
 interface
 
 uses

@@ -11,7 +11,7 @@ interface
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
   mnOpenSSLUtils, mnOpenSSL, mnLogs, mnHttpClient, mnOpenSSLAPI,
-  mnModules,
+  mnModules,   mnStreamUtils, mnUtils,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules,
   HomeModules;
 
@@ -42,6 +42,7 @@ type
     AutoOpenChk: TCheckBox;
     AutoRunChk: TCheckBox;
     OpenBtn: TButton;
+    Button3: TButton;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
@@ -50,6 +51,7 @@ type
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure OpenBtnClick(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
   private
     FMax:Integer;
     HttpServer: TmodWebServer;
@@ -230,6 +232,19 @@ begin
   //LogEdit.Lines.Add('Finished');
 end;
 
+procedure TMain.Button3Click(Sender: TObject);
+var
+  ws: TWebsocketPayloadHeader;
+begin
+  FillChar(ws, SizeOf(TWebsocketPayloadHeader), 0);
+  ws.Flags := [wsfFinish];
+  ws.Opcode := wsoBinary;
+  ws.InteralSize := 3;
+  ws.Masked := True;
+  Log.Write(IntToStr(SizeOf(TWebsocketPayloadHeader)));
+  Log.Write(DataToBinStr(ws, SizeOf(ws), '-'));
+end;
+
 procedure TMain.FormCreate(Sender: TObject);
 var
   aIni: TIniFile;
@@ -261,6 +276,8 @@ var
   end;
 
 begin
+  Memo.Font.Name := 'Consolas';
+  Memo.Font.Size := 10;
   InstallEventLog(HttpServerLog);
   HttpServer := TmodWebServer.Create;
   HttpServer.OnBeforeOpen := HttpServerBeforeOpen;

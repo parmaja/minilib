@@ -1,5 +1,4 @@
 ﻿unit mnModules;
-
 {$M+}{$H+}
 {$IFDEF FPC}{$MODE delphi}{$ENDIF}
 {**
@@ -8,6 +7,7 @@
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+ * @author    Belal Hamed <belal, belalhamed@gmail.com>
  *
  *  https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html
  *
@@ -192,7 +192,7 @@ type
     procedure PutHeader(AName, AValue: String);
 
     procedure SendHeader;
-
+    procedure ClearHeader;
   end;
 
   TmodModule = class;
@@ -604,6 +604,11 @@ end;
 procedure TmodRespond.AddHeader(const AName: string; AValue: TDateTime);
 begin
   AddHeader(AName, FormatHTTPDate(AValue));
+end;
+
+procedure TmodRespond.ClearHeader;
+begin
+  FHeader.Clear;
 end;
 
 constructor TmodRespond.Create;

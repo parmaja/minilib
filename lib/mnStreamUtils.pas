@@ -100,6 +100,77 @@ type
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
   end;
 
+  //* WebSocket
+
+  TmnProtcolStreamProxy = class abstract(TmnStreamOverProxy)
+  public
+    class function GetProtocolName: string; virtual; abstract;
+  end;
+
+  TmnProtcolStreamProxyClass = class of TmnProtcolStreamProxy;
+
+  { WebSocket }
+
+{***********************************************************************
+
+   0                   1                   2                   3
+   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  +-+-+-+-+-------+-+-------------+-------------------------------+
+  |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+  |I|S|S|S|  (4)  |A|     (7)     |            (16/64)            |
+  |N|V|V|V|       |S|             |   (if payload len==126/127)   |
+  | |1|2|3|       |K|             |                               |
+  +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+  |     Extended payload length continued, if payload len == 127    |
+  + - - - - - - - - - - - - - - - +-------------------------------+
+  |                               |Masking-key, if MASK set to 1  |
+  +-------------------------------+-------------------------------+
+  | Masking-key (continued)       |          Payload Data         |
+  +-------------------------------- - - - - - - - - - - - - - - - +
+  :                     Payload Data continued ...                :
+***********************************************************************}
+
+  {$Z1}
+  TWSFlags = set of (
+    wsfFinish,
+    wsfRES1,
+    wsfRES2,
+    wsfRES3
+  );
+
+  TWSOpcode = (wsoText = 1, wsoBinary = 2, _wsoEnd = $F);
+  TWSSizeType = (wsoSmall, wsoSize16, wsoSize64);
+
+  TWebsocketPayloadHeader = packed record
+  private
+    function GetFlags: TWSFlags;
+    procedure SetFlags(const Value: TWSFlags);
+    function GetOpcode: TWSOpcode;
+    procedure SetOpcode(const Value: TWSOpcode);
+    function GetMasked: Boolean;
+    procedure SetMasked(const Value: Boolean);
+    function GetInteralSize: Byte;
+    procedure SetInteralSize(const Value: Byte);
+    function GetSizeType: TWSSizeType;
+  public
+    Byte1: Byte;
+    Byte2: Byte;
+    property Flags: TWSFlags read GetFlags write SetFlags;
+    property Opcode: TWSOpcode read GetOpcode write SetOpcode;
+    property Masked: Boolean read GetMasked write SetMasked;
+    property InteralSize: Byte read GetInteralSize write SetInteralSize;
+    property SizeType: TWSSizeType read GetSizeType;
+  end;
+
+  TmnWebSocket13StreamProxy = class(TmnProtcolStreamProxy)
+  private
+    Header: TWebsocketPayloadHeader;
+  public
+    function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+    function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+    class function GetProtocolName: string; override;
+  end;
+
 implementation
 
 { TmnDeflateWriteStreamProxy }
@@ -509,6 +580,73 @@ end;
 function TmnPlainStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
 begin
   Result := Over.Write(Buffer, Count, ResultCount, RealCount);
+end;
+
+{ TmnWebSocket13StreamProxy }
+
+function TmnWebSocket13StreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+begin
+end;
+
+function TmnWebSocket13StreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+begin
+end;
+
+class function TmnWebSocket13StreamProxy.GetProtocolName: string;
+begin
+  Result := 'websocket13';
+end;
+
+{ TWebsocketPayloadHeader }
+
+function TWebsocketPayloadHeader.GetFlags: TWSFlags;
+begin
+  Result := TWSFlags(Byte(Byte1 and $0F));
+end;
+
+function TWebsocketPayloadHeader.GetInteralSize: Byte;
+begin
+  Result := Byte((Byte2 and $FE) shr 1);
+end;
+
+function TWebsocketPayloadHeader.GetOpcode: TWSOpcode;
+begin
+  Result := TWSOpcode(Byte((Byte1 and $F0) shr 4));
+end;
+
+function TWebsocketPayloadHeader.GetSizeType: TWSSizeType;
+begin
+  if InteralSize < 126 then
+    Result := wsoSmall
+  else if InteralSize = 126 then
+    Result := wsoSize16
+  else
+    Result := wsoSize64;
+end;
+
+procedure TWebsocketPayloadHeader.SetFlags(const Value: TWSFlags);
+begin
+  Byte1 := Byte1 and $F0 or Byte(Value);
+end;
+
+procedure TWebsocketPayloadHeader.SetInteralSize(const Value: Byte);
+begin
+  Byte2 := Byte2 and $1 or (Byte(Value) shl 1);
+end;
+
+function TWebsocketPayloadHeader.GetMasked: Boolean;
+begin
+  Result := Byte(Byte2 and $1) > 0;
+end;
+
+procedure TWebsocketPayloadHeader.SetMasked(const Value: Boolean);
+begin
+  Byte2 := Byte2 and $FE or Byte(Value);
+end;
+
+procedure TWebsocketPayloadHeader.SetOpcode(const Value: TWSOpcode);
+begin
+  Byte1 := Byte1 and $0F or (Byte(Value) shl 4);
 end;
 
 end.

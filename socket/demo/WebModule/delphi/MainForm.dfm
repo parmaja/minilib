@@ -52,9 +52,8 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
-    ExplicitTop = 151
-    ExplicitWidth = 430
-    ExplicitHeight = 207
+    ExplicitWidth = 435
+    ExplicitHeight = 234
   end
   object StartBtn: TButton
     Left = 369
@@ -66,7 +65,7 @@ object Main: TMain
     Default = True
     TabOrder = 0
     OnClick = StartBtnClick
-    ExplicitLeft = 360
+    ExplicitLeft = 365
   end
   object HomePathEdit: TEdit
     Left = 88
@@ -78,7 +77,7 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 2
     Text = 'c:\offline\'
-    ExplicitWidth = 271
+    ExplicitWidth = 272
   end
   object StopBtn: TButton
     Left = 369
@@ -90,7 +89,7 @@ object Main: TMain
     Enabled = False
     TabOrder = 5
     OnClick = StopBtnClick
-    ExplicitLeft = 360
+    ExplicitLeft = 365
   end
   object PortEdit: TEdit
     Left = 88
@@ -121,8 +120,7 @@ object Main: TMain
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
-    ExplicitTop = 117
-    ExplicitWidth = 430
+    ExplicitWidth = 435
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
@@ -267,7 +265,7 @@ object Main: TMain
     Default = True
     TabOrder = 7
     OnClick = Button1Click
-    ExplicitLeft = 360
+    ExplicitLeft = 365
   end
   object UseSSLChk: TCheckBox
     Left = 108
@@ -287,6 +285,7 @@ object Main: TMain
     Caption = 'Test'
     TabOrder = 9
     OnClick = Button2Click
+    ExplicitLeft = 300
   end
   object AliasNameEdit: TEdit
     Left = 162
@@ -298,7 +297,7 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 10
     Text = 'doc'
-    ExplicitWidth = 192
+    ExplicitWidth = 197
   end
   object KeepAliveChk: TCheckBox
     Left = 10
@@ -345,5 +344,15 @@ object Main: TMain
     Caption = 'Open'
     TabOrder = 15
     OnClick = OpenBtnClick
+    ExplicitLeft = 365
+  end
+  object Button3: TButton
+    Left = 280
+    Top = 88
+    Width = 75
+    Height = 25
+    Caption = 'Button3'
+    TabOrder = 16
+    OnClick = Button3Click
   end
 end
