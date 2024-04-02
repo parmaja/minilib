@@ -43,6 +43,7 @@ type
     AutoRunChk: TCheckBox;
     OpenBtn: TButton;
     Button3: TButton;
+    Button4: TButton;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
@@ -52,6 +53,7 @@ type
     procedure Button2Click(Sender: TObject);
     procedure OpenBtnClick(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
     FMax:Integer;
     HttpServer: TmodWebServer;
@@ -126,12 +128,11 @@ begin
   HttpServer.Port := PortEdit.Text;
 
   HttpServer.UseSSL := UseSSLChk.Checked;
-
-  HttpServer.CertificateFile := 'HttpServer.crt';
-  HttpServer.PrivateKeyFile := 'HttpServer.private.key';
-
-  //HttpServer.CertificateFile := 'certificate.pem';
-  //HttpServer.PrivateKeyFile := 'key.pem';
+  if HttpServer.UseSSL then
+  begin
+    HttpServer.CertificateFile := 'HttpServer.crt';
+    HttpServer.PrivateKeyFile := 'HttpServer.private.key';
+  end;
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/', '-']; Seprator: Char = ' '; IgnoreCase: Boolean = true): Boolean;
@@ -171,7 +172,6 @@ var
   s: TsslConfig;
   aCer, aCsr, aPubKey, aPrvKey: string;
 begin
-  //MakeCert('certificate.pem', 'privatekey.pem', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
   s := TsslConfig.Create;
   try
     s.WriteInteger('req', 'default_bits', 2048);
@@ -195,7 +195,7 @@ begin
     s.WriteString('alt_names', 'address', 'MyAddress');
     s.WriteString('alt_names', 'category', 'Industry');
 
-    MakeCert2('HttpServer.crt', 'HttpServer.private.key', 'minilib', 'parmaja', 'SY', '', 2048, 0, 100);
+    MakeCert2(ExtractFilePath(Application.ExeName)+ 'HttpServer.crt', ExtractFilePath(Application.ExeName)+ 'HttpServer.private.key', 'minilib', 'parmaja', 'SY', '', 2048, 0, 100);
 
     //MakeCert2('HttpServer', s);
     {if MakeCert(s) then
@@ -243,6 +243,11 @@ begin
   ws.Masked := True;
   Log.Write(IntToStr(SizeOf(TWebsocketPayloadHeader)));
   Log.Write(DataToBinStr(ws, SizeOf(ws), '-'));
+end;
+
+procedure TMain.Button4Click(Sender: TObject);
+begin
+  MakeCert(ExtractFilePath(Application.ExeName)+ 'HttpServer.crt', ExtractFilePath(Application.ExeName)+ 'HttpServer.private.key', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
 end;
 
 procedure TMain.FormCreate(Sender: TObject);

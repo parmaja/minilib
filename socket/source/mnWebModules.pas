@@ -45,9 +45,12 @@ Notes:
 interface
 
 uses
-  SysUtils, Classes, syncobjs, StrUtils, //
-  NetEncoding,
-  Hash,
+  SysUtils, Classes, syncobjs, StrUtils,
+  {$ifdef FPC}
+  sha1, base64,
+  {$else}
+  NetEncoding, Hash,
+  {$endif}
   DateUtils,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams, mnMultipartData, mnModules;
@@ -339,9 +342,15 @@ end;
 function HashWebSocketKey(const key: string): string;
 var
   b: TBytes;
+  s: string;
 begin
+{$ifdef FPC}
+  s := SHA1Print(SHA1String(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'));
+  Result := EncodeStringBase64(s);
+{$else}
   b := THashSHA1.GetHashBytes(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
   Result := TNetEncoding.Base64String.EncodeBytesToString(b);
+{$endif}
 end;
 
 
@@ -825,6 +834,11 @@ begin
         Respond.Stream.WriteLineUTF8('Upgrade: websocket');
         Respond.Stream.WriteLineUTF8('Connection: Upgrade');
         Respond.Stream.WriteLineUTF8('Sec-WebSocket-Accept: ' + HashWebSocketKey(WSHash));
+
+//      Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+//      Sec-WebSocket-Protocol: plain
+
+        Respond.Stream.WriteLineUTF8('');
         Respond.ClearHeader;
         Respond.KeepAlive := True;
         Respond.ProtcolClass := TmnWebSocket13StreamProxy;
@@ -873,33 +887,39 @@ var
   aParams: TmnParams;
 begin
   inherited;
-  if not Respond.Header.Exists['Content-Length'] then
-    Respond.KeepAlive := False;
-
-  if Respond.KeepAlive then
+  if Respond.WebSocket then
   begin
-    if Request.Header.IsExists('Keep-Alive') then //idk if really sent from client
+  end
+  else
+  begin
+    if not Respond.Header.Exists['Content-Length'] then
+      Respond.KeepAlive := False;
+
+    if Respond.KeepAlive then
     begin
-      aParams := TmnParams.Create;
-      try
-        //Keep-Alive: timeout=5, max=1000
-        aParams.Separator := '=';
-        aParams.Delimiter := ',';
-        aParams.AsString := Request.Header['Keep-Alive'];
-        Result.Timout := aParams['timeout'].AsInteger;
-      finally
-        aParams.Free;
-      end;
-    end
-    else
-      Result.Timout := Module.KeepAliveTimeOut;
+      if Request.Header.IsExists('Keep-Alive') then //idk if really sent from client
+      begin
+        aParams := TmnParams.Create;
+        try
+          //Keep-Alive: timeout=5, max=1000
+          aParams.Separator := '=';
+          aParams.Delimiter := ',';
+          aParams.AsString := Request.Header['Keep-Alive'];
+          Result.Timout := aParams['timeout'].AsInteger;
+        finally
+          aParams.Free;
+        end;
+      end
+      else
+        Result.Timout := Module.KeepAliveTimeOut;
 
-    Result.Status := Result.Status + [mrKeepAlive];
-  end;
+      Result.Status := Result.Status + [mrKeepAlive];
+    end;
 
-  if Respond.CompressProxy <> nil then
-  begin
-    Respond.CompressProxy.Disable;
+    if Respond.CompressProxy <> nil then
+    begin
+      Respond.CompressProxy.Disable;
+    end;
   end;
 end;
 

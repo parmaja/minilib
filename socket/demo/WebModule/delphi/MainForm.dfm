@@ -126,7 +126,7 @@ object Main: TMain
       Left = 233
       Top = 6
       Width = 60
-      Height = 22
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -151,7 +151,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 22
+      Height = 25
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -171,7 +171,7 @@ object Main: TMain
       Left = 101
       Top = 6
       Width = 20
-      Height = 22
+      Height = 25
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -191,7 +191,7 @@ object Main: TMain
       Left = 127
       Top = 6
       Width = 60
-      Height = 22
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -216,7 +216,7 @@ object Main: TMain
       Left = 35
       Top = 6
       Width = 60
-      Height = 22
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -256,16 +256,15 @@ object Main: TMain
     end
   end
   object Button1: TButton
-    Left = 369
-    Top = 56
+    Left = 371
+    Top = 58
     Width = 60
     Height = 22
     Anchors = [akTop, akRight]
-    Caption = 'MakeCert'
+    Caption = 'MakeCert2'
     Default = True
     TabOrder = 7
     OnClick = Button1Click
-    ExplicitLeft = 365
   end
   object UseSSLChk: TCheckBox
     Left = 108
@@ -277,18 +276,17 @@ object Main: TMain
     OnClick = StayOnTopChkClick
   end
   object Button2: TButton
-    Left = 304
-    Top = 57
+    Left = 203
+    Top = 73
     Width = 60
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'Test'
     TabOrder = 9
     OnClick = Button2Click
-    ExplicitLeft = 300
   end
   object AliasNameEdit: TEdit
-    Left = 162
+    Left = 163
     Top = 30
     Width = 201
     Height = 21
@@ -297,7 +295,6 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 10
     Text = 'doc'
-    ExplicitWidth = 197
   end
   object KeepAliveChk: TCheckBox
     Left = 10
@@ -347,12 +344,21 @@ object Main: TMain
     ExplicitLeft = 365
   end
   object Button3: TButton
-    Left = 280
+    Left = 269
     Top = 88
     Width = 75
     Height = 25
     Caption = 'Button3'
     TabOrder = 16
     OnClick = Button3Click
+  end
+  object Button4: TButton
+    Left = 303
+    Top = 58
+    Width = 61
+    Height = 22
+    Caption = 'MakeCert1'
+    TabOrder = 17
+    OnClick = Button4Click
   end
 end

@@ -111,9 +111,9 @@ type
 
   { WebSocket }
 
-{***********************************************************************
+{******************************************************************
 
-   0                   1                   2                   3
+   0               1               2               3
    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
   +-+-+-+-+-------+-+-------------+-------------------------------+
   |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
@@ -121,14 +121,14 @@ type
   |N|V|V|V|       |S|             |   (if payload len==126/127)   |
   | |1|2|3|       |K|             |                               |
   +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
-  |     Extended payload length continued, if payload len == 127    |
+  |     Extended payload length continued, if payload len == 127  |
   + - - - - - - - - - - - - - - - +-------------------------------+
   |                               |Masking-key, if MASK set to 1  |
   +-------------------------------+-------------------------------+
   | Masking-key (continued)       |          Payload Data         |
   +-------------------------------- - - - - - - - - - - - - - - - +
   :                     Payload Data continued ...                :
-***********************************************************************}
+******************************************************************}
 
   {$Z1}
   TWSFlags = set of (
@@ -143,6 +143,8 @@ type
 
   TWebsocketPayloadHeader = packed record
   private
+    Byte1: Byte;
+    Byte2: Byte;
     function GetFlags: TWSFlags;
     procedure SetFlags(const Value: TWSFlags);
     function GetOpcode: TWSOpcode;
@@ -153,8 +155,9 @@ type
     procedure SetInteralSize(const Value: Byte);
     function GetSizeType: TWSSizeType;
   public
-    Byte1: Byte;
-    Byte2: Byte;
+    {$ifndef FPC}
+    class operator Initialize(out Dest: TWebsocketPayloadHeader);
+    {$endif}
     property Flags: TWSFlags read GetFlags write SetFlags;
     property Opcode: TWSOpcode read GetOpcode write SetOpcode;
     property Masked: Boolean read GetMasked write SetMasked;
@@ -585,11 +588,22 @@ end;
 { TmnWebSocket13StreamProxy }
 
 function TmnWebSocket13StreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+var
+  aHeader: TWebsocketPayloadHeader;
 begin
+  Over.Read(aHeader, SizeOf(aHeader), ResultCount, RealCount);
+  Result := Over.Read(Buffer, aHeader.InteralSize, ResultCount, RealCount);
 end;
 
 function TmnWebSocket13StreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+var
+  aHeader: TWebsocketPayloadHeader;
 begin
+  aHeader.Opcode := wsoText;
+  aHeader.Flags := aHeader.Flags + [wsfFinish];
+  aHeader.InteralSize := Count;
+  Over.Write(aHeader, SizeOf(aHeader), ResultCount, RealCount);
+  Result := Over.Write(Buffer, Count, ResultCount, RealCount);
 end;
 
 class function TmnWebSocket13StreamProxy.GetProtocolName: string;
@@ -623,6 +637,13 @@ begin
   else
     Result := wsoSize64;
 end;
+
+{$ifndef FPC}
+class operator TWebsocketPayloadHeader.Initialize(out Dest: TWebsocketPayloadHeader);
+begin
+  FillChar(Dest, SizeOf(Dest), 0);
+end;
+{$endif}
 
 procedure TWebsocketPayloadHeader.SetFlags(const Value: TWSFlags);
 begin

@@ -999,11 +999,10 @@ end;
 
 function TmnBufferStream.WriteLineUTF8(const S: UTF8String): TFileSize;
 begin
-  Result := WriteUTF8(s);
   if EndOfLine <> '' then
-  begin
-    Result := Result + WriteUTF8(EndOfLine);
-  end;
+    Result := WriteUTF8(S + EndOfLine)
+  else
+    Result := WriteUTF8(S);
 end;
 
 function TmnBufferStream.WriteAnsiString(const S: ansistring): TFileSize;

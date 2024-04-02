@@ -66,6 +66,8 @@ type
     procedure ExamplePostmanEcho;
     procedure ExampleCloudFlare;
 
+    procedure ExampleWebSocket;
+
     procedure ExampleSmallBuffer; //read write line with small buffer
     procedure ExampleHexLine; //Hex lines
     procedure ExampleHexImage; //Hex image
@@ -649,6 +651,79 @@ begin
   end;
 end;
 
+procedure TTestStream.ExampleWebSocket;
+var
+  Stream: TmnClientSocket;
+  aFile: TFileStream;
+  S: UTF8String;
+  t: int64;
+  Proxy: TmnWebSocket13StreamProxy;
+begin
+  Info.NoDelay := True;
+  Info.KeepAlive := False;
+  Info.QuickAck := False;
+  Info.UseSSL := False;
+  try
+    Stream := TmnClientSocket.Create('echo.websocket.org', '443');
+    Stream.ReadTimeout := Info.TestTimeOut;
+    Stream.Options := Info.SocketOptions;
+    Stream.Options := Stream.Options + [soNoDelay];
+//  Stream.Options := Stream.Options + [soKeepAlive];
+//    if QuickAck then
+//      Stream.Options := Stream.Options + [soQuickAck];
+    if Stream.Port = '443' then
+      Stream.Options := Stream.Options + [soSSL];
+    try
+      t := TThread.GetTickCount;
+      Stream.EndOfLine := #13#10;
+      //Stream.ConnectTimeout := 10000;
+      Stream.Connect;
+      WriteLn(TicksToString(TThread.GetTickCount - t));
+      if Stream.Connected then
+      begin
+        Stream.WriteLineUTF8('GET echo.websocket.org HTTP/1.1');
+        Stream.WriteLineUTF8('Host: echo.websocket.org');
+        Stream.WriteLineUTF8('Connection: keep-alive, Upgrade');
+        Stream.WriteLineUTF8('Sec-Fetch-Site: cross-site');
+        Stream.WriteLineUTF8('Sec-WebSocket-Key: ccCoUoR7ORNSVEc1ReiLWg==');
+        Stream.WriteLineUTF8('Sec-WebSocket-Version: 13');
+        Stream.WriteLineUTF8('Upgrade: websocket');
+        Stream.WriteLineUTF8('');
+
+        //read phase
+        Stream.ReadLineUTF8(s);
+        WriteLn(s);
+        while Stream.Connected and Stream.ReadLineUTF8(s) do
+        begin
+          WriteLn(s);
+          if s ='' then
+            break;
+        end;
+        Proxy := TmnWebSocket13StreamProxy.Create;
+        Stream.AddProxy(Proxy);
+        if Stream.Connected then
+        begin
+          Stream.WriteLineUTF8('Hello Websocket');
+          Stream.ReadLineUTF8(s);
+          WriteLn(s);
+        end;
+
+      end;
+      WriteLn(TicksToString(TThread.GetTickCount - t));
+      Stream.Disconnect;
+    finally
+      Stream.Free;
+    end;
+    WriteLn('Client end execute');
+  except
+    on E: Exception do
+    begin
+      WriteLn(E.Message);
+      raise;
+    end;
+  end;
+end;
+
 procedure TTestStream.ExampleWriteFormData;
 var
   m: TMemoryStream;
@@ -663,7 +738,7 @@ begin
     aFormData := TmnMultipartData.Create;
     try
       aFormData.Boundary := TGUID.NewGuid.ToString;
-      TmnMultipartDataValue.Create(aFormData).Value := 'test@code.com';
+//      TmnMultipartDataValue.Create(aFormData).Value := 'test@code.com';
       TmnMultipartDataFileName.Create(aFormData).FileName := 'image.jpg';
 
       aFormData.Write(Stream);
@@ -742,8 +817,8 @@ begin
 
     Writeln('');
     Writeln('>'+c.Response.Head);
-    for h in c.Response.Header do
-      Writeln('>'+h.GetNameValue);
+{    for h in c.Response.Header do
+      Writeln('>'+h.GetNameValue);} //*fix
     Writeln(s);
 
     Writeln(c.Response.StatusCode.ToString);
@@ -771,7 +846,7 @@ begin
       aFormData.Read(Stream);
       for aItm in aFormData do
       begin
-        Writeln(aItm.Header.Collect);
+//        Writeln(aItm.Header.Collect); //*fix
         Writeln(aItm.Name);
       end;
 
@@ -868,8 +943,8 @@ begin
 
     Writeln('');
     Writeln('>'+c.Response.Head);
-    for h in c.Response.Header do
-      Writeln('>'+h.GetNameValue);
+{    for h in c.Response.Header do
+      Writeln('>'+h.GetNameValue);} //*fix
     Writeln(s);
 
     Writeln(c.Response.StatusCode.ToString);
@@ -986,11 +1061,11 @@ begin
 
     Writeln('');
 //    Writeln('<'+c.Request.Head);
-    for h in c.Request.Header do
-      Writeln('<'+h.GetNameValue);
+{    for h in c.Request.Header do
+      Writeln('<'+h.GetNameValue);} //*fix
     Writeln('');
-    Writeln('>'+c.Response.Head);
-    for h in c.Response.Header do
+{    Writeln('>'+c.Response.Head);
+    for h in c.Response.Header do}//*fix
       Writeln('>'+h.GetNameValue);
     Writeln('');
     Writeln(s);
@@ -1269,6 +1344,7 @@ begin
       AddProc('GZImage: GZ image', ExampleGZImage);
       AddProc('UnGZImage: Unzip GZ image', ExampleGZImage);
       AddProc('HexLine: Hex lines', ExampleHexLine);
+      AddProc('WebSocket: WebSocket', ExampleWebSocket);
       AddProc('HexImage: Hex image', ExampleHexImage);
       AddProc('CopyFile Write', CopyFileWrite);
       AddProc('CopyFile Read', CopyFileRead);

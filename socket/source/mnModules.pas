@@ -308,8 +308,10 @@ type
     //Protocols all should lowercase
     constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules = nil); virtual;
     destructor Destroy; override;
-    function Execute(ARequest: TmodRequest; AStream: TmnConnectionStream = nil): TmodRespondResult;
     function RegisterCommand(vName: String; CommandClass: TmodCommandClass; AFallback: Boolean = False): Integer; overload;
+
+    //* Run in Connection Thread
+    function Execute(ARequest: TmodRequest; AStream: TmnConnectionStream = nil): TmodRespondResult;
 
     property Commands: TmodCommandClasses read FCommands;
     property Active: Boolean read GetActive;
@@ -1114,6 +1116,8 @@ end;
 
 function TmodModule.Match(const ARequest: TmodRequest): Boolean;
 begin
+  if not CommandRegistered then
+    RegisterCommands;
   //Result := SameText(AliasName, ARequest.Module) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
   Result := False;
   if ((Protocols = nil) or StrInArray(LowerCase(ARequest.Protocol), Protocols)) then
@@ -1131,9 +1135,6 @@ var
   aCMD: TmodCommand;
   aHandled: Boolean;
 begin
-  if not CommandRegistered then
-    RegisterCommands;
-
   Result.Status := [mrSuccess];
 
   ReadHeader(ARequest, AStream);
