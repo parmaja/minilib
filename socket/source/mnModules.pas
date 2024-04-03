@@ -63,7 +63,6 @@ type
     FStream: TmnBufferStream; //*todo TmnConnectionStream
     FCookies: TStrings;
     FWritingStarted: Boolean;
-    procedure SetHeader(const AValue: TmodHeader);
   protected
   public
     constructor Create;
@@ -1449,15 +1448,6 @@ begin
     Cookies.Values[vNameSpace+'.'+vName] := Value
   else
     Cookies.Values[vName] := Value;
-end;
-
-procedure TmodCommunicate.SetHeader(const AValue: TmodHeader);
-begin
-  if FHeader <> AValue then
-  begin
-    FreeAndNil(FHeader);
-    FHeader := AValue;
-  end;
 end;
 
 procedure TmodCommunicate.SetStream(AStream: TmnConnectionStream);

@@ -1451,8 +1451,6 @@ var
   end;
 
 var
-  P: PByte;
-  mt: PByte;
   Index: Integer;
   MatchIndex: Integer;
   aErr: Boolean;
@@ -1577,8 +1575,6 @@ const
   sSize = 1024;
 
 var
-  P: PByte;
-  mt: PByte;
   Index: Integer;
   MatchIndex: Integer;
   aErr: Boolean;

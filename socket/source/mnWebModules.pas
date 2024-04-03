@@ -241,7 +241,7 @@ type
 
   TmodWebEventServer = class(TmodCustomWebServer)
   public
-    constructor Create(const vPort: string; vProc: TmodWebEventProc);
+    constructor Create(const vPort: string; vProc: TmodWebEventProc); reintroduce;
   end;
 
   {**
@@ -343,8 +343,11 @@ end;
 
 function HashWebSocketKey(const key: string): string;
 var
-  b: TBytes;
+{$ifdef FPC}
   s: string;
+{$else}
+  b: TBytes;
+{$endif}
 begin
 {$ifdef FPC}
   s := SHA1Print(SHA1String(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'));
@@ -821,7 +824,6 @@ procedure TmodHttpCommand.Prepare(var Result: TmodRespondResult);
 var
   aKeepAlive: Boolean;
   WSHash, WSKey: string;
-  WebSocket: Boolean;
 begin
   inherited;
 

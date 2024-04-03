@@ -245,7 +245,7 @@ end;
 procedure TbsWSGetHomeCommand.RespondResult(var Result: TmodRespondResult);
 var
   s: string;
-  i: Integer;
+//  i: Integer;
 begin
   //Request.Path := DeleteSubPath(Name, Request.Path);
   s := 'Hi';

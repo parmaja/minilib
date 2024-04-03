@@ -21,14 +21,9 @@ unit mnOpenSSLUtils;
 interface
 
 uses
-  Classes,
-  SysUtils,
-  IniFiles,
-  mnClasses,
-  mnUtils,
-  mnSockets,
-  mnOpenSSL,
-  mnOpenSSLAPI;
+  Classes, SysUtils, IniFiles,
+  mnClasses, mnUtils,
+  mnSockets, mnOpenSSL, mnOpenSSLAPI;
 
 type
 
@@ -622,6 +617,7 @@ var
   v: PASN1_OCTET_STRING;
   t: UTF8String;
   i: Integer;
+  x: Integer;
 begin
   vArr := nil;
   Result := OPENSSL_sk_new_null;
@@ -636,7 +632,7 @@ begin
       v := ASN1_OCTET_STRING_new;
       t := UTF8Encode(s);
 
-      var x := ASN1_OCTET_STRING_set(v, PByte(t), Length(t));
+      x := ASN1_OCTET_STRING_set(v, PByte(t), Length(t));
       GENERAL_NAME_set0_value(g, AltType, v);
       OPENSSL_sk_push(Result, g);
 

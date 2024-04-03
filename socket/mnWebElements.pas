@@ -959,7 +959,6 @@ function TmnwSchemas.Respond(Route: string; Renderer: TmnwRenderer; Sender: TObj
 var
   SchemaObject: TmnwSchemaObject;
   aElement: TmnwElement;
-  aPath: string;
   Routes: TStringList;
   i: Integer;
   aRoute: string;

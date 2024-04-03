@@ -133,8 +133,6 @@ begin
 end;
 
 function TmnLibrary.Load(vSafe: Boolean = False): TmnbLoadState;
-var
-  b: Boolean;
 begin
   if IsLoaded then
   begin

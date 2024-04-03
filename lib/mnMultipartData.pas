@@ -93,7 +93,6 @@ type
   TmnMultipartData = class(TmnNamedObjectList<TmnMultipartDataItem>)
   private
     FBoundary: string;
-    FHttpHeader: Boolean;
     FTempPath: string;
   protected
     function DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TmnMultipartDataItem; virtual;
@@ -299,7 +298,6 @@ function TmnMultipartData.Read(vStream: TmnBufferStream): Boolean;
 var
   aItem: TmnMultipartDataItem;
   Matched: Boolean;
-  aDataHeader: TmnHeader;
   aBoundary: utf8string;
   s: utf8string;
 begin
@@ -335,13 +333,13 @@ function TmnMultipartData.Write(vStream: TmnBufferStream): Boolean;
 var
   itm: TmnMultipartDataItem;
 begin
-
   for itm in Self do
   begin
     vStream.WriteLineUTF8('--'+Boundary);
     itm.Write(vStream);
   end;
   vStream.WriteLineUTF8('--'+Boundary+'--');
+  Result := True;
 end;
 
 { TmnMultipartDataValue }
@@ -386,8 +384,6 @@ begin
 end;
 
 procedure TmnMultipartDataFileName.DoReadPrepare;
-var
-  f: string;
 begin
   LocalFileName := IncludePathDelimiter(Data.TempPath);
   ForceDirectories(LocalFileName);

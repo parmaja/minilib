@@ -340,7 +340,7 @@ procedure SocketDownloadFile(URL: string; FileName: string);
 var
   c: TmnCustomHttpClient;
 begin
-  c := TmnCustomHttpClient.Create;
+  c := TmnHttpClient.Create;
   try
     //c.Compressing := True;
     //m.SaveToFile('c:\temp\1.json');
