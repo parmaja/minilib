@@ -737,7 +737,7 @@ begin
         if Count > 0 then
           Size := Size - c;
         SetLength(S, p + c);
-        Move(aBuffer^, (PByte(Result) + p)^, c);
+        Move(aBuffer^, (PByte(S) + p)^, c);
         p := p + c;
       end;
       if ((c = 0) and not CanRead) or ((Count > 0) and (Size = 0)) then
