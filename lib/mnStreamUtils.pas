@@ -86,9 +86,10 @@ type
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
   end;
 
+  { TmnChunkStreamProxy }
+
   TmnChunkStreamProxy = class(TmnStreamOverProxy)
   protected
-    FChunkEnd: Boolean;
     FReadSize: Integer;
     function ChunkSize: Integer;
 
@@ -142,7 +143,7 @@ type
     wsfFinish
   );
 
-  TWSOpcode = (wsoText = 1, wsoBinary = 2, _wsoEnd = $F);
+  TWSOpcode = (wsoText = 1, wsoBinary = 2, wsoPing=$9, wsoPong=$A);
   TWSSizeType = (wsoSmall, wsoSize16, wsoSize64);
 
   TWebsocketPayloadHeader = packed record
@@ -424,7 +425,6 @@ end;
 procedure TmnChunkStreamProxy.CloseRead;
 begin
   inherited;
-  FChunkEnd := False;
   FReadSize := 0;
 end;
 
@@ -444,40 +444,32 @@ function TmnChunkStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount,
 var
   aCount: longint;
 begin
-  //Result := Over.Read(Buffer, Count, ResultCount, RealCount);
-  //Exit;
   ResultCount := 0;
   RealCount := 0;
-  //Result := not FChunkEnd;
   Result := True;
-
-  if Result then
+  if FReadSize=0 then
   begin
+    FReadSize := ReadSize;
     if FReadSize=0 then
     begin
-      FReadSize := ReadSize;
-      if FReadSize=0 then
-      begin
-        //FChunkEnd := True;
-        CloseData;
-      end;
+      CloseData;
     end;
+  end;
 
-    if FReadSize>0 then
-    begin
-      if FReadSize>=Count then
-        aCount := Count
-      else
-        aCount := FReadSize;
+  if FReadSize>0 then
+  begin
+    if FReadSize>=Count then
+      aCount := Count
+    else
+      aCount := FReadSize;
 
-      Over.Read(Buffer, aCount, ResultCount, RealCount);
-      Dec(FReadSize, ResultCount);
-    end;
+    Over.Read(Buffer, aCount, ResultCount, RealCount);
+    Dec(FReadSize, ResultCount);
+  end;
 
-    if FReadSize = 0 then
-    begin
-      ReadChunkEndOfLine;
-    end;
+  if FReadSize = 0 then
+  begin
+    ReadChunkEndOfLine;
   end;
 end;
 
@@ -652,7 +644,7 @@ end;
 
 class function TmnWebSocket13StreamProxy.GetProtocolName: string;
 begin
-  Result := 'websocket13';
+  Result := 'websocket.13';
 end;
 
 function TmnWebSocket13StreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;

@@ -271,6 +271,7 @@ type
     FAliasName: String;
     FCommands: TmodCommandClasses;
     FKeepAliveTimeOut: Integer;
+    FUseWebSocket: Boolean;
     FLevel: Integer;
     FModules: TmodModules;
     FProtocols: TArray<String>;
@@ -321,6 +322,7 @@ type
     property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
     property UseKeepAlive: TmodKeepAlive read FUseKeepAlive write FUseKeepAlive default klvUndefined;
     property UseCompressing: Boolean read FUseCompressing write FUseCompressing;
+    property UseWebSocket: Boolean read FUseWebSocket write FUseWebSocket;
     property AliasName: String read FAliasName write SetAliasName;
     property Level: Integer read FLevel write FLevel;
   end;

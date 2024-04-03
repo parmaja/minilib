@@ -104,8 +104,10 @@ type
     property ContentLength: Integer read FContentLength write FContentLength;
     property CompressClass: TmnCompressStreamProxyClass read FCompressClass write SetCompressClass;
     property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
+    //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy;
+
     property HttpResult: THttpResult read FHttpResult write SetHttpResult;
     //Document root folder
     property HomePath: string read FHomePath;
@@ -481,6 +483,7 @@ begin
   inherited;
   UseKeepAlive := klvUndefined;
   UseCompressing := True;
+  UseWebSocket := True;
   FHomePath := '';
 end;
 
@@ -824,7 +827,7 @@ begin
 
   if Request.Header.Field['Connection'].Have('Upgrade', [',']) then
   begin
-    if Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
+    if Module.UseWebSocket and Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
     begin
       if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
       begin
