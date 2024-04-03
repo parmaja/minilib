@@ -493,7 +493,7 @@ const
   sEOL = #13#10;
 
 var
-  c, i, t: Integer;
+  t: Integer;
   r, e: LongInt;
   b: PByte;
   s: UTF8String;
@@ -676,16 +676,20 @@ end;
 
 function TmnWebSocket13StreamProxy.ReadHeader: Integer;
 var
-  b: Byte;
   r, c: LongInt;
+  W: Word;
+  Q: Int64;
 begin
   Over.Read(Header, SizeOf(Header), r, c);
   if Header.InteralSize = 126 then
   begin
-    Over.Read(Header, SizeOf(Header), r, c);
+    Over.Read(W, SizeOf(W), r, c);
+    Result := SwapBytes(W);
   end
   else if Header.InteralSize = 127 then
   begin
+    Over.Read(Q, SizeOf(Q), r, c);
+    Result := SwapBytes(Q);
   end
   else
     Result := Header.InteralSize;
