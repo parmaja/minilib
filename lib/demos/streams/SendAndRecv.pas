@@ -794,7 +794,7 @@ var
   m: TStringStream;
   c: TmnHttpClient;
   s: string;
-  h: TmnHeaderItem;
+  h: TmnField;
 begin
   //https://documenter.getpostman.com/view/5025623/SWTG5aqV
   m := TStringStream.Create;
@@ -817,8 +817,8 @@ begin
 
     Writeln('');
     Writeln('>'+c.Response.Head);
-{    for h in c.Response.Header do
-      Writeln('>'+h.GetNameValue);} //*fix
+    for h in c.Response.Header do
+      Writeln('>'+h.GetNameValue);
     Writeln(s);
 
     Writeln(c.Response.StatusCode.ToString);
@@ -835,6 +835,7 @@ var
   Stream: TmnBufferStream;
   aFormData: TmnMultipartData;
   aItm: TmnMultipartDataItem;
+  h: TmnField;
 begin
   aTextFile:=TFileStream.Create(Location + 'formdata1.txt', fmOpenRead);
   Stream := TmnWrapperStream.Create(aTextFile, True);
@@ -846,7 +847,8 @@ begin
       aFormData.Read(Stream);
       for aItm in aFormData do
       begin
-//        Writeln(aItm.Header.Collect); //*fix
+        for h in aItm.Header do
+          Writeln('>'+h.GetNameValue);
         Writeln(aItm.Name);
       end;
 
@@ -923,7 +925,7 @@ procedure TTestStream.ExampleBIOPostmanEcho;
 var
   c: TmnBIOHttpClient;
   s: string;
-  h: TmnHeaderItem;
+  h: TmnField;
 begin
   //https://documenter.getpostman.com/view/5025623/SWTG5aqV
   c := TmnBIOHttpClient.Create;
@@ -943,8 +945,8 @@ begin
 
     Writeln('');
     Writeln('>'+c.Response.Head);
-{    for h in c.Response.Header do
-      Writeln('>'+h.GetNameValue);} //*fix
+    for h in c.Response.Header do
+      Writeln('>'+h.GetNameValue);
     Writeln(s);
 
     Writeln(c.Response.StatusCode.ToString);
@@ -1038,7 +1040,7 @@ var
   m: TStringStream;
   c: TmnHttpClient;
   s: string;
-  h: TmnHeaderItem;
+  h: TmnField;
 begin
   m := TStringStream.Create;
   c := TmnHttpClient.Create;
@@ -1061,11 +1063,11 @@ begin
 
     Writeln('');
 //    Writeln('<'+c.Request.Head);
-{    for h in c.Request.Header do
-      Writeln('<'+h.GetNameValue);} //*fix
+    for h in c.Request.Header do
+      Writeln('<'+h.GetNameValue);
     Writeln('');
-{    Writeln('>'+c.Response.Head);
-    for h in c.Response.Header do}//*fix
+    Writeln('>'+c.Response.Head);
+    for h in c.Response.Header do
       Writeln('>'+h.GetNameValue);
     Writeln('');
     Writeln(s);

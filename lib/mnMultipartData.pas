@@ -23,6 +23,8 @@ type
   TmnMultipartDataItem = class abstract(TmnNamedObject)
   private
     FData: TmnMultipartData;
+    FHeader: TmnHeader;
+    procedure SetHeader(const Value: TmnHeader);
   protected
     procedure ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
 
@@ -36,13 +38,13 @@ type
     procedure Prepare;
     function GetValue: string; virtual;
   public
-    Header: TmnHeader;
     constructor Create(vData: TmnMultipartData);
     destructor Destroy; override;
     procedure Write(vStream: TmnBufferStream);
     function Read(vStream: TmnBufferStream; const vBoundary: utf8string): Boolean;
     property Data: TmnMultipartData read FData;
     property Value: string read GetValue;
+    property Header: TmnHeader read FHeader write SetHeader;
   end;
 
   TmnMultipartDataFileName = class(TmnMultipartDataItem)
@@ -156,7 +158,7 @@ constructor TmnMultipartDataItem.Create(vData: TmnMultipartData);
 begin
   inherited Create;
   FData := vData;
-  //Header := TmnHeader.Create; from new item
+  Header := TmnHeader.Create;
   FData.Add(Self);
 end;
 
@@ -194,6 +196,13 @@ end;
 procedure TmnMultipartDataItem.ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
 begin
   DoRead(Buffer, Count);
+end;
+
+procedure TmnMultipartDataItem.SetHeader(const Value: TmnHeader);
+begin
+  if FHeader <> nil then
+    FreeAndNil(FHeader);
+  FHeader := Value;
 end;
 
 procedure TmnMultipartDataItem.DoPrepare;
@@ -250,9 +259,9 @@ begin
 
     aDisposition := aHeader['Content-Disposition'];
 
-    if Result=nil then
+    if Result = nil then
     begin
-      if GetSubValue(aDisposition, 'filename', s) and (s<>'') then
+      if GetSubValue(aDisposition, 'filename', s) and (s <> '') then
       begin
         Result := TmnMultipartDataFileName.Create(Self);
         TmnMultipartDataFileName(Result).FileName := s;
