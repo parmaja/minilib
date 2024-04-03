@@ -19,7 +19,7 @@ interface
 
 uses
   Classes, SysUtils, zlib,
-  mnLogs, mnUtils, mnStreams;
+  mnUtils, mnStreams;
 
 type
   TmnCompressLevel = 0..9;
@@ -170,10 +170,25 @@ type
     property SizeType: TWSSizeType read GetSizeType;
   end;
 
+  TWebsocketPayload = record
+  private
+    FSize: Int64;
+    function GetSize: Int64;
+    procedure SetSize(const Value: Int64);
+  public
+    Header: TWebsocketPayloadHeader;
+    property Size: Int64 read GetSize write SetSize;
+  end;
+
   TmnWebSocket13StreamProxy = class(TmnProtcolStreamProxy)
   private
+    FReadSize: Integer;
     Header: TWebsocketPayloadHeader;
+    Binary: Boolean;
+  protected
+    function ReadHeader: Integer;
   public
+    constructor Create(ABinary: Boolean = True);
     function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
     class function GetProtocolName: string; override;
@@ -640,6 +655,18 @@ begin
   Byte1 := Byte1 and $F0 or (Byte(Value));
 end;
 
+{ TWebsocketPayload }
+
+function TWebsocketPayload.GetSize: Int64;
+begin
+
+end;
+
+procedure TWebsocketPayload.SetSize(const Value: Int64);
+begin
+
+end;
+
 { TmnWebSocket13StreamProxy }
 
 class function TmnWebSocket13StreamProxy.GetProtocolName: string;
@@ -647,26 +674,91 @@ begin
   Result := 'websocket.13';
 end;
 
+function TmnWebSocket13StreamProxy.ReadHeader: Integer;
+var
+  b: Byte;
+  r, c: LongInt;
+begin
+  Over.Read(Header, SizeOf(Header), r, c);
+  if Header.InteralSize = 126 then
+  begin
+    Over.Read(Header, SizeOf(Header), r, c);
+  end
+  else if Header.InteralSize = 127 then
+  begin
+  end
+  else
+    Result := Header.InteralSize;
+end;
+
+constructor TmnWebSocket13StreamProxy.Create(ABinary: Boolean);
+begin
+  inherited Create;
+  Binary := ABinary;
+end;
+
 function TmnWebSocket13StreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
 var
-  aHeader: TWebsocketPayloadHeader;
+  aCount: longint;
 begin
-  Over.Read(aHeader, SizeOf(aHeader), ResultCount, RealCount);
-  Result := Over.Read(Buffer, aHeader.InteralSize, ResultCount, RealCount);
+  ResultCount := 0;
+  RealCount := 0;
+  Result := True;
+  if FReadSize=0 then
+  begin
+    FReadSize := ReadHeader;
+    if FReadSize=0 then
+    begin
+      CloseData;
+    end;
+  end;
+
+  if FReadSize>0 then
+  begin
+    if FReadSize>=Count then
+      aCount := Count
+    else
+      aCount := FReadSize;
+
+    Over.Read(Buffer, aCount, ResultCount, RealCount);
+    Dec(FReadSize, ResultCount);
+  end;
 end;
 
 function TmnWebSocket13StreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
 var
   aHeader: TWebsocketPayloadHeader;
+  Q: Int64;
+  W: Word;
 begin
-  aHeader.Opcode := wsoText;
+  if Binary then
+    aHeader.Opcode := wsoBinary
+  else
+    aHeader.Opcode := wsoText;
   aHeader.Flags := aHeader.Flags + [wsfFinish];
   if Count > 125 then
-    aHeader.InteralSize := 126
+  begin
+    if Count > Word.MaxValue then
+      aHeader.InteralSize := 127
+    else
+      aHeader.InteralSize := 126;
+  end
   else
     aHeader.InteralSize := Count;
-  log.WriteLn(DataToBinStr(aHeader, SizeOf(aHeader)));
   Over.Write(aHeader, SizeOf(aHeader), ResultCount, RealCount);
+  if aHeader.InteralSize > 125 then
+  begin
+    if aHeader.InteralSize = 126 then
+    begin
+      W := SwapBytes(Word(Count));
+      Over.Write(W, SizeOf(W), ResultCount, RealCount);
+    end
+    else if aHeader.InteralSize = 127 then
+    begin
+      Q := SwapBytes(Int64(Count));
+      Over.Write(Q, SizeOf(Q), ResultCount, RealCount);
+    end;
+  end;
   Result := Over.Write(Buffer, Count, ResultCount, RealCount);
 end;
 
