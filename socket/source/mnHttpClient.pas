@@ -838,7 +838,7 @@ begin
   aStream := TmnHttpStream.Create;
 
   aStream.EndOfLine      := sWinEndOfLine;
-  aStream.ReadTimeout    := 5000;
+  aStream.ReadTimeout    := 30000;
   aStream.ConnectTimeout := 5000;
   aStream.WriteTimeout   := 5000;
   aStream.Options := aStream.Options + [soWaitBeforeRead];
