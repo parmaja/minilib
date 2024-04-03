@@ -42,9 +42,9 @@ object Main: TMain
   end
   object Memo: TMemo
     Left = 0
-    Top = 153
+    Top = 176
     Width = 439
-    Height = 235
+    Height = 212
     Align = alBottom
     Anchors = [akLeft, akTop, akRight, akBottom]
     BiDiMode = bdLeftToRight
@@ -52,8 +52,6 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
-    ExplicitWidth = 435
-    ExplicitHeight = 234
   end
   object StartBtn: TButton
     Left = 369
@@ -94,7 +92,7 @@ object Main: TMain
   object PortEdit: TEdit
     Left = 88
     Top = 30
-    Width = 33
+    Width = 40
     Height = 21
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
@@ -103,7 +101,7 @@ object Main: TMain
   end
   object StayOnTopChk: TCheckBox
     Left = 10
-    Top = 52
+    Top = 59
     Width = 97
     Height = 17
     Caption = 'Stay on top'
@@ -112,7 +110,7 @@ object Main: TMain
   end
   object Panel3: TPanel
     Left = 0
-    Top = 119
+    Top = 142
     Width = 439
     Height = 34
     Align = alBottom
@@ -120,13 +118,14 @@ object Main: TMain
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
+    ExplicitTop = 119
     ExplicitWidth = 435
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
       Top = 6
       Width = 60
-      Height = 25
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -151,7 +150,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 25
+      Height = 22
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -171,7 +170,7 @@ object Main: TMain
       Left = 101
       Top = 6
       Width = 20
-      Height = 25
+      Height = 22
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -191,7 +190,7 @@ object Main: TMain
       Left = 127
       Top = 6
       Width = 60
-      Height = 25
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -216,7 +215,7 @@ object Main: TMain
       Left = 35
       Top = 6
       Width = 60
-      Height = 25
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -256,9 +255,9 @@ object Main: TMain
     end
   end
   object Button1: TButton
-    Left = 371
+    Left = 355
     Top = 58
-    Width = 60
+    Width = 76
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'MakeCert2'
@@ -268,7 +267,7 @@ object Main: TMain
   end
   object UseSSLChk: TCheckBox
     Left = 108
-    Top = 54
+    Top = 61
     Width = 97
     Height = 17
     Caption = 'Use SSL'
@@ -276,8 +275,8 @@ object Main: TMain
     OnClick = StayOnTopChkClick
   end
   object Button2: TButton
-    Left = 203
-    Top = 73
+    Left = 371
+    Top = 114
     Width = 60
     Height = 22
     Anchors = [akTop, akRight]
@@ -295,10 +294,11 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 10
     Text = 'doc'
+    ExplicitWidth = 197
   end
   object KeepAliveChk: TCheckBox
     Left = 10
-    Top = 77
+    Top = 84
     Width = 97
     Height = 17
     Caption = 'Keep Alive'
@@ -307,7 +307,7 @@ object Main: TMain
   end
   object CompressChk: TCheckBox
     Left = 108
-    Top = 77
+    Top = 84
     Width = 97
     Height = 17
     Caption = 'Compress'
@@ -316,7 +316,7 @@ object Main: TMain
   end
   object AutoOpenChk: TCheckBox
     Left = 108
-    Top = 101
+    Top = 108
     Width = 141
     Height = 17
     Caption = 'Auto Open web page'
@@ -325,7 +325,7 @@ object Main: TMain
   end
   object AutoRunChk: TCheckBox
     Left = 10
-    Top = 101
+    Top = 108
     Width = 97
     Height = 17
     Caption = 'AutoRun'
@@ -333,19 +333,18 @@ object Main: TMain
     OnClick = StayOnTopChkClick
   end
   object OpenBtn: TButton
-    Left = 369
-    Top = 91
-    Width = 60
+    Left = 355
+    Top = 83
+    Width = 76
     Height = 22
     Anchors = [akTop, akRight]
-    Caption = 'Open'
+    Caption = 'Open URL'
     TabOrder = 15
     OnClick = OpenBtnClick
-    ExplicitLeft = 365
   end
   object Button3: TButton
-    Left = 269
-    Top = 88
+    Left = 290
+    Top = 111
     Width = 75
     Height = 25
     Caption = 'Button3'
@@ -353,9 +352,9 @@ object Main: TMain
     OnClick = Button3Click
   end
   object Button4: TButton
-    Left = 303
+    Left = 273
     Top = 58
-    Width = 61
+    Width = 76
     Height = 22
     Caption = 'MakeCert1'
     TabOrder = 17

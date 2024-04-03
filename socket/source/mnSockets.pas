@@ -54,8 +54,7 @@ type
     soWaitBeforeWrite, //Wait for ready before write, idk what for
     soCloseTimeout, //close socket if read timeout
     soSSL,  //Use OpenSSL 1.1.1
-    soSSLDebug, //* TODO
-    soWebsocket  //Use OpenSSL 1.1.1
+    soSSLDebug //* TODO
   );
 
   TmnsoOptions = set of TmnsoOption;

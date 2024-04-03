@@ -853,9 +853,6 @@ begin
   else
     aStream.Options := aStream.Options - [soSSL];
 
-  if SameText(Protocol, 'ws') or SameText(Protocol, 'wss') then
-    aStream.Options := aStream.Options + [soWebsocket];
-
   Result := aStream;
 end;
 

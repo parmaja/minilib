@@ -11,7 +11,7 @@ interface
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
   mnOpenSSLUtils, mnOpenSSL, mnLogs, mnHttpClient, mnOpenSSLAPI,
-  mnModules,   mnStreamUtils, mnUtils,
+  mnModules, mnStreamUtils, mnUtils,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules,
   HomeModules;
 
@@ -239,8 +239,8 @@ begin
   FillChar(ws, SizeOf(TWebsocketPayloadHeader), 0);
   ws.Flags := [wsfFinish];
   ws.Opcode := wsoBinary;
-  ws.InteralSize := 3;
-  ws.Masked := True;
+  ws.InteralSize := 5;
+  ws.Masked := False;
   Log.Write(IntToStr(SizeOf(TWebsocketPayloadHeader)));
   Log.Write(DataToBinStr(ws, SizeOf(ws), '-'));
 end;

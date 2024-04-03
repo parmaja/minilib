@@ -286,7 +286,6 @@ function Hex2String(const vData: string): string; overload;
 function ByteToBinStr(Value: Byte): string;
 function DataToBinStr(var Data; Size: Integer; Separator: string = ''): string;
 
-
 //Files Utils
 
 type
