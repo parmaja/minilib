@@ -305,6 +305,12 @@ function mnMulDiv(nNumber, nNumerator, nDenominator: Int64): Int64; overload;
 //propblem round(10.5) -> 10
 function mnRound(nNumber: Double): Int64; overload;
 
+procedure SwapBytes(const Source; out Dest; Size: Integer); overload;
+function SwapBytes(const Source: Word): Word; overload;
+function SwapBytes(const Source: SmallInt): SmallInt; overload;
+function SwapBytes(const Source: Cardinal): Cardinal; overload;
+function SwapBytes(const Source: Int64): Int64; overload;
+
 var
   SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
 
@@ -2236,6 +2242,43 @@ begin
     else
       Inc(Result);
   end;
+end;
+
+
+procedure SwapBytes(const Source; out Dest; Size: Integer); overload;
+var
+  PSource: PByte;
+  PDest: PByte;
+  I: Integer;
+begin
+  PSource := PByte(@Source);
+  PDest:= PByte(@Dest);
+
+  for I := 0 to Size - 1 do
+  begin
+    PDest^ := PSource[Size - I - 1];
+    Inc(PDest);
+  end;
+end;
+
+function SwapBytes(const Source: Word): Word; overload;
+begin
+  SwapBytes(Source, Result, SizeOf(Result));
+end;
+
+function SwapBytes(const Source: SmallInt): SmallInt; overload;
+begin
+  SwapBytes(Source, Result, SizeOf(Result));
+end;
+
+function SwapBytes(const Source: Cardinal): Cardinal; overload;
+begin
+  SwapBytes(Source, Result, SizeOf(Result));
+end;
+
+function SwapBytes(const Source: Int64): Int64; overload;
+begin
+  SwapBytes(Source, Result, SizeOf(Result));
 end;
 
 initialization
