@@ -15,7 +15,7 @@ interface
 uses
   Classes, SysUtils, IniFiles,
   mnUtils, mnStreams, mnClasses, mnParams,
-  mnLogs, mnStreamUtils;
+  mnStreamUtils;
 
 type
   TmnMultipartData = class;
@@ -164,7 +164,7 @@ end;
 
 destructor TmnMultipartDataItem.Destroy;
 begin
-  FreeAndNil(Header);
+  FreeAndNil(FHeader);
   inherited;
 end;
 

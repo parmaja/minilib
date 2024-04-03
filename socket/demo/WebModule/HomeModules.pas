@@ -243,9 +243,19 @@ end;
 { TbsWSGetHomeCommand }
 
 procedure TbsWSGetHomeCommand.RespondResult(var Result: TmodRespondResult);
+var
+  s: string;
+  i: Integer;
 begin
   //Request.Path := DeleteSubPath(Name, Request.Path);
-  Respond.Stream.WriteLineUTF8('Hi hi');
+  s := 'Hi';
+  while s<>'' do
+  begin
+    Respond.Stream.WriteLineUTF8(s);
+    Respond.Stream.ReadLineUtf8(s);
+    log(s);
+  end;
+
   inherited;
 end;
 

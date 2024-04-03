@@ -1440,7 +1440,6 @@ end;
 procedure TmodCommunicate.ReadHeader(Stream: TmnBufferStream);
 begin
   Header.ReadHeader(Stream);
-
   Cookies.DelimitedText := Header['Cookie'];
 end;
 

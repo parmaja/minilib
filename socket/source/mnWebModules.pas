@@ -833,8 +833,6 @@ begin
       begin
         WSHash := Request.Header['Sec-WebSocket-Key'];
         WSKey := HashWebSocketKey(WSHash);
-        Log(WSKey);
-
         Respond.HttpResult := hrSwitchingProtocols;
         Respond.AddHeader('Connection', 'Upgrade');
         Respond.AddHeader('upgrade', 'websocket');
@@ -942,7 +940,6 @@ end;
 procedure TmodHttpCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Log(Request.Client + ': ' + Request.Raw);
 end;
 
 procedure TmodHttpCommand.SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition);
