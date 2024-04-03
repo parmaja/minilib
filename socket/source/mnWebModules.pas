@@ -51,7 +51,7 @@ uses
   {$else}
   NetEncoding, Hash,
   {$endif}
-  DateUtils,
+  DateUtils, mnLogs,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams, mnMultipartData, mnModules;
 
@@ -817,7 +817,7 @@ end;
 procedure TmodHttpCommand.Prepare(var Result: TmodRespondResult);
 var
   aKeepAlive: Boolean;
-  WSHash: string;
+  WSHash, WSKey: string;
   WebSocket: Boolean;
 begin
   inherited;
@@ -826,20 +826,32 @@ begin
   begin
     if Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
     begin
-      WSHash := Request.Header['Sec-WebSocket-Key']; //* dGhlIHNhbXBsZSBub25jZQ==
       if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
       begin
+        WSHash := Request.Header['Sec-WebSocket-Key'];
+        WSKey := HashWebSocketKey(WSHash);
+        Log(WSKey);
+
         Respond.HttpResult := hrSwitchingProtocols;
+        Respond.AddHeader('Connection', 'Upgrade');
+        Respond.AddHeader('upgrade', 'websocket');
+        Respond.AddHeader('sec-websocket-accept', WSKey);
+        Respond.SendHeader;
+
+{
         Respond.SendHead;
-        Respond.Stream.WriteLineUTF8('Upgrade: websocket');
-        Respond.Stream.WriteLineUTF8('Connection: Upgrade');
-        Respond.Stream.WriteLineUTF8('Sec-WebSocket-Accept: ' + HashWebSocketKey(WSHash));
+        Respond.Stream.WriteLineUTF8('connection: Upgrade');
+        Respond.Stream.WriteLineUTF8('upgrade: websocket');
+        Respond.Stream.WriteLineUTF8('date: ' + FormatHTTPDate(Now));
+        Respond.Stream.WriteLineUTF8('sec-websocket-accept: ' + WSKey);
 
 //      Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
-//      Sec-WebSocket-Protocol: plain
+        Respond.Stream.WriteLineUTF8('Sec-WebSocket-Protocol: plain');
 
         Respond.Stream.WriteLineUTF8('');
         Respond.ClearHeader;
+}
+
         Respond.KeepAlive := True;
         Respond.ProtcolClass := TmnWebSocket13StreamProxy;
         Respond.FProtcolProxy := Respond.ProtcolClass.Create;

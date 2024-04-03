@@ -18,7 +18,7 @@ interface
 
 uses
   Classes, SysUtils, zlib,
-  mnStreams;
+  mnLogs, mnUtils, mnStreams;
 
 type
   TmnCompressLevel = 0..9;
@@ -132,10 +132,10 @@ type
 
   {$Z1}
   TWSFlags = set of (
-    wsfFinish,
-    wsfRES1,
+    wsfRES3,
     wsfRES2,
-    wsfRES3
+    wsfRES1,
+    wsfFinish
   );
 
   TWSOpcode = (wsoText = 1, wsoBinary = 2, _wsoEnd = $F);
@@ -602,6 +602,7 @@ begin
   aHeader.Opcode := wsoText;
   aHeader.Flags := aHeader.Flags + [wsfFinish];
   aHeader.InteralSize := Count;
+  log.WriteLn(DataToBinStr(aHeader, SizeOf(aHeader)));
   Over.Write(aHeader, SizeOf(aHeader), ResultCount, RealCount);
   Result := Over.Write(Buffer, Count, ResultCount, RealCount);
 end;
@@ -613,19 +614,14 @@ end;
 
 { TWebsocketPayloadHeader }
 
-function TWebsocketPayloadHeader.GetFlags: TWSFlags;
-begin
-  Result := TWSFlags(Byte(Byte1 and $0F));
-end;
-
 function TWebsocketPayloadHeader.GetInteralSize: Byte;
 begin
-  Result := Byte((Byte2 and $FE) shr 1);
+  Result := Byte((Byte2 and not $80));
 end;
 
-function TWebsocketPayloadHeader.GetOpcode: TWSOpcode;
+procedure TWebsocketPayloadHeader.SetInteralSize(const Value: Byte);
 begin
-  Result := TWSOpcode(Byte((Byte1 and $F0) shr 4));
+  Byte2 := (Byte2 and (not $80)) or Value;
 end;
 
 function TWebsocketPayloadHeader.GetSizeType: TWSSizeType;
@@ -645,29 +641,34 @@ begin
 end;
 {$endif}
 
-procedure TWebsocketPayloadHeader.SetFlags(const Value: TWSFlags);
+function TWebsocketPayloadHeader.GetFlags: TWSFlags;
 begin
-  Byte1 := Byte1 and $F0 or Byte(Value);
+  Result := TWSFlags(Byte((Byte1 and $F0) shr 4));
 end;
 
-procedure TWebsocketPayloadHeader.SetInteralSize(const Value: Byte);
+procedure TWebsocketPayloadHeader.SetFlags(const Value: TWSFlags);
 begin
-  Byte2 := Byte2 and $1 or (Byte(Value) shl 1);
+  Byte1 := Byte1 and $0F or (Byte(Value) shl 4);
 end;
 
 function TWebsocketPayloadHeader.GetMasked: Boolean;
 begin
-  Result := Byte(Byte2 and $1) > 0;
+  Result := Byte(Byte2 and $80) > 0;
 end;
 
 procedure TWebsocketPayloadHeader.SetMasked(const Value: Boolean);
 begin
-  Byte2 := Byte2 and $FE or Byte(Value);
+  Byte2 := Byte2 and (not $80) or (ord(Value) shl 7);
+end;
+
+function TWebsocketPayloadHeader.GetOpcode: TWSOpcode;
+begin
+  Result := TWSOpcode(Byte((Byte1 and $0F)));
 end;
 
 procedure TWebsocketPayloadHeader.SetOpcode(const Value: TWSOpcode);
 begin
-  Byte1 := Byte1 and $0F or (Byte(Value) shl 4);
+  Byte1 := Byte1 and $F0 or (Byte(Value));
 end;
 
 end.
