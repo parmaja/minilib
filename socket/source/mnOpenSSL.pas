@@ -4,6 +4,7 @@ unit mnOpenSSL;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+ * @author    Belal Hamed <belal, belalhamed@gmail.com>
  *}
 
  {**

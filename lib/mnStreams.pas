@@ -5,6 +5,7 @@ unit mnStreams;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+ * @author    Belal Hamed <belal, belalhamed@gmail.com>
  *}
 
 {$M+}
@@ -25,7 +26,6 @@ unit mnStreams;
   Rules:
 
     if stream read 0 byte but it is not eof , it mean `retry` or `timeout`
-    remove retry in future
 }
 
 interface

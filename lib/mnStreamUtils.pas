@@ -6,6 +6,7 @@ unit mnStreamUtils;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+ * @author    Belal Hamed <belal, belalhamed@gmail.com>
  * @ported    Most code of deflate and inflate ported from FPC source zstream, i just wrapped it into my StreamProxy
  *}
 
@@ -113,22 +114,25 @@ type
 
 {******************************************************************
 
-   0               1               2               3
-   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-  +-+-+-+-+-------+-+-------------+-------------------------------+
-  |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
-  |I|S|S|S|  (4)  |A|     (7)     |            (16/64)            |
-  |N|V|V|V|       |S|             |   (if payload len==126/127)   |
-  | |1|2|3|       |K|             |                               |
-  +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
-  |     Extended payload length continued, if payload len == 127  |
-  + - - - - - - - - - - - - - - - +-------------------------------+
-  |                               |Masking-key, if MASK set to 1  |
-  +-------------------------------+-------------------------------+
-  | Masking-key (continued)       |          Payload Data         |
-  +-------------------------------- - - - - - - - - - - - - - - - +
-  :                     Payload Data continued ...                :
-******************************************************************}
+   7 6 5 4 3 2 1 0
+  +-+-+-+-+-------+
+  |F|R|R|R| opcode|  F=Finish, R = Reserved
+  +---------------+
+  |M| Len         |  M = Masked, Len, Size of payload if <126 no need to pass the Size(16 or 64)
+  +---------------+
+  | Size 16 (126) |  Payload Size if Len = 126 or 127 (64 bit) LittleEndian
+  | Size 16       |
+  | Size 64 (127) |  Payload Size if Len = 127
+  | Size 64       |
+  | Size 64       |
+  | Size 64       |
+  | Size 64       |
+  | Size 64       |
+  +---------------+
+  | Mask * 4 (32) |  Mask key if Mask flag set
+  +---------------+
+  | Payload Data  |
+  +---------------+
 
   {$Z1}
   TWSFlags = set of (
@@ -520,7 +524,7 @@ var
   r, c: LongInt;
 begin
   Over.Read(b, 1, r, c); //skip $A
-  if b=13 then
+  if b = 13 then
     Over.Read(b, 1, r, c); //skip $A
 end;
 
@@ -585,33 +589,6 @@ begin
   Result := Over.Write(Buffer, Count, ResultCount, RealCount);
 end;
 
-{ TmnWebSocket13StreamProxy }
-
-function TmnWebSocket13StreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
-var
-  aHeader: TWebsocketPayloadHeader;
-begin
-  Over.Read(aHeader, SizeOf(aHeader), ResultCount, RealCount);
-  Result := Over.Read(Buffer, aHeader.InteralSize, ResultCount, RealCount);
-end;
-
-function TmnWebSocket13StreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
-var
-  aHeader: TWebsocketPayloadHeader;
-begin
-  aHeader.Opcode := wsoText;
-  aHeader.Flags := aHeader.Flags + [wsfFinish];
-  aHeader.InteralSize := Count;
-  log.WriteLn(DataToBinStr(aHeader, SizeOf(aHeader)));
-  Over.Write(aHeader, SizeOf(aHeader), ResultCount, RealCount);
-  Result := Over.Write(Buffer, Count, ResultCount, RealCount);
-end;
-
-class function TmnWebSocket13StreamProxy.GetProtocolName: string;
-begin
-  Result := 'websocket13';
-end;
-
 { TWebsocketPayloadHeader }
 
 function TWebsocketPayloadHeader.GetInteralSize: Byte;
@@ -669,6 +646,36 @@ end;
 procedure TWebsocketPayloadHeader.SetOpcode(const Value: TWSOpcode);
 begin
   Byte1 := Byte1 and $F0 or (Byte(Value));
+end;
+
+{ TmnWebSocket13StreamProxy }
+
+class function TmnWebSocket13StreamProxy.GetProtocolName: string;
+begin
+  Result := 'websocket13';
+end;
+
+function TmnWebSocket13StreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+var
+  aHeader: TWebsocketPayloadHeader;
+begin
+  Over.Read(aHeader, SizeOf(aHeader), ResultCount, RealCount);
+  Result := Over.Read(Buffer, aHeader.InteralSize, ResultCount, RealCount);
+end;
+
+function TmnWebSocket13StreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+var
+  aHeader: TWebsocketPayloadHeader;
+begin
+  aHeader.Opcode := wsoText;
+  aHeader.Flags := aHeader.Flags + [wsfFinish];
+  if Count > 125 then
+    aHeader.InteralSize := 126
+  else
+    aHeader.InteralSize := Count;
+  log.WriteLn(DataToBinStr(aHeader, SizeOf(aHeader)));
+  Over.Write(aHeader, SizeOf(aHeader), ResultCount, RealCount);
+  Result := Over.Write(Buffer, Count, ResultCount, RealCount);
 end;
 
 end.

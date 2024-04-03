@@ -8,6 +8,8 @@ unit mnOpenSSLAPI;
  *
  * @license   Mit
  * @author    Zaher Dirkey zaherdirkey
+ * @author    Belal Hamed <belal, belalhamed@gmail.com>
+ *
  * @thanks    To all who i get some code from them
  *
  *}

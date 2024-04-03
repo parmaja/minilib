@@ -691,7 +691,7 @@ begin
         Stream.WriteLineUTF8('');
 
         //read phase
-        Stream.ReadLineUTF8(s);
+        Stream.ReadstLineUTF8(s);
         WriteLn(s);
         while Stream.Connected and Stream.ReadLineUTF8(s) do
         begin

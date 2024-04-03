@@ -6,6 +6,7 @@ unit mnHttpClient;
   *            See the file COPYING.MLGPL, included in this distribution,
   * @author    initial work Jihad Khlaifa <jkhalifa at gmail dot com>
   * @author    Zaher Dirkey zaherdirkey
+  * @author    Belal Hamed <belal, belalhamed@gmail.com>
   * }
 
 {

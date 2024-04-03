@@ -233,6 +233,7 @@ begin
 end;
 
 { TmnMultipartData }
+
 procedure CopyString(out S: utf8string; Buffer: Pointer; Len: Integer); inline;
 begin
   if Len <> 0 then

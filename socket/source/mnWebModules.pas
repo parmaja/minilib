@@ -835,14 +835,15 @@ begin
         Respond.HttpResult := hrSwitchingProtocols;
         Respond.AddHeader('Connection', 'Upgrade');
         Respond.AddHeader('upgrade', 'websocket');
+        Respond.AddHeader('date: ', FormatHTTPDate(Now));
         Respond.AddHeader('sec-websocket-accept', WSKey);
+        Respond.AddHeader('Sec-WebSocket-Protocol', 'plain');
         Respond.SendHeader;
 
 {
         Respond.SendHead;
         Respond.Stream.WriteLineUTF8('connection: Upgrade');
         Respond.Stream.WriteLineUTF8('upgrade: websocket');
-        Respond.Stream.WriteLineUTF8('date: ' + FormatHTTPDate(Now));
         Respond.Stream.WriteLineUTF8('sec-websocket-accept: ' + WSKey);
 
 //      Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
