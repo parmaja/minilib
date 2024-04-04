@@ -275,8 +275,6 @@ type
     function ReadAnsiString(vCount: Integer): AnsiString;
     {$endif}
 
-    //function ReadLn: string; overload; deprecated;
-
     function WriteLine: TFileSize; overload;
     function WriteLine(const S: utf8string): TFileSize; overload;
     function WriteLine(const S: unicodestring): TFileSize; overload;
@@ -1385,7 +1383,7 @@ begin
       Close([cloRead]);
   end;
 }
-  if (Result<=0) then
+  if (Result <= 0) then
   begin
     if not Connected then //connected = timeout,  not connected = stream closed
       Close([cloRead]);
@@ -1426,11 +1424,11 @@ var
   begin
     if vBI >= aCount then
     begin
-      vErr := Read(b, 1)<>1;
+      vErr := Read(b, 1) <> 1;
 
       if not vErr then
       begin
-        if aCount=ABufferSize then
+        if aCount = ABufferSize then
         begin
           ABufferSize := ABufferSize + ReadWriteBufferSize; { TODO : change ReadWriteBufferSize->FReadBuffer.Size }
           ReallocMem(ABuffer, ABufferSize);
