@@ -49,9 +49,16 @@ type
 
   TTestStream = class(TObject)
   protected
+    procedure ExampleReadLinesFile;
+    procedure ExampleReadStringsFile;
+
+    procedure CopyFileWrite;
+    procedure CopyFileRead;
+
     procedure InternalExampleSocket(WithServer: Boolean = True; WithClient: Boolean = True); //Socket threads
 
     procedure ExampleSocket;
+
     procedure ExampleTimeout;
     procedure ExampleSocketOpenStreet;
     procedure ExampleSocketTestTimeout;
@@ -66,29 +73,24 @@ type
     procedure ExamplePostmanEcho;
     procedure ExampleCloudFlare;
 
+    procedure ExampleWriteReadWSFile;
     procedure ExampleWebSocket;
 
     procedure ExampleSmallBuffer; //read write line with small buffer
     procedure ExampleHexLine; //Hex lines
     procedure ExampleHexImage; //Hex image
     procedure ExampleCopyHexImage; //Hex image2 images and read one
-    procedure InternalCompressImage(GZ, WithHex: Boolean); //GZ image
 
     procedure ExampleChunkedRead;
     procedure ExampleChunkedWrite;
     procedure ExampleChunkedImage;
 
+    procedure InternalCompressImage(GZ, WithHex: Boolean); //GZ image
     procedure ExampleInflateImage; //Inflate image
     procedure ExampleGZImage; //GZ image
-
     procedure ExampleGZText; //GZ image
-    procedure ExampleTextWithHeader;
-    procedure ExampleReadLineFile;
-
+    procedure ExampleGZTextWithHeader;
     procedure ExampleUnGZImage; //Unzip GZ image
-
-    procedure CopyFileWrite;
-    procedure CopyFileRead;
 
     procedure DoRun;
   public
@@ -106,7 +108,6 @@ const
 
 type
   TmyInfo = record
-
     Address: UTF8String;
     EndOfLine: UTF8String;
     SocketOptionsStr: UTF8String;
@@ -212,8 +213,8 @@ begin
         begin
           if info.CancelAfter then
             Reciever.Stream.Disconnect;
-          b := Stream.WriteLineUTF8(sMsg) > 0;
-          b := Stream.ReadLineUTF8(s);
+          b := Stream.WriteUTF8Line(sMsg) > 0;
+          b := Stream.ReadUTF8Line(s);
           WriteLn('client After read Line "' + s + '"');
           if sMsg <> s then
           begin
@@ -246,19 +247,19 @@ procedure TThreadReciever.RunHttp;
     s: UTF8String;
   begin
     repeat
-      Stream.ReadLineUTF8(s);
+      Stream.ReadUTF8Line(s);
       WriteLn('Server read header "' + s + '"');
     until s = '';
   end;
 
   procedure _WriteHeader;
   begin
-    Stream.WriteLineUTF8('HTTP/1.1 200 OK');
-    Stream.WriteLineUTF8('content-length: 0');
-    //Stream.WriteLineUTF8('Connection: keep-alive');
-    Stream.WriteLineUTF8('Connection: close');
-    Stream.WriteLineUTF8('content-type: text/html; charset=UTF-8');
-    Stream.WriteLineUTF8('');
+    Stream.WriteUTF8Line('HTTP/1.1 200 OK');
+    Stream.WriteUTF8Line('content-length: 0');
+    //Stream.WriteUTF8Line('Connection: keep-alive');
+    Stream.WriteUTF8Line('Connection: close');
+    Stream.WriteUTF8Line('content-type: text/html; charset=UTF-8');
+    Stream.WriteUTF8Line('');
   end;
 
 var
@@ -284,7 +285,7 @@ begin
   Count := 0;
   while true do
   begin
-    Stream.ReadLineUTF8(s);
+    Stream.ReadUTF8Line(s);
     WriteLn('Server After read Line "' + s + '"');
     if s = '' then
     begin
@@ -412,7 +413,7 @@ begin
     WriteLn('Main: Server starting');
     Reciever := TThreadReciever.Create(True);
     Reciever.Start;
-    WriteLn('Main: Server started, Sleep for 1s before Client start');
+    WriteLn('Main: Server started, Sleep for 1s before Client start, Port:' + sPort);
     Sleep(1000);
   end;
 
@@ -566,16 +567,16 @@ begin
       WriteLn(TicksToString(TThread.GetTickCount - t));
       if Stream.Connected then
       begin
-        Stream.WriteLineUTF8('GET /17/65536/65536.png HTTP/1.1');
-        Stream.WriteLineUTF8('Host: c.tile.openstreetmap.org');
-        Stream.WriteLineUTF8('User-Agent: Mozilla');
-        Stream.WriteLineUTF8('Connection: close');
-        Stream.WriteLineUTF8('');
+        Stream.WriteUTF8Line('GET /17/65536/65536.png HTTP/1.1');
+        Stream.WriteUTF8Line('Host: c.tile.openstreetmap.org');
+        Stream.WriteUTF8Line('User-Agent: Mozilla');
+        Stream.WriteUTF8Line('Connection: close');
+        Stream.WriteUTF8Line('');
 
         //read phase
-        Stream.ReadLineUTF8(s);
+        Stream.ReadUTF8Line(s);
         WriteLn(s);
-        while Stream.Connected and Stream.ReadLineUTF8(s) do
+        while Stream.Connected and Stream.ReadUTF8Line(s) do
         begin
           if s ='' then
           begin
@@ -665,6 +666,7 @@ begin
   Info.UseSSL := False;
   try
     Stream := TmnClientSocket.Create('echo.websocket.org', '443');
+//    Stream := TmnClientSocket.Create('localhost', '8080');
     Stream.ReadTimeout := Info.TestTimeOut;
     Stream.Options := Info.SocketOptions;
     Stream.Options := Stream.Options + [soNoDelay];
@@ -677,35 +679,47 @@ begin
       t := TThread.GetTickCount;
       Stream.EndOfLine := #13#10;
       //Stream.ConnectTimeout := 10000;
+      WriteLn('Connecting to ' + Stream.Address);
       Stream.Connect;
       WriteLn(TicksToString(TThread.GetTickCount - t));
       if Stream.Connected then
       begin
-        Stream.WriteLineUTF8('GET echo.websocket.org HTTP/1.1');
-        Stream.WriteLineUTF8('Host: echo.websocket.org');
-        Stream.WriteLineUTF8('Connection: keep-alive, Upgrade');
-        Stream.WriteLineUTF8('Sec-Fetch-Site: cross-site');
-        Stream.WriteLineUTF8('Sec-WebSocket-Key: ccCoUoR7ORNSVEc1ReiLWg==');
-        Stream.WriteLineUTF8('Sec-WebSocket-Version: 13');
-        Stream.WriteLineUTF8('Upgrade: websocket');
-        Stream.WriteLineUTF8('');
+        WriteLn('Connected to ' + Stream.Address);
+        Stream.WriteUTF8Line('GET / HTTP/1.1');
+        Stream.WriteUTF8Line('Host: ' + Stream.Address);
+        Stream.WriteUTF8Line('Connection: keep-alive, Upgrade');
+        Stream.WriteUTF8Line('Content-Type: text/html');
+//        Stream.WriteUTF8Line('Origin: localhost');
+        Stream.WriteUTF8Line('Upgrade: websocket');
+        Stream.WriteUTF8Line('Sec-Fetch-Site: cross-site');
+        Stream.WriteUTF8Line('Sec-WebSocket-Key: ccCoUoR7ORNSVEc1ReiLWg==');
+        Stream.WriteUTF8Line('Sec-WebSocket-Version: 13');
+        Stream.WriteUTF8Line('X-Send-Server-Hostname: false');
 
-        //read phase
-        Stream.ReadstLineUTF8(s);
-        WriteLn(s);
-        while Stream.Connected and Stream.ReadLineUTF8(s) do
+        Stream.WriteUTF8Line('');
+
+        Stream.ReadUTF8Line(s);
+        WriteLn('>' + s);
+
+        while Stream.Connected do
         begin
-          WriteLn(s);
+          Stream.ReadUTF8Line(s);
+          WriteLn('>' + s);
           if s ='' then
             break;
         end;
-        Proxy := TmnWebSocket13StreamProxy.Create;
+
+        Proxy := TmnWebSocket13StreamProxy.Create(True, True, 0);
         Stream.AddProxy(Proxy);
+
+        //Stream.ReadUTF8String(s);
+        //WriteLn('ws>' + s);
+
         if Stream.Connected then
         begin
-          Stream.WriteLineUTF8('Hello Websocket');
-          Stream.ReadLineUTF8(s);
-          WriteLn(s);
+          Stream.WriteUTF8String('Hi');
+          Stream.ReadUTF8String(s);
+          WriteLn('ws>'+s);
         end;
 
       end;
@@ -752,6 +766,54 @@ begin
   end;
 end;
 
+procedure TTestStream.ExampleWriteReadWSFile;
+var
+  f: TmnWrapperStream;
+  Proxy: TmnWebSocket13StreamProxy;
+  s: utf8string;
+begin
+  WriteLn('Writing WS File');
+  f := TmnWrapperStream.Create(TFileStream.Create(Application.Location + 'test\ws.file', fmCreate));
+  try
+    Proxy := TmnWebSocket13StreamProxy.Create(False);
+    f.AddProxy(Proxy);
+
+    f.WriteUTF8String('Hello');
+    f.WriteUTF8String('Hi');
+
+    f.WriteUTF8String('My Name'+#13#10'Is No Name'#13#10);
+    f.WriteUTF8String('My Power'+#13#10'Not Same'#13#10);
+
+  finally
+    f.free;
+  end;
+
+  WriteLn('Reading WS File');
+  f := TmnWrapperStream.Create(TFileStream.Create(Application.Location + 'ws.file', fmOpenRead));
+  try
+    Proxy := TmnWebSocket13StreamProxy.Create(False);
+    f.AddProxy(Proxy);
+
+    f.ReadUTF8String(s);
+    WriteLn('>'+s);
+
+//    f.ReadUTF8String(s);
+    f.ReadUTF8Line(s);
+    WriteLn('>'+s);
+
+    f.ReadUTF8Line(s);
+    WriteLn('>'+s);
+    f.ReadUTF8Line(s);
+    WriteLn('>'+s);
+    f.ReadUTF8Line(s);
+    WriteLn('>'+s);
+    f.ReadUTF8Line(s);
+    WriteLn('>'+s);
+  finally
+    f.free;
+  end;
+end;
+
 procedure TTestStream.ExampleHexLine;
 var
   Stream: TmnBufferStream;
@@ -762,9 +824,9 @@ begin
   Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
-    Stream.WriteLineUTF8('0123456789');
-    Stream.WriteLineUTF8('0123456789');
-    Stream.WriteLineUTF8('0123456789');
+    Stream.WriteUTF8Line('0123456789');
+    Stream.WriteUTF8Line('0123456789');
+    Stream.WriteUTF8Line('0123456789');
   finally
     FreeAndNil(Stream);
   end;
@@ -774,9 +836,9 @@ begin
   Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
-    while not Stream.EndOfStream do
+    while Stream.Connected do
     begin
-      S := Stream.ReadLine;
+      Stream.ReadUTF8Line(S);
       WriteLn('"' + Trim(S) + '"');
     end;
   finally
@@ -837,11 +899,12 @@ var
   aItm: TmnMultipartDataItem;
   h: TmnField;
 begin
-  aTextFile:=TFileStream.Create(Location + 'formdata1.txt', fmOpenRead);
+  aTextFile:=TFileStream.Create(Location + 'test\formdata_noheader.txt', fmOpenRead or fmShareDenyWrite);
   Stream := TmnWrapperStream.Create(aTextFile, True);
   try
     Stream.EndOfLine := sWinEndOfLine;
     aFormData := TmnMultipartData.Create;
+    aFormData.Boundary := '---------------------------9051914041544843365972754266';
     try
       //aFormData.Read(Stream);
       aFormData.Read(Stream);
@@ -860,7 +923,7 @@ begin
   end;
 end;
 
-procedure TTestStream.ExampleReadLineFile;
+procedure TTestStream.ExampleReadLinesFile;
 var
   aTextFile: TFileStream;
   Stream: TmnBufferStream;
@@ -868,26 +931,38 @@ var
   t: Cardinal;
   s: UTF8String;
 begin
-  WriteLn('Read text file');
-  aTextFile := TFileStream.Create(Location + 'large.json', fmOpenRead);
+  aTextFile := TFileStream.Create(Location + 'small.json', fmOpenRead);
   Stream := TmnWrapperStream.Create(aTextFile, True);
-  aProxy := TmnPlainStreamProxy.Create;
-
-
   try
-    t := TThread.GetTickCount;
-    while Stream.ReadLine(S) do
+    while Stream.ReadLine(s) do
     begin
+      WriteLn(s)
     end;
-
-    WriteLn(TicksToString(TThread.GetTickCount-t));
-
-    Stream.AddProxy(aProxy);
-
   finally
     Stream.Free;
   end;
 
+end;
+
+procedure TTestStream.ExampleReadStringsFile;
+var
+  aTextFile: TFileStream;
+  Stream: TmnBufferStream;
+  aProxy: TmnStreamOverProxy;
+  s: UTF8String;
+  aStrings: TStringList;
+begin
+  aTextFile := TFileStream.Create(Location + 'small.json', fmOpenRead);
+  Stream := TmnWrapperStream.Create(aTextFile, True);
+  aStrings := TStringList.Create;
+  try
+    Stream.ReadUTF8Strings(aStrings);
+    for s in aStrings do
+      WriteLn(s);
+  finally
+    Stream.Free;
+    aStrings.Free;
+  end;
 end;
 
 procedure TTestStream.ExampleHexImage;
@@ -1028,8 +1103,8 @@ begin
   Proxy := TmnChunkStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
-    Stream.WriteLineUTF8('0123456789');
-    Stream.WriteLineUTF8('0123456789 kjhdkajshd kjh fdksajdf hdfjas kdfh ksdh fklsdhf ksdhf ksdhf ksdh fklshfj dffdff');
+    Stream.WriteUTF8Line('0123456789');
+    Stream.WriteUTF8Line('0123456789 kjhdkajshd kjh fdksajdf hdfjas kdfh ksdh fklsdhf ksdhf ksdhf ksdh fklshfj dffdff');
   finally
     FreeAndNil(Stream);
   end;
@@ -1197,7 +1272,7 @@ begin
   end;
 end;
 
-procedure TTestStream.ExampleTextWithHeader;
+procedure TTestStream.ExampleGzTextWithHeader;
 var
   aTextFile: TFileStream;
   Stream: TmnBufferStream;
@@ -1207,7 +1282,6 @@ var
   b: TBytes;
   c: Integer;
 begin
-  WriteLn('Read header text file');
   aTextFile := TFileStream.Create(Location + 'header.txt', fmOpenRead);
   Stream := TmnWrapperStream.Create(aTextFile, True);
   aProxy := TmnPlainStreamProxy.Create;
@@ -1225,7 +1299,6 @@ begin
     SetLength(b, c);
     s := TEncoding.UTF8.GetString(b);
     WriteLn(s);
-
 
     {while Stream.ReadLine(S, False) do
       WriteLn(s);}
@@ -1325,6 +1398,8 @@ begin
       WriteLn('');
       InstallConsoleLog;
       Info.Address := ini.ReadString('options', 'Address', sHost);
+      AddProc('Readlines Text', ExampleReadLinesFile);
+      AddProc('Read Strings File', ExampleReadStringsFile);
       AddProc('Download Cloud Flare ', ExampleCloudFlare);
       AddProc('BIO Postman Echo ', ExampleBIOPostmanEcho);
       AddProc('Postman Echo ', ExamplePostmanEcho);
@@ -1346,13 +1421,14 @@ begin
       AddProc('GZImage: GZ image', ExampleGZImage);
       AddProc('UnGZImage: Unzip GZ image', ExampleGZImage);
       AddProc('HexLine: Hex lines', ExampleHexLine);
+      AddProc('WriteWSFile: Write Read WS File', ExampleWriteReadWSFile);
       AddProc('WebSocket: WebSocket', ExampleWebSocket);
       AddProc('HexImage: Hex image', ExampleHexImage);
       AddProc('CopyFile Write', CopyFileWrite);
       AddProc('CopyFile Read', CopyFileRead);
       AddProc('GZText: GZ Text', ExampleGZText);
-      AddProc('GZText: Headered Text', ExampleTextWithHeader);
-      AddProc('FileText: Readline Text', ExampleReadLineFile);
+      AddProc('GZText: Headered Text', ExampleGzTextWithHeader);
+
       AddProc('Chunked: Read Chunked lines', ExampleChunkedRead);
       AddProc('Chunked: Write Chunked lines', ExampleChunkedWrite);
       AddProc('Chunked: Image Chunked lines', ExampleChunkedImage);
