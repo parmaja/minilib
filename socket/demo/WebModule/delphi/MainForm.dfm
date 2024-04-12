@@ -52,6 +52,8 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
+    ExplicitWidth = 435
+    ExplicitHeight = 211
   end
   object StartBtn: TButton
     Left = 369
@@ -118,14 +120,13 @@ object Main: TMain
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
-    ExplicitTop = 119
     ExplicitWidth = 435
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
       Top = 6
       Width = 60
-      Height = 22
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -188,7 +189,7 @@ object Main: TMain
       Left = 127
       Top = 6
       Width = 60
-      Height = 22
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -213,7 +214,7 @@ object Main: TMain
       Left = 35
       Top = 6
       Width = 60
-      Height = 22
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -252,9 +253,9 @@ object Main: TMain
     end
   end
   object Button1: TButton
-    Left = 355
+    Left = 257
     Top = 58
-    Width = 76
+    Width = 65
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'MakeCert2'
@@ -280,6 +281,7 @@ object Main: TMain
     Caption = 'Test'
     TabOrder = 9
     OnClick = Button2Click
+    ExplicitLeft = 367
   end
   object AliasNameEdit: TEdit
     Left = 163
@@ -338,22 +340,23 @@ object Main: TMain
     Caption = 'Open URL'
     TabOrder = 15
     OnClick = OpenBtnClick
+    ExplicitLeft = 351
   end
   object Button3: TButton
-    Left = 290
-    Top = 111
-    Width = 75
-    Height = 25
+    Left = 304
+    Top = 114
+    Width = 61
+    Height = 22
     Caption = 'Button3'
     TabOrder = 16
     OnClick = Button3Click
   end
   object Button4: TButton
-    Left = 273
+    Left = 355
     Top = 58
     Width = 76
     Height = 22
-    Caption = 'MakeCert1'
+    Caption = 'MakeCert'
     TabOrder = 17
     OnClick = Button4Click
   end

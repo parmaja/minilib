@@ -164,7 +164,7 @@ begin
   Strings := TmnWrapperStream.Create(Stream, False);
   try
     Clear;
-    while not Strings.EndOfStream do
+    while Strings.Connected do
     begin
       Line := Strings.ReadLineUTF8;
       AddItem(Line, Separator, True);

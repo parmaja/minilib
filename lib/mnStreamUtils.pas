@@ -113,12 +113,15 @@ type
 
   { WebSocket }
 
+//  http://livepersoninc.github.io/ws-test-page/
+
 {******************************************************************
 
-   7 6 5 4 3 2 1 0
+  +-+-+-+-+-+-+-+-+
+  |7 6 5 4 3 2 1 0|
   +-+-+-+-+-------+
-  |F|R|R|R| opcode|  F=Finish, R = Reserved
-  +---------------+
+  |F|C|R|R| opcode|  F=Finish, R = Reserved, C=Compress flag
+  +-+-------------+
   |M| Len         |  M = Masked, Len, Size of payload if <126 no need to pass the Size(16 or 64)
   +---------------+
   | Size 16 (126) |  Payload Size if Len = 126 or 127 (64 bit) LittleEndian
@@ -136,12 +139,6 @@ type
   +---------------+
 
   {$Z1}
-  TWSFlags = set of (
-    wsfRES3,
-    wsfRES2,
-    wsfRES1,
-    wsfFinish
-  );
 
   TWSMask = record
   public
@@ -151,15 +148,13 @@ type
       False: (Mask: array[0..3] of Byte);
   end;
 
-  TWSOpcode = (wsoText = 1, wsoBinary = 2, wsoClose = $8, wsoPing = $9, wsoPong = $A, _wsoEnd = $F);
+  TWSOpcode = (wsoConitnue = 0, wsoText = 1, wsoBinary = 2, wsoClose = $8, wsoPing = $9, wsoPong = $A, _wsoEnd = $F);
   TWSSizeType = (wsoSmall, wsoSize16, wsoSize64);
 
   TWebsocketPayloadHeader = packed record
   private
     Byte1: Byte;
     Byte2: Byte;
-    function GetFlags: TWSFlags;
-    procedure SetFlags(const Value: TWSFlags);
     function GetOpcode: TWSOpcode;
     procedure SetOpcode(const Value: TWSOpcode);
     function GetMasked: Boolean;
@@ -169,14 +164,16 @@ type
     function GetSizeType: TWSSizeType;
     function GetFinished: Boolean;
     procedure SetFinished(const Value: Boolean);
+    function GetCompressMessages: Boolean;
+    procedure SetCompressMessages(const Value: Boolean);
   public
-    {$ifndef FPC}
-    class operator Initialize(out Dest: TWebsocketPayloadHeader);
-    {$endif}
-    property Flags: TWSFlags read GetFlags write SetFlags;
+    class operator Initialize({$ifdef FPC}var{$else}out{$endif} Dest: TWebsocketPayloadHeader);
+
+    property Finished: Boolean read GetFinished write SetFinished;
+    property CompressMessages: Boolean read GetCompressMessages write SetCompressMessages;
+
     property Opcode: TWSOpcode read GetOpcode write SetOpcode;
     property Masked: Boolean read GetMasked write SetMasked;
-    property Finished: Boolean read GetFinished write SetFinished;
     property InteralSize: Byte read GetInteralSize write SetInteralSize;
     property SizeType: TWSSizeType read GetSizeType;
   end;
@@ -196,6 +193,7 @@ type
   TmnWebSocket13StreamProxy = class(TmnProtcolStreamProxy)
   private
     FSize: Integer;
+    FMasked: Boolean;
     FMask: TWSMask;
     FMaskIndex: Integer;
     Header: TWebsocketPayloadHeader;
@@ -203,9 +201,10 @@ type
   protected
     function ReadHeader: Boolean;
     property Mask: TWSMask read FMask write FMask;
-    procedure MaskData(var Data; ASize: Integer);
+    property Masked: Boolean read FMasked write FMasked;
+    procedure MaskData(const FromData; var ToData; ASize: Integer); inline;
   public
-    constructor Create(ABinary: Boolean = True);
+    constructor Create(ABinary: Boolean = True; AMasked: Boolean = False; AMask: Cardinal = 0);
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
     function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
     class function GetProtocolName: string; override;
@@ -615,16 +614,6 @@ end;
 
 { TWebsocketPayloadHeader }
 
-function TWebsocketPayloadHeader.GetInteralSize: Byte;
-begin
-  Result := Byte((Byte2 and not $80));
-end;
-
-procedure TWebsocketPayloadHeader.SetInteralSize(const Value: Byte);
-begin
-  Byte2 := (Byte2 and (not $80)) or Value;
-end;
-
 function TWebsocketPayloadHeader.GetSizeType: TWSSizeType;
 begin
   if InteralSize < 126 then
@@ -635,33 +624,53 @@ begin
     Result := wsoSize64;
 end;
 
-{$ifndef FPC}
-class operator TWebsocketPayloadHeader.Initialize(out Dest: TWebsocketPayloadHeader);
+class operator TWebsocketPayloadHeader.Initialize({$ifdef FPC}var{$else}out{$endif} Dest: TWebsocketPayloadHeader);
 begin
   FillChar(Dest, SizeOf(Dest), 0);
 end;
-{$endif}
+
+{
+  Opcode and Finish
+   7 6 5 4 3 2 1 0
+  |F|R|R|R| opcode|  F=Finish, R = Reserved
+}
 
 function TWebsocketPayloadHeader.GetFinished: Boolean;
 begin
-  Result := wsfFinish in Flags;
-end;
-
-function TWebsocketPayloadHeader.GetFlags: TWSFlags;
-begin
-  Result := TWSFlags(Byte((Byte1 and $F0) shr 4));
+  Result := (Byte1 and $80) > 0;
 end;
 
 procedure TWebsocketPayloadHeader.SetFinished(const Value: Boolean);
 begin
-  Flags := Flags + [wsfFinish];
+  Byte1 := Byte1 and (not $80) or (ord(Value) shl 7);
 end;
 
-procedure TWebsocketPayloadHeader.SetFlags(const Value: TWSFlags);
+function TWebsocketPayloadHeader.GetCompressMessages: Boolean;
 begin
-  Byte1 := Byte1 and $0F or (Byte(Value) shl 4);
+  Result := (Byte1 and $40) > 0;
 end;
 
+procedure TWebsocketPayloadHeader.SetCompressMessages(const Value: Boolean);
+begin
+  Byte1 := Byte1 and (not $40) or (ord(Value) shl 6);
+end;
+
+function TWebsocketPayloadHeader.GetOpcode: TWSOpcode;
+begin
+  Result := TWSOpcode(Byte((Byte1 and $0F)));
+end;
+
+procedure TWebsocketPayloadHeader.SetOpcode(const Value: TWSOpcode);
+begin
+  Byte1 := Byte1 and $F0 or Byte(Value);
+end;
+
+{
+  Masked and Size
+
+   7 6 5 4 3 2 1 0
+  |M| Len         |  M = Masked, Len, Size of payload if <126 no need to pass the Size(16 or 64)
+}
 function TWebsocketPayloadHeader.GetMasked: Boolean;
 begin
   Result := Byte(Byte2 and $80) > 0;
@@ -672,14 +681,14 @@ begin
   Byte2 := Byte2 and (not $80) or (ord(Value) shl 7);
 end;
 
-function TWebsocketPayloadHeader.GetOpcode: TWSOpcode;
+function TWebsocketPayloadHeader.GetInteralSize: Byte;
 begin
-  Result := TWSOpcode(Byte((Byte1 and $0F)));
+  Result := Byte((Byte2 and not $80));
 end;
 
-procedure TWebsocketPayloadHeader.SetOpcode(const Value: TWSOpcode);
+procedure TWebsocketPayloadHeader.SetInteralSize(const Value: Byte);
 begin
-  Byte1 := Byte1 and $F0 or (Byte(Value));
+  Byte2 := Byte2 or (Value and (not $80));
 end;
 
 procedure TWSMask.Clear;
@@ -706,21 +715,23 @@ begin
   Result := 'websocket.13';
 end;
 
-procedure TmnWebSocket13StreamProxy.MaskData(var Data; ASize: Integer);
+procedure TmnWebSocket13StreamProxy.MaskData(const FromData; var ToData; ASize: Integer);
 var
   aIndex: longint;
-  P: PByte;
+  fp, tp: PByte;
 begin
   aIndex := 0;
-  P := @Data;
+  fp := @FromData;
+  tp := @ToData;
   while aIndex < aSize do
   begin
-    P^ := P^ xor FMask.Mask[FMaskIndex];
+    tp^ := fp^ xor FMask.Mask[FMaskIndex];
     Inc(FMaskIndex);
     if FMaskIndex>=Length(FMask.Mask) then
       FMaskIndex := 0;
     Inc(aIndex);
-    Inc(P);
+    Inc(fp);
+    Inc(tp);
   end;
 end;
 
@@ -776,10 +787,12 @@ begin
   end;
 end;
 
-constructor TmnWebSocket13StreamProxy.Create(ABinary: Boolean);
+constructor TmnWebSocket13StreamProxy.Create(ABinary: Boolean; AMasked: Boolean; AMask: Cardinal);
 begin
   inherited Create;
   Binary := ABinary;
+  FMasked := AMasked;
+  FMask.Key := AMask;
 end;
 
 function TmnWebSocket13StreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
@@ -809,7 +822,7 @@ begin
 
     Result := Over.Read(Buffer, aCount, ResultCount, RealCount);
     if Header.Masked then
-      MaskData(Buffer, ResultCount);
+      MaskData(Buffer, Buffer, ResultCount);
     Dec(FSize, ResultCount);
     if FSize = 0 then
     begin
@@ -824,12 +837,16 @@ var
   aHeader: TWebsocketPayloadHeader;
   Q: Int64;
   W: Word;
+  aBuffer: Pointer;
 begin
+  aHeader.Finished := True;
   if Binary then
     aHeader.Opcode := wsoBinary
   else
     aHeader.Opcode := wsoText;
-  aHeader.Flags := aHeader.Flags + [wsfFinish];
+
+  aHeader.Masked := Masked;
+
   if Count > 125 then
   begin
     if Count > Word.MaxValue then
@@ -839,6 +856,7 @@ begin
   end
   else
     aHeader.InteralSize := Count;
+
   Over.Write(aHeader, SizeOf(aHeader), ResultCount, RealCount);
   if aHeader.InteralSize > 125 then
   begin
@@ -853,9 +871,17 @@ begin
       Over.Write(Q, SizeOf(Q), ResultCount, RealCount);
     end;
   end;
-{  if Header.Masked then
-    MaskData(ABuffer, Count);}//*no go use SSL
-  Result := Over.Write(Buffer, Count, ResultCount, RealCount);
+  if Masked then
+  begin
+    Over.Write(Mask.Mask, SizeOf(Mask.Mask), ResultCount, RealCount);
+    aBuffer := nil;
+    GetMem(aBuffer, Count);
+    MaskData(Buffer, aBuffer^, Count);
+    Result := Over.Write(aBuffer^, Count, ResultCount, RealCount);
+    FreeMem(aBuffer);
+  end
+  else
+    Result := Over.Write(Buffer, Count, ResultCount, RealCount);
 end;
 
 end.

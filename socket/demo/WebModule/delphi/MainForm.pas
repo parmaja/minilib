@@ -237,7 +237,7 @@ var
   ws: TWebsocketPayloadHeader;
 begin
   FillChar(ws, SizeOf(TWebsocketPayloadHeader), 0);
-  ws.Flags := [wsfFinish];
+  ws.Finished := True;
   ws.Opcode := wsoBinary;
   ws.InteralSize := 5;
   ws.Masked := False;
