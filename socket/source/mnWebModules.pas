@@ -824,6 +824,7 @@ procedure TmodHttpCommand.Prepare(var Result: TmodRespondResult);
 var
   aKeepAlive: Boolean;
   WSHash, WSKey: string;
+  SendHostHeader: Boolean;
 begin
   inherited;
 
@@ -834,37 +835,26 @@ begin
       if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
       begin
         WSHash := Request.Header['Sec-WebSocket-Key'];
+        SendHostHeader := Request.Header.Field['X-Send-Server-Hostname'].AsBoolean;
+
         WSKey := HashWebSocketKey(WSHash);
         Respond.HttpResult := hrSwitchingProtocols;
         Respond.AddHeader('Connection', 'Upgrade');
         Respond.AddHeader('upgrade', 'websocket');
         Respond.AddHeader('date: ', FormatHTTPDate(Now));
-        Respond.AddHeader('sec-websocket-accept', WSKey);
+        Respond.AddHeader('Sec-Websocket-Accept', WSKey);
         Respond.AddHeader('Sec-WebSocket-Protocol', 'plain');
         Respond.SendHeader;
-
-{
-        Respond.SendHead;
-        Respond.Stream.WriteLineUTF8('connection: Upgrade');
-        Respond.Stream.WriteLineUTF8('upgrade: websocket');
-        Respond.Stream.WriteLineUTF8('sec-websocket-accept: ' + WSKey);
-
-//      Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
-        Respond.Stream.WriteLineUTF8('Sec-WebSocket-Protocol: plain');
-
-        Respond.Stream.WriteLineUTF8('');
-        Respond.ClearHeader;
-}
 
         Respond.KeepAlive := True;
         Respond.ProtcolClass := TmnWebSocket13StreamProxy;
         Respond.FProtcolProxy := Respond.ProtcolClass.Create;
         Respond.WebSocket := True;
-        Respond.Stream.AddProxy(Respond.ProtcolProxy);
         Result.Status := Result.Status + [mrKeepAlive];
-
-      //Respond.AddHeader('Sec-WebSocket-Accept', Key);
-    //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
+        Respond.Stream.AddProxy(Respond.ProtcolProxy);
+        if SendHostHeader then
+          Respond.Stream.WriteUTF8String('Request served by mnWebModule');
+        //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
       end;
     end;
   end;
