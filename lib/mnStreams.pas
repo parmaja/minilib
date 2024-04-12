@@ -21,11 +21,19 @@ unit mnStreams;
 {$ENDIF}
 //Change TFIleSize to TStreamSize (Longint)
 
-{$define NEW_EOF}
 {
   Rules:
 
     if stream read 0 byte but it is not eof , it mean `retry` or `timeout`
+
+    if read count = 0 without closed it is timeout need to retry
+    if read count = 0 with Close the stream reach end of file of disconnected
+    if read count > 0 but CloseData should return by buffer
+
+    my problem is Connected by default is false, but when Socket it is True
+    If we read from file Connected is false, if we used in loop it will exit, so we use return count = 0 with not connected to check return
+
+    Passive is always Connected, but when read 0 count that mean disconnect/closed/eof
 }
 
 interface
@@ -60,7 +68,7 @@ type
     function WriteString(const vData: string): TFileSize; overload;
     function WriteString(const vData: string; vUTF8: Boolean): TFileSize; overload;
     function WriteUtf8(const vData: UTF8String): TFileSize; deprecated;
-    function WriteUtf8String(const vData: UTF8String): TFileSize; inline;
+    function WriteUTF8String(const vData: UTF8String): TFileSize; inline;
   end;
 
   TTimeoutMode = (tmConnect, tmRead, tmWrite);
@@ -77,20 +85,23 @@ type
 
   { TmnCustomStream }
 
-  TmnCustomStream = class(TStream)
+  TmnCustomStream = class abstract(TStream)
   private
     FDone: TmnStreamClose;
+    FPassive: Boolean;
   protected
-    function GetConnected: Boolean; virtual; //Socket or COM ports have Connected override
-    function CanRead: Boolean;
-    function CanWrite: Boolean;
+    //If Passive like Wrapper to FileStream reading count=0 meant  close, Passive have be in Socket too if you want break reading on timeout
+    property Passive: Boolean read FPassive; //Break on timeout(reading count=0)
+    function GetConnected: Boolean; virtual; abstract; //Socket or COM ports have Connected override
+    function CanRead: Boolean; {$ifndef DEBUG}inline;{$endif}
+    function CanWrite: Boolean; inline;
     procedure SetCloseData;
     procedure ResetCloseData;
   public
-    //Count = 0 , load until eof
+    //Count = 0 , load until eof, timeout not break the loop
     function ReadString(out S: string; Count: TFileSize = 0): Boolean; overload;
+    function ReadUTF8String(out S: UTF8String; Count: TFileSize = 0): Boolean; overload;
     function ReadBytes(Count: TFileSize = 0): TBytes; overload;
-    function ReadBufferBytes(Count: TFileSize = 0): TBytes; overload; deprecated 'use ReadBytes';
     //Use copy from to stream
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
     function WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
@@ -204,13 +215,12 @@ type
 
   { TmnBufferStream }
 
-  TmnBufferStream = class(TmnCustomStream)
+  TmnBufferStream = class abstract(TmnCustomStream)
   protected
     FReadBuffer: TmnStreamBuffer;
     FWriteBuffer: TmnStreamBuffer;
   strict private
     FEndOfLine: string;
-    //FZeroClose: Boolean;
     //procedure SaveWriteBuffer; //kinda flush
   protected
 
@@ -234,8 +244,6 @@ type
     procedure DoCloseWrite; virtual;
     procedure Writing(Count: Longint); virtual;
     procedure Reading(Count: Longint); virtual;
-    function GetEndOfStream: Boolean;
-    function GetConnected: Boolean; override;
 
     property Proxy: TmnStreamProxy read FProxy;
     function ReadBuffer(var Buffer; Count: Longint): Longint;
@@ -253,6 +261,7 @@ type
     procedure Close(ACloseWhat: TmnStreamClose = [cloRead, cloWrite]);
 
     //* ABuffer is created you need to free it
+    //* If read count = 0 but still connected we consider it as timeout
     function ReadUntilCallback(vData: TObject; const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; Callback: TReadUntilCallback; out Matched: Boolean): Boolean;
     function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: PByte; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
     {$ifndef NEXTGEN}
@@ -260,12 +269,14 @@ type
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
     {$endif}
 
+    function ReadLine(out S: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLine(ExcludeEOL: Boolean = True): string; overload;
-    function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True): Boolean; overload;
-    function ReadLineUTF8(out S: utf8string; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadUTF8Line(out S: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload;
+    //TODO ReadLineUTF8 to ReadUTF8Line
+    function ReadLineUTF8(out S: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload; deprecated;
     function ReadLineUTF8(out S: string; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLineUTF8(ExcludeEOL: Boolean = True): UTF8String; overload;
-    function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True): Boolean; overload;
 
     function ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean = True): Boolean; overload;
 
@@ -276,12 +287,13 @@ type
     {$endif}
 
     function WriteLine: TFileSize; overload;
-    function WriteLine(const S: utf8string): TFileSize; overload;
+    function WriteLine(const S: UTF8String): TFileSize; overload;
     function WriteLine(const S: unicodestring): TFileSize; overload;
 
     function WriteRawByte(const S: UTF8String): TFileSize; overload;
-    function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
-    function WriteLineUTF8(const Utf8Bytes: TBytes): TFileSize; overload; //bytes encoded utf8
+    function WriteUTF8Line(const S: UTF8String): TFileSize; overload;
+    function WriteLineUTF8(const S: UTF8String): TFileSize; overload; deprecated;
+    function WriteLineUTF8(const UTF8Bytes: TBytes): TFileSize; overload; //bytes encoded utf8  //* what the hell that <---
     {$ifndef FPC}
     function WriteLineUTF8(const S: string): TFileSize; overload;
     {$endif}
@@ -301,11 +313,10 @@ type
     procedure WriteCommand(const Command: string; const Format: string; const Params: array of const); overload;
     procedure WriteCommand(const Command: string; const Params: string = ''); overload;
 
+    procedure ReadUTF8Strings(Value: TStrings); overload;
     procedure ReadStrings(Value: TStrings); overload;
+    function WriteUTF8Strings(const Value: TStrings): TFileSize; overload;
     function WriteStrings(const Value: TStrings): TFileSize; overload;
-
-    property EOF: Boolean read GetEndOfStream; {$ifdef FPC} deprecated; {$endif} //alias of Done
-    property EndOfStream: Boolean read GetEndOfStream;
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
     property TimeoutTries: integer read FTimeoutTries write FTimeoutTries;
@@ -319,17 +330,19 @@ type
   TmnWrapperStream = class(TmnBufferStream)
   strict private
     FStreamOwned: Boolean;
+    FEndOfStream: Boolean;
     FStream: TStream;
     procedure SetStream(const Value: TStream);
   protected
+    function GetConnected: Boolean; override;
     function DoRead(var Buffer; Count: Longint): Longint; override;
     function DoWrite(const Buffer; Count: Longint): Longint; override;
-
   public
     constructor Create(AStream: TStream; AEndOfLine: string; Owned: Boolean = True); overload; virtual;
     constructor Create(AStream: TStream; Owned: Boolean = True); overload;
     destructor Destroy; override;
-    property StreamOwned: Boolean read FStreamOwned write FStreamOwned default False;
+    property StreamOwned: Boolean read FStreamOwned;
+    property EndOfStream: Boolean read FEndOfStream;
     property Stream: TStream read FStream write SetStream;
   end;
 
@@ -401,7 +414,7 @@ begin
     Result := 0;
 end;
 
-function TStreamHelper.WriteUtf8String(const vData: UTF8String): TFileSize;
+function TStreamHelper.WriteUTF8String(const vData: UTF8String): TFileSize;
 begin
   if vData<>'' then
     Result := Write(PByte(vData)^, Length(vData))
@@ -409,7 +422,7 @@ begin
     Result := 0;
 end;
 
-procedure CopyUTF8String(out S: utf8string; Buffer: Pointer; Len: Integer); inline;
+procedure CopyUTF8String(out S: UTF8String; Buffer: Pointer; Len: Integer); inline;
 begin
   if Len <> 0 then
   begin
@@ -704,11 +717,6 @@ end;
 
 { TmnBufferStream }
 
-function TmnCustomStream.GetConnected: Boolean;
-begin
-  Result := False;
-end;
-
 function TmnCustomStream.ReadString(out S: string; Count: TFileSize): Boolean;
 var
   aBuffer: PByte;
@@ -723,7 +731,7 @@ begin
   GetMem(aBuffer, ReadWriteBufferSize);
   try
     p := 0;
-    while True do
+    while Connected do
     begin
       if (Count > 0) and (Size < ReadWriteBufferSize) then
         l := Size
@@ -738,7 +746,45 @@ begin
         Move(aBuffer^, (PByte(S) + p)^, c);
         p := p + c;
       end;
-      if ((c = 0) and not CanRead) or ((Count > 0) and (Size = 0)) then
+      if ((c = 0) and Passive) or not Connected or not CanRead or ((Count > 0) and (Size = 0)) then
+        break;
+    end;
+  finally
+    FreeMem(aBuffer);
+  end;
+  Result := S <> '';
+end;
+
+function TmnCustomStream.ReadUTF8String(out S: UTF8String; Count: TFileSize): Boolean;
+var
+  aBuffer: PByte;
+  p: Integer;
+  l, c, Size: Integer;
+begin
+  S := '';
+  Size := Count;
+  {$ifdef FPC} //less hint in fpc
+  aBuffer := nil;
+  {$endif}
+  GetMem(aBuffer, ReadWriteBufferSize);
+  try
+    p := 0;
+    while Connected do
+    begin
+      if (Count > 0) and (Size < ReadWriteBufferSize) then
+        l := Size
+      else
+        l := ReadWriteBufferSize;
+      c := Read(aBuffer^, l);
+      if c > 0 then
+      begin
+        if Count > 0 then
+          Size := Size - c;
+        SetLength(S, p + c);
+        Move(aBuffer^, (PByte(S) + p)^, c);
+        p := p + c;
+      end;
+      if ((c = 0) and Passive) or not Connected or not CanRead or ((Count > 0) and (Size = 0)) then
         break;
     end;
   finally
@@ -763,12 +809,12 @@ end;
 
 function TmnCustomStream.CanRead: Boolean;
 begin
-  Result := Connected and not (cloData in Done) and not (cloRead in Done);
+  Result := not (cloData in Done) and not (cloRead in Done);
 end;
 
 function TmnCustomStream.CanWrite: Boolean;
 begin
-  Result := Connected and not (cloData in Done) and not (cloWrite in Done);
+  Result := not (cloData in Done) and not (cloWrite in Done);
 end;
 
 procedure TmnCustomStream.ResetCloseData;
@@ -802,7 +848,7 @@ begin
   GetMem(aBuffer, ReadWriteBufferSize);
   try
     p := 0;
-    while True do
+    while Connected do
     begin
       if (Count > 0) and (Size < ReadWriteBufferSize) then
         l := Size
@@ -817,7 +863,7 @@ begin
         Move(aBuffer^, Result[p], c);
         p := p + c;
       end;
-      if ((c = 0) and not CanRead) or ((Count > 0) and (Size = 0)) then
+      if ((c = 0) and Passive) or not Connected or not CanRead or ((Count > 0) and (Size = 0)) then
         break;
     end;
   finally
@@ -831,11 +877,6 @@ begin
   Result := inherited Read(Buffer, Count);
 end;
 
-function TmnCustomStream.ReadBufferBytes(Count: TFileSize): TBytes;
-begin
-  Result := ReadBytes(Count);
-end;
-
 function TmnCustomStream.ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize;
 var
   aBuffer: PByte;
@@ -843,8 +884,8 @@ var
 begin
   Result := 0;
   RealCount := 0;
-  if Count=0 then
-    Exit;
+{  if Count=0 then
+    Exit;}
 
   aSize := Count;
   {$ifdef FPC} //less hint in fpc
@@ -853,7 +894,7 @@ begin
   GetMem(aBuffer, ReadWriteBufferSize);
   try
     //while Connected do //todo use Done
-    while True do
+    while Connected do
     begin
       if (Count > 0) and (aSize < ReadWriteBufferSize) then
         l := aSize
@@ -867,9 +908,8 @@ begin
         Result := Result + c;
         RealCount := RealCount + AStream.Write(aBuffer^, c);
       end;
-      if ((Count > 0) and (aSize = 0)) then //we finsih count
-        break;
-      if (c = 0) and not CanRead then
+      //(Count > 0) and (aSize = 0) //we finsih count
+      if ((c = 0) and Passive) or not Connected or not CanRead or ((Count > 0) and (Size = 0)) then
         break;
     end;
   finally
@@ -953,6 +993,11 @@ begin
   end;
 end;
 
+function TmnBufferStream.WriteLineUTF8(const S: UTF8String): TFileSize;
+begin
+  Result := WriteUTF8Line(s);
+end;
+
 {$ifndef FPC}
 function TmnBufferStream.WriteLineUTF8(const S: string): TFileSize;
 begin
@@ -960,7 +1005,7 @@ begin
 end;
 {$endif}
 
-function TmnBufferStream.WriteLineUTF8(const Utf8Bytes: TBytes): TFileSize;
+function TmnBufferStream.WriteLineUTF8(const UTF8Bytes: TBytes): TFileSize;
 begin
   if Length(Utf8Bytes)<>0 then
     Result := Write(Pointer(Utf8Bytes)^, Length(Utf8Bytes))
@@ -969,7 +1014,7 @@ begin
 
   if EndOfLine <> '' then
   begin
-    Result := Result + WriteUTF8(EndOfLine);
+    Result := Result + WriteUTF8String(EndOfLine);
   end;
 end;
 
@@ -995,12 +1040,12 @@ end;
 
 {$endif}
 
-function TmnBufferStream.WriteLineUTF8(const S: UTF8String): TFileSize;
+function TmnBufferStream.WriteUTF8Line(const S: UTF8String): TFileSize;
 begin
   if EndOfLine <> '' then
-    Result := WriteUTF8(S + EndOfLine)
+    Result := WriteUTF8String(S + EndOfLine)
   else
-    Result := WriteUTF8(S);
+    Result := WriteUTF8String(S);
 end;
 
 function TmnBufferStream.WriteAnsiString(const S: ansistring): TFileSize;
@@ -1033,9 +1078,9 @@ begin
     Result := 0;
 end;
 
-function TmnBufferStream.WriteLine(const S: utf8string): TFileSize;
+function TmnBufferStream.WriteLine(const S: UTF8String): TFileSize;
 var
-  EOL: utf8string;
+  EOL: UTF8String;
 begin
   Result := 0;
   if s <> '' then
@@ -1064,8 +1109,20 @@ begin
   Result := 0;
   for i := 0 to Value.Count - 1 do
   begin
-    if Value[i] <> '' then //stupid delphi always add empty line in last of TStringList
+    if (i < Value.Count - 1) or (Value[i] <> '') then //stupid delphi always add empty line in last of TStringList
       Result := Result + WriteLine(Value[i]);
+  end;
+end;
+
+function TmnBufferStream.WriteUTF8Strings(const Value: TStrings): TFileSize;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 0 to Value.Count - 1 do
+  begin
+    if (i < Value.Count - 1) or (Value[i] <> '') then //stupid delphi always add empty line in last of TStringList
+      Result := Result + WriteUTF8Line(Value[i]);
   end;
 end;
 
@@ -1161,7 +1218,7 @@ begin
 end;
 {$endif}
 
-function TmnBufferStream.ReadLine(out S: utf8string; ExcludeEOL: Boolean): Boolean;
+function TmnBufferStream.ReadLine(out S: UTF8String; ExcludeEOL: Boolean): Boolean;
 begin
   Result := ReadLineUTF8(S, ExcludeEOL);
 end;
@@ -1194,17 +1251,9 @@ begin
   ReadLineUTF8(Result, ExcludeEOL);
 end;
 
-function TmnBufferStream.ReadLineUTF8(out S: utf8string; ExcludeEOL: Boolean): Boolean;
-var
-  m: Boolean;
-  res: PByte;
-  len: TFileSize;
-  EOL: utf8string;
+function TmnBufferStream.ReadLineUTF8(out S: UTF8String; ExcludeEOL: Boolean): Boolean;
 begin
-  EOL := utf8string(EndOfLine);
-  Result := ReadBufferUntil(@eol[1], mnStreams.ByteLength(eol), ExcludeEOL, res, len, m);
-  CopyUTF8String(S, res, len);
-  FreeMem(res);
+  Result := ReadUTF8Line(S, ExcludeEOL);
 end;
 
 function TmnBufferStream.ReadLineUTF8(out S: string; ExcludeEOL: Boolean): Boolean;
@@ -1227,7 +1276,7 @@ procedure TmnBufferStream.ReadStrings(Value: TStrings);
 var
   s: string;
 begin
-  while not (cloRead in Done) do
+  while Connected and CanRead do
   begin
     if ReadLine(s) then
       Value.Add(s);
@@ -1299,7 +1348,6 @@ end;
 constructor TmnBufferStream.Create(AEndOfLine: string);
 begin
   inherited Create;
-  //FZeroClose := True;
   FReadBuffer := TmnStreamBuffer.Create(Self);
   FWriteBuffer := TmnStreamBuffer.Create(Self);
 
@@ -1346,16 +1394,6 @@ begin
   Result := FReadBuffer.Size;
 end;
 
-function TmnBufferStream.GetConnected: Boolean;
-begin
-  Result := inherited GetConnected;
-end;
-
-function TmnBufferStream.GetEndOfStream: Boolean;
-begin
-  Result := cloRead in Done;
-end;
-
 function TmnBufferStream.GetReadBufferSize: TFileSize;
 begin
   Result := FReadBuffer.Size;
@@ -1370,24 +1408,16 @@ function TmnBufferStream.Read(var Buffer; Count: Longint): Longint;
 var
   RealCount: longint;
 begin
+  ResetCloseData;
   Flush;//Flush write buffer
   if FProxy <> nil then
     FProxy.Read(Buffer, Count, Result, RealCount)
   else
     Result := ReadBuffer(Buffer, Count);
 
-{
-  if (Result=0) then
-  begin
-    if not (FStream is TmnCustomStream) or not (FStream as TmnCustomStream).Connected then
-      Close([cloRead]);
-  end;
-}
-  if (Result <= 0) then
-  begin
-    if not Connected then //connected = timeout,  not connected = stream closed
-      Close([cloRead]);
-  end;
+  //Count = 0, Connected = True = timeout, not connected = stream closed
+  if (Result <= 0) and not Connected then
+    Close([cloRead]);
 end;
 
 procedure TmnBufferStream.SetReadBufferSize(AValue: TFileSize);
@@ -1395,7 +1425,7 @@ begin
   if FReadBuffer.Size = AValue then
     Exit;
   if FReadBuffer.Buffer <> nil then
-    raise Exception.Create('change ReadBufferSize before using stream');
+    raise Exception.Create('Change ReadBufferSize before using stream');
   FReadBuffer.Size := AValue;
 end;
 
@@ -1417,14 +1447,14 @@ function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; Ex
 var
   aCount: Integer;
 
-  function _IsMatch(vBI, vMI: Integer; out vErr: Boolean): Boolean;
+  function _IsMatching(vBI, vMI: Integer; out vErr: Boolean): Boolean;
   var
     b: Byte;
     t: PByte;
   begin
     if vBI >= aCount then
     begin
-      vErr := Read(b, 1) <> 1;
+      vErr := (Read(b, 1) <> 1);
 
       if not vErr then
       begin
@@ -1467,19 +1497,19 @@ begin
 
   while not Matched do
   begin
-    if _IsMatch(Index + MatchIndex, MatchIndex, aErr) then
+    if _IsMatching(Index + MatchIndex, MatchIndex, aErr) then
     begin
       Inc(MatchIndex);
       if MatchIndex = MatchSize then
-      begin
         Matched := True;
-      end;
     end
     else
     begin
       MatchIndex := 0;
       Inc(Index);
       if aErr then
+        Break;
+      if not CanRead then
         Break;
     end;
   end;
@@ -1538,14 +1568,14 @@ var
   aBuf: TBytes;
   aSize: Integer;
 
-  function _IsMatch(vBI, vMI: Integer; out vErr: Boolean): Boolean;
+  function _IsMatching(vBI, vMI: Integer; out vErr: Boolean): Boolean;
   var
     b: Byte;
     t: PByte;
   begin
     if vBI >= aCount then
     begin
-      vErr := Read(b, 1)<>1; { TODO : find way to improve this }
+      vErr := Read(b, 1) <> 1; { TODO : find way to improve this }
 
       if not vErr then
       begin
@@ -1591,19 +1621,17 @@ begin
 
   while not Matched do
   begin
-    if _IsMatch(Index + MatchIndex, MatchIndex, aErr) then
+    if _IsMatching(Index + MatchIndex, MatchIndex, aErr) then
     begin
       Inc(MatchIndex);
       if MatchIndex = MatchSize then
-      begin
         Matched := True;
-      end;
     end
     else
     begin
       MatchIndex := 0;
       Inc(Index);
-      if aErr  then
+      if aErr then
         Break
       else if (Index>=sSize) then
       begin
@@ -1623,13 +1651,37 @@ begin
     Result := False;
 end;
 
+function TmnBufferStream.ReadUTF8Line(out S: UTF8String; ExcludeEOL: Boolean): Boolean;
+var
+  m: Boolean;
+  res: PByte;
+  len: TFileSize;
+  EOL: UTF8String;
+begin
+  EOL := UTF8String(EndOfLine);
+  Result := ReadBufferUntil(@eol[1], mnStreams.ByteLength(eol), ExcludeEOL, res, len, m);
+  CopyUTF8String(S, res, len);
+  FreeMem(res);
+end;
+
+procedure TmnBufferStream.ReadUTF8Strings(Value: TStrings);
+var
+  s: UTF8String;
+begin
+  while Connected and CanRead do
+  begin
+    if ReadUTF8Line(s) then
+      Value.Add(s);
+  end;
+end;
+
 {$endif}
 
 procedure TmnWrapperStream.SetStream(const Value: TStream);
 begin
   if FStream <> Value then
   begin
-    if (FStream <> nil) and FStreamOwned then
+    if (FStream <> nil) and StreamOwned then
       FreeAndNil(FStream);
     FStream := Value;
     FStreamOwned := False;
@@ -1639,11 +1691,18 @@ end;
 function TmnWrapperStream.DoRead(var Buffer; Count: Longint): Longint;
 begin
   Result := FStream.Read(Buffer, Count);
+  if Result = 0 then
+    FEndOfStream := True;
 end;
 
 function TmnWrapperStream.DoWrite(const Buffer; Count: Longint): Longint;
 begin
   Result := FStream.Write(Buffer, Count);//TODO must be buffered
+end;
+
+function TmnWrapperStream.GetConnected: Boolean;
+begin
+  Result := not FEndOfStream;
 end;
 
 constructor TmnWrapperStream.Create(AStream: TStream; AEndOfLine: string; Owned: Boolean = True);
@@ -1653,7 +1712,6 @@ begin
     raise EmnStreamException.Create('Stream = nil');
   FStreamOwned := Owned;
   FStream := AStream;
-
 end;
 
 constructor TmnWrapperStream.Create(AStream: TStream; Owned: Boolean);
