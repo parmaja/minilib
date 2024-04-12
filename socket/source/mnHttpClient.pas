@@ -391,7 +391,7 @@ begin
   if l > 0 then
     SetString(vParams, p, l);
 
-  if LeftStr(vParams, 1) <> '/' then
+  if StartsStr('/', vParams) then
     vParams := '/' + vParams;
 
   if vPort = '' then
@@ -463,7 +463,7 @@ procedure TmnHttpRequest.SendCommand(Command: string; vData: PByte; vCount: Card
 
   procedure _Write(const s: UTF8String); overload;
   begin
-    Stream.WriteLineUTF8(s);
+    Stream.WriteUTF8Line(s);
     //TFile.AppendAllText('c:\temp\h.Log', s+#13);
   end;
 

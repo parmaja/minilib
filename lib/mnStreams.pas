@@ -273,10 +273,11 @@ type
     function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLine(ExcludeEOL: Boolean = True): string; overload;
     function ReadUTF8Line(out S: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadUTF8Line(out S: string; ExcludeEOL: Boolean = True): Boolean; overload;
     //TODO ReadLineUTF8 to ReadUTF8Line
     function ReadLineUTF8(out S: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload; deprecated;
-    function ReadLineUTF8(out S: string; ExcludeEOL: Boolean = True): Boolean; overload;
-    function ReadLineUTF8(ExcludeEOL: Boolean = True): UTF8String; overload;
+    function ReadLineUTF8(out S: string; ExcludeEOL: Boolean = True): Boolean; overload; deprecated;
+    function ReadLineUTF8(ExcludeEOL: Boolean = True): UTF8String; overload; deprecated;
 
     function ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean = True): Boolean; overload;
 
@@ -295,7 +296,8 @@ type
     function WriteLineUTF8(const S: UTF8String): TFileSize; overload; deprecated;
     function WriteLineUTF8(const UTF8Bytes: TBytes): TFileSize; overload; //bytes encoded utf8  //* what the hell that <---
     {$ifndef FPC}
-    function WriteLineUTF8(const S: string): TFileSize; overload;
+    function WriteLineUTF8(const S: string): TFileSize; overload; deprecated;
+    function WriteUTF8Line(const S: string): TFileSize; overload;
     {$endif}
 
     {$ifndef NEXTGEN}
@@ -499,6 +501,11 @@ end;
 
 {$ifndef NEXTGEN}
 function ByteLength(s: ansistring): TFileSize; overload;
+begin
+  Result := Length(s) * SizeOf(AnsiChar);
+end;
+
+function ByteLength(s: utf8string): TFileSize; overload;
 begin
   Result := Length(s) * SizeOf(AnsiChar);
 end;
@@ -988,7 +995,7 @@ begin
     Result := 0;
   if EndOfLine <> '' then
   begin
-    EOL := EndOfLine;
+    EOL := AnsiString(EndOfLine);
     Result := Result + Write(Pointer(EOL)^, Length(EOL));
   end;
 end;
@@ -1001,7 +1008,12 @@ end;
 {$ifndef FPC}
 function TmnBufferStream.WriteLineUTF8(const S: string): TFileSize;
 begin
-  Result := WriteLineUTF8(UTF8Encode(s));
+  Result := WriteUTF8Line(UTF8Encode(s));
+end;
+
+function TmnBufferStream.WriteUTF8Line(const S: string): TFileSize;
+begin
+  Result := WriteUTF8Line(UTF8Encode(s));
 end;
 {$endif}
 
@@ -1014,7 +1026,7 @@ begin
 
   if EndOfLine <> '' then
   begin
-    Result := Result + WriteUTF8String(EndOfLine);
+    Result := Result + WriteUTF8String(UTF8String(EndOfLine));
   end;
 end;
 
@@ -1043,7 +1055,7 @@ end;
 function TmnBufferStream.WriteUTF8Line(const S: UTF8String): TFileSize;
 begin
   if EndOfLine <> '' then
-    Result := WriteUTF8String(S + EndOfLine)
+    Result := WriteUTF8String(S + UTF8String(EndOfLine))
   else
     Result := WriteUTF8String(S);
 end;
@@ -1087,7 +1099,7 @@ begin
     Result := Write(PByte(S)^, mnStreams.ByteLength(S));
   if EndOfLine <> '' then
   begin
-    EOL := EndOfLine;
+    EOL := UTF8String(EndOfLine);
     Result := Result + Write(PByte(EOL)^, mnStreams.ByteLength(EOL));
   end;
 end;
@@ -1220,7 +1232,7 @@ end;
 
 function TmnBufferStream.ReadLine(out S: UTF8String; ExcludeEOL: Boolean): Boolean;
 begin
-  Result := ReadLineUTF8(S, ExcludeEOL);
+  Result := ReadUTF8Line(S, ExcludeEOL);
 end;
 
 function TmnBufferStream.ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean): Boolean;
@@ -1248,7 +1260,7 @@ end;}
 
 function TmnBufferStream.ReadLineUTF8(ExcludeEOL: Boolean): UTF8String;
 begin
-  ReadLineUTF8(Result, ExcludeEOL);
+  ReadUTF8Line(Result, ExcludeEOL);
 end;
 
 function TmnBufferStream.ReadLineUTF8(out S: UTF8String; ExcludeEOL: Boolean): Boolean;
@@ -1260,7 +1272,15 @@ function TmnBufferStream.ReadLineUTF8(out S: string; ExcludeEOL: Boolean): Boole
 var
   u8: UTF8String;
 begin
-  Result := ReadLineUTF8(u8, ExcludeEOL);
+  Result := ReadUTF8Line(u8, ExcludeEOL);
+  S := UTF8ToString(u8);
+end;
+
+function TmnBufferStream.ReadUTF8Line(out S: string; ExcludeEOL: Boolean): Boolean;
+var
+  u8: UTF8String;
+begin
+  Result := ReadUTF8Line(u8, ExcludeEOL);
   S := UTF8ToString(u8);
 end;
 
@@ -1671,7 +1691,7 @@ begin
   while Connected and CanRead do
   begin
     if ReadUTF8Line(s) then
-      Value.Add(s);
+      Value.Add(UTF8ToString(s));
   end;
 end;
 

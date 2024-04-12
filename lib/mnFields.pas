@@ -838,7 +838,7 @@ begin
   {$ifdef FPC}
   SetAsString(UTF8Decode(AValue));
   {$else}
-  SetAsString(UTF8Decode(AValue));
+  SetAsString(UTF8ToString(AValue));
   {$endif}
 end;
 

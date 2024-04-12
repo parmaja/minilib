@@ -226,9 +226,9 @@ end;
 procedure TmnMultipartDataItem.Write(vStream: TmnBufferStream);
 begin
   Header.WriteHeader(vStream);
-  vStream.WriteLineUTF8('');
+  vStream.WriteUTF8Line('');
   DoWrite(vStream);
-  vStream.WriteLineUTF8('');
+  vStream.WriteUTF8Line('');
 end;
 
 { TmnMultipartData }
@@ -335,10 +335,10 @@ var
 begin
   for itm in Self do
   begin
-    vStream.WriteLineUTF8('--'+Boundary);
+    vStream.WriteUTF8Line('--'+Boundary);
     itm.Write(vStream);
   end;
-  vStream.WriteLineUTF8('--'+Boundary+'--');
+  vStream.WriteUTF8Line('--'+Boundary+'--');
   Result := True;
 end;
 

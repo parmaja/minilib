@@ -457,6 +457,7 @@ begin
   else
     Result := SameText(s, 'y');
   Writeln;
+  Result := True;
 end;
 
 function GetAnswer(Q: UTF8String; Default: UTF8String = ''; AddClear: UTF8String = ''): UTF8String; overload;
@@ -1463,7 +1464,7 @@ begin
           s := '';
           ReadLn(s);
           WriteLn;
-          s := trim(s);
+          s := Trim(s);
           SearchStr := '';
         end;
 

@@ -682,18 +682,18 @@ begin
   begin
     s := item.GetNameValue(': ');
     //WriteLn(s);
-    Stream.WriteLineUTF8(s);
+    Stream.WriteUTF8Line(s);
   end;
 
   if Cookies.Count<>0 then
   begin
     for s in Cookies do
-      Stream.WriteLineUTF8('Set-Cookie: ' + s);
+      Stream.WriteUTF8Line('Set-Cookie: ' + s);
   end;
 
   DoSendHeader; //enter after
 
-  Stream.WriteLineUTF8(Utf8string(''));
+  Stream.WriteUTF8Line(Utf8string(''));
   FStates := FStates + [resHeaderSent];
 
   DoHeaderSent;
@@ -704,7 +704,7 @@ begin
     s := s + item.GetNameValue(': ')+Stream.EndOfLine;
   end;
  // s := s + Stream.EndOfLine;
-  Stream.WriteLineUTF8(Utf8string(s));}
+  Stream.WriteUTF8Line(Utf8string(s));}
 end;
 
 procedure TmodRespond.SetStream(AStream: TmnConnectionStream);
@@ -723,7 +723,7 @@ begin
   if HeadText = '' then
     raise TmodModuleException.Create('Head not set');
 
-  Stream.WriteLineUTF8(HeadText);
+  Stream.WriteUTF8Line(HeadText);
   FStates := FStates + [resHeadSent];
 end;
 
@@ -807,7 +807,8 @@ var
 begin
   inherited;
   //need support peek :( for check request
-  aRequestLine := TrimRight(UTF8ToString(Stream.ReadLineUTF8)); //* TODO do we need UTF8ToString?
+  Stream.ReadUTF8Line(aRequestLine);
+  aRequestLine := TrimRight(aRequestLine); //* TODO do we need UTF8ToString?
   if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
 

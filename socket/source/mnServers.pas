@@ -651,6 +651,7 @@ begin
           else
           begin
             //check to make this in new thread
+            aConnection := nil;
             try
               aConnection := CreateConnection(aSocket) as TmnServerConnection;
               aConnection.FRemoteIP := aSocket.GetRemoteAddress;
@@ -661,7 +662,7 @@ begin
                 aConnection := nil;
               end;
             end;
-            if aConnection<>nil then
+            if aConnection <> nil then
               aConnection.Start;
           end;
           {w.Stop;

@@ -700,12 +700,12 @@ end;
 
 function TWebsocketPayload.GetSize: Int64;
 begin
-
+  Result := Header.InteralSize;
 end;
 
 procedure TWebsocketPayload.SetSize(const Value: Int64);
 begin
-
+  Header.InteralSize := Value;
 end;
 
 { TmnWebSocket13StreamProxy }
@@ -781,6 +781,7 @@ begin
         end
         else if Header.Opcode = wsoClose then
         begin
+
         end;
       end;
     end;
@@ -874,7 +875,6 @@ begin
   if Masked then
   begin
     Over.Write(Mask.Mask, SizeOf(Mask.Mask), ResultCount, RealCount);
-    aBuffer := nil;
     GetMem(aBuffer, Count);
     MaskData(Buffer, aBuffer^, Count);
     Result := Over.Write(aBuffer^, Count, ResultCount, RealCount);

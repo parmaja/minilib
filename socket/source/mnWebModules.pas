@@ -509,8 +509,8 @@ end;
 procedure TmodWebModule.InternalError(ARequest: TmodRequest; AStream: TmnBufferStream; var Handled: Boolean);
 begin
   inherited;
-  AStream.WriteLineUTF8('HTTP/1.1 500 Internal Server Error');
-  AStream.WriteLineUTF8('');
+  AStream.WriteUTF8Line('HTTP/1.1 500 Internal Server Error');
+  AStream.WriteUTF8Line('');
   Handled := True;
 end;
 

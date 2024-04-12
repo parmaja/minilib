@@ -166,7 +166,7 @@ begin
     Clear;
     while Strings.Connected do
     begin
-      Line := Strings.ReadLineUTF8;
+      Strings.ReadUTF8Line(Line);
       AddItem(Line, Separator, True);
     end;
   finally
@@ -338,7 +338,8 @@ begin
   try
     while not Strings.EndOfStream do
     begin
-      Line := Trim(Strings.ReadLineUTF8);
+      Strings.ReadUTF8Line(Line);
+      Line := Trim(Line);
       if RightStr(Line, 1) = '.' then
         AddSection(LeftStr(Line, Length(Line) - 1))
       else if LeftStr(Line, 1) = '[' then
@@ -504,7 +505,7 @@ begin
   begin
     while not (cloRead in Stream.Done) do
     begin
-      line := UTF8ToString(Stream.ReadLineUTF8);
+      Stream.ReadUTF8Line(line);
       if line = '' then
         break
       else
@@ -525,7 +526,7 @@ var
   f: TmnField;
 begin
   for f in Self do
-    Stream.WriteLineUTF8(f.AsString);
+    Stream.WriteUTF8Line(f.AsString);
 end;
 
 { TmnFieldHelper }
