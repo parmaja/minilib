@@ -303,7 +303,7 @@ var
 begin
   aBoundary := '--' + UTF8Encode(Boundary);
 
-  vStream.ReadLineUTF8(S, True);
+  vStream.ReadUTF8Line(S, True);
   if s = aBoundary then
   begin
     aBoundary := UTF8Encode(vStream.EndOfLine) + aBoundary;
@@ -318,7 +318,7 @@ begin
         Exit(False);
       end;
 
-      vStream.ReadLineUTF8(S, True);
+      vStream.ReadUTF8Line(S, True);
       if S = '--' then
       begin
         Exit(True);
@@ -386,7 +386,8 @@ end;
 procedure TmnMultipartDataFileName.DoReadPrepare;
 begin
   LocalFileName := IncludePathDelimiter(Data.TempPath);
-  ForceDirectories(LocalFileName);
+  if LocalFileName <> '' then
+    ForceDirectories(LocalFileName);
   LocalFileName := LocalFileName + FileName;
 
   if FileExists(LocalFileName) then
