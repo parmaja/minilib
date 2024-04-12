@@ -5,8 +5,7 @@ unit mnOpenSSLUtils;
  * @license   Mit
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
-{$M+}
-{$H+}
+{$M+}{$H+}
 {$IFDEF FPC}
 {$mode delphi}
 {$error 'Delphi Only'}
@@ -73,10 +72,9 @@ type
 function MakeX509(vConfig: TsslConfig): PX509;
 function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
 function MakeCertReq(vConfig: TsslConfig; px: PX509; pk: PEVP_PKEY): Boolean; overload;
-function MakeCert(vConfig: TsslConfig): Boolean; overload;
-function MakeCert(const vName: string; vConfig: TsslConfig): Boolean; overload;
+function MakeCertReq(vConfig: TsslConfig): Boolean; overload;
+function MakeCertReq(const vName: string; vConfig: TsslConfig): Boolean; overload;
 function BuildAltStack(AltType: Integer; Names: TStrings; var vArr: TSSLStackArr): POPENSSL_STACK;
-
 
 function MakeCert2(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 function MakeCert2(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
@@ -407,7 +405,7 @@ begin
   Result := True;
 end;
 
-function MakeCert(vConfig: TsslConfig): Boolean; overload;
+function MakeCertReq(vConfig: TsslConfig): Boolean; overload;
 begin
   Result := PX509.Generate(vConfig, procedure(px: PX509; pk: PEVP_PKEY)
   begin
@@ -433,7 +431,7 @@ begin
   end);
 end;
 
-function MakeCert(const vName: string; vConfig: TsslConfig): Boolean; overload;
+function MakeCertReq(const vName: string; vConfig: TsslConfig): Boolean; overload;
 
   procedure _Write(const vFile, vData: string);
   var
@@ -456,7 +454,7 @@ function MakeCert(const vName: string; vConfig: TsslConfig): Boolean; overload;
 var
   cn, rn, pn, vn: string;
 begin
-  Result := MakeCert(vConfig);
+  Result := MakeCertReq(vConfig);
   if Result then
   begin
     _Write(vName+'.cer', vConfig.ReadString('Result', 'Cer', ''));

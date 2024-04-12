@@ -197,6 +197,7 @@ procedure RaiseSSLError(Message: utf8string);
 
 function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+
 function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
 function ECDSASignBase64(const vData, vKey: utf8string): UTF8String; overload;
 function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
@@ -482,7 +483,6 @@ begin
     outbio := BIO_new_file(PUTF8Char(CertificateFile), 'w');
 	  PEM_write_bio_X509(outbio, x509);
     BIO_free(outbio);
-
 
     s := ChangeFileExt(CertificateFile, '.csr');
     xx := X509_to_X509_REQ(x509, pkey, EVP_sha256);
@@ -780,7 +780,7 @@ begin
     Result := False
   else
     Result := True;
-  Log.WriteLn(lglDebug, 'version: ' + SSL_get_version(Handle));
+  Log.WriteLn(lglInfo, 'version: ' + SSL_get_version(Handle));
 
 end;
 

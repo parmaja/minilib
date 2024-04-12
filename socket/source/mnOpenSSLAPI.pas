@@ -13,19 +13,21 @@ unit mnOpenSSLAPI;
  * @thanks    To all who i get some code from them
  *
  *}
+{
+ https://aticleworld.com/ssl-server-client-using-openssl-in-c/
+ https://eclipsesource.com/blogs/2016/09/07/tutorial-code-signing-and-verification-with-openssl/
 
- //https://aticleworld.com/ssl-server-client-using-openssl-in-c/
- //https://eclipsesource.com/blogs/2016/09/07/tutorial-code-signing-and-verification-with-openssl/
+ https://www.xolphin.com/support/OpenSSL/OpenSSL_-_Installation_under_Windows
+ https://wiki.openssl.org/index.php/Libcrypto_API
+ https://slproweb.com/products/Win32OpenSSL.html
+ https://github.com/sota2502/mpstation/blob/master/lib/IdSSLOpenSSLHeaders.pas
+ https://fuchsia-docs.firebaseapp.com/rust/src/boringssl_sys/lib.rs.html#1929
 
- //https://www.xolphin.com/support/OpenSSL/OpenSSL_-_Installation_under_Windows
- //https://wiki.openssl.org/index.php/Libcrypto_API
- //https://slproweb.com/products/Win32OpenSSL.html
- //https://github.com/sota2502/mpstation/blob/master/lib/IdSSLOpenSSLHeaders.pas
- //https://fuchsia-docs.firebaseapp.com/rust/src/boringssl_sys/lib.rs.html#1929
+ official examples
+ https://www.openssl.org/docs/man1.0.2/man3/BIO_get_ssl.html
 
- //official examples
- //https://www.openssl.org/docs/man1.0.2/man3/BIO_get_ssl.html
-
+ https://security.stackexchange.com/questions/184845/how-to-generate-csrcertificate-signing-request-using-c-and-openssl
+}
 interface
 
 uses
@@ -75,6 +77,7 @@ type
   PBIGNUM = PSLLObject;
   PBN_GENCB = PSLLObject;
   PRSA = Pointer;
+  PPRSA = Pointer;
 
   PASN1_VALUE = Pointer;
   PPASN1_VALUE = ^PASN1_VALUE;
@@ -82,7 +85,7 @@ type
   PX509 = type PSLLObject;
   PX509_STORE_CTX = PSLLObject;
   PX509_REQ = type PSLLObject;
-  PX509_CRL =PSLLObject;
+  PX509_CRL = PSLLObject;
   PX509V3_CONF_METHOD = PSLLObject;
   PPX509_REQ = ^PX509_REQ;
   PX509_NAME = PSLLObject;
@@ -108,6 +111,7 @@ type
 
   PEVP_CIPHER = PSLLObject;
   PEVP_PKEY = PSLLObject;
+  PPEVP_PKEY = ^PEVP_PKEY;
   PEVP_MD = PSLLObject;
 
   PEC_GROUP = PSLLObject;
@@ -472,7 +476,10 @@ var
   PEM_write_bio_RSAPublicKey: function(bp: PBIO; x: PRSA): Integer; cdecl;
 
   PEM_read_bio_X509: function(bp: PBIO; x: PX509; cb: Ppem_password_cb; u: Pointer): PX509; cdecl;
-  PEM_read_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; cb: Ppem_password_cb; u: Pointer): PEVP_PKEY; cdecl;
+  PEM_read_bio_PrivateKey: function(bp: PBIO; x: PPEVP_PKEY; cb: Ppem_password_cb; u: Pointer): PEVP_PKEY; cdecl;
+  PEM_read_bio_RSAPublicKey: function(bp: PBIO; x: PPRSA; cb: Ppem_password_cb; u: Pointer): PRSA; cdecl;
+
+  PEM_read_bio_PUBKEY: function(bp: PBIO; x: PPEVP_PKEY; cb: Ppem_password_cb; u: Pointer): PEVP_PKEY; cdecl;
 
   PEM_X509_INFO_read_bio: function(bp: PBIO; sk: POPENSSL_STACK; cb: Ppem_password_cb; u: Pointer): POPENSSL_STACK; cdecl;
 
@@ -621,7 +628,6 @@ var
 
   function EVP_PKEY_assign_RSA(pkey: PEVP_PKEY; key: PRSA): Integer;
   function EVP_PKEY_assign_EC_KEY(pkey: PEVP_PKEY; key: PEC_KEY): Integer;
-
 
   //tls1.h
   function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
@@ -922,6 +928,8 @@ begin
   PEM_write_bio_RSAPublicKey := GetAddress('PEM_write_bio_RSAPublicKey');
   PEM_read_bio_X509 := GetAddress('PEM_read_bio_X509');
   PEM_read_bio_PrivateKey := GetAddress('PEM_read_bio_PrivateKey');
+  PEM_read_bio_PUBKEY := GetAddress('PEM_read_bio_PUBKEY');
+  PEM_read_bio_RSAPublicKey := GetAddress('PEM_read_bio_RSAPublicKey');
   PEM_X509_INFO_read_bio := GetAddress('PEM_X509_INFO_read_bio');
 
   EVP_PKEY_new := GetAddress('EVP_PKEY_new');
@@ -1061,6 +1069,3 @@ finalization
   FreeAndNil(OpenSSLLib);
   FreeAndNil(CryptoLib);
 end.
-
-
-
