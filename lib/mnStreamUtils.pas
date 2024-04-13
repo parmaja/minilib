@@ -737,51 +737,56 @@ end;
 
 function TmnWebSocket13StreamProxy.ReadHeader: Boolean;
 var
-  r, c: LongInt;
+  c, r: LongInt;
   W: Word;
   Q: Int64;
   aSize: Int64;
 begin
-  Result := Over.Read(Header, SizeOf(Header), r, c);
+  Result := Over.Read(Header, SizeOf(Header), c, r);
   if Result then
   begin
     FMaskIndex := 0;
     while True do
     begin
-      if Header.InteralSize = 126 then
-      begin
-        Over.Read(W, SizeOf(W), r, c);
-        aSize := SwapBytes(W);
-      end
-      else if Header.InteralSize = 127 then
-      begin
-        Over.Read(Q, SizeOf(Q), r, c);
-        aSize := SwapBytes(Q);
-      end
-      else
-        aSize := Header.InteralSize;
-
-      if Header.Masked then
-        Over.Read(FMask.Mask, SizeOf(FMask.Mask), r, c)
-      else
-        FMask.Clear;
-
-      if Header.Opcode in [wsoText, wsoBinary] then
-      begin
-        FSize := aSize;
-        Result := True;
-        Break;
-      end
+      if c = 0 then //* not timeout
+        break
       else
       begin
-        Result := False;
-        if Header.Opcode = wsoPing then
+        if Header.InteralSize = 126 then
         begin
-          //Send pong
+          Over.Read(W, SizeOf(W), c, r);
+          aSize := SwapBytes(W);
         end
-        else if Header.Opcode = wsoClose then
+        else if Header.InteralSize = 127 then
         begin
+          Over.Read(Q, SizeOf(Q), c, r);
+          aSize := SwapBytes(Q);
+        end
+        else
+          aSize := Header.InteralSize;
 
+        if Header.Masked then
+          Over.Read(FMask.Mask, SizeOf(FMask.Mask), c, r)
+        else
+          FMask.Clear;
+
+        if Header.Opcode in [wsoConitnue, wsoText, wsoBinary] then
+        begin
+          FSize := aSize;
+          Result := True;
+          Break;
+        end
+        else
+        begin
+          Result := False;
+          if Header.Opcode = wsoPing then
+          begin
+            //Send pong
+          end
+          else if Header.Opcode = wsoClose then
+          begin
+
+          end;
         end;
       end;
     end;
@@ -803,9 +808,10 @@ begin
   ResultCount := 0;
   RealCount := 0;
   Result := True;
-  if FSize=0 then
+  if FSize = 0 then
   begin
-    if ReadHeader then
+    Result := ReadHeader;
+    if Result then
     begin
       if FSize = 0 then
       begin
@@ -814,9 +820,9 @@ begin
     end;
   end;
 
-  if FSize>0 then
+  if FSize > 0 then
   begin
-    if FSize>=Count then
+    if FSize >= Count then
       aCount := Count
     else
       aCount := FSize;
