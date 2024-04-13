@@ -835,7 +835,7 @@ begin
       if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
       begin
         WSHash := Request.Header['Sec-WebSocket-Key'];
-        SendHostHeader := Request.Header.Field['X-Send-Server-Hostname'].AsBoolean;
+        SendHostHeader := Request.Header.ReadBool('X-Send-Server-Hostname', True);
 
         WSKey := HashWebSocketKey(WSHash);
         Respond.HttpResult := hrSwitchingProtocols;

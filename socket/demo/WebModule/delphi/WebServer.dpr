@@ -7,7 +7,7 @@ uses
   mnStreams,
   mnClients,
   MainForm in 'MainForm.pas' {Main},
-  HomeModules in '..\..\lazarus\WebModule\HomeModules.pas';
+  HomeModules in '..\HomeModules.pas';
 
 {$R *.RES}
 

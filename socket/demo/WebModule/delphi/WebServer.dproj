@@ -98,6 +98,7 @@
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
         <DCC_ExeOutput>..\</DCC_ExeOutput>
         <Icon_MainIcon>WebServer_Icon2.ico</Icon_MainIcon>
+        <DCC_SYMBOL_DEPRECATED>error</DCC_SYMBOL_DEPRECATED>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -106,7 +107,7 @@
         <DCCReference Include="MainForm.pas">
             <Form>Main</Form>
         </DCCReference>
-        <DCCReference Include="..\..\lazarus\WebModule\HomeModules.pas"/>
+        <DCCReference Include="..\HomeModules.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
