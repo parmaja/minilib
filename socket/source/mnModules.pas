@@ -78,6 +78,7 @@ type
     FStream: TmnBufferStream; //*todo TmnConnectionStream
     FCookies: TStrings;
     FWritingStarted: Boolean;
+    FContentLength: Integer;
     procedure SetHead(const Value: string);
   protected
     FCompressClass: TmnCompressStreamProxyClass;
@@ -85,7 +86,9 @@ type
     procedure OnWriting(vCount: Longint);
     procedure DoSendHeader; virtual;
     procedure DoHeaderSent; virtual;
+    procedure DoReadHeader; virtual;
     procedure SendHead;
+    procedure DoWriteCookies; virtual;
     procedure SetCompressClass(AValue: TmnCompressStreamProxyClass);
     procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
   public
@@ -98,11 +101,12 @@ type
     procedure SetCookie(const vNameSpace, vName, Value: string);
     function GetCookie(const vNameSpace, vName: string): string;
 
+    //Compress on the fly, now we use deflate
     property CompressClass: TmnCompressStreamProxyClass read FCompressClass write SetCompressClass;
     property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
 
-    procedure ReadHeader(Stream: TmnBufferStream);
     procedure ClearHeader;
+    procedure ReceiveHeader;
     procedure SendHeader;
 
     //Add new header, can dublicate
@@ -113,6 +117,11 @@ type
     procedure PutHeader(AName, AValue: String);
 
     property Head: string read FHead write SetHead;
+    property ContentLength: Integer read FContentLength write FContentLength;
+  end;
+
+  TmodIO = class(TObject)
+  public
   end;
 
   TmodRequestInfo = record
@@ -142,12 +151,12 @@ type
 
   TmodRequest = class(TmodCommunicate)
   private
-    FContentLength: Integer;
     FParams: TmnFields;
     FRoute: TmnRoute;
     FPath: String;
   protected
     Info: TmodRequestInfo;
+    procedure DoWriteCookies; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -169,7 +178,6 @@ type
     property Route: TmnRoute read FRoute write FRoute;
     property Params: TmnFields read FParams;
 
-    property ContentLength: Integer read FContentLength write FContentLength;
     function CollectURI: string;
   end;
 
@@ -192,6 +200,7 @@ type
   TmodRespond = class(TmodCommunicate)
   private
   protected
+    procedure DoWriteCookies; override;
   public
   end;
 
@@ -213,7 +222,6 @@ type
     FRespond: TmodRespond;
     FRequest: TmodRequest;
     FRaiseExceptions: Boolean;
-    FContentSize: Int64;
 
     procedure SetModule(const Value: TmodModule); virtual;
     function GetActive: Boolean;
@@ -234,7 +242,6 @@ type
     property Module: TmodModule read FModule write SetModule;
     //Lock the server listener when execute the command
     //Prepare called after created in lucking mode
-    property ContentSize: Int64 read FContentSize write FContentSize; //todo
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     property Request: TmodRequest read FRequest;
     property Respond: TmodRespond read FRespond;
@@ -335,7 +342,7 @@ type
 
   TmodModules = class(TmnNamedObjectList<TmodModule>)
   private
-    FEOFOnError: Boolean;
+//    FEOFOnError: Boolean;
     FActive: Boolean;
     FEndOfLine: String;
     FDefaultProtocol: String;
@@ -608,6 +615,20 @@ begin
   AddHeader(AName, t);
 end;
 
+{ TmodRespond }
+
+procedure TmodRespond.DoWriteCookies;
+var
+  s: string;
+begin
+  inherited;
+  if Cookies.Count <> 0 then
+  begin
+    for s in Cookies do
+      Stream.WriteUTF8Line('Set-Cookie: ' + s);
+  end;
+end;
+
 { TmodRequest }
 
 function TmodRequest.CollectURI: string;
@@ -629,6 +650,17 @@ begin
   FreeAndNil(FRoute);
   FreeAndNil(FParams);
   inherited Destroy;
+end;
+
+procedure TmodRequest.DoWriteCookies;
+var
+  s: UTF8String;
+begin
+  inherited;
+  Cookies.Delimiter := ';';
+  s := UTF8Encode(Cookies.DelimitedText);
+  if s <> '' then
+    Stream.WriteUTF8Line('Cookie: ' + s);
 end;
 
 procedure TmodRequest.Clear;
@@ -917,7 +949,7 @@ procedure TmodModule.ReadHeader(ARequest: TmodRequest; Stream: TmnBufferStream);
 begin
   if Stream <> nil then
   begin
-    ARequest.ReadHeader(Stream);
+    ARequest.ReceiveHeader;
     DoReadHeader(ARequest);
   end;
 end;
@@ -984,7 +1016,6 @@ end;
 
 procedure TmodModule.DoReadHeader(ARequest: TmodRequest);
 begin
-
 end;
 
 procedure TmodModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
@@ -1182,7 +1213,7 @@ end;
 procedure TmodModules.Created;
 begin
   inherited;
-  FEOFOnError := True;
+//  FEOFOnError := True;
   FEndOfLine := sWinEndOfLine; //for http protocol
 end;
 
@@ -1327,10 +1358,13 @@ begin
   FCompressProxy :=AValue;
 end;
 
-procedure TmodCommunicate.ReadHeader(Stream: TmnBufferStream);
+procedure TmodCommunicate.ReceiveHeader;
 begin
   Header.ReadHeader(Stream);
   Cookies.DelimitedText := Header['Cookie'];
+  if (Header.Field['Content-Length'].IsExists) then
+    ContentLength := Header.Field['Content-Length'].AsInt64;
+  DoReadHeader;
 end;
 
 procedure TmodCommunicate.SendHead;
@@ -1350,7 +1384,15 @@ begin
 
 end;
 
+procedure TmodCommunicate.DoReadHeader;
+begin
+end;
+
 procedure TmodCommunicate.DoSendHeader;
+begin
+end;
+
+procedure TmodCommunicate.DoWriteCookies;
 begin
 end;
 
@@ -1384,6 +1426,9 @@ begin
 
   SendHead;
 
+  if (ContentLength > 0) then
+    PutHeader('Content-Length: ', IntToStr(ContentLength));
+
   for item in Header do
   begin
     s := item.GetNameValue(': ');
@@ -1391,11 +1436,7 @@ begin
     Stream.WriteUTF8Line(s);
   end;
 
-  if Cookies.Count<>0 then
-  begin
-    for s in Cookies do
-      Stream.WriteUTF8Line('Set-Cookie: ' + s);
-  end;
+  DoWriteCookies;
 
   DoSendHeader; //enter after
 
@@ -1415,13 +1456,6 @@ begin
       CompressProxy.Enable;
   end;
 
-  {s := '';
-  for item in Header do
-  begin
-    s := s + item.GetNameValue(': ')+Stream.EndOfLine;
-  end;
- // s := s + Stream.EndOfLine;
-  Stream.WriteUTF8Line(Utf8string(s));}
 end;
 
 procedure TmodCommunicate.AddHeader(const AName: string; AValue: TDateTime);

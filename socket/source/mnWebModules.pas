@@ -81,7 +81,6 @@ type
   private
     FWebSocket: Boolean;
     FKeepAlive: Boolean;
-    FContentLength: Integer;
     //WebSocket
     FProtcolClass: TmnProtcolStreamProxyClass;
     FProtcolProxy: TmnProtcolStreamProxy;
@@ -95,8 +94,6 @@ type
     constructor Create;
     property WebSocket: Boolean read FWebSocket write FWebSocket;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
-    //Compress on the fly, now we use deflate
-    property ContentLength: Integer read FContentLength write FContentLength;
     //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy;
