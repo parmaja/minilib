@@ -223,6 +223,7 @@ type
   public
     procedure Write(const Target, S: string; Options: TmnwWriterOptions = []); overload;
     procedure WriteLn(const Target, S: string; Options: TmnwWriterOptions = []); overload;
+    property Item; default;
   end;
 
   { TmnwSchema }
@@ -503,6 +504,13 @@ type
       TDocument = class(TElementHTML)
       protected
         procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TDirectFile }
+
+      TDirectFile = class(TElementHTML)
+      protected
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -1045,6 +1053,7 @@ begin
   inherited Created;
   //RegisterClasses(THTML);
   RegisterRenderer(THTML.TDocument ,TDocument);
+  RegisterRenderer(THTML.TDirectFile,TDirectFile);
   RegisterRenderer(THTML.TParagraph, TParagraph);
   RegisterRenderer(THTML.TBreak, TBreak);
   RegisterRenderer(THTML.TInput, TInput);
@@ -1880,6 +1889,13 @@ procedure THTML.TImage.DoCompose;
 begin
   inherited;
   Root.Libraries.Use('JQuery');
+end;
+
+{ TmnwHTMLRenderer.TDirectFile }
+
+procedure TmnwHTMLRenderer.TDirectFile.DoRender(Scope: TmnwScope; Context: TmnwContext);
+begin
+  (Scope.Element as THTML.TDirectFile).Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
 end;
 
 initialization
