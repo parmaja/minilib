@@ -19,21 +19,44 @@ unit mnStreams;
 {$modeswitch typehelpers}
 {$modeswitch multihelpers}
 {$ENDIF}
-//Change TFIleSize to TStreamSize (Longint)
+
+//TODO Change TFileSize to TStreamSize (Longint)
 
 {
   Rules:
 
-    if stream read 0 byte but it is not eof , it mean `retry` or `timeout`
+    3 type of reading
+    Read Buffer
+    Read in Loop
+    Read Until
 
-    if read count = 0 without closed it is timeout need to retry
-    if read count = 0 with Close the stream reach end of file of disconnected
-    if read count > 0 but CloseData should return by buffer
+    Read Buffer: Should return true when there is data count > 0 even if disconnected/closed(data)
+                 If read buffer return count = 0 and not disconnected, return false, but that mean it is timeout, or retry
 
-    my problem is Connected by default is false, but when Socket it is True
-    If we read from file Connected is false, if we used in loop it will exit, so we use return count = 0 with not connected to check return
+    Read in Loop: Like read stream, read strings, read string, it loop until stream disconnected/closed(data)
 
-    Passive is always Connected, but when read 0 count that mean disconnect/closed/eof
+                  Return true if count > 0 even if disconnected
+                  Return false of read count = 0 (no data), if not disonnected that meant it is timeout
+
+                  Breaking: no breaking loop when reading count = 0
+                            break loop when closed data, or disconnect
+
+    Read Until:   Like Read line, read until
+
+                  Return true if count > 0 even if disconnected
+                  Return false of read **real** count = 0 (no data), but return true if read the match, count can be 0 but maybe it is matched, match string will not count, if not disonnected that meant it is timeout or retry
+
+                  Breaking: no breaking loop when reading count = 0
+                            break loop when closed data, or disconnect
+
+
+    if stream read 0 byte but it is not discoonect/closed(data) , it mean `retry` or `timeout`
+    if ReadLine(s) return true but s='' that mean it is empty line
+    if read count = 0 with disconnect/close after read, the stream reach end of file of disconnected
+
+    my problem is Connected by default is false, but when socket it is True
+
+    Passive streams is always Connected, but when read count =0 that mean disconnect/closed/eof and read buffer should mark it as disconnect
 }
 
 interface

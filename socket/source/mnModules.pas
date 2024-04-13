@@ -558,8 +558,11 @@ begin
   if URI<>'' then
   begin
     aStart := 1;
-    if StartsText('http://', URI) then Inc(aStart, 7);
-    if StartsText('https://', URI) then Inc(aStart, 8);
+    //TODO use pose for ://
+    if StartsText('http://', URI) then
+      Inc(aStart, 7);
+    if StartsText('https://', URI) then
+      Inc(aStart, 8);
 
     aCount := Length(URI) - aStart + 1;
 
