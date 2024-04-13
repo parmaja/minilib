@@ -6,15 +6,11 @@ unit SendAndRecv;
 {$M+}
 {$H+}
 
-{TODO
-  Add TmnHttpClient example
-}
-
 interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams, mnMultipartData, mnHttpClient, mnWebModules, mnFields, mnHeaders,
+  mnUtils, mnStreams, mnMultipartData, mnHttpClient2, mnWebModules, mnFields, mnHeaders,
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 {$ifdef GUI}
@@ -321,18 +317,18 @@ begin
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test.txt', fmOpenRead));
   try
     Stream.ReadBufferSize := 5;
-    s := Stream.ReadLine;
+    Stream.ReadLine(s);
     WriteLn(S);
-    s := Stream.ReadLine;
+    Stream.ReadLine(s);
     WriteLn(S);
 
     Stream.ReadString(ss);
     WriteLn('['+ss+']');
 
-    s := Stream.ReadLine;
+    Stream.ReadLine(s);
     WriteLn(S);
 
-    s := Stream.ReadLine;
+    Stream.ReadLine(s);
     WriteLn(S);
 
   finally
@@ -865,7 +861,7 @@ begin
   try
     //c.UserAgent := 'curl/7.83.1';
     c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-    c.Request.Accept := '*/*';
+    c.Request.Header.Add('Accept', '*/*');
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
     //c.Compressing := True;
@@ -879,12 +875,11 @@ begin
     //c.ReadStream(m);
 
     Writeln('');
-    Writeln('>'+c.Response.Head);
-    for h in c.Response.Header do
+    for h in c.Respond.Header do
       Writeln('>'+h.GetNameValue);
     Writeln(s);
 
-    Writeln(c.Response.StatusCode.ToString);
+//    Writeln(c.Respond.StatusCode.ToString);
 
   finally
     c.Free;
@@ -1008,7 +1003,7 @@ begin
   try
     //c.UserAgent := 'curl/7.83.1';
     c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-    c.Request.Accept := '*/*';
+//    c.Request.Accept := '*/*';
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
     //c.Compressing := True;
@@ -1020,12 +1015,11 @@ begin
 
 
     Writeln('');
-    Writeln('>'+c.Response.Head);
-    for h in c.Response.Header do
+    for h in c.Respond.Header do
       Writeln('>'+h.GetNameValue);
     Writeln(s);
 
-    Writeln(c.Response.StatusCode.ToString);
+//    Writeln(c.Response.StatusCode.ToString);
 
   finally
     c.Free;
@@ -1123,7 +1117,7 @@ begin
   try
     //c.UserAgent := 'curl/7.83.1';
     c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-    c.Request.Accept := '*/*';
+//    c.Request.Accept := '*/*';
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
     //c.Compressing := True;
@@ -1142,13 +1136,12 @@ begin
     for h in c.Request.Header do
       Writeln('<'+h.GetNameValue);
     Writeln('');
-    Writeln('>'+c.Response.Head);
-    for h in c.Response.Header do
+    for h in c.Respond.Header do
       Writeln('>'+h.GetNameValue);
     Writeln('');
     Writeln(s);
 
-    Writeln(c.Response.StatusCode.ToString);
+//    Writeln(c.Response.StatusCode.ToString);
 
   finally
     c.Free;
@@ -1401,9 +1394,9 @@ begin
       Info.Address := ini.ReadString('options', 'Address', sHost);
       AddProc('Readlines Text', ExampleReadLinesFile);
       AddProc('Read Strings File', ExampleReadStringsFile);
-      AddProc('Download Cloud Flare ', ExampleCloudFlare);
-      AddProc('BIO Postman Echo ', ExampleBIOPostmanEcho);
-      AddProc('Postman Echo ', ExamplePostmanEcho);
+      AddProc('[httpclient] Download Cloud Flare ', ExampleCloudFlare);
+      AddProc('[httpclient] BIO Postman Echo ', ExampleBIOPostmanEcho);
+      AddProc('[httpclient] Postman Echo ', ExamplePostmanEcho);
       AddProc('Line Print Server ', ExamplePrintServer);
       AddProc('Echo Keep Alive Server ', ExampleEchoAliveServer);
 
@@ -1456,6 +1449,7 @@ begin
               if (SearchStr = '') or (Pos(SearchStr, LowerCase(Commands[n].name))>0) then
                 WriteLn(IntToStr(n + 1) + ': ' + Commands[n].name);
             end;
+            WriteLn;
             WriteLn('0: Type 0 to exit');
             WriteLn;
           end;

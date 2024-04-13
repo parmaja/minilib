@@ -35,7 +35,7 @@ interface
 
 uses
   SysUtils, Classes, StrUtils, Types, DateUtils,
-  Generics.Defaults,
+  Generics.Defaults, mnStreamUtils,
   mnClasses, mnStreams, mnFields, mnParams,
   mnSockets, mnConnections, mnServers;
 
@@ -51,30 +51,68 @@ type
 
   TmodCommand = class;
 
+  TmodHeaderState = (
+    resHeaderSending,
+    resHeadSent, //reposnd line, first line before header
+    resHeaderSent,
+    //resSuccess,
+    //resKeepAlive,
+    resEnd
+    );
+
+  TmodHeaderStates = set of TmodHeaderState;
+
   TmodHeader = class(TmnHeader)
+  public
+    FStates: TmodHeaderStates;
   public
     function Domain: string;
     function Origin: string;
+    property States: TmodHeaderStates read FStates;
   end;
 
   TmodCommunicate = class abstract(TmnObject)
   private
+    FHead: string;
     FHeader: TmodHeader;
     FStream: TmnBufferStream; //*todo TmnConnectionStream
     FCookies: TStrings;
     FWritingStarted: Boolean;
+    procedure SetHead(const Value: string);
   protected
+    FCompressClass: TmnCompressStreamProxyClass;
+    FCompressProxy: TmnCompressStreamProxy;
+    procedure OnWriting(vCount: Longint);
+    procedure DoSendHeader; virtual;
+    procedure DoHeaderSent; virtual;
+    procedure SendHead;
+    procedure SetCompressClass(AValue: TmnCompressStreamProxyClass);
+    procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
   public
     constructor Create;
     destructor Destroy; override;
-    procedure SetStream(AStream: TmnConnectionStream); virtual;
+    procedure SetStream(AStream: TmnConnectionStream; TriggerHeader: Boolean); virtual;
     property Stream: TmnBufferStream read FStream;
     property Header: TmodHeader read FHeader;
     property Cookies: TStrings read FCookies;
     procedure SetCookie(const vNameSpace, vName, Value: string);
     function GetCookie(const vNameSpace, vName: string): string;
 
+    property CompressClass: TmnCompressStreamProxyClass read FCompressClass write SetCompressClass;
+    property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
+
     procedure ReadHeader(Stream: TmnBufferStream);
+    procedure ClearHeader;
+    procedure SendHeader;
+
+    //Add new header, can dublicate
+    procedure AddHeader(const AName: string; AValue: TDateTime); overload;
+    procedure AddHeader(const AName, AValue: String); overload; virtual;
+    procedure AddHeader(const AName: string; Values: TStringDynArray); overload;
+    //Update header by name but adding new value to old value
+    procedure PutHeader(AName, AValue: String);
+
+    property Head: string read FHead write SetHead;
   end;
 
   TmodRequestInfo = record
@@ -115,8 +153,6 @@ type
     destructor Destroy; override;
     procedure  Clear;
 
-    procedure SetStream(AStream: TmnConnectionStream); override;
-
     property Raw: String read Info.Raw write Info.Raw;
 
     //from raw
@@ -149,49 +185,14 @@ type
     Timout: Integer;
   end;
 
-  TmodRespondState = (
-    resHeaderSending,
-    resHeadSent, //reposnd line, first line before header
-    resHeaderSent,
-    //resSuccess,
-    //resKeepAlive,
-    resEnd
-    );
-
   TmodKeepAlive = (klvUndefined, klvClose, klvKeepAlive);
-
-  TmodRespondStates = set of TmodRespondState;
 
   { TmodRespond }
 
   TmodRespond = class(TmodCommunicate)
   private
-    FStates: TmodRespondStates;
-    //FRespondResult: TmodRespondResult;
   protected
-    function HeadText: string; virtual;
-    procedure DoSendHeader; virtual;
-    procedure DoHeaderSent; virtual;
-    procedure SendHead;
-    procedure OnWriting(vCount: Longint);
   public
-    constructor Create;
-    destructor Destroy; override;
-
-    procedure SetStream(AStream: TmnConnectionStream); override;
-
-    property States: TmodRespondStates read FStates;
-    //property RespondResult: TmodRespondResult read FRespondResult;
-
-    //Add new header, can dublicate
-    procedure AddHeader(const AName: string; AValue: TDateTime); overload;
-    procedure AddHeader(const AName, AValue: String); overload; virtual;
-    procedure AddHeader(const AName: string; Values: TStringDynArray); overload;
-    //Update header by name but adding new value to old value
-    procedure PutHeader(AName, AValue: String);
-
-    procedure SendHeader;
-    procedure ClearHeader;
   end;
 
   TmodModule = class;
@@ -592,7 +593,7 @@ end;
 
 { TmodRespond }
 
-procedure TmodRespond.AddHeader(const AName: string; Values: TStringDynArray);
+procedure TmodCommunicate.AddHeader(const AName: string; Values: TStringDynArray);
 var
   s, t: string;
 begin
@@ -605,129 +606,6 @@ begin
   end;
 
   AddHeader(AName, t);
-end;
-
-procedure TmodRespond.AddHeader(const AName: string; AValue: TDateTime);
-begin
-  AddHeader(AName, FormatHTTPDate(AValue));
-end;
-
-procedure TmodRespond.ClearHeader;
-begin
-  FHeader.Clear;
-end;
-
-constructor TmodRespond.Create;
-begin
-  inherited;
-
-end;
-
-destructor TmodRespond.Destroy;
-begin
-
-  inherited;
-end;
-
-procedure TmodRespond.DoHeaderSent;
-begin
-
-end;
-
-procedure TmodRespond.DoSendHeader;
-begin
-end;
-
-function TmodRespond.HeadText: string;
-begin
-  Result := '';
-end;
-
-procedure TmodRespond.OnWriting(vCount: Longint);
-begin
-  if not FWritingStarted then
-  begin
-    FWritingStarted := True;
-    if not (resHeaderSending in FStates) and not (resHeaderSent in FStates) then
-      SendHeader;
-  end;
-end;
-
-procedure TmodRespond.AddHeader(const AName, AValue: String);
-begin
-  if resHeaderSent in FStates then
-    raise TmodModuleException.Create('Header is already sent');
-
-  Header.Add(AName, AValue);
-end;
-
-procedure TmodRespond.PutHeader(AName, AValue: String);
-begin
-  if resHeaderSent in FStates then
-    raise TmodModuleException.Create('Header is sent');
-
-  Header.Put(AName, AValue);
-end;
-
-procedure TmodRespond.SendHeader;
-var
-  item: TmnField;
-  s: String;
-begin
-  if resHeaderSent in FStates then
-    raise TmodModuleException.Create('Header is sent');
-
-  FStates := FStates + [resHeaderSending];
-
-  SendHead;
-
-  for item in Header do
-  begin
-    s := item.GetNameValue(': ');
-    //WriteLn(s);
-    Stream.WriteUTF8Line(s);
-  end;
-
-  if Cookies.Count<>0 then
-  begin
-    for s in Cookies do
-      Stream.WriteUTF8Line('Set-Cookie: ' + s);
-  end;
-
-  DoSendHeader; //enter after
-
-  Stream.WriteUTF8Line(Utf8string(''));
-  FStates := FStates + [resHeaderSent];
-
-  DoHeaderSent;
-
-  {s := '';
-  for item in Header do
-  begin
-    s := s + item.GetNameValue(': ')+Stream.EndOfLine;
-  end;
- // s := s + Stream.EndOfLine;
-  Stream.WriteUTF8Line(Utf8string(s));}
-end;
-
-procedure TmodRespond.SetStream(AStream: TmnConnectionStream);
-begin
-  if (FStream <> nil) and (FStream is TmnConnectionStream) then
-    (FStream as TmnConnectionStream).OnWriting := nil;
-  inherited;
-  if FStream <> nil then
-    AStream.OnWriting := OnWriting;
-end;
-
-procedure TmodRespond.SendHead;
-begin
-  if resHeadSent in FStates then
-    raise TmodModuleException.Create('Head is sent');
-  if HeadText = '' then
-    raise TmodModuleException.Create('Head not set');
-
-  Stream.WriteUTF8Line(HeadText);
-  FStates := FStates + [resHeadSent];
 end;
 
 { TmodRequest }
@@ -751,11 +629,6 @@ begin
   FreeAndNil(FRoute);
   FreeAndNil(FParams);
   inherited Destroy;
-end;
-
-procedure TmodRequest.SetStream(AStream: TmnConnectionStream);
-begin
-  inherited;
 end;
 
 procedure TmodRequest.Clear;
@@ -832,7 +705,7 @@ begin
       end
       else
         try
-          aRequest.SetStream(Stream);
+          aRequest.SetStream(Stream, False);
           aRequest.Client := RemoteIP;
           Result := aModule.Execute(aRequest, Stream);
         finally
@@ -933,7 +806,7 @@ begin
   FRequest := ARequest; //do not free
 
   FRespond := CreateRespond;
-  FRespond.SetStream(AStream);
+  FRespond.SetStream(AStream, True);
 end;
 
 destructor TmodCommand.Destroy;
@@ -1428,7 +1301,7 @@ destructor TmodCommunicate.Destroy;
 begin
   FreeAndNil(FHeader);
   FreeAndNil(FCookies);
-  SetStream(nil);
+  SetStream(nil, False);
   inherited;
 end;
 
@@ -1440,10 +1313,45 @@ begin
     Result := Cookies.Values[vName];
 end;
 
+procedure TmodCommunicate.SetCompressClass(AValue: TmnCompressStreamProxyClass);
+begin
+  if FCompressClass <> nil then
+    raise TmodModuleException.Create('Compress class is already set!');
+  FCompressClass := AValue;
+end;
+
+procedure TmodCommunicate.SetsCompressProxy(AValue: TmnCompressStreamProxy);
+begin
+  if FCompressProxy <> nil then
+    raise TmodModuleException.Create('Compress proxy is already set!');
+  FCompressProxy :=AValue;
+end;
+
 procedure TmodCommunicate.ReadHeader(Stream: TmnBufferStream);
 begin
   Header.ReadHeader(Stream);
   Cookies.DelimitedText := Header['Cookie'];
+end;
+
+procedure TmodCommunicate.SendHead;
+begin
+  if resHeadSent in Header.States then
+    raise TmodModuleException.Create('Head is sent');
+
+  if Head = '' then
+    raise TmodModuleException.Create('Head not set');
+
+  Stream.WriteUTF8Line(Head);
+  Header.FStates := Header.FStates + [resHeadSent];
+end;
+
+procedure TmodCommunicate.DoHeaderSent;
+begin
+
+end;
+
+procedure TmodCommunicate.DoSendHeader;
+begin
 end;
 
 procedure TmodCommunicate.SetCookie(const vNameSpace, vName, Value: string);
@@ -1454,9 +1362,106 @@ begin
     Cookies.Values[vName] := Value;
 end;
 
-procedure TmodCommunicate.SetStream(AStream: TmnConnectionStream);
+procedure TmodCommunicate.SetHead(const Value: string);
 begin
+  FHead := Value;
+end;
+
+procedure TmodCommunicate.ClearHeader;
+begin
+  FHeader.Clear;
+end;
+
+procedure TmodCommunicate.SendHeader;
+var
+  item: TmnField;
+  s: String;
+begin
+  if resHeaderSent in Header.States then
+    raise TmodModuleException.Create('Header is sent');
+
+  Header.FStates := Header.FStates + [resHeaderSending];
+
+  SendHead;
+
+  for item in Header do
+  begin
+    s := item.GetNameValue(': ');
+    //WriteLn(s);
+    Stream.WriteUTF8Line(s);
+  end;
+
+  if Cookies.Count<>0 then
+  begin
+    for s in Cookies do
+      Stream.WriteUTF8Line('Set-Cookie: ' + s);
+  end;
+
+  DoSendHeader; //enter after
+
+  Stream.WriteUTF8Line(Utf8string(''));
+  Header.FStates := Header.FStates + [resHeaderSent];
+
+  DoHeaderSent;
+
+  if CompressClass <> nil then
+  begin
+    if CompressProxy = nil then
+    begin
+      CompressProxy := CompressClass.Create([cprsWrite], 9);
+      Stream.AddProxy(CompressProxy);
+    end
+    else
+      CompressProxy.Enable;
+  end;
+
+  {s := '';
+  for item in Header do
+  begin
+    s := s + item.GetNameValue(': ')+Stream.EndOfLine;
+  end;
+ // s := s + Stream.EndOfLine;
+  Stream.WriteUTF8Line(Utf8string(s));}
+end;
+
+procedure TmodCommunicate.AddHeader(const AName: string; AValue: TDateTime);
+begin
+  AddHeader(AName, FormatHTTPDate(AValue));
+end;
+
+procedure TmodCommunicate.AddHeader(const AName, AValue: String);
+begin
+  if resHeaderSent in Header.States then
+    raise TmodModuleException.Create('Header is already sent');
+
+  Header.Add(AName, AValue);
+end;
+
+procedure TmodCommunicate.PutHeader(AName, AValue: String);
+begin
+  if resHeaderSent in Header.States then
+    raise TmodModuleException.Create('Header is sent');
+
+  Header.Put(AName, AValue);
+end;
+
+procedure TmodCommunicate.OnWriting(vCount: Longint);
+begin
+  if not FWritingStarted then
+  begin
+    FWritingStarted := True;
+    if not (resHeaderSending in Header.FStates) and not (resHeaderSent in Header.FStates) then
+      SendHeader;
+  end;
+end;
+
+procedure TmodCommunicate.SetStream(AStream: TmnConnectionStream; TriggerHeader: Boolean);
+begin
+  if (FStream <> nil) and (FStream is TmnConnectionStream) then
+    (FStream as TmnConnectionStream).OnWriting := nil;
   FStream := AStream;
+  if (FStream <> nil) and TriggerHeader then
+    AStream.OnWriting := OnWriting;
 end;
 
 { TmnRoute }

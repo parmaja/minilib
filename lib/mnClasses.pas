@@ -141,6 +141,7 @@ type
       {$ifdef FPC} //not now
       procedure Clear; override;
       {$endif}
+      property Item[const Index: string]: _Object_ read Find;
     end;
 
     { TmnNameValueObjectList }

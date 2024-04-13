@@ -82,28 +82,21 @@ type
     FWebSocket: Boolean;
     FKeepAlive: Boolean;
     FContentLength: Integer;
-    FCompressClass: TmnCompressStreamProxyClass;
-    FCompressProxy: TmnCompressStreamProxy;
+    //WebSocket
     FProtcolClass: TmnProtcolStreamProxyClass;
     FProtcolProxy: TmnProtcolStreamProxy;
     FHomePath: string; //Document root folder
     FHostURL: string;
     FHttpResult: THttpResult;
-    procedure SetCompressClass(AValue: TmnCompressStreamProxyClass);
-    procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
     procedure SetHttpResult(const Value: THttpResult);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
   protected
-    function HeadText: string; override;
-    procedure DoHeaderSent; override;
   public
     constructor Create;
     property WebSocket: Boolean read FWebSocket write FWebSocket;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     //Compress on the fly, now we use deflate
     property ContentLength: Integer read FContentLength write FContentLength;
-    property CompressClass: TmnCompressStreamProxyClass read FCompressClass write SetCompressClass;
-    property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
     //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy;
@@ -134,6 +127,7 @@ type
     procedure SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition = sdDefault); overload;
   public
     destructor Destroy; override;
+
     property Respond: TmodHttpRespond read GetRespond;
   end;
 
@@ -393,18 +387,12 @@ end;
 
 { TmodHttpRespond }
 
-procedure TmodHttpRespond.SetCompressClass(AValue: TmnCompressStreamProxyClass);
-begin
-  if FCompressClass <> nil then
-    raise TmodModuleException.Create('Compress class is already set!');
-  FCompressClass := AValue;
-end;
-
 procedure TmodHttpRespond.SetHttpResult(const Value: THttpResult);
 begin
-  if resHeaderSent in States then
+  if resHeaderSent in Header.States then
     raise TmodModuleException.Create('Header is already sent');
   FHttpResult := Value;
+  Head := HttpResult.ToString;
 end;
 
 procedure TmodHttpRespond.SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -412,38 +400,10 @@ begin
   FProtcolClass := Value;
 end;
 
-procedure TmodHttpRespond.SetsCompressProxy(AValue: TmnCompressStreamProxy);
-begin
-  if FCompressProxy <> nil then
-    raise TmodModuleException.Create('Compress proxy is already set!');
-  FCompressProxy :=AValue;
-end;
-
 constructor TmodHttpRespond.Create;
 begin
   inherited Create;
   FHttpResult := hrNone;
-end;
-
-procedure TmodHttpRespond.DoHeaderSent;
-begin
-  inherited;
-
-  if CompressClass <> nil then
-  begin
-    if CompressProxy = nil then
-    begin
-      CompressProxy := CompressClass.Create([cprsWrite], 9);
-      Stream.AddProxy(CompressProxy);
-    end
-    else
-      CompressProxy.Enable;
-  end;
-end;
-
-function TmodHttpRespond.HeadText: string;
-begin
-  Result := HttpResult.ToString;
 end;
 
 { TmodHttpPostCommand }
@@ -1122,6 +1082,8 @@ function ThttpModules.CheckRequest(const ARequest: string): Boolean;
 begin
   Result := Server.UseSSL or (ARequest[1]<>#$16);
 end;
+
+{ TmodHttpRequest }
 
 initialization
   modLock := TCriticalSection.Create;

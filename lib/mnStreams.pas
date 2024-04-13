@@ -296,7 +296,7 @@ type
 
     function ReadLine(out S: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True): Boolean; overload;
-    function ReadLine(ExcludeEOL: Boolean = True): string; overload;
+    function ReadLine(ExcludeEOL: Boolean = True): string; overload; deprecated;
     function ReadUTF8Line(out S: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadUTF8Line(out S: string; ExcludeEOL: Boolean = True): Boolean; overload;
     //TODO ReadLineUTF8 to ReadUTF8Line
@@ -335,7 +335,7 @@ type
     function ReadBytes(vCount: Integer): TBytes;
     function WriteBytes(Buffer: TBytes): Longint;
 
-    procedure ReadCommand(out Command: string; out Params: string);
+    function ReadCommand(out Command: string; out Params: string): Boolean;
 
     procedure WriteCommand(const Command: string; const Format: string; const Params: array of const); overload;
     procedure WriteCommand(const Command: string; const Params: string = ''); overload;
@@ -1163,21 +1163,29 @@ procedure TmnBufferStream.Writing(Count: Longint);
 begin
 end;
 
-procedure TmnBufferStream.ReadCommand(out Command: string; out Params: string);
+function TmnBufferStream.ReadCommand(out Command: string; out Params: string): Boolean;
 var
   s: string;
   p: Integer;
 begin
-  s := ReadLine;
-  p := Pos(' ', s);
-  if p > 0 then
+  Result := ReadLine(s);
+  if Result then
   begin
-    Command := Copy(s, 1, p - 1);
-    Params := Copy(s, p + 1, MaxInt);
+    p := Pos(' ', s);
+    if p > 0 then
+    begin
+      Command := Copy(s, 1, p - 1);
+      Params := Copy(s, p + 1, MaxInt);
+    end
+    else
+    begin
+      Command := s;
+      Params := '';
+    end;
   end
   else
   begin
-    Command := s;
+    Command := '';
     Params := '';
   end;
 end;
