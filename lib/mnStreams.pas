@@ -232,6 +232,10 @@ type
     function GetBufferSize: TFileSize;
     function GetReadBufferSize: TFileSize;
     function GetWriteBufferSize: TFileSize;
+
+  private //TODO
+    function ReadBuffer(var Buffer; Count: Longint; var ResultCount: Longint): Boolean;
+    function WriteBuffer(const Buffer; Count: Longint; var ResultCount: Longint): Boolean;
   protected
     FProxy: TmnStreamProxy;
 
@@ -246,8 +250,6 @@ type
     procedure Reading(Count: Longint); virtual;
 
     property Proxy: TmnStreamProxy read FProxy;
-    function ReadBuffer(var Buffer; Count: Longint; var ResultCount: Longint): Boolean;
-    function WriteBuffer(const Buffer; Count: Longint; var ResultCount: Longint): Boolean;
   public
     constructor Create(AEndOfLine: string = sUnixEndOfLine);
     destructor Destroy; override;
@@ -308,7 +310,7 @@ type
     {$endif}
 
     function ReadBytes(vCount: Integer): TBytes;
-    procedure WriteBytes(Buffer: TBytes);
+    function WriteBytes(Buffer: TBytes): Longint;
 
     procedure ReadCommand(out Command: string; out Params: string);
 
@@ -1107,7 +1109,7 @@ end;
 function TmnBufferStream.WriteBuffer(const Buffer; Count: Longint; var ResultCount: Longint): Boolean;
 begin
   ResultCount := FReadBuffer.Write(Buffer, Count);
-  Result := (ResultCount = 0) and not Connected;
+  Result := (ResultCount <> 0) and Connected;
 end;
 
 function TmnBufferStream.WriteStrings(const Value: TStrings): TFileSize;
@@ -1459,7 +1461,7 @@ end;
 function TmnBufferStream.ReadBuffer(var Buffer; Count: Longint; var ResultCount: Longint): Boolean;
 begin
   ResultCount := FReadBuffer.Read(Buffer, Count);
-  Result := (ResultCount = 0) and not Connected;
+  Result := (ResultCount <> 0) and Connected;
 end;
 
 function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: PByte; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
@@ -1539,7 +1541,8 @@ begin
   ReAllocMem(ABuffer, aCount);
   ABufferSize := aCount;
 
-  if not Matched and (cloRead in Done) and (ABufferSize = 0) then
+  //if matched but size=0 that mean we have data but it is 0, because we execluded the EOL
+  if not Matched and (ABufferSize = 0) then //(cloRead in Done) and
     Result := False;
 end;
 
@@ -1555,9 +1558,9 @@ begin
   SetLength(Result, aCount);
 end;
 
-procedure TmnBufferStream.WriteBytes(Buffer: TBytes);
+function TmnBufferStream.WriteBytes(Buffer: TBytes): Longint;
 begin
-  Write(Pointer(Buffer)^, Length(Buffer));
+  Result := Write(Pointer(Buffer)^, Length(Buffer));
 end;
 
 {$ifndef NEXTGEN}
