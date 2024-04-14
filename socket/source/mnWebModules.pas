@@ -58,6 +58,7 @@ uses
 type
 
   TmodWebModule = class;
+
   THttpResult = (
     hrNone,
     hrOK,
@@ -80,20 +81,19 @@ type
   TmodHttpRespond = class(TmodRespond)
   private
     FWebSocket: Boolean;
-    FKeepAlive: Boolean;
     //WebSocket
     FProtcolClass: TmnProtcolStreamProxyClass;
     FProtcolProxy: TmnProtcolStreamProxy;
+
     FHomePath: string; //Document root folder
     FHostURL: string;
     FHttpResult: THttpResult;
     procedure SetHttpResult(const Value: THttpResult);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
   protected
+    procedure Created; override;
   public
-    constructor Create;
     property WebSocket: Boolean read FWebSocket write FWebSocket;
-    property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy;
@@ -116,6 +116,7 @@ type
     procedure Prepare(var Result: TmodRespondResult); override;
     procedure Unprepare(var Result: TmodRespondResult); override;
     procedure RespondResult(var Result: TmodRespondResult); override;
+
     function CreateRespond: TmodRespond; override;
 
     procedure RespondNotFound;
@@ -126,9 +127,6 @@ type
     destructor Destroy; override;
 
     property Respond: TmodHttpRespond read GetRespond;
-  end;
-
-  TmodWebSocketCommand = class(TmodHttpCommand)
   end;
 
   TmodWebFileModule = class;
@@ -384,6 +382,12 @@ end;
 
 { TmodHttpRespond }
 
+procedure TmodHttpRespond.Created;
+begin
+  inherited;
+  FHttpResult := hrNone;
+end;
+
 procedure TmodHttpRespond.SetHttpResult(const Value: THttpResult);
 begin
   if resHeaderSent in Header.States then
@@ -395,12 +399,6 @@ end;
 procedure TmodHttpRespond.SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
 begin
   FProtcolClass := Value;
-end;
-
-constructor TmodHttpRespond.Create;
-begin
-  inherited Create;
-  FHttpResult := hrNone;
 end;
 
 { TmodHttpPostCommand }
@@ -787,7 +785,7 @@ begin
 
   if Request.Header.Field['Connection'].Have('Upgrade', [',']) then
   begin
-    if Module.UseWebSocket and Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
+    if UseWebSocket and Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
     begin
       if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
       begin
@@ -818,26 +816,26 @@ begin
 
   if not Respond.WebSocket then
   begin
-    aKeepAlive := (Module.UseKeepAlive = klvUndefined) and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive');
-    aKeepAlive := aKeepAlive or ((Module.UseKeepAlive = klvKeepAlive) and not SameText(Request.Header.ReadString('Connection'), 'close'));
+    aKeepAlive := (UseKeepAlive = klvUndefined) and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive');
+    aKeepAlive := aKeepAlive or ((UseKeepAlive = klvKeepAlive) and not SameText(Request.Header.ReadString('Connection'), 'close'));
 
     if aKeepAlive then
     begin
       Respond.KeepAlive := True;
       Respond.AddHeader('Connection', 'Keep-Alive');
-      Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 1000) + ', max=100');
+      Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(KeepAliveTimeOut div 1000) + ', max=100');
     end;
 
-    if not aKeepAlive and Module.UseCompressing then
+    if not aKeepAlive and UseCompressing then
     begin
       if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
-        Respond.CompressClass := TmnGzipStreamProxy
+        CompressClass := TmnGzipStreamProxy
       else if Request.Header.Field['Accept-Encoding'].Have('deflate', [',']) then
-        Respond.CompressClass := TmnDeflateStreamProxy
+        CompressClass := TmnDeflateStreamProxy
       else
-        Respond.CompressClass := nil;
-      if Respond.CompressClass <> nil then
-        Respond.AddHeader('Content-Encoding', Respond.CompressClass.GetCompressName);
+        CompressClass := nil;
+      if CompressClass <> nil then
+        Respond.AddHeader('Content-Encoding', CompressClass.GetCompressName);
     end;
 
     if (Request.Header.Field['Content-Length'].IsExists) then
@@ -874,14 +872,14 @@ begin
         end;
       end
       else
-        Result.Timout := Module.KeepAliveTimeOut;
+        Result.Timout := KeepAliveTimeOut;
 
       Result.Status := Result.Status + [mrKeepAlive];
     end;
 
-    if Respond.CompressProxy <> nil then
+    if CompressProxy <> nil then
     begin
-      Respond.CompressProxy.Disable;
+      CompressProxy.Disable;
     end;
   end;
 end;
@@ -898,12 +896,12 @@ var
   aDate: TDateTime;
   aEtag, aFtag: string;
 begin
-  if Active then
+  if Respond.Stream.Connected then
   begin
     FileAge(vFile, aDate);
     aFtag := DateTimeToUnix(aDate).ToString;
     aEtag := Request.Header['If-None-Match'];
-    if (aEtag<>'') and (aEtag=aFtag) then
+    if (aEtag<>'') and (aEtag = aFtag) then
     begin
       Respond.HttpResult := hrNotModified;
       Respond.SendHeader;
@@ -927,7 +925,7 @@ begin
       //Respond.AddHeader('Date', Now);
       Respond.AddHeader('Last-Modified', aDate);
       Respond.AddHeader('ETag', aFtag);
-      if Active then
+      if Respond.Stream.Connected then
       begin
         Respond.PutHeader('Content-Type', DocumentToContentType(vName));
         case vDisposition of
@@ -942,7 +940,7 @@ begin
 
       Respond.SendHeader;
 
-      if Active then
+      if Respond.Stream.Connected then
         Respond.Stream.WriteStream(aDocStream);
     finally
       aDocStream.Free;
@@ -991,7 +989,7 @@ end;
 
 function TmodHttpCommand.CreateRespond: TmodRespond;
 begin
-  Result := TmodHttpRespond.Create;
+  Result := TmodHttpRespond.Create(Self);
 end;
 
 { TmodCustomWebModules }
