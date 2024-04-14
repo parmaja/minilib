@@ -10,7 +10,7 @@ interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams, mnMultipartData, mnHttpClient2, mnWebModules, mnFields, mnHeaders,
+  mnUtils, mnStreams, mnMultipartData, mnHttpClient, mnWebModules, mnFields, mnHeaders,
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 {$ifdef GUI}
@@ -859,12 +859,13 @@ begin
   m := TStringStream.Create;
   c := TmnHttpClient.Create;
   try
-    //c.UserAgent := 'curl/7.83.1';
+//    c.UserAgent := 'curl/7.83.1';
     c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-    c.Request.Header.Add('Accept', '*/*');
+    c.Request.AddHeader('Accept', '*/*');
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
-    //c.Compressing := True;
+    c.UseCompressing := True;
+
     s := m.DataString;
 
     //c.GetString('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896', s);

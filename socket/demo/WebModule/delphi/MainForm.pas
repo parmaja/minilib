@@ -10,7 +10,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
-  mnOpenSSLUtils, mnOpenSSL, mnLogs, mnHttpClient, mnOpenSSLAPI,
+  mnOpenSSLUtils, mnOpenSSL, mnLogs, mnOpenSSLAPI,
   mnModules, mnStreamUtils, mnUtils,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules,
   HomeModules;
@@ -212,10 +212,10 @@ end;
 
 procedure TMain.Button2Click(Sender: TObject);
 var
-  HttpClient: TmnHttpClient;
+//  HttpClient: TmnHttpClient;
   MemoryStream: TMemoryStream;
 begin
-  //LogEdit.Lines.Add('Getting from URL ' + HostEdit.Text);
+(*  //LogEdit.Lines.Add('Getting from URL ' + HostEdit.Text);
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
@@ -230,6 +230,7 @@ begin
     MemoryStream.Free;
   end;
   //LogEdit.Lines.Add('Finished');
+  *)
 end;
 
 procedure TMain.Button3Click(Sender: TObject);

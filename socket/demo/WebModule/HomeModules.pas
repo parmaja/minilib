@@ -62,7 +62,7 @@ type
     procedure RespondResult(var Result: TmodRespondResult); override;
   end;
 
-  TWSEchoGetHomeCommand = class(TmodWebSocketCommand)
+  TWSEchoGetHomeCommand = class(TmodHttpCommand)
   protected
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
@@ -249,13 +249,16 @@ procedure TWSEchoGetHomeCommand.RespondResult(var Result: TmodRespondResult);
 var
   s: string;
 begin
-  //Request.Path := DeleteSubPath(Name, Request.Path);
-  while Respond.Stream.Connected do
+  if Respond.WebSocket then
   begin
-    if Respond.Stream.ReadUTF8Line(s) then
+    //Request.Path := DeleteSubPath(Name, Request.Path);
+    while Respond.Stream.Connected do
     begin
-      Respond.Stream.WriteUTF8Line(s);
-      log(s);
+      if Respond.Stream.ReadUTF8Line(s) then
+      begin
+        Respond.Stream.WriteUTF8Line(s);
+        log(s);
+      end;
     end;
   end;
   inherited;

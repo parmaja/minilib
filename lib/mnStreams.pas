@@ -1335,12 +1335,11 @@ end;
 function TmnBufferStream.Write(const Buffer; Count: Longint): Longint;
 var
   RealCount: longint;
-  Success: Boolean;
 begin
   if FProxy <> nil then
-    Success := FProxy.Write(Buffer, Count, Result, RealCount)
+    FProxy.Write(Buffer, Count, Result, RealCount)
   else
-    Success := WriteBuffer(Buffer, Count, Result);
+    WriteBuffer(Buffer, Count, Result);
 end;
 
 procedure TmnBufferStream.Flush;
@@ -1457,14 +1456,13 @@ end;
 function TmnBufferStream.Read(var Buffer; Count: Longint): Longint;
 var
   RealCount: longint;
-  Success: Boolean;
 begin
   ResetCloseData;
   Flush;//Flush write buffer
   if FProxy <> nil then
-    Success := FProxy.Read(Buffer, Count, Result, RealCount)
+    FProxy.Read(Buffer, Count, Result, RealCount)
   else
-    Success := ReadBuffer(Buffer, Count, Result);
+    ReadBuffer(Buffer, Count, Result);
 
   //Count = 0, Connected = True = timeout, not connected = stream closed
   if (Result <= 0) and not Connected then
