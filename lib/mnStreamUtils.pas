@@ -481,13 +481,13 @@ begin
   if FReadSize=0 then
   begin
     FReadSize := ReadSize;
-    if FReadSize=0 then
+    if FReadSize = 0 then
     begin
       CloseData;
     end;
   end;
 
-  if FReadSize>0 then
+  if FReadSize > 0 then
   begin
     if FReadSize>=Count then
       aCount := Count

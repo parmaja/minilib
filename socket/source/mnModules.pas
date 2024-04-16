@@ -12,8 +12,9 @@
  *  https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html
  *
  *
- }
- {  HEAD:
+}
+
+{  HEAD:
               userinfo       host      port
               ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
   GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top HTTP/1.1
@@ -28,8 +29,7 @@
   https://resttesttest.com
   https://httpbin.org
   http://dummy.restapiexample.com/
-
- }
+}
 
 interface
 
@@ -71,7 +71,7 @@ type
     property States: TmodHeaderStates read FStates;
   end;
 
-  TmodCustomCommand = class;
+  TmnCustomCommand = class;
 
   TmodCommunicate = class abstract(TmnObject)
   private
@@ -81,7 +81,7 @@ type
     FCookies: TStrings;
     FWritingStarted: Boolean;
     FContentLength: Integer;
-    FCommand: TmodCustomCommand;
+    FCommand: TmnCustomCommand;
     procedure SetHead(const Value: string);
   protected
     procedure OnWriting(vCount: Longint);
@@ -95,7 +95,7 @@ type
     procedure DoReceiveHeader; virtual;
     procedure DoHeaderReceived; virtual;
   public
-    constructor Create(ACommand: TmodCustomCommand);
+    constructor Create(ACommand: TmnCustomCommand);
     destructor Destroy; override;
     procedure SetStream(AStream: TmnConnectionStream; TriggerHeader: Boolean); virtual;
     property Stream: TmnBufferStream read FStream;
@@ -116,7 +116,7 @@ type
     procedure PutHeader(AName, AValue: String);
 
     property Head: string read FHead write SetHead;
-    property Command: TmodCustomCommand read FCommand;
+    property Command: TmnCustomCommand read FCommand;
     property ContentLength: Integer read FContentLength write FContentLength;
   end;
 
@@ -158,6 +158,9 @@ type
     destructor Destroy; override;
     procedure  Clear;
 
+    function ReadString(out s: string; Count: Integer): Boolean;
+    function ReadLine(out s: string): Boolean;
+
     property Raw: String read Info.Raw write Info.Raw;
 
     //from raw
@@ -175,6 +178,7 @@ type
     property Params: TmnFields read FParams;
 
     function CollectURI: string;
+
   end;
 
   TmodeResult = (
@@ -200,10 +204,11 @@ type
     procedure DoWriteCookies; override;
     procedure DoReceiveHeader; override;
   public
+    function WriteString(const s: string): Boolean;
+    function WriteLine(const s: string): Boolean;
+
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
   end;
-
-  TmodModule = class;
 
   {
     Params: (info like remoteip)
@@ -213,9 +218,9 @@ type
     Result: Success or error and message of error
   }
 
-  { TmodCustomCommand }
+  { TmnCustomCommand }
 
-  TmodCustomCommand = class(TmnNamedObject)
+  TmnCustomCommand = class(TmnNamedObject)
   private
     FRaiseExceptions: Boolean;
   protected
@@ -224,7 +229,10 @@ type
 
     FCompressClass: TmnCompressStreamProxyClass;
     FCompressProxy: TmnCompressStreamProxy;
+    FChunkedProxy: TmnChunkStreamProxy;
+    FChunked: Boolean;
 
+    procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetCompressClass(AValue: TmnCompressStreamProxyClass);
     procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
 
@@ -249,15 +257,32 @@ type
     property CompressClass: TmnCompressStreamProxyClass read FCompressClass write SetCompressClass;
     property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
 
+    property ChunkedProxy: TmnChunkStreamProxy read FChunkedProxy write SetChunkedProxy;
+    property Chunked: Boolean read FChunked write FChunked;
+
+
     //Prepare called after created in lucking mode
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     property Request: TmodRequest read FRequest;
     property Respond: TmodRespond read FRespond;
   end;
 
-  TmodCustomCommandClass = class of TmodCustomCommand;
+  TmnCustomCommandClass = class of TmnCustomCommand;
 
-  TmodCommand = class(TmodCustomCommand)
+  TwebCommand = class(TmnCustomCommand)
+  protected
+    procedure Prepare(var Result: TmodRespondResult); virtual;
+    procedure RespondResult(var Result: TmodRespondResult); virtual;
+    function Execute: TmodRespondResult;
+    procedure Unprepare(var Result: TmodRespondResult); virtual; //Shutdown it
+  public
+  end;
+
+  //*
+
+  TmodModule = class;
+
+  TmodCommand = class(TwebCommand)
   private
     FModule: TmodModule;
     function GetActive: Boolean;
@@ -265,10 +290,6 @@ type
     procedure SetModule(const Value: TmodModule); virtual;
     procedure Log(S: String); virtual;
 
-    procedure Prepare(var Result: TmodRespondResult); virtual;
-    procedure RespondResult(var Result: TmodRespondResult); virtual;
-    function Execute: TmodRespondResult;
-    procedure Unprepare(var Result: TmodRespondResult); virtual; //Shutdown it
   public
     constructor Create(AModule: TmodModule; ARequest: TmodRequest; aStream: TmnConnectionStream = nil); virtual;
     //GetCommandName: make name for command when register it, useful when log the name of it
@@ -667,6 +688,16 @@ begin
   end;
 end;
 
+function TmodRespond.WriteLine(const s: string): Boolean;
+begin
+  Result := Stream.WriteUTF8Line(S) > 0;
+end;
+
+function TmodRespond.WriteString(const s: string): Boolean;
+begin
+  Result := Stream.WriteUTF8String(S) > 0;
+end;
+
 { TmodRequest }
 
 function TmodRequest.CollectURI: string;
@@ -699,6 +730,16 @@ begin
   s := UTF8Encode(Cookies.DelimitedText);
   if s <> '' then
     Stream.WriteUTF8Line('Cookie: ' + s);
+end;
+
+function TmodRequest.ReadLine(out s: string): Boolean;
+begin
+  Result := Stream.ReadUTF8Line(s);
+end;
+
+function TmodRequest.ReadString(out s: string; Count: Integer): Boolean;
+begin
+  Result := Stream.ReadUTF8String(s, TFileSize(Count));
 end;
 
 procedure TmodRequest.Clear;
@@ -848,7 +889,7 @@ begin
   inherited;
 end;
 
-{ TmodCustomCommandListener }
+{ TmnCustomCommandListener }
 
 function TmodModuleListener.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
 begin
@@ -867,33 +908,40 @@ begin
   Result := inherited Server as TmodModuleServer;
 end;
 
-{ TmodCustomCommand }
+{ TmnCustomCommand }
 
-procedure TmodCustomCommand.DoSendHeader(Sender: TmodCommunicate);
+procedure TmnCustomCommand.DoSendHeader(Sender: TmodCommunicate);
 begin
 end;
 
-procedure TmodCustomCommand.SetCompressClass(AValue: TmnCompressStreamProxyClass);
+procedure TmnCustomCommand.SetChunkedProxy(const Value: TmnChunkStreamProxy);
+begin
+  if FChunkedProxy <> nil then
+    raise TmodModuleException.Create('Chunked class is already set!');
+  FChunkedProxy := Value;
+end;
+
+procedure TmnCustomCommand.SetCompressClass(AValue: TmnCompressStreamProxyClass);
 begin
   if FCompressClass <> nil then
     raise TmodModuleException.Create('Compress class is already set!');
   FCompressClass := AValue;
 end;
 
-procedure TmodCustomCommand.SetsCompressProxy(AValue: TmnCompressStreamProxy);
+procedure TmnCustomCommand.SetsCompressProxy(AValue: TmnCompressStreamProxy);
 begin
   if FCompressProxy <> nil then
     raise TmodModuleException.Create('Compress proxy is already set!');
   FCompressProxy :=AValue;
 end;
 
-destructor TmodCustomCommand.Destroy;
+destructor TmnCustomCommand.Destroy;
 begin
   FreeAndNil(FRespond);
   inherited;
 end;
 
-constructor TmodCustomCommand.Create(ARequest: TmodRequest; aStream: TmnConnectionStream);
+constructor TmnCustomCommand.Create(ARequest: TmodRequest; aStream: TmnConnectionStream);
 begin
   inherited Create;
   FRequest := ARequest; //do not free
@@ -909,7 +957,7 @@ begin
   FRespond.SetStream(AStream, True);
 end;
 
-procedure TmodCustomCommand.Created;
+procedure TmnCustomCommand.Created;
 begin
   inherited;
   UseKeepAlive := klvUndefined;
@@ -917,21 +965,36 @@ begin
   UseWebSocket := True;
 end;
 
-function TmodCustomCommand.CreateRequest: TmodRequest;
+function TmnCustomCommand.CreateRequest: TmodRequest;
 begin
   Result := TmodRequest.Create(Self);
 end;
 
-function TmodCustomCommand.CreateRespond: TmodRespond;
+function TmnCustomCommand.CreateRespond: TmodRespond;
 begin
   Result := TmodRespond.Create(Self);
 end;
 
-procedure TmodCustomCommand.DoHeaderReceived(Sender: TmodCommunicate);
+procedure TmnCustomCommand.DoHeaderReceived(Sender: TmodCommunicate);
 begin
+  if Chunked then
+  begin
+    if ChunkedProxy <> nil then
+      ChunkedProxy.Enable
+    else
+    begin
+      ChunkedProxy := TmnChunkStreamProxy.Create;
+      Sender.Stream.AddProxy(ChunkedProxy);
+    end;
+  end
+  else
+  begin
+    if ChunkedProxy <> nil then
+      ChunkedProxy.Disable;
+  end;
 end;
 
-procedure TmodCustomCommand.DoHeaderSent(Sender: TmodCommunicate);
+procedure TmnCustomCommand.DoHeaderSent(Sender: TmodCommunicate);
 begin
   if CompressClass <> nil then
   begin
@@ -945,7 +1008,7 @@ begin
   end;
 end;
 
-procedure TmodCustomCommand.DoPrepareHeader(Sender: TmodCommunicate);
+procedure TmnCustomCommand.DoPrepareHeader(Sender: TmodCommunicate);
 begin
 end;
 
@@ -959,9 +1022,9 @@ begin
   Result := inherited Add(aItem);
 end;
 
-{ TmodCommand }
+{ TwebCommand }
 
-function TmodCommand.Execute: TmodRespondResult;
+function TwebCommand.Execute: TmodRespondResult;
 begin
   Result.Status := []; //default to be not keep alive, not sure, TODO
   Prepare(Result);
@@ -969,17 +1032,19 @@ begin
   Unprepare(Result);
 end;
 
-procedure TmodCommand.Prepare(var Result: TmodRespondResult);
+procedure TwebCommand.Prepare(var Result: TmodRespondResult);
 begin
 end;
 
-procedure TmodCommand.RespondResult(var Result: TmodRespondResult);
+procedure TwebCommand.RespondResult(var Result: TmodRespondResult);
 begin
 end;
 
-procedure TmodCommand.Unprepare(var Result: TmodRespondResult);
+procedure TwebCommand.Unprepare(var Result: TmodRespondResult);
 begin
 end;
+
+{ TmodCommand }
 
 procedure TmodCommand.Log(S: String);
 begin
@@ -1429,7 +1494,7 @@ end;
 
 { TmodCommunicate }
 
-constructor TmodCommunicate.Create(ACommand: TmodCustomCommand);
+constructor TmodCommunicate.Create(ACommand: TmnCustomCommand);
 begin
   inherited Create;
   FCommand := ACommand;
@@ -1545,7 +1610,6 @@ begin
   for item in Header do
   begin
     s := item.GetNameValue(': ');
-    //WriteLn(s);
     Stream.WriteUTF8Line(s);
   end;
 
@@ -1620,7 +1684,7 @@ var
   s: string;
 begin
   s := Origin;
-  if s<>'*' then
+  if s <> '*' then
     Result := ExtractDomain(s)
   else
     Result := '';
@@ -1629,7 +1693,7 @@ end;
 function TmodHeader.Origin: string;
 begin
   Result := Self['Origin'];
-  if Result='' then
+  if Result = '' then
     Result := '*';
 end;
 

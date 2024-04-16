@@ -6,6 +6,11 @@ unit SendAndRecv;
 {$M+}
 {$H+}
 
+{
+  https://placehold.co/600x400/png
+  https://httpbin.org/get
+}
+
 interface
 
 uses
@@ -45,29 +50,32 @@ type
 
   TTestStream = class(TObject)
   protected
+    procedure InternalExampleSocket(WithServer: Boolean = True; WithClient: Boolean = True); //Socket threads
+
+
     procedure ExampleReadLinesFile;
     procedure ExampleReadStringsFile;
 
     procedure CopyFileWrite;
     procedure CopyFileRead;
 
-    procedure InternalExampleSocket(WithServer: Boolean = True; WithClient: Boolean = True); //Socket threads
-
     procedure ExampleSocket;
 
     procedure ExampleTimeout;
-    procedure ExampleSocketOpenStreet;
     procedure ExampleSocketTestTimeout;
     procedure ExampleSocketTestCancel;
     procedure ExamplePrintServer;
     procedure ExampleEchoAliveServer;
 
-    procedure ExampleBIOPostmanEcho;
+    procedure ExampleHttpHtml;
+    procedure ExampleHttpGz;
+    procedure ExampleSocketOpenStreet;
+    procedure ExampleHttpEcho;
+    procedure ExampleBIOHttpEcho;
+    procedure ExampleCloudFlare;
+
     procedure ExampleWriteFormData;
     procedure ExampleReadFormData;
-
-    procedure ExamplePostmanEcho;
-    procedure ExampleCloudFlare;
 
     procedure ExampleWriteReadWSFile;
     procedure ExampleWebSocket;
@@ -77,8 +85,8 @@ type
     procedure ExampleHexImage; //Hex image
     procedure ExampleCopyHexImage; //Hex image2 images and read one
 
-    procedure ExampleChunkedRead;
     procedure ExampleChunkedWrite;
+    procedure ExampleChunkedRead;
     procedure ExampleChunkedImage;
 
     procedure InternalCompressImage(GZ, WithHex: Boolean); //GZ image
@@ -425,6 +433,7 @@ begin
     WriteLn('Main: Waiting for client');
     Sender.WaitFor;
   end;
+
   if WithServer then
   begin
     WriteLn('Main: Waiting for server');
@@ -433,7 +442,6 @@ begin
 
   FreeAndNil(Reciever);
   FreeAndNil(Sender);
-
 end;
 
 function GetAnswer(Q: UTF8String; Default: Boolean = true): Boolean; overload;
@@ -848,7 +856,7 @@ begin
   InternalCompressImage(False, False);
 end;
 
-procedure TTestStream.ExamplePostmanEcho;
+procedure TTestStream.ExampleHttpHtml;
 var
   m: TStringStream;
   c: TmnHttpClient;
@@ -862,29 +870,86 @@ begin
 //    c.UserAgent := 'curl/7.83.1';
     c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.AddHeader('Accept', '*/*');
-//    c.Request.Header.Add('x-forwarded-proto', 'https');
-//    c.Request.Header.Add('x-forwarded-port', '443');
+    c.Request.AddHeader('Content-Encoding', 'deflate, gzip');
     c.UseCompressing := True;
 
     s := m.DataString;
+    c.GetString('https://httpbin.org/html', s);
 
-    //c.GetString('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896', s);
-    c.GetString('https://postman-echo.com/get?test=1', s);
-    //c.GetString('https://raw.githubusercontent.com/paramjani12/paramjani12/main/README.md', s);
-
-    //c.Get('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896');
     //c.ReadStream(m);
 
     Writeln('');
     for h in c.Respond.Header do
       Writeln('>'+h.GetNameValue);
     Writeln(s);
-
 //    Writeln(c.Respond.StatusCode.ToString);
-
   finally
     c.Free;
     m.Free;
+  end;
+end;
+
+procedure TTestStream.ExampleHttpEcho;
+var
+  m: TStringStream;
+  c: TmnHttpClient;
+  s: string;
+  h: TmnField;
+begin
+//https://httpbin.org/get
+  //https://documenter.getpostman.com/view/5025623/SWTG5aqV
+  m := TStringStream.Create;
+  c := TmnHttpClient.Create;
+  try
+//    c.UserAgent := 'curl/7.83.1';
+    c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.AddHeader('Accept', '*/*');
+//    c.Request.AddHeader('Content-Encoding', 'deflate, gzip');
+//http://www.testonline.com/index.html
+    c.UseCompressing := True;
+
+    s := m.DataString;
+//    c.GetString('http://postman-echo.com/get?test=1', s);
+    c.GetString('https://reqbin.com/echo', s);
+
+    //c.ReadStream(m);
+
+    Writeln('');
+    for h in c.Respond.Header do
+      Writeln('>'+h.GetNameValue);
+    Writeln(s);
+//    Writeln(c.Respond.StatusCode.ToString);
+  finally
+    c.Free;
+    m.Free;
+  end;
+end;
+
+procedure TTestStream.ExampleHttpGz;
+var
+  c: TmnHttpClient;
+  s: string;
+  h: TmnField;
+begin
+  //https://httpbin.org/get
+  c := TmnHttpClient.Create;
+  try
+//    c.UserAgent := 'curl/7.83.1';
+    c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.AddHeader('Accept', '*/*');
+    c.Request.AddHeader('Content-Encoding', 'deflate, gzip');
+    c.UseCompressing := True;
+
+    c.GetString('https://httpbin.org/gzip', s);
+    //c.ReadStream(m);
+
+    Writeln('');
+    for h in c.Respond.Header do
+      Writeln('>'+h.GetNameValue);
+    Writeln(s);
+//    Writeln(c.Respond.StatusCode.ToString);
+  finally
+    c.Free;
   end;
 end;
 
@@ -993,7 +1058,7 @@ begin
   end;
 end;
 
-procedure TTestStream.ExampleBIOPostmanEcho;
+procedure TTestStream.ExampleBIOHttpEcho;
 var
   c: TmnBIOHttpClient;
   s: string;
@@ -1004,7 +1069,7 @@ begin
   try
     //c.UserAgent := 'curl/7.83.1';
     c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-//    c.Request.Accept := '*/*';
+    c.Request.AddHeader('Accept', '*/*');
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
     //c.Compressing := True;
@@ -1066,8 +1131,8 @@ var
   Proxy: TmnChunkStreamProxy;
   f: TFileStream;
 begin
-
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_chunk.txt', fmOpenRead));
+  WriteLn('Use ExampleChunkedWrite to create file');
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_chunk.txt', fmShareDenyWrite or fmOpenRead));
   Proxy := TmnChunkStreamProxy.Create;
   Stream.AddProxy(Proxy);
   //ReadWriteBufferSize := 3;
@@ -1094,13 +1159,12 @@ var
   Stream: TmnBufferStream;
   Proxy: TmnChunkStreamProxy;
 begin
-
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_chunk.txt', fmCreate or fmOpenWrite));
   Proxy := TmnChunkStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
-    Stream.WriteUTF8Line('0123456789');
-    Stream.WriteUTF8Line('0123456789 kjhdkajshd kjh fdksajdf hdfjas kdfh ksdh fklsdhf ksdhf ksdhf ksdh fklshfj dffdff');
+    Stream.WriteUTF8Line('0123456789 Line 1');
+    Stream.WriteUTF8Line('0123456789 Line 2 the last Line');
   finally
     FreeAndNil(Stream);
   end;
@@ -1395,11 +1459,13 @@ begin
       Info.Address := ini.ReadString('options', 'Address', sHost);
       AddProc('Readlines Text', ExampleReadLinesFile);
       AddProc('Read Strings File', ExampleReadStringsFile);
-      AddProc('[httpclient] Download Cloud Flare ', ExampleCloudFlare);
-      AddProc('[httpclient] BIO Postman Echo ', ExampleBIOPostmanEcho);
-      AddProc('[httpclient] Postman Echo ', ExamplePostmanEcho);
-      AddProc('Line Print Server ', ExamplePrintServer);
-      AddProc('Echo Keep Alive Server ', ExampleEchoAliveServer);
+      AddProc('[httpclient] Example Http HTML', ExampleHttpHtml);
+      AddProc('[httpclient] Example Http Gz', ExampleHttpGz);
+      AddProc('[httpclient] HTTP Echo', ExampleHttpEcho);
+      AddProc('[httpclient] BIO HTTP Echo', ExampleBIOHttpEcho);
+      AddProc('[httpclient] Download Cloud Flare', ExampleCloudFlare);
+      AddProc('Line Print Server', ExamplePrintServer);
+      AddProc('Echo Keep Alive Server', ExampleEchoAliveServer);
 
       AddProc('Socket threads', ExampleSocket);
       AddProc('Timout Socket threads', ExampleTimeout);
@@ -1407,8 +1473,8 @@ begin
       AddProc('Socket Timout: Socket threads', ExampleSocketTestTimeout);
       AddProc('Socket Test Cancel', ExampleSocketTestCancel);
 
-      AddProc('Write FormData', ExampleWriteFormData);
-      AddProc('Read FormData', ExampleReadFormData);
+      AddProc('[form]Write FormData', ExampleWriteFormData);
+      AddProc('[form]Read FormData', ExampleReadFormData);
 
       AddProc('SmallBuffer: read write line with small buffer', ExampleSmallBuffer);
       AddProc('CopyHexImage: Hex image2 images and read one', ExampleCopyHexImage);
@@ -1424,9 +1490,9 @@ begin
       AddProc('GZText: GZ Text', ExampleGZText);
       AddProc('GZText: Headered Text', ExampleGzTextWithHeader);
 
-      AddProc('Chunked: Read Chunked lines', ExampleChunkedRead);
-      AddProc('Chunked: Write Chunked lines', ExampleChunkedWrite);
-      AddProc('Chunked: Image Chunked lines', ExampleChunkedImage);
+      AddProc('[Chunked] Write Chunked lines', ExampleChunkedWrite);
+      AddProc('[Chunked] Read Chunked lines', ExampleChunkedRead);
+      AddProc('[Chunked] Image Chunked lines', ExampleChunkedImage);
 
       while true do
       begin

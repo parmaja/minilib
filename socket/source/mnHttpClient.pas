@@ -33,7 +33,7 @@ type
 
   { TmnCustomHttpClient }
 
-  TmnCustomHttpClient = class abstract(TmodCustomCommand)
+  TmnCustomHttpClient = class abstract(TwebCommand)
   private
     FHost: UTF8String;
     FPort: UTF8String;
@@ -42,14 +42,13 @@ type
     FUserAgent: UTF8String;
 
     FStream: TmnConnectionStream;
-    FChunked: Boolean;
   protected
-    ChunkedProxy: TmnChunkStreamProxy;
 
     procedure DoPrepareHeader(Sender: TmodCommunicate); override;
     function DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream; virtual; abstract;
 
     function CreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
+
     procedure FreeStream; virtual;
     procedure Receive; virtual;
 
@@ -58,6 +57,7 @@ type
     procedure SendPost(vData: PByte; vCount: Cardinal);
     procedure SendGet;
     procedure SendHead;
+
     function CreateRespond: TmodRespond; override;
     procedure Created; override;
   public
@@ -95,7 +95,6 @@ type
     property Path: UTF8String read FPath write FPath;
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
     property Stream: TmnConnectionStream read FStream;
-    property Chunked: Boolean read FChunked write FChunked;
   end;
 
   { TmnCustomHttpStream }
@@ -351,7 +350,7 @@ procedure TmnCustomHttpClient.DoPrepareHeader(Sender: TmodCommunicate);
 begin
   inherited;
   Sender.Header['User-Agent'] := UserAgent;
-  Sender.Header['Host: '] := Host;
+  Sender.Header['Host'] := Host;
 end;
 
 { TmnHttpStream }
@@ -484,27 +483,8 @@ begin
 end;
 
 procedure TmnCustomHttpClient.Receive;
-var
-  s: string;
-  aCompressClass: TmnCompressStreamProxyClass;
 begin
   Respond.ReceiveHeader;
-
-  if Chunked then
-  begin
-    if ChunkedProxy <> nil then
-      ChunkedProxy.Enable
-    else
-    begin
-      ChunkedProxy := TmnChunkStreamProxy.Create;
-      Stream.AddProxy(ChunkedProxy);
-    end;
-  end
-  else
-  begin
-    if ChunkedProxy <> nil then
-      ChunkedProxy.Disable;
-  end;
 end;
 
 procedure TmnCustomHttpClient.ReceiveMemoryStream(AStream: TStream);
@@ -538,7 +518,7 @@ begin
     GetStream(vURL, m);
 
     SetLength(b, m.Size);
-    if m.Size<>0 then
+    if m.Size <> 0 then
       Move(PByte(m.Memory)^, b[0], m.Size);
     OutString := TEncoding.UTF8.GetString(b);
     Result := m.Size;

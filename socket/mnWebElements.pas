@@ -186,7 +186,7 @@ type
     function Render(Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream): Boolean; overload;
     function Render(Renderer: TmnwRenderer; Sender: TObject; AStrings: TStrings): Boolean; overload;
 
-    property Route: String read FRoute write FRoute;
+    property Route: String read FRoute write FRoute; //TODO change it to Alias
     property Name: String read FName write FName;
     property StyleClass: String read FStyleClass write FStyleClass;
     property Style: String read FStyle write FStyle;

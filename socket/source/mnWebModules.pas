@@ -114,8 +114,8 @@ type
   protected
     procedure Created; override;
     procedure Prepare(var Result: TmodRespondResult); override;
-    procedure Unprepare(var Result: TmodRespondResult); override;
     procedure RespondResult(var Result: TmodRespondResult); override;
+    procedure Unprepare(var Result: TmodRespondResult); override;
 
     function CreateRespond: TmodRespond; override;
 
