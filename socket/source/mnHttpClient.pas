@@ -454,9 +454,8 @@ function TmnCustomHttpClient.ReadStream(AStream: TStream): TFileSize;
 begin
   if Chunked and (Respond.ContentLength = 0) then
     Result := FStream.ReadStream(AStream, -1)
-  else if Respond.KeepAlive or (Respond.ContentLength > 0) then
+  else if (Respond.ContentLength > 0) and Respond.KeepAlive then //Respond.KeepAlive because we cant use compressed with keeplive or contentlength >0
   begin
-    // and (Response.ContentLength<>0) nop and Response.ContentLength=0 checked in read stream
     Result := FStream.ReadStream(AStream, Respond.ContentLength);
   end
   else
