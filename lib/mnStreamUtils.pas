@@ -22,6 +22,17 @@ uses
   mnUtils, mnStreams;
 
 type
+  { TmnPlainStreamProxy }
+
+  TmnPlainStreamProxy = class(TmnStreamOverProxy)
+    procedure CloseWrite; override;
+    procedure CloseRead; override;
+    function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+    function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+  end;
+
+  { Compressing }
+
   TmnCompressLevel = 0..9;
   TmnStreamCompress = set of (cprsRead, cprsWrite);
 
@@ -72,18 +83,13 @@ type
     property BufSize: Cardinal read FBufSize write FBufSize;
   end;
 
+  { TmnGzipStreamProxy }
+
   TmnGzipStreamProxy = class(TmnDeflateStreamProxy)
   private
   public
     constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel); override;
     class function GetCompressName: string; override;
-  end;
-
-  TmnPlainStreamProxy = class(TmnStreamOverProxy)
-    procedure CloseWrite; override;
-    procedure CloseRead; override;
-    function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
-    function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
   end;
 
   { TmnChunkStreamProxy }
@@ -102,7 +108,7 @@ type
     function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
   end;
 
-  //* WebSocket
+  { WebSocket }
 
   TmnProtcolStreamProxy = class abstract(TmnStreamOverProxy)
   public

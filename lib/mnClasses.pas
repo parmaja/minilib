@@ -63,8 +63,8 @@ type
         FIndex: Integer;
       public
         constructor Create(AList: TmnObjectList<_Object_>);
-        function GetCurrent: _Object_;
-        function MoveNext: Boolean;
+        function GetCurrent: _Object_; inline;
+        function MoveNext: Boolean; inline;
         property Current: _Object_ read GetCurrent;
       end;
 

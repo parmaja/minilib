@@ -94,11 +94,9 @@ type
     function WriteUTF8String(const vData: UTF8String): TFileSize; inline;
   end;
 
-  TTimeoutMode = (tmConnect, tmRead, tmWrite);
-
   TmnStreamClose = set of (
     cloRead, //Mark is as EOF
-    cloData, //Mark is as end of data, Chunked or Boundary
+    cloData, //Mark is as end of data, Boundary Data or End of Part of Multipart
     cloWrite //Flush buffer
   );
 
@@ -925,8 +923,8 @@ var
 begin
   Result := 0;
   RealCount := 0;
-{  if Count=0 then
-    Exit;}
+  if not Connected then
+    exit(0);
 
   aSize := Count;
   {$ifdef FPC} //less hint in fpc
@@ -934,8 +932,7 @@ begin
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
-    //while Connected do //todo use Done
-    while Connected do
+    while True do
     begin
       if (Count > 0) and (aSize < ReadWriteBufferSize) then
         l := aSize

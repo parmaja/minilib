@@ -59,6 +59,13 @@ type
 
   TmodWebModule = class;
 
+  TmodHttpRequest = class(TwebRequest)
+  protected
+    procedure Created; override;
+  public
+    procedure DoPrepareHeader; override;
+  end;
+
   THttpResult = (
     hrNone,
     hrOK,
@@ -78,26 +85,15 @@ type
 
   { TmodHttpRespond }
 
-  TmodHttpRespond = class(TmodRespond)
+  TmodHttpRespond = class(TwebRespond)
   private
-    FWebSocket: Boolean;
-    //WebSocket
-    FProtcolClass: TmnProtcolStreamProxyClass;
-    FProtcolProxy: TmnProtcolStreamProxy;
-
     FHomePath: string; //Document root folder
     FHostURL: string;
     FHttpResult: THttpResult;
     procedure SetHttpResult(const Value: THttpResult);
-    procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
   protected
     procedure Created; override;
   public
-    property WebSocket: Boolean read FWebSocket write FWebSocket;
-    //WebSocket
-    property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
-    property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy;
-
     property HttpResult: THttpResult read FHttpResult write SetHttpResult;
     //Document root folder
     property HomePath: string read FHomePath;
@@ -112,20 +108,20 @@ type
   private
     function GetRespond: TmodHttpRespond;
   protected
-    procedure Created; override;
     procedure Prepare(var Result: TmodRespondResult); override;
     procedure RespondResult(var Result: TmodRespondResult); override;
     procedure Unprepare(var Result: TmodRespondResult); override;
 
     function CreateRespond: TmodRespond; override;
 
-    procedure RespondNotFound;
-    procedure RespondNotActive;
-    procedure SendFile(const vFile: string); overload;
+    procedure RespondNotFound; virtual;
+    procedure RespondNotActive; virtual;
+
     procedure SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition = sdDefault); overload;
+    procedure SendFile(const vFile: string); overload;
+
   public
     destructor Destroy; override;
-
     property Respond: TmodHttpRespond read GetRespond;
   end;
 
@@ -185,6 +181,7 @@ type
 
   ThttpModules = class(TmodModules)
   protected
+    function CreateRequest: TmodRequest; override;
     function CheckRequest(const ARequest: string): Boolean; override;
   end;
 
@@ -347,7 +344,6 @@ begin
 {$endif}
 end;
 
-
 function URIDecode(const S: AnsiString; CodePage: Word = CP_UTF8): string;
 var
   c: AnsiChar;
@@ -396,11 +392,6 @@ begin
   Head := HttpResult.ToString;
 end;
 
-procedure TmodHttpRespond.SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
-begin
-  FProtcolClass := Value;
-end;
-
 { TmodHttpPostCommand }
 
 procedure TmodHttpPostCommand.RespondResult(var Result: TmodRespondResult);
@@ -440,7 +431,7 @@ procedure TmodWebModule.Created;
 begin
   inherited;
   UseKeepAlive := klvUndefined;
-  UseCompressing := True;
+  UseCompressing := ovlYes;
   UseWebSocket := True;
   FHomePath := '';
 end;
@@ -765,11 +756,6 @@ begin
   Result := inherited Respond as TmodHttpRespond;
 end;
 
-procedure TmodHttpCommand.Created;
-begin
-  inherited;
-end;
-
 destructor TmodHttpCommand.Destroy;
 begin
   inherited;
@@ -802,11 +788,11 @@ begin
         Respond.SendHeader;
 
         Respond.KeepAlive := True;
-        Respond.ProtcolClass := TmnWebSocket13StreamProxy;
-        Respond.FProtcolProxy := Respond.ProtcolClass.Create;
-        Respond.WebSocket := True;
+        ProtcolClass := TmnWebSocket13StreamProxy;
+        FProtcolProxy := ProtcolClass.Create;
+        WebSocket := True;
         Result.Status := Result.Status + [mrKeepAlive];
-        Respond.Stream.AddProxy(Respond.ProtcolProxy);
+        Respond.Stream.AddProxy(ProtcolProxy);
         if SendHostHeader then
           Respond.Stream.WriteUTF8String('Request served by mnWebModule');
         //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
@@ -814,19 +800,17 @@ begin
     end;
   end;
 
-  if not Respond.WebSocket then
+  if Request.KeepAlive then
   begin
-    aKeepAlive := (UseKeepAlive = klvUndefined) and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive');
-    aKeepAlive := aKeepAlive or ((UseKeepAlive = klvKeepAlive) and not SameText(Request.Header.ReadString('Connection'), 'close'));
+    Respond.KeepAlive := True;
+    Respond.AddHeader('Connection', 'Keep-Alive');
+    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(KeepAliveTimeOut div 1000) + ', max=100');
+  end;
 
-    if aKeepAlive then
-    begin
-      Respond.KeepAlive := True;
-      Respond.AddHeader('Connection', 'Keep-Alive');
-      Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(KeepAliveTimeOut div 1000) + ', max=100');
-    end;
-
-    if not aKeepAlive and UseCompressing then
+  if not WebSocket then
+  begin
+    //Compressing
+    if not Respond.KeepAlive and (UseCompressing in [ovlUndefined, ovlYes]) then
     begin
       if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
         CompressClass := TmnGzipStreamProxy
@@ -837,9 +821,6 @@ begin
       if CompressClass <> nil then
         Respond.AddHeader('Content-Encoding', CompressClass.GetCompressName);
     end;
-
-    if (Request.Header.Field['Content-Length'].IsExists) then
-      Request.ContentLength := Request.Header.Field['Content-Length'].AsInteger;
   end;
 end;
 
@@ -848,7 +829,7 @@ var
   aParams: TmnParams;
 begin
   inherited;
-  if Respond.WebSocket then
+  if WebSocket then
   begin
   end
   else
@@ -957,13 +938,9 @@ procedure TmodHttpCommand.RespondNotActive;
 var
   Body: string;
 begin
-  Respond.HttpResult := hrOK;
-  Respond.AddHeader('Content-Type', 'text/html');
-  Respond.SendHeader;
-  Body := '<HTML><HEAD><TITLE>404 Not Active</TITLE></HEAD>' +
-    '<BODY><H1>404 Not Found</H1>The requested URL ' +
-    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
-  Respond.Stream.WriteUTF8(UTF8Encode(Body));
+  Respond.HttpResult := hrOK; //hrError
+  Respond.AddHeader('Content-Type', 'text/plain');
+  Respond.Stream.WriteUTF8('404 Not Active');
   Respond.KeepAlive := False;
 end;
 
@@ -971,13 +948,9 @@ procedure TmodHttpCommand.RespondNotFound;
 var
   Body: string;
 begin
-  Respond.HttpResult := hrOK;
-  Respond.AddHeader('Content-Type', 'text/html');
-  Respond.SendHeader;
-  Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
-    '<BODY><H1>404 Not Found</H1>The requested URL ' +
-    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
-  Respond.Stream.WriteUTF8(UTF8Encode(Body));
+  Respond.HttpResult := hrOK; //hrError
+  Respond.AddHeader('Content-Type', 'text/plain');
+  Respond.Stream.WriteUTF8String('404 Not Found');
   Respond.KeepAlive := False;
 end;
 
@@ -1079,6 +1052,28 @@ begin
 end;
 
 { TmodHttpRequest }
+
+function ThttpModules.CreateRequest: TmodRequest;
+begin
+  Result := TmodHttpRequest.Create(nil);
+end;
+
+procedure TmodHttpRequest.DoPrepareHeader;
+begin
+  inherited;
+  PutHeader('User-Agent', UserAgent);
+  if Parent.UseCompressing = ovlYes then
+    PutHeader('Accept-Encoding', 'deflate, gzip');
+end;
+
+{ TmodHttpRequest }
+
+procedure TmodHttpRequest.Created;
+begin
+  inherited;
+  Accept := '*/*';
+  UserAgent := sUserAgent;
+end;
 
 initialization
   modLock := TCriticalSection.Create;

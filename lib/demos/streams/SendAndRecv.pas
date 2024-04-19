@@ -9,6 +9,7 @@ unit SendAndRecv;
 {
   https://placehold.co/600x400/png
   https://httpbin.org/get
+  https://documenter.getpostman.com/view/5025623/SWTG5aqV
 }
 
 interface
@@ -16,6 +17,7 @@ interface
 uses
   Classes, SysUtils, IniFiles,
   mnUtils, mnStreams, mnMultipartData, mnHttpClient, mnWebModules, mnFields, mnHeaders,
+  mnModules,
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 {$ifdef GUI}
@@ -322,7 +324,7 @@ var
   s: UTF8String;
   ss: string;
 begin
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test.txt', fmOpenRead));
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\test.txt', fmOpenRead));
   try
     Stream.ReadBufferSize := 5;
     Stream.ReadLine(s);
@@ -358,12 +360,12 @@ var
   CompressProxy: TmnDeflateStreamProxy;
 begin
   if GZ then
-    cFile := Location + 'image.gz'
+    cFile := Location + 'test\image.gz'
   else
-    cFile := Location + 'image.inflate';
+    cFile := Location + 'test\image.inflate';
   //image.gz is a compressed file of hex file of image
   WriteLn('Read image to compressed file');
-  aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
+  aImageFile := TFileStream.Create(Location + 'test\image.jpg', fmOpenRead);
   Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmCreate or fmOpenWrite));
   if GZ then
     CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9)
@@ -388,7 +390,7 @@ begin
 //---------------------------------------------------------
 
   WriteLn('Read compressed file to image');
-  aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
+  aImageFile := TFileStream.Create(Location + 'test\image_copy.jpg', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmOpenRead));
   if GZ then
     CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9)
@@ -585,7 +587,7 @@ begin
         begin
           if s ='' then
           begin
-            aFile := TFileStream.Create(Location + 'map.png', fmCreate or fmOpenWrite);
+            aFile := TFileStream.Create(Location + 'test\map.png', fmCreate or fmOpenWrite);
             try
               Stream.CopyToStream(aFile);
             finally
@@ -642,9 +644,9 @@ var
   HexProxy: TmnHexStreamProxy;
   CompressProxy: TmnDeflateStreamProxy;
 begin
-  cFile := Location + 'image.gz';
+  cFile := Location + 'test\image.gz';
   WriteLn('Read compressed file to image');
-  aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
+  aImageFile := TFileStream.Create(Location + 'test\image_copy.jpg', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmOpenRead));
   CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9);
   Stream.AddProxy(CompressProxy);
@@ -794,7 +796,7 @@ begin
   end;
 
   WriteLn('Reading WS File');
-  f := TmnWrapperStream.Create(TFileStream.Create(Application.Location + 'ws.file', fmOpenRead));
+  f := TmnWrapperStream.Create(TFileStream.Create(Application.Location + 'test\ws.file', fmOpenRead));
   try
     Proxy := TmnWebSocket13StreamProxy.Create(False);
     f.AddProxy(Proxy);
@@ -825,7 +827,7 @@ var
   Proxy: TmnHexStreamProxy;
   S: UTF8String;
 begin
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_hex.txt', fmCreate or fmOpenWrite));
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\test_hex.txt', fmCreate or fmOpenWrite));
   Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
@@ -837,7 +839,7 @@ begin
   end;
 
 
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_hex.txt', fmOpenRead));
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\test_hex.txt', fmOpenRead));
   Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
@@ -868,10 +870,9 @@ begin
   c := TmnHttpClient.Create;
   try
 //    c.UserAgent := 'curl/7.83.1';
-    c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-    c.Request.AddHeader('Accept', '*/*');
-    c.Request.AddHeader('Content-Encoding', 'deflate, gzip');
-    c.UseCompressing := True;
+    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.PutHeader('Content-Encoding', 'deflate, gzip');
+    c.UseCompressing := ovlYes;
 
     s := m.DataString;
     c.GetString('https://httpbin.org/html', s);
@@ -881,8 +882,8 @@ begin
     Writeln('');
     for h in c.Respond.Header do
       Writeln('>'+h.GetNameValue);
+
     Writeln(s);
-//    Writeln(c.Respond.StatusCode.ToString);
   finally
     c.Free;
     m.Free;
@@ -896,23 +897,21 @@ var
   s: string;
   h: TmnField;
 begin
-//https://httpbin.org/get
-  //https://documenter.getpostman.com/view/5025623/SWTG5aqV
   m := TStringStream.Create;
   c := TmnHttpClient.Create;
   try
 //    c.UserAgent := 'curl/7.83.1';
-    c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.AddHeader('Accept', '*/*');
-//    c.Request.AddHeader('Content-Encoding', 'deflate, gzip');
-//http://www.testonline.com/index.html
-    c.UseCompressing := True;
+    c.UseCompressing := ovlYes;
 
-    s := m.DataString;
-//    c.GetString('http://postman-echo.com/get?test=1', s);
-    c.GetString('https://reqbin.com/echo', s);
+    c.GetString('http://postman-echo.com/get?test=1', s);
+//    c.GetString('https://reqbin.com/echo', s);
 
     //c.ReadStream(m);
+    Writeln('');
+    for h in c.Request.Header do
+      Writeln('<'+h.GetNameValue);
 
     Writeln('');
     for h in c.Respond.Header do
@@ -930,24 +929,34 @@ var
   c: TmnHttpClient;
   s: string;
   h: TmnField;
+  i: Integer;
 begin
   //https://httpbin.org/get
   c := TmnHttpClient.Create;
   try
 //    c.UserAgent := 'curl/7.83.1';
-    c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-    c.Request.AddHeader('Accept', '*/*');
-    c.Request.AddHeader('Content-Encoding', 'deflate, gzip');
-    c.UseCompressing := True;
+    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+//    c.UseCompressing := True;
+    c.UseCompressing := ovlYes;
+    c.UseKeepAlive := klvClose;
 
-    c.GetString('https://httpbin.org/gzip', s);
+    c.GetString('http://httpbin.org/gzip', s);
+//    c.GetFile('http://httpbin.org/gzip', Location+'test\file.gz');
     //c.ReadStream(m);
+
+//    Writeln('Result' + c.Respond.StatusCode.ToString);
+    h := nil;
+
+    for h in c.Request.Header do
+      Writeln('<'+h.GetNameValue);
 
     Writeln('');
     for h in c.Respond.Header do
       Writeln('>'+h.GetNameValue);
+
+    Writeln('');
     Writeln(s);
-//    Writeln(c.Respond.StatusCode.ToString);
+
   finally
     c.Free;
   end;
@@ -993,7 +1002,7 @@ var
   t: Cardinal;
   s: UTF8String;
 begin
-  aTextFile := TFileStream.Create(Location + 'small.json', fmOpenRead);
+  aTextFile := TFileStream.Create(Location + 'test\small.json', fmOpenRead);
   Stream := TmnWrapperStream.Create(aTextFile, True);
   try
     while Stream.ReadLine(s) do
@@ -1014,7 +1023,7 @@ var
   s: UTF8String;
   aStrings: TStringList;
 begin
-  aTextFile := TFileStream.Create(Location + 'small.json', fmOpenRead);
+  aTextFile := TFileStream.Create(Location + 'test\small.json', fmOpenRead);
   Stream := TmnWrapperStream.Create(aTextFile, True);
   aStrings := TStringList.Create;
   try
@@ -1034,8 +1043,8 @@ var
   Proxy: TmnHexStreamProxy;
 begin
   WriteLn('Read image to hex file');
-  aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmCreate or fmOpenWrite));
+  aImageFile := TFileStream.Create(Location + 'test\image.jpg', fmOpenRead);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\image_hex.txt', fmCreate or fmOpenWrite));
   Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
@@ -1046,8 +1055,8 @@ begin
   end;
 
   WriteLn('Read hex file to image');
-  aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmOpenRead));
+  aImageFile := TFileStream.Create(Location + 'test\image_copy.jpg', fmCreate or fmOpenWrite);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\image_hex.txt', fmOpenRead));
   Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
@@ -1068,7 +1077,7 @@ begin
   c := TmnBIOHttpClient.Create;
   try
     //c.UserAgent := 'curl/7.83.1';
-    c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.AddHeader('Accept', '*/*');
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
@@ -1112,8 +1121,8 @@ begin
   end;
 
   WriteLn('Read hex file to image');
-  aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmOpenRead));
+  aImageFile := TFileStream.Create(Location + 'test\image_copy.jpg', fmCreate or fmOpenWrite);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\image_hex.txt', fmOpenRead));
   Proxy := TmnChunkStreamProxy.Create;
   Stream.AddProxy(Proxy);
   Stream.AddProxy(TmnHexStreamProxy.Create);
@@ -1132,7 +1141,7 @@ var
   f: TFileStream;
 begin
   WriteLn('Use ExampleChunkedWrite to create file');
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_chunk.txt', fmShareDenyWrite or fmOpenRead));
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\test_chunk.txt', fmShareDenyWrite or fmOpenRead));
   Proxy := TmnChunkStreamProxy.Create;
   Stream.AddProxy(Proxy);
   //ReadWriteBufferSize := 3;
@@ -1159,7 +1168,7 @@ var
   Stream: TmnBufferStream;
   Proxy: TmnChunkStreamProxy;
 begin
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_chunk.txt', fmCreate or fmOpenWrite));
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\test_chunk.txt', fmCreate or fmOpenWrite));
   Proxy := TmnChunkStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
@@ -1181,7 +1190,7 @@ begin
   c := TmnHttpClient.Create;
   try
     //c.UserAgent := 'curl/7.83.1';
-    c.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
 //    c.Request.Accept := '*/*';
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
@@ -1222,8 +1231,8 @@ var
   aSize: Integer;
 begin
   WriteLn('Read image to hex file');
-  aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmCreate or fmOpenWrite));
+  aImageFile := TFileStream.Create(Location + 'test\image.jpg', fmOpenRead);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\image_hex.txt', fmCreate or fmOpenWrite));
   Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
@@ -1237,14 +1246,14 @@ begin
   end;
 
   WriteLn('Read hex file to image');
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmOpenRead));
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\image_hex.txt', fmOpenRead));
   Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
-    aImageFile := TFileStream.Create(Location + 'image_copy1.jpg', fmCreate or fmOpenWrite);
+    aImageFile := TFileStream.Create(Location + 'test\image_copy1.jpg', fmCreate or fmOpenWrite);
     Stream.ReadStream(aImageFile, aSize);
     FreeAndNil(aImageFile);
-    aImageFile := TFileStream.Create(Location + 'image_copy2.jpg', fmCreate or fmOpenWrite);
+    aImageFile := TFileStream.Create(Location + 'test\image_copy2.jpg', fmCreate or fmOpenWrite);
     Stream.ReadStream(aImageFile, aSize);
     FreeAndNil(aImageFile);
   finally
@@ -1300,10 +1309,10 @@ var
   HexProxy: TmnHexStreamProxy;
   CompressProxy: TmnDeflateStreamProxy;
 begin
-  cFile := Location + 'file.gz';
+  cFile := Location + 'test\formdata1.gz';
   //image.gz is a compressed file of hex file of image
   WriteLn('Read text to compressed file');
-  aTextFile := TFileStream.Create(Location + 'file.txt', fmOpenRead);
+  aTextFile := TFileStream.Create(Location + 'test\formdata1.txt', fmOpenRead);
   Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmCreate or fmOpenWrite));
   CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9);
   Stream.AddProxy(CompressProxy);
@@ -1318,7 +1327,7 @@ begin
 //---------------------------------------------------------
 
   WriteLn('Read compressed file to image');
-  aTextFile := TFileStream.Create(Location + 'file_copy.txt', fmCreate or fmOpenWrite);
+  aTextFile := TFileStream.Create(Location + 'test\formdata1_copy.txt', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmOpenRead));
   CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9);
   Stream.AddProxy(CompressProxy);
@@ -1341,7 +1350,7 @@ var
   b: TBytes;
   c: Integer;
 begin
-  aTextFile := TFileStream.Create(Location + 'header.txt', fmOpenRead);
+  aTextFile := TFileStream.Create(Location + 'test\header.txt', fmOpenRead);
   Stream := TmnWrapperStream.Create(aTextFile, True);
   aProxy := TmnPlainStreamProxy.Create;
 
@@ -1372,8 +1381,8 @@ var
   Stream1: TmnBufferStream;
   Stream2: TFileStream;
 begin
-  Stream1 := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite));
-  Stream2 := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
+  Stream1 := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\image_copy.jpg', fmCreate or fmOpenWrite));
+  Stream2 := TFileStream.Create(Location + 'test\image.jpg', fmOpenRead);
   try
     Stream1.CopyFromStream(Stream2);
   finally
@@ -1389,8 +1398,8 @@ var
   Stream1: TmnBufferStream;
   Stream2: TFileStream;
 begin
-  Stream1 := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.jpg', fmOpenRead));
-  Stream2 := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
+  Stream1 := TmnWrapperStream.Create(TFileStream.Create(Location + 'test\image.jpg', fmOpenRead));
+  Stream2 := TFileStream.Create(Location + 'test\image_copy.jpg', fmCreate or fmOpenWrite);
   try
     Stream1.CopyToStream(Stream2);
 

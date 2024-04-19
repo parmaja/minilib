@@ -4,7 +4,6 @@ unit mnHttpClient;
   *
   * @license   MIT
   *            See the file COPYING.MLGPL, included in this distribution,
-  * @author    initial work Jihad Khlaifa <jkhalifa at gmail dot com>
   * @author    Zaher Dirkey zaherdirkey
   * @author    Belal Hamed <belal, belalhamed@gmail.com>
   * }
@@ -35,19 +34,16 @@ type
 
   TmnCustomHttpClient = class abstract(TwebCommand)
   private
-    FHost: UTF8String;
     FPort: UTF8String;
     FPath: UTF8String;
     FProtocol: UTF8String;
-    FUserAgent: UTF8String;
 
     FStream: TmnConnectionStream;
+    function GetRequest: TmodHttpRequest;
   protected
+    function DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream; virtual; abstract;
 
-    procedure DoPrepareHeader(Sender: TmodCommunicate); override;
-    function DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream; virtual; abstract;
-
-    function CreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
+    function CreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 
     procedure FreeStream; virtual;
     procedure Receive; virtual;
@@ -58,6 +54,7 @@ type
     procedure SendGet;
     procedure SendHead;
 
+    function CreateRequest: TmodRequest; override;
     function CreateRespond: TmodRespond; override;
     procedure Created; override;
   public
@@ -89,12 +86,11 @@ type
     procedure GetMemoryStream(const vURL: UTF8String; OutStream: TMemoryStream);
     procedure SendFile(const vURL: UTF8String; AFileName: UTF8String);
 
-    property Host: UTF8String read FHost write FHost;
-    property Port: UTF8String read FPort write FPort;
     property Protocol: UTF8String read FProtocol write FProtocol;
+    property Port: UTF8String read FPort write FPort;
     property Path: UTF8String read FPath write FPath;
-    property UserAgent: UTF8String read FUserAgent write FUserAgent;
     property Stream: TmnConnectionStream read FStream;
+    property Request: TmodHttpRequest read GetRequest;
   end;
 
   { TmnCustomHttpStream }
@@ -118,7 +114,7 @@ type
 
   TmnHttpClient = class(TmnCustomHttpClient)
   protected
-    function DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream; override;
+    function DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream; override;
   end;
 
   TmnBIOHttpStream = class(TmnConnectionStream)
@@ -147,7 +143,7 @@ type
 
   TmnBIOHttpClient = class(TmnCustomHttpClient)
   public
-    function DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream; override;
+    function DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream; override;
   end;
 
 function HttpDownloadFile(URL: string; FileName: string): TFileSize;
@@ -156,10 +152,6 @@ function HttpGetFileSize(URL: string; out FileSize: TFileSize): Boolean;
 function BIO_HttpDownloadFile(URL: string; FileName: string): TFileSize;
 
 implementation
-
-const
-  ProtocolVersion = 'HTTP/1.1'; //* Capital letter
-  sUserAgent = 'Mozilla/5.0';
 
 function HttpDownloadFile(URL: string; FileName: string): TFileSize;
 var
@@ -263,13 +255,13 @@ begin
   end;
 end;
 
-procedure ParseURL(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String);
+procedure ParseURL(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String);
 var
   p: PUTF8Char;
   l: Integer;
 begin
   vProtocol := '';
-  vAddress := '';
+  vHost := '';
   vPort := '';
   vParams := '';
 
@@ -280,8 +272,8 @@ begin
 
   if l > 0 then
   begin
-    vAddress := GetUrlPart(p, l, ':', ['/']);
-    if vAddress <> '' then
+    vHost := GetUrlPart(p, l, ':', ['/']);
+    if vHost <> '' then
     begin
       vPort := GetUrlPart(p, l, '/', []);
       if vPort = '' then
@@ -292,10 +284,10 @@ begin
     end
     else
     begin
-      vAddress := GetUrlPart(p, l, '/', []);
-      if vAddress = '' then
+      vHost := GetUrlPart(p, l, '/', []);
+      if vHost = '' then
       begin
-        SetString(vAddress, p, l);
+        SetString(vHost, p, l);
         l := 0;
       end;
     end;
@@ -346,13 +338,6 @@ begin
   SendCommand('HEAD', nil, 0);
 end;
 
-procedure TmnCustomHttpClient.DoPrepareHeader(Sender: TmodCommunicate);
-begin
-  inherited;
-  Sender.Header['User-Agent'] := UserAgent;
-  Sender.Header['Host'] := Host;
-end;
-
 { TmnHttpStream }
 {$ifdef FPC}
 function TmnHttpStream.Seek(Offset: longint; Origin: Word): Integer;
@@ -375,20 +360,12 @@ begin
 end;
 
 procedure TmnCustomHttpClient.Connect(const vURL: UTF8String);
+var
+  aHost: UTF8String;
 begin
   if FStream = nil then
-    FStream := CreateStream(vURL, FProtocol, FHost, FPort, FPath);
-
-  case UseKeepAlive of
-    klvUndefined: ; //TODO
-    klvKeepAlive:
-    begin
-      Request.Header['Connection'] := 'Keep-Alive';
-      //Keep-Alive: timeout=1200
-    end;
-    klvClose:
-      Request.Header['Connection'] := 'close';
-  end;
+    FStream := CreateStream(vURL, FProtocol, aHost, FPort, FPath);
+  Request.Host := aHost;
   Stream.Connect;
 end;
 
@@ -403,9 +380,9 @@ begin
     Receive;
 end;
 
-function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
+function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 begin
-  Result := DoCreateStream(vURL, vProtocol, vAddress, vPort, vParams);
+  Result := DoCreateStream(vURL, vProtocol, vHost, vPort, vParams);
   Request.SetStream(Result, True);
   Respond.SetStream(Result, False);
 end;
@@ -426,7 +403,11 @@ end;
 procedure TmnCustomHttpClient.Created;
 begin
   inherited;
-  FUserAgent := sUserAgent;
+end;
+
+function TmnCustomHttpClient.CreateRequest: TmodRequest;
+begin
+  Result := TmodhttpRequest.Create(Self);
 end;
 
 function TmnCustomHttpClient.CreateRespond: TmodRespond;
@@ -570,6 +551,11 @@ begin
   OutStream.Seek(0, soFromBeginning);
 end;
 
+function TmnCustomHttpClient.GetRequest: TmodHttpRequest;
+begin
+  Result := inherited Request as TmodHttpRequest;
+end;
+
 procedure TmnCustomHttpClient.SendFile(const vURL: UTF8String; AFileName: UTF8String);
 begin
   //TODO
@@ -577,7 +563,7 @@ end;
 
 { TmnHttpClient }
 
-function TmnHttpClient.DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
+function TmnHttpClient.DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 var
   aStream: TmnHttpStream;
 begin
@@ -589,9 +575,9 @@ begin
   aStream.WriteTimeout   := 5000;
   aStream.Options := aStream.Options + [soWaitBeforeRead];
 
-  ParseURL(vURL, FProtocol, FHost, FPort, FPath);
-  aStream.Address := Host;
-  aStream.Port := Port;
+  ParseURL(vURL, vProtocol, vHost, vPort, FPath);
+  aStream.Address := vHost;
+  aStream.Port := vPort;
 
   aStream.Options := aStream.Options + [soNoDelay];
   if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
@@ -604,7 +590,7 @@ end;
 
 { TmnBIOHttpClient }
 
-function TmnBIOHttpClient.DoCreateStream(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String): TmnConnectionStream;
+function TmnBIOHttpClient.DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 var
   aStream: TmnBIOHttpStream;
 begin
@@ -616,9 +602,9 @@ begin
   aStream.WriteTimeout   := 5000;
   //aStream.Options := aStream.Options + [soWaitBeforeRead];
 
-  ParseURL(vURL, FProtocol, FHost, FPort, FPath);
-  aStream.Address := Host;
-  aStream.Port := Port;
+  ParseURL(vURL, vProtocol, vHost, vPort, FPath);
+  aStream.Address := vHost;
+  aStream.Port := vPort;
 
 {  aStream.Options := aStream.Options + [soNoDelay];
   if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then

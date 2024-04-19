@@ -249,7 +249,7 @@ procedure TWSEchoGetHomeCommand.RespondResult(var Result: TmodRespondResult);
 var
   s: string;
 begin
-  if Respond.WebSocket then
+  if WebSocket then
   begin
     //Request.Path := DeleteSubPath(Name, Request.Path);
     while Respond.Stream.Connected do
