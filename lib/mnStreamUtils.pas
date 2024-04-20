@@ -301,7 +301,11 @@ begin
           break;
         end
         else if err <> Z_OK then
+        begin
+          ZEnd := True;
+          CloseData;
           raise Exception.Create(String(zerror(err)));
+        end;
       end;
       ResultCount := Count - Integer(ZStream.avail_out);
     end;
