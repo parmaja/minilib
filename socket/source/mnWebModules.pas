@@ -809,8 +809,14 @@ begin
 
   if not WebSocket then
   begin
-    //Compressing
     if not Respond.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then
+    begin
+      if CompressClass <> nil then
+        Respond.AddHeader('Content-Encoding', CompressClass.GetCompressName);
+    end;
+
+    //Compressing
+    {if not Respond.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then
     begin
       if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
         CompressClass := TmnGzipStreamProxy
@@ -820,7 +826,7 @@ begin
         CompressClass := nil;
       if CompressClass <> nil then
         Respond.AddHeader('Content-Encoding', CompressClass.GetCompressName);
-    end;
+    end;}
   end;
 end;
 

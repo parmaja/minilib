@@ -254,7 +254,6 @@ type
     procedure DoSendHeader(Sender: TmodCommunicate); virtual;
     procedure DoHeaderSent(Sender: TmodCommunicate); virtual;
 
-    procedure DoReceiveHeader(Sender: TmodCommunicate); virtual;
     procedure DoHeaderReceived(Sender: TmodCommunicate); virtual;
 
     function CreateRequest: TmodRequest; virtual;
@@ -265,7 +264,7 @@ type
     UseKeepAlive: TmodKeepAlive;
     UseCompressing: TmodOptionValue;
     UseWebSocket: Boolean;
-    constructor Create(ARequest: TmodRequest; aStream: TmnConnectionStream = nil);
+    constructor Create(ARequest: TmodRequest; AStream: TmnConnectionStream = nil);
     destructor Destroy; override;
 
     property ChunkedProxy: TmnChunkStreamProxy read FChunkedProxy write SetChunkedProxy;
@@ -293,7 +292,7 @@ type
   TwebRequest = class(TmodRequest)
   private
     FAccept: String;
-    FHost: UTF8String;
+    FHost: string;
     FUserAgent: UTF8String;
   protected
     procedure DoPrepareHeader; override; //Called by Client
@@ -301,7 +300,7 @@ type
     procedure DoHeaderReceived; override; //Called by Server
     procedure Created; override;
   public
-    property Host: UTF8String read FHost write FHost;
+    property Host: string read FHost write FHost;
     property Accept: String read FAccept write FAccept;
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
   end;
@@ -980,13 +979,17 @@ begin
   inherited;
 end;
 
-constructor TmnCustomCommand.Create(ARequest: TmodRequest; aStream: TmnConnectionStream);
+constructor TmnCustomCommand.Create(ARequest: TmodRequest; AStream: TmnConnectionStream);
 begin
   inherited Create;
   FRequest := ARequest; //do not free
-  if FRequest <> nil then
-    FRequest.FParent := Self
-  else
+  if FRequest <> nil then //like webserver
+  begin
+    FRequest.FParent := Self;
+    FRequest.DoHeaderReceived;
+    DoHeaderReceived(ARequest);
+  end
+  else //like httpclient
   begin
     FRequest := CreateRequest;
     FRequest.SetStream(AStream, False);
@@ -1031,6 +1034,22 @@ begin
     if ChunkedProxy <> nil then
       ChunkedProxy.Disable;
   end;
+
+  if CompressClass <> nil then
+  begin
+    if CompressProxy <> nil then
+      CompressProxy.Enable
+    else
+    begin
+      CompressProxy := CompressClass.Create([cprsRead], 9);
+      Sender.Stream.AddProxy(CompressProxy);
+    end;
+  end
+  else
+  begin
+    if CompressProxy <> nil then
+      CompressProxy.Disable;
+  end;
 end;
 
 procedure TmnCustomCommand.DoHeaderSent(Sender: TmodCommunicate);
@@ -1038,10 +1057,6 @@ begin
 end;
 
 procedure TmnCustomCommand.DoPrepareHeader(Sender: TmodCommunicate);
-begin
-end;
-
-procedure TmnCustomCommand.DoReceiveHeader(Sender: TmodCommunicate);
 begin
 end;
 
@@ -1591,15 +1606,12 @@ procedure TmodCommunicate.ReceiveHeader;
 begin
   Header.ReadHeader(Stream);
 
-  Cookies.DelimitedText := Header['Cookie'];
-
   DoReceiveHeader;
-  if Parent <> nil then
-    Parent.DoReceiveHeader(Self);
-
-  DoHeaderReceived;
-  if Parent <> nil then
+  if Parent <> nil then { TODO : taskeej need review }
+  begin
+    DoHeaderReceived; //is called when assign parent
     Parent.DoHeaderReceived(Self);
+  end;
 end;
 
 procedure TmodCommunicate.SendHead;
@@ -1772,11 +1784,29 @@ begin
 end;
 
 procedure TwebRequest.DoHeaderReceived;
+var
+  aCompressClass: TmnCompressStreamProxyClass;
 begin
   inherited;
+  Cookies.DelimitedText := Header['Cookie'];
+
   FAccept := Header.ReadString('Connection');
   KeepAlive := (Parent.UseKeepAlive = klvUndefined) and SameText(Header.ReadString('Connection'), 'Keep-Alive');
   KeepAlive := KeepAlive or ((Parent.UseKeepAlive = klvKeepAlive) and not SameText(Header.ReadString('Connection'), 'close'));
+
+  Parent.Chunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
+
+  if Parent.UseCompressing in [ovUndefined, ovYes] then
+  begin
+    if Header.Field['Accept-Encoding'].Have('gzip', [',']) then
+      aCompressClass := TmnGzipStreamProxy
+    else if Header.Field['Accept-Encoding'].Have('deflate', [',']) then
+      aCompressClass := TmnDeflateStreamProxy
+    else
+      aCompressClass := nil;
+
+    Parent.CompressClass := aCompressClass;
+  end;
 end;
 
 procedure TwebRequest.DoPrepareHeader;
@@ -1805,7 +1835,6 @@ var
   s: UTF8String;
 begin
   inherited;
-  Cookies.Delimiter := ';';
   s := UTF8Encode(Cookies.DelimitedText);
   if s <> '' then
     Stream.WriteUTF8Line('Cookie: ' + s);
@@ -1854,21 +1883,7 @@ begin
     else
       aCompressClass := nil;
 
-    if aCompressClass <> nil then
-    begin
-      if Parent.CompressProxy <> nil then
-        Parent.CompressProxy.Enable
-      else
-      begin
-        Parent.CompressProxy := aCompressClass.Create([cprsRead], 9);
-        Stream.AddProxy(Parent.CompressProxy);
-      end;
-    end
-    else
-    begin
-      if Parent.CompressProxy <> nil then
-        Parent.CompressProxy.Disable;
-    end;
+    Parent.CompressClass := aCompressClass;
   end;
 end;
 
