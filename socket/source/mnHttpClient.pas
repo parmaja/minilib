@@ -40,6 +40,7 @@ type
 
     FStream: TmnConnectionStream;
     function GetRequest: TmodHttpRequest;
+    function GetRespond: TmodHttpRespond;
   protected
     function DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream; virtual; abstract;
 
@@ -68,6 +69,9 @@ type
     function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
     function Post(const vURL: UTF8String; vData: UTF8String): Boolean; overload;
 
+    function Patch(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
+    function Patch(const vURL: UTF8String; vData: UTF8String): Boolean; overload;
+
     function Get(const vURL: UTF8String): Boolean;
 
     function ReadStream(AStream: TStream): TFileSize; overload;
@@ -91,6 +95,7 @@ type
     property Path: UTF8String read FPath write FPath;
     property Stream: TmnConnectionStream read FStream;
     property Request: TmodHttpRequest read GetRequest;
+    property Respond: TmodHttpRespond read GetRespond;
   end;
 
   { TmnCustomHttpStream }
@@ -369,17 +374,6 @@ begin
   Stream.Connect;
 end;
 
-function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
-begin
-  Connect(vUrl);
-
-  SendPost(vData, vCount);
-  //
-  Result := Stream.Connected;
-  if Result then
-    Receive;
-end;
-
 function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 begin
   Result := DoCreateStream(vURL, vProtocol, vHost, vPort, vParams);
@@ -435,9 +429,39 @@ begin
   Result := Stream.Connected;
 end;
 
+function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
+begin
+  Connect(vUrl);
+
+  SendPost(vData, vCount);
+  //
+  Result := Stream.Connected;
+  if Result then
+  begin
+    Receive;
+  end;
+end;
+
+
 function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
 begin
   Result := Post(vURL, PByte(vData), Length(vData));
+end;
+
+function TmnCustomHttpClient.Patch(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
+begin
+  Connect(vUrl);
+
+  SendPatch(vData, vCount);
+  //
+  Result := Stream.Connected;
+  if Result then
+    Receive;
+end;
+
+function TmnCustomHttpClient.Patch(const vURL: UTF8String; vData: UTF8String): Boolean;
+begin
+  Result := Patch(vURL, PByte(vData), Length(vData));
 end;
 
 procedure TmnCustomHttpClient.ReceiveStream(AStream: TStream);
@@ -464,6 +488,7 @@ end;
 
 procedure TmnCustomHttpClient.Receive;
 begin
+  Respond.ReceiveHead;
   Respond.ReceiveHeader;
 end;
 
@@ -553,6 +578,11 @@ end;
 function TmnCustomHttpClient.GetRequest: TmodHttpRequest;
 begin
   Result := inherited Request as TmodHttpRequest;
+end;
+
+function TmnCustomHttpClient.GetRespond: TmodHttpRespond;
+begin
+  Result := inherited Respond as TmodHttpRespond;
 end;
 
 procedure TmnCustomHttpClient.SendFile(const vURL: UTF8String; AFileName: UTF8String);

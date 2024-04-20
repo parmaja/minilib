@@ -69,6 +69,7 @@ type
     procedure ExamplePrintServer;
     procedure ExampleEchoAliveServer;
 
+    procedure ExampleZatca;
     procedure ExampleHttpHtml;
     procedure ExampleHttpGz;
     procedure ExampleSocketOpenStreet;
@@ -821,6 +822,46 @@ begin
   end;
 end;
 
+procedure TTestStream.ExampleZatca;
+var
+  m: TMemoryStream;
+  c: TmnHttpClient;
+  s: string;
+  r: UTF8String;
+  h: TmnField;
+begin
+  //https://documenter.getpostman.com/view/5025623/SWTG5aqV
+  m := TMemoryStream.Create;
+  c := TmnHttpClient.Create;
+  try
+//    c.UserAgent := 'curl/7.83.1';
+    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.PutHeader('Content-Encoding', 'deflate, gzip');
+    c.Request.PutHeader('accept', 'application/json');
+    c.Request.PutHeader('OTP', '12345');
+    c.Request.PutHeader('Accept-Version', 'V2');
+
+
+    c.UseCompressing := ovlNo;
+
+    s := '{"csr": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ0ZUQ0NBYndDQVFBd2RURUxNQWtHQTFVRUJoTUNVMEV4RmpBVUJnTlZCQXNNRFZKcGVXRmthQ0JDY21GdQpZMmd4SmpBa0JnTlZCQW9NSFUxaGVHbHRkVzBnVTNCbFpXUWdWR1ZqYUNCVGRYQndiSGtnVE'+
+         'ZSRU1TWXdKQVlEClZRUUREQjFVVTFRdE9EZzJORE14TVRRMUxUTTVPVGs1T1RrNU9Ua3dNREF3TXpCV01CQUdCeXFHU000OUFnRUcKQlN1QkJBQUtBMElBQktGZ2ltdEVtdlJTQkswenI5TGdKQXRWU0NsOFZQWno2Y2RyNVgrTW9USG84dkhOTmx5Vwo1UTZ1N1Q4bmFQSnF0R29UakpqY'+
+         'VBJTUo0dTE3ZFNrL1ZIaWdnZWN3Z2VRR0NTcUdTSWIzRFFFSkRqR0IxakNCCjB6QWhCZ2tyQmdFRUFZSTNGQUlFRkF3U1drRlVRMEV0UTI5a1pTMVRhV2R1YVc1bk1JR3RCZ05WSFJFRWdhVXcKZ2FLa2daOHdnWnd4T3pBNUJnTlZCQVFNTWpFdFZGTlVmREl0VkZOVWZETXRaV1F5TW1Ze'+
+         'FpEZ3RaVFpoTWkweApNVEU0TFRsaU5UZ3RaRGxoT0dZeE1XVTBORFZtTVI4d0hRWUtDWkltaVpQeUxHUUJBUXdQTXprNU9UazVPVGs1Ck9UQXdNREF6TVEwd0N3WURWUVFNREFReE1UQXdNUkV3RHdZRFZRUWFEQWhTVWxKRU1qa3lPVEVhTUJnR0ExVUUKRHd3UlUzVndjR3g1SUdGamRHb'+
+         'DJhWFJwWlhNd0NnWUlLb1pJemowRUF3SURSd0F3UkFJZ1NHVDBxQkJ6TFJHOApJS09melI1L085S0VicHA4bWc3V2VqUlllZkNZN3VRQ0lGWjB0U216MzAybmYvdGo0V2FxbVYwN01qZVVkVnVvClJJckpLYkxtUWZTNwotLS0tLUVORCBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0K"}';
+
+    c.Post('https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal/compliance', UTF8Encode(s));
+
+    c.ReadStream(m, -1);
+    SetLength(r, m.Size);
+    Move(m.Memory^, PByte(r)^, m.Size);
+    m.SaveToFile('c:\temp\1.txt');
+  finally
+    c.Free;
+    m.Free;
+  end;
+end;
+
 procedure TTestStream.ExampleHexLine;
 var
   Stream: TmnBufferStream;
@@ -1468,6 +1509,7 @@ begin
       Info.Address := ini.ReadString('options', 'Address', sHost);
       AddProc('Readlines Text', ExampleReadLinesFile);
       AddProc('Read Strings File', ExampleReadStringsFile);
+      AddProc('[httpclient] Example Zatca', ExampleZatca);
       AddProc('[httpclient] Example Http HTML', ExampleHttpHtml);
       AddProc('[httpclient] Example Http Gz', ExampleHttpGz);
       AddProc('[httpclient] HTTP Echo', ExampleHttpEcho);

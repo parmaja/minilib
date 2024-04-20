@@ -297,7 +297,8 @@ begin
         if err = Z_STREAM_END then
         begin
           ZEnd := True;
-          break
+          CloseData;
+          break;
         end
         else if err <> Z_OK then
           raise Exception.Create(String(zerror(err)));
@@ -507,6 +508,7 @@ begin
   if FReadSize = 0 then
   begin
     ReadChunkEndOfLine;
+    //CloseData
   end;
 end;
 

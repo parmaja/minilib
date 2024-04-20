@@ -923,7 +923,7 @@ var
 begin
   Result := 0;
   RealCount := 0;
-  if not Connected then
+  if not Connected or (Count=0) then
     exit(0);
 
   aSize := Count;

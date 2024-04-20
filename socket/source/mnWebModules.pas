@@ -431,7 +431,7 @@ procedure TmodWebModule.Created;
 begin
   inherited;
   UseKeepAlive := klvUndefined;
-  UseCompressing := ovlYes;
+  UseCompressing := ovYes;
   UseWebSocket := True;
   FHomePath := '';
 end;
@@ -810,7 +810,7 @@ begin
   if not WebSocket then
   begin
     //Compressing
-    if not Respond.KeepAlive and (UseCompressing in [ovlUndefined, ovlYes]) then
+    if not Respond.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then
     begin
       if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
         CompressClass := TmnGzipStreamProxy
@@ -1062,7 +1062,7 @@ procedure TmodHttpRequest.DoPrepareHeader;
 begin
   inherited;
   PutHeader('User-Agent', UserAgent);
-  if Parent.UseCompressing = ovlYes then
+  if Parent.UseCompressing = ovYes then
     PutHeader('Accept-Encoding', 'deflate, gzip');
 end;
 

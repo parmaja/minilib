@@ -107,6 +107,7 @@ type
     function GetCookie(const vNameSpace, vName: string): string;
 
     procedure ClearHeader;
+    procedure ReceiveHead; //need discuss
     procedure ReceiveHeader; virtual;
     procedure SendHeader; virtual;
 
@@ -206,7 +207,15 @@ type
 
   TmodKeepAlive = (klvUndefined, klvClose, klvKeepAlive);
 
-  TmodOptionValue = (ovlUndefined, ovlNo, ovlYes);
+  TmodOptionValue = (ovUndefined, ovNo, ovYes);
+
+  TmodOptionValueHelper = record helper for TmodOptionValue
+  private
+    function GetAsBoolean: Boolean;
+    procedure SetAsBoolean(const Value: Boolean);
+  public
+    property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
+  end;
 
   {
     Params: (info like remoteip)
@@ -237,8 +246,8 @@ type
     FProtcolProxy: TmnProtcolStreamProxy;
 
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
-    procedure SetCompressClass(AValue: TmnCompressStreamProxyClass);
-    procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
+    procedure SetCompressClass(Value: TmnCompressStreamProxyClass);
+    procedure SetsCompressProxy(Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
 
     procedure DoPrepareHeader(Sender: TmodCommunicate); virtual;
@@ -306,6 +315,9 @@ type
     procedure DoHeaderReceived; override; //Called by Client
   public
     property ContentType: string read FContentType write FContentType;
+    function StatusCode: Integer;
+    function StatusResult: string;
+    function StatusVersion: string;
   end;
 
   TwebCommand = class(TmnCustomCommand)
@@ -938,23 +950,23 @@ end;
 
 procedure TmnCustomCommand.SetChunkedProxy(const Value: TmnChunkStreamProxy);
 begin
-  if FChunkedProxy <> nil then
+  if (Value <> nil) and (FChunkedProxy <> nil) then
     raise TmodModuleException.Create('Chunked class is already set!');
   FChunkedProxy := Value;
 end;
 
-procedure TmnCustomCommand.SetCompressClass(AValue: TmnCompressStreamProxyClass);
+procedure TmnCustomCommand.SetCompressClass(Value: TmnCompressStreamProxyClass);
 begin
-  if FCompressClass <> nil then
+  if (Value <> nil) and (FCompressClass <> nil) then
     raise TmodModuleException.Create('Compress class is already set!');
-  FCompressClass := AValue;
+  FCompressClass := Value;
 end;
 
-procedure TmnCustomCommand.SetsCompressProxy(AValue: TmnCompressStreamProxy);
+procedure TmnCustomCommand.SetsCompressProxy(Value: TmnCompressStreamProxy);
 begin
-  if FCompressProxy <> nil then
+  if (Value <> nil) and (FCompressProxy <> nil) then
     raise TmodModuleException.Create('Compress proxy is already set!');
-  FCompressProxy :=AValue;
+  FCompressProxy :=Value;
 end;
 
 procedure TmnCustomCommand.SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -988,7 +1000,7 @@ procedure TmnCustomCommand.Created;
 begin
   inherited;
   UseKeepAlive := klvUndefined;
-  UseCompressing := ovlYes;
+  UseCompressing := ovYes;
   UseWebSocket := True;
 end;
 
@@ -1570,6 +1582,11 @@ begin
     Result := Cookies.Values[vName];
 end;
 
+procedure TmodCommunicate.ReceiveHead;
+begin
+  Stream.ReadUTF8Line(FHead);
+end;
+
 procedure TmodCommunicate.ReceiveHeader;
 begin
   Header.ReadHeader(Stream);
@@ -1828,7 +1845,7 @@ begin
       Parent.ChunkedProxy.Disable;
   end;
 
-  if Parent.UseCompressing in [ovlUndefined, ovlYes] then
+  if Parent.UseCompressing in [ovUndefined, ovYes] then
   begin
     if Header.Field['Content-Encoding'].Have('gzip', [',']) then
       aCompressClass := TmnGzipStreamProxy
@@ -1874,6 +1891,39 @@ begin
     for s in Cookies do
       Stream.WriteUTF8Line('Set-Cookie: ' + s);
   end;
+end;
+
+function TwebRespond.StatusCode: Integer;
+var
+  s: string;
+begin
+  s := SubStr(Head, ' ', 1);
+  Result := StrToIntDef(s, 0);
+end;
+
+function TwebRespond.StatusResult: string;
+begin
+  Result := SubStr(Head, ' ', 2); { TODO : to correct use remain text :) }
+end;
+
+function TwebRespond.StatusVersion: string;
+begin
+  Result := SubStr(Head, ' ', 0);
+end;
+
+{ TmodOptionValueHelper }
+
+function TmodOptionValueHelper.GetAsBoolean: Boolean;
+begin
+  Result := Self <> ovNo;
+end;
+
+procedure TmodOptionValueHelper.SetAsBoolean(const Value: Boolean);
+begin
+  if Value then
+    Self := ovYes
+  else
+    Self := ovNo;
 end;
 
 initialization

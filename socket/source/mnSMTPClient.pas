@@ -215,7 +215,7 @@ end;
 
 constructor TmnCustomSMTPHeader.Create(AClient: TmnCustomSMTPClient);
 begin
-  inherited Create;
+  inherited Create(nil);
   FClient := AClient;
 end;
 
