@@ -793,6 +793,7 @@ begin
         WebSocket := True;
         Result.Status := Result.Status + [mrKeepAlive];
         Respond.Stream.AddProxy(ProtcolProxy);
+
         if SendHostHeader then
           Respond.Stream.WriteUTF8String('Request served by mnWebModule');
         //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
@@ -807,7 +808,11 @@ begin
     Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(KeepAliveTimeOut div 1000) + ', max=100');
   end;
 
-  if not WebSocket then
+  if WebSocket then
+  begin
+    CompressProxy.Disable;
+  end
+  else
   begin
     if not Respond.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then
     begin
