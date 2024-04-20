@@ -395,7 +395,6 @@ type
     FUseWebSocket: Boolean;
     procedure SetAliasName(AValue: String);
   protected
-    CommandRegistered: Boolean;
     FFallbackCommand: TmodCommandClass;
     //Name here will corrected with registered item name for example Get -> GET
     function GetActive: Boolean; virtual;
@@ -1208,11 +1207,7 @@ end;
 
 procedure TmodModule.RegisterCommands;
 begin
-  if Commands.Count = 0 then
-  begin
-    DoRegisterCommands;
-  end;
-  CommandRegistered := True;
+  DoRegisterCommands;
 end;
 
 procedure TmodModule.Start;
@@ -1243,6 +1238,7 @@ begin
   end;
   FCommands := TmodCommandClasses.Create(True);
   FKeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
+  RegisterCommands;
 end;
 
 destructor TmodModule.Destroy;
@@ -1272,8 +1268,6 @@ end;
 
 function TmodModule.Match(const ARequest: TmodRequest): Boolean;
 begin
-  if not CommandRegistered then
-    RegisterCommands;
   //Result := SameText(AliasName, ARequest.Module) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
   Result := False;
   if ((Protocols = nil) or StrInArray(LowerCase(ARequest.Protocol), Protocols)) then

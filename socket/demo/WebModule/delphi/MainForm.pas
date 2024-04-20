@@ -123,7 +123,7 @@ begin
       aDocModule.UseKeepAlive := klvKeepAlive
     else
       aDocModule.UseKeepAlive := klvUndefined;
-    aDocModule.UseCompressing := CompressChk.Checked;
+    aDocModule.UseCompressing.AsBoolean := CompressChk.Checked;
   end;
   HttpServer.Port := PortEdit.Text;
 

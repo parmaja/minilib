@@ -628,7 +628,7 @@ begin
     Respond.HttpResult := hrFound;
     //Respond.SendHead('HTTP/1.1 307 Temporary Redirect');
 
-    Respond.AddHeader('Location', Request.CollectURI);
+    Respond.AddHeader('Location', IncludeURLDelimiter(Request.Address));
     Respond.SendHeader;
   end
   else
