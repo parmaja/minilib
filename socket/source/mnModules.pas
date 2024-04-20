@@ -247,7 +247,7 @@ type
 
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetCompressClass(Value: TmnCompressStreamProxyClass);
-    procedure SetsCompressProxy(Value: TmnCompressStreamProxy);
+    procedure SetCompressProxy(Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
 
     procedure DoPrepareHeader(Sender: TmodCommunicate); virtual;
@@ -272,7 +272,7 @@ type
 
     //Compress on the fly, now we use deflate
     property CompressClass: TmnCompressStreamProxyClass read FCompressClass write SetCompressClass;
-    property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
+    property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetCompressProxy;
 
     property WebSocket: Boolean read FWebSocket write FWebSocket;
     //WebSocket
@@ -960,7 +960,7 @@ begin
   FCompressClass := Value;
 end;
 
-procedure TmnCustomCommand.SetsCompressProxy(Value: TmnCompressStreamProxy);
+procedure TmnCustomCommand.SetCompressProxy(Value: TmnCompressStreamProxy);
 begin
   if (Value <> nil) and (FCompressProxy <> nil) then
     raise TmodModuleException.Create('Compress proxy is already set!');
@@ -1790,7 +1790,7 @@ begin
 
   Parent.Chunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
 
-  if Parent.UseCompressing in [ovUndefined, ovYes] then
+  if (Parent.UseCompressing = ovYes) or ((Parent.UseCompressing  = ovUndefined) and (Header.Field['Accept-Encoding'].IsExists)) then
   begin
     if Header.Field['Accept-Encoding'].Have('gzip', [',']) then
       aCompressClass := TmnGzipStreamProxy
