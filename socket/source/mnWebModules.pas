@@ -1074,8 +1074,6 @@ procedure TmodHttpRequest.DoPrepareHeader;
 begin
   inherited;
   PutHeader('User-Agent', UserAgent);
-  if Use.Compressing = ovYes then
-    PutHeader('Accept-Encoding', 'deflate, gzip');
 end;
 
 { TmodHttpRequest }

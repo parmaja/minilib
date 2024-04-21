@@ -97,7 +97,7 @@ type
   TmnChunkStreamProxy = class(TmnStreamOverProxy)
   protected
     FReadSize: Integer;
-    function ChunkSize: Integer;
+    function FrameSize: Integer;
 
     function ReadSize: Integer;
     procedure ReadChunkEndOfLine;
@@ -535,8 +535,8 @@ begin
 
   while True do
   begin
-    if Count>ChunkSize then
-      t := ChunkSize
+    if Count>FrameSize then
+      t := FrameSize
     else
       t := Count;
 
@@ -595,7 +595,7 @@ begin
   end;
 end;
 
-function TmnChunkStreamProxy.ChunkSize: Integer;
+function TmnChunkStreamProxy.FrameSize: Integer;
 begin
   Result := 1024;
 end;

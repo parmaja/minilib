@@ -150,13 +150,14 @@ type
   TmodOptionValue = (ovUndefined, ovNo, ovYes);
 
   { TmodRequest }
+
   TmodCommunicateUsing = record
     KeepAliveTimeOut: Integer;
     KeepAlive: TmodOptionValue;
-    Compressing: TmodOptionValue;
+    AcceptCompressing: TmodOptionValue; //asking server to send compressing
+    Compressing: TmodOptionValue; //our data will sent compressed
     WebSocket: Boolean;
   end;
-
 
   TmodRequest = class(TmodCommunicate)
   private
@@ -314,7 +315,6 @@ type
     procedure DoSendHeader; override;
     procedure DoHeaderSent; override;
 
-
     procedure DoHeaderReceived; override; //Called by Server
     procedure Created; override;
   public
@@ -407,10 +407,7 @@ type
     FLevel: Integer;
     FModules: TmodModules;
     FProtocols: TArray<String>;
-    FKeepAliveTimeOut: Integer;
-    FUseKeepAlive: TmodOptionValue;
-    FUseCompressing: TmodOptionValue;
-    FUseWebSocket: Boolean;
+    FUse: TmodCommunicateUsing;
     procedure SetAliasName(AValue: String);
   protected
     FFallbackCommand: TmodCommandClass;
@@ -453,12 +450,15 @@ type
     property Modules: TmodModules read FModules;
     //* use lower case in Protocols
     property Protocols: TArray<String> read FProtocols;
-    property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
-    property UseKeepAlive: TmodOptionValue read FUseKeepAlive write FUseKeepAlive default ovUndefined;
-    property UseCompressing: TmodOptionValue read FUseCompressing write FUseCompressing;
-    property UseWebSocket: Boolean read FUseWebSocket write FUseWebSocket;
     property AliasName: String read FAliasName write SetAliasName;
     property Level: Integer read FLevel write FLevel;
+
+    property Use: TmodCommunicateUsing read FUse write FUse;
+
+    property KeepAliveTimeOut: Integer read FUse.KeepAliveTimeOut write FUse.KeepAliveTimeOut;
+    property UseKeepAlive: TmodOptionValue read FUse.KeepAlive write FUse.KeepAlive default ovUndefined;
+    property UseCompressing: TmodOptionValue read FUse.Compressing write FUse.Compressing;
+    property UseWebSocket: Boolean read FUse.WebSocket write FUse.WebSocket;
   end;
 
   TmodModuleClass = class of TmodModule;
@@ -469,7 +469,6 @@ type
 
   TmodModules = class(TmnNamedObjectList<TmodModule>)
   private
-//    FEOFOnError: Boolean;
     FActive: Boolean;
     FEndOfLine: String;
     FDefaultProtocol: String;
@@ -1274,7 +1273,7 @@ begin
     FModules.Add(Self);
   end;
   FCommands := TmodCommandClasses.Create(True);
-  FKeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
+  FUse.KeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
   RegisterCommands;
 end;
 
@@ -1496,7 +1495,6 @@ end;
 procedure TmodModules.Created;
 begin
   inherited;
-//  FEOFOnError := True;
   FEndOfLine := sWinEndOfLine; //for http protocol
 end;
 
@@ -1827,7 +1825,8 @@ begin
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
   aCompressClass := nil;
 
-  if (Use.Compressing = ovYes) or ((Use.Compressing  = ovUndefined) and (Header.Field['Accept-Encoding'].IsExists)) then
+  //yes Compressing not AcceptCompressing we are server here
+  if (Use.Compressing in [ovYes, ovUndefined]) and (Header.Field['Accept-Encoding'].IsExists) then
   begin
     if Header.Field['Accept-Encoding'].Have('gzip', [',']) then
       aCompressClass := TmnGzipStreamProxy
@@ -1840,6 +1839,7 @@ end;
 procedure TwebRequest.DoHeaderSent;
 begin
   inherited;
+  //We are here the client
   if (Use.Compressing = ovYes) then
     InitProxies(False, TmnGzipStreamProxy);
 end;
@@ -1864,10 +1864,11 @@ begin
       PutHeader('Connection', 'close');
   end;
 
+  if Use.AcceptCompressing = ovYes then
+    PutHeader('Accept-Encoding', 'deflate, gzip');
+
   if (Use.Compressing = ovYes) then
-  begin
     PutHeader('Content-Encoding', 'gzip');
-  end;
 end;
 
 procedure TwebRequest.DoSendHeader;
