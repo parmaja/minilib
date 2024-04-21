@@ -152,9 +152,9 @@ type
   { TmodRequest }
   TmodCommunicateUsing = record
     KeepAliveTimeOut: Integer;
-    UseKeepAlive: TmodOptionValue;
-    UseCompressing: TmodOptionValue;
-    UseWebSocket: Boolean;
+    KeepAlive: TmodOptionValue;
+    Compressing: TmodOptionValue;
+    WebSocket: Boolean;
   end;
 
 
@@ -170,7 +170,6 @@ type
     FProtcolProxy: TmnProtcolStreamProxy;
     FChunkedProxy: TmnChunkStreamProxy;
     FStream: TmnBufferStream;
-    FUsings: TmodCommunicateUsing; //*todo TmnConnectionStream
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetCompressProxy(const Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -182,7 +181,9 @@ type
     procedure InitProxies(vChunked: Boolean; vCompressClass: TmnCompressStreamProxyClass);
 
   public
+    Use: TmodCommunicateUsing;
     constructor Create(ACommand: TmnCustomCommand; AStream: TmnBufferStream); //need trigger event
+    procedure SetStream(AStream: TmnBufferStream; TriggerHeader: Boolean); //for http client
     destructor Destroy; override;
     procedure  Clear;
 
@@ -217,7 +218,6 @@ type
     //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy write FProtcolProxy;
-    property Usings: TmodCommunicateUsing read FUsings;
   end;
 
   { TmodRespond }
@@ -227,7 +227,6 @@ type
   protected
     FRequest: TmodRequest;
     function GetStream: TmnBufferStream; override;
-
   public
     constructor Create(ARequest: TmodRequest); //need trigger event
     function WriteString(const s: string): Boolean;
@@ -292,9 +291,6 @@ type
   TmnCustomCommandClass = class of TmnCustomCommand;
 
   TmnCustomServerCommand = class(TmnCustomCommand)
-  protected
-    procedure Created; override;
-
   public
     constructor Create(ARequest: TmodRequest);
   end;
@@ -302,7 +298,7 @@ type
   TmnCustomClientCommand = class(TmnCustomCommand)
   //move create request here
   public
-    constructor Create(AStream: TmnConnectionStream);
+    constructor Create;
   end;
 
 
@@ -316,6 +312,8 @@ type
   protected
     procedure DoPrepareHeader; override; //Called by Client
     procedure DoSendHeader; override;
+    procedure DoHeaderSent; override;
+
 
     procedure DoHeaderReceived; override; //Called by Server
     procedure Created; override;
@@ -785,9 +783,9 @@ constructor TmodRequest.Create(ACommand: TmnCustomCommand; AStream: TmnBufferStr
 begin
   inherited Create(ACommand);
   FStream := AStream;
-  FUsings.UseKeepAlive   := ovUndefined;
-  FUsings.UseCompressing := ovYes;
-  FUsings.UseWebSocket   := True;
+  Use.KeepAlive   := ovUndefined;
+  Use.Compressing := ovNo;
+  Use.WebSocket   := False;
 end;
 
 procedure TmodRequest.Created;
@@ -831,6 +829,12 @@ end;
 procedure TmodRequest.SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
 begin
   FProtcolClass := Value;
+end;
+
+procedure TmodRequest.SetStream(AStream: TmnBufferStream; TriggerHeader: Boolean);
+begin
+  FStream := AStream;
+  SetTrigger(TriggerHeader);
 end;
 
 procedure TmodRequest.Clear;
@@ -1079,7 +1083,6 @@ end;
 procedure TmnCustomCommand.Created;
 begin
   inherited;
-  FRespond := CreateRespond;
 end;
 
 function TmnCustomCommand.CreateRequest(AStream: TmnConnectionStream): TmodRequest;
@@ -1321,6 +1324,11 @@ var
 begin
   Result.Status := [mrSuccess];
 
+  ARequest.Use.KeepAliveTimeOut := KeepAliveTimeOut;
+  ARequest.Use.KeepAlive        := UseKeepAlive;
+  ARequest.Use.Compressing      := UseCompressing;
+  ARequest.Use.WebSocket        := UseWebSocket;
+
   ReceiveHeader(ARequest);
 
   aCommand := RequestCommand(ARequest);
@@ -1328,11 +1336,6 @@ begin
   if aCommand <> nil then
   begin
     try
-      ARequest.FUsings.KeepAliveTimeOut := KeepAliveTimeOut;
-      ARequest.FUsings.UseKeepAlive     := UseKeepAlive;
-      ARequest.FUsings.UseCompressing   := UseCompressing;
-      ARequest.FUsings.UseWebSocket     := UseWebSocket;
-
       Result := aCommand.Execute;
       Result.Status := Result.Status + [mrSuccess];
     finally
@@ -1818,13 +1821,13 @@ begin
   Cookies.DelimitedText := Header['Cookie'];
 
   FAccept := Header.ReadString('Connection');
-  KeepAlive := (Usings.UseKeepAlive = ovUndefined) and SameText(Header.ReadString('Connection'), 'Keep-Alive');
-  KeepAlive := KeepAlive or ((Usings.UseKeepAlive = ovYes) and not SameText(Header.ReadString('Connection'), 'close'));
+  KeepAlive := (Use.KeepAlive = ovUndefined) and SameText(Header.ReadString('Connection'), 'Keep-Alive');
+  KeepAlive := KeepAlive or ((Use.KeepAlive = ovYes) and not SameText(Header.ReadString('Connection'), 'close'));
 
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
   aCompressClass := nil;
 
-  if (Usings.UseCompressing = ovYes) or ((Usings.UseCompressing  = ovUndefined) and (Header.Field['Accept-Encoding'].IsExists)) then
+  if (Use.Compressing = ovYes) or ((Use.Compressing  = ovUndefined) and (Header.Field['Accept-Encoding'].IsExists)) then
   begin
     if Header.Field['Accept-Encoding'].Have('gzip', [',']) then
       aCompressClass := TmnGzipStreamProxy
@@ -1834,15 +1837,23 @@ begin
   InitProxies(aChunked, aCompressClass);
 end;
 
+procedure TwebRequest.DoHeaderSent;
+begin
+  inherited;
+  if (Use.Compressing = ovYes) then
+    InitProxies(False, TmnGzipStreamProxy);
+end;
+
 procedure TwebRequest.DoPrepareHeader;
 begin
   inherited;
+  PutHeader('Host', Host);
   if (ContentLength > 0) then
     PutHeader('Content-Length', IntToStr(ContentLength));
   if Accept <> '' then
     PutHeader('Accept', Accept);
 
-  case Usings.UseKeepAlive of
+  case Use.KeepAlive of
     ovUndefined: ; //TODO
     ovYes:
     begin
@@ -1852,7 +1863,11 @@ begin
     ovNo:
       PutHeader('Connection', 'close');
   end;
-  PutHeader('Host', Host);
+
+  if (Use.Compressing = ovYes) then
+  begin
+    PutHeader('Content-Encoding', 'gzip');
+  end;
 end;
 
 procedure TwebRequest.DoSendHeader;
@@ -1884,7 +1899,7 @@ begin
 
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
   aCompressClass := nil;
-  if Request.Usings.UseCompressing in [ovUndefined, ovYes] then
+  if Request.Use.Compressing in [ovUndefined, ovYes] then
   begin
     if Header.Field['Content-Encoding'].Have('gzip', [',']) then
       aCompressClass := TmnGzipStreamProxy
@@ -1956,21 +1971,17 @@ begin
   inherited Create;
   FRequest := ARequest; //do not free
   FRequest.FParent := Self;
-end;
 
-procedure TmnCustomServerCommand.Created;
-begin
-  inherited;
+  FRespond := CreateRespond;
   FRespond.SetTrigger(True);
 end;
 
 { TmnCustomClientCommand }
 
-constructor TmnCustomClientCommand.Create(AStream: TmnConnectionStream);
+constructor TmnCustomClientCommand.Create;
 begin
   inherited Create;
-  FRequest := CreateRequest(AStream);
-  FRequest.SetTrigger(True);
+
 end;
 
 initialization

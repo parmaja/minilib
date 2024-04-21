@@ -63,6 +63,7 @@ type
     destructor Destroy; override;
     function Connected: Boolean;
 
+
     //Use it to open connection and keep it connected
     procedure Connect(const vURL: UTF8String);
     function Open(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
@@ -326,7 +327,10 @@ end;
 procedure TmnCustomHttpClient.SendCommand(Command: string; vData: PByte; vCount: Cardinal);
 begin
   Request.Head := Command + ' ' + Path + ' ' + ProtocolVersion;
-  Request.ContentLength := vCount;
+
+  if Request.Use.Compressing<>ovYes then
+    Request.ContentLength := vCount;
+
   Request.SendHeader;
 
   if (vData <> nil) and (vCount > 0) then
@@ -377,24 +381,25 @@ end;
 function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 begin
   Result := DoCreateStream(vURL, vProtocol, vHost, vPort, vParams);
+  FRequest.SetStream(Result, True);
 
   //need set trigger
-  Request.SetStream(Result, True);
-  Respond.SetStream(Result, False);
+  //Request.SetStream(Result, True);
+  //Respond.SetStream(Result, False);
 end;
 
 procedure TmnCustomHttpClient.FreeStream;
 begin
-  Request.SetStream(nil, False);
-  //Respond.SetStream(nil, False);
-
+  Request.SetTrigger(False);
   Request.ChunkedProxy := nil;
   FreeAndNil(FStream);
 end;
 
 constructor TmnCustomHttpClient.Create;
 begin
-  inherited Create(nil, nil);
+  inherited Create;
+  FRequest := CreateRequest(nil);
+  FRespond := CreateRespond;
 end;
 
 procedure TmnCustomHttpClient.Created;
@@ -409,7 +414,7 @@ end;
 
 function TmnCustomHttpClient.CreateRespond: TmodRespond;
 begin
-  Result := TmodHttpRespond.Create(Self);
+  Result := TmodHttpRespond.Create(Request);
 end;
 
 destructor TmnCustomHttpClient.Destroy;
@@ -479,7 +484,7 @@ end;
 
 function TmnCustomHttpClient.ReadStream(AStream: TStream): TFileSize;
 begin
-  if Request.Chunked and (Respond.ContentLength = 0) then
+  if (Request.ChunkedProxy<>nil) and (Respond.ContentLength = 0) then
     Result := FStream.ReadStream(AStream, -1)
   else if (Respond.ContentLength > 0) and Respond.KeepAlive then //Respond.KeepAlive because we cant use compressed with keeplive or contentlength >0
   begin

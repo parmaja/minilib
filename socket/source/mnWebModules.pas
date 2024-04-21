@@ -431,7 +431,7 @@ procedure TmodWebModule.Created;
 begin
   inherited;
   UseKeepAlive := ovUndefined;
-  UseCompressing := ovYes;
+  UseCompressing := ovNo;
   UseWebSocket := True;
   FHomePath := '';
 end;
@@ -771,7 +771,7 @@ begin
 
   if Request.Header.Field['Connection'].Have('Upgrade', [',']) then
   begin
-    if Request.Usings.UseWebSocket and Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
+    if Request.Use.WebSocket and Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
     begin
       if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
       begin
@@ -805,7 +805,7 @@ begin
   begin
     Respond.KeepAlive := True;
     Respond.AddHeader('Connection', 'Keep-Alive');
-    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Usings.KeepAliveTimeOut div 1000) + ', max=100');
+    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Use.KeepAliveTimeOut div 1000) + ', max=100');
   end;
 
   if Request.WebSocket then
@@ -815,7 +815,7 @@ begin
   end
   else
   begin
-    if not Respond.KeepAlive and (Request.Usings.UseCompressing in [ovUndefined, ovYes]) then
+    if not Respond.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
     begin
       if Request.CompressProxy <> nil then
         Respond.AddHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
@@ -865,7 +865,7 @@ begin
         end;
       end
       else
-        Result.Timout := Request.Usings.KeepAliveTimeOut;
+        Result.Timout := Request.Use.KeepAliveTimeOut;
 
       Result.Status := Result.Status + [mrKeepAlive];
     end;
@@ -1074,7 +1074,7 @@ procedure TmodHttpRequest.DoPrepareHeader;
 begin
   inherited;
   PutHeader('User-Agent', UserAgent);
-  if Usings.UseCompressing = ovYes then
+  if Use.Compressing = ovYes then
     PutHeader('Accept-Encoding', 'deflate, gzip');
 end;
 

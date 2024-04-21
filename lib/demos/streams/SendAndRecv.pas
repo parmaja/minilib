@@ -842,7 +842,7 @@ begin
     c.Request.PutHeader('Accept-Version', 'V2');
 
 
-    c.UseCompressing := ovlNo;
+    c.Request.Use.Compressing := ovYes;
 
     s := '{"csr": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ0ZUQ0NBYndDQVFBd2RURUxNQWtHQTFVRUJoTUNVMEV4RmpBVUJnTlZCQXNNRFZKcGVXRmthQ0JDY21GdQpZMmd4SmpBa0JnTlZCQW9NSFUxaGVHbHRkVzBnVTNCbFpXUWdWR1ZqYUNCVGRYQndiSGtnVE'+
          'ZSRU1TWXdKQVlEClZRUUREQjFVVTFRdE9EZzJORE14TVRRMUxUTTVPVGs1T1RrNU9Ua3dNREF3TXpCV01CQUdCeXFHU000OUFnRUcKQlN1QkJBQUtBMElBQktGZ2ltdEVtdlJTQkswenI5TGdKQXRWU0NsOFZQWno2Y2RyNVgrTW9USG84dkhOTmx5Vwo1UTZ1N1Q4bmFQSnF0R29UakpqY'+
@@ -913,10 +913,13 @@ begin
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.PutHeader('Content-Encoding', 'deflate, gzip');
-    c.UseCompressing := ovlYes;
+    c.Request.Use.Compressing := ovYes;
 
     s := m.DataString;
-    c.GetString('https://httpbin.org/html', s);
+    //c.GetString('https://httpbin.org/html', s);
+    c.Post('https://httpbin.org/post', '{"Code": 123}');
+    c.ReadStream(m);
+    s := m.DataString;
 
     //c.ReadStream(m);
 
@@ -944,7 +947,7 @@ begin
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.AddHeader('Accept', '*/*');
-    c.UseCompressing := ovlYes;
+    c.Request.Use.Compressing := ovYes;
 
     c.GetString('http://postman-echo.com/get?test=1', s);
 //    c.GetString('https://reqbin.com/echo', s);
@@ -978,8 +981,8 @@ begin
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
 //    c.UseCompressing := True;
-    c.UseCompressing := ovlYes;
-    c.UseKeepAlive := klvClose;
+    c.Request.Use.Compressing := ovYes;
+    c.Request.Use.KeepAlive := ovNo;
 
     c.GetString('http://httpbin.org/gzip', s);
 //    c.GetFile('http://httpbin.org/gzip', Location+'test\file.gz');
