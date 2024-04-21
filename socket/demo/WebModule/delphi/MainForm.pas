@@ -120,9 +120,9 @@ begin
     aDocModule.HomePath := aHomePath;
     aDocModule.AliasName := AliasNameEdit.Text;
     if KeepAliveChk.Checked then
-      aDocModule.UseKeepAlive := klvKeepAlive
+      aDocModule.UseKeepAlive := ovYes
     else
-      aDocModule.UseKeepAlive := klvUndefined;
+      aDocModule.UseKeepAlive := ovNo;
     aDocModule.UseCompressing.AsBoolean := CompressChk.Checked;
   end;
   HttpServer.Port := PortEdit.Text;

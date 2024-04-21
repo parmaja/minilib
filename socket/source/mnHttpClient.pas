@@ -32,7 +32,7 @@ type
 
   { TmnCustomHttpClient }
 
-  TmnCustomHttpClient = class abstract(TwebCommand)
+  TmnCustomHttpClient = class abstract(TmnCustomClientCommand)
   private
     FPort: UTF8String;
     FPath: UTF8String;
@@ -55,7 +55,7 @@ type
     procedure SendGet;
     procedure SendHead;
 
-    function CreateRequest: TmodRequest; override;
+    function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
     function CreateRespond: TmodRespond; override;
     procedure Created; override;
   public
@@ -377,15 +377,18 @@ end;
 function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 begin
   Result := DoCreateStream(vURL, vProtocol, vHost, vPort, vParams);
+
+  //need set trigger
   Request.SetStream(Result, True);
   Respond.SetStream(Result, False);
 end;
 
 procedure TmnCustomHttpClient.FreeStream;
 begin
-  Request.SetStream(nil, True);
-  Respond.SetStream(nil, False);
-  ChunkedProxy := nil;
+  Request.SetStream(nil, False);
+  //Respond.SetStream(nil, False);
+
+  Request.ChunkedProxy := nil;
   FreeAndNil(FStream);
 end;
 
@@ -399,9 +402,9 @@ begin
   inherited;
 end;
 
-function TmnCustomHttpClient.CreateRequest: TmodRequest;
+function TmnCustomHttpClient.CreateRequest(AStream: TmnConnectionStream): TmodRequest;
 begin
-  Result := TmodhttpRequest.Create(Self);
+  Result := TmodhttpRequest.Create(Self, AStream);
 end;
 
 function TmnCustomHttpClient.CreateRespond: TmodRespond;
@@ -476,7 +479,7 @@ end;
 
 function TmnCustomHttpClient.ReadStream(AStream: TStream): TFileSize;
 begin
-  if Chunked and (Respond.ContentLength = 0) then
+  if Request.Chunked and (Respond.ContentLength = 0) then
     Result := FStream.ReadStream(AStream, -1)
   else if (Respond.ContentLength > 0) and Respond.KeepAlive then //Respond.KeepAlive because we cant use compressed with keeplive or contentlength >0
   begin

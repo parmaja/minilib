@@ -154,7 +154,7 @@ type
     procedure Created; override;
 
     procedure Log(S: string); override;
-    procedure InternalError(ARequest: TmodRequest; AStream: TmnBufferStream; var Handled: Boolean); override;
+    procedure InternalError(ARequest: TmodRequest; var Handled: Boolean); override;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); override;
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
   public
@@ -181,7 +181,7 @@ type
 
   ThttpModules = class(TmodModules)
   protected
-    function CreateRequest: TmodRequest; override;
+    function CreateRequest(Astream: TmnBufferStream): TmodRequest; override;
     function CheckRequest(const ARequest: string): Boolean; override;
   end;
 
@@ -430,7 +430,7 @@ end;
 procedure TmodWebModule.Created;
 begin
   inherited;
-  UseKeepAlive := klvUndefined;
+  UseKeepAlive := ovUndefined;
   UseCompressing := ovYes;
   UseWebSocket := True;
   FHomePath := '';
@@ -452,11 +452,11 @@ begin
   vMatch := ARequest.Route[0] = AliasName;
 end;
 
-procedure TmodWebModule.InternalError(ARequest: TmodRequest; AStream: TmnBufferStream; var Handled: Boolean);
+procedure TmodWebModule.InternalError(ARequest: TmodRequest; var Handled: Boolean);
 begin
   inherited;
-  AStream.WriteUTF8Line('HTTP/1.1 500 Internal Server Error');
-  AStream.WriteUTF8Line('');
+  ARequest.Stream.WriteUTF8Line('HTTP/1.1 500 Internal Server Error');
+  ARequest.Stream.WriteUTF8Line('');
   Handled := True;
 end;
 
@@ -771,7 +771,7 @@ begin
 
   if Request.Header.Field['Connection'].Have('Upgrade', [',']) then
   begin
-    if UseWebSocket and Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
+    if Request.Usings.UseWebSocket and Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
     begin
       if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
       begin
@@ -788,11 +788,11 @@ begin
         Respond.SendHeader;
 
         Respond.KeepAlive := True;
-        ProtcolClass := TmnWebSocket13StreamProxy;
-        FProtcolProxy := ProtcolClass.Create;
-        WebSocket := True;
+        Request.ProtcolClass := TmnWebSocket13StreamProxy;
+        Request.ProtcolProxy := Request.ProtcolClass.Create;
+        Request.WebSocket := True;
         Result.Status := Result.Status + [mrKeepAlive];
-        Respond.Stream.AddProxy(ProtcolProxy);
+        Request.Stream.AddProxy(Request.ProtcolProxy);
 
         if SendHostHeader then
           Respond.Stream.WriteUTF8String('Request served by mnWebModule');
@@ -805,19 +805,20 @@ begin
   begin
     Respond.KeepAlive := True;
     Respond.AddHeader('Connection', 'Keep-Alive');
-    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(KeepAliveTimeOut div 1000) + ', max=100');
+    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Usings.KeepAliveTimeOut div 1000) + ', max=100');
   end;
 
-  if WebSocket then
+  if Request.WebSocket then
   begin
-    CompressProxy.Disable;
+    if Request.CompressProxy<>nil then
+      Request.CompressProxy.Disable;
   end
   else
   begin
-    if not Respond.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then
+    if not Respond.KeepAlive and (Request.Usings.UseCompressing in [ovUndefined, ovYes]) then
     begin
-      if CompressClass <> nil then
-        Respond.AddHeader('Content-Encoding', CompressClass.GetCompressName);
+      if Request.CompressProxy <> nil then
+        Respond.AddHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
     end;
 
     //Compressing
@@ -840,7 +841,7 @@ var
   aParams: TmnParams;
 begin
   inherited;
-  if WebSocket then
+  if Request.WebSocket then
   begin
   end
   else
@@ -864,14 +865,14 @@ begin
         end;
       end
       else
-        Result.Timout := KeepAliveTimeOut;
+        Result.Timout := Request.Usings.KeepAliveTimeOut;
 
       Result.Status := Result.Status + [mrKeepAlive];
     end;
 
-    if CompressProxy <> nil then
+    if Request.CompressProxy <> nil then
     begin
-      CompressProxy.Disable;
+      Request.CompressProxy.Disable;
     end;
   end;
 end;
@@ -973,7 +974,7 @@ end;
 
 function TmodHttpCommand.CreateRespond: TmodRespond;
 begin
-  Result := TmodHttpRespond.Create(Self);
+  Result := TmodHttpRespond.Create(Request);
 end;
 
 { TmodCustomWebModules }
@@ -1064,16 +1065,16 @@ end;
 
 { TmodHttpRequest }
 
-function ThttpModules.CreateRequest: TmodRequest;
+function ThttpModules.CreateRequest(Astream: TmnBufferStream): TmodRequest;
 begin
-  Result := TmodHttpRequest.Create(nil);
+  Result := TmodHttpRequest.Create(nil, Astream);
 end;
 
 procedure TmodHttpRequest.DoPrepareHeader;
 begin
   inherited;
   PutHeader('User-Agent', UserAgent);
-  if Parent.UseCompressing = ovYes then
+  if Usings.UseCompressing = ovYes then
     PutHeader('Accept-Encoding', 'deflate, gzip');
 end;
 
