@@ -329,6 +329,7 @@ type
   protected
     procedure DoPrepareHeader; override; //Called by Server
     procedure DoSendHeader; override;
+    procedure DoHeaderSent; override;
     procedure DoHeaderReceived; override; //Called by Client
   public
     property ContentType: string read FContentType write FContentType;
@@ -1823,14 +1824,13 @@ begin
   KeepAlive := KeepAlive or ((Use.KeepAlive = ovYes) and not SameText(Header.ReadString('Connection'), 'close'));
 
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
-  aCompressClass := nil;
 
-  //yes Compressing not AcceptCompressing we are server here
-  if (Use.Compressing in [ovYes, ovUndefined]) and (Header.Field['Accept-Encoding'].IsExists) then
+  aCompressClass := nil;
+  if (Header.Field['Transfer-Encoding'].IsExists) then
   begin
-    if Header.Field['Accept-Encoding'].Have('gzip', [',']) then
+    if Header.Field['Transfer-Encoding'].Have('gzip', [',']) then
       aCompressClass := TmnGzipStreamProxy
-    else if Header.Field['Accept-Encoding'].Have('deflate', [',']) then
+    else if Header.Field['Transfer-Encoding'].Have('deflate', [',']) then
       aCompressClass := TmnDeflateStreamProxy;
   end;
   InitProxies(aChunked, aCompressClass);
@@ -1882,6 +1882,27 @@ begin
 end;
 
 { TwebRespond }
+
+procedure TwebRespond.DoHeaderSent;
+var
+  aChunked: Boolean;
+  aCompressClass: TmnCompressStreamProxyClass;
+begin
+  inherited;
+  //yes Compressing not AcceptCompressing we are server here
+  with Request do
+  begin
+    aCompressClass := nil;
+    if (Use.Compressing in [ovYes, ovUndefined]) and (Header.Field['Accept-Encoding'].IsExists) then
+    begin
+      if Header.Field['Accept-Encoding'].Have('gzip', [',']) then
+        aCompressClass := TmnGzipStreamProxy
+      else if Header.Field['Accept-Encoding'].Have('deflate', [',']) then
+        aCompressClass := TmnDeflateStreamProxy;
+    end;
+    InitProxies(aChunked, aCompressClass);
+  end;
+end;
 
 procedure TwebRespond.DoHeaderReceived;
 var
