@@ -410,6 +410,7 @@ end;
 function TmnCustomHttpClient.CreateRequest(AStream: TmnConnectionStream): TmodRequest;
 begin
   Result := TmodhttpRequest.Create(Self, AStream);
+  Result.Use.AcceptCompressing := ovYes;
 end;
 
 function TmnCustomHttpClient.CreateRespond: TmodRespond;

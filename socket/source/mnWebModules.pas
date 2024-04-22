@@ -815,11 +815,11 @@ begin
   end
   else
   begin
-    if not Respond.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
+    {if not Respond.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
     begin
       if Request.CompressProxy <> nil then
         Respond.AddHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
-    end;
+    end;}
 
     //Compressing
     {if not Respond.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then

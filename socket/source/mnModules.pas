@@ -92,6 +92,7 @@ type
     procedure DoSendHeader; virtual;
     procedure DoWriteCookies; virtual;
     procedure DoHeaderSent; virtual;
+    procedure DoPrepareRespond; virtual;
 
     procedure DoHeaderReceived; virtual;
     function GetStream: TmnBufferStream; virtual; abstract;
@@ -171,6 +172,8 @@ type
     FProtcolProxy: TmnProtcolStreamProxy;
     FChunkedProxy: TmnChunkStreamProxy;
     FStream: TmnBufferStream;
+    FRequestCompress: Boolean;
+    FRespondCompress: Boolean;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetCompressProxy(const Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -178,6 +181,8 @@ type
     Info: TmodRequestInfo;
     procedure Created; override;
     procedure DoHeaderReceived; override;
+    procedure DoPrepareRespond; override;
+
     function GetStream: TmnBufferStream; override;
     procedure InitProxies(vChunked: Boolean; vCompressClass: TmnCompressStreamProxyClass);
 
@@ -213,6 +218,8 @@ type
     property ChunkedProxy: TmnChunkStreamProxy read FChunkedProxy write SetChunkedProxy;
 
     //Compress on the fly, now we use deflate
+    property RequestCompress: Boolean read FRequestCompress;
+    property RespondCompress: Boolean read FRespondCompress;
     property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetCompressProxy;
 
     property WebSocket: Boolean read FWebSocket write FWebSocket;
@@ -228,6 +235,7 @@ type
   protected
     FRequest: TmodRequest;
     function GetStream: TmnBufferStream; override;
+    procedure DoPrepareRespond; override;
   public
     constructor Create(ARequest: TmodRequest); //need trigger event
     function WriteString(const s: string): Boolean;
@@ -331,11 +339,13 @@ type
     procedure DoSendHeader; override;
     procedure DoHeaderSent; override;
     procedure DoHeaderReceived; override; //Called by Client
+
   public
     property ContentType: string read FContentType write FContentType;
     function StatusCode: Integer;
     function StatusResult: string;
     function StatusVersion: string;
+    function WebRequest: TwebRequest;
   end;
 
   TwebCommand = class(TmnCustomServerCommand)
@@ -755,6 +765,19 @@ begin
   FRequest := ARequest;
 end;
 
+procedure TmodRespond.DoPrepareRespond;
+begin
+  inherited;
+  if Request.CompressProxy<>nil then
+    Request.CompressProxy.Disable;
+
+  if Request.ChunkedProxy<>nil then
+    Request.ChunkedProxy.Disable;
+
+  if Request.ProtcolProxy<>nil then
+    Request.ProtcolProxy.Disable;
+end;
+
 function TmodRespond.GetStream: TmnBufferStream;
 begin
   Result := FRequest.Stream;
@@ -784,7 +807,7 @@ begin
   inherited Create(ACommand);
   FStream := AStream;
   Use.KeepAlive   := ovUndefined;
-  Use.Compressing := ovNo;
+  Use.Compressing := ovUndefined;
   Use.WebSocket   := False;
 end;
 
@@ -848,6 +871,11 @@ begin
 end;
 
 
+
+procedure TmodRequest.DoPrepareRespond;
+begin
+  inherited;
+end;
 
 function TmodRequest.GetStream: TmnBufferStream;
 begin
@@ -1634,6 +1662,7 @@ end;
 
 procedure TmodCommunicate.ReceiveHead;
 begin
+  DoPrepareRespond;
   Stream.ReadUTF8Line(FHead);
 end;
 
@@ -1666,6 +1695,11 @@ end;
 
 procedure TmodCommunicate.DoPrepareHeader;
 begin
+end;
+
+procedure TmodCommunicate.DoPrepareRespond;
+begin
+
 end;
 
 procedure TmodCommunicate.DoSendHeader;
@@ -1823,17 +1857,30 @@ begin
   KeepAlive := (Use.KeepAlive = ovUndefined) and SameText(Header.ReadString('Connection'), 'Keep-Alive');
   KeepAlive := KeepAlive or ((Use.KeepAlive = ovYes) and not SameText(Header.ReadString('Connection'), 'close'));
 
+
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
 
-  aCompressClass := nil;
-  if (Header.Field['Transfer-Encoding'].IsExists) then
+  {aCompressClass := nil;
+  if (Header.Field['Content-Encoding'].IsExists) then
   begin
-    if Header.Field['Transfer-Encoding'].Have('gzip', [',']) then
+    if Header.Field['Content-Encoding'].Have('gzip', [',']) then
       aCompressClass := TmnGzipStreamProxy
-    else if Header.Field['Transfer-Encoding'].Have('deflate', [',']) then
+    else if Header.Field['Content-Encoding'].Have('deflate', [',']) then
       aCompressClass := TmnDeflateStreamProxy;
   end;
-  InitProxies(aChunked, aCompressClass);
+  InitProxies(aChunked, aCompressClass);}
+
+  FRequestCompress := Header.Field['Content-Encoding'].Have('gzip', [',']);
+  FRespondCompress := Use.Compressing.AsBoolean and (Header.Field['Accept-Encoding'].Have('gzip', [',']));
+
+  if FRequestCompress or FRespondCompress then
+  begin
+    InitProxies(aChunked, TmnGzipStreamProxy);
+    if not FRequestCompress then
+      CompressProxy.Disable;
+  end
+  else
+    InitProxies(aChunked, nil);
 end;
 
 procedure TwebRequest.DoHeaderSent;
@@ -1865,7 +1912,7 @@ begin
   end;
 
   if Use.AcceptCompressing = ovYes then
-    PutHeader('Accept-Encoding', 'deflate, gzip');
+    PutHeader('Accept-Encoding', 'gzip, deflate');
 
   if (Use.Compressing = ovYes) then
     PutHeader('Content-Encoding', 'gzip');
@@ -1884,24 +1931,11 @@ end;
 { TwebRespond }
 
 procedure TwebRespond.DoHeaderSent;
-var
-  aChunked: Boolean;
-  aCompressClass: TmnCompressStreamProxyClass;
 begin
   inherited;
-  //yes Compressing not AcceptCompressing we are server here
-  with Request do
-  begin
-    aCompressClass := nil;
-    if (Use.Compressing in [ovYes, ovUndefined]) and (Header.Field['Accept-Encoding'].IsExists) then
-    begin
-      if Header.Field['Accept-Encoding'].Have('gzip', [',']) then
-        aCompressClass := TmnGzipStreamProxy
-      else if Header.Field['Accept-Encoding'].Have('deflate', [',']) then
-        aCompressClass := TmnDeflateStreamProxy;
-    end;
-    InitProxies(aChunked, aCompressClass);
-  end;
+
+  if WebRequest.CompressProxy<>nil then
+    WebRequest.CompressProxy.Enabled := WebRequest.FRespondCompress;
 end;
 
 procedure TwebRespond.DoHeaderReceived;
@@ -1939,6 +1973,9 @@ begin
     PutHeader('Content-Length', IntToStr(ContentLength));
   if (ContentType <> '') then
     PutHeader('Content-Type', ContentType);
+
+  if WebRequest.FRespondCompress then
+    PutHeader('Content-Encoding', WebRequest.CompressProxy.GetCompressName);
 end;
 
 procedure TwebRespond.DoSendHeader;
@@ -1969,6 +2006,11 @@ end;
 function TwebRespond.StatusVersion: string;
 begin
   Result := SubStr(Head, ' ', 0);
+end;
+
+function TwebRespond.WebRequest: TwebRequest;
+begin
+  Result := Request as TwebRequest;
 end;
 
 { TmodOptionValueHelper }
