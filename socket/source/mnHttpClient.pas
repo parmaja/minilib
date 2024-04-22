@@ -497,7 +497,6 @@ end;
 
 procedure TmnCustomHttpClient.Receive;
 begin
-  Respond.ReceiveHead;
   Respond.ReceiveHeader;
 end;
 

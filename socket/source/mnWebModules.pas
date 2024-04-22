@@ -40,8 +40,6 @@ Notes:
   Ref: https://www.ntu.edu.sg/home/ehchua/programming/webprogramming/HTTP_Basics.html
 *}
 
-
-
 interface
 
 uses
@@ -810,8 +808,7 @@ begin
 
   if Request.WebSocket then
   begin
-    if Request.CompressProxy<>nil then
-      Request.CompressProxy.Disable;
+    Request.CompressProxy.Disable;
   end
   else
   begin
@@ -870,10 +867,7 @@ begin
       Result.Status := Result.Status + [mrKeepAlive];
     end;
 
-    if Request.CompressProxy <> nil then
-    begin
-      Request.CompressProxy.Disable;
-    end;
+    Request.CompressProxy.Disable;
   end;
 end;
 

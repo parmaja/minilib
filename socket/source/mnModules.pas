@@ -87,13 +87,14 @@ type
     procedure OnWriting(vCount: Longint);
 
     procedure SendHead;
+    procedure ReceiveHead;
 
     procedure DoPrepareHeader; virtual;
     procedure DoSendHeader; virtual;
     procedure DoWriteCookies; virtual;
     procedure DoHeaderSent; virtual;
-    procedure DoPrepareRespond; virtual;
 
+    procedure InitProtocol; virtual;
     procedure DoHeaderReceived; virtual;
     function GetStream: TmnBufferStream; virtual; abstract;
   public
@@ -107,7 +108,6 @@ type
     function GetCookie(const vNameSpace, vName: string): string;
 
     procedure ClearHeader;
-    procedure ReceiveHead; //need discuss
     procedure ReceiveHeader; virtual;
     procedure SendHeader; virtual;
 
@@ -182,11 +182,11 @@ type
     Info: TmodRequestInfo;
     procedure Created; override;
     procedure DoHeaderReceived; override;
-    procedure DoPrepareRespond; override;
+    procedure InitProtocol; override;
 
     function GetStream: TmnBufferStream; override;
     procedure InitProxies(vChunked: Boolean; vCompressClass: TmnCompressStreamProxyClass);
-
+    procedure ResetProxies; virtual;
   public
     Use: TmodCommunicateUsing;
     constructor Create(ACommand: TmnCustomCommand; AStream: TmnBufferStream); //need trigger event
@@ -235,7 +235,7 @@ type
   protected
     FRequest: TmodRequest;
     function GetStream: TmnBufferStream; override;
-    procedure DoPrepareRespond; override;
+    procedure InitProtocol; override;
   public
     constructor Create(ARequest: TmodRequest); //need trigger event
     function WriteString(const s: string): Boolean;
@@ -309,7 +309,6 @@ type
   public
     constructor Create;
   end;
-
 
   // Web
 
@@ -570,7 +569,6 @@ function ParseURI(const URI: String; out Address, Params: string): Boolean;
 procedure ParseQuery(const Query: String; mnParams: TmnFields);
 procedure ParseParamsEx(const Params: String; mnParams: TmnParams);
 
-
 function ParseAddress(const Request: string; out URIPath: string; out URIQuery: string): Boolean; overload;
 function ParseAddress(const Request: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean; overload;
 procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
@@ -766,17 +764,9 @@ begin
   FRequest := ARequest;
 end;
 
-procedure TmodRespond.DoPrepareRespond;
+procedure TmodRespond.InitProtocol;
 begin
   inherited;
-  if Request.CompressProxy<>nil then
-    Request.CompressProxy.Disable;
-
-  if Request.ChunkedProxy<>nil then
-    Request.ChunkedProxy.Disable;
-
-  if Request.ProtcolProxy<>nil then
-    Request.ProtcolProxy.Disable;
 end;
 
 function TmodRespond.GetStream: TmnBufferStream;
@@ -836,6 +826,13 @@ begin
   Result := Stream.ReadUTF8String(s, TFileSize(Count));
 end;
 
+procedure TmodRequest.ResetProxies;
+begin
+  CompressProxy.Disable;
+  ChunkedProxy.Disable;
+  ProtcolProxy.Disable;
+end;
+
 procedure TmodRequest.SetChunkedProxy(const Value: TmnChunkStreamProxy);
 begin
   if (Value <> nil) and (FChunkedProxy <> nil) then
@@ -871,10 +868,9 @@ begin
   //????
 end;
 
-
-
-procedure TmodRequest.DoPrepareRespond;
+procedure TmodRequest.InitProtocol;
 begin
+  ResetProxies;
   inherited;
 end;
 
@@ -896,10 +892,7 @@ begin
     end;
   end
   else
-  begin
-    if ChunkedProxy <> nil then
-      ChunkedProxy.Disable;
-  end;
+    ChunkedProxy.Disable;
 
   if vCompressClass <> nil then
   begin
@@ -912,10 +905,7 @@ begin
     end;
   end
   else
-  begin
-    if CompressProxy <> nil then
-      CompressProxy.Disable;
-  end;
+    CompressProxy.Disable;
 end;
 
 { TmodModuleListener }
@@ -1663,18 +1653,21 @@ end;
 
 procedure TmodCommunicate.ReceiveHead;
 begin
-  DoPrepareRespond;
+  InitProtocol;
   Stream.ReadUTF8Line(FHead);
 end;
 
 procedure TmodCommunicate.ReceiveHeader;
 begin
+  ReceiveHead;
   Header.ReadHeader(Stream);
   DoHeaderReceived;
 end;
 
 procedure TmodCommunicate.SendHead;
 begin
+  InitProtocol;
+
   if resHeadSent in Header.States then
     raise TmodModuleException.Create('Head is sent');
 
@@ -1698,7 +1691,7 @@ procedure TmodCommunicate.DoPrepareHeader;
 begin
 end;
 
-procedure TmodCommunicate.DoPrepareRespond;
+procedure TmodCommunicate.InitProtocol;
 begin
 
 end;

@@ -630,12 +630,15 @@ end;
 
 procedure TmnStreamProxy.Enable;
 begin
+  if Self = nil then
+    raise EmnStreamException.Create('No Stream exists yet');
   Enabled := True;
 end;
 
 procedure TmnStreamProxy.Disable;
 begin
-  Enabled := False;
+  if Self <> nil then
+    Enabled := False;
 end;
 
 { TmnStreamOverProxy }
