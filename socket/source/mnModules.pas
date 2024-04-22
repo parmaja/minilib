@@ -160,6 +160,8 @@ type
     WebSocket: Boolean;
   end;
 
+  TStreamMode = set of (smRequestCompress, smRespondCompress);
+
   TmodRequest = class(TmodCommunicate)
   private
     FParams: TmnFields;
@@ -172,8 +174,7 @@ type
     FProtcolProxy: TmnProtcolStreamProxy;
     FChunkedProxy: TmnChunkStreamProxy;
     FStream: TmnBufferStream;
-    FRequestCompress: Boolean;
-    FRespondCompress: Boolean;
+    FMode: TStreamMode;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetCompressProxy(const Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -218,8 +219,7 @@ type
     property ChunkedProxy: TmnChunkStreamProxy read FChunkedProxy write SetChunkedProxy;
 
     //Compress on the fly, now we use deflate
-    property RequestCompress: Boolean read FRequestCompress;
-    property RespondCompress: Boolean read FRespondCompress;
+    property Mode: TStreamMode read FMode;// write FMode;
     property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetCompressProxy;
 
     property WebSocket: Boolean read FWebSocket write FWebSocket;
@@ -334,6 +334,7 @@ type
   TwebRespond = class(TmodRespond)
   private
     FContentType: String;
+    function GetRequest: TwebRequest;
   protected
     procedure DoPrepareHeader; override; //Called by Server
     procedure DoSendHeader; override;
@@ -345,7 +346,7 @@ type
     function StatusCode: Integer;
     function StatusResult: string;
     function StatusVersion: string;
-    function WebRequest: TwebRequest;
+    property Request: TwebRequest read GetRequest;
   end;
 
   TwebCommand = class(TmnCustomServerCommand)
@@ -1870,13 +1871,16 @@ begin
   end;
   InitProxies(aChunked, aCompressClass);}
 
-  FRequestCompress := Header.Field['Content-Encoding'].Have('gzip', [',']);
-  FRespondCompress := Use.Compressing.AsBoolean and (Header.Field['Accept-Encoding'].Have('gzip', [',']));
+  if Header.Field['Content-Encoding'].Have('gzip', [',']) then
+    FMode := FMode + [smRequestCompress];
 
-  if FRequestCompress or FRespondCompress then
+  if Use.Compressing.AsBoolean and (Header.Field['Accept-Encoding'].Have('gzip', [','])) then
+    FMode := FMode + [smRespondCompress];
+
+  if (smRequestCompress in Mode) or (smRespondCompress in Mode) then
   begin
     InitProxies(aChunked, TmnGzipStreamProxy);
-    if not FRequestCompress then
+    if not (smRequestCompress in Mode) then
       CompressProxy.Disable;
   end
   else
@@ -1934,8 +1938,8 @@ procedure TwebRespond.DoHeaderSent;
 begin
   inherited;
 
-  if WebRequest.CompressProxy<>nil then
-    WebRequest.CompressProxy.Enabled := WebRequest.FRespondCompress;
+  if Request.CompressProxy<>nil then
+    Request.CompressProxy.Enabled := smRespondCompress in Request.Mode;
 end;
 
 procedure TwebRespond.DoHeaderReceived;
@@ -1974,8 +1978,8 @@ begin
   if (ContentType <> '') then
     PutHeader('Content-Type', ContentType);
 
-  if WebRequest.FRespondCompress then
-    PutHeader('Content-Encoding', WebRequest.CompressProxy.GetCompressName);
+  if smRespondCompress in Request.Mode then
+    PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
 end;
 
 procedure TwebRespond.DoSendHeader;
@@ -2008,9 +2012,9 @@ begin
   Result := SubStr(Head, ' ', 0);
 end;
 
-function TwebRespond.WebRequest: TwebRequest;
+function TwebRespond.GetRequest: TwebRequest;
 begin
-  Result := Request as TwebRequest;
+  Result := inherited Request as TwebRequest;
 end;
 
 { TmodOptionValueHelper }
