@@ -55,6 +55,7 @@ type
     resHeaderSending,
     resHeadSent, //reposnd line, first line before header
     resHeaderSent,
+    //resBodySent,
     //resSuccess,
     //resKeepAlive,
     resEnd
@@ -63,12 +64,13 @@ type
   TmodHeaderStates = set of TmodHeaderState;
 
   TmodHeader = class(TmnHeader)
-  public
+  private
     FStates: TmodHeaderStates;
   public
     function Domain: string;
     function Origin: string;
     property States: TmodHeaderStates read FStates;
+    procedure Clear; override;
   end;
 
   TmnCustomCommand = class;
@@ -107,7 +109,7 @@ type
     procedure SetCookie(const vNameSpace, vName, Value: string);
     function GetCookie(const vNameSpace, vName: string): string;
 
-    procedure ClearHeader;
+    procedure Reset;
     procedure ReceiveHeader; virtual;
     procedure SendHeader; virtual;
 
@@ -1657,13 +1659,14 @@ end;
 
 procedure TmodCommunicate.ReceiveHead;
 begin
-  InitProtocol;
   Stream.ReadUTF8Line(FHead);
 end;
 
 procedure TmodCommunicate.ReceiveHeader;
 begin
-  ReceiveHead;
+  Reset;
+  InitProtocol;
+	ReceiveHead;
   Header.ReadHeader(Stream);
   DoHeaderReceived;
 end;
@@ -1721,8 +1724,9 @@ begin
   FHead := Value;
 end;
 
-procedure TmodCommunicate.ClearHeader;
+procedure TmodCommunicate.Reset;
 begin
+  FWritingStarted := False;
   FHeader.Clear;
 end;
 
@@ -1816,6 +1820,12 @@ begin
 end;
 
 { TmodHeader }
+
+procedure TmodHeader.Clear;
+begin
+  inherited;
+  FStates := [];
+end;
 
 function TmodHeader.Domain: string;
 var

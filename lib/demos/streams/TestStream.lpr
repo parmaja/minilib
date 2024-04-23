@@ -1,6 +1,7 @@
 program TestStream;
 
 {$mode objfpc}{$H+}
+{$AppType consol}
 
 uses
   {$IFDEF UNIX}

@@ -15,7 +15,7 @@ begin
   Application.Initialize;
   if FindCmdLineSwitch('hide', true) then
   begin
-    Application.ShowMainForm:=false;
+    Application.ShowMainForm := False;
     ShowWindow(Application.Handle,SW_HIDE);
   end;
   Application.CreateForm(TMain, Main);

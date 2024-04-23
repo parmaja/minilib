@@ -67,6 +67,8 @@ type
     //Use it to open connection and keep it connected
     procedure Connect(const vURL: UTF8String);
     function Open(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
+    function Post(vData: PByte; vCount: Integer): Boolean; overload;
+    function Post(vData: UTF8String): Boolean; overload;
     function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
     function Post(const vURL: UTF8String; vData: UTF8String): Boolean; overload;
 
@@ -331,6 +333,7 @@ begin
   if Request.Use.Compressing<>ovYes then
     Request.ContentLength := vCount;
 
+  Request.Reset;
   Request.SendHeader;
 
   if (vData <> nil) and (vCount > 0) then
@@ -421,6 +424,7 @@ end;
 destructor TmnCustomHttpClient.Destroy;
 begin
   inherited;
+  FreeAndNil(FRequest);
   FreeStream;
 end;
 
@@ -441,7 +445,18 @@ end;
 function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 begin
   Connect(vUrl);
+  Post(vData, vCount);
+end;
 
+function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
+begin
+  Result := Post(vURL, PByte(vData), Length(vData));
+end;
+
+function TmnCustomHttpClient.Post(vData: PByte; vCount: Integer): Boolean;
+begin
+  if (Stream = nil) or not Stream.Connected then
+    raise EmnStreamException.Create('Not connected yet');
   SendPost(vData, vCount);
   //
   Result := Stream.Connected;
@@ -449,12 +464,6 @@ begin
   begin
     Receive;
   end;
-end;
-
-
-function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
-begin
-  Result := Post(vURL, PByte(vData), Length(vData));
 end;
 
 function TmnCustomHttpClient.Patch(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
@@ -471,6 +480,11 @@ end;
 function TmnCustomHttpClient.Patch(const vURL: UTF8String; vData: UTF8String): Boolean;
 begin
   Result := Patch(vURL, PByte(vData), Length(vData));
+end;
+
+function TmnCustomHttpClient.Post(vData: UTF8String): Boolean;
+begin
+  Result := Post(PByte(vData), Length(vData));
 end;
 
 procedure TmnCustomHttpClient.ReceiveStream(AStream: TStream);

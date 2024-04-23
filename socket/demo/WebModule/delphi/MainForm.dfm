@@ -52,6 +52,8 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
+    ExplicitWidth = 431
+    ExplicitHeight = 210
   end
   object StartBtn: TButton
     Left = 365
@@ -63,7 +65,7 @@ object Main: TMain
     Default = True
     TabOrder = 0
     OnClick = StartBtnClick
-    ExplicitLeft = 369
+    ExplicitLeft = 361
   end
   object HomePathEdit: TEdit
     Left = 88
@@ -75,7 +77,7 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 2
     Text = 'c:\offline\'
-    ExplicitWidth = 276
+    ExplicitWidth = 268
   end
   object StopBtn: TButton
     Left = 365
@@ -87,7 +89,7 @@ object Main: TMain
     Enabled = False
     TabOrder = 5
     OnClick = StopBtnClick
-    ExplicitLeft = 369
+    ExplicitLeft = 361
   end
   object PortEdit: TEdit
     Left = 88
@@ -118,7 +120,7 @@ object Main: TMain
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
-    ExplicitWidth = 439
+    ExplicitWidth = 431
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
@@ -149,7 +151,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 13
+      Height = 25
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -162,13 +164,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object Label3: TLabel
       AlignWithMargins = True
       Left = 101
       Top = 6
       Width = 20
-      Height = 13
+      Height = 25
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -181,6 +184,7 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object MaxOfThreadsLabel: TLabel
       AlignWithMargins = True
@@ -235,7 +239,7 @@ object Main: TMain
       Left = 3
       Top = 3
       Width = 29
-      Height = 13
+      Height = 28
       Align = alLeft
       Caption = 'Count'
       Color = clBtnFace
@@ -248,6 +252,7 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
   end
   object Button1: TButton
@@ -260,7 +265,7 @@ object Main: TMain
     Default = True
     TabOrder = 7
     OnClick = Button1Click
-    ExplicitLeft = 257
+    ExplicitLeft = 249
   end
   object UseSSLChk: TCheckBox
     Left = 108
@@ -280,7 +285,7 @@ object Main: TMain
     Caption = 'Test'
     TabOrder = 9
     OnClick = Button2Click
-    ExplicitLeft = 371
+    ExplicitLeft = 363
   end
   object AliasNameEdit: TEdit
     Left = 163
@@ -292,7 +297,7 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 10
     Text = 'doc'
-    ExplicitWidth = 201
+    ExplicitWidth = 193
   end
   object KeepAliveChk: TCheckBox
     Left = 10
@@ -339,7 +344,7 @@ object Main: TMain
     Caption = 'Open URL'
     TabOrder = 15
     OnClick = OpenBtnClick
-    ExplicitLeft = 355
+    ExplicitLeft = 347
   end
   object Button3: TButton
     Left = 304

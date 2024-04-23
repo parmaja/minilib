@@ -69,8 +69,9 @@ type
     procedure ExamplePrintServer;
     procedure ExampleEchoAliveServer;
 
-    procedure ExampleZatca;
     procedure ExampleHttpHtml;
+    procedure ExampleZatca;
+    procedure ExampleHttpPost;
     procedure ExampleHttpGz;
     procedure ExampleSocketOpenStreet;
     procedure ExampleHttpEcho;
@@ -842,7 +843,7 @@ begin
     c.Request.PutHeader('Accept-Version', 'V2');
 
 
-    c.Request.Use.Compressing := ovYes;
+    c.Request.Use.AcceptCompressing := ovYes;
 
     s := '{"csr": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ0ZUQ0NBYndDQVFBd2RURUxNQWtHQTFVRUJoTUNVMEV4RmpBVUJnTlZCQXNNRFZKcGVXRmthQ0JDY21GdQpZMmd4SmpBa0JnTlZCQW9NSFUxaGVHbHRkVzBnVTNCbFpXUWdWR1ZqYUNCVGRYQndiSGtnVE'+
          'ZSRU1TWXdKQVlEClZRUUREQjFVVTFRdE9EZzJORE14TVRRMUxUTTVPVGs1T1RrNU9Ua3dNREF3TXpCV01CQUdCeXFHU000OUFnRUcKQlN1QkJBQUtBMElBQktGZ2ltdEVtdlJTQkswenI5TGdKQXRWU0NsOFZQWno2Y2RyNVgrTW9USG84dkhOTmx5Vwo1UTZ1N1Q4bmFQSnF0R29UakpqY'+
@@ -911,17 +912,78 @@ begin
   c := TmnHttpClient.Create;
   try
 //    c.UserAgent := 'curl/7.83.1';
-    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-    c.Request.PutHeader('Content-Encoding', 'chunk');
+//    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.Use.AcceptCompressing := ovYes;
+    c.Request.Use.KeepAlive := ovNo;
+//    c.Request.Use.Compressing := ovYes;
 
     s := m.DataString;
-    //c.GetString('https://httpbin.org/html', s);
-    c.Post('https://httpbin.org/post', '{"Code": 123}');
+    c.GetString('http://httpbin.org/html', s);
+    //c.Post('https://httpbin.org/post', '{"Code": 123}');
+//    c.ReadStream(m);
+//    s := m.DataString;
+
+    Writeln('');
+    for h in c.Request.Header do
+      Writeln('<'+h.GetNameValue);
+
+    //c.ReadStream(m);
+
+    Writeln('');
+    for h in c.Respond.Header do
+      Writeln('>'+h.GetNameValue);
+
+    Writeln(s);
+  finally
+    c.Free;
+    m.Free;
+  end;
+end;
+
+procedure TTestStream.ExampleHttpPost;
+var
+  m: TStringStream;
+  c: TmnHttpClient;
+  s: string;
+  h: TmnField;
+begin
+  //https://documenter.getpostman.com/view/5025623/SWTG5aqV
+  m := TStringStream.Create;
+  c := TmnHttpClient.Create;
+  try
+//    c.UserAgent := 'curl/7.83.1';
+//    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.Use.AcceptCompressing := ovYes;
+    c.Request.Use.KeepAlive := ovYes;
+//    c.Request.Use.Compressing := ovYes;
+
+    c.Post('http://httpbin.org/post', '{"Code": 8354654987}');
     c.ReadStream(m);
     s := m.DataString;
 
-    //c.ReadStream(m);
+    Writeln('');
+    for h in c.Request.Header do
+      Writeln('<'+h.GetNameValue);
+
+    Writeln('');
+    for h in c.Respond.Header do
+      Writeln('>'+h.GetNameValue);
+
+    Writeln(s);
+
+    m.Clear;
+
+    Writeln('-------------------------');
+    Writeln('Sending another POST');
+    Writeln('');
+
+    c.Post('{"Name": "Bla TheBla"}');
+    c.ReadStream(m);
+    s := m.DataString;
+
+    Writeln('');
+    for h in c.Request.Header do
+      Writeln('<'+h.GetNameValue);
 
     Writeln('');
     for h in c.Respond.Header do
@@ -946,8 +1008,8 @@ begin
   try
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-    c.Request.AddHeader('Accept', '*/*');
-    c.Request.Use.Compressing := ovYes;
+    c.Request.Accept := '*/*';
+    c.Request.Use.AcceptCompressing := ovYes;
 
     c.GetString('http://postman-echo.com/get?test=1', s);
 //    c.GetString('https://reqbin.com/echo', s);
@@ -980,8 +1042,7 @@ begin
   try
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
-//    c.UseCompressing := True;
-    c.Request.Use.Compressing := ovYes;
+    c.Request.Use.AcceptCompressing := ovYes;
     c.Request.Use.KeepAlive := ovNo;
 
     c.GetString('http://httpbin.org/gzip', s);
@@ -1125,7 +1186,7 @@ begin
     c.Request.AddHeader('Accept', '*/*');
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
-    //c.Compressing := True;
+    //c.AcceptCompressing := True;
 
     //c.GetString('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896', s);
     //c.GetString('https://raw.githubusercontent.com/paramjani12/paramjani12/main/README.md', s);
@@ -1238,7 +1299,7 @@ begin
 //    c.Request.Accept := '*/*';
 //    c.Request.Header.Add('x-forwarded-proto', 'https');
 //    c.Request.Header.Add('x-forwarded-port', '443');
-    //c.Compressing := True;
+    //c.AcceptCompressing := True;
     s := m.DataString;
 
     //c.GetString('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896', s);
@@ -1512,8 +1573,9 @@ begin
       Info.Address := ini.ReadString('options', 'Address', sHost);
       AddProc('Readlines Text', ExampleReadLinesFile);
       AddProc('Read Strings File', ExampleReadStringsFile);
-      AddProc('[httpclient] Example Zatca', ExampleZatca);
+//      AddProc('[httpclient] Example Zatca', ExampleZatca);
       AddProc('[httpclient] Example Http HTML', ExampleHttpHtml);
+      AddProc('[httpclient] Example Http Post', ExampleHttpPost);
       AddProc('[httpclient] Example Http Gz', ExampleHttpGz);
       AddProc('[httpclient] HTTP Echo', ExampleHttpEcho);
       AddProc('[httpclient] BIO HTTP Echo', ExampleBIOHttpEcho);
