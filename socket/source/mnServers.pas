@@ -814,7 +814,10 @@ begin
   try
     if Socket <> nil then
     begin
+      {$ifndef MSWINDOWS}
       Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
+      {$endif}
+      Socket.Close;
 
       //in linux close will cause lag on select
       //Shutdown worked in windows
@@ -923,7 +926,7 @@ begin
       DoBeforeClose;
       FListener.Terminate;
       FListener.WaitFor;
-      Log('Listener Stopped');
+      Log('Server stopping at port: '+ FListener.Port);
 
       //to process all queues
       //in case of service ThreadID<>MainThreadID :)
