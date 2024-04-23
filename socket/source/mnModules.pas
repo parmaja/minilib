@@ -73,6 +73,19 @@ type
     procedure Clear; override;
   end;
 
+  TmodCommunicate = class;
+
+  { TmodCommunicateStreamControl }
+
+  TmodCommunicateStreamControl =  class(TmnStreamControl)
+  private
+    FCommunicate: TmodCommunicate;
+  public
+    procedure Writing(Count: Longint); override;
+    procedure Reading(Count: Longint); override;
+    property Communicate: TmodCommunicate read FCommunicate;
+  end;
+
   TmnCustomCommand = class;
 
   TmodCommunicate = class abstract(TmnObject)
@@ -84,9 +97,11 @@ type
     FWritingStarted: Boolean;
     FContentLength: Int64;
     FParent: TmnCustomCommand;
+    FStreamControl: TmodCommunicateStreamControl;
     procedure SetHead(const Value: string);
   protected
-    procedure OnWriting(vCount: Longint);
+    procedure DoWriting(vCount: Longint);
+    procedure DoReading(vCount: Longint);
 
     procedure SendHead;
     procedure ReceiveHead;
@@ -1639,6 +1654,8 @@ begin
   FHeader := TmodHeader.Create;
   FCookies := TStringList.Create;
   FCookies.Delimiter := ';';
+  FStreamControl := TmodCommunicateStreamControl.Create;
+  FStreamControl.FCommunicate := Self;
 end;
 
 destructor TmodCommunicate.Destroy;
@@ -1646,6 +1663,7 @@ begin
   SetTrigger(False);
   FreeAndNil(FHeader);
   FreeAndNil(FCookies);
+  FreeAndNil(FStreamControl);
   inherited;
 end;
 
@@ -1788,24 +1806,32 @@ begin
   Header.Put(AName, AValue);
 end;
 
-procedure TmodCommunicate.OnWriting(vCount: Longint);
+procedure TmodCommunicate.DoWriting(vCount: Longint);
 begin
   if not FWritingStarted then
   begin
     FWritingStarted := True;
-    if not (resHeaderSending in Header.FStates) and not (resHeaderSent in Header.FStates) then
-      SendHeader;
+    try
+      if not (resHeaderSending in Header.FStates) and not (resHeaderSent in Header.FStates) then
+        SendHeader;
+    finally
+      FWritingStarted := False;
+    end;
   end;
+end;
+
+procedure TmodCommunicate.DoReading(vCount: Longint);
+begin
 end;
 
 procedure TmodCommunicate.SetTrigger(TriggerHeader: Boolean);
 begin
-  if (Stream <> nil) and (Stream is TmnConnectionStream) then
+  if (Stream <> nil) then
   begin
     if TriggerHeader then
-      (Stream as TmnConnectionStream).OnWriting := OnWriting
+      Stream.Control := FStreamControl
     else
-      (Stream as TmnConnectionStream).OnWriting := nil;
+      Stream.Control := nil;
   end;
 end;
 
@@ -1843,6 +1869,22 @@ begin
   Result := Self['Origin'];
   if Result = '' then
     Result := '*';
+end;
+
+{ TmodCommunicateStreamControl }
+
+procedure TmodCommunicateStreamControl.Writing(Count: Longint);
+begin
+  inherited;
+  if FCommunicate <> nil then
+    FCommunicate.DoWriting(Count);
+end;
+
+procedure TmodCommunicateStreamControl.Reading(Count: Longint);
+begin
+  inherited;
+  if FCommunicate <> nil then
+    FCommunicate.DoReading(Count);
 end;
 
 { TwebRequest }

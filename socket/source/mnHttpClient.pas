@@ -445,7 +445,7 @@ end;
 function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 begin
   Connect(vUrl);
-  Post(vData, vCount);
+  Result := Post(vData, vCount);
 end;
 
 function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
