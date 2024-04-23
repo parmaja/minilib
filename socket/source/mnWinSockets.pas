@@ -147,7 +147,7 @@ function TmnSocket.DoShutdown(How: TmnSocketStates): TmnError;
 var
   c: Integer;
   iHow: Integer;
-  //errno: longint;
+  errno: longint;
 begin
   if [sdReceive, sdSend] = How then
     iHow := SD_BOTH
@@ -163,7 +163,7 @@ begin
 
   //CheckActive;
   c := WinSock2.Shutdown(FHandle, iHow);
-  //errno := WSAGetLastError;
+  errno := WSAGetLastError;
   if c = SOCKET_ERROR then
     Result := erInvalid
   else
@@ -452,6 +452,8 @@ begin
 
   if aHandle <> INVALID_SOCKET then
   begin
+    FillChar(aSockAddr, SizeOf(aSockAddr), #0);
+
     //https://stackoverflow.com/questions/55034112/c-disable-delayed-ack-on-windows
     //aFreq := 1; // can be 1..255, default is 2
     //aErr := ioctlsocket(sock, SIO_TCP_SET_ACK_FREQUENCY, &freq);
@@ -488,6 +490,7 @@ begin
         end;
       end;
     end;
+
     {$IFDEF FPC}
     if WinSock2.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
     {$ELSE}
@@ -502,6 +505,7 @@ begin
       // Extract the port number
       if aSockAddr.sin_port = 0 then
       begin
+        l := SizeOf(aSockAddr);
         if WinSock2.getsockname(aHandle, TSockAddr(aSockAddr), l) = SOCKET_ERROR then
         begin
           vErr := WSAGetLastError;

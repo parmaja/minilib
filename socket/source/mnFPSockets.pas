@@ -417,6 +417,7 @@ begin
       // Extract the port number
       if aSockAddr.sin_port = 0 then
       begin
+        l := SizeOf(aSockAddr);
         if fpgetsockname(aHandle, TSockAddr(aSockAddr), l) = SOCKET_ERROR then
         begin
           vErr := SocketError;

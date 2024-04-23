@@ -429,6 +429,7 @@ begin
     {if SSL.Active then
       SSL.ShutDown;} //nop
     Result := DoShutdown(How);
+
     if Result = erSuccess then
       FStates := FStates + How
     else if Result > erTimeout then

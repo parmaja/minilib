@@ -564,6 +564,7 @@ begin
       // Extract the port number
       if aAddr.addr_in.sin_port = 0 then
       begin
+        l := SizeOf(aAddr);
         if getsockname(aHandle, aAddr.addr, l) = SOCKET_ERROR then
         begin
           vErr := errno; //GetSocketError(aHandle);
