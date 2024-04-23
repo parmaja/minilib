@@ -161,6 +161,10 @@ type
   end;
 
   TStreamMode = set of (smRequestCompress, smRespondCompress);
+  TStreamModeHelper = record helper for TStreamMode
+    function RequestCompress: Boolean;
+    function RespondCompress: Boolean;
+  end;
 
   TmodRequest = class(TmodCommunicate)
   private
@@ -900,7 +904,7 @@ begin
       CompressProxy.Enable
     else
     begin
-      CompressProxy := vCompressClass.Create([cprsRead], 9);
+      CompressProxy := vCompressClass.Create([cprsRead, cprsWrite], 9);
       Stream.AddProxy(CompressProxy);
     end;
   end
@@ -2043,6 +2047,18 @@ constructor TmnCustomClientCommand.Create;
 begin
   inherited Create;
 
+end;
+
+{ TStreamModeHelper }
+
+function TStreamModeHelper.RequestCompress: Boolean;
+begin
+  Result := smRequestCompress in Self;
+end;
+
+function TStreamModeHelper.RespondCompress: Boolean;
+begin
+  Result := smRespondCompress in Self;
 end;
 
 initialization
