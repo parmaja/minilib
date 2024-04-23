@@ -68,6 +68,7 @@
     <Linking>
       <Debugging>
         <DebugInfoType Value="dsDwarf3"/>
+        <UseHeaptrc Value="True"/>
         <UseValgrind Value="True"/>
       </Debugging>
     </Linking>

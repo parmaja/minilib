@@ -913,7 +913,7 @@ begin
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.PutHeader('Content-Encoding', 'chunk');
-    c.Request.Use.Compressing := ovYes;
+    c.Request.Use.AcceptCompressing := ovYes;
 
     s := m.DataString;
     //c.GetString('https://httpbin.org/html', s);

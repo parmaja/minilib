@@ -390,8 +390,8 @@ end;
 
 procedure TmnCustomHttpClient.FreeStream;
 begin
-  Request.SetTrigger(False);
-  Request.ChunkedProxy := nil;
+//  Request.SetTrigger(False);
+//  Request.ChunkedProxy := nil;
   FreeAndNil(FStream);
 end;
 
@@ -420,8 +420,8 @@ end;
 
 destructor TmnCustomHttpClient.Destroy;
 begin
-  FreeStream;
   inherited;
+  FreeStream;
 end;
 
 { TmnCustomHttpClient }

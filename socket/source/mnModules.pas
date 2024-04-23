@@ -1637,9 +1637,9 @@ end;
 
 destructor TmodCommunicate.Destroy;
 begin
+  SetTrigger(False);
   FreeAndNil(FHeader);
   FreeAndNil(FCookies);
-  SetTrigger(False);
   inherited;
 end;
 

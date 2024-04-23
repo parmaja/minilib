@@ -390,6 +390,7 @@ type
     procedure Writing(vCount: Longint); override;
   public
     constructor Create;
+    destructor Destroy; override;
     procedure Prepare; virtual;
     procedure Connect; virtual; abstract;
     procedure Disconnect; virtual; abstract;
@@ -715,6 +716,11 @@ begin
   FReadTimeout := cReadTimeout;
   FWriteTimeout := cWriteTimeout;
   FConnectTimeout := cConnectTimeout;
+end;
+
+destructor TmnConnectionStream.Destroy;
+begin
+  inherited;
 end;
 
 procedure TmnConnectionStream.Prepare;
