@@ -511,7 +511,7 @@ end;
 
 procedure TmnCustomHttpClient.Receive;
 begin
-  Respond.ReceiveHeader;
+  Respond.ReceiveHeader(True);
 end;
 
 procedure TmnCustomHttpClient.ReceiveMemoryStream(AStream: TStream);

@@ -125,8 +125,8 @@ type
     function GetCookie(const vNameSpace, vName: string): string;
 
     procedure Reset;
-    procedure ReceiveHeader; virtual;
-    procedure SendHeader; virtual;
+    procedure ReceiveHeader(WithHead: Boolean); virtual;
+    procedure SendHeader(WithHead: Boolean = True); virtual;
 
     //Add new header, can dublicate
     procedure AddHeader(const AName: string; AValue: TDateTime); overload;
@@ -1273,7 +1273,7 @@ end;
 
 procedure TmodModule.ReceiveHeader(ARequest: TmodRequest);
 begin
-  ARequest.ReceiveHeader;
+  ARequest.ReceiveHeader(False); //* Head is already recieved elsewhere
   DoReceiveHeader(ARequest);
 end;
 
@@ -1680,11 +1680,12 @@ begin
   Stream.ReadUTF8Line(FHead);
 end;
 
-procedure TmodCommunicate.ReceiveHeader;
+procedure TmodCommunicate.ReceiveHeader(WithHead: Boolean);
 begin
   Reset;
   InitProtocol;
-	ReceiveHead;
+  if WithHead then
+	  ReceiveHead;
   Header.ReadHeader(Stream);
   DoHeaderReceived;
 end;
@@ -1748,7 +1749,7 @@ begin
   FHeader.Clear;
 end;
 
-procedure TmodCommunicate.SendHeader;
+procedure TmodCommunicate.SendHeader(WithHead: Boolean);
 var
   item: TmnField;
   s: String;
@@ -1813,7 +1814,7 @@ begin
     FWritingStarted := True;
     try
       if not (resHeaderSending in Header.FStates) and not (resHeaderSent in Header.FStates) then
-        SendHeader;
+        SendHeader(True);
     finally
       FWritingStarted := False;
     end;

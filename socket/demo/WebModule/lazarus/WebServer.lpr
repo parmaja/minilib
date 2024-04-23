@@ -17,7 +17,7 @@ uses
   Forms,
   LCLIntf,
   SysUtils,
-  MainForm in 'MainForm.pas', HomeModules;
+  MainForm in 'MainForm.pas', HomeModules, mnModules;
 
 {$R *.res}
 

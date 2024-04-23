@@ -1,0 +1,1 @@
+{"command":"session","uid":"123","params":{"username":"admin","password":"3fa4bf009f28f3f7d673535f65d434b3","action":"login"}}
