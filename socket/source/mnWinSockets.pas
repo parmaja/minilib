@@ -62,7 +62,7 @@ type
     destructor Destroy; override;
     function GetSocketError(Handle: TSocketHandle): Integer; override;
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-    procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; var Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     function ResolveIP(Address: string): string; override;
     procedure Startup;
@@ -441,11 +441,12 @@ begin
   end
 end;
 
-procedure TmnWallSocket.Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Bind(Options: TmnsoOptions; ListenTimeout: Integer; var Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
   aSockAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
   aHostEnt: PHostEnt;
+  l: Integer;
 begin
   aHandle := TSocketHandle(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP));
 
@@ -499,8 +500,16 @@ begin
     else
     begin
       // Extract the port number
-      //unsigned short ephemeralPort = ntohs(localAddr.sin_port);
-      //printf("Ephemeral port: %hu\n", ephemeralPort);
+      if aSockAddr.sin_port = 0 then
+      begin
+        if WinSock2.getsockname(aHandle, TSockAddr(aSockAddr), l) = SOCKET_ERROR then
+        begin
+          vErr := WSAGetLastError;
+          FreeSocket(aHandle);
+        end
+        else
+          Port := IntToStr(ntohs(aSockAddr.sin_port));
+      end;
 		end;
   end;
 

@@ -139,7 +139,7 @@ type
     function GetSocketError(Handle: TSocketHandle): Integer; virtual;
 
     //Bind used by Listener of server
-    procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
+    procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; var Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
     //Connect used by clients
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); overload; virtual; abstract;
@@ -284,7 +284,7 @@ begin
 
     SSL := TSSL.Init(Context);
 
-    if (HostName<>'') then
+    if (HostName <> '') then
       SSL.SetHostName(HostName);
 
     SSL.SetSocket(FHandle);

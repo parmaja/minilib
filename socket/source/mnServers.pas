@@ -604,6 +604,7 @@ begin
 
   try
     Connect;
+    Log('Server starting at port: ' + FPort);
     if Connected then
       Changed;
     while Connected and not Terminated do
@@ -895,7 +896,6 @@ begin
         //FListener.Timeout := 500;
         DoStart;
         FListener.Start;
-        Log('Server starting at port: ' + Port);
         FActive := True;
       except
         FreeAndNil(FListener); //case error because delphi call terminateset on free
@@ -1048,7 +1048,7 @@ begin
     //Context.SetVerifyNone;
   end;
 
-  WallSocket.Bind(Options, ReadTimeout, Port, Address, FListenerSocket, vErr);
+  WallSocket.Bind(Options, ReadTimeout, FPort, Address, FListenerSocket, vErr);
   if FListenerSocket <> nil then
   begin
 //    FListenerSocket.Context := FContext;

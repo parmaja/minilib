@@ -75,6 +75,7 @@ type
     property List: TmnConnectionList read FList;
     procedure Add(Connection: TmnConnection); virtual;
     procedure Remove(Connection: TmnConnection); virtual;
+    property Port: string read FPort;
   end;
 
   { TmnConnection }

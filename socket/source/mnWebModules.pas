@@ -816,7 +816,7 @@ begin
         Request.Stream.AddProxy(Request.ProtcolProxy);
 
         if SendHostHeader then
-          Respond.Stream.WriteUTF8String('Request served by mnWebModule');
+          Respond.Stream.WriteUTF8String('Request served by miniWebModule');
         //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
       end;
     end;
