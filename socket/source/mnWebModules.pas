@@ -49,7 +49,7 @@ uses
   {$else}
   NetEncoding, Hash,
   {$endif}
-  DateUtils, mnLogs,
+  DateUtils, mnLogs, mnBase64,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams, mnMultipartData, mnModules;
 
@@ -301,6 +301,7 @@ var
   modLock: TCriticalSection = nil;
 
 function WebExpandToRoot(FileName: string; Root: string): string;
+function HashWebSocketKey(const key: string): string;
 
 implementation
 
@@ -324,20 +325,42 @@ end;
 //TODO slow function needs to improvements
 //https://stackoverflow.com/questions/1549213/whats-the-correct-encoding-of-http-get-request-strings
 
+{$ifdef FPC}
+function EncodeBase64(const Buffer; Count: Integer): Utf8String;
+var
+  Outstream : TStringStream;
+  Encoder   : TBase64EncodingStream;
+begin
+  if Count=0 then
+    Exit('');
+  Outstream:=TStringStream.Create('');
+  try
+    Encoder:=TBase64EncodingStream.create(outstream);
+    try
+      Encoder.Write(Buffer, Count);
+    finally
+      Encoder.Free;
+      end;
+    Result:=Outstream.DataString;
+  finally
+    Outstream.free;
+    end;
+end;
+{$endif}
 
 function HashWebSocketKey(const key: string): string;
 var
 {$ifdef FPC}
-  s: string;
+  b: TSHA1Digest;
 {$else}
   b: TBytes;
 {$endif}
 begin
 {$ifdef FPC}
-  s := SHA1Print(SHA1String(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'));
-  Result := EncodeStringBase64(s);
+  b := SHA1String(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
+  Result := EncodeBase64(b, SizeOf(b));
 {$else}
-  b := THashSHA1.GetHashBytes(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
+  b := THashSHA1.GetHashBytes(Utf8String(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'));
   Result := TNetEncoding.Base64String.EncodeBytesToString(b);
 {$endif}
 end;

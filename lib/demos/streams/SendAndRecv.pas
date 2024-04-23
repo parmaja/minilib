@@ -1567,6 +1567,7 @@ begin
   ini := TIniFile.Create(Application.Location + 'Options.ini');
   try
     try
+      //Writeln('wskey=' + HashWebSocketKey('123456789'));
       WriteLn('Welcome to testing Streams');
       WriteLn('');
       InstallConsoleLog;

@@ -495,7 +495,13 @@ begin
     begin
       vErr := WSAGetLastError;
       FreeSocket(aHandle);
-    end;
+    end
+    else
+    begin
+      // Extract the port number
+      //unsigned short ephemeralPort = ntohs(localAddr.sin_port);
+      //printf("Ephemeral port: %hu\n", ephemeralPort);
+		end;
   end;
 
   if aHandle <> INVALID_SOCKET then
