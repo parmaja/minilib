@@ -67,22 +67,27 @@ type
     //Use it to open connection and keep it connected
     procedure Connect(const vURL: UTF8String);
     function Open(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
+
     function Post(vData: PByte; vCount: Integer): Boolean; overload;
     function Post(vData: UTF8String): Boolean; overload;
     function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
     function Post(const vURL: UTF8String; vData: UTF8String): Boolean; overload;
 
+    function Patch(vData: PByte; vCount: Integer): Boolean; overload;
     function Patch(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
     function Patch(const vURL: UTF8String; vData: UTF8String): Boolean; overload;
 
-    function Get(const vURL: UTF8String): Boolean;
+    function Get: Boolean; overload;
+    function Get(const vURL: UTF8String): Boolean; overload;
 
     function ReadStream(AStream: TStream): TFileSize; overload;
-    procedure ReadStream(AStream: TStream; Count: Integer); overload;
+    function ReadStream(AStream: TStream; Count: Integer): TFileSize; overload;
+    function ReadToFile(OutFileName: UTF8String; Count: Integer = -1): TFileSize; overload;
 
     procedure ReceiveStream(AStream: TStream); overload;
     procedure ReceiveMemoryStream(AStream: TStream);
     procedure Disconnect;
+
     //Some utils
     //This will download the content into a stream and disconnect
     function GetString(const vURL: UTF8String; var OutString: string): TFileSize;
@@ -92,6 +97,7 @@ type
     //Please add seek to 0 after getting it
     procedure GetMemoryStream(const vURL: UTF8String; OutStream: TMemoryStream);
     procedure SendFile(const vURL: UTF8String; AFileName: UTF8String);
+    procedure Clear;
 
     property Protocol: UTF8String read FProtocol write FProtocol;
     property Port: UTF8String read FPort write FPort;
@@ -371,6 +377,12 @@ begin
   Result := FStream.Connected;
 end;
 
+procedure TmnCustomHttpClient.Clear;
+begin
+  Request.Clear;
+  Respond.Clear;
+end;
+
 procedure TmnCustomHttpClient.Connect(const vURL: UTF8String);
 var
   aHost: UTF8String;
@@ -448,6 +460,17 @@ begin
   Result := Post(vData, vCount);
 end;
 
+function TmnCustomHttpClient.Patch(vData: PByte; vCount: Integer): Boolean;
+begin
+  if (Stream = nil) or not Stream.Connected then
+    raise EmnStreamException.Create('Not connected yet');
+  SendPatch(vData, vCount);
+
+  Result := Stream.Connected;
+  if Result then
+    Receive;
+end;
+
 function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
 begin
   Result := Post(vURL, PByte(vData), Length(vData));
@@ -469,12 +492,7 @@ end;
 function TmnCustomHttpClient.Patch(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 begin
   Connect(vUrl);
-
-  SendPatch(vData, vCount);
-  //
-  Result := Stream.Connected;
-  if Result then
-    Receive;
+  Patch(vData, vCount);
 end;
 
 function TmnCustomHttpClient.Patch(const vURL: UTF8String; vData: UTF8String): Boolean;
@@ -492,9 +510,21 @@ begin
   ReadStream(AStream);
 end;
 
-procedure TmnCustomHttpClient.ReadStream(AStream: TStream; Count: Integer);
+function TmnCustomHttpClient.ReadStream(AStream: TStream; Count: Integer): TFileSize;
 begin
-  FStream.ReadStream(AStream, Count);
+  Result := FStream.ReadStream(AStream, Count);
+end;
+
+function TmnCustomHttpClient.ReadToFile(OutFileName: UTF8String; Count: Integer): TFileSize;
+var
+  f: TFileStream;
+begin
+  f := TFileStream.Create(OutFileName, fmCreate or fmShareDenyWrite);
+  try
+    Result := ReadStream(f, Count);
+  finally
+    f.Free;
+  end;
 end;
 
 function TmnCustomHttpClient.ReadStream(AStream: TStream): TFileSize;
@@ -557,8 +587,15 @@ end;
 function TmnCustomHttpClient.Get(const vURL: UTF8String): Boolean;
 begin
   Connect(vUrl);
+  Result := Get;
+end;
+
+function TmnCustomHttpClient.Get: Boolean;
+begin
+  if (Stream = nil) or not Stream.Connected then
+    raise EmnStreamException.Create('Not connected yet');
   SendGet;
-  //
+
   Result := Stream.Connected;
   if Result then
     Receive;

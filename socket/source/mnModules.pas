@@ -128,6 +128,8 @@ type
     procedure ReceiveHeader(WithHead: Boolean); virtual;
     procedure SendHeader(WithHead: Boolean = True); virtual;
 
+    procedure  Clear; virtual;
+
     //Add new header, can dublicate
     procedure AddHeader(const AName: string; AValue: TDateTime); overload;
     procedure AddHeader(const AName, AValue: String); overload; virtual;
@@ -213,7 +215,7 @@ type
     constructor Create(ACommand: TmnCustomCommand; AStream: TmnBufferStream); //need trigger event
     procedure SetStream(AStream: TmnBufferStream; TriggerHeader: Boolean); //for http client
     destructor Destroy; override;
-    procedure  Clear;
+    procedure  Clear; override;
 
     function ReadString(out s: string; Count: Integer): Boolean;
     function ReadLine(out s: string): Boolean;
@@ -1646,6 +1648,11 @@ begin
 end;
 
 { TmodCommunicate }
+
+procedure TmodCommunicate.Clear;
+begin
+  FHeader.Clear;
+end;
 
 constructor TmodCommunicate.Create(ACommand: TmnCustomCommand);
 begin
