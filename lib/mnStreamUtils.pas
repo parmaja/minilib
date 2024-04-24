@@ -78,8 +78,8 @@ type
     constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel = 9); override;
     destructor Destroy; override;
     procedure CloseDeflate; //close it after finishing compress a stream or partial a stream
-    class function GetCompressName: string; override;
     procedure CloseInflate;
+    class function GetCompressName: string; override;
     property BufSize: Cardinal read FBufSize write FBufSize;
   end;
 
@@ -274,10 +274,11 @@ var
 begin
   if cprsRead in FCompress then
   begin
+    //Example https://jigsaw.w3.org/HTTP/ChunkedScript
     with InflateInfo do
-    if ZEnd then
+    {if ZEnd then  ///* No because there is gzip stream even reach END but still feeding it, we need to reopen it
       ResultCount := 0
-    else
+    else}
     begin
       InitInflate; //init it if not initialized
       ZStream.next_out := @buffer;
@@ -297,13 +298,13 @@ begin
         if err = Z_STREAM_END then
         begin
           ZEnd := True;
-          CloseData;
+//          CloseData; //* no because we can reach END of zlib but sill need to inflate the stream, weird, do not trust END
           break;
         end
         else if err <> Z_OK then
         begin
           ZEnd := True;
-          CloseData;
+//          CloseData;
           raise Exception.Create(String(zerror(err)));
         end;
       end;
@@ -382,6 +383,7 @@ var
   WindowBits: Integer;
 begin
   with DeflateInfo do
+  begin
     if ZBuffer = nil then
     begin
       GetMem(ZBuffer, BufSize);
@@ -399,6 +401,8 @@ begin
       if err <> Z_OK then
         raise Exception.Create(String(zerror(err)));
     end;
+    ZEnd := False;
+  end;
 end;
 
 procedure TmnDeflateStreamProxy.InitInflate;
@@ -489,7 +493,7 @@ begin
   ResultCount := 0;
   RealCount := 0;
   Result := True;
-  if FReadSize=0 then
+  if FReadSize = 0 then
   begin
     FReadSize := ReadSize;
     if FReadSize = 0 then
@@ -506,13 +510,13 @@ begin
       aCount := FReadSize;
 
     Over.Read(Buffer, aCount, ResultCount, RealCount);
-    Dec(FReadSize, ResultCount);
+    FReadSize := FReadSize - ResultCount;
   end;
 
   if FReadSize = 0 then
   begin
     ReadChunkEndOfLine;
-    //CloseData
+//    CloseData
   end;
 end;
 
