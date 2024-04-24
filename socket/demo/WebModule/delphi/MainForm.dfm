@@ -56,40 +56,38 @@ object Main: TMain
     ExplicitHeight = 210
   end
   object StartBtn: TButton
-    Left = 365
+    Left = 361
     Top = 6
-    Width = 60
+    Width = 72
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'Start'
     Default = True
     TabOrder = 0
     OnClick = StartBtnClick
-    ExplicitLeft = 361
   end
   object HomePathEdit: TEdit
     Left = 88
     Top = 6
-    Width = 272
+    Width = 268
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
     TabOrder = 2
     Text = 'c:\offline\'
-    ExplicitWidth = 268
+    ExplicitWidth = 264
   end
   object StopBtn: TButton
-    Left = 365
+    Left = 361
     Top = 30
-    Width = 60
+    Width = 72
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'Stop'
     Enabled = False
     TabOrder = 5
     OnClick = StopBtnClick
-    ExplicitLeft = 361
   end
   object PortEdit: TEdit
     Left = 88
@@ -256,8 +254,8 @@ object Main: TMain
     end
   end
   object Button1: TButton
-    Left = 253
-    Top = 58
+    Left = 265
+    Top = 82
     Width = 65
     Height = 22
     Anchors = [akTop, akRight]
@@ -265,7 +263,6 @@ object Main: TMain
     Default = True
     TabOrder = 7
     OnClick = Button1Click
-    ExplicitLeft = 249
   end
   object UseSSLChk: TCheckBox
     Left = 108
@@ -277,7 +274,7 @@ object Main: TMain
     OnClick = StayOnTopChkClick
   end
   object Button2: TButton
-    Left = 367
+    Left = 361
     Top = 114
     Width = 60
     Height = 22
@@ -285,19 +282,18 @@ object Main: TMain
     Caption = 'Test'
     TabOrder = 9
     OnClick = Button2Click
-    ExplicitLeft = 363
   end
   object AliasNameEdit: TEdit
     Left = 163
     Top = 30
-    Width = 197
+    Width = 193
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
     TabOrder = 10
     Text = 'doc'
-    ExplicitWidth = 193
+    ExplicitWidth = 189
   end
   object KeepAliveChk: TCheckBox
     Left = 10
@@ -336,7 +332,7 @@ object Main: TMain
     OnClick = StayOnTopChkClick
   end
   object OpenBtn: TButton
-    Left = 351
+    Left = 361
     Top = 83
     Width = 76
     Height = 22
@@ -344,10 +340,9 @@ object Main: TMain
     Caption = 'Open URL'
     TabOrder = 15
     OnClick = OpenBtnClick
-    ExplicitLeft = 347
   end
   object Button3: TButton
-    Left = 304
+    Left = 269
     Top = 114
     Width = 61
     Height = 22
@@ -356,9 +351,9 @@ object Main: TMain
     OnClick = Button3Click
   end
   object Button4: TButton
-    Left = 355
+    Left = 361
     Top = 58
-    Width = 76
+    Width = 72
     Height = 22
     Caption = 'MakeCert'
     TabOrder = 17

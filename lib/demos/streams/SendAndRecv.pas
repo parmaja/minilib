@@ -48,6 +48,11 @@ type
     Stream: TmnClientSocket;
   end;
 
+  TmyHttpClient = class(TmnHttpClient)
+  public
+    procedure Print;
+  end;
+
   { TTestStream }
 
   TTestStream = class(TObject)
@@ -72,6 +77,7 @@ type
     procedure ExampleHttpHtml;
     procedure ExampleZatca;
     procedure ExampleHttpPost;
+    procedure ExampleHttpChunked;
     procedure ExampleHttpGz;
     procedure ExampleSocketOpenStreet;
     procedure ExampleHttpEcho;
@@ -826,14 +832,14 @@ end;
 procedure TTestStream.ExampleZatca;
 var
   m: TMemoryStream;
-  c: TmnHttpClient;
+  c: TmyHttpClient;
   s: string;
   r: UTF8String;
   h: TmnField;
 begin
   //https://documenter.getpostman.com/view/5025623/SWTG5aqV
   m := TMemoryStream.Create;
-  c := TmnHttpClient.Create;
+  c := TmyHttpClient.Create;
   try
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
@@ -903,13 +909,13 @@ end;
 procedure TTestStream.ExampleHttpHtml;
 var
   m: TStringStream;
-  c: TmnHttpClient;
+  c: TmyHttpClient;
   s: string;
   h: TmnField;
 begin
   //https://documenter.getpostman.com/view/5025623/SWTG5aqV
   m := TStringStream.Create;
-  c := TmnHttpClient.Create;
+  c := TmyHttpClient.Create;
   try
 //    c.UserAgent := 'curl/7.83.1';
 //    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
@@ -922,16 +928,7 @@ begin
     //c.Post('https://httpbin.org/post', '{"Code": 123}');
 //    c.ReadStream(m);
 //    s := m.DataString;
-
-    Writeln('');
-    for h in c.Request.Header do
-      Writeln('<'+h.GetNameValue);
-
-    //c.ReadStream(m);
-
-    Writeln('');
-    for h in c.Respond.Header do
-      Writeln('>'+h.GetNameValue);
+    c.Print;
 
     Writeln(s);
   finally
@@ -943,13 +940,13 @@ end;
 procedure TTestStream.ExampleHttpPost;
 var
   m: TStringStream;
-  c: TmnHttpClient;
+  c: TmyHttpClient;
   s: string;
   h: TmnField;
 begin
   //https://documenter.getpostman.com/view/5025623/SWTG5aqV
   m := TStringStream.Create;
-  c := TmnHttpClient.Create;
+  c := TmyHttpClient.Create;
   try
 //    c.UserAgent := 'curl/7.83.1';
 //    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
@@ -957,21 +954,18 @@ begin
     c.Request.Use.KeepAlive := ovYes;
 //    c.Request.Use.Compressing := ovYes;
 
-    c.Post('http://httpbin.org/post', '{"Code": 8354654987}');
+    //https://httpbin.org/response-headers?Transfer-Encoding=chunked
+    //c.Post('http://httpbin.org/response-headers?Transfer-Encoding=chunked', '{"Code": 8354654987}');
+
+    c.Post('http://httpbin.org/post?Transfer-Encoding=chunked', '{"Code": 8354654987}');
     c.ReadStream(m);
     s := m.DataString;
 
-    Writeln('');
-    for h in c.Request.Header do
-      Writeln('<'+h.GetNameValue);
-
-    Writeln('');
-    for h in c.Respond.Header do
-      Writeln('>'+h.GetNameValue);
+    c.Print;
 
     Writeln(s);
 
-    m.Clear;
+(*    m.Clear;
 
     Writeln('-------------------------');
     Writeln('Sending another POST');
@@ -981,13 +975,59 @@ begin
     c.ReadStream(m);
     s := m.DataString;
 
-    Writeln('');
-    for h in c.Request.Header do
-      Writeln('<'+h.GetNameValue);
+    c.Print;
 
+    Writeln(s);
+*)
+  finally
+    c.Free;
+    m.Free;
+  end;
+end;
+
+procedure TTestStream.ExampleHttpChunked;
+var
+  m: TStringStream;
+  c: TmyHttpClient;
+  s: string;
+  h: TmnField;
+begin
+  //https://documenter.getpostman.com/view/5025623/SWTG5aqV
+  m := TStringStream.Create;
+  c := TmyHttpClient.Create;
+  try
+//    c.UserAgent := 'curl/7.83.1';
+//    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.Use.AcceptCompressing := ovYes;
+    c.Request.Use.KeepAlive := ovYes;
+//    c.Request.Use.Compressing := ovYes;
+
+    //https://httpbin.org/response-headers?Transfer-Encoding=chunked
+    //c.Post('http://httpbin.org/response-headers?Transfer-Encoding=chunked', '{"Code": 8354654987}');
+
+    c.Get('https://jigsaw.w3.org/HTTP/ChunkedScript');
+//    c.Request.ChunkedProxy.Disable;
+//    c.Request.CompressProxy.Disable;
+    c.Print;
+
+    //c.ReadToFile('jigsaw.text', -1);
+    c.ReadStream(m);
+    s := m.DataString;
+    Writeln(s);
+
+    m.Clear;
+
+    Writeln('-------------------------');
+    Writeln('Sending another request');
     Writeln('');
-    for h in c.Respond.Header do
-      Writeln('>'+h.GetNameValue);
+
+    c.Clear;
+
+    c.Get;
+    c.Print;
+
+    c.ReadStream(m);
+    s := m.DataString;
 
     Writeln(s);
   finally
@@ -999,12 +1039,12 @@ end;
 procedure TTestStream.ExampleHttpEcho;
 var
   m: TStringStream;
-  c: TmnHttpClient;
+  c: TmyHttpClient;
   s: string;
   h: TmnField;
 begin
   m := TStringStream.Create;
-  c := TmnHttpClient.Create;
+  c := TmyHttpClient.Create;
   try
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
@@ -1032,13 +1072,13 @@ end;
 
 procedure TTestStream.ExampleHttpGz;
 var
-  c: TmnHttpClient;
+  c: TmyHttpClient;
   s: string;
   h: TmnField;
   i: Integer;
 begin
   //https://httpbin.org/get
-  c := TmnHttpClient.Create;
+  c := TmyHttpClient.Create;
   try
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
@@ -1287,12 +1327,12 @@ end;
 procedure TTestStream.ExampleCloudFlare;
 var
   m: TStringStream;
-  c: TmnHttpClient;
+  c: TmyHttpClient;
   s: string;
   h: TmnField;
 begin
   m := TStringStream.Create;
-  c := TmnHttpClient.Create;
+  c := TmyHttpClient.Create;
   try
     //c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
@@ -1309,15 +1349,8 @@ begin
     //c.Get('https://api.oursms.com/api-a/msgs?username=Alhayatsweets&token=2NgwEKQgO18yLAgXfTU0&src=ALHAYAT&body=12347&dests=+966504544896');
     //c.ReadStream(m);
 
+    c.Print;
 
-    Writeln('');
-//    Writeln('<'+c.Request.Head);
-    for h in c.Request.Header do
-      Writeln('<'+h.GetNameValue);
-    Writeln('');
-    for h in c.Respond.Header do
-      Writeln('>'+h.GetNameValue);
-    Writeln('');
     Writeln(s);
 
 //    Writeln(c.Response.StatusCode.ToString);
@@ -1577,6 +1610,7 @@ begin
 //      AddProc('[httpclient] Example Zatca', ExampleZatca);
       AddProc('[httpclient] Example Http HTML', ExampleHttpHtml);
       AddProc('[httpclient] Example Http Post', ExampleHttpPost);
+      AddProc('[httpclient] Example Http Chunked', ExampleHttpChunked);
       AddProc('[httpclient] Example Http Gz', ExampleHttpGz);
       AddProc('[httpclient] HTTP Echo', ExampleHttpEcho);
       AddProc('[httpclient] BIO HTTP Echo', ExampleBIOHttpEcho);
@@ -1697,6 +1731,31 @@ procedure TmyInfo.Clear;
 begin
   Finalize(info);
   FillChar(Self, SizeOf(Self), 0);
+end;
+
+{ TmyHttpClient }
+
+procedure TmyHttpClient.Print;
+var
+  h: TmnField;
+begin
+  Writeln('');
+  Writeln('== Reqeust ==');
+  Writeln('');
+
+  for h in Request.Header do
+    Writeln('<'+h.GetNameValue);
+
+  Writeln('');
+  Writeln('== Respond ==');
+  Writeln('');
+
+  for h in Respond.Header do
+    Writeln('>'+h.GetNameValue);
+
+  Writeln('');
+  Writeln('== Data ==');
+  Writeln('');
 end;
 
 end.
