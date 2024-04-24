@@ -75,7 +75,7 @@ type
   private
     FOptions: TmnsoOptions;
     FKind: TSocketKind;
-    FHostAdress: string;
+    FHostAddress: string;
 		FHostName: string;
     function GetConnected: Boolean;
   protected
@@ -101,7 +101,7 @@ type
   public
     Context: TContext; //Maybe Reference to Listener CTX or external CTX
 
-    constructor Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAdress: string = ''; AHostName: string = '');
+    constructor Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAddress: string = ''; AHostName: string = '');
     destructor Destroy; override;
     procedure EnableSSL;
     procedure Prepare; virtual; //TODO rename Connect;
@@ -124,7 +124,7 @@ type
     function GetRemoteName: string; virtual; abstract;
     //property Handle: TSocketHandle read FHandle; //I prefer not public it, but i need it into OpenSSL
 
-    property HostAdress: string read FHostAdress;
+    property HostAddress: string read FHostAddress;
 		property HostName: string read FHostName;
   end;
 
@@ -246,14 +246,14 @@ begin
   end
 end;
 
-constructor TmnCustomSocket.Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAdress: string; AHostName: string);
+constructor TmnCustomSocket.Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAddress: string; AHostName: string);
 begin
   inherited Create;
   FOptions := AOptions;
   FKind := AKind;
   FHandle := AHandle;
   FHostName := AHostName;
-  FHostAdress := AHostAdress;
+  FHostAddress := AHostAddress;
 end;
 
 destructor TmnCustomSocket.Destroy;

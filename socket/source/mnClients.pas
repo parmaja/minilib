@@ -40,6 +40,8 @@ type
     function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
   public
     constructor Create(const vAddress: string = ''; vPort: string = ''; vOptions: TmnsoOptions = [soNoDelay]); overload;
+    //Host can have port separated with :
+    constructor CreateBy(const vHost: string; vDefPort: string; vOptions: TmnsoOptions = [soNoDelay]); overload;
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
     property BindAddress: string read FBindAddress write SetBindAddress;
@@ -323,6 +325,16 @@ begin
 end;
 
 { TmnClientSocket }
+
+constructor TmnClientSocket.CreateBy(const vHost: string; vDefPort: string; vOptions: TmnsoOptions);
+var
+  aAddress, aPort: string;
+begin
+  SpliteStr(vHost, ':', aAddress, aPort);
+  if aPort = '' then
+    aPort := vDefPort;
+  Create(aAddress, aPort, vOptions);
+end;
 
 function TmnClientSocket.CreateSocket(out vErr: Integer): TmnCustomSocket;
 begin
