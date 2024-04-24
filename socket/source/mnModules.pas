@@ -1746,7 +1746,8 @@ end;
 procedure TmodCommunicate.Reset;
 begin
   FWritingStarted := False;
-  FHeader.Clear;
+  //FHeader.Clear;
+  FHeader.FStates := [];
 end;
 
 procedure TmodCommunicate.SendHeader(WithHead: Boolean);
