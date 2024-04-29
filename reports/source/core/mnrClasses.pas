@@ -1786,7 +1786,7 @@ end;
 function TmnrSection.DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 begin
   vParams.Reset;
-  vParams.Data := Report.RowsData.CreateJsonData;
+  vParams.Data := Report.RowsData.CreateJsonData; //multiline row
 
   if Assigned(FOnFetch) then
     FOnFetch(vParams)
@@ -1812,7 +1812,6 @@ var
 begin
   //vParams.Data shared for all DesignRows
   vParams.Data.AddPair('ID', vParams.ID);
-  //aRow.JData.AddPair('Number', vParams.Number);
   vParams.Data.AddPair('Locked', vParams.Locked);
   vParams.Data.AddPair('Index', vIndex);
 
