@@ -131,7 +131,7 @@ type
   private
     function GetModule: TmodWebFileModule;
   protected
-    function GetDefaultDocument(Root: string): string;
+    function GetDefaultDocument(vRoot: string): string;
     procedure RespondResult(var Result: TmodRespondResult); override;
     procedure Prepare(var Result: TmodRespondResult); override;
     procedure Created; override;
@@ -146,9 +146,10 @@ type
 
   TmodWebModule = class abstract(TmodModule)
   private
+    FHomePath: string;
+    FSmartURL: Boolean;
     procedure SetHomePath(AValue: string);
   protected
-    FHomePath: string;
     procedure Created; override;
 
     procedure Log(S: string); override;
@@ -160,8 +161,8 @@ type
     HostURL: string;
     CachePath: string;
     destructor Destroy; override;
-    property DocumentRoot: string read FHomePath write SetHomePath; //deprecated;
     property HomePath: string read FHomePath write SetHomePath;
+    property SmartURL: Boolean read FSmartURL write FSmartURL;
   end;
 
   { TmodWebFileModule }
@@ -538,20 +539,27 @@ begin
   Result := (inherited Module) as TmodWebFileModule;
 end;
 
-function TmodURICommand.GetDefaultDocument(Root: string): string;
+function TmodURICommand.GetDefaultDocument(vRoot: string): string;
 var
   i: Integer;
   aFile: string;
 begin
   //TODO baaad you need to luck before access
+  vRoot := IncludePathDelimiter(vRoot);
   for i := 0 to Module.DefaultDocument.Count - 1 do
   begin
-    aFile := Root + Module.DefaultDocument[i];
+    aFile := vRoot + Module.DefaultDocument[i];
     if FileExists(aFile) then
     begin
       Result := aFile;
+      Exit;
     end;
   end;
+
+  if Module.DefaultDocument.Count<>0 then
+    Result := vRoot + Module.DefaultDocument[0]
+  else
+    Result := vRoot;
 end;
 
 procedure TmodURICommand.RespondResult(var Result: TmodRespondResult);
@@ -602,6 +610,8 @@ end;
 procedure TmodHttpGetCommand.RespondResult(var Result: TmodRespondResult);
 var
   aDocument, aHomePath: string;
+  aPath, aFile: string;
+  aDefault: Boolean;
 begin
 
 (*
@@ -630,7 +640,13 @@ begin
   aDocument := ExpandFile(aDocument);
 
   if EndsDelimiter(aDocument) then //get the default file if it not defined
-     aDocument := GetDefaultDocument(aDocument);
+  begin
+    aDocument := GetDefaultDocument(aDocument);
+    aDefault := True;
+  end
+  else
+    aDefault := False;
+
 
   if not StartsStr(aHomePath, aDocument) then //check if out of root :)
   begin
@@ -648,12 +664,36 @@ begin
     //Respond.SendHead('HTTP/1.1 301 Moved Permanently');
     Respond.HttpResult := hrFound;
     //Respond.SendHead('HTTP/1.1 307 Temporary Redirect');
-
     Respond.AddHeader('Location', IncludeURLDelimiter(Request.Address));
     Respond.SendHeader;
   end
   else
   begin
+    if Module.SmartURL then
+    begin
+
+      repeat
+        if FileExists(aDocument) then
+          Break;
+
+        //aFile := ExtractFileName(aDocument);
+        //aPath := ExtractFilePath(aDocument);
+
+        if aDefault then
+        begin
+          aPath := ExtractFilePath(aDocument);
+          aPath := ExtractFilePath(aPath)
+        end
+        else
+        begin
+          aPath := ExtractFilePath(aDocument);
+          aDefault := True;
+        end;
+
+        aDocument := GetDefaultDocument(aPath);
+
+      until (aPath='') or SameText(aPath, aHomePath);
+    end;
 
     RespondDocument(aDocument, Result);
   end;
@@ -977,7 +1017,7 @@ procedure TmodHttpCommand.RespondNotFound;
 var
   Body: string;
 begin
-  Respond.HttpResult := hrOK; //hrError
+  Respond.HttpResult := hrNotFound; //hrError
   Respond.AddHeader('Content-Type', 'text/plain');
   Respond.Stream.WriteUTF8String('404 Not Found');
   Respond.KeepAlive := False;
