@@ -827,7 +827,7 @@ end;
 
 procedure TmnCustomField.WriteAsUID(const Value: string);
 begin
-  if Value = '' then
+  if (Value = '')or(Value='0') then //0 fix for integer as uid
     Clear
   else
     AsString := Value;
