@@ -32,8 +32,12 @@ type
   protected
     function GetActive: Boolean; override;
 
+    function ReceiveData(var Buffer; var Count: Longint; vFlag: Integer): TmnError;
+
     function DoReceive(var Buffer; var Count: Longint): TmnError; override;
+    function DoPeek(var Buffer; var Count: Integer): TmnError; override;
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
+
     //Timeout millisecond
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnSocketStates): TmnError; override;
@@ -132,6 +136,11 @@ begin
     Result := erClosed;
 end;
 
+function TmnSocket.DoPeek(var Buffer; var Count: Integer): TmnError;
+begin
+  Result := ReceiveData(Buffer, Count, MSG_PEEK);
+end;
+
 function TmnSocket.DoPending: Boolean;
 var
   Count: Cardinal;
@@ -183,36 +192,8 @@ begin
 end;
 
 function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
-var
-  ret: Integer;
-  errno: longint;
 begin
-  ret := WinSock2.recv(FHandle, Buffer, Count, 0);
-  if ret = 0 then
-  begin
-    Count := 0;
-    Result := erClosed;
-  end
-  else if ret = SOCKET_ERROR then
-  begin
-    Count := 0;
-    //CheckError not directly here
-    if soWaitBeforeRead in Options then
-      Result := erInvalid
-    else
-    begin
-      errno := WSAGetLastError(); //not work with OpenSSL because it reset error to 0, now readtimeout in socket options not usefull
-      if errno = WSAETIMEDOUT then
-        Result := erTimeout //the caller will close it depend on options
-      else
-        Result := erInvalid
-    end;
-  end
-  else
-  begin
-    Count := ret;
-    Result := erSuccess;
-  end;
+  Result := ReceiveData(Buffer, Count, 0);
 end;
 
 function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
@@ -278,6 +259,39 @@ begin
   else
     s := '';
   Result := string(s);
+end;
+
+function TmnSocket.ReceiveData(var Buffer; var Count: Longint; vFlag: Integer): TmnError;
+var
+  ret: Integer;
+  errno: longint;
+begin
+  ret := WinSock2.recv(FHandle, Buffer, Count, vFlag);
+  if ret = 0 then
+  begin
+    Count := 0;
+    Result := erClosed;
+  end
+  else if ret = SOCKET_ERROR then
+  begin
+    Count := 0;
+    //CheckError not directly here
+    if soWaitBeforeRead in Options then
+      Result := erInvalid
+    else
+    begin
+      errno := WSAGetLastError(); //not work with OpenSSL because it reset error to 0, now readtimeout in socket options not usefull
+      if errno = WSAETIMEDOUT then
+        Result := erTimeout //the caller will close it depend on options
+      else
+        Result := erInvalid
+    end;
+  end
+  else
+  begin
+    Count := ret;
+    Result := erSuccess;
+  end;
 end;
 
 function TmnSocket.GetLocalAddress: string;

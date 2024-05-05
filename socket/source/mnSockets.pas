@@ -12,6 +12,19 @@ unit mnSockets;
 
  }
 
+{
+  https://stackoverflow.com/questions/3897883/how-to-detect-an-incoming-ssl-https-handshake-ssl-wire-format
+
+  SSL 3.0 or TLS 1.0, 1.1 and 1.2
+  +-------+------------------+------------------+--------+------
+  | 0x16  | 2 bytes version  |  2 bytes length  |  0x01  |  etc.
+  +-------+------------------+------------------+--------+------
+      b[0] == 0x16 (message type "SSL handshake")
+      b[1] should be 0x03 (currently newest major version, but who knows in future?)
+      b[5] must be 0x01 (handshake protocol message "HelloClient")
+}
+
+
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
@@ -93,6 +106,7 @@ type
     function DoListen: TmnError; virtual; abstract;
     function DoSend(const Buffer; var Count: Longint): TmnError; virtual; abstract;
     function DoReceive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
+    function DoPeek(var Buffer; var Count: Longint): TmnError; virtual; abstract;
     function DoPending: Boolean; virtual; abstract;
     function DoClose: TmnError; virtual; abstract;
     property Options: TmnsoOptions read FOptions;
@@ -108,6 +122,7 @@ type
     function Shutdown(How: TmnSocketStates): TmnError;
     function Close: TmnError;
     function Receive(var Buffer; var Count: Longint): TmnError;
+    function Peek(var Buffer; var Count: Longint): TmnError;
     function Send(const Buffer; var Count: Longint): TmnError;
     function Select(Timeout: Integer; Check: TSelectCheck): TmnError;
 
@@ -290,7 +305,10 @@ begin
     SSL.SetSocket(FHandle);
 
     if Kind = skServer then
-      SSL.ServerHandshake
+    begin
+      if not SSL.ServerHandshake then
+        Close;
+    end
     else
     begin
       if not SSL.ClientHandshake then
@@ -374,6 +392,11 @@ begin
   Result := DoSelect(Timeout, Check);
   if Result > erTimeout then
     Close;
+end;
+
+function TmnCustomSocket.Peek(var Buffer; var Count: Longint): TmnError;
+begin
+  DoPeek(Buffer, Count);
 end;
 
 function TmnCustomSocket.Pending: Boolean;

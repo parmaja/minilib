@@ -819,8 +819,8 @@ begin
   ReadSize := SSL_read(Handle, Buf, Size);
   if ReadSize <= 0  then
   begin
-    errno := WallSocket.GetSocketError(FSocket);
     err := SSL_get_error(Handle, ReadSize);
+    errno := WallSocket.GetSocketError(FSocket);
 
     {
       Here we have a problem some are not real error, Disconnected gracefully, or read time out
