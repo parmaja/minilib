@@ -857,6 +857,9 @@ destructor TmnServer.Destroy;
 begin
   Stop;
   inherited;
+
+  //to process all queues like logs
+  //TThread.Synchronize(nil, DoCheckSynchronize);
 end;
 
 procedure TmnServer.Disconnect;
