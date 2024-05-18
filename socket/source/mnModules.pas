@@ -35,7 +35,7 @@ interface
 
 uses
   SysUtils, Classes, StrUtils, Types, DateUtils,
-  Generics.Defaults, mnStreamUtils,
+  Generics.Defaults, mnStreamUtils, SyncObjs,
   mnClasses, mnStreams, mnFields, mnParams,
   mnSockets, mnConnections, mnServers;
 
@@ -585,6 +585,77 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
     property Modules: TmodModules read FModules;
+  end;
+
+{ Pool }
+
+  TmnPool = class;
+  TmnPoolObject = class;
+  TPoolObjectClass = class of TmnPoolObject;
+
+  TmnPoolObject = class(TmnObject)
+  private
+    FPool: TmnPool;
+    FSkip: Boolean;
+    FName: string;
+  protected
+    FTerminated: Boolean;
+    procedure DoPrepare; virtual; //execute in main thread
+    procedure DoProcess; virtual; //execute in poolServices thread
+    procedure DoUnprepare; virtual; //execute in poolServices thread
+
+  public
+    constructor Create(APool: TmnPool; const vName: string); overload;
+    destructor Destroy; override;
+
+    procedure Execute;
+    procedure Terminate; virtual;
+    procedure AfterConstruction; override;
+    property Terminated: Boolean read FTerminated;
+    procedure Enter;
+    procedure Leave;
+
+    property Name: string read FName;
+  end;
+
+  TPoolList = class(TmnObjectList<TmnPoolObject>)
+  end;
+
+  TmnPoolThread = class(TThread)
+  protected
+    FPool: TmnPool;
+    procedure Execute; override;
+    procedure TerminatedSet; override;
+  public
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+  TmnPool = class(TObject)
+  private
+    FCurrent: TmnPoolObject;
+
+    FLock: TCriticalSection;
+    FEvent: TEvent;
+    FWaitEvent: TEvent;
+
+    FPoolList: TPoolList;
+    FTaskList: TPoolList;
+    FStarted: Boolean;
+    FTerminated: Boolean;
+  protected
+    procedure Start;
+    procedure Add(vPoolObject: TmnPoolObject);
+    procedure Execute; virtual; //run it from the thread
+  public
+    constructor Create;
+    destructor Destroy; override;
+    property PoolList: TPoolList read FPoolList;
+    property Lock: TCriticalSection read FLock;
+    function FindName(vClass: TPoolObjectClass; const vName: string): Boolean;
+    procedure SkipClass(vClass: TPoolObjectClass);
+    procedure TerminateSet; virtual;
+    property Terminated: Boolean read FTerminated;
   end;
 
 function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
@@ -1976,7 +2047,7 @@ begin
   if Use.AcceptCompressing = ovYes then
     PutHeader('Accept-Encoding', 'gzip, deflate');
 
-  if (Use.Compressing = ovYes) then
+  if (Use.Compressing = ovYes) then //to send data by request (post)
     PutHeader('Content-Encoding', 'gzip');
 end;
 
@@ -2120,6 +2191,249 @@ end;
 function TStreamModeHelper.RespondCompress: Boolean;
 begin
   Result := smRespondCompress in Self;
+end;
+
+{ Pool }
+
+{ TmnPoolObject }
+
+constructor TmnPoolObject.Create(APool: TmnPool; const vName: string);
+begin
+  inherited Create;
+  FPool := APool;
+  FName := vName;
+  FSkip := False;
+  FTerminated := False;
+//  FPool.Add(Self);
+  DoPrepare;
+end;
+
+procedure TmnPoolObject.AfterConstruction;
+begin
+  inherited;
+  FPool.Add(Self);
+end;
+
+destructor TmnPoolObject.Destroy;
+begin
+  DoUnprepare;
+  inherited;
+end;
+
+procedure TmnPoolObject.DoPrepare;
+begin
+end;
+
+procedure TmnPoolObject.DoProcess;
+begin
+end;
+
+procedure TmnPoolObject.DoUnprepare;
+begin
+end;
+
+procedure TmnPoolObject.Enter;
+begin
+  FPool.Lock.Enter;
+end;
+
+procedure TmnPoolObject.Execute;
+begin
+  DoProcess;
+  FPool.Lock.Enter;
+  try
+    FPool.FTaskList.Extract(Self);
+  finally
+    FPool.Lock.Leave;
+  end;
+
+  Free; //<------ Wrong
+end;
+
+procedure TmnPoolObject.Leave;
+begin
+  FPool.Lock.Leave;
+end;
+
+procedure TmnPoolObject.Terminate;
+begin
+  FTerminated := True;
+end;
+
+{ TmnPoolThread }
+
+constructor TmnPoolThread.Create;
+begin
+  inherited Create(True);
+
+end;
+
+destructor TmnPoolThread.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TmnPoolThread.Execute;
+begin
+  inherited;
+  FPool.TerminateSet;
+end;
+
+procedure TmnPool.Execute;
+var
+  aCurrent: TmnPoolObject;
+begin
+  inherited;
+  while not Terminated do
+  begin
+    Lock.Enter;
+    try
+      if PoolList.Count <> 0 then
+        FCurrent := PoolList.Extract(PoolList.First) { TODO : try use PoolList as queue }
+      else
+        FCurrent := nil;
+    finally
+      Lock.Leave;
+    end;
+
+    if FCurrent <> nil then
+    begin
+      FWaitEvent.ResetEvent;
+      try
+        if not FCurrent.FSkip then
+        begin
+          //Sleep(2000);
+          try
+            FCurrent.DoProcess;//
+          except
+            raise;
+{            on E: Exception do
+              Log('Error Pool Object [%s]: %s', [FCurrent.ClassName, E.Message]);}
+          end;
+        end;
+      finally
+        aCurrent := FCurrent;
+        Lock.Enter;
+        try
+          FCurrent := nil;
+        finally
+          Lock.Leave;
+        end;
+        FreeAndNil(aCurrent);
+        FWaitEvent.SetEvent;
+      end;
+    end
+    else
+    begin
+      FEvent.WaitFor;
+    end;
+  end;
+end;
+
+procedure TmnPoolThread.TerminatedSet;
+begin
+  inherited;
+  FPool.TerminateSet;
+end;
+
+{ TmnPool }
+
+procedure TmnPool.Add(vPoolObject: TmnPoolObject);
+begin
+  Lock.Enter;
+  try
+    Start;
+
+    PoolList.Add(vPoolObject);
+    if PoolList.Count=1 then
+      FEvent.SetEvent;
+  finally
+    Lock.Leave;
+  end;
+end;
+
+constructor TmnPool.Create;
+begin
+  inherited Create;
+  FStarted := False;
+  FPoolList := TPoolList.Create;
+  FTaskList := TPoolList.Create;
+  FLock := TCriticalSection.Create;
+  FEvent := TEvent.Create(nil, False, False, '');
+  FWaitEvent := TEvent.Create(nil, True, True, '');
+end;
+
+destructor TmnPool.Destroy;
+begin
+  FreeAndNil(FWaitEvent);
+
+  FreeAndNil(FLock);
+  FreeAndNil(FEvent);
+  FreeAndNil(FTaskList);
+  FreeAndNil(FPoolList);
+
+  inherited;
+end;
+
+function TmnPool.FindName(vClass: TPoolObjectClass; const vName: string): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  Lock.Enter;
+  try
+    for I := 0 to PoolList.Count-1 do
+    begin
+      if (PoolList[i].ClassType=vClass) and (PoolList[i].Name=vName) then
+      begin
+        Result := True;
+        Break;
+      end;
+    end;
+  finally
+    Lock.Leave;
+  end;
+end;
+
+procedure TmnPool.Start;
+begin
+  if not FStarted then
+  begin
+    FStarted := True;
+  end;
+end;
+
+procedure TmnPool.TerminateSet;
+begin
+  FEvent.SetEvent;
+  //FTickEvent.SetEvent;
+  //if FCurrent <> nil then FCurrent.FTerminated := True;
+end;
+
+procedure TmnPool.SkipClass(vClass: TPoolObjectClass);
+var
+  PoolObject: TmnPoolObject;
+begin
+  Lock.Enter;
+  try
+    for PoolObject in PoolList do
+    begin
+      if (PoolObject.ClassType=vClass) then
+        PoolObject.FSkip := True;
+    end;
+
+		//waitforcurrent;
+
+    if (FCurrent <> nil) and (FCurrent.ClassType = vClass) then
+    begin
+      FCurrent.Terminate;
+    end;
+  finally
+    Lock.Leave;
+  end;
+
+  FWaitEvent.WaitFor;
 end;
 
 initialization

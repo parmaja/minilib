@@ -64,8 +64,10 @@ type
 
   TWSEchoGetHomeCommand = class(TmodHttpCommand)
   protected
+    FPool: TmnPool;
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
+    property Pool: TmnPool read FPool;
   end;
 
   THomeSchemas = class(TmnwSchemas)
