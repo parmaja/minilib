@@ -42,7 +42,7 @@ type
     function InternalSend(vBuf: Pointer; vLen: Integer): Integer;
     function DoListen: TmnError; override;
     function DoReceive(var Buffer; var Count: Longint): TmnError; override;
-    function DoPeek(var Buffer; var Count: Integer): TmnError; override;
+    function DoPeek(var Buffer; var Count: Longint): TmnError; override;
 
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
     function DoClose: TmnError; override;
@@ -214,7 +214,7 @@ begin
     Result := erClosed;
 end;
 
-function TmnSocket.DoPeek(var Buffer; var Count: Integer): TmnError;
+function TmnSocket.DoPeek(var Buffer; var Count: Longint): TmnError;
 begin
   Result := ReceiveData(Buffer, Count, Msg_Peek);
 end;

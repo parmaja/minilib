@@ -291,9 +291,12 @@ begin
           Over.Read(ZBuffer^, BufSize, HaveRead, RealCount);
           ZStream.next_in := Pointer(ZBuffer);
           ZStream.avail_in := HaveRead;
+          if HaveRead=0 then //timeout or disconnected
+            break;
         end
         else
           RealCount := 0;
+
         err := inflate(ZStream, Z_NO_FLUSH);
         if err = Z_STREAM_END then
         begin
@@ -553,7 +556,7 @@ begin
     //Result := Over.Write(#13#10, t, r, e);
     Count := Count-t;
     if Count<=0 then
-      Break;
+      break;
   end;
 end;
 
@@ -588,14 +591,14 @@ begin
           Result := StrToIntDef('$'+s, 0);
           if b=13 then
             Over.Read(b, 1, r, c); //skip $A
-          Break;
+          break;
         end;
         else
           s := s + Chr(b);
       end;
     end
     else
-      Break;
+      break;
   end;
 end;
 
@@ -790,7 +793,7 @@ begin
         begin
           FSize := aSize;
           Result := True;
-          Break;
+          break;
         end
         else
         begin
