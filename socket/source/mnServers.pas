@@ -128,7 +128,9 @@ type
   protected
     procedure PostLogs; //run in main thread by queue
     procedure PostChanged; //run in main thread by queue
+    procedure PostStarted; //run in main thread by queue
     procedure Changed; virtual;
+    procedure Started; virtual;
 
     procedure Prepare; virtual;
     procedure Execute; override;
@@ -179,6 +181,7 @@ type
     function CreateListener: TmnListener; virtual;
     procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
+    procedure DoStarted(vListener: TmnListener); virtual;
     procedure DoIdle; virtual; //no connection found after time out:)
     procedure DoBeforeOpen; virtual;
     procedure DoAfterOpen; virtual;
@@ -263,9 +266,11 @@ type
     FOnAfterClose: TNotifyEvent;
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnListenerNotify;
+    FOnStarted: TmnOnListenerNotify;
   protected
     procedure DoLog(const S: string); override;
     procedure DoChanged(vListener: TmnListener); override;
+    procedure DoStarted(vListener: TmnListener); override;
     procedure DoBeforeOpen; override;
     procedure DoAfterOpen; override;
     procedure DoBeforeClose; override;
@@ -277,6 +282,7 @@ type
     property OnBeforeClose: TNotifyEvent read FOnBeforeClose write FOnBeforeClose;
     property OnLog: TmnOnLog read FOnLog write FOnLog;
     property OnChanged: TmnOnListenerNotify read FOnChanged write FOnChanged;
+    property OnStarted: TmnOnListenerNotify read FOnStarted write FOnStarted;
   end;
 
 implementation
@@ -340,6 +346,16 @@ begin
   begin
     if Assigned(FOnChanged) then
       FOnChanged(vListener);
+  end;
+end;
+
+procedure TmnEventServer.DoStarted(vListener: TmnListener);
+begin
+  inherited;
+  if not (IsDestroying) then
+  begin
+    if Assigned(FOnStarted) then
+      FOnStarted(vListener);
   end;
 end;
 
@@ -502,6 +518,11 @@ begin
   Queue(nil, PostChanged);
 end;
 
+procedure TmnListener.Started;
+begin
+  Queue(PostStarted); //without nil if thread stop delete queue
+end;
+
 procedure TmnListener.Connect;
 var
   aErr: Integer;
@@ -606,7 +627,10 @@ begin
     Connect;
     Log('Server starting at port: ' + FPort);
     if Connected then
+    begin
       Changed;
+      Started;
+    end;
     while Connected and not Terminated do
     begin
       try
@@ -919,6 +943,12 @@ begin
     FServer.DoChanged(Self);
 end;
 
+procedure TmnListener.PostStarted;
+begin
+  if FServer <> nil then
+    FServer.DoStarted(Self);
+end;
+
 procedure TmnServer.Stop;
 begin
   if (FListener <> nil) then
@@ -994,6 +1024,11 @@ end;
 
 procedure TmnServer.DoStart;
 begin
+end;
+
+procedure TmnServer.DoStarted(vListener: TmnListener);
+begin
+
 end;
 
 procedure TmnServer.DoStop;
