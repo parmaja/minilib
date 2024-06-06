@@ -87,6 +87,7 @@ type
     procedure ReceiveStream(AStream: TStream); overload;
     procedure ReceiveMemoryStream(AStream: TStream);
     procedure Disconnect;
+    procedure Reset;
 
     //Some utils
     //This will download the content into a stream and disconnect
@@ -508,6 +509,16 @@ end;
 procedure TmnCustomHttpClient.ReceiveStream(AStream: TStream);
 begin
   ReadStream(AStream);
+end;
+
+procedure TmnCustomHttpClient.Reset;
+begin
+  Disconnect;
+
+  FreeAndNil(Respond);
+  FreeAndNil(Request);
+  FRequest := CreateRequest(nil);
+  FRespond := CreateRespond;
 end;
 
 function TmnCustomHttpClient.ReadStream(AStream: TStream; Count: Integer): TFileSize;
