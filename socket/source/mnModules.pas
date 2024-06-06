@@ -300,7 +300,7 @@ type
   private
     FRaiseExceptions: Boolean;
   protected
-    FRespond: TmodRespond;
+    FRespond: TmodRespond; //need discuss like http client
     FRequest: TmodRequest;
 
     procedure DoPrepareHeader(Sender: TmodCommunicate); virtual;
@@ -1172,6 +1172,7 @@ end;
 destructor TmnCustomCommand.Destroy;
 begin
   FreeAndNil(FRespond);
+  FreeAndNil(FRequest);
   inherited;
 end;
 

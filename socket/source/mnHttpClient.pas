@@ -87,7 +87,6 @@ type
     procedure ReceiveStream(AStream: TStream); overload;
     procedure ReceiveMemoryStream(AStream: TStream);
     procedure Disconnect;
-    procedure Reset;
 
     //Some utils
     //This will download the content into a stream and disconnect
@@ -397,7 +396,7 @@ end;
 function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 begin
   Result := DoCreateStream(vURL, vProtocol, vHost, vPort, vParams);
-  FRequest.SetStream(Result, True);
+  Request.SetStream(Result, True);
 
   //need set trigger
   //Request.SetStream(Result, True);
@@ -408,7 +407,14 @@ procedure TmnCustomHttpClient.FreeStream;
 begin
 //  Request.SetTrigger(False);
 //  Request.ChunkedProxy := nil;
-  FreeAndNil(FStream);
+  if Request<>nil then //case of disconnect or destroy
+  begin
+    Request.ProtcolProxy := nil;
+    Request.ChunkedProxy := nil;
+    Request.CompressProxy := nil;
+  end;
+
+  FreeAndNil(FStream); //stream will free proxies
 end;
 
 constructor TmnCustomHttpClient.Create;
@@ -437,7 +443,6 @@ end;
 destructor TmnCustomHttpClient.Destroy;
 begin
   inherited;
-  FreeAndNil(FRequest);
   FreeStream;
 end;
 
@@ -509,16 +514,6 @@ end;
 procedure TmnCustomHttpClient.ReceiveStream(AStream: TStream);
 begin
   ReadStream(AStream);
-end;
-
-procedure TmnCustomHttpClient.Reset;
-begin
-  Disconnect;
-
-  FreeAndNil(Respond);
-  FreeAndNil(Request);
-  FRequest := CreateRequest(nil);
-  FRespond := CreateRespond;
 end;
 
 function TmnCustomHttpClient.ReadStream(AStream: TStream; Count: Integer): TFileSize;
