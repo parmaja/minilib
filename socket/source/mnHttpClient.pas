@@ -443,6 +443,7 @@ end;
 destructor TmnCustomHttpClient.Destroy;
 begin
   inherited;
+  FreeAndNil(FRequest);
   FreeStream;
 end;
 

@@ -1172,7 +1172,7 @@ end;
 destructor TmnCustomCommand.Destroy;
 begin
   FreeAndNil(FRespond);
-  FreeAndNil(FRequest);
+  //FreeAndNil(FRequest); in server command free request is outside but http client command free it
   inherited;
 end;
 
