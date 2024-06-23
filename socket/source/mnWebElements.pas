@@ -457,15 +457,18 @@ type
       { TMemoryImage }
 
       TMemoryImage = class(TImage)
+      private
+        FData: TMemoryStream;
       protected
-        Data: TMemoryStream;
         procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
       public
         FileName: string;
         FilePath: string;
         procedure Created; override;
         destructor Destroy; override;
-        procedure LoadFromFile(AFileName: string);
+        procedure LoadFromFile(const AFileName: string);
+        procedure LoadFromStream(AStream: TStream);
+        property Data: TMemoryStream read FData;
       end;
 
       { Break }
@@ -1438,12 +1441,12 @@ end;
 procedure THTML.TMemoryImage.Created;
 begin
   inherited;
-  Data := TMemoryStream.Create;
+  FData := TMemoryStream.Create;
 end;
 
 destructor THTML.TMemoryImage.Destroy;
 begin
-  FreeAndNil(Data);
+  FreeAndNil(FData);
   inherited;
 end;
 
@@ -1454,11 +1457,18 @@ begin
   AStream.WriteStream(Data, 0);
 end;
 
-procedure THTML.TMemoryImage.LoadFromFile(AFileName: string);
+procedure THTML.TMemoryImage.LoadFromFile(const AFileName: string);
 begin
   Data.LoadFromFile(AFileName);
   FileName := ExtractFileName(AFileName);
   FilePath := ExtractFilePath(AFileName);
+end;
+
+procedure THTML.TMemoryImage.LoadFromStream(AStream: TStream);
+begin
+  Data.LoadFromStream(AStream);
+  FileName := '';
+  FilePath := '';
 end;
 
 { TmnwElement }
@@ -1899,5 +1909,8 @@ begin
 end;
 
 initialization
+
 finalization
+  FreeAndNil(CacheClassObjects);
+
 end.
