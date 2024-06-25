@@ -22,7 +22,7 @@ uses
   mnFields, mnParams, mnMultipartData, mnModules, mnWebModules, mnWebElements;
 
 type
-  TmnwBootstrap_Library = class(TmnwLibrary)
+  TBootstrap_Library = class(TmnwLibrary)
   public
     procedure AddHead(AElement: TmnwElement; Context: TmnwContext); override;
   end;
@@ -56,7 +56,7 @@ implementation
 procedure TmnwBootstrapRenderer.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary('Bootstrap', TmnwBootstrap_Library);
+  Libraries.RegisterLibrary('Bootstrap', TBootstrap_Library);
   RegisterRenderer(THTML.TDocument, TDocument);
   Libraries.Use('Bootstrap');
 end;
@@ -70,13 +70,13 @@ begin
   inherited;
 end;
 
-{ TmnwBootstrap_Library }
+{ TBootstrap_Library }
 
-procedure TmnwBootstrap_Library.AddHead(AElement: TmnwElement; Context: TmnwContext);
+procedure TBootstrap_Library.AddHead(AElement: TmnwElement; Context: TmnwContext);
 begin
   inherited;
-  Context.Output.WriteLn('html', '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
-  Context.Output.WriteLn('html', '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
+  Context.Output.WriteLn('html', '<link href="' +GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/') + 'bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
+  Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/')+'bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
 end;
 
 end.

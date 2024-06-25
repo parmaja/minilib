@@ -79,6 +79,7 @@ type
     function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function UnsetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
+    procedure Append(AAttributes: TmnwAttributes);
     procedure Created; override;
   end;
 
@@ -101,10 +102,13 @@ type
   TmnwObject = class(TmnNamedObject);
 
   TmnwLibrary = class abstract(TmnNamedObject)
-  public
+  private
     FUsage: Integer;
+  protected
+    function GetSource(url: string): string; inline;
   public
-    procedure AddHead(AElement: TmnwElement; Context: TmnwContext); virtual;
+    Source: string;
+    procedure AddHead(AElement: TmnwElement; Context: TmnwContext); virtual; abstract;
     procedure IncUsage;
     procedure DecUsage;
     property Usage: Integer read FUsage;
@@ -114,11 +118,15 @@ type
 
   TmnwLibraries = class(TmnNamedObjectList<TmnwLibrary>)
   public
-    procedure Use(ALibraryName: string);
+    procedure Use(ALibrary: TmnwLibrary); overload;
+    procedure Use(ALibraryName: string); overload;
+    procedure Use(ALibraryClass: TmnwLibraryClass); overload;
+    function Find(ALibrary: TmnwLibraryClass): TmnwLibrary; overload;
+    function ChangeSource(ALibraryClass: TmnwLibraryClass; NewSource: string): Boolean;
     procedure RegisterLibrary(ALibraryName: string; ALibraryClass: TmnwLibraryClass);
   end;
 
-  TmnwJQuery_Library = class(TmnwLibrary)
+  TJQuery_Library = class(TmnwLibrary)
   public
     procedure AddHead(AElement: TmnwElement; Context: TmnwContext); override;
   end;
@@ -126,6 +134,7 @@ type
   TmnwRequestState = (rsBeforeRequest, rsAfterRequest);
 
   TmnwElementKind = set of(
+//    elRender,
     elEmbed, //* created by parent
     elInternal, //* do not render we will call it manually
     elFallback //* if no child have the route name, it take the respond if have a name
@@ -137,7 +146,7 @@ type
   private
     FEnabled: Boolean;
     FVisible: Boolean;
-    FUse: Boolean; //* Render it
+    FRenderIt: Boolean;
     FRoot: TmnwSchema;
     FParent: TmnwElement;
 
@@ -156,11 +165,13 @@ type
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
     procedure DoState(RequestState: TmnwRequestState); virtual;
     procedure State(RequestState: TmnwRequestState);
+    procedure DoBeforeRender(Renderer: TmnwRenderer); virtual;
     procedure DoCompose; virtual;
     procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); virtual;
+    procedure BeforeRender(Renderer: TmnwRenderer);
   public
     Composed: Boolean;
-    constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []); virtual;
+    constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); virtual;
     destructor Destroy; override;
     procedure Add(O: TmnwElement); overload;
     function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;
@@ -194,8 +205,8 @@ type
     property Comment: String read FComment write FComment;
     property Visible: Boolean read FVisible write FVisible;
     property Enabled: Boolean read FEnabled write FEnabled;
-    //* Use render it
-    property Use: Boolean read FUse write FUse;
+
+    property RenderIt: Boolean read FRenderIt write FRenderIt;
     //* Embed render it directly not by loop like THeader
     property Attributes: TmnwAttributes read FAttributes;
     property Kind: TmnwElementKind read FKind write FKind;
@@ -230,14 +241,14 @@ type
 
   TmnwSchema = class(TmnwElement)
   private
-    FLibraries: TmnwLibraries;
+//    FLibraries: TmnwLibraries;
   protected
     procedure DoRespond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
   public
-    constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []); override;
+    constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); override;
     destructor Destroy; override;
 
-    property Libraries: TmnwLibraries read FLibraries;
+    //property Libraries: TmnwLibraries read FLibraries;
   end;
 
   TmnwSchemaClass = class of TmnwSchema;
@@ -259,7 +270,7 @@ type
   public
     procedure Render(AElement: TmnwElement; Context: TmnwContext);
     procedure Respond(AElement: TmnwElement; AStream: TmnBufferStream); virtual;
-    constructor Create(ARenderer: TmnwRenderer); virtual; //usfull for creating it by RendererClass.Create
+    constructor Create(ARenderer: TmnwRenderer); virtual; //useful for creating it by RendererClass.Create
     procedure CollectAttributes(Scope: TmnwScope);
   end;
 
@@ -293,9 +304,14 @@ type
     {$ifndef FPC}
     procedure RegisterClasses(ASchemaClass: TmnwSchemaClass);
     {$endif}
+    procedure DoBeginRender; virtual;
+    procedure DoEndRender; virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
+
+    procedure BeginRender;
+    procedure EndRender;
 
     procedure RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = True);
     function FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
@@ -350,6 +366,7 @@ type
       public
       end;
 
+      TBody = class;
       THeader = class;
       TFooter = class;
       TContainer = class;
@@ -373,17 +390,26 @@ type
 
       { TDocument }
 
-      TDocument = class(THTMLElement)
+      TDocument = class(TAssets)
       private
-        FContainer: TContainer;
         FTitle: string;
         FVersion: integer;
-        FHeader: THeader;
-        FFooter: TFooter;
+        FBody: TBody;
       public
         Direction: TDirection;
         property Version: integer read FVersion write FVersion;
         property Title: string read FTitle write FTitle;
+        procedure Created; override;
+        destructor Destroy; override;
+        property Body: TBody read FBody;
+      end;
+
+      TBody = class(TContent)
+      protected
+        FHeader: THeader;
+        FFooter: TFooter;
+        FContainer: TContainer;
+      public
         property Header: THeader read FHeader;
         property Footer: TFooter read FFooter;
         property Container: TContainer read FContainer;
@@ -447,6 +473,8 @@ type
       end;
 
       TImage = class(THTMLElement)
+      protected
+        procedure DoBeforeRender(Renderer: TmnwRenderer); override;
       public
         Source: string;
         AltText: string;
@@ -505,6 +533,14 @@ type
       { TDocument }
 
       TDocument = class(TElementHTML)
+      protected
+        procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TBody }
+
+      TBody = class(TElementHTML)
       protected
         procedure DoCollectAttributes(Scope: TmnwScope); override;
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -600,6 +636,7 @@ type
       end;
 
     protected
+      procedure AddHead(AElement: TmnwElement; Context: TmnwContext); virtual;
       procedure Created; override;
     public
       HomeUrl: string;
@@ -765,6 +802,16 @@ begin
   end;
 end;
 
+procedure TmnwAttributes.Append(AAttributes: TmnwAttributes);
+var
+  fromAttibute: TmnwAttribute;
+begin
+  for fromAttibute in AAttributes do
+  begin
+    Add(TmnwAttribute.CreateFrom(fromAttibute));
+  end;
+end;
+
 procedure TmnwAttributes.Created;
 begin
   inherited;
@@ -816,6 +863,7 @@ begin
   aScope.Element := AElement;
   try
     CollectAttributes(aScope);
+
     if AElement.Parent <> nil then
       aParent := AElement.Parent.CreateRender(Context)
     else
@@ -826,13 +874,14 @@ begin
 
     DoBeforeRender(aScope, Context);
     DoRender(aScope, Context);
+
     if aParent <> nil then
     begin
       aParent.DoAfterChildRender(aScope, Context);
       aParent.Free;
     end;
   finally
-    aScope.Attributes.Free;
+    FreeAndNil(aScope.Attributes);
   end;
 end;
 
@@ -848,6 +897,8 @@ end;
 
 procedure TmnwElementRenderer.CollectAttributes(Scope: TmnwScope);
 begin
+  Scope.Attributes.Append(Scope.Element.Attributes);
+
   if Scope.Element.ID <> '' then
     Scope.Attributes['id'] := Scope.Element.ID;
   if Scope.Element.Name <> '' then
@@ -856,6 +907,7 @@ begin
     Scope.Attributes['style'] := Scope.Element.Style;
   if Scope.Element.StyleClass <> '' then
     Scope.Attributes.SetSubValue('class', Scope.Element.StyleClass);
+
   DoCollectAttributes(Scope);
 end;
 
@@ -870,7 +922,7 @@ procedure TmnwElement.Render(Context: TmnwContext);
 var
   Renderer: TmnwElementRenderer;
 begin
-  if Use then
+  if RenderIt then
   begin
     Renderer := CreateRender(Context);
     if Renderer <> nil then
@@ -1051,11 +1103,16 @@ begin
   Result.Render(Renderer, Sender, AStream);
 end;
 
+procedure TmnwHTMLRenderer.AddHead(AElement: TmnwElement; Context: TmnwContext);
+begin
+end;
+
 procedure TmnwHTMLRenderer.Created;
 begin
   inherited Created;
   //RegisterClasses(THTML);
   RegisterRenderer(THTML.TDocument ,TDocument);
+  RegisterRenderer(THTML.TBody ,TBody);
   RegisterRenderer(THTML.TDirectFile,TDirectFile);
   RegisterRenderer(THTML.TParagraph, TParagraph);
   RegisterRenderer(THTML.TBreak, TBreak);
@@ -1068,6 +1125,8 @@ begin
   RegisterRenderer(THTML.TContainer, TContainer);
   RegisterRenderer(THTML.TCard, TCard);
   RegisterRenderer(THTML.TForm, TForm);
+
+  Libraries.RegisterLibrary('JQuery', TJQuery_Library);
 end;
 
 { TmnwHTMLRenderer.TElementHTML }
@@ -1111,17 +1170,15 @@ begin
   Context.Output.WriteLn('html', '<head>', [woOpenTag]);
   Context.Output.WriteLn('html', '<title>'+ e.Title + '</title>', [woOpenTag, woCloseTag]);
   AddHead(Scope.Element, Context);
-  for aLibrary in e.Root.Libraries do
-  begin
-    if aLibrary.Usage > 0 then
-      aLibrary.AddHead(Scope.Element, Context);
-  end;
 
   for aLibrary in Renderer.Libraries do
   begin
     if aLibrary.Usage > 0 then
       aLibrary.AddHead(Scope.Element, Context);
   end;
+
+  (Renderer as TmnwHTMLRenderer).AddHead(Scope.Element, Context);
+
   //* Collect head from childs
   {for o in Scope.Element do
   begin
@@ -1136,12 +1193,7 @@ begin
     end;
   end;}
   Context.Output.WriteLn('html', '</head>', [woCloseTag]);
-  Context.Output.WriteLn('html', '<body>', [woOpenTag]);
-  e.Header.Render(Context);
-  e.Container.Render(Context);
-  inherited;
-  e.Footer.Render(Context);
-  Context.Output.WriteLn('html', '</body>', [woCloseTag]);
+  e.Body.Render(Context);
   Context.Output.WriteLn('html', '</html>', [woCloseTag]);
 end;
 
@@ -1313,9 +1365,9 @@ end;
 
 { TmnwSchema }
 
-constructor TmnwSchema.Create(AParent: TmnwElement; AKind: TmnwElementKind = []);
+constructor TmnwSchema.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
 begin
-  FLibraries := TmnwLibraries.Create;
+//  FLibraries := TmnwLibraries.Create;
   inherited;
   FRoot := Self;
   {$ifndef FPC}
@@ -1325,12 +1377,13 @@ end;
 
 destructor TmnwSchema.Destroy;
 begin
-  FreeAndNil(FLibraries);
+//  FreeAndNil(FLibraries);
   inherited;
 end;
 
 procedure TmnwSchema.DoRespond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
 begin
+  BeforeRender(Renderer);
   Render(Renderer, Sender, AStream);
 end;
 
@@ -1407,16 +1460,12 @@ end;
 procedure THTML.TDocument.Created;
 begin
   inherited;
-  FHeader := THeader.Create(Self, [elEmbed, elInternal]);
-  FFooter := TFooter.Create(Self, [elEmbed, elInternal]);
-  FContainer := TContainer.Create(Self, [elEmbed, elInternal]);
+  FBody := TBody.Create(Self, [elEmbed, elInternal], True);
 end;
 
 destructor THTML.TDocument.Destroy;
 begin
-{  FreeAndNil(FHeader);
-  FreeAndNil(FFooter);
-  FreeAndNil(FContainer);}
+{  FreeAndNil(FBody); }
   inherited;
 end;
 
@@ -1500,6 +1549,15 @@ procedure TmnwElement.Added(Item: TmnwElement);
 begin
   inherited;
   Item.Update;
+end;
+
+procedure TmnwElement.BeforeRender(Renderer: TmnwRenderer);
+var
+  o: TmnwElement;
+begin
+  DoBeforeRender(Renderer);
+  for o in Self do
+    o.BeforeRender(Renderer);
 end;
 
 procedure TmnwElement.Check;
@@ -1599,6 +1657,10 @@ begin
     Result := Self;
 end;
 
+procedure TmnwElement.DoBeforeRender(Renderer: TmnwRenderer);
+begin
+end;
+
 procedure TmnwElement.DoCompose;
 begin
 end;
@@ -1607,16 +1669,17 @@ procedure TmnwElement.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: 
 begin
 end;
 
-constructor TmnwElement.Create(AParent: TmnwElement; AKind: TmnwElementKind);
+constructor TmnwElement.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
 begin
   inherited Create;
   FEnabled := True;
   FVisible := True;
-  FUse := True;
+  FRenderIt := True;
   FName := '';
   FAttributes := TmnwAttributes.Create;
   FKind := AKind;
   FParent := AParent;
+  FRenderIt := ARenderIt;
   if FParent <> nil then
   begin
     FRoot:= FParent.FRoot;
@@ -1754,6 +1817,11 @@ end;
 
 { TmnwRenderer }
 
+procedure TmnwRenderer.BeginRender;
+begin
+  DoBeginRender;
+end;
+
 constructor TmnwRenderer.Create;
 begin
   FLibraries := TmnwLibraries.Create;
@@ -1768,6 +1836,19 @@ begin
   FreeAndNil(FParams);
   FreeAndNil(FLibraries);
   inherited;
+end;
+
+procedure TmnwRenderer.EndRender;
+begin
+  DoEndRender;
+end;
+
+procedure TmnwRenderer.DoBeginRender;
+begin
+end;
+
+procedure TmnwRenderer.DoEndRender;
+begin
 end;
 
 {$ifndef FPC}
@@ -1826,28 +1907,35 @@ var
   aFileName: string;
 begin
   inherited;
-  (Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', DocumentToContentType(Route));
-  aFileName := IncludePathDelimiter(HomePath) + Route;
-  if FileExists(aFileName) then
+  if HomePath <> '' then
   begin
-    fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
-    try
-      AStream.WriteStream(fs, 0);
-    finally
-      fs.Free;
+    (Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', DocumentToContentType(Route));
+    aFileName := IncludePathDelimiter(HomePath) + Route;
+    if FileExists(aFileName) then
+    begin
+      fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
+      try
+        AStream.WriteStream(fs, 0);
+      finally
+        fs.Free;
+      end;
     end;
   end;
 end;
 
 { TmnwLibrary }
 
-procedure TmnwLibrary.AddHead(AElement: TmnwElement; Context: TmnwContext);
-begin
-end;
-
 procedure TmnwLibrary.DecUsage;
 begin
   FUsage := FUsage - 1;
+end;
+
+function TmnwLibrary.GetSource(url: string): string;
+begin
+  if Source <> '' then
+    Result := IncludeURLDelimiter(Source)
+  else
+    Result := IncludeURLDelimiter(url);
 end;
 
 procedure TmnwLibrary.IncUsage;
@@ -1856,6 +1944,29 @@ begin
 end;
 
 { TmnwLibraries }
+
+function TmnwLibraries.ChangeSource(ALibraryClass: TmnwLibraryClass; NewSource: string): Boolean;
+var
+  ALibrary: TmnwLibrary;
+begin
+  ALibrary := Find(ALibraryClass);
+  Result := ALibrary <> nil;
+  if Result then
+    ALibrary.Source := NewSource;
+end;
+
+function TmnwLibraries.Find(ALibrary: TmnwLibraryClass): TmnwLibrary;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+    if Items[i].ClassType = ALibrary then
+    begin
+      Result := Items[i];
+      break;
+    end;
+end;
 
 procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; ALibraryClass: TmnwLibraryClass);
 var
@@ -1866,23 +1977,42 @@ begin
   Add(ALibrary);
 end;
 
+procedure TmnwLibraries.Use(ALibrary: TmnwLibrary);
+begin
+  if ALibrary <> nil then
+    ALibrary.IncUsage
+  else
+    raise Exception.Create('library is nil');
+end;
+
+procedure TmnwLibraries.Use(ALibraryClass: TmnwLibraryClass);
+var
+  ALibrary: TmnwLibrary;
+begin
+  ALibrary := Find(ALibraryClass);
+  if ALibrary <> nil then
+    Use(ALibrary)
+  else
+    raise Exception.Create('There is no library: ' + ALibraryClass.ClassName);
+end;
+
 procedure TmnwLibraries.Use(ALibraryName: string);
 var
   ALibrary: TmnwLibrary;
 begin
   ALibrary := Find(ALibraryName);
   if ALibrary <> nil then
-    ALibrary.IncUsage
+    Use(ALibrary)
   else
     raise Exception.Create('There is no library: ' + ALibraryName);
 end;
 
-{ TmnwJQuery_Library }
+{ TJQuery_Library }
 
-procedure TmnwJQuery_Library.AddHead(AElement: TmnwElement; Context: TmnwContext);
+procedure TJQuery_Library.AddHead(AElement: TmnwElement; Context: TmnwContext);
 begin
   inherited;
-  Context.Output.WriteLn('html', '<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js" crossorigin="anonymous"></script>');
+  Context.Output.WriteLn('html', '<script src="'+GetSource('https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/') + 'jquery.min.js" crossorigin="anonymous"></script>');
 end;
 
 { THTML }
@@ -1890,15 +2020,19 @@ end;
 procedure THTML.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary('JQuery', TmnwJQuery_Library);
 end;
 
 { THTML.TImage }
 
+procedure THTML.TImage.DoBeforeRender(Renderer: TmnwRenderer);
+begin
+  inherited;
+  Renderer.Libraries.Use('JQuery');
+end;
+
 procedure THTML.TImage.DoCompose;
 begin
   inherited;
-  Root.Libraries.Use('JQuery');
 end;
 
 { TmnwHTMLRenderer.TDirectFile }
@@ -1906,6 +2040,45 @@ end;
 procedure TmnwHTMLRenderer.TDirectFile.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   (Scope.Element as THTML.TDirectFile).Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
+end;
+
+{ THTML.TBody }
+
+procedure THTML.TBody.Created;
+begin
+  inherited;
+  FHeader := THeader.Create(Self, [elEmbed, elInternal], False);
+  FFooter := TFooter.Create(Self, [elEmbed, elInternal], False);
+  FContainer := TContainer.Create(Self, [elEmbed, elInternal], True);
+end;
+
+destructor THTML.TBody.Destroy;
+begin
+{  FreeAndNil(FHeader);
+  FreeAndNil(FFooter);
+  FreeAndNil(FContainer);}
+  inherited;
+end;
+
+{ TmnwHTMLRenderer.TBody }
+
+procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(Scope: TmnwScope);
+begin
+  inherited;
+
+end;
+
+procedure TmnwHTMLRenderer.TBody.DoRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TBody;
+begin
+  e := Scope.Element as THTML.TBody;
+  Context.Output.WriteLn('html', '<body '+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  e.Header.Render(Context);
+  e.Container.Render(Context);
+  inherited;
+  e.Footer.Render(Context);
+  Context.Output.WriteLn('html', '</body>', [woCloseTag]);
 end;
 
 initialization

@@ -106,53 +106,55 @@ begin
     //Route := 'document';
     Title := 'MyHome';
     Direction := dirLTR;
-
-    Header.Text := 'Creative Solutions';
-    with Header.Add<TImage> do
+    with Body do
     begin
-      Name := 'image_logo';
-      Comment := 'Image from another module';
-      Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
-    end;
-    Header.Use := True;
-    Footer.Use := True;
-
-    with Container do
-    begin
-      Name := 'Container';
-      with This.Add<TParagraph> do
+      Header.Text := 'Creative Solutions';
+      with Header.Add<TImage> do
       begin
-        Text := 'Hello Word';
-        Name := 'p1';
+        Name := 'image_logo';
+        Comment := 'Image from another module';
+        Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
       end;
 
-      with This.Add<TCard>() do
+      Header.RenderIt := True;
+      Footer.RenderIt := True;
+
+      with Container do
       begin
-        Caption := 'Welcome';
-        Name := 'card';
-
-        with This.Add<TMemoryImage> do
+        Name := 'Container';
+        with This.Add<TParagraph> do
         begin
-          Name := 'logo';
-          Route := 'logo';
-          LoadFromFile(IncludePathDelimiter(Module.HomePath) + 'logo.png');
+          Text := 'Hello Word';
+          Name := 'p1';
         end;
 
-        with This.Add<TImage> do
+        with This.Add<TCard>() do
         begin
-          Name := 'logo';
-//          Route := 'logo';
-            Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo';
-        end;
+          Caption := 'Welcome';
+          Name := 'card';
 
-        with This.Add<TImage> do
-        begin
-          Name := 'file_logo';
-//          Route := 'logo';
-          Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
+          with This.Add<TMemoryImage> do
+          begin
+            Name := 'logo';
+            Route := 'logo';
+            LoadFromFile(IncludePathDelimiter(Module.HomePath) + 'logo.png');
+          end;
+
+          with This.Add<TImage> do
+          begin
+            Name := 'logo';
+  //          Route := 'logo';
+              Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo';
+          end;
+
+          with This.Add<TImage> do
+          begin
+            Name := 'file_logo';
+  //          Route := 'logo';
+            Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
+          end;
         end;
       end;
-
     end;
   end;
 end;
@@ -280,41 +282,44 @@ begin
     Title := 'MyHome';
     Direction := dirLTR;
 
-    Header.Text := 'Creative Solutions';
-    with Header.Add<TImage> do
+    with Body do
     begin
-      Comment := 'Image from another module';
-      Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
-    end;
-    Header.Use := True;
-    Footer.Use := True;
-
-    with Container do
-    begin
-      with This.Add<TParagraph> do
+      Header.Text := 'Creative Solutions';
+      with Header.Add<TImage> do
       begin
-        Text := 'Hello Word';
+        Comment := 'Image from another module';
+        Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
       end;
+      Header.RenderIt := True;
+      Footer.RenderIt := True;
 
-      with This.Add<TCard>() do
+      with Container do
       begin
-        Caption := 'Login';
-
-        with This.Add<TForm>() do
+        with This.Add<TParagraph> do
         begin
-          with This.Add<TInput>('username') do
+          Text := 'Hello Word';
+        end;
+
+        with This.Add<TCard>() do
+        begin
+          Caption := 'Login';
+
+          with This.Add<TForm>() do
           begin
-            Caption := 'Username';
-            PlaceHolder := 'Type user name';
+            with This.Add<TInput>('username') do
+            begin
+              Caption := 'Username';
+              PlaceHolder := 'Type user name';
+            end;
+
+            with This.Add<TInputPassword>('password') do
+            begin
+              Caption := 'Password';
+            end;
+
+            This.Add<TBreak>;
+
           end;
-
-          with This.Add<TInputPassword>('password') do
-          begin
-            Caption := 'Password';
-          end;
-
-          This.Add<TBreak>;
-
         end;
       end;
     end;
