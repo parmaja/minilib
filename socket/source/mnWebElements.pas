@@ -429,9 +429,25 @@ type
 
       TContainer = class(TContent)
       public
+        Size: Integer;
+      end;
+
+      TRow = class(TContent)
+      public
+        Size: Integer;
+      end;
+
+      TColumn = class(TContent)
+      public
+        Size: Integer;
       end;
 
       TCard = class(TContent)
+      public
+        Caption: string;
+      end;
+
+      TPanel = class(TContent)
       public
         Caption: string;
       end;
@@ -575,9 +591,27 @@ type
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      TRow = class abstract(TElementHTML)
+      protected
+      public
+        procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      TColumn = class abstract(TElementHTML)
+      protected
+      public
+        procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       { TCard }
 
       TCard = class abstract(TElementHTML)
+      protected
+      public
+        procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      TPanel = class abstract(TElementHTML)
       protected
       public
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -1125,6 +1159,9 @@ begin
   RegisterRenderer(THTML.TContainer, TContainer);
   RegisterRenderer(THTML.TCard, TCard);
   RegisterRenderer(THTML.TForm, TForm);
+  RegisterRenderer(THTML.TRow, TRow);
+  RegisterRenderer(THTML.TColumn, TColumn);
+  RegisterRenderer(THTML.TPanel, TPanel);
 
   Libraries.RegisterLibrary('JQuery', TJQuery_Library);
 end;
@@ -1232,13 +1269,9 @@ var
   e: THTML.TContainer;
 begin
   e := Scope.Element as THTML.TContainer;
-  Context.Output.WriteLn('html', '<div class="container mt-3">', [woOpenTag]);
-  //Context.Output.WriteLn('html', '<div class="col-md-9">', [woOpenTag]);
-  Context.Output.WriteLn('html', '<main>', [woOpenTag]);
+  Context.Output.WriteLn('html', '<main class="container">', [woOpenTag]);
   inherited;
   Context.Output.WriteLn('html', '</main>', [woCloseTag]);
-  //Context.Output.WriteLn('html', '</div>', [woCloseTag]);
-  Context.Output.WriteLn('html', '</div>', [woCloseTag]);
 end;
 
 { TmnwHTMLRenderer.TCardHTML }
@@ -2079,6 +2112,47 @@ begin
   inherited;
   e.Footer.Render(Context);
   Context.Output.WriteLn('html', '</body>', [woCloseTag]);
+end;
+
+{ TmnwHTMLRenderer.TPanel }
+
+procedure TmnwHTMLRenderer.TPanel.DoRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TPanel;
+begin
+  e := Scope.Element as THTML.TPanel;
+  Context.Output.WriteLn('html', '<div class="panel">', [woOpenTag]);
+  if e.Caption <> '' then
+    Context.Output.WriteLn('html', '<div class="panel-header">' + e.Caption + '</div>', [woOpenTag, woCloseTag]);
+
+  Context.Output.WriteLn('html', '<div class="panel-body">', [woOpenTag]);
+  inherited;
+  Context.Output.WriteLn('html', '</div>', [woCloseTag]);
+  Context.Output.Writeln('html', '</div>', [woCloseTag]);
+end;
+
+{ TmnwHTMLRenderer.TRow }
+
+procedure TmnwHTMLRenderer.TRow.DoRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TRow;
+begin
+  e := Scope.Element as THTML.TRow;
+  Context.Output.WriteLn('html', '<div class="row">', [woOpenTag]);
+  inherited;
+  Context.Output.Writeln('html', '</div>', [woCloseTag]);
+end;
+
+{ TmnwHTMLRenderer.TColumn }
+
+procedure TmnwHTMLRenderer.TColumn.DoRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TColumn;
+begin
+  e := Scope.Element as THTML.TColumn;
+  Context.Output.WriteLn('html', '<div class="column">', [woOpenTag]);
+  inherited;
+  Context.Output.Writeln('html', '</div>', [woCloseTag]);
 end;
 
 initialization

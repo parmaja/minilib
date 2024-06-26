@@ -45,6 +45,17 @@ type
       procedure AddHead(AElement: TmnwElement; Context: TmnwContext); override;
     end;
 
+    TContainer = class abstract(TElementHTML)
+    protected
+    public
+      procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+    end;
+
+    TColumn = class(TmnwHTMLRenderer.TElementHTML)
+    public
+      procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+    end;
+
   public
     procedure Created; override;
   end;
@@ -58,6 +69,8 @@ begin
   inherited;
   Libraries.RegisterLibrary('Bootstrap', TBootstrap_Library);
   RegisterRenderer(THTML.TDocument, TDocument);
+  RegisterRenderer(THTML.TContainer, TContainer, True);
+  RegisterRenderer(THTML.TColumn, TColumn, True);
   Libraries.Use('Bootstrap');
 end;
 
@@ -77,6 +90,34 @@ begin
   inherited;
   Context.Output.WriteLn('html', '<link href="' +GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/') + 'bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
   Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/')+'bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
+end;
+
+{ TmnwBootstrapRenderer.TColumn }
+
+procedure TmnwBootstrapRenderer.TColumn.DoRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TColumn;
+begin
+  e := Scope.Element as THTML.TColumn;
+  Context.Output.WriteLn('html', '<div class="col-md-'+e.Size.ToString+'">', [woOpenTag]);
+  inherited;
+  Context.Output.Writeln('html', '</div>', [woCloseTag]);
+end;
+
+{ TmnwBootstrapRenderer.TContainer }
+
+procedure TmnwBootstrapRenderer.TContainer.DoRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TContainer;
+begin
+  e := Scope.Element as THTML.TContainer;
+  Context.Output.WriteLn('html', '<div class="container mt-'+e.Size.ToString+'">', [woOpenTag]);
+  //Context.Output.WriteLn('html', '<div class="col-md-9">', [woOpenTag]);
+  Context.Output.WriteLn('html', '<main>', [woOpenTag]);
+  inherited;
+  Context.Output.WriteLn('html', '</main>', [woCloseTag]);
+  //Context.Output.WriteLn('html', '</div>', [woCloseTag]);
+  Context.Output.WriteLn('html', '</div>', [woCloseTag]);
 end;
 
 end.
