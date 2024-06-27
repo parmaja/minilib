@@ -140,6 +140,10 @@ type
     elFallback //* if no child have the route name, it take the respond if have a name
   );
 
+
+  TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignEnd);
+  TmnwFixed= (fixedDefault, fixedTop, fixedBottom);
+
   { TmnwElement }
 
   TmnwElement = class(TmnObjectList<TmnwElement>)
@@ -243,6 +247,8 @@ type
   private
 //    FLibraries: TmnwLibraries;
   protected
+    NameingLastID: Integer;
+    procedure UpdateID(Element: TmnwElement); inline;
     procedure DoRespond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); override;
@@ -364,6 +370,8 @@ type
       protected
         procedure Added(Item: TmnwElement); override;
       public
+        Align: TmnwAlign;
+        Fixed: TmnwFixed;
       end;
 
       TBody = class;
@@ -429,7 +437,9 @@ type
 
       TContainer = class(TContent)
       public
+        Margin: Integer;
         Size: Integer;
+        procedure Created; override;
       end;
 
       TRow = class(TContent)
@@ -444,6 +454,7 @@ type
 
       TCard = class(TContent)
       public
+        Collapse: Boolean;
         Caption: string;
       end;
 
@@ -467,6 +478,7 @@ type
       TParagraph = class(TContent)
       public
         Text: string;
+        constructor Create(AParent: TmnwElement; AText: string);
       end;
 
       { TEdit }
@@ -1420,6 +1432,15 @@ begin
   Render(Renderer, Sender, AStream);
 end;
 
+procedure TmnwSchema.UpdateID(Element: TmnwElement);
+begin
+  if Element.ID = '' then
+  begin
+    Inc(NameingLastID);
+    Element.ID := Copy(Element.ClassName, 2, MaxInt) + '_' + NameingLastID.ToString;
+  end;
+end;
+
 {$ifndef FPC}
 procedure TmnwRenderer.RegisterClasses(ASchemaClass: TmnwSchemaClass);
 var
@@ -1815,7 +1836,10 @@ var
 begin
   DoCompose;
   for o in Self do
+  begin
     o.Compose;
+  end;
+  Root.UpdateID(Self);
   Composed := True;
 end;
 
@@ -2153,6 +2177,23 @@ begin
   Context.Output.WriteLn('html', '<div class="column">', [woOpenTag]);
   inherited;
   Context.Output.Writeln('html', '</div>', [woCloseTag]);
+end;
+
+{ THTML.TContainer }
+
+procedure THTML.TContainer.Created;
+begin
+  inherited;
+  Margin := 3;
+  Size := 1;
+end;
+
+{ THTML.TParagraph }
+
+constructor THTML.TParagraph.Create(AParent: TmnwElement; AText: string);
+begin
+  inherited Create(AParent);
+  Text := AText;
 end;
 
 initialization

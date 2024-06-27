@@ -5,6 +5,9 @@ unit mnBootstraps;
  * @license   modifiedLGPL (modified of mod://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+
+  https://fastbootstrap.com/components/accordion/
+  https://fastbootstrap.com/components/layout/
  *}
 
 {$M+}
@@ -51,7 +54,18 @@ type
       procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
     end;
 
+    TRow = class(TmnwHTMLRenderer.TElementHTML)
+    public
+      procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+    end;
+
     TColumn = class(TmnwHTMLRenderer.TElementHTML)
+    public
+      procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+    end;
+
+    TCard = class abstract(TElementHTML)
+    protected
     public
       procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
     end;
@@ -60,7 +74,38 @@ type
     procedure Created; override;
   end;
 
+function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
+
 implementation
+
+function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+begin
+  if Align = alignStart then
+    Result := 'align-self-start'
+  else if Align = alignCenter then
+    Result := 'align-self-center'
+  else if Align = alignStreach then
+    Result := 'align-self-Streach'
+  else if Align = alignEnd then
+    Result := 'align-self-end'
+  else
+    Result := '';
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
+end;
+
+function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
+begin
+  if Fixed = fixedTop then
+    Result := 'fixed-top'
+  else if Fixed = fixedBottom then
+    Result := 'fixed-bottom'
+  else
+    Result := '';
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
+end;
 
 { TmnwBootstrapRenderer }
 
@@ -68,9 +113,11 @@ procedure TmnwBootstrapRenderer.Created;
 begin
   inherited;
   Libraries.RegisterLibrary('Bootstrap', TBootstrap_Library);
-  RegisterRenderer(THTML.TDocument, TDocument);
+  RegisterRenderer(THTML.TDocument, TDocument, True);
   RegisterRenderer(THTML.TContainer, TContainer, True);
+  RegisterRenderer(THTML.TRow, TRow, True);
   RegisterRenderer(THTML.TColumn, TColumn, True);
+  RegisterRenderer(THTML.TCard, TCard, True);
   Libraries.Use('Bootstrap');
 end;
 
@@ -88,8 +135,10 @@ end;
 procedure TBootstrap_Library.AddHead(AElement: TmnwElement; Context: TmnwContext);
 begin
   inherited;
-  Context.Output.WriteLn('html', '<link href="' +GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/') + 'bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
-  Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/')+'bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
+//  Context.Output.WriteLn('html', '<link href="' +GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/') + 'bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
+//  Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/')+'bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
+  Context.Output.WriteLn('html', '<link href="' +GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/') + 'bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">');
+  Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/')+'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
 end;
 
 { TmnwBootstrapRenderer.TColumn }
@@ -99,7 +148,7 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  Context.Output.WriteLn('html', '<div class="col-md-'+e.Size.ToString+'">', [woOpenTag]);
+  Context.Output.WriteLn('html', '<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"'+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   inherited;
   Context.Output.Writeln('html', '</div>', [woCloseTag]);
 end;
@@ -111,13 +160,56 @@ var
   e: THTML.TContainer;
 begin
   e := Scope.Element as THTML.TContainer;
-  Context.Output.WriteLn('html', '<div class="container mt-'+e.Size.ToString+'">', [woOpenTag]);
-  //Context.Output.WriteLn('html', '<div class="col-md-9">', [woOpenTag]);
+//container-fluid for full width, container not full width
+  Context.Output.WriteLn('html', '<div class="container-fluid mt-'+e.Margin.ToString+'"'+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   Context.Output.WriteLn('html', '<main>', [woOpenTag]);
   inherited;
   Context.Output.WriteLn('html', '</main>', [woCloseTag]);
   //Context.Output.WriteLn('html', '</div>', [woCloseTag]);
   Context.Output.WriteLn('html', '</div>', [woCloseTag]);
+end;
+
+{ TmnwBootstrapRenderer.TCard }
+
+procedure TmnwBootstrapRenderer.TCard.DoRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TCard;
+begin
+  e := Scope.Element as THTML.TCard;
+  Context.Output.WriteLn('html', '<div class="card' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '" '+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  if e.Caption <> '' then
+  begin
+//    Context.Output.WriteLn('html', '<h5 class="card-header" id="'+e.id+'-header">', [woOpenTag]);
+    Context.Output.Write('html', '<h5 class="card-header" id="'+e.id+'-header"');
+    if e.Collapse then
+      Context.Output.Write('html', 'role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
+    Context.Output.WriteLn('html', '>', [woOpenTag]);
+    Context.Output.WriteLn('html', e.Caption);
+    Context.Output.WriteLn('html', '</h>', [woCloseTag]);
+    if e.Collapse then
+    begin
+      Context.Output.WriteLn('html', '<span class="navbar-toggler-icon"></span>', [woOpenTag, woCloseTag]);
+    end;
+    Context.Output.WriteLn('html', '</h5>', [woCloseTag]);
+  end;
+
+  Context.Output.WriteLn('html', '<div class="card-body collapse" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body">', [woOpenTag]);
+//  collapse
+  inherited;
+  Context.Output.WriteLn('html', '</div>', [woCloseTag]);
+  Context.Output.Writeln('html', '</div>', [woCloseTag]);
+end;
+
+{ TmnwBootstrapRenderer.TRow }
+
+procedure TmnwBootstrapRenderer.TRow.DoRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TRow;
+begin
+  e := Scope.Element as THTML.TRow;
+  Context.Output.WriteLn('html', '<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenTag]);
+  inherited;
+  Context.Output.Writeln('html', '</div>', [woCloseTag]);
 end;
 
 end.
