@@ -1,6 +1,7 @@
 ﻿unit mnWebElements;//* BETA
 {$IFDEF FPC}
 {$mode delphi}
+{$modeswitch prefixedattributes}
 {$ENDIF}
 {$H+}{$M+}
 {**
@@ -63,6 +64,20 @@ type
   TmnwRendererClass = class of TmnwRenderer;
 
   TmnwElementClass = class of TmnwElement;
+
+  TrttiElementAttribute = class(TCustomAttribute)
+  public
+    class procedure Update(Element: TmnwElement); virtual; abstract;
+  end;
+
+  { TrttiNameAttribute }
+
+  TrttiNameAttribute = class(TrttiElementAttribute)
+  private
+  public
+    class procedure Update(Element: TmnwElement); override;
+    constructor Create;
+  end;
 
   { TmnwAttribute }
 
@@ -245,16 +260,13 @@ type
 
   TmnwSchema = class(TmnwElement)
   private
-//    FLibraries: TmnwLibraries;
   protected
     NameingLastID: Integer;
-    procedure UpdateID(Element: TmnwElement); inline;
+    procedure GenID(Element: TmnwElement); inline;
     procedure DoRespond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); override;
     destructor Destroy; override;
-
-    //property Libraries: TmnwLibraries read FLibraries;
   end;
 
   TmnwSchemaClass = class of TmnwSchema;
@@ -379,12 +391,14 @@ type
       TFooter = class;
       TContainer = class;
 
+      [TrttiNameAttribute]
       TDirectFile = class(THTMLElement)
       public
         FileName: string;
         procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
       end;
 
+      [TrttiNameAttribute]
       TFile = class(THTMLElement)
       public
         procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
@@ -452,12 +466,14 @@ type
         Size: Integer;
       end;
 
+      [TrttiNameAttribute]
       TCard = class(TContent)
       public
         Collapse: Boolean;
         Caption: string;
       end;
 
+      [TrttiNameAttribute]
       TPanel = class(TContent)
       public
         Caption: string;
@@ -468,6 +484,7 @@ type
 
       { TForm }
 
+      [TrttiNameAttribute]
       TForm = class(TContent)
       private
         FButtons: TFormButtons;
@@ -478,11 +495,12 @@ type
       TParagraph = class(TContent)
       public
         Text: string;
-        constructor Create(AParent: TmnwElement; AText: string);
+        constructor CreateWith(AParent: TmnwElement; AText: string);
       end;
 
       { TEdit }
 
+      [TrttiNameAttribute]
       TInput = class(THTMLElement)
       public
         Caption: string;
@@ -495,11 +513,13 @@ type
 
       { TInputPassword }
 
+      [TrttiNameAttribute]
       TInputPassword = class(TInput)
       public
         procedure Created; override;
       end;
 
+      [TrttiNameAttribute]
       TImage = class(THTMLElement)
       protected
         procedure DoBeforeRender(Renderer: TmnwRenderer); override;
@@ -512,6 +532,7 @@ type
 
       { TMemoryImage }
 
+      [TrttiNameAttribute]
       TMemoryImage = class(TImage)
       private
         FData: TMemoryStream;
@@ -1412,7 +1433,6 @@ end;
 
 constructor TmnwSchema.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
 begin
-//  FLibraries := TmnwLibraries.Create;
   inherited;
   FRoot := Self;
   {$ifndef FPC}
@@ -1422,7 +1442,6 @@ end;
 
 destructor TmnwSchema.Destroy;
 begin
-//  FreeAndNil(FLibraries);
   inherited;
 end;
 
@@ -1432,12 +1451,38 @@ begin
   Render(Renderer, Sender, AStream);
 end;
 
-procedure TmnwSchema.UpdateID(Element: TmnwElement);
+procedure UpdateElement(Element: TmnwElement);
+var
+  rttiContext: TRttiContext;
+  rttiType: TRttiType;
+  attribute: TCustomAttribute;
+begin
+  rttiContext := TRttiContext.Create;
+  try
+    rttiType := rttiContext.GetType(Element.ClassType);
+    for attribute in rttiType.GetAttributes do
+      if attribute is TrttiElementAttribute then
+        TrttiElementAttribute(attribute).Update(Element);
+  finally
+    rttiContext.Free;
+  end;
+end;
+
+procedure TmnwSchema.GenID(Element: TmnwElement);
+var
+  s: string;
+  p: Integer;
 begin
   if Element.ID = '' then
   begin
     Inc(NameingLastID);
-    Element.ID := Copy(Element.ClassName, 2, MaxInt) + '_' + NameingLastID.ToString;
+    s := Element.ClassName;
+    p := ReversePos('.', s);
+    if p > 0 then
+      s := Copy(s, p + 1, MaxInt)
+    else
+      s := Copy(s, 2, MaxInt);
+    Element.ID := s + '_' + NameingLastID.ToString;
   end;
 end;
 
@@ -1728,12 +1773,11 @@ begin
   inherited Create;
   FEnabled := True;
   FVisible := True;
-  FRenderIt := True;
+  FRenderIt := ARenderIt;
   FName := '';
   FAttributes := TmnwAttributes.Create;
   FKind := AKind;
   FParent := AParent;
-  FRenderIt := ARenderIt;
   if FParent <> nil then
   begin
     FRoot:= FParent.FRoot;
@@ -1839,7 +1883,7 @@ begin
   begin
     o.Compose;
   end;
-  Root.UpdateID(Self);
+  UpdateElement(Self);
   Composed := True;
 end;
 
@@ -2190,15 +2234,28 @@ end;
 
 { THTML.TParagraph }
 
-constructor THTML.TParagraph.Create(AParent: TmnwElement; AText: string);
+constructor THTML.TParagraph.CreateWith(AParent: TmnwElement; AText: string);
 begin
   inherited Create(AParent);
   Text := AText;
 end;
 
+{ TNameAttribute }
+
+class procedure TrttiNameAttribute.Update(Element: TmnwElement);
+begin
+  Element.Root.GenID(Element);
+end;
+
+constructor TrttiNameAttribute.Create;
+begin
+  inherited;
+end;
+
 initialization
 
 finalization
+{$ifndef FPC}
   FreeAndNil(CacheClassObjects);
-
+{$endif}
 end.

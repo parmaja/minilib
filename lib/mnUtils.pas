@@ -168,7 +168,6 @@ function CollectStrings(Strings: array of string; Delimiter: Char = ','; Trailin
 function ReversePos(const SubStr, S : String): Integer; overload;
 function ReversePos(const SubStr, S: String; const Start: Integer): Integer; overload;
 
-
 {* VarReplace
   VarInit = '$'
   Example: VarReplace('c:\$project\$[name]';

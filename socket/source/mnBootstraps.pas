@@ -171,6 +171,10 @@ end;
 
 { TmnwBootstrapRenderer.TCard }
 
+
+//https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
+//https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
+
 procedure TmnwBootstrapRenderer.TCard.DoRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TCard;
@@ -185,15 +189,14 @@ begin
       Context.Output.Write('html', 'role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
     Context.Output.WriteLn('html', '>', [woOpenTag]);
     Context.Output.WriteLn('html', e.Caption);
-    Context.Output.WriteLn('html', '</h>', [woCloseTag]);
     if e.Collapse then
     begin
-      Context.Output.WriteLn('html', '<span class="navbar-toggler-icon"></span>', [woOpenTag, woCloseTag]);
+      Context.Output.WriteLn('html', '<span class="icons float-right fa fa-arrow-alt-circle-up"></span>', [woOpenTag, woCloseTag]);
     end;
     Context.Output.WriteLn('html', '</h5>', [woCloseTag]);
   end;
 
-  Context.Output.WriteLn('html', '<div class="card-body collapse" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body">', [woOpenTag]);
+  Context.Output.WriteLn('html', '<div class="card-body collapse show" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body">', [woOpenTag]);
 //  collapse
   inherited;
   Context.Output.WriteLn('html', '</div>', [woCloseTag]);
