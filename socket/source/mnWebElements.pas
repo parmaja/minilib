@@ -1479,9 +1479,9 @@ begin
     s := Element.ClassName;
     p := ReversePos('.', s);
     if p > 0 then
-      s := Copy(s, p + 1, MaxInt)
+      s := Copy(s, p + 2, MaxInt) //* skip T
     else
-      s := Copy(s, 2, MaxInt);
+      s := Copy(s, 2, MaxInt); //* skip T
     Element.ID := s + '_' + NameingLastID.ToString;
   end;
 end;

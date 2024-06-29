@@ -8,6 +8,7 @@ unit mnBootstraps;
 
   https://fastbootstrap.com/components/accordion/
   https://fastbootstrap.com/components/layout/
+  https://freefrontend.com/bootstrap-sidebars/
  *}
 
 {$M+}
