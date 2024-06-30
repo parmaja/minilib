@@ -114,11 +114,7 @@ type
 
     //USAGE: TMyNamedObjectList = class(TmnNamedObjectList<TMyNamedObject>)
 
-    {$ifdef FPC}
-    TmnNamedObjectList<_Object_> = class(TmnObjectList<_Object_>)
-    {$else}
     TmnNamedObjectList<_Object_: TmnNamedObject> = class(TmnObjectList<_Object_>)
-    {$endif}
     private
       FDicSize: Integer;
       FDic: TDictionary<string, _Object_>;
@@ -159,7 +155,7 @@ type
     //USAGE: TMyNameValueObjectList = class(TmnNameValueObjectList<TMyNameValueObject>)
 
     {$ifdef FPC}
-    TmnNameValueObjectList<_Object_> = class(TmnNamedObjectList<_Object_>)
+    TmnNameValueObjectList<_Object_: TmnNameValueObject> = class(TmnNamedObjectList<_Object_>)
     {$else}
     TmnNameValueObjectList<_Object_: TmnNameValueObject> = class(TmnNamedObjectList<_Object_>)
     {$endif}
@@ -172,6 +168,26 @@ type
       property Values[Index: string]: string read GetValues write SetValues; default;
       property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     end;
+
+    {$ifdef FPC}
+
+    { INamedObject }
+
+    INamedObject = Interface
+    ['{E8E58D2B-122D-4EA4-9A1A-BC9EE883D957}']
+      function GetName: string;
+      property Name: string read GetName;
+    end;
+
+    { TINamedObjects }
+
+    TINamedObjects<T: INamedObject> = class(TmnObjectList<T>)
+    public
+      function Find(const AName: string): T;
+      function IndexOfName(AName: string): Integer;
+    end;
+
+    {$endif}
 
 implementation
 
@@ -420,7 +436,7 @@ begin
     inherited;
     {$ifdef FPC}
     if Action = lnAdded then
-      FDic.AddOrSetValue(_Object_(Ptr).Name.ToLower, Ptr);
+      FDic.AddOrSetValue(_Object_(Ptr).Name.ToLower, _Object_(Ptr));
     {$else}
     if Action = cnAdded then
       FDic.AddOrSetValue(Value.Name.ToLower, Value);
@@ -538,6 +554,44 @@ procedure TmnNamedObject.SetName(const Value: string);
 begin
   FName := Value;
 end;
+
+{$ifdef FPC}
+
+{ TNamedObjects }
+
+function TINamedObjects<T>.Find(const AName: string): T;
+var
+  i: integer;
+begin
+  Result := nil;
+	if AName <> '' then
+    for i := 0 to Count - 1 do
+    begin
+      if SameText((Items[i] as INamedObject).GetName, AName) then
+      begin
+        Result := Items[i];
+        break;
+      end;
+    end;
+end;
+
+function TINamedObjects<T>.IndexOfName(AName: string): Integer;
+var
+  i: integer;
+begin
+  Result := -1;
+	if AName <> '' then
+    for i := 0 to Count - 1 do
+    begin
+      if SameText((Items[i] as INamedObject).GetName, AName) then
+      begin
+        Result := i;
+        break;
+      end;
+    end;
+end;
+
+{$endif}
 
 end.
 
