@@ -1,7 +1,7 @@
 object Main: TMain
-  Left = 907
+  Left = 489
   Height = 366
-  Top = 243
+  Top = 241
   Width = 536
   HorzScrollBar.Page = 206
   VertScrollBar.Page = 207

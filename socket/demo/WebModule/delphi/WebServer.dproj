@@ -121,6 +121,7 @@
         <UWP_DelphiLogo44>..\WebServer.png</UWP_DelphiLogo44>
         <UWP_DelphiLogo150>..\WebServer.png</UWP_DelphiLogo150>
         <Icon_MainIcon>..\WebServer_Icon.ico</Icon_MainIcon>
+        <BRCC_Verbose>true</BRCC_Verbose>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>

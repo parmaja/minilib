@@ -3,6 +3,7 @@ unit HomeModules;
 {$H+}{$M+}
 {$ifdef fpc}
 {$mode delphi}
+{$modeswitch functionreferences}{$modeswitch anonymousfunctions}
 {$endif}
 
 interface
@@ -100,7 +101,7 @@ begin
   inherited;
   Name := 'welcome';
   Route := 'welcome';
-  with This.Add<TDocument> do
+  with TDocument.Create(This) do
   begin
     Name := 'document';
     //Route := 'document';
@@ -108,8 +109,10 @@ begin
     Direction := dirLTR;
     with Body do
     begin
+      TJSResource.Create(This, 'WebElements');
+
       Header.Text := 'Creative Solutions';
-      with Header.Add<TImage> do
+      with TImage.Create(This) do
       begin
         Name := 'image_logo';
         Comment := 'Image from another module';
@@ -122,37 +125,44 @@ begin
       with Container do
       begin
         Name := 'Container';
-        with This.Add<TParagraph> do
+        with TParagraph.Create(This) do
         begin
           Text := 'Hello Word';
           Name := 'p1';
         end;
 
-        with This.Add<TCard>() do
+        with TCard.Create(This) do
         begin
           Caption := 'Welcome';
           Name := 'card';
 
-          with This.Add<TMemoryImage> do
+          with TMemoryImage.Create(This) do
           begin
             Name := 'logo';
             Route := 'logo';
             LoadFromFile(IncludePathDelimiter(Module.HomePath) + 'logo.png');
           end;
 
-          with This.Add<TImage> do
+{          with TImage.Create(This) do
           begin
             Name := 'logo';
   //          Route := 'logo';
               Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo';
-          end;
-
-          with This.Add<TImage> do
+          end;}
+{$ifndef fpc}
+          With TCompose.Create(This) do
           begin
-            Name := 'file_logo';
-  //          Route := 'logo';
-            Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
+            OnCompose := procedure
+            begin
+              with TImage.Create(This) do
+              begin
+                Name := 'file_logo';
+      //          Route := 'logo';
+                Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
+              end;
+            end;
           end;
+{$endif}
         end;
       end;
     end;
@@ -225,20 +235,20 @@ begin
   inherited;
   Name := 'Assets';
   Route := 'assets';
-  with This.Add<TAssets> do
+  with TAssets.Create(This) do
   begin
     HomePath := Module.HomePath;
     Kind := Kind + [elFallback];
     //Name := 'document';
 //    Route := '';
-    with This.Add<TDirectFile> do
+    with TDirectFile.Create(This) do
     begin
       Name := 'jquery';
       Route := 'jquery';
       FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
     end;
 
-    with This.Add<TDirectFile> do
+    with TDirectFile.Create(This) do
     begin
       Name := 'logo';
       Route := 'logo';
@@ -275,7 +285,7 @@ begin
   inherited;
   Name := 'welcome';
   Route := 'welcome';
-  with This.Add<TDocument> do
+  with TDocument.Create(This) do
   begin
     //Name := 'document';
     Route := 'document';
@@ -285,7 +295,7 @@ begin
     with Body do
     begin
       Header.Text := 'Creative Solutions';
-      with Header.Add<TImage> do
+      with TImage.Create(This) do
       begin
         Comment := 'Image from another module';
         Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
@@ -295,29 +305,31 @@ begin
 
       with Container do
       begin
-        with This.Add<TParagraph> do
+        with TParagraph.Create(This) do
         begin
           Text := 'Hello Word';
         end;
 
-        with This.Add<TCard>() do
+        with TCard.Create(This) do
         begin
           Caption := 'Login';
 
-          with This.Add<TForm>() do
+          with TForm.Create(This) do
           begin
-            with This.Add<TInput>('username') do
+            with TInput.Create(This) do
             begin
+              ID := 'username';
               Caption := 'Username';
               PlaceHolder := 'Type user name';
             end;
 
-            with This.Add<TInputPassword>('password') do
+            with TInputPassword.Create(This) do
             begin
+              ID := 'password';
               Caption := 'Password';
             end;
 
-            This.Add<TBreak>;
+            TBreak.Create(This);
 
           end;
         end;
@@ -342,7 +354,7 @@ begin
   inherited;
   Name := 'ws';
   Route := 'ws';
-  with This.Add<TDirectFile> do
+  with TDirectFile.Create(This) do
   begin
     Route := 'echo';
     FileName := IncludePathDelimiter(Module.HomePath) + 'ws.html';

@@ -84,6 +84,7 @@ function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
 begin
   if Align = alignStart then
     Result := 'align-self-start'
+
   else if Align = alignCenter then
     Result := 'align-self-center'
   else if Align = alignStreach then
@@ -135,7 +136,6 @@ end;
 
 procedure TBootstrap_Library.AddHead(AElement: TmnwElement; Context: TmnwContext);
 begin
-  inherited;
 //  Context.Output.WriteLn('html', '<link href="' +GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/') + 'bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
 //  Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/')+'bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
   Context.Output.WriteLn('html', '<link href="' +GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/') + 'bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">');

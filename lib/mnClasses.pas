@@ -17,12 +17,12 @@ unit mnClasses;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, DateUtils, Types,
+  Classes, SysUtils, StrUtils, Types, DateUtils,
   Generics.Collections, Contnrs;
 
 type
 
-  {$IFDEF FPC}
+  {$IFDEF FPC} //*Temporary, To be compatiple with Delphi
   TProc = Reference to procedure;
   TProc<T> = reference to procedure (Arg1: T);
   TProc<T1,T2> = reference to procedure (Arg1: T1; Arg2: T2);
@@ -154,11 +154,7 @@ type
 
     //USAGE: TMyNameValueObjectList = class(TmnNameValueObjectList<TMyNameValueObject>)
 
-    {$ifdef FPC}
     TmnNameValueObjectList<_Object_: TmnNameValueObject> = class(TmnNamedObjectList<_Object_>)
-    {$else}
-    TmnNameValueObjectList<_Object_: TmnNameValueObject> = class(TmnNamedObjectList<_Object_>)
-    {$endif}
     private
       FAutoRemove: Boolean;
       function GetValues(Index: string): string;
