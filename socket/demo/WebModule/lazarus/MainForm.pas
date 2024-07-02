@@ -162,6 +162,7 @@ begin
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := 'home';
+    aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
     aHomeModule.HomePath := aHomePath;
     aHomeModule.HostURL := 'http://localhost:' + PortEdit.Text;
     aHomeModule.HomeUrl := aHomeModule.HostURL + '/' + aHomeModule.AliasName;

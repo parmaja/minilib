@@ -109,7 +109,8 @@ begin
     Direction := dirLTR;
     with Body do
     begin
-      TJSResource.Create(This, 'WebElements');
+      //TJSResource.Create(This, 'WebElements');
+      TJSEmbedFile.Create(This, Module.AppPath + '../../source/mnWebElements.js');
 
       Header.Text := 'Creative Solutions';
       with TImage.Create(This) do

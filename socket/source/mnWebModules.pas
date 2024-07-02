@@ -146,8 +146,10 @@ type
 
   TmodWebModule = class abstract(TmodModule)
   private
+    FAppPath: string;
     FHomePath: string;
     FSmartURL: Boolean;
+    procedure SetAppPath(const AValue: string);
     procedure SetHomePath(AValue: string);
   protected
     procedure Created; override;
@@ -161,6 +163,7 @@ type
     HostURL: string;
     CachePath: string;
     destructor Destroy; override;
+    property AppPath: string read FAppPath write SetAppPath;
     property HomePath: string read FHomePath write SetHomePath;
     property SmartURL: Boolean read FSmartURL write FSmartURL;
   end;
@@ -447,6 +450,12 @@ begin
   if FHomePath = AValue then
 	  exit;
   FHomePath := AValue;
+end;
+
+procedure TmodWebModule.SetAppPath(const AValue: string);
+begin
+  if FAppPath =AValue then Exit;
+  FAppPath :=AValue;
 end;
 
 procedure TmodWebModule.Created;

@@ -377,6 +377,8 @@ type
 {-----------------    STANDARD    ----------------------}
 {-------------------------------------------------------}
 
+  { THTML }
+
   THTML =class(TmnwSchema)
   public
     type
@@ -412,6 +414,19 @@ type
         procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
       public
         FileName: string;
+        constructor Create(AParent: TmnwElement; AFileName: string = ''); reintroduce;
+        function GetContentType(Route: string): string; override;
+      end;
+
+      { TEmbedFile }
+
+      TEmbedFile = class(THTMLElement)
+      protected
+        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
+      public
+        FileName: string;
+        procedure Created; override;
+        constructor Create(AParent: TmnwElement; AFileName: string = ''); reintroduce;
         function GetContentType(Route: string): string; override;
       end;
 
@@ -421,11 +436,15 @@ type
       protected
         procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
       public
-        FileName: string;
         ResName: string;
         procedure Created; override;
         constructor Create(AParent: TmnwElement; AResName: string); reintroduce;
         function GetContentType(Route: string): string; override;
+      end;
+
+      { TJSEmbedFile }
+
+      TJSEmbedFile = class(TEmbedFile)
       end;
 
       [TrttiNameAttribute]
@@ -661,9 +680,20 @@ type
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      { TEmbedFile }
+
+      TEmbedFile = class(TElementHTML)
+      protected
+        procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       TJSResource = class(TElementHTML)
       protected
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      TJSEmbedFile = class(TJSResource)
+      protected
       end;
 
       TCompose = class(TElementHTML)
@@ -1252,11 +1282,13 @@ begin
   inherited Created;
   //RegisterClasses(THTML);
   RegisterRenderer(THTML.TCompose, TCompose);
+  RegisterRenderer(THTML.TDirectFile,TDirectFile);
+  RegisterRenderer(THTML.TEmbedFile, TEmbedFile);
   RegisterRenderer(THTML.TJSResource, TJSResource);
+  RegisterRenderer(THTML.TJSEmbedFile, TJSEmbedFile);
 
   RegisterRenderer(THTML.TDocument ,TDocument);
   RegisterRenderer(THTML.TBody ,TBody);
-  RegisterRenderer(THTML.TDirectFile,TDirectFile);
   RegisterRenderer(THTML.TParagraph, TParagraph);
   RegisterRenderer(THTML.TBreak, TBreak);
   RegisterRenderer(THTML.TInput, TInput);
@@ -2082,7 +2114,45 @@ begin
   end;
 end;
 
+constructor THTML.TDirectFile.Create(AParent: TmnwElement; AFileName: string);
+begin
+  inherited Create(AParent);
+  FileName := AFileName;
+end;
+
 function THTML.TDirectFile.GetContentType(Route: string): string;
+begin
+  Result := DocumentToContentType(FileName);
+end;
+
+{ THTML.TEmbedFile }
+
+procedure THTML.TEmbedFile.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+var
+  fs: TFileStream;
+begin
+  inherited;
+  fs := TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead);
+  try
+    AStream.WriteStream(fs, 0);
+  finally
+    fs.Free;
+  end;
+end;
+
+procedure THTML.TEmbedFile.Created;
+begin
+  inherited;
+  Kind := Kind + [elHighLevel];
+end;
+
+constructor THTML.TEmbedFile.Create(AParent: TmnwElement; AFileName: string);
+begin
+  inherited Create(AParent);
+  FileName := AFileName;
+end;
+
+function THTML.TEmbedFile.GetContentType(Route: string): string;
 begin
   Result := DocumentToContentType(FileName);
 end;
@@ -2266,7 +2336,15 @@ end;
 
 procedure TmnwHTMLRenderer.TDirectFile.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
-  (Scope.Element as THTML.TDirectFile).Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
+  Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
+end;
+
+{ TmnwHTMLRenderer.TEmbedFile }
+
+procedure TmnwHTMLRenderer.TEmbedFile.DoRender(Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
 end;
 
 { THTML.TBody }
@@ -2401,7 +2479,7 @@ end;
 procedure TmnwHTMLRenderer.TCompose.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Output.WriteLn('html', '<div '+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
-  //(Scope.Element as THTML.TCompose).Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
+  //Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
   inherited;
   Context.Output.WriteLn('html', '</div>', [woCloseTag]);
 end;
@@ -2444,7 +2522,7 @@ procedure TmnwHTMLRenderer.TJSResource.DoRender(Scope: TmnwScope; Context: TmnwC
 begin
   inherited;
   Context.Output.WriteLn('html', '<script'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
- (Scope.Element as THTML.TJSResource).Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
+  Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
   inherited;
   Context.Output.WriteLn('html', '');
   Context.Output.WriteLn('html', '</script>', [woCloseTag]);
