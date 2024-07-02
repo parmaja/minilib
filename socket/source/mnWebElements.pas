@@ -53,8 +53,6 @@ uses
   Classes, SysUtils, Contnrs, Variants, Types, RTTI,
   {$ifdef FPC}
   LCLType, //* for RT_RCDATA
-  {$else}
-  System.Types,
   {$endif}
 	mnUtils, mnClasses, mnStreams, mnLogs,
   mnMultipartData, mnModules, mnWebModules;

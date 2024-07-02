@@ -59,7 +59,7 @@ type
   //PSLLObject = class(TObject);
   {$ifdef FPC}
   SSLObject = record end;
-  PSLLObject = type ^SSLObject; //* Unfortunately FPC have no `type of` :(
+  PSLLObject = ^SSLObject; //* Unfortunately FPC have no `type of` :(
   //PSLLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
   {$else}
 //  SSLObject = record end;
