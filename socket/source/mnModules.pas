@@ -518,6 +518,7 @@ type
     procedure Stop;
     procedure Init;
     procedure Idle;
+    function Compare(Left: TmodModule; Right: TmodModule): Integer; override;
     property Server: TmodModuleServer read FServer;
     procedure Added(Item: TmodModule); override;
   public
@@ -1529,23 +1530,11 @@ begin
   FEndOfLine := AValue;
 end;
 
-function ModuleCompareLevel(Item1, Item2: Pointer): Integer;
-begin
-  Result := TmodModule(Item1).Level - TmodModule(Item2).Level;
-end;
-
 procedure TmodModules.Start;
 var
   aModule: TmodModule;
 begin
-  {$ifdef FPC}
-  Sort(ModuleCompareLevel); //* sort it before run
-  {$else}
-  Sort(TComparer<TmodModule>.Construct(function(const Left, Right: TmodModule): Integer
-  begin
-    Result := Left.Level-Right.Level;
-  end)); //* sort it before run
-  {$endif}
+  QuickSort;
   for aModule in Self do
     aModule.Start;
   FActive := True;
@@ -1599,6 +1588,11 @@ end;
 function TmodModules.CheckRequest(const ARequest: string): Boolean;
 begin
   Result := True;
+end;
+
+function TmodModules.Compare(Left, Right: TmodModule): Integer;
+begin
+  Result := Left.Level - Right.Level;
 end;
 
 constructor TmodModules.Create(AServer: TmodModuleServer);
