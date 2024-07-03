@@ -45,7 +45,7 @@ type
   //USAGE FPC: TMyObjectList = class(specialize TmnObjectList<TMyObject>)
 
   {$ifdef FPC}
-  TmnObjectList<_Object_> = class(Contnrs.TObjectList)
+  TmnObjectList<_Object_> = class(TObjectList)
   {$else}
   TmnObjectList<_Object_: class> = class(TObjectList<_Object_>)
   {$endif}
@@ -80,6 +80,12 @@ type
     {$H-}procedure Removing(Item: _Object_); virtual;{$H+}
     {$H-}procedure Added(Item: _Object_); virtual;{$H+}
 
+
+    //* Belal: If both Left and Right is eaual the orignal sort swap it, we do not want to swapt it
+    //* Thanks to Belal
+    function Compare(Left, Right: _Object_): Integer; virtual;
+    procedure QuickSortItems(iLo, iHi: Integer);
+
     procedure Created; virtual;
     function RequireItem: _Object_; virtual;
   public
@@ -94,6 +100,8 @@ type
     function Require(Index: Integer): _Object_;
     {$endif}
     function Peek(Index: Integer): _Object_;
+
+    procedure QuickSort;
 
     property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
     function Last: _Object_;
@@ -308,6 +316,45 @@ begin
     Result := _Object_(inherited First)
   else
     Result := nil;
+end;
+
+procedure TmnObjectList<_Object_>.QuickSort;
+begin
+  if Count<>0 then
+    QuickSortItems(0, Count - 1);
+end;
+
+procedure TmnObjectList<_Object_>.QuickSortItems(iLo, iHi: Integer);
+var
+  Lo, Hi: integer;
+  p: _Object_;
+begin
+  Lo := iLo;
+  Hi := iHi;
+  p := Items[ ((Lo + Hi) div 2) ];
+  repeat
+
+    while Compare(Items[Lo], p) < 0 do Inc(Lo);
+    while Compare(Items[Hi], p) > 0 do Dec(Hi);
+    if Lo <= Hi then
+    begin
+      if (Lo<>Hi) then
+      begin
+        //Swap(Lo, Hi);
+        if Compare(Items[Lo], Items[Hi])<>0 then
+          Exchange(Lo, Hi);
+      end;
+      Inc(Lo);
+      Dec(Hi);
+    end;
+  until Lo > Hi;
+  if Hi > iLo then QuickSortItems(iLo, Hi);
+  if Lo < iHi then QuickSortItems(Lo, iHi);
+end;
+
+function TmnObjectList<_Object_>.Compare(Left, Right: _Object_): Integer;
+begin
+  raise ENotImplemented.Create(ClassName + '.Compare');
 end;
 
 procedure TmnObjectList<_Object_>.Created;
