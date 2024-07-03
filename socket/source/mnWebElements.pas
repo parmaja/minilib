@@ -735,7 +735,6 @@ type
       TIntervalCompose = class(TCompose)
       protected
         procedure DoCollectAttributes(Scope: TmnwScope); override;
-        procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { THeader }
@@ -2607,11 +2606,6 @@ begin
   inherited;
   URL := IncludeURLDelimiter(TmnwHTMLRenderer(Renderer).HomeUrl) + Scope.Element.GetPath;
   Scope.Attributes['data-refresh-url'] := URL;
-end;
-
-procedure TmnwHTMLRenderer.TIntervalCompose.DoRender(Scope: TmnwScope; Context: TmnwContext);
-begin
-  inherited DoRender(Scope, Context);
 end;
 
 { THTML.TJSResource }
