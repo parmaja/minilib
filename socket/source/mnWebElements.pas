@@ -824,7 +824,7 @@ procedure CacheClasses;
 {$endif}
 
 //* You need to compile it by brcc32 mnWebElements.rc or wait another 100 years till Delphi/FPC auto compile it
-{$R 'mnWebElements.res' 'mnWebElements.rc'}
+{.$R 'mnWebElements.res' 'mnWebElements.rc'}
 
 implementation
 
