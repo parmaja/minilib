@@ -70,6 +70,8 @@ type
   TmnwRendererClass = class of TmnwRenderer;
 
   TmnwElementClass = class of TmnwElement;
+  TrttiElementAttribute = class;
+  TrttiElementAttributeClass = class of TrttiElementAttribute;
 
   { TrttiElementAttribute }
 
@@ -732,7 +734,7 @@ type
 
       TIntervalCompose = class(TCompose)
       protected
-        function AddScript(Scope: TmnwScope; Context: TmnwContext): string; override;
+        procedure DoCollectAttributes(Scope: TmnwScope); override;
         procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -859,7 +861,7 @@ procedure CacheClasses;
 {$endif}
 
 //* You need to compile it by brcc32 mnWebElements.rc or wait another 100 years till Delphi/FPC auto compile it
-{.$R 'mnWebElements.res' 'mnWebElements.rc'}
+{$R 'mnWebElements.res' 'mnWebElements.rc'}
 
 implementation
 
@@ -1618,20 +1620,35 @@ begin
   Render(Renderer, Sender, AStream);
 end;
 
-procedure UpdateElement(Element: TmnwElement);
+procedure rttiCollectAttributes(rttiContext: TRttiContext; ElementClass: TClass; List: TClassList);
 var
-  rttiContext: TRttiContext;
   rttiType: TRttiType;
   attribute: TCustomAttribute;
 begin
+  rttiType := rttiContext.GetType(ElementClass);
+  for attribute in rttiType.GetAttributes do
+    if List.IndexOf(attribute.ClassType)<0 then
+      List.Add(attribute.ClassType);
+  if ElementClass.ClassParent <> nil then
+    rttiCollectAttributes(rttiContext, ElementClass.ClassParent, List);
+end;
+
+procedure UpdateElement(Element: TmnwElement);
+var
+  rttiContext: TRttiContext;
+  attribute: TCustomAttributeClass;
+  list: TClassList;
+begin
+  list := TClassList.Create;
   rttiContext := TRttiContext.Create;
   try
-    rttiType := rttiContext.GetType(Element.ClassType);
-    for attribute in rttiType.GetAttributes do
-      if attribute is TrttiElementAttribute then
-        TrttiElementAttribute(attribute).Update(Element);
+    rttiCollectAttributes(rttiContext, Element.ClassType, list);
+    for attribute in list do
+      if attribute.InheritsFrom(TrttiElementAttribute) then
+        TrttiElementAttributeClass(attribute).Update(Element);
   finally
     rttiContext.Free;
+    list.Free;
   end;
 end;
 
@@ -2149,10 +2166,6 @@ begin
   FParams := TmnwAttributes.Create;
   InitObjects;
   FObjectClasses.QuickSort;
-  for o in FObjectClasses do
-  begin
-    Log.WriteLn(o.ObjectClass.ClassName);
-  end;
 end;
 
 destructor TmnwRenderer.Destroy;
@@ -2491,7 +2504,7 @@ var
   e: THTML.TBody;
 begin
   e := Scope.Element as THTML.TBody;
-  Context.Output.WriteLn('html', '<body '+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Context.Output.WriteLn('html', '<body'+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
 //  e.Header.Render(Context);
 //  e.Container.Render(Context);
   inherited;
@@ -2580,19 +2593,20 @@ end;
 
 procedure TmnwHTMLRenderer.TCompose.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
-  Context.Output.WriteLn('html', '<div ' + AddScript(Scope, Context) + Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Context.Output.WriteLn('html', '<div ' + Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   inherited;
   Context.Output.WriteLn('html', '</div>', [woCloseTag]);
 end;
 
 { TmnwHTMLRenderer.TIntervalCompose }
 
-function TmnwHTMLRenderer.TIntervalCompose.AddScript(Scope: TmnwScope; Context: TmnwContext): string;
+procedure TmnwHTMLRenderer.TIntervalCompose.DoCollectAttributes(Scope: TmnwScope);
 var
   URL: string;
 begin
+  inherited;
   URL := IncludeURLDelimiter(TmnwHTMLRenderer(Renderer).HomeUrl) + Scope.Element.GetPath;
-  Result := 'onload="addReload(''' + Scope.Element.ID + ''', ''' + URL + ''')"';
+  Scope.Attributes['data-refresh-url'] := URL;
 end;
 
 procedure TmnwHTMLRenderer.TIntervalCompose.DoRender(Scope: TmnwScope; Context: TmnwContext);
@@ -2637,7 +2651,7 @@ end;
 procedure TmnwHTMLRenderer.TJSResource.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Context.Output.WriteLn('html', '<script'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Context.Output.WriteLn('html', '<script type="text/javascript"'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
   inherited;
   Context.Output.WriteLn('html', '');
@@ -2648,7 +2662,7 @@ end;
 
 procedure TmnwHTMLRenderer.TJSEmbedFile.DoRender(Scope: TmnwScope; Context: TmnwContext);
 begin
-  Context.Output.WriteLn('html', '<script'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Context.Output.WriteLn('html', '<script type="text/javascript"'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   inherited;
   Context.Output.WriteLn('html', '');
   Context.Output.WriteLn('html', '</script>', [woCloseTag]);

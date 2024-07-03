@@ -94,13 +94,41 @@ type
 
 implementation
 
+type
+
+  { TClockComposer }
+
+  TClockCompose = class(THTML.TIntervalCompose)
+  public
+    procedure DoCompose; override;
+  end;
+
+{ TClockComposer }
+
+procedure TClockCompose.DoCompose;
+begin
+  inherited DoCompose;
+  with THTML do
+  begin
+    TParagraph.Create(Self, TimeToStr(Now));
+    {with TImage.Create(Self) do
+    begin
+      Name := 'file_logo';
+  //          Route := 'logo';
+      Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
+    end;}
+  end;
+end;
+
 { TWellcomeSchema }
 
 procedure TWelcomeSchema.DoCompose;
 begin
   inherited;
+  Cached := False;
   Name := 'welcome';
   Route := 'welcome';
+
   with TDocument.Create(This) do
   begin
     Name := 'document';
@@ -109,7 +137,7 @@ begin
     Direction := dirLTR;
     with Body do
     begin
-      //TJSResource.Create(This, 'WebElements');
+//      TJSResource.Create(This, 'WebElements');
       TJSEmbedFile.Create(This, Module.AppPath + '../../source/mnWebElements.js');
 
       Header.Text := 'Creative Solutions';
@@ -150,8 +178,13 @@ begin
   //          Route := 'logo';
               Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo';
           end;}
+
+          with TClockCompose.Create(This) do
+          begin
+          end;
+
 {$ifndef fpc}
-          With TCompose.Create(This) do
+          with TCompose.Create(This) do
           begin
             OnCompose := procedure
             begin
@@ -164,6 +197,7 @@ begin
             end;
           end;
 {$endif}
+
         end;
       end;
     end;

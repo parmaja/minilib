@@ -1,22 +1,32 @@
 var reload_elements = [];
 
 function reloadElements() {
-  reload_elements.forEach(item => {
-    fetch(item[1]) 
+  console.log('reloadElements');
+  reload_elements.forEach(element => {
+    const tagId = element.id;
+    const tagUrl = element.getAttribute('data-refresh-url');
+    fetch(tagUrl) 
       .then(response => response.text())
       .then(data => {
-        document.getElementById(item[0]).innerHTML = data;
+        element.innerHTML = data;
       })
       .catch(error => {
-        document.getElementById(item[0]).innerHTML = 'Error: ' + error.message;
+        element.innerHTML = 'Error: ' + error.message;
         console.error('Error fetching content:', error);
       });
   });
 }
 
-function addReload(elmName, elmURL) {
-  reload_elements.push([elmName, elmURL]);
-  if (reload_elements.length === 1) {
+function init()
+{
+  reload_elements = document.querySelectorAll('[data-refresh-url]');
+  if (reload_elements.length > 0) 
+  {
+    console.log('interval enabled');
     setInterval(reloadElements, 1000);
   }
+  else
+    console.log('interval is not enabled');
 }
+
+window.onload = init;
