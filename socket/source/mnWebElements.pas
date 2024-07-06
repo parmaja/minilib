@@ -70,28 +70,28 @@ type
   TmnwRendererClass = class of TmnwRenderer;
 
   TmnwElementClass = class of TmnwElement;
-  TrttiElementAttribute = class;
-  TrttiElementAttributeClass = class of TrttiElementAttribute;
+  TElementExtension = class;
+  TElementExtensionClass = class of TElementExtension;
 
-  { TrttiElementAttribute }
+  { TElementExtension }
 
-  TrttiElementAttribute = class(TCustomAttribute)
+  TElementExtension = class(TCustomAttribute)
   public
     class procedure Update(Element: TmnwElement); virtual; abstract;
     constructor Create; //* Leave it
   end;
 
-  { TrttiIDAttribute }
+  { TIDExtension }
 
-  TrttiIDAttribute = class(TrttiElementAttribute)
+  TIDExtension = class(TElementExtension)
   private
   public
     class procedure Update(Element: TmnwElement); override;
   end;
 
-  { TrttiRouteAttribute }
+  { TRouteExtension }
 
-  TrttiRouteAttribute = class(TrttiElementAttribute)
+  TRouteExtension = class(TElementExtension)
   private
   public
     class procedure Update(Element: TmnwElement); override;
@@ -439,7 +439,7 @@ type
       TFooter = class;
       TContainer = class;
 
-      [TrttiIDAttribute]
+      [TIDExtension]
 
       { TDirectFile }
 
@@ -481,7 +481,7 @@ type
       TJSEmbedFile = class(TEmbedFile)
       end;
 
-      [TrttiIDAttribute]
+      [TIDExtension]
 
       { TFile }
 
@@ -525,8 +525,8 @@ type
         constructor Create(AParent: TmnwElement; AOnCompose: TContentComposeProc = nil); reintroduce;
       end;
 
-      [TrttiIDAttribute]
-      [TrttiRouteAttribute]
+      [TIDExtension]
+      [TRouteExtension]
       TIntervalCompose = class(TContentCompose)
       end;
 
@@ -593,14 +593,14 @@ type
         Size: Integer;
       end;
 
-      [TrttiIDAttribute]
+      [TIDExtension]
       TCard = class(TContent)
       public
         Collapse: Boolean;
         Caption: string;
       end;
 
-      [TrttiIDAttribute]
+      [TIDExtension]
       TPanel = class(TContent)
       public
         Caption: string;
@@ -611,7 +611,7 @@ type
 
       { TForm }
 
-      [TrttiIDAttribute]
+      [TIDExtension]
       TForm = class(TContent)
       private
         FButtons: TFormButtons;
@@ -627,7 +627,7 @@ type
 
       { TEdit }
 
-      [TrttiIDAttribute]
+      [TIDExtension]
       TInput = class(THTMLElement)
       protected
         procedure Created; override;
@@ -641,13 +641,13 @@ type
 
       { TInputPassword }
 
-      [TrttiIDAttribute]
+      [TIDExtension]
       TInputPassword = class(TInput)
       protected
         procedure Created; override;
       end;
 
-      [TrttiIDAttribute]
+      [TIDExtension]
       TImage = class(THTMLElement)
       protected
         procedure DoCompose; override;
@@ -659,7 +659,7 @@ type
 
       { TMemoryImage }
 
-      [TrttiIDAttribute]
+      [TIDExtension]
       TMemoryImage = class(TImage)
       private
         FData: TMemoryStream;
@@ -1168,9 +1168,9 @@ begin
   DoCollectAttributes(Scope);
 end;
 
-{ TrttiElementAttribute }
+{ TElementExtension }
 
-constructor TrttiElementAttribute.Create;
+constructor TElementExtension.Create;
 begin
   inherited Create;
 end;
@@ -1666,7 +1666,7 @@ begin
   Render(Renderer, Sender, AStream);
 end;
 
-procedure rttiCollectAttributes(rttiContext: TRttiContext; ElementClass: TClass; List: TClassList);
+procedure CollectExtensions(rttiContext: TRttiContext; ElementClass: TClass; List: TClassList);
 var
   rttiType: TRttiType;
   attribute: TCustomAttribute;
@@ -1676,7 +1676,7 @@ begin
     if List.IndexOf(attribute.ClassType)<0 then
       List.Add(attribute.ClassType);
   if ElementClass.ClassParent <> nil then
-    rttiCollectAttributes(rttiContext, ElementClass.ClassParent, List);
+    CollectExtensions(rttiContext, ElementClass.ClassParent, List);
 end;
 
 procedure UpdateElement(Element: TmnwElement);
@@ -1691,10 +1691,10 @@ begin
   list := TClassList.Create;
   rttiContext := TRttiContext.Create;
   try
-    rttiCollectAttributes(rttiContext, Element.ClassType, list);
+    CollectExtensions(rttiContext, Element.ClassType, list);
     for attribute in list do
-      if attribute.InheritsFrom(TrttiElementAttribute) then
-        TrttiElementAttributeClass(attribute).Update(Element);
+      if attribute.InheritsFrom(TElementExtension) then
+        TElementExtensionClass(attribute).Update(Element);
   finally
     rttiContext.Free;
     list.Free;
@@ -2612,14 +2612,14 @@ end;
 
 { TNameAttribute }
 
-class procedure TrttiIDAttribute.Update(Element: TmnwElement);
+class procedure TIDExtension.Update(Element: TmnwElement);
 begin
   Element.Root.GenID(Element);
 end;
 
-{ TrttiRouteAttribute }
+{ TRouteExtension }
 
-class procedure TrttiRouteAttribute.Update(Element: TmnwElement);
+class procedure TRouteExtension.Update(Element: TmnwElement);
 begin
   Element.Root.GenRoute(Element);
 end;
