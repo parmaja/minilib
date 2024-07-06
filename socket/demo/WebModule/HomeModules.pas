@@ -131,7 +131,7 @@ end;
 procedure TWelcomeSchema.DoCompose;
 begin
   inherited;
-  Cached := False;
+  Cached := True;
   Name := 'welcome';
   Route := 'welcome';
 
@@ -185,21 +185,23 @@ begin
               Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo';
           end;}
 
-          with TClockCompose.Create(This) do
+          {with TClockCompose.Create(This) do
           begin
-          end;
+          end;}
 
 {$ifndef fpc}
-          with TContentCompose.Create(This) do
+          with TIntervalCompose.Create(This) do
           begin
-            OnCompose := procedure
+            Route := 'clock';
+            OnCompose := procedure(vThis: TmnwElement)
             begin
-              with TImage.Create(This) do
+              TParagraph.Create(vThis, TimeToStr(Now));
+              {with TImage.Create(This) do
               begin
                 Name := 'file_logo';
       //          Route := 'logo';
                 Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
-              end;
+              end;}
             end;
           end;
 {$endif}

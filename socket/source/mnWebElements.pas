@@ -57,7 +57,7 @@ uses
 	mnUtils, mnClasses, mnStreams, mnLogs,
   mnMultipartData, mnModules, mnWebModules;
 
-{.$define rtti_objects}
+{$define rtti_objects}
 
 type
 
@@ -517,6 +517,7 @@ type
             ContentCompose: TContentCompose;
             procedure DoCompose; override;
           end;
+
         procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
         procedure ContentCompose(This: TmnwElement); virtual;
       public
@@ -857,11 +858,11 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-    protected
-      procedure AddHead(AElement: TmnwElement; Context: TmnwContext); virtual;
-      procedure InitObjects; override;
-    public
-      HomeUrl: string;
+  protected
+    procedure AddHead(AElement: TmnwElement; Context: TmnwContext); virtual;
+    procedure InitObjects; override;
+  public
+    HomeUrl: string;
   end;
 
 function LevelStr(vLevel: Integer): String;
@@ -2349,11 +2350,20 @@ begin
   InnerComposer.FParent := Self;
   TContentCompose(InnerComposer).DoCompose;
   //InnerComposer.OnCompose;
-  Render(ARenderer, Sender, AStream);
+  Render(ARenderer, Sender, AStream);}
 
-  if Assigned(OnCompose) then
-  begin
-  end;}
+  InnerComposer := TInnerComposer.Create(nil);
+  try
+    InnerComposer.FRoot := Root;
+    if Assigned(OnCompose) then
+    begin
+      OnCompose(InnerComposer);
+      InnerComposer.Render(ARenderer, Sender, AStream);
+    end;
+  finally
+    InnerComposer.Free;
+  end;
+
 end;
 
 procedure THTML.TContentCompose.ContentCompose(This: TmnwElement);
@@ -2625,6 +2635,7 @@ procedure TmnwHTMLRenderer.TContentCompose.DoInnerRender(Scope: TmnwScope; Conte
 begin
   Context.Output.WriteLn('html', '<div ' + Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   inherited;
+  Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
   Context.Output.WriteLn('html', '</div>', [woCloseTag]);
 end;
 
