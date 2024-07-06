@@ -52,23 +52,23 @@ type
     TContainer = class abstract(TElementHTML)
     protected
     public
-      procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
     end;
 
     TRow = class(TmnwHTMLRenderer.TElementHTML)
     public
-      procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
     end;
 
     TColumn = class(TmnwHTMLRenderer.TElementHTML)
     public
-      procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
     end;
 
     TCard = class abstract(TElementHTML)
     protected
     public
-      procedure DoRender(Scope: TmnwScope; Context: TmnwContext); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
     end;
 
   public
@@ -144,7 +144,7 @@ end;
 
 { TmnwBootstrapRenderer.TColumn }
 
-procedure TmnwBootstrapRenderer.TColumn.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwBootstrapRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TColumn;
 begin
@@ -156,7 +156,7 @@ end;
 
 { TmnwBootstrapRenderer.TContainer }
 
-procedure TmnwBootstrapRenderer.TContainer.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwBootstrapRenderer.TContainer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TContainer;
 begin
@@ -176,7 +176,7 @@ end;
 //https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
 //https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
 
-procedure TmnwBootstrapRenderer.TCard.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwBootstrapRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TCard;
 begin
@@ -206,7 +206,7 @@ end;
 
 { TmnwBootstrapRenderer.TRow }
 
-procedure TmnwBootstrapRenderer.TRow.DoRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwBootstrapRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TRow;
 begin

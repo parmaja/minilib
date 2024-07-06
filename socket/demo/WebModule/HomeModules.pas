@@ -100,17 +100,23 @@ type
 
   TClockCompose = class(THTML.TIntervalCompose)
   public
+    procedure ContentCompose(This: TmnwElement); override;
     procedure DoCompose; override;
   end;
 
 { TClockComposer }
+
+procedure TClockCompose.ContentCompose(This: TmnwElement);
+begin
+
+end;
 
 procedure TClockCompose.DoCompose;
 begin
   inherited DoCompose;
   with THTML do
   begin
-    TParagraph.Create(Self, TimeToStr(Now));
+    TParagraph.Create(Self.This, TimeToStr(Now));
     {with TImage.Create(Self) do
     begin
       Name := 'file_logo';
@@ -184,7 +190,7 @@ begin
           end;
 
 {$ifndef fpc}
-          with TCompose.Create(This) do
+          with TContentCompose.Create(This) do
           begin
             OnCompose := procedure
             begin
