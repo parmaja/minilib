@@ -57,7 +57,7 @@ uses
 	mnUtils, mnClasses, mnStreams, mnLogs,
   mnMultipartData, mnModules, mnWebModules;
 
-{$define rtti_objects}
+{.$define rtti_objects}
 
 type
 
