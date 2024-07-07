@@ -72,7 +72,7 @@ type
     end;
 
   public
-    procedure InitObjects; override;
+    procedure RegisterObjects; override;
   end;
 
 function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
@@ -111,7 +111,7 @@ end;
 
 { TmnwBootstrapRenderer }
 
-procedure TmnwBootstrapRenderer.InitObjects;
+procedure TmnwBootstrapRenderer.RegisterObjects;
 begin
   inherited;
   Libraries.RegisterLibrary('Bootstrap', TBootstrap_Library);

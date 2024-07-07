@@ -1,6 +1,33 @@
+var ws = null;
+var attached = false;
+
+function ws_income(msg) 
+{
+}
+
+function attach(url)
+{
+  console.log("connecting to: " + url);
+  ws = new WebSocket(url)
+  ws.onopen = function(ev) {
+    console.log("connection established");
+  }
+  ws.onmessage = function(ev) {
+    ws_income(ev.data);
+    console.log("Message from Server: " + ev.data);
+  }
+  ws.onclose  = function(ev) {
+    console.log("Connection closed");
+  }
+  ws.onerror = function(ev) {
+    console.log("error")
+  }
+}
+
 var reload_elements = [];
 
-function reloadElements() {
+function reloadElements() 
+{
   console.log('reloadElements');
   reload_elements.forEach(element => {
     const tagId = element.id;
@@ -27,6 +54,10 @@ function init()
   }
   else
     console.log('interval is not enabled');
+
+  attached = document.body.hasAttribute('data-attach');
+  if (attached == true)  
+    attach(window.location.href);
 }
 
 window.onload = init;

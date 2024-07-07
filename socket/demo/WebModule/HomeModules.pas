@@ -31,11 +31,13 @@ type
   public
   end;
 
+  { TWelcomeSchema }
+
   TWelcomeSchema = class(TCustomHomeSchema)
   private
-  public
   protected
     procedure DoCompose; override;
+    class function GetCapabilities: TmnwSchemaCapabilities; override;
   public
   end;
 
@@ -100,20 +102,13 @@ type
 
   TClockCompose = class(THTML.TIntervalCompose)
   public
-    procedure ContentCompose(This: TmnwElement); override;
-    procedure DoCompose; override;
+    procedure InnerCompose(Inner: TmnwElement); override;
   end;
 
 { TClockComposer }
 
-procedure TClockCompose.ContentCompose(This: TmnwElement);
+procedure TClockCompose.InnerCompose(Inner: TmnwElement);
 begin
-
-end;
-
-procedure TClockCompose.DoCompose;
-begin
-  inherited DoCompose;
   with THTML do
   begin
     TParagraph.Create(Self.This, TimeToStr(Now));
@@ -131,7 +126,6 @@ end;
 procedure TWelcomeSchema.DoCompose;
 begin
   inherited;
-  Cached := True;
   Name := 'welcome';
   Route := 'welcome';
 
@@ -185,18 +179,19 @@ begin
               Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo';
           end;}
 
-          {with TClockCompose.Create(This) do
+
+{$ifdef fpc}
+{          with TClockCompose.Create(This) do
           begin
           end;}
-
-{$ifndef fpc}
+{$else}
           with TIntervalCompose.Create(This) do
           begin
             Route := 'clock';
-            OnCompose := procedure(vThis: TmnwElement)
+            OnCompose := procedure(Inner: TmnwElement)
             begin
-              TParagraph.Create(vThis, TimeToStr(Now));
-              {with TImage.Create(This) do
+              TParagraph.Create(Inner, TimeToStr(Now));
+              {with TImage.Create(Inner) do
               begin
                 Name := 'file_logo';
       //          Route := 'logo';
@@ -212,6 +207,11 @@ begin
   end;
 end;
 
+class function TWelcomeSchema.GetCapabilities: TmnwSchemaCapabilities;
+begin
+  Result := [schemaAttach] + Inherited GetCapabilities;
+end;
+
 { TbsHttpGetHomeCommand }
 
 procedure TbsHttpGetHomeCommand.RespondResult(var Result: TmodRespondResult);
@@ -219,14 +219,21 @@ var
   Renderer : TmnwBootstrapRenderer;
 begin
   inherited;
-  Respond.PutHeader('Content-Type', DocumentToContentType('html'));
-  Respond.HttpResult := hrOK;
-  Renderer := TmnwBootstrapRenderer.Create;
-  try
-    Renderer.HomeUrl := (Module as THomeModule).HomeUrl;
-    (Module as THomeModule).Schemas.Respond(DeleteSubPath('', Request.Path), Renderer, Self, Respond.Stream);
-  finally
-    Renderer.Free;
+  if Request.WebSocket then
+  begin
+    (Module as THomeModule).Schemas.Attach(DeleteSubPath('', Request.Path), Self, Respond.Stream);
+  end
+  else
+  begin
+    Respond.PutHeader('Content-Type', DocumentToContentType('html'));
+    Respond.HttpResult := hrOK;
+    Renderer := TmnwBootstrapRenderer.Create;
+    try
+      Renderer.HomeUrl := (Module as THomeModule).HomeUrl;
+      (Module as THomeModule).Schemas.Respond(DeleteSubPath('', Request.Path), Renderer, Self, Respond.Stream);
+    finally
+      Renderer.Free;
+    end;
   end;
 end;
 

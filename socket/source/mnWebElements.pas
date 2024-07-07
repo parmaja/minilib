@@ -120,6 +120,7 @@ type
 
   TmnwContext = record
     Sender: TObject;
+    Schema: TmnwSchema;
     Renderer: TmnwRenderer;
     ParentRenderer: TmnwElementRenderer;
     Output: TmnwOutput;
@@ -128,7 +129,6 @@ type
   { TmnwScope }
 
   TmnwScope = record
-    Schema: TmnwSchema;
     Element: TmnwElement;
     Attributes: TmnwAttributes;
   end;
@@ -206,7 +206,7 @@ type
 
     procedure DoCompose; virtual;
     procedure DoRespondHeader(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); virtual;
-    procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); virtual;
+    procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); virtual;
   public
     Composed: Boolean;
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); virtual;
@@ -230,14 +230,14 @@ type
 
     function GetContentType(Route: string): string; virtual;
 
-    procedure Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+    procedure Respond(Route: string; Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream);
 
     //* Original Render
     procedure Render(Context: TmnwContext); overload;
 
     //* This will just prepare to Rencer(Context)
-    function Render(Renderer: TmnwRenderer; Sender: TObject; AOutput: TmnwOutput): Boolean; overload;
-    function Render(Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream): Boolean; overload;
+    function Render(Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AOutput: TmnwOutput): Boolean; overload;
+    function Render(Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream): Boolean; overload;
 
     property Route: String read FRoute write FRoute; //TODO change it to Alias
     property Name: String read FName write FName;
@@ -279,20 +279,40 @@ type
     property Item; default;
   end;
 
+  TmnwAttachment = class(TObject)
+  end;
+
+  TmnwAttachments = class(TmnObjectList<TmnwAttachment>)
+  end;
+
+  TmnwSchamaCapability = (
+		schemaSession,
+		schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
+    schemaAttach  //* Attach websocket
+	);
+
+  TmnwSchemaCapabilities = set of TmnwSchamaCapability;
+
   { TmnwSchema }
 
   TmnwSchema = class(TmnwElement)
   private
-    FCached: Boolean;
+    FAttachments: TmnwAttachments;
   protected
     NameingLastNumber: Integer;
     procedure GenID(Element: TmnwElement); inline;
     procedure GenRoute(Element: TmnwElement); inline;
-    procedure DoRespond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
+    procedure DoRespond(Route: string; Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream); override;
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); override;
     destructor Destroy; override;
-    property Cached: Boolean read FCached write FCached;
+
+    class function GetCapabilities: TmnwSchemaCapabilities; virtual;
+
+    function Attach(Route: string; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
+    procedure Deattach(AAttachment: TmnwAttachments);
+
+    property Attachments: TmnwAttachments read FAttachments;
   end;
 
   TmnwSchemaClass = class of TmnwSchema;
@@ -365,7 +385,7 @@ type
     {$endif}
     procedure DoBeginRender; virtual;
     procedure DoEndRender; virtual;
-    procedure InitObjects; virtual;
+    procedure RegisterObjects; virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -399,9 +419,12 @@ type
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
   public
     destructor Destroy; override;
+
     procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
+
     function Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream): TmnwElement;
-    //function Render(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream): TmnwSchema;
+    //for websocket
+    function Attach(Route: string; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
   end;
 
   TDirection = (dirUnkown, dirLTR, dirRTL);
@@ -445,7 +468,7 @@ type
 
       TDirectFile = class(THTMLElement)
       protected
-        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
+        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
         FileName: string;
         constructor Create(AParent: TmnwElement; AFileName: string = ''); reintroduce;
@@ -456,7 +479,7 @@ type
 
       TEmbedFile = class(THTMLElement)
       protected
-        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
+        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
         FileName: string;
         procedure Created; override;
@@ -468,7 +491,7 @@ type
 
       TJSResource = class(THTMLElement)
       protected
-        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
+        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
         ResName: string;
         procedure Created; override;
@@ -487,7 +510,7 @@ type
 
       TFile = class(THTMLElement)
       protected
-        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
+        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
         function GetContentType(Route: string): string; override;
       end;
@@ -496,13 +519,13 @@ type
 
       TAssets = class(THTMLElement)
       protected
-        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
+        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
         HomePath: string;
         function GetContentType(Route: string): string; override;
       end;
 
-      TContentComposeProc = reference to procedure(This: TmnwElement);
+      TContentComposeProc = reference to procedure(Inner: TmnwElement);
 
       { TContentCompose }
 
@@ -514,12 +537,11 @@ type
 
           TInnerComposer = class(THTMLElement)
           public
-            ContentCompose: TContentCompose;
-            procedure DoCompose; override;
           end;
 
-        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
-        procedure ContentCompose(This: TmnwElement); virtual;
+        procedure InnerCompose(Inner: TmnwElement); virtual;
+
+        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
         OnCompose: TContentComposeProc;
         constructor Create(AParent: TmnwElement; AOnCompose: TContentComposeProc = nil); reintroduce;
@@ -664,7 +686,7 @@ type
       private
         FData: TMemoryStream;
       protected
-        procedure DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); override;
+        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
         FileName: string;
         FilePath: string;
@@ -860,7 +882,7 @@ type
 
   protected
     procedure AddHead(AElement: TmnwElement; Context: TmnwContext); virtual;
-    procedure InitObjects; override;
+    procedure RegisterObjects; override;
   public
     HomeUrl: string;
   end;
@@ -1316,7 +1338,7 @@ begin
       SchemaObject := nil;
 
     if SchemaObject = nil then
-      SchemaObject := First;
+      SchemaObject := First; //* fallback
 
     if SchemaObject <> nil then
     begin
@@ -1327,7 +1349,7 @@ begin
         aSchema.Route := Route;
         SchemaCreated(aSchema);
         aSchema.Compose;
-        if aSchema.Cached then
+        if not (schemaDynamic in aSchema.GetCapabilities) then
           SchemaObject.Schema := aSchema;
       end
       else
@@ -1360,11 +1382,65 @@ begin
 
   if Result <> nil then
   begin
-    Result.Respond(aRoute, Renderer, Sender, AStream);
+    Result.Respond(aRoute, Sender, aSchema, Renderer, AStream);
   end;
 
-  if (aSchema <> nil) and not aSchema.Cached then
+  if (aSchema <> nil) and (schemaDynamic in aSchema.GetCapabilities) then
     aSchema.Free;
+end;
+
+function TmnwSchemas.Attach(Route: string; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
+var
+  SchemaObject: TmnwSchemaObject;
+  Routes: TStringList;
+  i: Integer;
+  aRoute: string;
+  aSchema: TmnwSchema;
+begin
+  exit(nil);
+  aSchema := nil;
+  Routes := TStringList.Create;
+  try
+    i := 0;
+    StrToStrings(Route, Routes, ['/']);
+    if (i<Routes.Count) then
+    begin
+      aRoute := Routes[i];
+      inc(i);
+      SchemaObject := Find(aRoute);
+    end
+    else
+      SchemaObject := nil;
+
+    if SchemaObject = nil then
+      SchemaObject := First; //* fallback
+
+    if SchemaObject <> nil then
+    begin
+      DeleteSubPath(aRoute, Route);
+      if SchemaObject.Schema = nil then
+      begin
+        if not (schemaDynamic in SchemaObject.SchemaClass.GetCapabilities) then
+        begin
+          aSchema := SchemaObject.SchemaClass.Create(nil);
+          aSchema.Route := Route;
+          SchemaCreated(aSchema);
+          aSchema.Compose;
+        end;
+      end
+      else
+        aSchema := SchemaObject.Schema;
+    end;
+  finally
+    Routes.Free;
+  end;
+
+  if aSchema <> nil then
+  begin
+    Result := aSchema.Attach(aRoute, Sender, AStream);
+  end
+  else
+    Result := nil;
 end;
 
 procedure TmnwSchemas.SchemaCreated(Schema: TmnwSchema);
@@ -1375,7 +1451,7 @@ procedure TmnwHTMLRenderer.AddHead(AElement: TmnwElement; Context: TmnwContext);
 begin
 end;
 
-procedure TmnwHTMLRenderer.InitObjects;
+procedure TmnwHTMLRenderer.RegisterObjects;
 begin
   inherited;
   //RegisterClasses(THTML);
@@ -1649,7 +1725,7 @@ constructor TmnwSchema.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARen
 begin
   inherited;
   FRoot := Self;
-  FCached := True;
+  FAttachments := TmnwAttachments.Create;
   {$ifdef rtti_objects}
   CacheClasses;
   {$endif}
@@ -1657,13 +1733,24 @@ end;
 
 destructor TmnwSchema.Destroy;
 begin
+  FAttachments.Clear;
+  FAttachments.Free;
+  FAttachments := nil;
   inherited;
 end;
 
-procedure TmnwSchema.DoRespond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+function TmnwSchema.Attach(Route: string; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
+begin
+end;
+
+procedure TmnwSchema.Deattach(AAttachment: TmnwAttachments);
+begin
+end;
+
+procedure TmnwSchema.DoRespond(Route: string; Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream);
 begin
   inherited;
-  Render(Renderer, Sender, AStream);
+  Render(Sender, Schema, Renderer, AStream);
 end;
 
 procedure CollectExtensions(rttiContext: TRttiContext; ElementClass: TClass; List: TClassList);
@@ -1699,6 +1786,11 @@ begin
     rttiContext.Free;
     list.Free;
   end;
+end;
+
+class function TmnwSchema.GetCapabilities: TmnwSchemaCapabilities;
+begin
+  Result := [];
 end;
 
 procedure TmnwSchema.GenID(Element: TmnwElement);
@@ -1854,7 +1946,7 @@ begin
   Result := DocumentToContentType(FileName);
 end;
 
-procedure THTML.TMemoryImage.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+procedure THTML.TMemoryImage.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 begin
   Data.Seek(0, soBeginning);
   AStream.WriteStream(Data, 0);
@@ -2005,7 +2097,7 @@ procedure TmnwElement.DoCompose;
 begin
 end;
 
-procedure TmnwElement.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+procedure TmnwElement.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 begin
 end;
 
@@ -2072,30 +2164,31 @@ begin
   Result := StringOfChar(' ', vLevel * 4);
 end;
 
-function TmnwElement.Render(Renderer: TmnwRenderer; Sender: TObject; AOutput: TmnwOutput): Boolean;
+function TmnwElement.Render(Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AOutput: TmnwOutput): Boolean;
 var
   aContext: TmnwContext;
 begin
   Result := False;
-  aContext.Output := AOutput;
+  aContext.Schema := Schema;
   aContext.Renderer := Renderer;
   aContext.Sender := Sender;
   aContext.ParentRenderer := nil;
+  aContext.Output := AOutput;
   Render(aContext);
   Result := True;
 end;
 
-procedure TmnwElement.Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+procedure TmnwElement.Respond(Route: string; Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream);
 begin
   if Route <> '' then
   begin
     (Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', GetContentType(Route)); //* move outside of mnWebElement.pas please
     DoRespondHeader(Route, Renderer, Sender, AStream);
   end;
-  DoRespond(Route, Renderer, Sender, AStream);
+  DoRespond(Route, Sender, Schema, Renderer, AStream);
 end;
 
-function TmnwElement.Render(Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream): Boolean;
+function TmnwElement.Render(Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream): Boolean;
 var
   Writer: TmnwWriter;
   Output: TmnwOutput;
@@ -2104,7 +2197,7 @@ begin
   Output := TmnwOutput.Create;
   Output.Add(Writer);
   try
-    Result := Render(Renderer, Sender, Output);
+    Result := Render(Sender, Schema, Renderer, Output);
   finally
     FreeAndNil(Output);
   end;
@@ -2180,7 +2273,7 @@ begin
   inherited;
   FObjectClasses := TRegObjects.Create;
   FParams := TmnwAttributes.Create;
-  InitObjects;
+  RegisterObjects;
   FObjectClasses.QuickSort;
 end;
 
@@ -2205,7 +2298,7 @@ procedure TmnwRenderer.DoEndRender;
 begin
 end;
 
-procedure TmnwRenderer.InitObjects;
+procedure TmnwRenderer.RegisterObjects;
 begin
 end;
 
@@ -2224,7 +2317,7 @@ end;
 
 { THTML.TDirectFile }
 
-procedure THTML.TDirectFile.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+procedure THTML.TDirectFile.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 var
   fs: TFileStream;
 begin
@@ -2250,7 +2343,7 @@ end;
 
 { THTML.TEmbedFile }
 
-procedure THTML.TEmbedFile.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+procedure THTML.TEmbedFile.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 var
   fs: TFileStream;
 begin
@@ -2282,7 +2375,7 @@ end;
 
 { THTML.TFile }
 
-procedure THTML.TFile.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+procedure THTML.TFile.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 var
   fs: TFileStream;
 begin
@@ -2305,7 +2398,7 @@ end;
 
 { THTML.TAssets }
 
-procedure THTML.TAssets.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+procedure THTML.TAssets.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 var
   fs: TFileStream;
   aFileName: string;
@@ -2339,7 +2432,7 @@ begin
   OnCompose := AOnCompose;
 end;
 
-procedure THTML.TContentCompose.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+procedure THTML.TContentCompose.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 var
   InnerComposer: TInnerComposer;
 begin
@@ -2354,30 +2447,23 @@ begin
 
   InnerComposer := TInnerComposer.Create(nil);
   try
-    InnerComposer.FRoot := Root;
+    //InnerComposer.FRoot := Root;
+    InnerCompose(InnerComposer);
     if Assigned(OnCompose) then
-    begin
       OnCompose(InnerComposer);
-      InnerComposer.Render(ARenderer, Sender, AStream);
-    end;
+    InnerComposer.Render(Sender, ASchema, ARenderer, AStream);
   finally
     InnerComposer.Free;
   end;
 
 end;
 
-procedure THTML.TContentCompose.ContentCompose(This: TmnwElement);
+procedure THTML.TContentCompose.InnerCompose(Inner: TmnwElement);
 begin
-
 end;
 
 { THTML.TContentCompose.TInnerComposer }
 
-procedure THTML.TContentCompose.TInnerComposer.DoCompose;
-begin
-  inherited;
-  //ContentCompose.OnCompose();
-end;
 
 { TmnwLibrary }
 
@@ -2484,7 +2570,7 @@ end;
 
 procedure TmnwHTMLRenderer.TDirectFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
-  Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
+  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
 end;
 
 { TmnwHTMLRenderer.TEmbedFile }
@@ -2492,7 +2578,7 @@ end;
 procedure TmnwHTMLRenderer.TEmbedFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
+  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
 end;
 
 { THTML.TBody }
@@ -2542,13 +2628,17 @@ end;
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TBody;
+  function GetAttach: string;
+  begin
+    if schemaAttach in Context.Schema.GetCapabilities then
+    begin
+      Result := ' data-attach="true"';
+    end;
+  end;
 begin
   e := Scope.Element as THTML.TBody;
-  Context.Output.WriteLn('html', '<body'+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
-//  e.Header.Render(Context);
-//  e.Container.Render(Context);
+  Context.Output.WriteLn('html', '<body' + Scope.Attributes.GetText(True) + GetAttach + '>', [woOpenTag]);
   inherited;
-//  e.Footer.Render(Context);
   Context.Output.WriteLn('html', '</body>', [woCloseTag]);
 end;
 
@@ -2635,7 +2725,7 @@ procedure TmnwHTMLRenderer.TContentCompose.DoInnerRender(Scope: TmnwScope; Conte
 begin
   Context.Output.WriteLn('html', '<div ' + Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   inherited;
-  Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
+  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
   Context.Output.WriteLn('html', '</div>', [woCloseTag]);
 end;
 
@@ -2669,7 +2759,7 @@ begin
   Kind := Kind + [elHighLevel];
 end;
 
-procedure THTML.TJSResource.DoRespond(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream);
+procedure THTML.TJSResource.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 var
   ResStream: TResourceStream;
 begin
@@ -2688,7 +2778,7 @@ procedure TmnwHTMLRenderer.TJSResource.DoInnerRender(Scope: TmnwScope; Context: 
 begin
   inherited;
   Context.Output.WriteLn('html', '<script type="text/javascript"'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
-  Scope.Element.Respond('', Context.Renderer, Context.Sender, Context.Output['html'].Stream);
+  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
   inherited;
   Context.Output.WriteLn('html', '');
   Context.Output.WriteLn('html', '</script>', [woCloseTag]);
