@@ -54,6 +54,7 @@ uses
   {$ifdef FPC}
   LCLType, //* for RT_RCDATA
   {$endif}
+  syncobjs,
 	mnUtils, mnClasses, mnStreams, mnLogs,
   mnMultipartData, mnModules, mnWebModules;
 
@@ -279,10 +280,37 @@ type
     property Item; default;
   end;
 
+  { TmnwAttachment }
+
   TmnwAttachment = class(TObject)
+  private
+    FTerminated: Boolean;
+    procedure SendMessage(const Message: string);
+  protected
+    procedure Execute; virtual;
+    procedure Terminate; virtual;
+  public
+    Schema: TmnwSchema;
+    Stream: TmnBufferStream;
+    destructor Destroy; override;
+    property Terminated: Boolean read FTerminated;
   end;
 
+  { TmnwAttachments }
+
   TmnwAttachments = class(TmnObjectList<TmnwAttachment>)
+  private
+    FLock: TCriticalSection;
+  protected
+    procedure Created; override;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Terminate;
+    procedure SendMessage(const Message: string);
+    procedure Add(AAttachment: TmnwAttachment);
+    procedure Remove(AAttachment: TmnwAttachment);
+    property Lock: TCriticalSection read FLock;
   end;
 
   TmnwSchamaCapability = (
@@ -309,8 +337,8 @@ type
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
 
-    function Attach(Route: string; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
-    procedure Deattach(AAttachment: TmnwAttachments);
+    procedure Attach(Route: string; Sender: TObject; AStream: TmnBufferStream);
+    procedure Deattach(AAttachment: TmnwAttachment);
 
     property Attachments: TmnwAttachments read FAttachments;
   end;
@@ -422,7 +450,7 @@ type
 
     procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
 
-    function Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream): TmnwElement;
+    function Respond(Route: string; Sender: TObject; Renderer: TmnwRenderer; AStream: TmnBufferStream): TmnwElement;
     //for websocket
     function Attach(Route: string; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
   end;
@@ -647,6 +675,21 @@ type
         constructor Create(AParent: TmnwElement; AText: string = ''); reintroduce;
       end;
 
+      { TAction }
+
+      [TRouteExtension]
+      TAction = class(THTMLElement)
+      protected
+        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
+      public
+        procedure Execute; virtual;
+      end;
+
+      TButton = class(THTMLElement)
+      public
+        Caption: string;
+      end;
+
       { TEdit }
 
       [TIDExtension]
@@ -658,7 +701,7 @@ type
         Text: string;
         PlaceHolder: string;
         EditType: string;
-        Width, Height: double;
+        //Width, Height: double;
       end;
 
       { TInputPassword }
@@ -851,6 +894,16 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      { TButton }
+
+      { TTButton }
+
+      TButton = class(TElementHTML)
+      protected
+        procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       { TInput }
 
       TInput = class(TElementHTML)
@@ -958,6 +1011,108 @@ end;
 procedure TmnwOutput.WriteLn(const Target, S: string; Options: TmnwWriterOptions);
 begin
   Write(Target, S, Options + [woEndLine]);
+end;
+
+{ TmnwAttachment }
+
+procedure TmnwAttachment.SendMessage(const Message: string);
+begin
+  Stream.WriteLine(Message);
+//  Stream.Close([cloData]);
+end;
+
+procedure TmnwAttachment.Execute;
+var
+  s: string;
+begin
+  while not Terminated and Stream.Connected do
+  begin
+    if Stream.ReadUTF8Line(s) then
+    begin
+//      Stream.WriteUTF8Line(s);
+      //log.WriteLn(s);
+    end;
+  end;
+end;
+
+procedure TmnwAttachment.Terminate;
+begin
+  FTerminated := True;
+  Stream.Close;
+end;
+
+destructor TmnwAttachment.Destroy;
+begin
+  inherited;
+end;
+
+{ TmnwAttachments }
+
+procedure TmnwAttachments.Created;
+begin
+  inherited;
+end;
+
+constructor TmnwAttachments.Create;
+begin
+  inherited Create;
+  FLock := TCriticalSection.Create;
+end;
+
+destructor TmnwAttachments.Destroy;
+begin
+  FreeAndNil(FLock);
+  inherited;
+end;
+
+procedure TmnwAttachments.Terminate;
+var
+  Attachment: TmnwAttachment;
+begin
+  Lock.Enter;
+  try
+    for Attachment in Self do
+    begin
+      Attachment.Terminate;
+    end;
+  finally
+    Lock.Leave;
+  end;
+end;
+
+procedure TmnwAttachments.SendMessage(const Message: string);
+var
+  Attachment: TmnwAttachment;
+begin
+  Lock.Enter;
+  try
+    for Attachment in Self do
+    begin
+      Attachment.SendMessage(Message);
+    end;
+  finally
+    Lock.Leave;
+  end;
+end;
+
+procedure TmnwAttachments.Add(AAttachment: TmnwAttachment);
+begin
+  Lock.Enter;
+  try
+    inherited Add(AAttachment);
+  finally
+    Lock.Leave;
+  end;
+end;
+
+procedure TmnwAttachments.Remove(AAttachment: TmnwAttachment);
+begin
+  Lock.Enter;
+  try
+    inherited Remove(AAttachment);
+  finally
+    Lock.Leave;
+  end;
 end;
 
 { TmnwAttributes }
@@ -1314,7 +1469,7 @@ begin
   inherited Add(SchemaObject);
 end;
 
-function TmnwSchemas.Respond(Route: string; Renderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream): TmnwElement;
+function TmnwSchemas.Respond(Route: string; Sender: TObject; Renderer: TmnwRenderer; AStream: TmnBufferStream): TmnwElement;
 var
   SchemaObject: TmnwSchemaObject;
   aElement: TmnwElement;
@@ -1397,7 +1552,6 @@ var
   aRoute: string;
   aSchema: TmnwSchema;
 begin
-  exit(nil);
   aSchema := nil;
   Routes := TStringList.Create;
   try
@@ -1437,7 +1591,7 @@ begin
 
   if aSchema <> nil then
   begin
-    Result := aSchema.Attach(aRoute, Sender, AStream);
+    aSchema.Attach(aRoute, Sender, AStream);
   end
   else
     Result := nil;
@@ -1466,6 +1620,7 @@ begin
   RegisterRenderer(THTML.TBody ,TBody);
   RegisterRenderer(THTML.TParagraph, TParagraph);
   RegisterRenderer(THTML.TBreak, TBreak);
+  RegisterRenderer(THTML.TButton, TButton);
   RegisterRenderer(THTML.TInput, TInput);
   RegisterRenderer(THTML.TInputPassword, TInputPassword);
   RegisterRenderer(THTML.TImage, TImage);
@@ -1654,6 +1809,23 @@ begin
   Context.Output.WriteLn('html', '<br>');
 end;
 
+{ TmnwHTMLRenderer.TTButton }
+
+procedure TmnwHTMLRenderer.TButton.DoCollectAttributes(Scope: TmnwScope);
+begin
+  inherited;
+  //Scope.Attributes['type'] := (Scope.Element as THTML.TButton).EditType;
+end;
+
+procedure TmnwHTMLRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TButton;
+begin
+  e := Scope.Element as THTML.TButton;
+  Context.Output.WriteLn('html', '<button type="button"' + Scope.Attributes.GetText(True)+' >'+e.Caption+'</button>', [woOpenTag, woCloseTag]);
+  inherited;
+end;
+
 { TmnwHTMLRenderer.TInputHTML }
 
 procedure TmnwHTMLRenderer.TInput.DoCollectAttributes(Scope: TmnwScope);
@@ -1733,18 +1905,30 @@ end;
 
 destructor TmnwSchema.Destroy;
 begin
+  FAttachments.Terminate;
   FAttachments.Clear;
-  FAttachments.Free;
-  FAttachments := nil;
+  FreeAndNil(FAttachments);
   inherited;
 end;
 
-function TmnwSchema.Attach(Route: string; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
+procedure TmnwSchema.Attach(Route: string; Sender: TObject; AStream: TmnBufferStream);
+var
+  Attachment: TmnwAttachment;
 begin
+  Attachment := TmnwAttachment.Create;
+  Attachment.Schema := Self;
+  Attachment.Stream := AStream;
+  Attachments.Add(Attachment);
+  try
+    Attachment.Execute;
+  finally
+//    Attachments.Remove(Attachment);
+  end;
 end;
 
-procedure TmnwSchema.Deattach(AAttachment: TmnwAttachments);
+procedure TmnwSchema.Deattach(AAttachment: TmnwAttachment);
 begin
+  Attachments.Remove(AAttachment);
 end;
 
 procedure TmnwSchema.DoRespond(Route: string; Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream);
@@ -2698,6 +2882,22 @@ constructor THTML.TParagraph.Create(AParent: TmnwElement; AText: string);
 begin
   inherited Create(AParent);
   Text := AText;
+end;
+
+{ THTML.TAction }
+
+procedure THTML.TAction.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
+begin
+  inherited;
+  try
+    Execute;
+    AStream.WriteUTF8Line('Executed');
+  finally
+  end;
+end;
+
+procedure THTML.TAction.Execute;
+begin
 end;
 
 { TNameAttribute }

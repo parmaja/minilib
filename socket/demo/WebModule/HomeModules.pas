@@ -105,6 +105,27 @@ type
     procedure InnerCompose(Inner: TmnwElement); override;
   end;
 
+  TThreadTimer = class(TThread)
+  public
+  end;
+
+  { TMyAction }
+
+  TMyAction = class(THTML.TAction)
+  public
+    procedure Execute; override;
+  end;
+
+{ TMyAction }
+
+procedure TMyAction.Execute;
+begin
+  inherited;
+  if Root <> nil then
+    Root.Attachments.SendMessage('My Action');
+end;
+
+
 { TClockComposer }
 
 procedure TClockCompose.InnerCompose(Inner: TmnwElement);
@@ -160,6 +181,11 @@ begin
           Name := 'p1';
         end;
 
+        with TMyAction.Create(This) do
+        begin
+          Route := 'myaction';
+        end;
+
         with TCard.Create(This) do
         begin
           Caption := 'Welcome';
@@ -179,6 +205,26 @@ begin
               Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo';
           end;}
 
+          with TRow.Create(This) do
+          begin
+            with TInput.Create(This) do
+            begin
+              Name := 'Input1';
+              Caption := 'Number 1';
+            end;
+
+            with TInput.Create(This) do
+            begin
+              Name := 'Input2';
+              Caption := 'Number 2';
+            end;
+
+            with TButton.Create(This) do
+            begin
+              Name := 'AddBtn';
+              Caption := 'Add';
+            end;
+          end;
 
 {$ifdef fpc}
 {          with TClockCompose.Create(This) do
@@ -221,7 +267,8 @@ begin
   inherited;
   if Request.WebSocket then
   begin
-    (Module as THomeModule).Schemas.Attach(DeleteSubPath('', Request.Path), Self, Respond.Stream);
+    (Module as THomeModule).Schemas.Attach(DeleteSubPath('', Request.Path), Self, Respond.Stream); //Serve the websocket
+    Result.Status := Result.Status - [mrKeepAlive]; // Disconnect
   end
   else
   begin
@@ -230,7 +277,7 @@ begin
     Renderer := TmnwBootstrapRenderer.Create;
     try
       Renderer.HomeUrl := (Module as THomeModule).HomeUrl;
-      (Module as THomeModule).Schemas.Respond(DeleteSubPath('', Request.Path), Renderer, Self, Respond.Stream);
+      (Module as THomeModule).Schemas.Respond(DeleteSubPath('', Request.Path), Self, Renderer, Respond.Stream);
     finally
       Renderer.Free;
     end;
