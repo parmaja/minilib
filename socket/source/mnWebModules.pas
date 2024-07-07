@@ -854,7 +854,8 @@ begin
         Respond.AddHeader('upgrade', 'websocket');
         Respond.AddHeader('date: ', FormatHTTPDate(Now));
         Respond.AddHeader('Sec-Websocket-Accept', WSKey);
-        Respond.AddHeader('Sec-WebSocket-Protocol', 'plain');
+        if Request.Header['Sec-WebSocket-Protocol'] = 'plain' then
+          Respond.AddHeader('Sec-WebSocket-Protocol', 'plain');
         Respond.SendHeader;
 
         Respond.KeepAlive := True;
