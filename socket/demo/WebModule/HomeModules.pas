@@ -122,7 +122,7 @@ procedure TMyAction.Execute;
 begin
   inherited;
   if Root <> nil then
-    Root.Attachments.SendMessage('My Action');
+    Root.Attachments.SendMessage('{"type": "text", "element": "input1", "value": "my new value"}');
 end;
 
 
@@ -210,6 +210,7 @@ begin
             with TInput.Create(This) do
             begin
               Name := 'Input1';
+              id := 'input1';
               Caption := 'Number 1';
             end;
 

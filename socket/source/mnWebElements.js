@@ -3,6 +3,16 @@ var attached = false;
 
 function ws_income(msg) 
 {
+  if (msg.charAt(0) === '{')
+  {    
+    const json = JSON.parse(msg);
+    if (json.type === 'text') 
+    {      
+      const element = document.getElementById(json.element);
+      if (element)
+        element.value = json.value;
+    }
+  }
 }
 
 function attach(url)
