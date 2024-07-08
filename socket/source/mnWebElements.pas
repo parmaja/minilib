@@ -108,13 +108,14 @@ type
   { TmnwAttributes }
 
   TmnwAttributes = class(TmnNameValueObjectList<TmnwAttribute>)
+  protected
+    procedure Created; override;
   public
     function GetText(WithExtraSpace: Boolean = False): string;
     function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function UnsetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     procedure Append(AAttributes: TmnwAttributes);
-    procedure Created; override;
   end;
 
   { TmnwContext }
@@ -490,10 +491,9 @@ type
       TFooter = class;
       TContainer = class;
 
-      [TIDExtension]
-
       { TDirectFile }
 
+      [TIDExtension]
       TDirectFile = class(THTMLElement)
       protected
         procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
@@ -505,37 +505,51 @@ type
 
       { TEmbedFile }
 
-      TEmbedFile = class(THTMLElement)
+      TEmbedFile = class(TDirectFile)
       protected
-        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
-      public
-        FileName: string;
         procedure Created; override;
-        constructor Create(AParent: TmnwElement; AFileName: string = ''); reintroduce;
-        function GetContentType(Route: string): string; override;
+      public
       end;
 
-      { TJSResource }
+      { TDirectResource }
 
-      TJSResource = class(THTMLElement)
+      [TIDExtension]
+      TDirectResource = class(THTMLElement)
       protected
         procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
         ResName: string;
-        procedure Created; override;
-        constructor Create(AParent: TmnwElement; AResName: string); reintroduce;
+        constructor Create(AParent: TmnwElement; AResName: string = ''); reintroduce;
         function GetContentType(Route: string): string; override;
+      end;
+
+      { TEmbedResource }
+
+      TEmbedResource = class(TDirectResource)
+      protected
+        procedure Created; override;
+      public
       end;
 
       { TJSEmbedFile }
 
       TJSEmbedFile = class(TEmbedFile)
+      protected
+        procedure Created; override;
       end;
 
-      [TIDExtension]
+      { TJSEmbedResource }
+
+      TJSEmbedResource = class(TDirectResource)
+      protected
+        procedure Created; override;
+      public
+        function GetContentType(Route: string): string; override;
+      end;
 
       { TFile }
 
+      [TIDExtension]
       TFile = class(THTMLElement)
       protected
         procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
@@ -587,11 +601,12 @@ type
         FTitle: string;
         FVersion: integer;
         FBody: TBody;
+      protected
+        procedure Created; override;
       public
         Direction: TDirection;
         property Version: integer read FVersion write FVersion;
         property Title: string read FTitle write FTitle;
-        procedure Created; override;
         destructor Destroy; override;
         property Body: TBody read FBody;
       end;
@@ -607,11 +622,12 @@ type
         FHeader: THeader;
         FFooter: TFooter;
         FContainer: TContainer;
+      protected
+        procedure Created; override;
       public
         property Header: THeader read GetHeader;
         property Footer: TFooter read GetFooter;
         property Container: TContainer read GetContainer;
-        procedure Created; override;
         destructor Destroy; override;
       end;
 
@@ -730,10 +746,11 @@ type
         FData: TMemoryStream;
       protected
         procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
+      protected
+        procedure Created; override;
       public
         FileName: string;
         FilePath: string;
-        procedure Created; override;
         destructor Destroy; override;
         function GetContentType(Route: string): string; override;
         procedure LoadFromFile(const AFileName: string);
@@ -801,7 +818,21 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      TJSResource = class(TElementHTML)
+      { TDirectResource }
+
+      TDirectResource = class(TElementHTML)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TEmbedResource }
+
+      TEmbedResource = class(TElementHTML)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      TJSEmbedResource = class(TEmbedResource)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
@@ -817,7 +848,6 @@ type
 
       TContentCompose = class(TElementHTML)
       protected
-        function AddScript(Scope: TmnwScope; Context: TmnwContext): string; virtual;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -1613,7 +1643,9 @@ begin
   RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
   RegisterRenderer(THTML.TDirectFile,TDirectFile);
   RegisterRenderer(THTML.TEmbedFile, TEmbedFile);
-  RegisterRenderer(THTML.TJSResource, TJSResource);
+  RegisterRenderer(THTML.TDirectResource, TDirectResource);
+  RegisterRenderer(THTML.TEmbedResource, TEmbedResource);
+  RegisterRenderer(THTML.TJSEmbedResource, TJSEmbedResource);
   RegisterRenderer(THTML.TJSEmbedFile, TJSEmbedFile);
 
   RegisterRenderer(THTML.TDocument ,TDocument);
@@ -2527,34 +2559,44 @@ end;
 
 { THTML.TEmbedFile }
 
-procedure THTML.TEmbedFile.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
-var
-  fs: TFileStream;
-begin
-  inherited;
-  fs := TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead);
-  try
-    AStream.WriteStream(fs, 0);
-  finally
-    fs.Free;
-  end;
-end;
-
 procedure THTML.TEmbedFile.Created;
 begin
   inherited;
   Kind := Kind + [elHighLevel];
 end;
 
-constructor THTML.TEmbedFile.Create(AParent: TmnwElement; AFileName: string);
+{ THTML.TDirectResource }
+
+procedure THTML.TDirectResource.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
+var
+  ResStream: TResourceStream;
 begin
-  inherited Create(AParent);
-  FileName := AFileName;
+  inherited;
+  ResStream := TResourceStream.Create(hInstance, ChangeFileExt(ResName, ''), RT_RCDATA); //* remove extension
+  try
+    AStream.CopyFrom(ResStream, 0);
+  finally
+    ResStream.Free;
+  end;
 end;
 
-function THTML.TEmbedFile.GetContentType(Route: string): string;
+constructor THTML.TDirectResource.Create(AParent: TmnwElement; AResName: string);
 begin
-  Result := DocumentToContentType(FileName);
+  inherited Create(AParent);
+  ResName := AResName;
+end;
+
+function THTML.TDirectResource.GetContentType(Route: string): string;
+begin
+  Result := DocumentToContentType(ResName);
+end;
+
+{ THTML.TEmbedResource }
+
+procedure THTML.TEmbedResource.Created;
+begin
+  inherited;
+  Kind := Kind + [elHighLevel];
 end;
 
 { THTML.TFile }
@@ -2754,12 +2796,29 @@ end;
 
 procedure TmnwHTMLRenderer.TDirectFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
+  inherited;
   Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
 end;
 
 { TmnwHTMLRenderer.TEmbedFile }
 
 procedure TmnwHTMLRenderer.TEmbedFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
+end;
+
+{ TmnwHTMLRenderer.TDirectResource }
+
+procedure TmnwHTMLRenderer.TDirectResource.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
+end;
+
+{ TmnwHTMLRenderer.TEmbedResource }
+
+procedure TmnwHTMLRenderer.TEmbedResource.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
   Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
@@ -2916,11 +2975,6 @@ end;
 
 { TmnwHTMLRenderer.TContentCompose }
 
-function TmnwHTMLRenderer.TContentCompose.AddScript(Scope: TmnwScope; Context: TmnwContext): string;
-begin
-  Result := '';
-end;
-
 procedure TmnwHTMLRenderer.TContentCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Output.WriteLn('html', '<div ' + Scope.Attributes.GetText(True)+'>', [woOpenTag]);
@@ -2940,41 +2994,30 @@ begin
   Scope.Attributes['data-refresh-url'] := URL;
 end;
 
-{ THTML.TJSResource }
+{ THTML.TJSEmbedResource }
 
-constructor THTML.TJSResource.Create(AParent: TmnwElement; AResName: string);
-begin
-  inherited Create(AParent);
-  ResName := AResName;
-end;
-
-function THTML.TJSResource.GetContentType(Route: string): string;
+function THTML.TJSEmbedResource.GetContentType(Route: string): string;
 begin
   Result := DocumentToContentType('.js');
 end;
 
-procedure THTML.TJSResource.Created;
+procedure THTML.TJSEmbedResource.Created;
 begin
   inherited;
   Kind := Kind + [elHighLevel];
 end;
 
-procedure THTML.TJSResource.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
-var
-  ResStream: TResourceStream;
+{ THTML.TJSEmbedFile }
+
+procedure THTML.TJSEmbedFile.Created;
 begin
   inherited;
-  ResStream := TResourceStream.Create(hInstance, ResName, RT_RCDATA);
-  try
-    AStream.CopyFrom(ResStream, 0);
-  finally
-    ResStream.Free;
-  end;
+  Kind := Kind + [elHighLevel];
 end;
 
-{ TmnwHTMLRenderer.TJSResource }
+{ TmnwHTMLRenderer.TJSEmbedResource }
 
-procedure TmnwHTMLRenderer.TJSResource.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TJSEmbedResource.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
   Context.Output.WriteLn('html', '<script type="text/javascript"'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);

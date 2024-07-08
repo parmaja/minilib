@@ -354,6 +354,7 @@ end;
 
 function TmnObjectList<_Object_>.Compare(Left, Right: _Object_): Integer;
 begin
+  Result := 0;
   raise ENotImplemented.Create(ClassName + '.Compare');
 end;
 
