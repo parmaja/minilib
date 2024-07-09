@@ -1047,7 +1047,7 @@ end;
 
 procedure TmnwAttachment.SendMessage(const Message: string);
 begin
-  Stream.WriteLine(Message);
+  Stream.WriteLineUTF8(Message);
 //  Stream.Close([cloData]);
 end;
 
