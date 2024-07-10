@@ -101,7 +101,7 @@ type
     {$endif}
     function Peek(Index: Integer): _Object_;
 
-    procedure QuickSort;
+    procedure QuickSort; virtual;
 
     property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
     function Last: _Object_;
@@ -335,9 +335,9 @@ begin
   p := Items[ Md ];
   repeat
 
-    while (Lo<Md) and (Compare(Items[Lo], p) < 0) do
+    while (Lo < Md) and (Compare(Items[Lo], p) < 0) do
 		  Inc(Lo);
-    while (Hi>Md) and (Compare(Items[Hi], p) > 0) do
+    while (Hi > Md) and (Compare(Items[Hi], p) > 0) do
 		  Dec(Hi);
 
     if Lo <= Hi then
@@ -345,7 +345,7 @@ begin
       if (Lo<>Hi) then
       begin
         //Swap(Lo, Hi);
-        if Compare(Items[Lo], Items[Hi])<>0 then
+        if Compare(Items[Lo], Items[Hi]) <> 0 then
           Exchange(Lo, Hi);
       end;
       Inc(Lo);

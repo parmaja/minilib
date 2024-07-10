@@ -227,6 +227,9 @@ type
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); virtual;
     destructor Destroy; override;
+
+    class function ClassLevel: Integer;
+
     procedure Add(O: TmnwElement); overload;
     function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;
     function Find(const Name: string): TmnwElement;
@@ -410,27 +413,8 @@ type
 
   TmnwRenderer = class(TmnwObject)
   public
-    type
-
-      TRegObject = class(TObject)
-      public
-        ObjectClass: TmnwElementClass;
-        RendererClass: TmnwElementRendererClass;
-      end;
-
-      { TRegObjects }
-
-      TRegObjects = class(TmnObjectList<TRegObject>)
-      protected
-        function Compare(Item1, Item2: TRegObject): Integer; override;
-      public
-        function FindDerived(AObjectClass: TmnwElementClass): TmnwElementClass;
-        function Find(AObjectClass: TmnwElementClass; Nearst: Boolean = False): TRegObject;
-        function FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
-      end;
   private
     FLibraries: TmnwLibraries;
-    FObjectClasses: TRegObjects;
     FParams: TmnwAttributes;
   protected
     {$ifdef rtti_objects}
@@ -438,20 +422,21 @@ type
     {$endif}
     procedure DoBeginRender; virtual;
     procedure DoEndRender; virtual;
-    procedure RegisterObjects; virtual;
+
+    class constructor RegisterObjects;
   public
     constructor Create; virtual;
     destructor Destroy; override;
+    class destructor Destroy;
 
     procedure BeginRender;
     procedure EndRender;
 
-    procedure RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = True);
+    class procedure RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = True);
     function FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
     function CreateRenderer(AObjectClass: TmnwElementClass): TmnwElementRenderer; overload;
     function CreateRenderer(AObject: TmnwElement): TmnwElementRenderer; overload;
 
-    property ObjectClasses: TRegObjects read FObjectClasses;
     property Params: TmnwAttributes read FParams;
     property Libraries: TmnwLibraries read FLibraries;
   end;
@@ -994,8 +979,9 @@ type
       end;
 
   protected
+    procedure Created; override;
     procedure AddHead(AElement: TmnwElement; Context: TmnwContext); virtual;
-    procedure RegisterObjects; override;
+    class constructor RegisterObjects;
   public
     HomeUrl: string;
   end;
@@ -1026,6 +1012,30 @@ procedure CacheClasses;
 {$R 'mnWebElements.res' 'mnWebElements.rc'}
 
 implementation
+
+type
+  TRegObject = class(TObject)
+  public
+    ObjectClass: TmnwElementClass;
+    RendererClass: TmnwElementRendererClass;
+    Level: Integer;
+  end;
+
+  { TRegObjects }
+
+  TRegObjects = class(TmnObjectList<TRegObject>)
+  protected
+    function Compare(Item1, Item2: TRegObject): Integer; override;
+  public
+    Sorted: Boolean;
+    procedure QuickSort; override;
+    function FindDerived(AObjectClass: TmnwElementClass): TmnwElementClass;
+    function Find(AObjectClass: TmnwElementClass; Nearst: Boolean = False): TRegObject;
+    function FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
+  end;
+
+var
+  ObjectClasses: TRegObjects = nil;
 
 {$ifdef rtti_objects}
 procedure CacheClasses;
@@ -1447,7 +1457,7 @@ end;
 
 { TmnwSchema.TRegObjects }
 
-function TmnwRenderer.TRegObjects.FindDerived(AObjectClass: TmnwElementClass): TmnwElementClass;
+function TRegObjects.FindDerived(AObjectClass: TmnwElementClass): TmnwElementClass;
 var
   o: TRegObject;
 begin
@@ -1462,17 +1472,27 @@ begin
   end;
 end;
 
-function TmnwRenderer.TRegObjects.Compare(Item1, Item2: TRegObject): Integer;
+function TRegObjects.Compare(Item1, Item2: TRegObject): Integer;
+{var
+  s1, s2: string;}
 begin
-  if Item2.ObjectClass.InheritsFrom(Item1.ObjectClass) then
-    Result := 1
-  else if Item1.ObjectClass.InheritsFrom(Item2.ObjectClass) then
-    Result := -1
-  else
-    Result := 0;
+  {s1 := Item1.ObjectClass.ClassName;
+  s2 := Item2.ObjectClass.ClassName;
+  if (s1 = 'THTML.TContentCompose') and (s2 = 'THTML.TIntervalCompose') then
+    nothing;
+  if (s2 = 'THTML.TContentCompose') and (s1 = 'THTML.TIntervalCompose') then
+    nothing;}
+
+  Result := Item2.Level - Item1.Level;
 end;
 
-function TmnwRenderer.TRegObjects.Find(AObjectClass: TmnwElementClass; Nearst: Boolean): TRegObject;
+procedure TRegObjects.QuickSort;
+begin
+  inherited;
+  Sorted := True;
+end;
+
+function TRegObjects.Find(AObjectClass: TmnwElementClass; Nearst: Boolean): TRegObject;
 var
   o: TRegObject;
   i: Integer;
@@ -1493,7 +1513,7 @@ begin
   end;
 end;
 
-function TmnwRenderer.TRegObjects.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
+function TRegObjects.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
 var
   o: TRegObject;
 begin
@@ -1661,13 +1681,18 @@ procedure TmnwSchemas.SchemaCreated(Schema: TmnwSchema);
 begin
 end;
 
+procedure TmnwHTMLRenderer.Created;
+begin
+  inherited;
+  Libraries.RegisterLibrary('JQuery', TJQuery_Library);
+end;
+
 procedure TmnwHTMLRenderer.AddHead(AElement: TmnwElement; Context: TmnwContext);
 begin
 end;
 
-procedure TmnwHTMLRenderer.RegisterObjects;
+class constructor TmnwHTMLRenderer.RegisterObjects;
 begin
-  inherited;
   //RegisterClasses(THTML);
   RegisterRenderer(THTML.TContentCompose, TContentCompose);
   RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
@@ -1695,8 +1720,6 @@ begin
   RegisterRenderer(THTML.TRow, TRow);
   RegisterRenderer(THTML.TColumn, TColumn);
   RegisterRenderer(THTML.TPanel, TPanel);
-
-  Libraries.RegisterLibrary('JQuery', TJQuery_Library);
 end;
 
 { TmnwHTMLRenderer.TElementHTML }
@@ -1886,7 +1909,7 @@ var
 begin
   e := Scope.Element as THTML.TButton;
   if schemaAttach in Context.Schema.GetCapabilities then
-    event := 'onclick="send('''+e.ID+''', ''click'', '''')"';
+    event := ' onclick="send('''+e.ID+''', ''click'', '''')" ';
   Context.Output.WriteLn('html', '<button type="button"' + event + '' + Scope.Attributes.GetText(True)+' >'+e.Caption+'</button>', [woOpenTag, woCloseTag]);
   inherited;
 end;
@@ -2106,7 +2129,7 @@ begin
 end;
 {$endif}
 
-procedure TmnwRenderer.RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean);
+class procedure TmnwRenderer.RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean);
 var
   aRegObject: TRegObject;
 begin
@@ -2125,6 +2148,7 @@ begin
     aRegObject := TRegObject.Create;
     aRegObject.ObjectClass := AObjectClass;
     aRegObject.RendererClass := ARendererClass;
+    aRegObject.Level := AObjectClass.ClassLevel;
     ObjectClasses.Add(aRegObject);
   end;
 end;
@@ -2411,6 +2435,19 @@ begin
   inherited;
 end;
 
+class function TmnwElement.ClassLevel: Integer;
+var
+  c: TClass;
+begin
+  Result := 0;
+  c := ClassType;
+  while c <> nil do
+  begin
+    c := c.ClassParent;
+    inc(Result);
+  end;
+end;
+
 procedure TmnwElement.Add(O: TmnwElement);
 begin
   O.FParent := Self;
@@ -2570,23 +2607,32 @@ begin
 end;
 
 constructor TmnwRenderer.Create;
-var
-  o: TmnwRenderer.TRegObject;
+{var
+  o: TmnwRenderer.TRegObject;}
 begin
   FLibraries := TmnwLibraries.Create;
   inherited;
-  FObjectClasses := TRegObjects.Create();
   FParams := TmnwAttributes.Create;
-  RegisterObjects;
-  FObjectClasses.QuickSort;
+  //ObjectClasses := TRegObjects.Create();
+{  for o in ObjectClasses do
+    log.WriteLn(o.ObjectClass.ClassName);}
+  if not ObjectClasses.Sorted then
+    ObjectClasses.QuickSort;
+  {log.WriteLn('---------------------------');
+  for o in ObjectClasses do
+    log.WriteLn(o.ObjectClass.ClassName);}
 end;
 
 destructor TmnwRenderer.Destroy;
 begin
-  FreeAndNil(FObjectClasses);
   FreeAndNil(FParams);
   FreeAndNil(FLibraries);
   inherited;
+end;
+
+class destructor TmnwRenderer.Destroy;
+begin
+  FreeAndNil(ObjectClasses);
 end;
 
 procedure TmnwRenderer.EndRender;
@@ -2602,8 +2648,9 @@ procedure TmnwRenderer.DoEndRender;
 begin
 end;
 
-procedure TmnwRenderer.RegisterObjects;
+class constructor TmnwRenderer.RegisterObjects;
 begin
+  ObjectClasses := TRegObjects.Create;
 end;
 
 {$ifdef rtti_objects}
@@ -3143,6 +3190,7 @@ end;
 initialization
 
 finalization
+  FreeAndNil(ObjectClasses);
 {$ifdef rtti_objects}
   FreeAndNil(CacheClassObjects);
 {$endif}

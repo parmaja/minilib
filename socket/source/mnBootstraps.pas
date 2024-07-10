@@ -71,8 +71,11 @@ type
       procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
     end;
 
+  protected
+    procedure Created; override;
   public
-    procedure RegisterObjects; override;
+
+    class constructor RegisterObjects;
   end;
 
 function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
@@ -111,16 +114,20 @@ end;
 
 { TmnwBootstrapRenderer }
 
-procedure TmnwBootstrapRenderer.RegisterObjects;
+procedure TmnwBootstrapRenderer.Created;
 begin
   inherited;
   Libraries.RegisterLibrary('Bootstrap', TBootstrap_Library);
+  Libraries.Use('Bootstrap');
+end;
+
+class constructor TmnwBootstrapRenderer.RegisterObjects;
+begin
   RegisterRenderer(THTML.TDocument, TDocument, True);
   RegisterRenderer(THTML.TContainer, TContainer, True);
   RegisterRenderer(THTML.TRow, TRow, True);
   RegisterRenderer(THTML.TColumn, TColumn, True);
   RegisterRenderer(THTML.TCard, TCard, True);
-  Libraries.Use('Bootstrap');
 end;
 
 { TmnwBootstrapRenderer.TBSInputHTML }

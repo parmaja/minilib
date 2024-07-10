@@ -149,7 +149,7 @@ procedure TClockCompose.InnerCompose(Inner: TmnwElement);
 begin
   with THTML do
   begin
-    TParagraph.Create(Self.This, TimeToStr(Now));
+    TParagraph.Create(Inner, TimeToStr(Now));
     {with TImage.Create(Self) do
     begin
       Name := 'file_logo';
@@ -241,6 +241,7 @@ begin
 
             with TMyButton.Create(This) do
             begin
+              ID := 'Add';
               Name := 'AddBtn';
               Caption := 'Add';
             end;
@@ -275,7 +276,8 @@ end;
 
 class function TWelcomeSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
-  Result := [schemaAttach] + Inherited GetCapabilities;
+  //Result := [schemaAttach] + Inherited GetCapabilities;
+  Result := Inherited GetCapabilities;
 end;
 
 { TbsHttpGetHomeCommand }
