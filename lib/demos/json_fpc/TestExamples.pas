@@ -49,7 +49,7 @@ begin
     Parser.Parse('{'#13);
     Parser.Parse('  Books: {'#13);
     Parser.Parse('    Book1: {'#13);
-    Parser.Parse('      Title: "'+cTestValue+'"'#13);
+    Parser.Parse('      Title: "' + cTestValue + '"'#13);
     Parser.Parse('    }'#13);
     Parser.Parse('  }'#13);
     Parser.Parse('}'#13);

@@ -284,7 +284,13 @@ var
       Result := ''
     else
     begin
+      //Result := TEncoding.UTF8.GetString(Value, Start, Count);
+      {$ifdef FPC}
+      SetLength(Result, Count);
+      CopyMemory(@Result[1], @Value[Start], Count);
+      {$else}
       Result := TEncoding.UTF8.GetString(Value, Start, Count);
+      {$endif}
     end;
   end;
 
