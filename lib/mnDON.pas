@@ -378,11 +378,12 @@ type
   published
   end;
 
-function JsonParseStringPair(const S: utf8string; Options: TJSONParseOptions = []): TDON_Pair;
-function JsonParseStringValue(const S: utf8string; Options: TJSONParseOptions = []): TDON_Value;
+function JsonParseStringPair(const S: utf8string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
+//* {"value": "test1"}
+function JsonParseStringValue(const S: utf8string; out Error: string; Options: TJSONParseOptions = []): TDON_Value;
 
-function JsonParseFilePair(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair;
-function JsonParseFileValue(const FileName: string; Options: TJSONParseOptions = []): TDON_Value;
+function JsonParseFilePair(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
+function JsonParseFileValue(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Value;
 
 procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
 
@@ -445,11 +446,11 @@ begin
   end;
 end;
 
-function JsonParseStringPair(const S: utf8string; Options: TJSONParseOptions): TDON_Pair;
+function JsonParseStringPair(const S: utf8string; out Error: string; Options: TJSONParseOptions): TDON_Pair;
 begin
   Result := TDON_Root.Create(nil);
   try
-    JsonParseCallback(s, Result, JsonParseAcquireCallback, Options);
+    JsonParseCallback(s, Error, Result, JsonParseAcquireCallback, Options);
   except
     on E: Exception do
     begin
@@ -459,29 +460,31 @@ begin
   end
 end;
 
-function JsonParseStringValue(const S: utf8string; Options: TJSONParseOptions): TDON_Value;
+function JsonParseStringValue(const S: utf8string; out Error: string; Options: TJSONParseOptions): TDON_Value;
 var
   Pair: TDON_Pair;
 begin
-  Pair := JsonParseStringPair(S, Options);
+  Pair := JsonParseStringPair(S, Error, Options);
   try
     if Pair<>nil then
-      Result := Pair.ReleaseValue;
+      Result := Pair.ReleaseValue
+    else
+      Result := nil;
   finally
     Pair.Free;
   end;
 end;
 
-function JsonParseFilePair(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair;
+function JsonParseFilePair(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
 begin
-  Result := JsonParseStringPair(LoadFileString(FileName), Options)
+  Result := JsonParseStringPair(LoadFileString(FileName), Error, Options)
 end;
 
-function JsonParseFileValue(const FileName: string; Options: TJSONParseOptions = []): TDON_Value;
+function JsonParseFileValue(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Value;
 var
   Pair: TDON_Pair;
 begin
-  Pair := JsonParseFilePair(FileName, Options);
+  Pair := JsonParseFilePair(FileName, Error, Options);
   Result := Pair.ReleaseValue;
 end;
 
@@ -1343,7 +1346,7 @@ begin
   inherited;
   if FIsUTF8 then
   begin
-    FStream.WriteUtf8(UTF8Encode(s));
+    FStream.WriteUTF8String(UTF8Encode(s));
   end
   else
   begin

@@ -20,7 +20,6 @@ unit mnJSON;
 {$MODE delphi}
 {$ModeSwitch arrayoperators}
 {$ModeSwitch advancedrecords}
-{$ModeSwitch ArrayOperators}
 {$ModeSwitch typehelpers}
 {$ModeSwitch functionreferences}
 {$ModeSwitch anonymousfunctions}
@@ -121,7 +120,7 @@ type
       ErrorMessage: String;
     procedure RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
     procedure Push; inline;
-    procedure Pop; inline;
+    procedure Pop; {$ifndef DEBUG}inline; {$endif}
     procedure Next; inline;
     procedure CheckExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); inline;
     procedure Error(const Msg: string); inline;
@@ -133,8 +132,7 @@ type
     procedure Finish;
   end;
 
-procedure JsonParseCallback(const Content: UTF8String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
-
+procedure JsonParseCallback(const Content: UTF8String; out Error: string; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 function JsonLintFile(const FileName: string; Options: TJSONParseOptions = []): string; //Return Error message
 
 implementation
@@ -149,16 +147,16 @@ const
 procedure TmnJSONParser.RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
 begin
   if Line > 0 then
-  begin
-    ErrorMessage := AError + ' :: line: ' + Line.ToString + ' column: '+ Column.ToString;
-    raise Exception.Create(ErrorMessage);
-  end
+    ErrorMessage := AError + ' :: line: ' + Line.ToString + ' column: ' + Column.ToString
   else
-  begin
     ErrorMessage := AError + ' :: column: '+ Column.ToString;
-  end;
+
   if not (jsoSafe in Options) then
     raise Exception.Create(ErrorMessage)
+  {$ifdef DEBUG}
+{  else if IsConsole then
+    WriteLn(ErrorMessage);}
+  {$endif}
 end;
 
 procedure TmnJSONParser.ErrorNotExpected(AExpected: TExpects; AContexts: TContexts);
@@ -173,6 +171,7 @@ begin
       exValue: Result := Result + ' value';
       exAssign: Result := Result + ' colon `:`';
       exNext: Result := Result + ' comma `,`';
+      exEnd:;
     end;
 
     Error(Result)
@@ -255,13 +254,16 @@ end;
 
 procedure TmnJSONParser.Parse(const Content: UTF8String);
 begin
-  Parse(@Content[1], Length(Content));
+  Parse(PByte(Content), Length(Content));
 end;
 
 procedure TmnJSONParser.Pop; {$ifdef FPC} inline; {$endif}
 begin
   if StackIndex = 0 then
+  begin
     Error('Expected EOF');
+    exit;
+  end;
   Parent := Stack[StackIndex-1].Parent;
   Context := Stack[StackIndex-1].Context;
   State := Stack[StackIndex-1].State;
@@ -276,13 +278,13 @@ var
   Ch: UTF8Char;
   AObject: TObject;
 
-  function CopyString(const Value: PByte; Start, Count: Integer): String; inline;
+  function CopyString(const Value: PByte; Start, Count: Integer): String; {$ifndef DEBUG}inline; {$endif}
   begin
     if Count = 0 then
       Result := ''
     else
     begin
-      Result := TEncoding.Unicode.GetString(Value, Start, Count);
+      Result := TEncoding.UTF8.GetString(Value, Start, Count);
     end;
   end;
 
@@ -557,13 +559,14 @@ begin
   end;
 end;
 
-procedure JsonParseCallback(const Content: UTF8String; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
+procedure JsonParseCallback(const Content: UTF8String; out Error: string; AParent: TObject; const AcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
 var
   JSONParser: TmnJSONParser;
 begin
   JSONParser.Init(AParent, AcquireProc, vOptions);
   JSONParser.Parse(Content);
   JSONParser.Finish;
+  Error := JSONParser.ErrorMessage;
 end;
 
 procedure JsonLintAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
@@ -571,10 +574,10 @@ begin
   AObject := nil;
 end;
 
-procedure JsonLintString(const S: string; Options: TJSONParseOptions);
+procedure JsonLintString(const S: string; out Error: string; Options: TJSONParseOptions);
 begin
   try
-    JsonParseCallback(s, nil, JsonLintAcquireCallback, Options);
+    JsonParseCallback(s, Error, nil, JsonLintAcquireCallback, Options);
   except
     on E: Exception do
     begin
@@ -587,7 +590,7 @@ function JsonLintFile(const FileName: string; Options: TJSONParseOptions = []): 
 begin
   Result := '';
   try
-    JsonLintString(LoadFileString(FileName), Options);
+    JsonLintString(LoadFileString(FileName), Result, Options);
   except
     on E: Exception do
     begin

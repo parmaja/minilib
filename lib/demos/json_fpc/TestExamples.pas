@@ -1,4 +1,4 @@
-unit TestExamples;
+﻿unit TestExamples;
 
 //https://github.com/briandfoy/json-acceptance-tests
 
@@ -45,7 +45,7 @@ begin
     //E := JsonLintFile('test.json', [jsoStrict]);
     //exit;
 
-    Parser.Init(DON, @JsonAcquireCallback, []);
+    Parser.Init(DON, @JsonParseAcquireCallback, []);
     Parser.Parse('{'#13);
     Parser.Parse('  Books: {'#13);
     Parser.Parse('    Book1: {'#13);
@@ -67,15 +67,17 @@ begin
     else
       Writeln('1: Error TestValue');
 
+    Writeln('');
+
     Files := TStringList.Create;
     try
       EnumFiles(Files, AppPath + 'test\', '*.json', [efFile, efFullPath]);
       for S in Files do
       begin
-        E := JsonLintFile(S, [jsoStrict]);
+        E := JsonLintFile(S, [jsoSafe, jsoStrict]);
 
         if E <> '' then
-          Writeln('FAIL: ' + ExtractFileName(S)+' : '+E)
+          Writeln('FAIL: ' + ExtractFileName(S)+' : ' + E)
         else
           Writeln('PASS: ' + ExtractFileName(S));
       end;
