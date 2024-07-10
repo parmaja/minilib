@@ -1,7 +1,7 @@
 var ws = null;
 var attached = false;
 
-function ws_income(msg) 
+function ws_receive(msg) 
 {
   if (msg.charAt(0) === '{')
   {    
@@ -10,9 +10,19 @@ function ws_income(msg)
     {      
       const element = document.getElementById(json.element);
       if (element)
-        element.value = json.value;
+        element.value = json.content;
     }
   }
+}
+
+function ws_send(msg) 
+{
+
+}
+
+function send(id, command, content) 
+{
+  ws_send({"element": id, "command": command, "content": content})
 }
 
 function attach(url)
@@ -23,7 +33,7 @@ function attach(url)
     console.log("connection established");
   }
   ws.onmessage = function(ev) {
-    ws_income(ev.data);
+    ws_receive(ev.data);
     console.log("Message from Server: " + ev.data);
   }
   ws.onclose  = function(ev) {

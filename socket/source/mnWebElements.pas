@@ -167,7 +167,14 @@ type
     procedure AddHead(AElement: TmnwElement; Context: TmnwContext); override;
   end;
 
+  TElementExecute = reference to procedure;
+
   TmnwRequestState = (rsBeforeRequest, rsAfterRequest);
+
+  TmnwElementState = set of (
+    estComposing,
+    estComposed
+  );
 
   TmnwElementKind = set of(
 //    elRender,
@@ -176,6 +183,7 @@ type
     elHighLevel, //Rendered first like scripts
     elFallback //* if no child have the route name, it take the respond if have a name
   );
+
 
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom);
@@ -187,7 +195,7 @@ type
     FEnabled: Boolean;
     FVisible: Boolean;
     FRenderIt: Boolean;
-    FRoot: TmnwSchema;
+    FSchema: TmnwSchema;
     FParent: TmnwElement;
 
     FRoute: String;
@@ -198,19 +206,25 @@ type
     FStyle: String;
     FAttributes: TmnwAttributes;
     FKind: TmnwElementKind;
+    FState: TmnwElementState;
+    FOnExecute: TElementExecute;
+    procedure SetState(const AValue: TmnwElementState);
   protected
     procedure Update; virtual;
     procedure Added(Item: TmnwElement); override;
     procedure Check; virtual;
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
-    procedure DoState(RequestState: TmnwRequestState); virtual;
-    procedure State(RequestState: TmnwRequestState);
 
     procedure DoCompose; virtual;
     procedure DoRespondHeader(Route: string; ARenderer: TmnwRenderer; Sender: TObject; AStream: TmnBufferStream); virtual;
     procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); virtual;
+
+    procedure DoExecute; virtual;
+    procedure Execute;
+    procedure DoChanged; virtual;
+    procedure Changed;
+    procedure SendMessage(AMessage: string);
   public
-    Composed: Boolean;
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); virtual;
     destructor Destroy; override;
     procedure Add(O: TmnwElement); overload;
@@ -221,13 +235,16 @@ type
     function IndexOfName(vName: string): Integer;
 
     function This: TmnwElement; virtual; //I wish i have templates/meta programming in pascal
-    property Root: TmnwSchema read FRoot;
+    property Schema: TmnwSchema read FSchema;
     property Parent: TmnwElement read FParent;
 
     function GetPath: string; virtual;
 
     function CreateRender(Context: TmnwContext): TmnwElementRenderer;
-    procedure Compose;
+    procedure Compose; virtual;
+    procedure AddState(AState: TmnwElementState);
+    procedure RemoveState(AState: TmnwElementState);
+
     procedure Clear; {$ifdef FPC} override; {$else} virtual; {$endif} //* see TmnObjectList
 
     function GetContentType(Route: string): string; virtual;
@@ -254,6 +271,9 @@ type
     //* Embed render it directly not by loop like THeader
     property Attributes: TmnwAttributes read FAttributes;
     property Kind: TmnwElementKind read FKind write FKind;
+    property State: TmnwElementState read FState write SetState;
+
+    property OnExecute: TElementExecute read FOnExecute write FOnExecute;
   end;
 
   { TmnwWriter }
@@ -288,7 +308,7 @@ type
     FTerminated: Boolean;
     procedure SendMessage(const Message: string);
   protected
-    procedure Execute; virtual;
+    procedure Loop; virtual;
     procedure Terminate; virtual;
   public
     Schema: TmnwSchema;
@@ -326,6 +346,7 @@ type
 
   TmnwSchema = class(TmnwElement)
   private
+    FAttached: Boolean;
     FAttachments: TmnwAttachments;
   protected
     NameingLastNumber: Integer;
@@ -338,10 +359,13 @@ type
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
 
+    procedure Compose; override;
+
     procedure Attach(Route: string; Sender: TObject; AStream: TmnBufferStream);
     procedure Deattach(AAttachment: TmnwAttachment);
 
     property Attachments: TmnwAttachments read FAttachments;
+    property Attached: Boolean read FAttached;
   end;
 
   TmnwSchemaClass = class of TmnwSchema;
@@ -698,12 +722,19 @@ type
       protected
         procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
-        procedure Execute; virtual;
+        procedure Loop; virtual;
       end;
 
+      { TButton }
+
       TButton = class(THTMLElement)
+      private
+        FCaption: string;
+        procedure SetCaption(const AValue: string);
+      protected
+        procedure DoChanged; override;
       public
-        Caption: string;
+        property Caption: string read FCaption write SetCaption;
       end;
 
       { TEdit }
@@ -717,7 +748,6 @@ type
         Text: string;
         PlaceHolder: string;
         EditType: string;
-        //Width, Height: double;
       end;
 
       { TInputPassword }
@@ -735,7 +765,7 @@ type
       public
         Source: string;
         AltText: string;
-        Width, Height: double;
+        //Width, Height: double;
       end;
 
       { TMemoryImage }
@@ -1051,7 +1081,7 @@ begin
 //  Stream.Close([cloData]);
 end;
 
-procedure TmnwAttachment.Execute;
+procedure TmnwAttachment.Loop;
 var
   s: string;
 begin
@@ -1852,9 +1882,12 @@ end;
 procedure TmnwHTMLRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TButton;
+  event: string;
 begin
   e := Scope.Element as THTML.TButton;
-  Context.Output.WriteLn('html', '<button type="button"' + Scope.Attributes.GetText(True)+' >'+e.Caption+'</button>', [woOpenTag, woCloseTag]);
+  if schemaAttach in Context.Schema.GetCapabilities then
+    event := 'onclick="send('''+e.ID+''', ''click'', '''')"';
+  Context.Output.WriteLn('html', '<button type="button"' + event + '' + Scope.Attributes.GetText(True)+' >'+e.Caption+'</button>', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -1928,7 +1961,7 @@ end;
 constructor TmnwSchema.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
 begin
   inherited;
-  FRoot := Self;
+  FSchema := Self;
   FAttachments := TmnwAttachments.Create;
   {$ifdef rtti_objects}
   CacheClasses;
@@ -1951,10 +1984,13 @@ begin
   Attachment.Schema := Self;
   Attachment.Stream := AStream;
   Attachments.Add(Attachment);
+  FAttached := True;
   try
-    Attachment.Execute;
+    Attachment.Loop;
   finally
-//    Attachments.Remove(Attachment);
+    Attachments.Extract(Attachment);
+    Attachment.Free;
+    FAttached := Attachments.Count > 0;
   end;
 end;
 
@@ -2007,6 +2043,14 @@ end;
 class function TmnwSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
   Result := [];
+end;
+
+procedure TmnwSchema.Compose;
+begin
+  AddState([estComposing]);
+  inherited;
+  RemoveState([estComposing]);
+  AddState([estComposed]);
 end;
 
 procedure TmnwSchema.GenID(Element: TmnwElement);
@@ -2201,6 +2245,12 @@ begin
     Result := Route;
 end;
 
+procedure TmnwElement.SetState(const AValue: TmnwElementState);
+begin
+  if FState =AValue then Exit;
+  FState :=AValue;
+end;
+
 procedure TmnwElement.Update;
 begin
 
@@ -2258,21 +2308,11 @@ begin
     raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
 end;
 
-procedure TmnwElement.DoState(RequestState: TmnwRequestState);
-begin
-
-end;
-
-procedure TmnwElement.State(RequestState: TmnwRequestState);
-begin
-
-end;
-
 function TmnwElement.FindByPath(const APath: string): TmnwElement;
 var
   o: TmnwElement;
 begin
-{  if (FRoot = nil) and (APath = '')
+{  if (FSchema = nil) and (APath = '')
     exit(Self);}
 
   if SameText(GetPath, APath) then
@@ -2313,6 +2353,33 @@ procedure TmnwElement.DoCompose;
 begin
 end;
 
+procedure TmnwElement.DoExecute;
+begin
+end;
+
+procedure TmnwElement.Execute;
+begin
+  if Assigned(OnExecute) then
+    OnExecute();
+  DoExecute;
+end;
+
+procedure TmnwElement.DoChanged;
+begin
+  DoChanged;
+end;
+
+procedure TmnwElement.Changed;
+begin
+
+end;
+
+procedure TmnwElement.SendMessage(AMessage: string);
+begin
+  if Schema <> nil then
+    Schema.Attachments.SendMessage('{"type": "text", "element": ' + ID + ', ' + AMessage + '}');
+end;
+
 procedure TmnwElement.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 begin
 end;
@@ -2333,7 +2400,7 @@ begin
   FParent := AParent;
   if FParent <> nil then
   begin
-    FRoot:= FParent.FRoot;
+    FSchema:= FParent.FSchema;
     FParent.Add(Self);
   end;
 end;
@@ -2347,7 +2414,7 @@ end;
 procedure TmnwElement.Add(O: TmnwElement);
 begin
   O.FParent := Self;
-  O.FRoot := FRoot;
+  O.FSchema := FSchema;
   inherited Add(O);
 end;
 
@@ -2431,13 +2498,34 @@ begin
     o.Compose;
   end;
   UpdateElement(Self);
-  Composed := True;
+end;
+
+procedure TmnwElement.AddState(AState: TmnwElementState);
+var
+  o: TmnwElement;
+begin
+  FState := FState + AState;
+  for o in Self do
+  begin
+    o.AddState(AState);
+  end;
+end;
+
+procedure TmnwElement.RemoveState(AState: TmnwElementState);
+var
+  o: TmnwElement;
+begin
+  FState := FState - AState;
+  for o in Self do
+  begin
+    o.RemoveState(AState);
+  end;
 end;
 
 procedure TmnwElement.Clear;
 begin
   inherited;
-  Composed := False;
+  RemoveState([estComposed]);
 end;
 
 function TmnwElement.GetContentType(Route: string): string;
@@ -2487,7 +2575,7 @@ var
 begin
   FLibraries := TmnwLibraries.Create;
   inherited;
-  FObjectClasses := TRegObjects.Create;
+  FObjectClasses := TRegObjects.Create();
   FParams := TmnwAttributes.Create;
   RegisterObjects;
   FObjectClasses.QuickSort;
@@ -2673,7 +2761,7 @@ begin
 
   InnerComposer := TInnerComposer.Create(nil);
   try
-    //InnerComposer.FRoot := Root;
+    //InnerComposer.FSchema := Schema;
     InnerCompose(InnerComposer);
     if Assigned(OnCompose) then
       OnCompose(InnerComposer);
@@ -2955,22 +3043,37 @@ begin
   end;
 end;
 
-procedure THTML.TAction.Execute;
+procedure THTML.TAction.Loop;
 begin
+end;
+
+{ THTML.TButton }
+
+procedure THTML.TButton.SetCaption(const AValue: string);
+begin
+  if FCaption =AValue then Exit;
+  FCaption :=AValue;
+  if (estComposed in State) and (Schema <> nil) and Schema.Attached then
+    SendMessage('"value": ' + QuoteStr(Caption));
+end;
+
+procedure THTML.TButton.DoChanged;
+begin
+  inherited;
 end;
 
 { TNameAttribute }
 
 class procedure TIDExtension.Update(Element: TmnwElement);
 begin
-  Element.Root.GenID(Element);
+  Element.Schema.GenID(Element);
 end;
 
 { TRouteExtension }
 
 class procedure TRouteExtension.Update(Element: TmnwElement);
 begin
-  Element.Root.GenRoute(Element);
+  Element.Schema.GenRoute(Element);
 end;
 
 { TmnwHTMLRenderer.TContentCompose }

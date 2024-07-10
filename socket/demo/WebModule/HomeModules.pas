@@ -11,7 +11,7 @@ interface
 uses
   Classes, SysUtils, StrUtils,
   mnUtils, mnStreams, mnModules, mnWebModules, mnMultipartData,
-	mnWebElements, mnBootstraps;
+	mnLogs, mnWebElements, mnBootstraps;
 
 type
   THomeModule = class;
@@ -36,9 +36,11 @@ type
   TWelcomeSchema = class(TCustomHomeSchema)
   private
   protected
+    Input1: THTML.TInput;
+    Input2: THTML.TInput;
     procedure DoCompose; override;
-    class function GetCapabilities: TmnwSchemaCapabilities; override;
   public
+    class function GetCapabilities: TmnwSchemaCapabilities; override;
   end;
 
   TWSShema = class(TCustomHomeSchema)
@@ -113,16 +115,31 @@ type
 
   TMyAction = class(THTML.TAction)
   public
-    procedure Execute; override;
+    procedure DoExecute; override;
   end;
+
+  { TMyButton }
+
+  TMyButton = class(THTML.TButton)
+  public
+    procedure DoExecute; override;
+  end;
+
+{ TMyButton }
+
+procedure TMyButton.DoExecute;
+begin
+  inherited;
+  log.WriteLn('TMyButton.DoExecute');
+end;
 
 { TMyAction }
 
-procedure TMyAction.Execute;
+procedure TMyAction.DoExecute;
 begin
   inherited;
-  if Root <> nil then
-    Root.Attachments.SendMessage('{"type": "text", "element": "input1", "value": "my new value"}');
+  if Schema <> nil then
+    Schema.Attachments.SendMessage('{"type": "text", "element": "input1", "value": "my new value"}');
 end;
 
 
@@ -207,20 +224,22 @@ begin
 
           with TRow.Create(This) do
           begin
-            with TInput.Create(This) do
+            Input1 := TInput.Create(This);
+            with Input1 do
             begin
               Name := 'Input1';
               id := 'input1';
               Caption := 'Number 1';
             end;
 
-            with TInput.Create(This) do
+            Input2 := TInput.Create(This);
+            with Input2 do
             begin
               Name := 'Input2';
               Caption := 'Number 2';
             end;
 
-            with TButton.Create(This) do
+            with TMyButton.Create(This) do
             begin
               Name := 'AddBtn';
               Caption := 'Add';
@@ -228,9 +247,9 @@ begin
           end;
 
 {$ifdef fpc}
-{          with TClockCompose.Create(This) do
+          with TClockCompose.Create(This) do
           begin
-          end;}
+          end;
 {$else}
           with TIntervalCompose.Create(This) do
           begin

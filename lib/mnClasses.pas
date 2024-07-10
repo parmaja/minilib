@@ -334,8 +334,11 @@ begin
   p := Items[ ((Lo + Hi) div 2) ];
   repeat
 
-    while Compare(Items[Lo], p) < 0 do Inc(Lo);
-    while Compare(Items[Hi], p) > 0 do Dec(Hi);
+    while Compare(Items[Lo], p) < 0 do
+		  Inc(Lo);
+    while Compare(Items[Hi], p) > 0 do
+		  Dec(Hi);
+
     if Lo <= Hi then
     begin
       if (Lo<>Hi) then
@@ -348,8 +351,10 @@ begin
       Dec(Hi);
     end;
   until Lo > Hi;
-  if Hi > iLo then QuickSortItems(iLo, Hi);
-  if Lo < iHi then QuickSortItems(Lo, iHi);
+  if Hi > iLo then
+	  QuickSortItems(iLo, Hi);
+  if Lo < iHi then
+	  QuickSortItems(Lo, iHi);
 end;
 
 function TmnObjectList<_Object_>.Compare(Left, Right: _Object_): Integer;
