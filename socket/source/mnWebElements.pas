@@ -353,6 +353,7 @@ type
     FAttachments: TmnwAttachments;
   protected
     NameingLastNumber: Integer;
+    procedure UpdateAttached; inline;
     procedure GenID(Element: TmnwElement); inline;
     procedure GenRoute(Element: TmnwElement); inline;
     procedure DoRespond(Route: string; Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream); override;
@@ -364,8 +365,8 @@ type
 
     procedure Compose; override;
 
-    procedure Attach(Route: string; Sender: TObject; AStream: TmnBufferStream);
-    procedure Deattach(AAttachment: TmnwAttachment);
+    // Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
+    procedure Attach(Route: string; Sender: TObject; AStream: TmnBufferStream); // in connection thread
 
     property Attachments: TmnwAttachments read FAttachments;
     property Attached: Boolean read FAttached;
@@ -2007,19 +2008,15 @@ begin
   Attachment.Schema := Self;
   Attachment.Stream := AStream;
   Attachments.Add(Attachment);
-  FAttached := True;
+  UpdateAttached;
   try
     Attachment.Loop;
+    if not Attachment.Terminated then
+      Attachment.Terminate;
   finally
-    Attachments.Extract(Attachment);
-    Attachment.Free;
-    FAttached := Attachments.Count > 0;
+    Attachments.Remove(Attachment);
+    UpdateAttached;
   end;
-end;
-
-procedure TmnwSchema.Deattach(AAttachment: TmnwAttachment);
-begin
-  Attachments.Remove(AAttachment);
 end;
 
 procedure TmnwSchema.DoRespond(Route: string; Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream);
@@ -2074,6 +2071,16 @@ begin
   inherited;
   RemoveState([estComposing]);
   AddState([estComposed]);
+end;
+
+procedure TmnwSchema.UpdateAttached;
+begin
+  Attachments.Lock.Enter;
+  try
+    FAttached := Attachments.Count > 0;
+  finally
+    Attachments.Lock.Leave;
+  end;
 end;
 
 procedure TmnwSchema.GenID(Element: TmnwElement);
@@ -2530,11 +2537,11 @@ var
 begin
 //  Clear; //*Should not clear here
   DoCompose;
+  UpdateElement(Self);
   for o in Self do
   begin
     o.Compose;
   end;
-  UpdateElement(Self);
 end;
 
 procedure TmnwElement.AddState(AState: TmnwElementState);
@@ -3000,7 +3007,6 @@ end;
 procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(Scope: TmnwScope);
 begin
   inherited;
-
 end;
 
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
@@ -3169,7 +3175,6 @@ end;
 
 procedure TmnwHTMLRenderer.TJSEmbedResource.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
-  inherited;
   Context.Output.WriteLn('html', '<script type="text/javascript"'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
   inherited;

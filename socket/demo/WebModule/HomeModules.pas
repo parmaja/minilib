@@ -10,7 +10,7 @@ interface
 
 uses
   Classes, SysUtils, StrUtils,
-  mnUtils, mnStreams, mnModules, mnWebModules, mnMultipartData,
+  mnUtils, mnStreams, mnModules, mnWebModules, mnMultipartData, mnServers,
 	mnLogs, mnWebElements, mnBootstraps;
 
 type
@@ -276,8 +276,8 @@ end;
 
 class function TWelcomeSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
-  //Result := [schemaAttach] + Inherited GetCapabilities;
-  Result := Inherited GetCapabilities;
+  Result := [schemaAttach] + Inherited GetCapabilities;
+  //Result := Inherited GetCapabilities;
 end;
 
 { TbsHttpGetHomeCommand }
@@ -343,8 +343,8 @@ end;
 
 destructor THomeModule.Destroy;
 begin
-  FreeAndNil(Schemas);
   inherited;
+  FreeAndNil(Schemas); //keep behind inherited
 end;
 
 { TAssetsSchema }

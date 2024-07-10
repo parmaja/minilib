@@ -1019,8 +1019,8 @@ end;
 
 destructor TmodModuleServer.Destroy;
 begin
-  FreeAndNil(FModules);
   inherited;
+  FreeAndNil(FModules); //After Inherited
 end;
 
 destructor TmodModuleConnection.Destroy;
