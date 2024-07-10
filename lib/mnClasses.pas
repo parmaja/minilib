@@ -326,17 +326,18 @@ end;
 
 procedure TmnObjectList<_Object_>.QuickSortItems(iLo, iHi: Integer);
 var
-  Lo, Hi: integer;
+  Lo, Hi, Md: integer;
   p: _Object_;
 begin
   Lo := iLo;
   Hi := iHi;
-  p := Items[ ((Lo + Hi) div 2) ];
+  Md := (Lo + Hi) div 2;
+  p := Items[ Md ];
   repeat
 
-    while Compare(Items[Lo], p) < 0 do
+    while (Lo<Md) and (Compare(Items[Lo], p) < 0) do
 		  Inc(Lo);
-    while Compare(Items[Hi], p) > 0 do
+    while (Hi>Md) and (Compare(Items[Hi], p) > 0) do
 		  Dec(Hi);
 
     if Lo <= Hi then
