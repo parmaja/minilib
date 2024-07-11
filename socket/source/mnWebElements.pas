@@ -2447,7 +2447,7 @@ var
   c: TClass;
 begin
   Result := 0;
-  c := ClassType;
+  c := Self;
   while c <> nil do
   begin
     c := c.ClassParent;
