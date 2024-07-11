@@ -45,6 +45,9 @@
 │                                             │
 └─────────────────────────────────────────────┘
 
+Add:
+  https://leafletjs.com/examples.html
+
 }
 
 interface
@@ -54,7 +57,7 @@ uses
   {$ifdef FPC}
   LCLType, //* for RT_RCDATA
   {$endif}
-  syncobjs,
+  syncobjs, mnDON, mnJSON,
 	mnUtils, mnClasses, mnStreams, mnLogs,
   mnMultipartData, mnModules, mnWebModules;
 
@@ -223,7 +226,9 @@ type
     procedure Execute;
     procedure DoChanged; virtual;
     procedure Changed;
-    procedure SendMessage(AMessage: string);
+    procedure SendMessage(AMessage: string); overload;
+    procedure SendMessage(JSON: TDON_Pair); virtual; overload;
+    procedure ReceiveMessage(JSON: TDON_Pair); virtual;
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); virtual;
     destructor Destroy; override;
@@ -235,6 +240,7 @@ type
     function Find(const Name: string): TmnwElement;
     function FindByRoute(const Route: string): TmnwElement;
     function FindByPath(const APath: string): TmnwElement;
+    function FindByID(const aID: string): TmnwElement;
     function IndexOfName(vName: string): Integer;
 
     function This: TmnwElement; virtual; //I wish i have templates/meta programming in pascal
@@ -257,7 +263,7 @@ type
     //* Original Render
     procedure Render(Context: TmnwContext); overload;
 
-    //* This will just prepare to Rencer(Context)
+    //* This will just prepare to Render(Context)
     function Render(Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AOutput: TmnwOutput): Boolean; overload;
     function Render(Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream): Boolean; overload;
 
@@ -271,7 +277,7 @@ type
     property Enabled: Boolean read FEnabled write FEnabled;
 
     property RenderIt: Boolean read FRenderIt write FRenderIt;
-    //* Embed render it directly not by loop like THeader
+
     property Attributes: TmnwAttributes read FAttributes;
     property Kind: TmnwElementKind read FKind write FKind;
     property State: TmnwElementState read FState write SetState;
@@ -304,6 +310,18 @@ type
     property Item; default;
   end;
 
+  TmnwMessage = class(TObject)
+  public
+    Content: string;
+  end;
+
+  { TmnwMessages }
+
+  TmnwMessages = class(TmnObjectList<TmnwMessage>)
+  public
+    procedure Add(s: string); overload;
+  end;
+
   { TmnwAttachment }
 
   TmnwAttachment = class(TObject)
@@ -325,6 +343,7 @@ type
   TmnwAttachments = class(TmnObjectList<TmnwAttachment>)
   private
     FLock: TCriticalSection;
+    FMessages: TmnwMessages;
   protected
     procedure Created; override;
   public
@@ -335,12 +354,13 @@ type
     procedure Add(AAttachment: TmnwAttachment);
     procedure Remove(AAttachment: TmnwAttachment);
     property Lock: TCriticalSection read FLock;
+    property Messages: TmnwMessages read FMessages;
   end;
 
   TmnwSchamaCapability = (
 		schemaSession,
 		schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
-    schemaAttach  //* Attach websocket
+    schemaInteractive  //* Attach websocket
 	);
 
   TmnwSchemaCapabilities = set of TmnwSchamaCapability;
@@ -351,17 +371,23 @@ type
   private
     FAttached: Boolean;
     FAttachments: TmnwAttachments;
+    FLock: TCriticalSection;
   protected
     NameingLastNumber: Integer;
     procedure UpdateAttached; inline;
     procedure GenID(Element: TmnwElement); inline;
     procedure GenRoute(Element: TmnwElement); inline;
     procedure DoRespond(Route: string; Sender: TObject; Schema: TmnwSchema; Renderer: TmnwRenderer; AStream: TmnBufferStream); override;
+    procedure ProcessMessage(const s: string);
+    procedure ReceiveMessage; overload;
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); override;
     destructor Destroy; override;
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
+
+		//* Attaching cap
+    function Interactive: Boolean;
 
     procedure Compose; override;
 
@@ -370,6 +396,7 @@ type
 
     property Attachments: TmnwAttachments read FAttachments;
     property Attached: Boolean read FAttached;
+    property Lock: TCriticalSection read FLock;
   end;
 
   TmnwSchemaClass = class of TmnwSchema;
@@ -718,22 +745,28 @@ type
         FCaption: string;
         procedure SetCaption(const AValue: string);
       protected
+        procedure ReceiveMessage(JSON: TDON_Pair); override;
         procedure DoChanged; override;
       public
         property Caption: string read FCaption write SetCaption;
       end;
 
-      { TEdit }
+      { TInput }
 
       [TIDExtension]
       TInput = class(THTMLElement)
+      private
+        FText: string;
+        procedure SetText(const AValue: string);
       protected
         procedure Created; override;
+        procedure ReceiveMessage(JSON: TDON_Pair); override;
       public
         Caption: string;
-        Text: string;
         PlaceHolder: string;
         EditType: string;
+      public
+        property Text: string read FText write SetText;
       end;
 
       { TInputPassword }
@@ -1014,6 +1047,16 @@ procedure CacheClasses;
 
 implementation
 
+function SQ(s: string): string; inline;
+begin
+  Result := QuoteStr(s, '''');
+end;
+
+function DQ(s: string): string; inline;
+begin
+  Result := QuoteStr(s, '"');
+end;
+
 type
   TRegObject = class(TObject)
   public
@@ -1084,6 +1127,17 @@ begin
   Write(Target, S, Options + [woEndLine]);
 end;
 
+{ TmnwMessages }
+
+procedure TmnwMessages.Add(s: string);
+var
+  aMessage: TmnwMessage;
+begin
+  aMessage := TmnwMessage.Create;
+  aMessage.Content := s;
+  Add(aMessage);
+end;
+
 { TmnwAttachment }
 
 procedure TmnwAttachment.SendMessage(const Message: string);
@@ -1098,10 +1152,16 @@ var
 begin
   while not Terminated and Stream.Connected do
   begin
-    if Stream.ReadUTF8Line(s) then
+    if Stream.ReadUTF8String(s) then
     begin
-//      Stream.WriteUTF8Line(s);
-      //log.WriteLn(s);
+      Schema.Attachments.Lock.Enter;
+      try
+        Schema.Attachments.Messages.Add(s);
+      finally
+        Schema.Attachments.Lock.Leave;
+      end;
+      Schema.ProcessMessage(s);
+      //TThread.Queue(nil, Schema.ReceiveMessage); //* nooo
     end;
   end;
 end;
@@ -1128,10 +1188,12 @@ constructor TmnwAttachments.Create;
 begin
   inherited Create;
   FLock := TCriticalSection.Create;
+  FMessages := TmnwMessages.Create;
 end;
 
 destructor TmnwAttachments.Destroy;
 begin
+  FreeAndNil(FMessages);
   FreeAndNil(FLock);
   inherited;
 end;
@@ -1291,8 +1353,6 @@ begin
   inherited;
   //AutoRemove := True; //no AltTxt in image should writen even if it empty
 end;
-
-{ TmnwScope }
 
 { TmnwElementRenderer }
 
@@ -1763,6 +1823,7 @@ begin
   Context.Output.WriteLn('html', '<html' + Scope.Attributes.GetText(True) + '>', [woOpenTag]);
   Context.Output.WriteLn('html', '<head>', [woOpenTag]);
   Context.Output.WriteLn('html', '<title>'+ e.Title + '</title>', [woOpenTag, woCloseTag]);
+  Context.Output.WriteLn('html', '<link rel="shortcut icon" href="#" />', [woOpenTag, woCloseTag]);
   AddHead(Scope.Element, Context);
 
   for aLibrary in Renderer.Libraries do
@@ -1909,8 +1970,8 @@ var
   event: string;
 begin
   e := Scope.Element as THTML.TButton;
-  if schemaAttach in Context.Schema.GetCapabilities then
-    event := ' onclick="send('''+e.ID+''', ''click'', '''')" ';
+  if Context.Schema.Interactive then
+    event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Context.Output.WriteLn('html', '<button type="button"' + event + '' + Scope.Attributes.GetText(True)+' >'+e.Caption+'</button>', [woOpenTag, woCloseTag]);
   inherited;
 end;
@@ -1927,11 +1988,14 @@ end;
 procedure TmnwHTMLRenderer.TInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TInput;
+  event: string;
 begin
   e := Scope.Element as THTML.TInput;
   if e.Caption <> '' then
     Context.Output.WriteLn('html', '<label for="'+e.ID+'" >' + e.Caption + '</label>', [woOpenTag, woCloseTag]);
-  Context.Output.WriteLn('html', '<input'+ Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
+  if Context.Schema.Interactive then
+    event := ' onchange="mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')"';
+  Context.Output.WriteLn('html', '<input'+ event + Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -1987,6 +2051,7 @@ begin
   inherited;
   FSchema := Self;
   FAttachments := TmnwAttachments.Create;
+  FLock := TCriticalSection.Create;
   {$ifdef rtti_objects}
   CacheClasses;
   {$endif}
@@ -1997,6 +2062,7 @@ begin
   FAttachments.Terminate;
   FAttachments.Clear;
   FreeAndNil(FAttachments);
+  FreeAndNil(FLock);
   inherited;
 end;
 
@@ -2025,6 +2091,59 @@ begin
   Render(Sender, Schema, Renderer, AStream);
 end;
 
+procedure TmnwSchema.ProcessMessage(const s: string);
+var
+  Json: TDON_Pair;
+  element: TmnwElement;
+  elementID: string;
+  Error: string;
+begin
+  log.WriteLn(s);
+  Json := JsonParseStringPair(s, Error, [jsoSafe]);
+  try
+    elementID := Json['element'].AsString;
+    element := FindByID(elementID);
+    if element <> nil then
+    begin
+      Lock.Enter;
+      try
+        element.ReceiveMessage(Json);
+      finally
+        Lock.Leave;
+      end;
+    end;
+  finally
+    Json.Free;
+  end;
+end;
+
+procedure TmnwSchema.ReceiveMessage;
+var
+  s: string;
+begin
+  while true do
+  begin
+    Schema.Attachments.Lock.Enter;
+    try
+      if Schema.Attachments.Messages.First <> nil then
+      begin
+        s := Schema.Attachments.Messages.First.Content;
+        Schema.Attachments.Messages.Delete(0);
+      end
+      else
+        s := '';
+    finally
+      Schema.Attachments.Lock.Leave;
+    end;
+    if s = '' then
+      break
+    else
+    begin
+      ProcessMessage(s);
+    end;
+  end;
+end;
+
 procedure CollectExtensions(rttiContext: TRttiContext; ElementClass: TClass; List: TClassList);
 var
   rttiType: TRttiType;
@@ -2047,22 +2166,30 @@ begin
 //  log.Write(Element.ClassName);
   if Element = nil then
     raise Exception.Create('Element is nil');
-  list := TClassList.Create;
-  rttiContext := TRttiContext.Create;
-  try
-    CollectExtensions(rttiContext, Element.ClassType, list);
-    for attribute in list do
-      if attribute.InheritsFrom(TElementExtension) then
-        TElementExtensionClass(attribute).Update(Element);
-  finally
-    rttiContext.Free;
-    list.Free;
+  if Element.ClassType <> nil then
+  begin
+    list := TClassList.Create;
+    rttiContext := TRttiContext.Create;
+    try
+      CollectExtensions(rttiContext, Element.ClassType, list);
+      for attribute in list do
+        if attribute.InheritsFrom(TElementExtension) then
+          TElementExtensionClass(attribute).Update(Element);
+    finally
+      rttiContext.Free;
+      list.Free;
+    end;
   end;
 end;
 
 class function TmnwSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
   Result := [];
+end;
+
+function TmnwSchema.Interactive: Boolean;
+begin
+  Result := schemaInteractive in GetCapabilities;
 end;
 
 procedure TmnwSchema.Compose;
@@ -2204,10 +2331,29 @@ end;
 
 { THTML.TInput }
 
+procedure THTML.TInput.SetText(const AValue: string);
+begin
+  if FText =AValue then Exit;
+  FText :=AValue;
+  if (estComposed in State) and (Schema <> nil) and Schema.Attached then
+    SendMessage('"command": "change", "content": ' + DQ(Text));
+end;
+
 procedure THTML.TInput.Created;
 begin
   inherited;
   EditType := 'text';
+end;
+
+procedure THTML.TInput.ReceiveMessage(JSON: TDON_Pair);
+begin
+  if JSON['command'].AsString = 'change' then
+  begin
+    if JSON['content'].IsExists then
+      FText := JSON['content'].AsString;
+    if JSON['caption'].IsExists then
+      FText := JSON['caption'].AsString;
+  end;
 end;
 
 { THTML.TInputPassword }
@@ -2359,6 +2505,22 @@ begin
   end;
 end;
 
+function TmnwElement.FindByID(const aID: string): TmnwElement;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Items[i].ID, aID) then
+      Result := Items[i]
+    else
+      Result := Items[i].FindByID(aID);
+    if Result <> nil then
+      break;
+  end;
+end;
+
 function TmnwElement.FindByRoute(const Route: string): TmnwElement;
 var
   i: Integer;
@@ -2408,7 +2570,15 @@ end;
 procedure TmnwElement.SendMessage(AMessage: string);
 begin
   if Schema <> nil then
-    Schema.Attachments.SendMessage('{"type": "text", "element": ' + ID + ', ' + AMessage + '}');
+    Schema.Attachments.SendMessage('{"element": ' + DQ(ID) + ', ' + AMessage + '}');
+end;
+
+procedure TmnwElement.SendMessage(JSON: TDON_Pair);
+begin
+end;
+
+procedure TmnwElement.ReceiveMessage(JSON: TDON_Pair);
+begin
 end;
 
 procedure TmnwElement.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
@@ -2921,7 +3091,6 @@ end;
 
 procedure TJQuery_Library.AddHead(AElement: TmnwElement; Context: TmnwContext);
 begin
-  inherited;
   Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/') + 'jquery.min.js" crossorigin="anonymous"></script>');
 end;
 
@@ -3014,9 +3183,9 @@ var
   e: THTML.TBody;
   function GetAttach: string;
   begin
-    if schemaAttach in Context.Schema.GetCapabilities then
+    if schemaInteractive in Context.Schema.GetCapabilities then
     begin
-      Result := ' data-attach="true"';
+      Result := ' data-mnw-attach="true"';
     end;
   end;
 begin
@@ -3107,7 +3276,18 @@ begin
   if FCaption =AValue then Exit;
   FCaption :=AValue;
   if (estComposed in State) and (Schema <> nil) and Schema.Attached then
-    SendMessage('"value": ' + QuoteStr(Caption));
+    SendMessage('"command": "change", "content": ' + DQ(Caption));
+end;
+
+procedure THTML.TButton.ReceiveMessage(JSON: TDON_Pair);
+begin
+  if JSON['command'].AsString = 'change' then
+  begin
+    if JSON['caption'].IsExists then
+      FCaption := JSON['caption'].AsString;
+  end
+  else if JSON['command'].AsString = 'click' then
+    Execute;
 end;
 
 procedure THTML.TButton.DoChanged;
@@ -3147,7 +3327,7 @@ var
 begin
   inherited;
   URL := IncludeURLDelimiter(TmnwHTMLRenderer(Renderer).HomeUrl) + Scope.Element.GetPath;
-  Scope.Attributes['data-refresh-url'] := URL;
+  Scope.Attributes['data-mnw-refresh-url'] := URL;
 end;
 
 { THTML.TJSEmbedResource }

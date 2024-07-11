@@ -267,6 +267,7 @@ begin
     CertFile := CorrectPath(ExpandToPath(GetOption('certificate', './certificate.pem'), Application.Location));
     PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), Application.Location));
     AutoRunChk.Checked := StrToBoolDef(GetSwitch('autorun', ''), False);
+    StayOnTopChk.Checked := StrToBoolDef(GetSwitch('ontop', ''), False);
   finally
     aIni.Free;
   end;
@@ -287,6 +288,7 @@ begin
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'challenge', ChallengeSSLChk.Checked);
     aIni.WriteBool('options', 'autorun', AutoRunChk.Checked);
+    aIni.WriteBool('options', 'ontop', StayOnTopChk.Checked);
   finally
     aIni.Free;
   end;

@@ -120,8 +120,8 @@ type
     procedure ResetCloseData;
   public
     //Count = 0 , load until eof, timeout not break the loop
-    function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
     function ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
+    function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
 
     function ReadString(out s: string; Count: TFileSize = 0): Boolean; overload; deprecated;
     function ReadUTF8String(out s: UTF8String; Count: TFileSize = 0): Boolean; overload;

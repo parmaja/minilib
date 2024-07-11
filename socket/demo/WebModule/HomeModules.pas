@@ -38,6 +38,7 @@ type
   protected
     Input1: THTML.TInput;
     Input2: THTML.TInput;
+    Input3: THTML.TInput;
     procedure DoCompose; override;
   public
     class function GetCapabilities: TmnwSchemaCapabilities; override;
@@ -130,7 +131,10 @@ type
 procedure TMyButton.DoExecute;
 begin
   inherited;
-  log.WriteLn('TMyButton.DoExecute');
+  with (Schema as TWelcomeSchema) do
+  begin
+	  Input3.Text := IntToStr(StrToIntDef(Input1.Text, 0) + StrToIntDef(Input2.Text, 0));
+  end;
 end;
 
 { TMyAction }
@@ -245,12 +249,20 @@ begin
               Name := 'AddBtn';
               Caption := 'Add';
             end;
+
+            Input3 := TInput.Create(This);
+            with Input3 do
+            begin
+              Name := 'Input3';
+              Caption := 'Result';
+            end;
+
           end;
 
 {$ifdef fpc}
-          with TClockCompose.Create(This) do
+{          with TClockCompose.Create(This) do
           begin
-          end;
+          end;}
 {$else}
           with TIntervalCompose.Create(This) do
           begin
@@ -276,7 +288,7 @@ end;
 
 class function TWelcomeSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
-  Result := [schemaAttach] + Inherited GetCapabilities;
+  Result := [schemaInteractive] + Inherited GetCapabilities;
   //Result := Inherited GetCapabilities;
 end;
 

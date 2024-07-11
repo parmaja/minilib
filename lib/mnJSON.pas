@@ -45,8 +45,8 @@ type
   TJSONParseOption = (
     jsoStrict,
     jsoNoDuplicate,//TODO do not allow duplicate names
-    jsoSafe,
-    jsoUTF8 //TODO
+    jsoSafe, //no Exceptions
+    jsoUTF8 //TODO , no, always UTF8
   );
   TJSONParseOptions = set of TJSONParseOption;
 

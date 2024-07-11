@@ -1,12 +1,16 @@
-var ws = null;
-var attached = false;
+let mnw = {};
 
-function ws_receive(msg) 
+mnw.ws = null;
+mnw.attached = false;
+mnw.url = "";
+
+mnw.ws_receive = function(msg)
 {
   if (msg.charAt(0) === '{')
   {    
+    console.log(msg);
     const json = JSON.parse(msg);
-    if (json.type === 'text') 
+    if (json.command === 'change') 
     {      
       const element = document.getElementById(json.element);
       if (element)
@@ -15,43 +19,57 @@ function ws_receive(msg)
   }
 }
 
-function ws_send(msg) 
+mnw.ws_send = function(msg) 
 {
-
+  this.ws.send(msg);
 }
 
-function send(id, command, content) 
+mnw.send = function(id, command, content) 
 {
-  ws_send({"element": id, "command": command, "content": content})
+  this.ws_send(JSON.stringify({"element": id, "command": command, "content": content}));
 }
 
-function attach(url)
+mnw.connect = function()
 {
-  console.log("connecting to: " + url);
-  ws = new WebSocket(url)
-  ws.onopen = function(ev) {
-    console.log("connection established");
+  console.log("connecting to: " + this.url);
+
+  this.ws = new WebSocket(this.url)
+
+  this.ws.onopen = function(ev) 
+  {
+    console.log("Connection established");
   }
-  ws.onmessage = function(ev) {
-    ws_receive(ev.data);
-    console.log("Message from Server: " + ev.data);
+
+  this.ws.onmessage = function(ev) 
+  {
+    mnw.ws_receive(ev.data);    
   }
-  ws.onclose  = function(ev) {
+
+  this.ws.onclose  = function(ev) 
+  {
     console.log("Connection closed");
   }
-  ws.onerror = function(ev) {
-    console.log("error")
+
+  this.ws.onerror = function(ev) 
+  {
+    console.log("Error, trying in 5s")
+    setTimeout(this.connect, 5000);
   }
+}
+
+mnw.attach = function(url)
+{
+  this.url = url;  
+  this.connect();
 }
 
 var reload_elements = [];
 
 function reloadElements() 
 {
-  console.log('reloadElements');
   reload_elements.forEach(element => {
     const tagId = element.id;
-    const tagUrl = element.getAttribute('data-refresh-url');
+    const tagUrl = element.getAttribute('data-mnw-refresh-url');
     fetch(tagUrl) 
       .then(response => response.text())
       .then(data => {
@@ -66,18 +84,19 @@ function reloadElements()
 
 function init()
 {
-  reload_elements = document.querySelectorAll('[data-refresh-url]');
+  reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');
   if (reload_elements.length > 0) 
   {
-    console.log('interval enabled');
-    setInterval(reloadElements, 1000);
+    var interval = document.body.hasAttribute('data-mnw-refresh-interval');
+    if (interval == 0)
+    interval = 1000;
+    setInterval(reloadElements, interval);
+    console.log('interval enabled ' + interval);
   }
-  else
-    console.log('interval is not enabled');
 
-  attached = document.body.hasAttribute('data-attach');
-  if (attached == true)  
-    attach(window.location.href);
+  mnw.attached = document.body.hasAttribute('data-mnw-attach');
+  if (mnw.attached == true)  
+    mnw.attach(window.location.href);
 }
 
-window.onload = init;
+window.addEventListener('load', init);
