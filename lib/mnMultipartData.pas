@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams, mnClasses, mnParams,
+  mnUtils, mnStreams, mnClasses, mnParams, mnMIME,
   mnStreamUtils;
 
 type
@@ -106,50 +106,7 @@ type
     property TempPath: string read FTempPath write FTempPath;
   end;
 
-function DocumentToContentType(const Name: string): string;
-
 implementation
-
-function DocumentToContentType(const Name: string): string;
-var
-  Ext: string;
-begin
-  if Pos('.', Name) = 0 then
-    Ext := Name
-  else
-  begin
-    Ext := LowerCase(ExtractFileExt(Name));
-    if Length(Ext) > 1 then
-      Ext := Copy(Ext, 2, Length(Ext));
-  end;
-
-  if Ext = 'txt' then
-    Result := 'text/plan'
-  else if (Ext = 'htm') or (Ext = 'html') or (Ext = 'shtml') or (Ext = 'dhtml') then
-    Result := 'text/html'
-  else if Ext = 'gif' then
-    Result := 'image/gif'
-  else if Ext = 'bmp' then
-    Result := 'image/bmp'
-  else if (Ext = 'jpg') or (Ext = 'jpeg') then
-    Result := 'image/jpeg'
-  else if (Ext = 'png') then
-    Result := 'image/png'
-  else if Ext = 'txt' then
-    Result := 'text/plain'
-  else if Ext = 'svg' then
-    Result := 'image/svg+xml'
-  else if Ext = 'css' then
-    Result := 'text/css'
-  else if Ext = 'json' then
-    Result := 'application/json'
-  else if Ext = 'pdf' then
-    Result := 'application/pdf'
-  else if Ext = 'js' then
-    Result := 'text/javascript'
-  else
-    Result := 'application/binary';
-end;
 
 { TmnMultipartDataItem }
 

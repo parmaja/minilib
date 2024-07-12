@@ -11,7 +11,8 @@ uses
   HejriDates, HejriUtils, minibidi, mnBase64, mnClasses, mnDrivers, mnFields, 
   mnLogs, mnParams, mnStreams, mnUtils, UniDates, mnRTTIUtils, mnConfigs, 
   mnStreamUtils, mnLibraries, mnMsgBox, mnJobs, mnJSON, mnDON, 
-  mnMultipartData, mnHeaders, ucp864, ucp1250, ucp1252, ucp1256, ucputils;
+  mnMultipartData, mnHeaders, ucp864, ucp1250, ucp1252, ucp1256, ucputils, 
+  mnMIME;
 
 implementation
 

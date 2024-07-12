@@ -150,6 +150,10 @@
         <Filename Value="ucputils.pas"/>
         <UnitName Value="ucputils"/>
       </Item>
+      <Item>
+        <Filename Value="mnMIME.pas"/>
+        <UnitName Value="mnMIME"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

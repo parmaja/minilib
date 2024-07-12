@@ -123,11 +123,11 @@ type
     function ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
     function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
 
-    function ReadString(out s: string; Count: TFileSize = 0): Boolean; overload; deprecated;
-    function ReadUTF8String(out s: UTF8String; Count: TFileSize = 0): Boolean; overload;
-    function ReadUTF8String(out s: string; Count: TFileSize = 0): Boolean; overload;
-    function ReadBytes(Count: TFileSize = 0): TBytes; overload;
+    function ReadUTF8String(out s: UTF8String; Count: TFileSize = -1): Boolean; overload;
+    function ReadUTF8String(out s: string; Count: TFileSize = -1): Boolean; overload;
+    function ReadBytes(Count: TFileSize = -1): TBytes; overload;
 
+    function ReadString(out s: string; Count: TFileSize = 0): Boolean; overload; deprecated;
     //Use copy from to stream
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
     function WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
@@ -794,9 +794,11 @@ begin
       begin
         if Count > 0 then
           aSize := aSize - c;
+
         SetLength(s, p + c);
         Move(aBuffer^, (PByte(s) + p)^, c);
         p := p + c;
+
       end;
       if ((c = 0) and Passive) or ((c=0) and not Connected) or not CanRead or ((Count > 0) and (aSize = 0)) then
         break;
@@ -812,24 +814,29 @@ var
   u8: UTF8String;
 begin
   Result := ReadUTF8String(u8);
+  {$ifndef FPC}
   s := UTF8ToString(u8);
+  {$endif}
 end;
 
 function TmnCustomStream.ReadUTF8String(out s: UTF8String; Count: TFileSize): Boolean;
 var
   aBuffer: PByte;
-  p: Integer;
-  l, c, aSize: Integer;
+  i, l, c, aSize: Integer;
+  ReadCount: Integer;
 begin
-  //try use pointer stream
   s := '';
+  ReadCount := 0;
+  if not Connected or (Count = 0) then
+    exit(False);
+
   aSize := Count;
   {$ifdef FPC} //less hint in fpc
   aBuffer := nil;
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
-    p := 0;
+    i := 0;
     while Connected do
     begin
       if (Count > 0) and (aSize < ReadWriteBufferSize) then
@@ -841,17 +848,19 @@ begin
       begin
         if Count > 0 then
           aSize := aSize - c;
-        SetLength(s, p + c);
-        Move(aBuffer^, (PByte(s) + p)^, c);
-        p := p + c;
+
+        ReadCount := ReadCount + c;
+        SetLength(s, i + c);
+        Move(aBuffer^, (PByte(s) + i)^, c);
+        i := i + c;
+
       end;
-      if ((c = 0) and Passive) or ((c=0) and not Connected) or not CanRead or ((Count > 0) and (aSize = 0)) then
+      if ((c = 0) and Passive) or ((c = 0) and not Connected) or not CanRead or ((Count > 0) and (aSize = 0)) then
         break;
     end;
   finally
     FreeMem(aBuffer);
   end;
-  Result := s <> '';
 end;
 
 function TmnCustomStream.CopyToStream(AStream: TStream; Count: TFileSize): TFileSize;
@@ -921,9 +930,11 @@ begin
       begin
         if Count > 0 then
           aSize := aSize - c;
+
         SetLength(Result, p + c);
         Move(aBuffer^, Result[p], c);
         p := p + c;
+
       end;
       if ((c = 0) and Passive) or ((c=0) and not Connected) or not CanRead or ((Count > 0) and (aSize = 0)) then
         break;
@@ -944,9 +955,9 @@ var
   aBuffer: PByte;
   l, c, aSize: Integer;
 begin
-  Result := 0;
   RealCount := 0;
-  if not Connected or (Count=0) then
+  Result := 0;
+  if not Connected or (Count = 0) then
     exit(0);
 
   aSize := Count;
@@ -966,8 +977,11 @@ begin
       begin
         if Count > 0 then
           aSize := aSize - c;
+
         Result := Result + c;
         RealCount := RealCount + AStream.Write(aBuffer^, c);
+
+
       end;
       //(c = 0) and Passive //static file no disconnect
       //(c = 0) and not Connected //(c<>0) data in tcp buffer and server disconnected

@@ -330,7 +330,7 @@ begin
           begin
             if EscapeBuffer <> '' then
             begin
-              StringBuffer := StringBuffer + ConvertFromUtf32(StrToInt('$'+EscapeBuffer));
+              StringBuffer := StringBuffer + UTF8Encode({$ifdef FPC}Character{$else}Char{$endif}.ConvertFromUtf32(StrToInt('$'+EscapeBuffer)));
               EscapeBuffer := '';
             end;
             StartString := Index;

@@ -309,6 +309,9 @@ function HashWebSocketKey(const key: string): string;
 
 implementation
 
+uses
+  mnMIME;
+
 function WebExpandToRoot(FileName: string; Root: string): string;
 begin
   if (FileName <> '') then

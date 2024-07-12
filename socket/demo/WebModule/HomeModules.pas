@@ -99,6 +99,9 @@ type
 
 implementation
 
+uses
+  mnMIME;
+
 type
 
   { TClockComposer }
