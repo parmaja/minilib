@@ -33,6 +33,8 @@ type
   { TmnMIME }
 
   TmnMIME = class(TmnNamedObjectList<TmnMIMEItem>)
+  private
+    procedure Register;
   protected
     procedure Created; override;
   public
@@ -52,7 +54,10 @@ var
 function MIME: TmnMIME;
 begin
   if FMIME = nil then
+  begin
     FMIME := TmnMIME.Create;
+    FMIME.Register;
+  end;
   Result := FMIME;
 end;
 
@@ -89,6 +94,10 @@ end;
 procedure TmnMIME.Created;
 begin
   inherited;
+end;
+
+procedure TmnMIME.Register;
+begin
   Add('', 'application/binary');
   Add('aac', 'audio/aac', 'AAC audio file');
   Add('apng', 'image/apng', 'Animated Portable Network Graphics (APNG) image');
@@ -114,7 +123,7 @@ begin
   Add('jar', 'application/java-archive', 'Java Archive (JAR)');
   Add('jpeg', 'image/jpeg', 'JPEG images');
   Add('jpg', 'image/jpeg', 'JPEG images');
-  Add('js', 'application/javascript', 'JavaScript (ECMAScript)');
+  Add('js', 'text/javascript', 'JavaScript (ECMAScript)');
   Add('json', 'application/json', 'JSON format');
   Add('jsonld', 'application/ld+json', 'JSON-LD format');
   Add('mid', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');

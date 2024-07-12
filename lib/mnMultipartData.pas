@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams, mnClasses, mnParams, mnMIME,
+  mnUtils, mnStreams, mnClasses, mnParams,
   mnStreamUtils;
 
 type
@@ -107,6 +107,9 @@ type
   end;
 
 implementation
+
+uses
+  mnMIME;
 
 { TmnMultipartDataItem }
 

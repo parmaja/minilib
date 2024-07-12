@@ -182,8 +182,8 @@ begin
     Direction := dirLTR;
     with Body do
     begin
-//      TJSResource.Create(This, 'WebElements');
-      TJSEmbedFile.Create(This, Module.AppPath + '../../source/mnWebElements.js');
+      TJSFile.Create(This, [ftResource], 'mnWebElements.js');
+      //TFile.Create(This, [], Module.AppPath + '../../source/mnWebElements.js');
 
       Header.Text := 'Creative Solutions';
       with TImage.Create(This) do
@@ -375,14 +375,14 @@ begin
     Kind := Kind + [elFallback];
     //Name := 'document';
 //    Route := '';
-    with TDirectFile.Create(This) do
+    with TFile.Create(This) do
     begin
       Name := 'jquery';
       Route := 'jquery';
       FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
     end;
 
-    with TDirectFile.Create(This) do
+    with TFile.Create(This) do
     begin
       Name := 'logo';
       Route := 'logo';
@@ -488,7 +488,7 @@ begin
   inherited;
   Name := 'ws';
   Route := 'ws';
-  with TDirectFile.Create(This) do
+  with TFile.Create(This) do
   begin
     Route := 'echo';
     FileName := IncludePathDelimiter(Module.HomePath) + 'ws.html';

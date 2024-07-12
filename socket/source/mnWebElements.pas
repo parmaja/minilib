@@ -58,7 +58,7 @@ uses
   LCLType, //* for RT_RCDATA
   {$endif}
   syncobjs, mnDON, mnJSON,
-	mnUtils, mnClasses, mnStreams, mnLogs,
+	mnUtils, mnClasses, mnStreams, mnLogs, mnMIME,
   mnMultipartData, mnModules, mnWebModules;
 
 {.$define rtti_objects}
@@ -227,7 +227,7 @@ type
     procedure DoChanged; virtual;
     procedure Changed;
     procedure SendMessage(AMessage: string); overload;
-    procedure SendMessage(JSON: TDON_Pair); virtual; overload;
+    procedure SendMessage(JSON: TDON_Pair); overload; virtual;
     procedure ReceiveMessage(JSON: TDON_Pair); virtual;
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); virtual;
@@ -343,7 +343,7 @@ type
   TmnwAttachments = class(TmnObjectList<TmnwAttachment>)
   private
     FLock: TCriticalSection;
-    FMessages: TmnwMessages;
+    //FMessages: TmnwMessages;
   protected
     procedure Created; override;
   public
@@ -354,7 +354,7 @@ type
     procedure Add(AAttachment: TmnwAttachment);
     procedure Remove(AAttachment: TmnwAttachment);
     property Lock: TCriticalSection read FLock;
-    property Messages: TmnwMessages read FMessages;
+//    property Messages: TmnwMessages read FMessages;
   end;
 
   TmnwSchamaCapability = (
@@ -472,18 +472,25 @@ type
   { TmnwSchemaObject }
 
   TmnwSchemaObject = class(TmnNamedObject)
+  private
+    FLock: TCriticalSection;
   public
     SchemaClass: TmnwSchemaClass;
     Schema: TmnwSchema;
+    constructor Create;
     destructor Destroy; override;
+    property Lock: TCriticalSection read FLock;
   end;
 
   { TmnwSchemas }
 
   TmnwSchemas = class(TmnNamedObjectList<TmnwSchemaObject>)
+  private
+    FLock: TCriticalSection;
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
   public
+    constructor Create;
     destructor Destroy; override;
 
     procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
@@ -491,6 +498,7 @@ type
     function Respond(Route: string; Sender: TObject; Renderer: TmnwRenderer; AStream: TmnBufferStream): TmnwElement;
     //for websocket
     function Attach(Route: string; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
+    property Lock: TCriticalSection read FLock;
   end;
 
   TDirection = (dirUnkown, dirLTR, dirRTL);
@@ -528,70 +536,27 @@ type
       TFooter = class;
       TContainer = class;
 
-      { TDirectFile }
-
-      [TIDExtension]
-      TDirectFile = class(THTMLElement)
-      protected
-        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
-      public
-        FileName: string;
-        constructor Create(AParent: TmnwElement; AFileName: string = ''); reintroduce;
-        function GetContentType(Route: string): string; override;
-      end;
-
-      { TEmbedFile }
-
-      TEmbedFile = class(TDirectFile)
-      protected
-        procedure Created; override;
-      public
-      end;
-
-      { TDirectResource }
-
-      [TIDExtension]
-      TDirectResource = class(THTMLElement)
-      protected
-        procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
-      public
-        ResName: string;
-        constructor Create(AParent: TmnwElement; AResName: string = ''); reintroduce;
-        function GetContentType(Route: string): string; override;
-      end;
-
-      { TEmbedResource }
-
-      TEmbedResource = class(TDirectResource)
-      protected
-        procedure Created; override;
-      public
-      end;
-
-      { TJSEmbedFile }
-
-      TJSEmbedFile = class(TEmbedFile)
-      protected
-        procedure Created; override;
-      end;
-
-      { TJSEmbedResource }
-
-      TJSEmbedResource = class(TDirectResource)
-      protected
-        procedure Created; override;
-      public
-        function GetContentType(Route: string): string; override;
-      end;
+      TFileOptions = set of (ftEmbed, ftResource);
 
       { TFile }
+
+      //* For resource Use FileName := 'myfile.js' but the resource name will took as myfile only, extention will be for mime
 
       [TIDExtension]
       TFile = class(THTMLElement)
       protected
         procedure DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream); override;
       public
+        FileName: string;
+        Options: TFileOptions;
+        constructor Create(AParent: TmnwElement; AOptions: TFileOptions = []; AFileName: string = ''); reintroduce;
         function GetContentType(Route: string): string; override;
+      end;
+
+      { TJSFile }
+
+      TJSFile = class(TFile)
+      protected
       end;
 
       { TAssets }
@@ -853,42 +818,16 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TDirectFile }
+      { TFile }
 
-      TDirectFile = class(TElementHTML)
+      TFile = class(TElementHTML)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TEmbedFile }
+      { TJSFile }
 
-      TEmbedFile = class(TElementHTML)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
-      end;
-
-      { TDirectResource }
-
-      TDirectResource = class(TElementHTML)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
-      end;
-
-      { TEmbedResource }
-
-      TEmbedResource = class(TElementHTML)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
-      end;
-
-      TJSEmbedResource = class(TEmbedResource)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
-      end;
-
-      { TJSEmbedFile }
-
-      TJSEmbedFile = class(TEmbedFile)
+      TJSFile = class(TFile)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
@@ -1154,14 +1093,18 @@ begin
   begin
     if Stream.ReadUTF8String(s) then
     begin
-      Schema.Attachments.Lock.Enter;
+{      Schema.Attachments.Lock.Enter;
       try
         Schema.Attachments.Messages.Add(s);
       finally
         Schema.Attachments.Lock.Leave;
-      end;
-      Schema.ProcessMessage(s);
-      //TThread.Queue(nil, Schema.ReceiveMessage); //* nooo
+      end;}
+      if s.StartsWith('{') then
+        Schema.ProcessMessage(s)
+      else if s = 'attach' then
+        Stream.WriteUTF8Line('attached')
+      else
+        Schema.ProcessMessage(s);
     end;
   end;
 end;
@@ -1188,12 +1131,12 @@ constructor TmnwAttachments.Create;
 begin
   inherited Create;
   FLock := TCriticalSection.Create;
-  FMessages := TmnwMessages.Create;
+//  FMessages := TmnwMessages.Create;
 end;
 
 destructor TmnwAttachments.Destroy;
 begin
-  FreeAndNil(FMessages);
+//  FreeAndNil(FMessages);
   FreeAndNil(FLock);
   inherited;
 end;
@@ -1587,9 +1530,16 @@ end;
 
 { TmnwSchemaObject }
 
+constructor TmnwSchemaObject.Create;
+begin
+  inherited Create;
+  FLock := TCriticalSection.Create;
+end;
+
 destructor TmnwSchemaObject.Destroy;
 begin
   FreeAndNil(Schema);
+  FreeAndNil(FLock);
   inherited;
 end;
 
@@ -1598,6 +1548,7 @@ end;
 destructor TmnwSchemas.Destroy;
 begin
   inherited;
+  FreeAndNil(FLock);
 end;
 
 procedure TmnwSchemas.RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
@@ -1616,19 +1567,19 @@ var
   aElement: TmnwElement;
   Routes: TStringList;
   i: Integer;
-  aRoute: string;
+  aSchemaName, aRoute: string;
   aSchema: TmnwSchema;
 begin
   aSchema := nil;
   Routes := TStringList.Create;
   try
-    i := 0;
     StrToStrings(Route, Routes, ['/']);
-    if (i<Routes.Count) then
+    if (Routes.Count > 0) then
     begin
-      aRoute := Routes[i];
-      inc(i);
-      SchemaObject := Find(aRoute);
+      aSchemaName := Routes[0];
+      Routes.Delete(0);
+      DeleteSubPath(aSchemaName, Route);
+      SchemaObject := Find(aSchemaName);
     end
     else
       SchemaObject := nil;
@@ -1638,18 +1589,22 @@ begin
 
     if SchemaObject <> nil then
     begin
-      DeleteSubPath(aRoute, Route);
-      if SchemaObject.Schema = nil then
-      begin
-        aSchema := SchemaObject.SchemaClass.Create(nil);
-        aSchema.Route := Route;
-        SchemaCreated(aSchema);
-        aSchema.Compose;
-        if not (schemaDynamic in aSchema.GetCapabilities) then
-          SchemaObject.Schema := aSchema;
-      end
-      else
-        aSchema := SchemaObject.Schema;
+      SchemaObject.Lock.Enter;
+      try
+        if SchemaObject.Schema = nil then
+        begin
+          aSchema := SchemaObject.SchemaClass.Create(nil);
+          aSchema.Route := Route;
+          SchemaCreated(aSchema);
+          aSchema.Compose;
+          if not (schemaDynamic in aSchema.GetCapabilities) then
+            SchemaObject.Schema := aSchema;
+        end
+        else
+          aSchema := SchemaObject.Schema;
+      finally
+        SchemaObject.Lock.Leave;
+      end;
       aElement := aSchema;
     end
     else
@@ -1658,6 +1613,7 @@ begin
     if aElement <> nil then
     begin
       Result := aElement;
+      i := 0;
       while i < Routes.Count do
       begin
         aRoute := Routes[i];
@@ -1742,6 +1698,12 @@ procedure TmnwSchemas.SchemaCreated(Schema: TmnwSchema);
 begin
 end;
 
+constructor TmnwSchemas.Create;
+begin
+  FLock := TCriticalSection.Create;
+  inherited Create;
+end;
+
 procedure TmnwHTMLRenderer.Created;
 begin
   inherited;
@@ -1757,12 +1719,8 @@ begin
   //RegisterClasses(THTML);
   RegisterRenderer(THTML.TContentCompose, TContentCompose);
   RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
-  RegisterRenderer(THTML.TDirectFile,TDirectFile);
-  RegisterRenderer(THTML.TEmbedFile, TEmbedFile);
-  RegisterRenderer(THTML.TDirectResource, TDirectResource);
-  RegisterRenderer(THTML.TEmbedResource, TEmbedResource);
-  RegisterRenderer(THTML.TJSEmbedResource, TJSEmbedResource);
-  RegisterRenderer(THTML.TJSEmbedFile, TJSEmbedFile);
+  RegisterRenderer(THTML.TFile, TFile);
+  RegisterRenderer(THTML.TJSFile, TJSFile);
 
   RegisterRenderer(THTML.TDocument ,TDocument);
   RegisterRenderer(THTML.TBody ,TBody);
@@ -2099,29 +2057,32 @@ var
   Error: string;
 begin
   log.WriteLn(s);
-  Json := JsonParseStringPair(s, Error, [jsoSafe]);
-  try
-    elementID := Json['element'].AsString;
-    element := FindByID(elementID);
-    if element <> nil then
-    begin
-      Lock.Enter;
-      try
-        element.ReceiveMessage(Json);
-      finally
-        Lock.Leave;
+  if s.StartsWith('{') then
+  begin
+    Json := JsonParseStringPair(s, Error, [jsoSafe]);
+    try
+      elementID := Json['element'].AsString;
+      element := FindByID(elementID);
+      if element <> nil then
+      begin
+        Lock.Enter;
+        try
+          element.ReceiveMessage(Json);
+        finally
+          Lock.Leave;
+        end;
       end;
+    finally
+      Json.Free;
     end;
-  finally
-    Json.Free;
-  end;
+  end
 end;
 
 procedure TmnwSchema.ReceiveMessage;
-var
-  s: string;
+{var
+  s: string;}
 begin
-  while true do
+{  while true do
   begin
     Schema.Attachments.Lock.Enter;
     try
@@ -2141,7 +2102,7 @@ begin
     begin
       ProcessMessage(s);
     end;
-  end;
+  end;}
 end;
 
 procedure CollectExtensions(rttiContext: TRttiContext; ElementClass: TClass; List: TClassList);
@@ -2843,95 +2804,38 @@ begin
 end;
 {$endif}
 
-{ THTML.TDirectFile }
+{ THTML.TFile }
 
-procedure THTML.TDirectFile.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
+procedure THTML.TFile.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
 var
-  fs: TFileStream;
+  ResStream: TStream;
 begin
   inherited;
-  fs := TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead);
+  if ftResource in Options then
+  begin
+    ResStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA) //* remove extension
+  end
+  else
+    ResStream := TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead);
   try
-    AStream.WriteStream(fs, 0);
-  finally
-    fs.Free;
-  end;
-end;
-
-constructor THTML.TDirectFile.Create(AParent: TmnwElement; AFileName: string);
-begin
-  inherited Create(AParent);
-  FileName := AFileName;
-end;
-
-function THTML.TDirectFile.GetContentType(Route: string): string;
-begin
-  Result := DocumentToContentType(FileName);
-end;
-
-{ THTML.TEmbedFile }
-
-procedure THTML.TEmbedFile.Created;
-begin
-  inherited;
-  Kind := Kind + [elHighLevel];
-end;
-
-{ THTML.TDirectResource }
-
-procedure THTML.TDirectResource.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
-var
-  ResStream: TResourceStream;
-begin
-  inherited;
-  ResStream := TResourceStream.Create(hInstance, ChangeFileExt(ResName, ''), RT_RCDATA); //* remove extension
-  try
-    AStream.CopyFrom(ResStream, 0);
+    AStream.WriteStream(ResStream, 0);
   finally
     ResStream.Free;
   end;
 end;
 
-constructor THTML.TDirectResource.Create(AParent: TmnwElement; AResName: string);
+constructor THTML.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string);
 begin
   inherited Create(AParent);
-  ResName := AResName;
-end;
-
-function THTML.TDirectResource.GetContentType(Route: string): string;
-begin
-  Result := DocumentToContentType(ResName);
-end;
-
-{ THTML.TEmbedResource }
-
-procedure THTML.TEmbedResource.Created;
-begin
-  inherited;
-  Kind := Kind + [elHighLevel];
-end;
-
-{ THTML.TFile }
-
-procedure THTML.TFile.DoRespond(Route: string; Sender: TObject; ASchema: TmnwSchema; ARenderer: TmnwRenderer; AStream: TmnBufferStream);
-var
-  fs: TFileStream;
-begin
-  inherited;
-  if FileExists(Route) then
-  begin
-    fs := TFileStream.Create(Route, fmOpenRead);
-    try
-      AStream.WriteStream(fs, 0);
-    finally
-      fs.Free;
-    end;
-  end;
+  Options := AOptions;
+  FileName := AFileName;
+  if not (ftEmbed in Options) then
+    Route := ChangeFileExt(ExtractFileName(FileName), '');
 end;
 
 function THTML.TFile.GetContentType(Route: string): string;
 begin
-  Result := DocumentToContentType(Route);
+  Result := DocumentToContentType(FileName);
 end;
 
 { THTML.TAssets }
@@ -3103,36 +3007,16 @@ begin
   inherited;
 end;
 
-{ TmnwHTMLRenderer.TDirectFile }
+{ TmnwHTMLRenderer.TFile }
 
-procedure TmnwHTMLRenderer.TDirectFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TFile;
 begin
+  e := Scope.Element as THTML.TFile;
+  if ftEmbed in e.Options then
+    Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
   inherited;
-  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
-end;
-
-{ TmnwHTMLRenderer.TEmbedFile }
-
-procedure TmnwHTMLRenderer.TEmbedFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-begin
-  inherited;
-  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
-end;
-
-{ TmnwHTMLRenderer.TDirectResource }
-
-procedure TmnwHTMLRenderer.TDirectResource.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-begin
-  inherited;
-  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
-end;
-
-{ TmnwHTMLRenderer.TEmbedResource }
-
-procedure TmnwHTMLRenderer.TEmbedResource.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-begin
-  inherited;
-  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
 end;
 
 { THTML.TBody }
@@ -3185,7 +3069,7 @@ var
   begin
     if schemaInteractive in Context.Schema.GetCapabilities then
     begin
-      Result := ' data-mnw-attach="true"';
+      Result := ' data-mnw-interactive="true"';
     end;
   end;
 begin
@@ -3330,46 +3214,27 @@ begin
   Scope.Attributes['data-mnw-refresh-url'] := URL;
 end;
 
-{ THTML.TJSEmbedResource }
+{ TmnwHTMLRenderer.TJSFile }
 
-function THTML.TJSEmbedResource.GetContentType(Route: string): string;
+procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TJSFile;
+  src: string;
 begin
-  Result := DocumentToContentType('.js');
-end;
-
-procedure THTML.TJSEmbedResource.Created;
-begin
-  inherited;
-  Kind := Kind + [elHighLevel];
-end;
-
-{ THTML.TJSEmbedFile }
-
-procedure THTML.TJSEmbedFile.Created;
-begin
-  inherited;
-  Kind := Kind + [elHighLevel];
-end;
-
-{ TmnwHTMLRenderer.TJSEmbedResource }
-
-procedure TmnwHTMLRenderer.TJSEmbedResource.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-begin
-  Context.Output.WriteLn('html', '<script type="text/javascript"'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
-  Scope.Element.Respond('', Context.Sender, Context.Schema, Context.Renderer, Context.Output['html'].Stream);
-  inherited;
-  Context.Output.WriteLn('html', '');
-  Context.Output.WriteLn('html', '</script>', [woCloseTag]);
-end;
-
-{ TmnwHTMLRenderer.TJSEmbedFile }
-
-procedure TmnwHTMLRenderer.TJSEmbedFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-begin
-  Context.Output.WriteLn('html', '<script type="text/javascript"'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
-  inherited;
-  Context.Output.WriteLn('html', '');
-  Context.Output.WriteLn('html', '</script>', [woCloseTag]);
+  e := Scope.Element as THTML.TJSFile;
+  if ftEmbed in e.Options then
+  begin
+    Context.Output.WriteLn('html', '<script type="text/javascript"'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+    inherited;
+    Context.Output.WriteLn('html', '');
+    Context.Output.WriteLn('html', '</script>', [woCloseTag]);
+  end
+  else
+  begin
+    src := IncludeURLDelimiter(TmnwHTMLRenderer(Renderer).HomeUrl) + Scope.Element.GetPath;
+    Context.Output.WriteLn('html', '<script type="text/javascript" src='+ DQ(src) +' ></script>', [woOpenTag, woCloseTag]);
+    inherited;
+  end;
 end;
 
 initialization

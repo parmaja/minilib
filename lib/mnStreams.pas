@@ -814,7 +814,9 @@ var
   u8: UTF8String;
 begin
   Result := ReadUTF8String(u8);
-  {$ifndef FPC}
+  {$ifdef FPC}
+  s := u8;
+  {$else}
   s := UTF8ToString(u8);
   {$endif}
 end;
