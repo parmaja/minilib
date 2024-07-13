@@ -820,18 +820,6 @@ begin
   Result := s <> '';
 end;
 
-function TmnCustomStream.ReadUTF8String(out s: string; Count: TFileSize): Boolean;
-var
-  u8: UTF8String;
-begin
-  Result := ReadUTF8String(u8);
-  {$ifdef FPC}
-  s := u8;
-  {$else}
-  s := UTF8ToString(u8);
-  {$endif}
-end;
-
 function TmnCustomStream.ReadUTF8String(out s: UTF8String; Count: TFileSize): Boolean;
 var
   aBuffer: PByte;
@@ -874,6 +862,19 @@ begin
   finally
     FreeMem(aBuffer);
   end;
+  Result := ReadCount > 0;
+end;
+
+function TmnCustomStream.ReadUTF8String(out s: string; Count: TFileSize): Boolean;
+var
+  u8: UTF8String;
+begin
+  Result := ReadUTF8String(u8);
+  {$ifdef FPC}
+  s := u8;
+  {$else}
+  s := UTF8ToString(u8);
+  {$endif}
 end;
 
 function TmnCustomStream.CopyToStream(AStream: TStream; Count: TFileSize): TFileSize;
