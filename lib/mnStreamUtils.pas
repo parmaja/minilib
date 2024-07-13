@@ -301,13 +301,13 @@ begin
         if err = Z_STREAM_END then
         begin
           ZEnd := True;
-//          CloseData; //* no because we can reach END of zlib but sill need to inflate the stream, weird, do not trust END
+//          CloseFragment; //* no because we can reach END of zlib but sill need to inflate the stream, weird, do not trust END
           break;
         end
         else if err <> Z_OK then
         begin
           ZEnd := True;
-//          CloseData;
+//          CloseFragment;
           raise Exception.Create(String(zerror(err)));
         end;
       end;
@@ -501,7 +501,7 @@ begin
     FReadSize := ReadSize;
     if FReadSize = 0 then
     begin
-      CloseData;
+      CloseFragment;
     end;
   end;
 
@@ -519,7 +519,7 @@ begin
   if FReadSize = 0 then
   begin
     ReadChunkEndOfLine;
-//    CloseData
+//    CloseFragment
   end;
 end;
 
@@ -804,7 +804,8 @@ begin
           end
           else if Header.Opcode = wsoClose then
           begin
-
+            CloseFragment;
+            //Close;
           end;
         end;
       end;
@@ -853,7 +854,9 @@ begin
     if FSize = 0 then
     begin
       if Header.Finished then
-        CloseData;
+      begin
+        CloseStream;
+      end;
     end;
   end;
 end;

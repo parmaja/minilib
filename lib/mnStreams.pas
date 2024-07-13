@@ -96,8 +96,9 @@ type
 
   TmnStreamClose = set of (
     cloRead, //Mark is as EOF
-    cloData, //Mark is as end of data, Boundary Data or End of Part of Multipart
-    cloWrite //Flush buffer
+    cloWrite, //Flush buffer
+    cloFragment, //Mark is as end of fragment, Boundary Fragment or End of Part of Multipart
+    cloStream //End of stream, but not disconnect or close the file, we can have another stream on same connection
   );
 
   EmnStreamException = class(Exception);
@@ -108,7 +109,7 @@ type
 
   TmnCustomStream = class abstract(TStream)
   private
-    FDone: TmnStreamClose;
+    FState: TmnStreamClose;
     FPassive: Boolean;
   protected
     //If Passive like Wrapper to FileStream reading count=0 meant  close, Passive have be in Socket too if you want break reading on timeout
@@ -116,8 +117,9 @@ type
     function GetConnected: Boolean; virtual; abstract; //Socket or COM ports have Connected and override
     function CanRead: Boolean; {$ifndef DEBUG}inline;{$endif}
     function CanWrite: Boolean; inline;
-    procedure SetCloseData;
-    procedure ResetCloseData;
+    procedure ResetClose;
+    procedure SetCloseFragment;
+    procedure SetCloseStream;
   public
     //Count = 0 , load until eof, timeout not break the loop
     function ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
@@ -136,7 +138,8 @@ type
     function CopyFromStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline;
 
     property Connected: Boolean read GetConnected;
-    property Done: TmnStreamClose read FDone;
+    property Done: TmnStreamClose read FState; {$ifdef FPC}deprecated;{$endif}
+    property State: TmnStreamClose read FState;
 
     function Read(var Buffer; Count: longint): longint; override;
     function Write(const Buffer; Count: longint): longint; override;
@@ -160,7 +163,8 @@ type
     procedure Flush; virtual;
     procedure CloseRead; virtual; abstract;
     procedure CloseWrite; virtual; abstract;
-    procedure CloseData; virtual;
+    procedure CloseFragment; virtual;
+    procedure CloseStream; virtual;
     property Over: TmnStreamProxy read FOver;
   public
     //RealCount passed to Original Stream to retrive the real size of write or read, do not assign or modifiy it
@@ -225,7 +229,8 @@ type
 
     procedure CloseRead; override;
     procedure CloseWrite; override;
-    procedure CloseData; override;
+    procedure CloseFragment; override;
+    procedure CloseStream; override;
 
     procedure Flush; override;
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
@@ -597,10 +602,16 @@ begin
   end;
 end;
 
-procedure TmnStreamProxy.CloseData;
+procedure TmnStreamProxy.CloseFragment;
 begin
   if FOver <> nil then
-    Over.CloseData;
+    Over.CloseFragment;
+end;
+
+procedure TmnStreamProxy.CloseStream;
+begin
+  if FOver <> nil then
+    Over.CloseFragment;
 end;
 
 procedure TmnStreamProxy.CloseReadAll;
@@ -881,22 +892,27 @@ end;
 
 function TmnCustomStream.CanRead: Boolean;
 begin
-  Result := not (cloData in Done) and not (cloRead in Done);
+  Result := not (cloFragment in State) and not (cloRead in State);
 end;
 
 function TmnCustomStream.CanWrite: Boolean;
 begin
-  Result := not (cloData in Done) and not (cloWrite in Done);
+  Result := not (cloFragment in State) and not (cloWrite in State);
 end;
 
-procedure TmnCustomStream.ResetCloseData;
+procedure TmnCustomStream.ResetClose;
 begin
-  FDone := FDone - [cloData];
+  FState := FState - [cloFragment, cloStream];
 end;
 
-procedure TmnCustomStream.SetCloseData;
+procedure TmnCustomStream.SetCloseFragment;
 begin
-  FDone := FDone + [cloData];
+  FState := FState + [cloFragment];
+end;
+
+procedure TmnCustomStream.SetCloseStream;
+begin
+  FState := FState + [cloFragment, cloStream];
 end;
 
 function TmnCustomStream.CopyFromStream(AStream: TStream; Count: TFileSize): TFileSize;
@@ -948,7 +964,7 @@ end;
 
 function TmnCustomStream.Read(var Buffer; Count: longint): longint;
 begin
-  ResetCloseData;
+  ResetClose;
   Result := inherited Read(Buffer, Count);
 end;
 
@@ -1007,7 +1023,7 @@ end;
 
 function TmnCustomStream.Write(const Buffer; Count: longint): longint;
 begin
-  //ResetCloseData;
+  //ResetCloseFragment;
   Result := inherited Write(Buffer, Count);
 end;
 
@@ -1397,22 +1413,22 @@ end;
 
 procedure TmnBufferStream.Close(ACloseWhat: TmnStreamClose);
 begin
-  if not (cloRead in Done) and (cloRead in ACloseWhat) then
+  if not (cloRead in State) and (cloRead in ACloseWhat) then
   begin
     if FProxy <> nil then
       FProxy.CloseReadAll
     else
       DoCloseRead;
-    FDone := FDone + [cloRead];
+    FState := FState + [cloRead];
   end;
 
-  if not (cloWrite in Done) and (cloWrite in ACloseWhat) then
+  if not (cloWrite in State) and (cloWrite in ACloseWhat) then
   begin
     if FProxy <> nil then
       FProxy.CloseWriteAll
     else
       DoCloseWrite;
-    FDone := FDone + [cloWrite];
+    FState := FState + [cloWrite];
   end;
 end;
 
@@ -1498,7 +1514,7 @@ function TmnBufferStream.Read(var Buffer; Count: Longint): Longint;
 var
   RealCount: longint;
 begin
-  ResetCloseData;
+  ResetClose;
   Flush;//Flush write buffer
   if FProxy <> nil then
     FProxy.Read(Buffer, Count, Result, RealCount)
@@ -1588,7 +1604,7 @@ begin
   if (Match = nil) or (MatchSize = 0) then
     raise Exception.Create('Match is empty!');
 
-  Result := not (cloRead in Done);
+  Result := not (cloRead in State);
   Matched := False;
 
   ABuffer := nil;
@@ -1623,7 +1639,7 @@ begin
   ABufferSize := aCount;
 
   //if matched but size=0 that mean we have data but it is 0, because we execluded the EOL
-  if not Matched and (ABufferSize = 0) then //(cloRead in Done) and
+  if not Matched and (ABufferSize = 0) then //(cloRead in State) and
     Result := False;
 end;
 
@@ -1718,7 +1734,7 @@ begin
   if (Match = nil) or (MatchSize = 0) then
     raise Exception.Create('Match is empty!');
 
-  Result := not (cloRead in Done);
+  Result := not (cloRead in State);
   Matched := False;
 
   aCount := 0;
@@ -1755,7 +1771,7 @@ begin
 
   Callback(vData, PByte(aBuf), aCount);
 
-  if not Matched and (cloRead in Done) and (aSize = 0) then
+  if not Matched and (cloRead in State) and (aSize = 0) then
     Result := False;
 end;
 
@@ -2031,7 +2047,7 @@ begin
     P := @vBuffer;
     aCount := 0;
     aTry := 0;
-    while (vCount > 0) {and not (cloRead in Stream.Done)} do
+    while (vCount > 0) {and not (cloRead in Stream.State)} do
     begin
       c := Stop - Pos; //size of data in buffer
       if c = 0 then //check if buffer have no data
@@ -2080,9 +2096,14 @@ begin
   RealCount := ResultCount;
 end;
 
-procedure TmnInitialStreamProxy.CloseData;
+procedure TmnInitialStreamProxy.CloseFragment;
 begin
-  FStream.SetCloseData;
+  FStream.SetCloseFragment;
+end;
+
+procedure TmnInitialStreamProxy.CloseStream;
+begin
+  FStream.SetCloseStream;
 end;
 
 procedure TmnInitialStreamProxy.CloseRead;
