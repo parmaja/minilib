@@ -8,9 +8,9 @@ mnw.pool = [];
 
 mnw.raw_receive = function(msg)
 {
+  console.log(msg);
   if (msg.charAt(0) === '{')
   {    
-    console.log(msg);
     const json = JSON.parse(msg);
     if (json.command === 'change') 
     {      
@@ -36,6 +36,7 @@ mnw.raw_receive = function(msg)
 
 mnw.raw_send = function(msg) 
 {
+  console.log(msg);
   this.ws.send(msg);
 }
 
@@ -46,10 +47,8 @@ mnw.send = function(id, command, content)
 
 mnw.connect = function()
 {
-  console.log("connecting to: " + this.url);
-
+  console.log("Connecting to: " + this.url);
   this.ws = new WebSocket(this.url);  
-
   this.ws.onopen = function(ev) 
   {
     console.log("Connection established");
@@ -63,20 +62,23 @@ mnw.connect = function()
 
   this.ws.onclose  = function(ev) 
   {
-    this.attached = false;
-    console.log("Connection closed");
-    if (this.interactive)
+    mnw.attached = false;
+    console.log("Connection closed, deattached");
+    if (mnw.interactive)
     {
       console.log("Error, trying in 5s")
-      setTimeout(this.connect, 5000);
+      setTimeout(function() { mnw.connect(); }, 5000);
     }
   }  
 
   this.ws.onerror = function(ev) 
   {
-    console.log("Error, trying in 5s")
-    if (this.interactiveh)
-      setTimeout(this.connect, 5000);
+    console.log("Connection error")
+    if (mnw.interactive)
+    {
+      //mnw.ws.close();      
+      //setTimeout(function() { mnw.connect(); }, 5000);
+    }
   }
 }
 
@@ -114,20 +116,19 @@ function init()
     if (interval == 0)
     interval = 1000;
     setInterval(reloadElements, interval);
-    console.log('interval enabled ' + interval);
+    console.log('Interval enabled ' + interval);
   }
 
   mnw.interactive = document.body.hasAttribute('data-mnw-interactive');
-  if (mnw.interactive == true)  
+  if (mnw.interactive)  
     mnw.attach(window.location.href);
 }
 
 function finish()
 {
-  if (mnw.ws)
-    mnw.ws.close();
+/*  if (mnw.ws)
+    mnw.ws.close();*/
 }
 
 window.addEventListener('load', init);
-
 window.addEventListener("beforeunload", finish);

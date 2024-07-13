@@ -360,7 +360,8 @@ type
   TmnwSchamaCapability = (
 		schemaSession,
 		schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
-    schemaInteractive  //* Attach websocket
+    schemaInteractive,  //* Attach websocket
+    schemaSessions
 	);
 
   TmnwSchemaCapabilities = set of TmnwSchamaCapability;
@@ -1093,6 +1094,7 @@ begin
   begin
     if Stream.ReadUTF8String(s) then
     begin
+      log.writeln('Socket: '+s);
 {      Schema.Attachments.Lock.Enter;
       try
         Schema.Attachments.Messages.Add(s);
