@@ -55,6 +55,8 @@ contains
   mnFields in '..\mnFields.pas',
   mnConfigs in '..\mnConfigs.pas',
   mnDrivers in '..\mnDrivers.pas',
+  mnJSON in '..\mnJSON.pas',
+  mnDON in '..\mnDON.pas',
   mnJobs in '..\mnJobs.pas',
   base36 in '..\base36.pas',
   mnLibraries in '..\mnLibraries.pas',

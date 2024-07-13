@@ -138,7 +138,7 @@ type
     function CopyFromStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline;
 
     property Connected: Boolean read GetConnected;
-    property Done: TmnStreamClose read FState; {$ifdef FPC}deprecated;{$endif}
+//    property Done: TmnStreamClose read FState; {$ifdef FPC}deprecated;{$endif}
     property State: TmnStreamClose read FState;
 
     function Read(var Buffer; Count: longint): longint; override;

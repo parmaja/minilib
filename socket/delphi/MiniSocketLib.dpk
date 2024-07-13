@@ -43,6 +43,7 @@ contains
   mnIRCClients in '..\source\mnIRCClients.pas',
   mnZKTClients in '..\source\mnZKTClients.pas',
   mnWinSockets in '..\source\mnWinSockets.pas',
+  mnWebElements in '..\source\mnWebElements.pas',
   mnClients in '..\source\mnClients.pas';
 
 end.

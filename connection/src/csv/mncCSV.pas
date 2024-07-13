@@ -387,7 +387,7 @@ function TmncCSVCommand.ReadLine(out Line: string): Boolean;
 var
   t: RawByteString;
 begin
-  Result := (FCSVStream <> nil) and not (cloRead in FCSVStream.Done);
+  Result := (FCSVStream <> nil) and not (cloRead in FCSVStream.State);
   if Result then
   begin
     Line := '';

@@ -62,10 +62,10 @@ var
 begin
   Line := 1;
   try
-    while not (cloRead in Stream.Done) and not Completed do
+    while not (cloRead in Stream.State) and not Completed do
     begin
       Text := '';
-      if Stream.ReadLineUTF8(Text, False) then
+      if Stream.ReadUTF8Line(Text, False) then
         ParseLine(Text, Line);
       Line := Line + 1;
     end;

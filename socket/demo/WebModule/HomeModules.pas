@@ -183,7 +183,7 @@ begin
     with Body do
     begin
       //TJSFile.Create(This, [ftResource], 'mnWebElements.js');
-      TJSFile.Create(This, [], Module.AppPath + '../../source/mnWebElements.js');
+      TJSFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.js'));
 
       Header.Text := 'Creative Solutions';
       with TImage.Create(This) do
@@ -305,7 +305,7 @@ begin
   if Request.WebSocket then
   begin
     (Module as THomeModule).Schemas.Attach(DeleteSubPath('', Request.Path), Self, Respond.Stream); //Serve the websocket
-    Result.Status := Result.Status - [mrKeepAlive]; // Disconnect
+    //Result.Status := Result.Status - [mrKeepAlive]; // Disconnect
   end
   else
   begin

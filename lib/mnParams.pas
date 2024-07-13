@@ -503,7 +503,7 @@ var
 begin
   if Stream <> nil then
   begin
-    while not (cloRead in Stream.Done) do
+    while not (cloRead in Stream.State) do
     begin
       Stream.ReadUTF8Line(line);
       if line = '' then
