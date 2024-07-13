@@ -4,6 +4,7 @@ mnw.ws = null;
 mnw.interactive = false;
 mnw.attached = false;
 mnw.url = "";
+mnw.pool = [];
 
 mnw.raw_receive = function(msg)
 {

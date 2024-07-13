@@ -804,7 +804,8 @@ begin
           end
           else if Header.Opcode = wsoClose then
           begin
-            CloseFragment;
+            CloseTransmission;
+            break;
             //Close;
           end;
         end;
@@ -855,7 +856,7 @@ begin
     begin
       if Header.Finished then
       begin
-        CloseStream;
+        CloseFragment;
       end;
     end;
   end;

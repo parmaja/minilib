@@ -10,7 +10,7 @@ interface
 
 uses
   Classes, SysUtils, StrUtils,
-  mnUtils, mnStreams, mnModules, mnWebModules, mnMultipartData, mnServers,
+  mnUtils, mnStreams, mnModules, mnWebModules, mnMultipartData,
 	mnLogs, mnWebElements, mnBootstraps;
 
 type
@@ -182,8 +182,8 @@ begin
     Direction := dirLTR;
     with Body do
     begin
-      TJSFile.Create(This, [ftResource], 'mnWebElements.js');
-      //TFile.Create(This, [], Module.AppPath + '../../source/mnWebElements.js');
+      //TJSFile.Create(This, [ftResource], 'mnWebElements.js');
+      TJSFile.Create(This, [], Module.AppPath + '../../source/mnWebElements.js');
 
       Header.Text := 'Creative Solutions';
       with TImage.Create(This) do

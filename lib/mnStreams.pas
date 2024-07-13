@@ -98,7 +98,7 @@ type
     cloRead, //Mark is as EOF
     cloWrite, //Flush buffer
     cloFragment, //Mark is as end of fragment, Boundary Fragment or End of Part of Multipart
-    cloStream //End of stream, but not disconnect or close the file, we can have another stream on same connection
+    cloTransmission //End of stream, but not disconnect or close the file, we can have another stream on same connection
   );
 
   EmnStreamException = class(Exception);
@@ -119,7 +119,7 @@ type
     function CanWrite: Boolean; inline;
     procedure ResetClose;
     procedure SetCloseFragment;
-    procedure SetCloseStream;
+    procedure SetCloseTransmission;
   public
     //Count = 0 , load until eof, timeout not break the loop
     function ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
@@ -164,7 +164,7 @@ type
     procedure CloseRead; virtual; abstract;
     procedure CloseWrite; virtual; abstract;
     procedure CloseFragment; virtual;
-    procedure CloseStream; virtual;
+    procedure CloseTransmission; virtual;
     property Over: TmnStreamProxy read FOver;
   public
     //RealCount passed to Original Stream to retrive the real size of write or read, do not assign or modifiy it
@@ -230,7 +230,7 @@ type
     procedure CloseRead; override;
     procedure CloseWrite; override;
     procedure CloseFragment; override;
-    procedure CloseStream; override;
+    procedure CloseTransmission; override;
 
     procedure Flush; override;
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
@@ -608,10 +608,10 @@ begin
     Over.CloseFragment;
 end;
 
-procedure TmnStreamProxy.CloseStream;
+procedure TmnStreamProxy.CloseTransmission;
 begin
   if FOver <> nil then
-    Over.CloseFragment;
+    Over.CloseTransmission;
 end;
 
 procedure TmnStreamProxy.CloseReadAll;
@@ -892,17 +892,19 @@ end;
 
 function TmnCustomStream.CanRead: Boolean;
 begin
-  Result := not (cloFragment in State) and not (cloRead in State);
+  //Result := not (cloFragment in State) and not (cloRead in State);
+  Result := ([cloFragment, cloTransmission, cloRead] * State = []);
 end;
 
 function TmnCustomStream.CanWrite: Boolean;
 begin
-  Result := not (cloFragment in State) and not (cloWrite in State);
+  //Result := not (cloFragment in State) and not (cloWrite in State);
+  Result := ([cloFragment, cloTransmission, cloWrite] * State = []);
 end;
 
 procedure TmnCustomStream.ResetClose;
 begin
-  FState := FState - [cloFragment, cloStream];
+  FState := FState - [cloFragment, cloTransmission];
 end;
 
 procedure TmnCustomStream.SetCloseFragment;
@@ -910,9 +912,9 @@ begin
   FState := FState + [cloFragment];
 end;
 
-procedure TmnCustomStream.SetCloseStream;
+procedure TmnCustomStream.SetCloseTransmission;
 begin
-  FState := FState + [cloFragment, cloStream];
+  FState := FState + [cloFragment, cloTransmission];
 end;
 
 function TmnCustomStream.CopyFromStream(AStream: TStream; Count: TFileSize): TFileSize;
@@ -2101,9 +2103,9 @@ begin
   FStream.SetCloseFragment;
 end;
 
-procedure TmnInitialStreamProxy.CloseStream;
+procedure TmnInitialStreamProxy.CloseTransmission;
 begin
-  FStream.SetCloseStream;
+  FStream.SetCloseTransmission;
 end;
 
 procedure TmnInitialStreamProxy.CloseRead;

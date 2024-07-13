@@ -853,6 +853,7 @@ begin
 
         WSKey := HashWebSocketKey(WSHash);
         Respond.HttpResult := hrSwitchingProtocols;
+        //Respond.AddHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         Respond.AddHeader('Connection', 'Upgrade');
         Respond.AddHeader('upgrade', 'websocket');
         Respond.AddHeader('date: ', FormatHTTPDate(Now));

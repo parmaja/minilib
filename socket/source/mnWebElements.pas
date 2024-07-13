@@ -1089,7 +1089,7 @@ procedure TmnwAttachment.Loop;
 var
   s: string;
 begin
-  while not Terminated and Stream.Connected do
+  while not Terminated and Stream.Connected and not (cloTransmission in Stream.State) do
   begin
     if Stream.ReadUTF8String(s) then
     begin
