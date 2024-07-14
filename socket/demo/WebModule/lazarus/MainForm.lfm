@@ -22,16 +22,17 @@ object Main: TMain
   OnDestroy = FormDestroy
   OnHide = FormHide
   object Memo: TMemo
-    Left = 0
-    Height = 242
-    Top = 124
-    Width = 536
+    Left = 5
+    Height = 232
+    Top = 129
+    Width = 526
     Align = alClient
     Anchors = [akLeft, akBottom]
-    Font.CharSet = ARABIC_CHARSET
+    BorderSpacing.Around = 5
+    Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
-    Font.Height = -11
-    Font.Name = 'Courier New'
+    Font.Height = -13
+    Font.Name = 'DejaVu Sans Mono'
     Font.Pitch = fpFixed
     Font.Quality = fqDraft
     ParentFont = False

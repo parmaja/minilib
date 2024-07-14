@@ -148,9 +148,11 @@ type
   private
     FAppPath: string;
     FHomePath: string;
+    FTempPath: string;
     FSmartURL: Boolean;
     procedure SetAppPath(const AValue: string);
     procedure SetHomePath(AValue: string);
+    procedure SetTempPath(const AValue: string);
   protected
     procedure Created; override;
 
@@ -453,6 +455,12 @@ begin
   if FHomePath = AValue then
 	  exit;
   FHomePath := AValue;
+end;
+
+procedure TmodWebModule.SetTempPath(const AValue: string);
+begin
+  if FTempPath =AValue then Exit;
+  FTempPath :=AValue;
 end;
 
 procedure TmodWebModule.SetAppPath(const AValue: string);
@@ -865,7 +873,7 @@ begin
         Respond.KeepAlive := True;
         Request.ProtcolClass := TmnWebSocket13StreamProxy;
         Request.ProtcolProxy := Request.ProtcolClass.Create;
-        Request.WebSocket := True;
+        Request.ConnectionType := ctWebSocket;
         Result.Status := Result.Status + [mrKeepAlive];
         Request.Stream.AddProxy(Request.ProtcolProxy);
 
@@ -883,12 +891,16 @@ begin
     Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Use.KeepAliveTimeOut div 1000) + ', max=100');
   end;
 
-  if Request.WebSocket then
+  if Request.ConnectionType = ctWebSocket then
   begin
     Request.CompressProxy.Disable;
   end
   else
   begin
+    if Request.Header.Field['Content-type'].Have('multipart/form-data', [',']) then
+    begin
+      Request.ConnectionType := ctFormData;
+    end;
     {if not Respond.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
     begin
       if Request.CompressProxy <> nil then
@@ -915,7 +927,7 @@ var
   aParams: TmnParams;
 begin
   inherited;
-  if Request.WebSocket then
+  if Request.ConnectionType = ctWebSocket then
   begin
   end
   else

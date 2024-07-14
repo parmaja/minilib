@@ -85,6 +85,9 @@ type
   { THomeModule }
 
   THomeModule = class(TmodWebModule)
+  private
+    FTempPath: string;
+    procedure SetTempPath(const AValue: string);
   protected
     procedure DoRegisterCommands; override;
     procedure Start; override;
@@ -95,12 +98,13 @@ type
   public
     Schemas: THomeSchemas;
     destructor Destroy; override;
+    property TempPath: string read FTempPath write SetTempPath;
   end;
 
 implementation
 
 uses
-  mnMIME;
+  mnMIME, mnParams;
 
 type
 
@@ -299,24 +303,39 @@ end;
 
 procedure TbsHttpGetHomeCommand.RespondResult(var Result: TmodRespondResult);
 var
-  Renderer : TmnwBootstrapRenderer;
+  aContext: TmnwRespondContext;
 begin
+  Initialize(aContext);
   inherited;
-  if Request.WebSocket then
+  if Request.ConnectionType = ctWebSocket then
   begin
     (Module as THomeModule).Schemas.Attach(DeleteSubPath('', Request.Path), Self, Respond.Stream); //Serve the websocket
     //Result.Status := Result.Status - [mrKeepAlive]; // Disconnect
   end
   else
   begin
+    aContext.Route := DeleteSubPath('', Request.Path);
+    aContext.Sender := Self;
+    aContext.Stream := Respond.Stream;
+
+    if Request.ConnectionType = ctFormData then
+    begin
+      aContext.MultipartData := TmnMultipartData.Create;
+      aContext.MultipartData.Boundary := Request.Header.Field['Content-type'].SubValue('boundary');
+      aContext.MultipartData.TempPath := (Module as THomeModule).TempPath;
+      aContext.MultipartData.Read(Request.Stream);
+    end
+    else
+      aContext.MultipartData := nil;
     Respond.PutHeader('Content-Type', DocumentToContentType('html'));
     Respond.HttpResult := hrOK;
-    Renderer := TmnwBootstrapRenderer.Create;
+    aContext.Renderer := TmnwBootstrapRenderer.Create;
     try
-      Renderer.HomeUrl := (Module as THomeModule).HomeUrl;
-      (Module as THomeModule).Schemas.Respond(DeleteSubPath('', Request.Path), Self, Renderer, Respond.Stream);
+      aContext.Renderer.HomeUrl := (Module as THomeModule).HomeUrl;
+      (Module as THomeModule).Schemas.Respond(aContext);
     finally
-      Renderer.Free;
+      aContext.Renderer.Free;
+      aContext.MultipartData.Free;
     end;
   end;
 end;
@@ -331,6 +350,12 @@ begin
   else
     ARequest.Command := ARequest.Route[1];
   //ARequest.Path := DeleteSubPath(ARequest.Command, ARequest.Path);
+end;
+
+procedure THomeModule.SetTempPath(const AValue: string);
+begin
+  if FTempPath =AValue then Exit;
+  FTempPath :=AValue;
 end;
 
 procedure THomeModule.DoRegisterCommands;
@@ -397,7 +422,7 @@ procedure TWSEchoGetHomeCommand.RespondResult(var Result: TmodRespondResult);
 var
   s: string;
 begin
-  if Request.WebSocket then
+  if Request.ConnectionType = ctWebSocket then
   begin
     //Request.Path := DeleteSubPath(Name, Request.Path);
     while Respond.Stream.Connected do
@@ -434,6 +459,7 @@ begin
         Comment := 'Image from another module';
         Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
       end;
+
       Header.RenderIt := True;
       Footer.RenderIt := True;
 
@@ -464,6 +490,9 @@ begin
             end;
 
             TBreak.Create(This);
+
+            Submit.Caption := 'Sumbit';
+            Reset.Caption := 'Reset';
 
           end;
         end;

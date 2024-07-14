@@ -185,12 +185,18 @@ type
     function RespondCompress: Boolean;
   end;
 
+  TConnectionType = (
+	  ctNormal,
+		ctFormData,
+		ctWebSocket
+	);
+
   TmodRequest = class(TmodCommunicate)
   private
     FParams: TmnFields;
     FRoute: TmnRoute;
     FPath: String;
-    FWebSocket: Boolean;
+    FConnectionType: TConnectionType;
     FChunked: Boolean;
     FProtcolClass: TmnProtcolStreamProxyClass;
     FCompressProxy: TmnCompressStreamProxy;
@@ -245,7 +251,7 @@ type
     property Mode: TStreamMode read FMode;// write FMode;
     property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetCompressProxy;
 
-    property WebSocket: Boolean read FWebSocket write FWebSocket;
+    property ConnectionType: TConnectionType read FConnectionType write FConnectionType;
     //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy write FProtcolProxy;

@@ -119,6 +119,7 @@ type
   public
     function Have(AValue: String; vSeparators: TSysCharSet = [';']): Boolean;
     function CreateSubValues(vSeparators: TSysCharSet = [';']): TStringList;
+    function SubValue(const Key: string): string;
   end;
 
 procedure FieldsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
@@ -535,6 +536,11 @@ function TmnFieldHelper.CreateSubValues(vSeparators: TSysCharSet): TStringList;
 begin
   Result := TStringList.Create;
   StrToStrings(AsString, Result, vSeparators, [' ']);
+end;
+
+function TmnFieldHelper.SubValue(const Key: string): string;
+begin
+  GetSubValue(AsString, Key, Result);
 end;
 
 function TmnFieldHelper.Have(AValue: String; vSeparators: TSysCharSet): Boolean;
