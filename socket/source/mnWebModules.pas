@@ -14,6 +14,18 @@ unit mnWebModules;
 {$MODE delphi}
 {$ENDIF}
 
+{
+            Userinfo       Host      Port
+            ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
+GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top
+                     └──────┬──────┘    └───────┬───────┘└───────────┬─────────────┘ └┬─┘
+                       DomainName            Directory             Query             Fragment
+                                        └─┬──┘                       ┬
+                                        Module.AliasName           Params
+    └────────────────────────┬─────────────────────────┘
+                          HomeURL
+}
+
 {**
 -------------------
 GET http://localhost/index.html HTTP/1.1
@@ -146,13 +158,11 @@ type
 
   TmodWebModule = class abstract(TmodModule)
   private
-    FAppPath: string;
     FHomePath: string;
-    FTempPath: string;
+    FWorkPath: string;
+
     FSmartURL: Boolean;
-    procedure SetAppPath(const AValue: string);
     procedure SetHomePath(AValue: string);
-    procedure SetTempPath(const AValue: string);
   protected
     procedure Created; override;
 
@@ -161,13 +171,21 @@ type
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); override;
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
   public
-    HomeURL: string;
-    HostURL: string;
-    CachePath: string;
     destructor Destroy; override;
-    property AppPath: string read FAppPath write SetAppPath;
-    property HomePath: string read FHomePath write SetHomePath;
     property SmartURL: Boolean read FSmartURL write FSmartURL;
+  public
+    DomainName: string; //localhost
+    Host: string; //http://localhost:8080
+    Directory: string; //* extra directory after AliasName can be empty
+    AssetsURL: string; //optional, default is HomeURL
+
+    //Public Path
+    property HomePath: string read FHomePath write SetHomePath;
+    //Private Path
+    property WorkPath: string read FWorkPath write FWorkPath;
+
+    function GetHomeURL: string;
+    function GetAssetsURL: string;
   end;
 
   { TmodWebFileModule }
@@ -306,6 +324,7 @@ type
 var
   modLock: TCriticalSection = nil;
 
+function WebExpandFile(HomePath, Path: string; out Document: string): Boolean;
 function WebExpandToRoot(FileName: string; Root: string): string;
 function HashWebSocketKey(const key: string): string;
 
@@ -313,6 +332,29 @@ implementation
 
 uses
   mnMIME;
+
+function WebExpandFile(HomePath, Path: string; out Document: string): Boolean;
+begin
+  HomePath := ExcludePathDelimiter(HomePath);
+
+  if (Path = '') or StartsDelimiter(Path) or StartsStr('./', Path) or StartsStr('../', Path) then //* some file or folder names starts with . like '.well-known/acme-challenge/'
+    Document := HomePath + Path
+  else
+    Document := IncludePathDelimiter(HomePath) + Path;
+
+  HomePath := CorrectPath(HomePath);
+  Document := CorrectPath(Document);
+
+  HomePath := ExpandFile(HomePath);
+  Document := ExpandFile(Document);
+
+  if not StartsStr(HomePath, Document) then //check if out of root :)
+    Result := False
+  else if ((Path = '') and not FileExists(Document)) or (not EndsDelimiter(Document) and DirectoryExists(Document)) then
+    Result := False
+  else
+    Result := True;
+end;
 
 function WebExpandToRoot(FileName: string; Root: string): string;
 begin
@@ -457,18 +499,6 @@ begin
   FHomePath := AValue;
 end;
 
-procedure TmodWebModule.SetTempPath(const AValue: string);
-begin
-  if FTempPath =AValue then Exit;
-  FTempPath :=AValue;
-end;
-
-procedure TmodWebModule.SetAppPath(const AValue: string);
-begin
-  if FAppPath =AValue then Exit;
-  FAppPath :=AValue;
-end;
-
 procedure TmodWebModule.Created;
 begin
   inherited;
@@ -505,6 +535,18 @@ end;
 destructor TmodWebModule.Destroy;
 begin
   inherited Destroy;
+end;
+
+function TmodWebModule.GetHomeURL: string;
+begin
+  Result := IncludeURLDelimiter(IncludeURLDelimiter(Host) + AliasName) + Directory;
+end;
+
+function TmodWebModule.GetAssetsURL: string;
+begin
+  Result := AssetsURL;
+  if Result = '' then
+    Result := GetHomeURL;
 end;
 
 procedure TmodWebModule.Log(S: string);

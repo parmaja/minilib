@@ -187,18 +187,6 @@ type
 
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions = [alsLeft]; vChar: Char = ' '): string; overload;
 
-{
-  Useful to make your project path related (Portable)
-  FileName:
-          ./myfile
-          ../myfile
-          /myfile
-          \myfile
-  Path:
-  Root: is optional, added before Path
-}
-function ExpandToPath(FileName: string; Path: string; Root: string = ''): string;
-
 function StartsDelimiter(const vFileName: string): Boolean;
 function EndsDelimiter(const vFileName: string): Boolean;
 
@@ -229,6 +217,18 @@ function DescapeStringC(const S: string): string;
 function ToUnixPathDelimiter(const S: string): string;
 function CorrectPath(const Path: string): string;
 function ExpandFile(const Name: string): string;
+
+{
+  Useful to make your project path related (Portable)
+  FileName:
+          ./myfile
+          ../myfile
+          /myfile
+          \myfile
+  Path:
+  Root: is optional, added before Path
+}
+function ExpandToPath(FileName: string; Path: string; Root: string = ''): string;
 
 //TODO pascal
 //function EscapeStringPas(const S: string): string;

@@ -76,8 +76,9 @@ begin
   end;
   item := MIME.Find(Ext);
   if item = nil then
-    item := MIME.First;
-  Result := item.ContentType;
+    Result := ''
+  else
+    Result := item.ContentType;
 end;
 
 { TmnMIME }

@@ -139,6 +139,7 @@ type
   end;
 
   TmnwRespondContext = record
+    SessionID: string;
     Route: string;
     Sender: TObject;
     Schema: TmnwSchema;
@@ -153,9 +154,8 @@ type
   private
     FUsage: Integer;
   protected
-    function GetSource(url: string): string; inline;
   public
-    Source: string;
+    IsLocal: Boolean;
     procedure AddHead(AElement: TmnwElement; Context: TmnwRenderContext); virtual; abstract;
     procedure IncUsage;
     procedure DecUsage;
@@ -164,17 +164,25 @@ type
 
   TmnwLibraryClass = class of TmnwLibrary;
 
+  { TmnwLibraries }
+
   TmnwLibraries = class(TmnNamedObjectList<TmnwLibrary>)
   public
+    Local: Boolean; //* when find lib, find local first
     procedure Use(ALibrary: TmnwLibrary); overload;
     procedure Use(ALibraryName: string); overload;
-    procedure Use(ALibraryClass: TmnwLibraryClass); overload;
-    function Find(ALibrary: TmnwLibraryClass): TmnwLibrary; overload;
-    function ChangeSource(ALibraryClass: TmnwLibraryClass; NewSource: string): Boolean;
-    procedure RegisterLibrary(ALibraryName: string; ALibraryClass: TmnwLibraryClass);
+    function Find(ALibrary: string; OnlyLocal: Boolean = False): TmnwLibrary; overload;
+    procedure RegisterLibrary(ALibraryName: string; IsLocal: Boolean; ALibraryClass: TmnwLibraryClass);
   end;
 
   TJQuery_Library = class(TmnwLibrary)
+  public
+    procedure AddHead(AElement: TmnwElement; Context: TmnwRenderContext); override;
+  end;
+
+  { TJQuery_LocalLibrary }
+
+  TJQuery_LocalLibrary = class(TmnwLibrary)
   public
     procedure AddHead(AElement: TmnwElement; Context: TmnwRenderContext); override;
   end;
@@ -355,7 +363,6 @@ type
   TmnwAttachments = class(TmnObjectList<TmnwAttachment>)
   private
     FLock: TCriticalSection;
-    //FMessages: TmnwMessages;
   protected
     procedure Created; override;
   public
@@ -366,7 +373,6 @@ type
     procedure Add(AAttachment: TmnwAttachment);
     procedure Remove(AAttachment: TmnwAttachment);
     property Lock: TCriticalSection read FLock;
-//    property Messages: TmnwMessages read FMessages;
   end;
 
   TmnwSchamaCapability = (
@@ -392,8 +398,8 @@ type
     procedure GenRoute(Element: TmnwElement); inline;
     procedure DoRespond(AContext: TmnwRespondContext); override;
     procedure ProcessMessage(const s: string);
-    procedure ReceiveMessage; overload;
   public
+    SessionID: string;
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); override;
     destructor Destroy; override;
 
@@ -453,8 +459,8 @@ type
   { TmnwRenderer }
 
   TmnwRenderer = class(TmnwObject)
-  public
   private
+    FModule: TmodWebModule;
     FLibraries: TmnwLibraries;
     FParams: TmnwAttributes;
   protected
@@ -466,8 +472,7 @@ type
 
     class constructor RegisterObjects;
   public
-    HomeUrl: string;
-    constructor Create; virtual;
+    constructor Create(AModule: TmodWebModule; IsLocal: Boolean); virtual;
     destructor Destroy; override;
     class destructor Destroy;
 
@@ -481,6 +486,7 @@ type
 
     property Params: TmnwAttributes read FParams;
     property Libraries: TmnwLibraries read FLibraries;
+    property Module: TmodWebModule read FModule;
   end;
 
   { TmnwSchemaObject }
@@ -509,9 +515,9 @@ type
 
     procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
 
-		procedure GetElement(Route: string; out Schema: TmnwSchema; out Element: TmnwElement);
+		procedure GetElement(var Route: string; out Schema: TmnwSchema; out Element: TmnwElement);
 
-    function Respond(AContext: TmnwRespondContext): TmnwElement;
+    function Respond(var AContext: TmnwRespondContext): TmnwElement;
     //for websocket
     function Attach(Route: string; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
     property Lock: TCriticalSection read FLock;
@@ -802,7 +808,10 @@ type
       public
       end;
   protected
+    procedure DoRespond(AContext: TmnwRespondContext); override;
+    function GetContentType(Route: string): string; override;
   public
+    ServeFiles: Boolean;
   end;
 
   { TmnwHTMLRenderer }
@@ -1035,6 +1044,7 @@ type
   end;
 
 var
+  //*Should be by base class categoried
   ObjectClasses: TRegObjects = nil;
 
 {$ifdef rtti_objects}
@@ -1579,7 +1589,7 @@ begin
   inherited Add(SchemaObject);
 end;
 
-procedure TmnwSchemas.GetElement(Route: string; out Schema: TmnwSchema; out Element: TmnwElement);
+procedure TmnwSchemas.GetElement(var Route: string; out Schema: TmnwSchema; out Element: TmnwElement);
 var
   SchemaObject: TmnwSchemaObject;
   aElement: TmnwElement;
@@ -1596,7 +1606,7 @@ begin
     begin
       aSchemaName := Routes[0];
       Routes.Delete(0);
-      DeleteSubPath(aSchemaName, Route);
+      Route := DeleteSubPath(aSchemaName, Route);
       SchemaObject := Find(aSchemaName);
     end
     else
@@ -1637,10 +1647,13 @@ begin
         aRoute := Routes[i];
         aElement := aElement.FindByRoute(aRoute);
         if aElement = nil then
-          break
+        begin
+          //if elFallback in Element.Kind then
+          break;
+        end
         else
         begin
-          DeleteSubPath(aRoute, Route);
+          Route := DeleteSubPath(aRoute, Route);
           Element := aElement;
         end;
         inc(i);
@@ -1651,7 +1664,7 @@ begin
   end;
 end;
 
-function TmnwSchemas.Respond(AContext: TmnwRespondContext): TmnwElement;
+function TmnwSchemas.Respond(var AContext: TmnwRespondContext): TmnwElement;
 var
   aSchema: TmnwSchema;
   aResume: Boolean;
@@ -1735,10 +1748,47 @@ begin
   inherited Create;
 end;
 
+{ THTML }
+
+procedure THTML.DoRespond(AContext: TmnwRespondContext);
+var
+  fs: TFileStream;
+  aFileName: string;
+begin
+  inherited;
+  if ServeFiles then
+  begin
+    if AContext.Renderer.Module.HomePath <> '' then
+    begin
+      if WebExpandFile(AContext.Renderer.Module.HomePath, AContext.Route, aFileName) then
+      begin
+        if FileExists(aFileName) then
+        begin
+          fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
+          try
+            AContext.Stream.WriteStream(fs, 0);
+          finally
+            fs.Free;
+          end;
+        end;
+      end;
+    end;
+  end;
+end;
+
+function THTML.GetContentType(Route: string): string;
+begin
+  if Route = '' then
+    Result := inherited GetContentType(Route)
+  else
+    Result := DocumentToContentType(Route);
+end;
+
 procedure TmnwHTMLRenderer.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary('JQuery', TJQuery_Library);
+  Libraries.RegisterLibrary('JQuery', False, TJQuery_Library);
+  Libraries.RegisterLibrary('JQuery', False, TJQuery_LocalLibrary);
 end;
 
 procedure TmnwHTMLRenderer.AddHead(AElement: TmnwElement; Context: TmnwRenderContext);
@@ -1876,7 +1926,7 @@ var
   e: THTML.TContainer;
 begin
   e := Scope.Element as THTML.TContainer;
-  Context.Output.WriteLn('html', '<main class="container">', [woOpenTag]);
+  Context.Output.WriteLn('html', '<main class="container" '+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   inherited;
   Context.Output.WriteLn('html', '</main>', [woCloseTag]);
 end;
@@ -2027,7 +2077,7 @@ end;
 procedure TmnwHTMLRenderer.TMemoryImage.DoCollectAttributes(Scope: TmnwScope);
 begin
   inherited;
-  Scope.Attributes['src'] := IncludeURLDelimiter(TmnwHTMLRenderer(Renderer).HomeUrl) + Scope.Element.GetPath;
+  Scope.Attributes['src'] := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + Scope.Element.GetPath;
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
 end;
 
@@ -2114,33 +2164,6 @@ begin
       Json.Free;
     end;
   end
-end;
-
-procedure TmnwSchema.ReceiveMessage;
-{var
-  s: string;}
-begin
-{  while true do
-  begin
-    Schema.Attachments.Lock.Enter;
-    try
-      if Schema.Attachments.Messages.First <> nil then
-      begin
-        s := Schema.Attachments.Messages.First.Content;
-        Schema.Attachments.Messages.Delete(0);
-      end
-      else
-        s := '';
-    finally
-      Schema.Attachments.Lock.Leave;
-    end;
-    if s = '' then
-      break
-    else
-    begin
-      ProcessMessage(s);
-    end;
-  end;}
 end;
 
 procedure CollectExtensions(rttiContext: TRttiContext; ElementClass: TClass; List: TClassList);
@@ -2537,8 +2560,8 @@ begin
     if Result <> nil then
       break;
   end;
-  if (Result = nil) and (Route <> '') and (elFallback in Kind) then
-    Result := Self;
+  {if (Result = nil) and (Route <> '') then
+    Result := Self;}
 end;
 
 procedure TmnwElement.DoCompose;
@@ -2802,12 +2825,14 @@ begin
   DoBeginRender;
 end;
 
-constructor TmnwRenderer.Create;
+constructor TmnwRenderer.Create(AModule: TmodWebModule; IsLocal: Boolean);
 {var
   o: TmnwRenderer.TRegObject;}
 begin
   FLibraries := TmnwLibraries.Create;
-  inherited;
+  FLibraries.Local := IsLocal;
+  inherited Create;
+  FModule := AModule;
   FParams := TmnwAttributes.Create;
   //ObjectClasses := TRegObjects.Create();
 {  for o in ObjectClasses do
@@ -2906,14 +2931,16 @@ begin
   inherited;
   if HomePath <> '' then
   begin
-    aFileName := IncludePathDelimiter(HomePath) + Route;
-    if FileExists(aFileName) then
+    if WebExpandFile(HomePath, AContext.Route, aFileName) then
     begin
-      fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
-      try
-        AContext.Stream.WriteStream(fs, 0);
-      finally
-        fs.Free;
+      if FileExists(aFileName) then
+      begin
+        fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
+        try
+          AContext.Stream.WriteStream(fs, 0);
+        finally
+          fs.Free;
+        end;
       end;
     end;
   end;
@@ -2962,22 +2989,11 @@ procedure THTML.TContentCompose.InnerCompose(Inner: TmnwElement);
 begin
 end;
 
-{ THTML.TContentCompose.TInnerComposer }
-
-
 { TmnwLibrary }
 
 procedure TmnwLibrary.DecUsage;
 begin
   FUsage := FUsage - 1;
-end;
-
-function TmnwLibrary.GetSource(url: string): string;
-begin
-  if Source <> '' then
-    Result := IncludeURLDelimiter(Source)
-  else
-    Result := IncludeURLDelimiter(url);
 end;
 
 procedure TmnwLibrary.IncUsage;
@@ -2987,35 +3003,26 @@ end;
 
 { TmnwLibraries }
 
-function TmnwLibraries.ChangeSource(ALibraryClass: TmnwLibraryClass; NewSource: string): Boolean;
-var
-  ALibrary: TmnwLibrary;
-begin
-  ALibrary := Find(ALibraryClass);
-  Result := ALibrary <> nil;
-  if Result then
-    ALibrary.Source := NewSource;
-end;
-
-function TmnwLibraries.Find(ALibrary: TmnwLibraryClass): TmnwLibrary;
+function TmnwLibraries.Find(ALibrary: string; OnlyLocal: Boolean): TmnwLibrary;
 var
   i: Integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
-    if Items[i].ClassType = ALibrary then
+    if (SameText(Items[i].Name, ALibrary)) and (not OnlyLocal or Items[i].IsLocal)  then
     begin
       Result := Items[i];
       break;
     end;
 end;
 
-procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; ALibraryClass: TmnwLibraryClass);
+procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; IsLocal: Boolean; ALibraryClass: TmnwLibraryClass);
 var
   ALibrary: TmnwLibrary;
 begin
   ALibrary := ALibraryClass.Create;
   ALibrary.Name := ALibraryName;
+  ALibrary.IsLocal := IsLocal;
   Add(ALibrary);
 end;
 
@@ -3027,22 +3034,13 @@ begin
     raise Exception.Create('library is nil');
 end;
 
-procedure TmnwLibraries.Use(ALibraryClass: TmnwLibraryClass);
-var
-  ALibrary: TmnwLibrary;
-begin
-  ALibrary := Find(ALibraryClass);
-  if ALibrary <> nil then
-    Use(ALibrary)
-  else
-    raise Exception.Create('There is no library: ' + ALibraryClass.ClassName);
-end;
-
 procedure TmnwLibraries.Use(ALibraryName: string);
 var
   ALibrary: TmnwLibrary;
 begin
-  ALibrary := Find(ALibraryName);
+  ALibrary := Find(ALibraryName, Local);
+  if (ALibrary = nil) and Local then
+    ALibrary := Find(ALibraryName, False);
   if ALibrary <> nil then
     Use(ALibrary)
   else
@@ -3053,7 +3051,14 @@ end;
 
 procedure TJQuery_Library.AddHead(AElement: TmnwElement; Context: TmnwRenderContext);
 begin
-  Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/') + 'jquery.min.js" crossorigin="anonymous"></script>');
+  Context.Output.WriteLn('html', '<script src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"></script>');
+end;
+
+{ TJQuery_LocalLibrary }
+
+procedure TJQuery_LocalLibrary.AddHead(AElement: TmnwElement; Context: TmnwRenderContext);
+begin
+  Context.Output.WriteLn('html', '<script src="' + IncludeURLDelimiter(Context.Renderer.Module.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"></script>');
 end;
 
 { THTML }
@@ -3107,7 +3112,7 @@ end;
 
 destructor THTML.TBody.Destroy;
 begin
-{  FreeAndNil(FHeader);
+{  FreeAndNil(FHeader); Nope
   FreeAndNil(FFooter);
   FreeAndNil(FContainer);}
   inherited;
@@ -3268,7 +3273,7 @@ var
   URL: string;
 begin
   inherited;
-  URL := IncludeURLDelimiter(TmnwHTMLRenderer(Renderer).HomeUrl) + Scope.Element.GetPath;
+  URL := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + Scope.Element.GetPath;
   Scope.Attributes['data-mnw-refresh-url'] := URL;
 end;
 
@@ -3289,7 +3294,7 @@ begin
   end
   else
   begin
-    src := IncludeURLDelimiter(TmnwHTMLRenderer(Renderer).HomeUrl) + Scope.Element.GetPath;
+    src := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + Scope.Element.GetPath;
     Context.Output.WriteLn('html', '<script type="text/javascript" src='+ DQ(src) +' ></script>', [woOpenTag, woCloseTag]);
     inherited;
   end;

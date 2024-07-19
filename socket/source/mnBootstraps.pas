@@ -31,6 +31,13 @@ type
     procedure AddHead(AElement: TmnwElement; Context: TmnwRenderContext); override;
   end;
 
+  { TBootstrap_LocalLibrary }
+
+  TBootstrap_LocalLibrary = class(TmnwLibrary)
+  public
+    procedure AddHead(AElement: TmnwElement; Context: TmnwRenderContext); override;
+  end;
+
   { TmnwBootstrap }
 
   TmnwBootstrapHTML = class(THTML)
@@ -117,7 +124,8 @@ end;
 procedure TmnwBootstrapRenderer.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary('Bootstrap', TBootstrap_Library);
+  Libraries.RegisterLibrary('Bootstrap', False, TBootstrap_Library);
+  Libraries.RegisterLibrary('Bootstrap', True, TBootstrap_LocalLibrary);
   Libraries.Use('Bootstrap');
 end;
 
@@ -143,10 +151,16 @@ end;
 
 procedure TBootstrap_Library.AddHead(AElement: TmnwElement; Context: TmnwRenderContext);
 begin
-//  Context.Output.WriteLn('html', '<link href="' +GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/') + 'bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
-//  Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/')+'bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
-  Context.Output.WriteLn('html', '<link href="' +GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/') + 'bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">');
-  Context.Output.WriteLn('html', '<script src="' + GetSource('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/')+'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
+  Context.Output.WriteLn('html', '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
+  Context.Output.WriteLn('html', '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
+end;
+
+{ TBootstrap_LocalLibrary }
+
+procedure TBootstrap_LocalLibrary.AddHead(AElement: TmnwElement; Context: TmnwRenderContext);
+begin
+  Context.Output.WriteLn('html', '<link href="' + IncludeURLDelimiter(Context.Renderer.Module.GetAssetsURL) + 'bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">');
+  Context.Output.WriteLn('html', '<script src="' + IncludeURLDelimiter(Context.Renderer.Module.GetAssetsURL) + 'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
 end;
 
 { TmnwBootstrapRenderer.TColumn }

@@ -20,7 +20,7 @@ uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
   mnLogs, mnUtils, rtti,
   StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSL, mnBootstraps,
-  HomeModules,
+  HomeModules, mnModules,
   LResources, Buttons, Menus;
 
 type
@@ -154,28 +154,6 @@ begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
 
-  aHomePath := HomePathEdit.Text;
-  if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
-    aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
-
-  aHomeModule := HttpServer.Modules.Find<THomeModule>;
-  if aHomeModule <> nil then
-  begin
-    aHomeModule.AliasName := 'home';
-    aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
-    aHomeModule.HomePath := aHomePath;
-    aHomeModule.HostURL := 'http://localhost:' + PortEdit.Text;
-    aHomeModule.HomeUrl := aHomeModule.HostURL + '/' + aHomeModule.AliasName;
-    aHomeModule.CachePath := ExtractFilePath(Application.ExeName) + 'cache';
-  end;
-
-  aDocModule := HttpServer.Modules.Find<TmodWebModule>;
-  if aDocModule <> nil then
-  begin
-    aDocModule.AliasName := AliasNameEdit.Text;
-    aDocModule.HomePath := aHomePath;
-  end;
-
   HttpServer.Port := PortEdit.Text;
   if UseSSLChk.Checked then
   begin
@@ -187,6 +165,33 @@ begin
     HttpServer.PrivateKeyFile := PrivateKeyFile;
   end;
   //Server.Address := '127.0.0.1';
+
+  aHomePath := HomePathEdit.Text;
+  if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
+    aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
+
+  aHomeModule := HttpServer.Modules.Find<THomeModule>;
+  if aHomeModule <> nil then
+  begin
+    aHomeModule.AliasName := 'home';
+    aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
+
+    aHomeModule.DomainName := 'localhost';
+    aHomeModule.Host := ComposeHostURL(HttpServer.UseSSL, aHomeModule.DomainName, HttpServer.Port);
+    aHomeModule.AssetsURL := aHomeModule.Host + '/' + aHomeModule.AliasName + '/assets/';
+    aHomeModule.HomePath := aHomePath;
+    aHomeModule.WorkPath := aHomeModule.AppPath;
+    ForceDirectories(aHomeModule.WorkPath + 'cache');
+    ForceDirectories(aHomeModule.WorkPath + 'temp');
+  end;
+
+  aDocModule := HttpServer.Modules.Find<TmodWebModule>;
+  if aDocModule <> nil then
+  begin
+    aDocModule.AliasName := AliasNameEdit.Text;
+    aDocModule.HomePath := aHomePath;
+  end;
+
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;

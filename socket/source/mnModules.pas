@@ -20,8 +20,8 @@
   GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top HTTP/1.1
   └┬┘    └─┬─┘   └───────────┬───────────┘└───────┬───────┘└───────────┬─────────────┘ └┬─┘ └─────┬┘
   method scheme          authority               path                query             fragment   protocol
-  └┬┘                                     └──┬──┘
-  Command                                  Module                     Params
+  └┬┘                                     └─┬─┘ └─┬─┘
+  Command                                Module  Alias              Params
 
   https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 
@@ -677,6 +677,8 @@ function FormatHTTPDate(vDate: TDateTime): string;
 function ExtractDomain(const URI: string): string;
 function DeleteSubPath(const SubKey, Path: string): string;
 
+function ComposeHostURL(UseSSL: Boolean; DomainName: string; Port: string = ''): string;
+
 const
   ProtocolVersion = 'HTTP/1.1'; //* Capital letter
   sUserAgent = 'miniWebModule/1.1';
@@ -685,6 +687,25 @@ implementation
 
 uses
   mnUtils;
+
+function ComposeHostURL(UseSSL: Boolean; DomainName: string; Port: string): string;
+begin
+  if UseSSL then
+  begin
+    Result := 'https://';
+    if Port = '443' then
+      Port := '';
+  end
+  else
+  begin
+    Result := 'http://';
+    if Port = '80' then
+      Port := '';
+  end;
+  Result := Result + DomainName;
+  if Port <> '' then
+    Result := Result + ':' + Port;
+end;
 
 function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
 var
@@ -733,7 +754,7 @@ begin
   StrToStringsCallback(Query, mnParams, @FieldsCallBack, ['&'], [' ']);
 end;
 
-function ParseAddress(const Request: String; out URIPath: string; out URIQuery: string): Boolean;
+function ParseAddress(const Request: string; out URIPath: string; out URIQuery: string): Boolean;
 var
   I, J: Integer;
 begin
@@ -770,7 +791,7 @@ begin
   end;
 end;
 
-function ParseAddress(const Request: String; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean;
+function ParseAddress(const Request: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean;
 begin
   Result := ParseAddress(Request, URIPath, URIParams);
   if Result then
@@ -779,7 +800,7 @@ begin
       StrToStringsCallback(URIParams, URIQuery, @FieldsCallBack, ['&'], [' ']);
 end;
 
-procedure ParsePath(const aRequest: String; out Name: String; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
+procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
 begin
   ParseAddress(aRequest, URIPath, URIParams, URIQuery);
   Name := SubStr(URIPath, URLPathDelim, 0);

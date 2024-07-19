@@ -1,3 +1,5 @@
+"use-strict";
+
 let mnw = {};
 
 mnw.ws = null;

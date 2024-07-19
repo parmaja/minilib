@@ -9,7 +9,7 @@ unit HomeModules;
 interface
 
 uses
-  Classes, SysUtils, StrUtils,
+  Classes, SysUtils, StrUtils, DateUtils,
   mnUtils, mnStreams, mnModules, mnWebModules, mnMultipartData,
 	mnLogs, mnWebElements, mnBootstraps;
 
@@ -86,8 +86,6 @@ type
 
   THomeModule = class(TmodWebModule)
   private
-    FTempPath: string;
-    procedure SetTempPath(const AValue: string);
   protected
     procedure DoRegisterCommands; override;
     procedure Start; override;
@@ -96,9 +94,9 @@ type
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
 
   public
+    AppPath: string;
     Schemas: THomeSchemas;
     destructor Destroy; override;
-    property TempPath: string read FTempPath write SetTempPath;
   end;
 
 implementation
@@ -153,7 +151,6 @@ begin
     Schema.Attachments.SendMessage('{"type": "text", "element": "input1", "value": "my new value"}');
 end;
 
-
 { TClockComposer }
 
 procedure TClockCompose.InnerCompose(Inner: TmnwElement);
@@ -194,7 +191,7 @@ begin
       begin
         Name := 'image_logo';
         Comment := 'Image from another module';
-        Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
+        Source := IncludeURLDelimiter(Module.Host)+'doc/logo.png';
       end;
 
       Header.RenderIt := True;
@@ -280,7 +277,7 @@ begin
               {with TImage.Create(Inner) do
               begin
                 Name := 'file_logo';
-      //          Route := 'logo';
+      //          Route := 'logo'; 
                 Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
               end;}
             end;
@@ -304,6 +301,8 @@ end;
 procedure TbsHttpGetHomeCommand.RespondResult(var Result: TmodRespondResult);
 var
   aContext: TmnwRespondContext;
+  aDate: TDateTime;
+  aPath: string;
 begin
   Initialize(aContext);
   inherited;
@@ -318,21 +317,25 @@ begin
     aContext.Sender := Self;
     aContext.Stream := Respond.Stream;
 
+    aContext.SessionID := Request.Cookies.Values['session'];
     if Request.ConnectionType = ctFormData then
     begin
       aContext.MultipartData := TmnMultipartData.Create;
       aContext.MultipartData.Boundary := Request.Header.Field['Content-type'].SubValue('boundary');
-      aContext.MultipartData.TempPath := (Module as THomeModule).TempPath;
+      aContext.MultipartData.TempPath := (Module as THomeModule).WorkPath + 'temp';
       aContext.MultipartData.Read(Request.Stream);
     end
     else
       aContext.MultipartData := nil;
     Respond.PutHeader('Content-Type', DocumentToContentType('html'));
     Respond.HttpResult := hrOK;
-    aContext.Renderer := TmnwBootstrapRenderer.Create;
+    aContext.Renderer := TmnwBootstrapRenderer.Create(Module as TmodWebModule, True);
     try
-      aContext.Renderer.HomeUrl := (Module as THomeModule).HomeUrl;
       (Module as THomeModule).Schemas.Respond(aContext);
+      aDate := IncSecond(Now, 30 * SecsPerMin);
+      aPath := '';
+      Respond.SetCookie('home', 'session', Format('%s; Expires=%s; SameSite=None; Domain=%s; Path=/%s; Secure', ['session', FormatHTTPDate(aDate), (Module as THomeModule).DomainName, aPath]))
+      //SessionID
     finally
       aContext.Renderer.Free;
       aContext.MultipartData.Free;
@@ -350,12 +353,6 @@ begin
   else
     ARequest.Command := ARequest.Route[1];
   //ARequest.Path := DeleteSubPath(ARequest.Command, ARequest.Path);
-end;
-
-procedure THomeModule.SetTempPath(const AValue: string);
-begin
-  if FTempPath =AValue then Exit;
-  FTempPath :=AValue;
 end;
 
 procedure THomeModule.DoRegisterCommands;
@@ -394,25 +391,21 @@ begin
   inherited;
   Name := 'Assets';
   Route := 'assets';
-  with TAssets.Create(This) do
-  begin
-    HomePath := Module.HomePath;
-    Kind := Kind + [elFallback];
-    //Name := 'document';
-//    Route := '';
-    with TFile.Create(This) do
-    begin
-      Name := 'jquery';
-      Route := 'jquery';
-      FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
-    end;
+  ServeFiles := True;
+  Kind := Kind + [elFallback];
 
-    with TFile.Create(This) do
-    begin
-      Name := 'logo';
-      Route := 'logo';
-      FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
-    end;
+  with TFile.Create(This) do
+  begin
+    Name := 'jquery';
+    Route := 'jquery';
+    FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
+  end;
+
+  with TFile.Create(This) do
+  begin
+    Name := 'logo';
+    Route := 'logo';
+    FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
   end;
 end;
 
@@ -457,7 +450,7 @@ begin
       with TImage.Create(This) do
       begin
         Comment := 'Image from another module';
-        Source := IncludeURLDelimiter(Module.HostURL)+'doc/logo.png';
+        Source := IncludeURLDelimiter(Module.Host)+'doc/logo.png';
       end;
 
       Header.RenderIt := True;

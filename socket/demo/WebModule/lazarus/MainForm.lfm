@@ -7,7 +7,6 @@ object Main: TMain
   VertScrollBar.Page = 207
   AlphaBlend = True
   BorderIcons = [biSystemMenu, biMinimize]
-  BorderStyle = bsSingle
   Caption = 'Module Web Server'
   ClientHeight = 366
   ClientWidth = 536
