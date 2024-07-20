@@ -127,11 +127,11 @@ end;
 
 class constructor TmnwBootstrapRenderer.RegisterObjects;
 begin
-  RegisterRenderer(THTML.TDocument, TDocument, True);
-  RegisterRenderer(THTML.TContainer, TContainer, True);
-  RegisterRenderer(THTML.TRow, TRow, True);
-  RegisterRenderer(THTML.TColumn, TColumn, True);
-  RegisterRenderer(THTML.TCard, TCard, True);
+  RegisterRenderer(THTML.TDocument, TDocument, Replace);
+  RegisterRenderer(THTML.TContainer, TContainer, Replace);
+  RegisterRenderer(THTML.TRow, TRow, Replace);
+  RegisterRenderer(THTML.TColumn, TColumn, Replace);
+  RegisterRenderer(THTML.TCard, TCard, Replace);
 end;
 
 { TmnwBootstrapRenderer.TBSInputHTML }

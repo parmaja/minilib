@@ -2,6 +2,8 @@
 {$IFDEF FPC}
 {$mode delphi}
 {$modeswitch prefixedattributes}
+{$modeswitch arrayoperators}
+{$modeswitch arraytodynarray}
 {$modeswitch functionreferences}{$modeswitch anonymousfunctions}
 {$ENDIF}
 {$H+}{$M+}
@@ -431,11 +433,14 @@ type
 
   TmnwSchemaClass = class of TmnwSchema;
 
+  TmnwRendererRegister = class;
+
   { TmnwElementRenderer }
 
   TmnwElementRenderer = class(TObject)
   private
     FRenderer: TmnwRenderer;
+    FRendererRegister: TmnwRendererRegister;
   protected
     procedure DoCollectAttributes(Scope: TmnwScope); virtual;
     //* This called once from the TmnwRenderer
@@ -459,9 +464,10 @@ type
     procedure DoAfterRender(Scope: TmnwScope; const Context: TmnwRenderContext); virtual;
 
     property Renderer: TmnwRenderer read FRenderer;
+    property RendererRegister: TmnwRendererRegister read FRendererRegister;
   public
     procedure Render(AElement: TmnwElement; Context: TmnwRenderContext; var ARespondResult: TmnwRespondResult);
-    constructor Create(ARenderer: TmnwRenderer); virtual; //useful for creating it by RendererClass.Create
+    constructor Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwRendererRegister); virtual; //useful for creating it by RendererClass.Create
     procedure CollectAttributes(Scope: TmnwScope);
   end;
 
@@ -483,6 +489,8 @@ type
 
     class constructor RegisterObjects;
   public
+    type
+      TmnwRegisterHow = (None, Replace, Extend);
     constructor Create(AModule: TmodWebModule; IsLocal: Boolean); virtual;
     destructor Destroy; override;
     class destructor Destroy;
@@ -490,9 +498,8 @@ type
     procedure BeginRender;
     procedure EndRender;
 
-    class procedure RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = True);
-    function FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
-    function CreateRenderer(AObjectClass: TmnwElementClass): TmnwElementRenderer; overload;
+    class procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwRegisterHow = None);
+    function CreateRenderer(AElementClass: TmnwElementClass): TmnwElementRenderer; overload;
     function CreateRenderer(AObject: TmnwElement): TmnwElementRenderer; overload;
 
     property Params: TmnwAttributes read FParams;
@@ -650,9 +657,9 @@ type
 
       TBody = class(TContent)
       private
+        function GetHeader: THeader;
         function GetContainer: TContainer;
         function GetFooter: TFooter;
-        function GetHeader: THeader;
       protected
         FHeader: THeader;
         FFooter: TFooter;
@@ -661,8 +668,8 @@ type
         procedure Created; override;
       public
         property Header: THeader read GetHeader;
-        property Footer: TFooter read GetFooter;
         property Container: TContainer read GetContainer;
+        property Footer: TFooter read GetFooter;
         destructor Destroy; override;
       end;
 
@@ -1001,6 +1008,30 @@ type
   public
   end;
 
+  { TmnwRendererRegister }
+
+  TmnwRendererRegister = class(TObject)
+  public
+    ElementClass: TmnwElementClass;
+    RendererClass: TmnwElementRendererClass;
+    Renderers: array of TmnwElementRendererClass;
+    Extensions: TClassList;
+    Level: Integer;
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+  { TmnwElementRenderers }
+
+  TmnwElementRenderers = class(TmnObjectList<TmnwRendererRegister>)
+  protected
+    function Compare(Item1, Item2: TmnwRendererRegister): Integer; override;
+  public
+    Sorted: Boolean;
+    procedure QuickSort; override;
+    function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
+  end;
+
   TmnwWebModule = class;
 
   { TmnwHttpGetHomeCommand }
@@ -1044,7 +1075,7 @@ type
     ObjectClass: TClass;
   end;
 
-  { TRegObjects }
+  { TmnwRendererRegisters }
 
   TCacheClassObjects = class(TmnObjectList<TCacheClassObject>)
   public
@@ -1092,30 +1123,9 @@ begin
     Result := '';
 end;
 
-type
-  TRegObject = class(TObject)
-  public
-    ObjectClass: TmnwElementClass;
-    RendererClass: TmnwElementRendererClass;
-    Level: Integer;
-  end;
-
-  { TRegObjects }
-
-  TRegObjects = class(TmnObjectList<TRegObject>)
-  protected
-    function Compare(Item1, Item2: TRegObject): Integer; override;
-  public
-    Sorted: Boolean;
-    procedure QuickSort; override;
-    function FindDerived(AObjectClass: TmnwElementClass): TmnwElementClass;
-    function Find(AObjectClass: TmnwElementClass; Nearst: Boolean = False): TRegObject;
-    function FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
-  end;
-
 var
   //*Should be by base class categoried
-  ObjectClasses: TRegObjects = nil;
+  ElementRenderers: TmnwElementRenderers = nil;
 
 {$ifdef rtti_objects}
 procedure CacheClasses;
@@ -1146,6 +1156,45 @@ begin
   end;
 end;
 {$endif}
+
+procedure rttiCollectExtensions(rttiContext: TRttiContext; ElementClass: TClass; List: TClassList); overload;
+var
+  rttiType: TRttiType;
+  attribute: TCustomAttribute;
+begin
+  rttiType := rttiContext.GetType(ElementClass);
+  for attribute in rttiType.GetAttributes do
+    if List.IndexOf(attribute.ClassType)<0 then
+      List.Add(attribute.ClassType);
+  if ElementClass.ClassParent <> nil then
+    rttiCollectExtensions(rttiContext, ElementClass.ClassParent, List);
+end;
+
+procedure rttiCollectExtensions(ElementClass: TmnwElementClass; ToList: TClassList); overload;
+var
+  rttiContext: TRttiContext;
+  attribute: TCustomAttributeClass;
+  list: TClassList;
+begin
+//  log.Write(Element.ClassName);
+  if ElementClass = nil then
+    raise Exception.Create('Element is nil');
+  if ElementClass <> nil then
+  begin
+    list := TClassList.Create;
+    rttiContext := TRttiContext.Create;
+    try
+      rttiCollectExtensions(rttiContext, ElementClass, list);
+      for attribute in list do
+        if attribute.InheritsFrom(TElementExtension) then
+          ToList.Add(attribute);
+    finally
+      rttiContext.Free;
+      list.Free;
+    end;
+  end;
+end;
+
 
 { TmnwOutput }
 
@@ -1483,7 +1532,6 @@ begin
     if Context.ParentRenderer <> nil then
       Context.ParentRenderer.DoEnterChildRender(aScope, Context);
 
-    Context.ParentRenderer := Self;
     DoEnterInnerRender(aScope, Context);
     DoInnerRender(aScope, Context, ARespondResult);
     DoAfterRender(aScope, Context);
@@ -1496,10 +1544,11 @@ begin
   end;
 end;
 
-constructor TmnwElementRenderer.Create(ARenderer: TmnwRenderer);
+constructor TmnwElementRenderer.Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwRendererRegister);
 begin
   inherited Create;
   FRenderer := ARenderer;
+  FRendererRegister:= ARendererRegister;
 end;
 
 procedure TmnwElementRenderer.CollectAttributes(Scope: TmnwScope);
@@ -1558,74 +1607,51 @@ begin
     Result := nil;
 end;
 
-{ TmnwSchema.TRegObjects }
+{ TmnwSchema.TmnwElementRenderers }
 
-function TRegObjects.FindDerived(AObjectClass: TmnwElementClass): TmnwElementClass;
-var
-  o: TRegObject;
+function TmnwElementRenderers.Compare(Item1, Item2: TmnwRendererRegister): Integer;
 begin
-  Result := nil;
-  for o in Self do
-  begin
-    if o.ObjectClass.ClassParent = AObjectClass then
-    begin
-      Result := o.ObjectClass;
-      break;
-    end;
-  end;
-end;
-
-function TRegObjects.Compare(Item1, Item2: TRegObject): Integer;
-{var
-  s1, s2: string;}
-begin
-  {s1 := Item1.ObjectClass.ClassName;
-  s2 := Item2.ObjectClass.ClassName;
-  if (s1 = 'THTML.TContentCompose') and (s2 = 'THTML.TIntervalCompose') then
-    nothing;
-  if (s2 = 'THTML.TContentCompose') and (s1 = 'THTML.TIntervalCompose') then
-    nothing;}
-
   Result := Item2.Level - Item1.Level;
 end;
 
-procedure TRegObjects.QuickSort;
+procedure TmnwElementRenderers.QuickSort;
 begin
   inherited;
   Sorted := True;
 end;
 
-function TRegObjects.Find(AObjectClass: TmnwElementClass; Nearst: Boolean): TRegObject;
+function TmnwElementRenderers.Find(AElementClass: TmnwElementClass; Nearst: Boolean): TmnwRendererRegister;
 var
-  o: TRegObject;
+  o: TmnwRendererRegister;
   i: Integer;
 begin
   Result := nil;
-  for i:= Count - 1  downto 0 do
+  for i:= 0 to Count - 1 do
   begin
     o := Items[i];
-    if AObjectClass = o.ObjectClass then
+    if AElementClass = o.ElementClass then
     begin
       Result := o;
       break;
     end
-    else if Nearst and AObjectClass.InheritsFrom(o.ObjectClass) then
+    else if Nearst and AElementClass.InheritsFrom(o.ElementClass) then
     begin
       Result := o;
+      break; //* because it sorted down
     end;
   end;
 end;
 
-function TRegObjects.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
+{function TmnwElementRenderers.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
 var
-  o: TRegObject;
+  o: TmnwRendererRegister;
 begin
   o := Find(AObjectClass, True);
   if o <> nil then
     Result := o.RendererClass
   else
     Result := TmnwElementRenderer;
-end;
+end;}
 
 { TmnwSchemaObject }
 
@@ -2022,14 +2048,12 @@ end;
 
 procedure TmnwHTMLRenderer.TForm.DoEnterChildRender(Scope: TmnwScope; const Context: TmnwRenderContext);
 begin
-  Context.Output.WriteLn('html', '<div>', [woOpenTag]);
   Scope.Attributes.SetSubValue('class', 'form-control');
   inherited;
 end;
 
 procedure TmnwHTMLRenderer.TForm.DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwRenderContext);
 begin
-  Context.Output.WriteLn('html', '</div>', [woCloseTag]);
   inherited;
 end;
 
@@ -2171,6 +2195,20 @@ begin
   inherited;
 end;
 
+{ TmnwRendererRegister }
+
+constructor TmnwRendererRegister.Create;
+begin
+  inherited Create;
+  Extensions := TClassList.Create;
+end;
+
+destructor TmnwRendererRegister.Destroy;
+begin
+  FreeAndNil(Extensions);
+  inherited;
+end;
+
 { TmnwSchema }
 
 constructor TmnwSchema.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
@@ -2247,19 +2285,6 @@ begin
   end
 end;
 
-procedure CollectExtensions(rttiContext: TRttiContext; ElementClass: TClass; List: TClassList);
-var
-  rttiType: TRttiType;
-  attribute: TCustomAttribute;
-begin
-  rttiType := rttiContext.GetType(ElementClass);
-  for attribute in rttiType.GetAttributes do
-    if List.IndexOf(attribute.ClassType)<0 then
-      List.Add(attribute.ClassType);
-  if ElementClass.ClassParent <> nil then
-    CollectExtensions(rttiContext, ElementClass.ClassParent, List);
-end;
-
 procedure UpdateElement(Element: TmnwElement);
 var
   rttiContext: TRttiContext;
@@ -2274,7 +2299,7 @@ begin
     list := TClassList.Create;
     rttiContext := TRttiContext.Create;
     try
-      CollectExtensions(rttiContext, Element.ClassType, list);
+      rttiCollectExtensions(rttiContext, Element.ClassType, list);
       for attribute in list do
         if attribute.InheritsFrom(TElementExtension) then
           TElementExtensionClass(attribute).Update(Element);
@@ -2366,42 +2391,42 @@ begin
 end;
 {$endif}
 
-class procedure TmnwRenderer.RegisterRenderer(AObjectClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean);
+class procedure TmnwRenderer.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwRegisterHow);
 var
-  aRegObject: TRegObject;
+  aRendererRegister: TmnwRendererRegister;
 begin
-  aRegObject := ObjectClasses.Find(AObjectClass);
-  if aRegObject <> nil then
+  aRendererRegister := ElementRenderers.Find(AElementClass);
+  if aRendererRegister <> nil then
   begin
 //    log.WriteLn('Replacing : '+AObjectClass.ClassName);
-    if Replace and (AObjectClass.InheritsFrom(aRegObject.ObjectClass)) then
-      aRegObject.RendererClass := ARendererClass
+    if (How = Replace) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
+      aRendererRegister.RendererClass := ARendererClass
+    else if (How = Extend) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
+      aRendererRegister.Renderers := aRendererRegister.Renderers + [ARendererClass]
     else
-      raise Exception.Create('You can''t re-register same class: '+ AObjectClass.ClassName);
+      raise Exception.Create('You can''t re-register same class: '+ AElementClass.ClassName);
   end
   else
   begin
+    if (How = Extend) then
+      raise Exception.Create('Ops we can''t add extended, we need to optimize code: '+ AElementClass.ClassName);
     //log.WriteLn(AObjectClass.ClassName);
-    aRegObject := TRegObject.Create;
-    aRegObject.ObjectClass := AObjectClass;
-    aRegObject.RendererClass := ARendererClass;
-    aRegObject.Level := AObjectClass.ClassLevel;
-    ObjectClasses.Add(aRegObject);
+    aRendererRegister := TmnwRendererRegister.Create;
+    aRendererRegister.ElementClass := AElementClass;
+    aRendererRegister.RendererClass := ARendererClass;
+    aRendererRegister.Level := AElementClass.ClassLevel;
+    rttiCollectExtensions(aRendererRegister.ElementClass, aRendererRegister.Extensions);
+    ElementRenderers.Add(aRendererRegister);
   end;
 end;
 
-function TmnwRenderer.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
-begin
-  Result := ObjectClasses.FindRendererClass(AObjectClass);
-end;
-
-function TmnwRenderer.CreateRenderer(AObjectClass: TmnwElementClass): TmnwElementRenderer;
+function TmnwRenderer.CreateRenderer(AElementClass: TmnwElementClass): TmnwElementRenderer;
 var
-  RendererClass: TmnwElementRendererClass;
+  aRendererRegister: TmnwRendererRegister;
 begin
-  RendererClass := FindRendererClass(AObjectClass);
-  if RendererClass <> nil then
-    Result := RendererClass.Create(Self)
+  aRendererRegister := ElementRenderers.Find(AElementClass, True);
+  if aRendererRegister <> nil then
+    Result := aRendererRegister.RendererClass.Create(Self, aRendererRegister)
   else
     Result := nil;
 end;
@@ -2910,20 +2935,20 @@ end;
 
 constructor TmnwRenderer.Create(AModule: TmodWebModule; IsLocal: Boolean);
 {var
-  o: TmnwRenderer.TRegObject;}
+  o: TmnwRenderer.TmnwRendererRegister;}
 begin
   FLibraries := TmnwLibraries.Create;
   FLibraries.Local := IsLocal;
   inherited Create;
   FModule := AModule;
   FParams := TmnwAttributes.Create;
-  //ObjectClasses := TRegObjects.Create();
-{  for o in ObjectClasses do
+  //Renderers := TmnwElementRenderers.Create();
+{  for o in Renderers do
     log.WriteLn(o.ObjectClass.ClassName);}
-  if not ObjectClasses.Sorted then
-    ObjectClasses.QuickSort;
+  if not ElementRenderers.Sorted then
+    ElementRenderers.QuickSort;
   {log.WriteLn('---------------------------');
-  for o in ObjectClasses do
+  for o in Renderers do
     log.WriteLn(o.ObjectClass.ClassName);}
 end;
 
@@ -2936,7 +2961,6 @@ end;
 
 class destructor TmnwRenderer.Destroy;
 begin
-  FreeAndNil(ObjectClasses);
 end;
 
 procedure TmnwRenderer.EndRender;
@@ -2954,7 +2978,8 @@ end;
 
 class constructor TmnwRenderer.RegisterObjects;
 begin
-  ObjectClasses := TRegObjects.Create;
+  ElementRenderers := TmnwElementRenderers.Create;
+  RegisterRenderer(TmnwElement, TmnwElementRenderer);
 end;
 
 {$ifdef rtti_objects}
@@ -3184,7 +3209,10 @@ end;
 function THTML.TBody.GetFooter: TFooter;
 begin
   if FFooter = nil then
+  begin
+    GetContainer; //force Container be created before footer
     FFooter := TFooter.Create(Self, [elEmbed], True);
+  end;
   Result := FFooter;
 end;
 
@@ -3495,7 +3523,7 @@ end;
 initialization
 
 finalization
-  FreeAndNil(ObjectClasses);
+  FreeAndNil(ElementRenderers);
 {$ifdef rtti_objects}
   FreeAndNil(CacheClassObjects);
 {$endif}
