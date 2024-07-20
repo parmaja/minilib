@@ -40,10 +40,6 @@ type
 
   { TmnwBootstrap }
 
-  TmnwBootstrapHTML = class(THTML)
-  public
-  end;
-
   { TmnwBootstrapRenderer }
 
   TmnwBootstrapRenderer = class(TmnwHTMLRenderer)

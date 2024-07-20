@@ -53,12 +53,12 @@ Add:
 interface
 
 uses
-  Classes, SysUtils, Contnrs, Variants, Types, RTTI,
+  Classes, SysUtils, StrUtils, DateUtils, Contnrs, Variants, Types, RTTI,
   {$ifdef FPC}
   LCLType, //* for RT_RCDATA
   {$endif}
   syncobjs, mnDON, mnJSON,
-	mnUtils, mnClasses, mnStreams, mnLogs, mnMIME,
+	mnUtils, mnClasses, mnStreams, mnLogs, mnMIME, mnParams,
   mnMultipartData, mnModules, mnWebModules;
 
 {.$define rtti_objects}
@@ -999,6 +999,43 @@ type
     procedure AddHead(AElement: TmnwElement; const Context: TmnwRenderContext); virtual;
     class constructor RegisterObjects;
   public
+  end;
+
+  TmnwWebModule = class;
+
+  { TmnwHttpGetHomeCommand }
+
+  TmnwHttpGetHomeCommand = class(TmodHttpCommand)
+  protected
+  public
+    procedure RespondResult(var Result: TmodRespondResult); override;
+  end;
+
+  TmnwWebSchema = class(THTML)
+  public
+    Module: TmnwWebModule;
+  end;
+
+  TmnwWebSchemas = class(TmnwSchemas)
+  protected
+    Module: TmnwWebModule;
+    procedure SchemaCreated(Schema: TmnwSchema); override;
+  end;
+
+  TmnwWebModule = class(TmodWebModule)
+  private
+  protected
+    RendererClass: TmnwRendererClass;
+    procedure DoRegisterCommands; override;
+    procedure Start; override;
+    procedure Created; override;
+
+    procedure DoPrepareRequest(ARequest: TmodRequest); override;
+
+  public
+    AppPath: string;
+    Schemas: TmnwWebSchemas;
+    destructor Destroy; override;
   end;
 
 function LevelStr(vLevel: Integer): String;
@@ -3359,6 +3396,108 @@ begin
     Context.Output.WriteLn('html', '<script type="text/javascript" src='+ DQ(src) +' ></script>', [woOpenTag, woCloseTag]);
     inherited;
   end;
+end;
+
+{ TbsHttpGetHomeCommand }
+
+procedure TmnwHttpGetHomeCommand.RespondResult(var Result: TmodRespondResult);
+var
+  aContext: TmnwRespondContext;
+  aDate: TDateTime;
+  aPath: string;
+  aRespondResult: TmnwRespondResult;
+begin
+  Initialize(aContext);
+  inherited;
+  if Request.ConnectionType = ctWebSocket then
+  begin
+    (Module as TmnwWebModule).Schemas.Attach(DeleteSubPath('', Request.Path), Self, Respond.Stream); //Serve the websocket
+    //Result.Status := Result.Status - [mrKeepAlive]; // Disconnect
+  end
+  else
+  begin
+    aContext.Route := DeleteSubPath('', Request.Path);
+    aContext.Sender := Self;
+    aContext.Stream := Respond.Stream;
+
+    aContext.SessionID := Request.Cookies.Values['session'];
+    if Request.ConnectionType = ctFormData then
+    begin
+      aContext.MultipartData := TmnMultipartData.Create;
+      aContext.MultipartData.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
+      aContext.MultipartData.TempPath := (Module as TmnwWebModule).WorkPath + 'temp';
+      aContext.MultipartData.Read(Request.Stream);
+    end
+    else
+      aContext.MultipartData := nil;
+    Respond.PutHeader('Content-Type', DocumentToContentType('html'));
+    Respond.HttpResult := hrOK;
+    aContext.Renderer := (Module as TmnwWebModule).RendererClass.Create(Module as TmodWebModule, True);
+    try
+      Initialize(aRespondResult);
+      aRespondResult.SessionID := '';
+      aRespondResult.HttpResult := hrOK;
+      aRespondResult.Location := '';
+      (Module as TmnwWebModule).Schemas.Respond(aContext, aRespondResult);
+      aDate := IncSecond(Now, 30 * SecsPerMin);
+      aPath := '';
+      Respond.SetCookie('home', 'session', Format('%s; Expires=%s; SameSite=None; Domain=%s; Path=/%s; Secure', ['session', FormatHTTPDate(aDate), (Module as TmnwWebModule).DomainName, aPath]))
+      //SessionID
+    finally
+      aContext.Renderer.Free;
+      aContext.MultipartData.Free;
+    end;
+  end;
+end;
+
+{ TmnwWebModule }
+
+procedure TmnwWebModule.DoPrepareRequest(ARequest: TmodRequest);
+begin
+  inherited;
+  if StartsStr('.', ARequest.Route[ARequest.Route.Count - 1]) then
+    ARequest.Command := ARequest.Route[ARequest.Route.Count - 1]
+  else
+    ARequest.Command := ARequest.Route[1];
+  //ARequest.Path := DeleteSubPath(ARequest.Command, ARequest.Path);
+end;
+
+procedure TmnwWebModule.DoRegisterCommands;
+begin
+  inherited;
+  RegisterCommand('page', TmnwHttpGetHomeCommand, true);
+end;
+
+procedure TmnwWebModule.Created;
+begin
+  inherited;
+  RendererClass := TmnwHTMLRenderer;
+end;
+
+procedure TmnwWebModule.Start;
+begin
+  inherited;
+  Schemas := TmnwWebSchemas.Create;
+  Schemas.Module := Self;
+//  Schemas.RegisterSchema('welcome', TWelcomeSchema);
+//  Schemas.RegisterSchema('assets', TAssetsSchema);
+//  Schemas.RegisterSchema('login', TLoginSchema);
+//  Schemas.RegisterSchema('ws', TWSShema);
+end;
+
+destructor TmnwWebModule.Destroy;
+begin
+  inherited;
+  FreeAndNil(Schemas); //keep behind inherited
+end;
+
+{ TmnwWebSchemas }
+
+procedure TmnwWebSchemas.SchemaCreated(Schema: TmnwSchema);
+begin
+  inherited;
+  if Schema is TmnwWebSchema then
+    (Schema as TmnwWebSchema).Module := Module;
 end;
 
 initialization

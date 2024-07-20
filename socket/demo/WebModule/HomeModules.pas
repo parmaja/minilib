@@ -14,16 +14,9 @@ uses
 	mnLogs, mnWebElements, mnBootstraps;
 
 type
-  THomeModule = class;
-
-  TCustomHomeSchema = class(TmnwBootstrapHTML)
-  public
-    Module: THomeModule;
-  end;
-
   { TAssetsSchema }
 
-  TAssetsSchema = class(TCustomHomeSchema)
+  TAssetsSchema = class(TmnwWebSchema)
   private
   public
   protected
@@ -33,7 +26,7 @@ type
 
   { TWelcomeSchema }
 
-  TWelcomeSchema = class(TCustomHomeSchema)
+  TWelcomeSchema = class(TmnwWebSchema)
   private
   protected
     Input1: THTML.TInput;
@@ -44,7 +37,7 @@ type
     class function GetCapabilities: TmnwSchemaCapabilities; override;
   end;
 
-  TWSShema = class(TCustomHomeSchema)
+  TWSShema = class(TmnwWebSchema)
   private
   public
   protected
@@ -54,7 +47,7 @@ type
 
   { TLoginSchema }
 
-  TLoginSchema = class(TCustomHomeSchema)
+  TLoginSchema = class(TmnwWebSchema)
   private
   public
   protected
@@ -63,42 +56,21 @@ type
   public
   end;
 
-  { TbsHttpGetHomeCommand }
-
-  TbsHttpGetHomeCommand = class(TmodHttpCommand)
-  protected
-  public
-    procedure RespondResult(var Result: TmodRespondResult); override;
-  end;
-
   TWSEchoGetHomeCommand = class(TmodHttpCommand)
   protected
-    FPool: TmnPool;
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
-    property Pool: TmnPool read FPool;
-  end;
-
-  THomeSchemas = class(TmnwSchemas)
-  protected
-    Module: THomeModule;
-    procedure SchemaCreated(Schema: TmnwSchema); override;
   end;
 
   { THomeModule }
 
-  THomeModule = class(TmodWebModule)
+  THomeModule = class(TmnwWebModule)
   private
   protected
     procedure DoRegisterCommands; override;
-    procedure Start; override;
     procedure Created; override;
-
-    procedure DoPrepareRequest(ARequest: TmodRequest); override;
-
+    procedure Start; override;
   public
-    AppPath: string;
-    Schemas: THomeSchemas;
     destructor Destroy; override;
   end;
 
@@ -301,97 +273,6 @@ end;
 
 { TbsHttpGetHomeCommand }
 
-procedure TbsHttpGetHomeCommand.RespondResult(var Result: TmodRespondResult);
-var
-  aContext: TmnwRespondContext;
-  aDate: TDateTime;
-  aPath: string;
-  aRespondResult: TmnwRespondResult;
-begin
-  Initialize(aContext);
-  inherited;
-  if Request.ConnectionType = ctWebSocket then
-  begin
-    (Module as THomeModule).Schemas.Attach(DeleteSubPath('', Request.Path), Self, Respond.Stream); //Serve the websocket
-    //Result.Status := Result.Status - [mrKeepAlive]; // Disconnect
-  end
-  else
-  begin
-    aContext.Route := DeleteSubPath('', Request.Path);
-    aContext.Sender := Self;
-    aContext.Stream := Respond.Stream;
-
-    aContext.SessionID := Request.Cookies.Values['session'];
-    if Request.ConnectionType = ctFormData then
-    begin
-      aContext.MultipartData := TmnMultipartData.Create;
-      aContext.MultipartData.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
-      aContext.MultipartData.TempPath := (Module as THomeModule).WorkPath + 'temp';
-      aContext.MultipartData.Read(Request.Stream);
-    end
-    else
-      aContext.MultipartData := nil;
-    Respond.PutHeader('Content-Type', DocumentToContentType('html'));
-    Respond.HttpResult := hrOK;
-    aContext.Renderer := TmnwBootstrapRenderer.Create(Module as TmodWebModule, True);
-    try
-      Initialize(aRespondResult);
-      aRespondResult.SessionID := '';
-      aRespondResult.HttpResult := hrOK;
-      aRespondResult.Location := '';
-      (Module as THomeModule).Schemas.Respond(aContext, aRespondResult);
-      aDate := IncSecond(Now, 30 * SecsPerMin);
-      aPath := '';
-      Respond.SetCookie('home', 'session', Format('%s; Expires=%s; SameSite=None; Domain=%s; Path=/%s; Secure', ['session', FormatHTTPDate(aDate), (Module as THomeModule).DomainName, aPath]))
-      //SessionID
-    finally
-      aContext.Renderer.Free;
-      aContext.MultipartData.Free;
-    end;
-  end;
-end;
-
-{ THomeModule }
-
-procedure THomeModule.DoPrepareRequest(ARequest: TmodRequest);
-begin
-  inherited;
-  if StartsStr('.', ARequest.Route[ARequest.Route.Count - 1]) then
-    ARequest.Command := ARequest.Route[ARequest.Route.Count - 1]
-  else
-    ARequest.Command := ARequest.Route[1];
-  //ARequest.Path := DeleteSubPath(ARequest.Command, ARequest.Path);
-end;
-
-procedure THomeModule.DoRegisterCommands;
-begin
-  inherited;
-  RegisterCommand('page', TbsHttpGetHomeCommand, true);
-  RegisterCommand('.ws', TWSEchoGetHomeCommand, false);
-end;
-
-procedure THomeModule.Created;
-begin
-  inherited;
-end;
-
-procedure THomeModule.Start;
-begin
-  inherited;
-  Schemas := THomeSchemas.Create;
-  Schemas.Module := Self;
-  Schemas.RegisterSchema('welcome', TWelcomeSchema);
-  Schemas.RegisterSchema('assets', TAssetsSchema);
-  Schemas.RegisterSchema('login', TLoginSchema);
-  Schemas.RegisterSchema('ws', TWSShema);
-end;
-
-destructor THomeModule.Destroy;
-begin
-  inherited;
-  FreeAndNil(Schemas); //keep behind inherited
-end;
-
 { TAssetsSchema }
 
 procedure TAssetsSchema.DoCompose;
@@ -521,15 +402,6 @@ begin
   end;
 end;
 
-{ THomeSchemas }
-
-procedure THomeSchemas.SchemaCreated(Schema: TmnwSchema);
-begin
-  inherited;
-  if Schema is TCustomHomeSchema then
-    (Schema as TCustomHomeSchema).Module := Module;
-end;
-
 { TWSShema }
 
 procedure TWSShema.DoCompose;
@@ -542,6 +414,34 @@ begin
     Route := 'echo';
     FileName := IncludePathDelimiter(Module.HomePath) + 'ws.html';
   end;
+end;
+
+{ THomeModule }
+
+procedure THomeModule.Created;
+begin
+  inherited;
+  RendererClass := TmnwBootstrapRenderer;
+end;
+
+procedure THomeModule.Start;
+begin
+  inherited Start;
+  Schemas.RegisterSchema('welcome', TWelcomeSchema);
+  Schemas.RegisterSchema('assets', TAssetsSchema);
+  Schemas.RegisterSchema('login', TLoginSchema);
+  Schemas.RegisterSchema('ws', TWSShema);end;
+
+destructor THomeModule.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure THomeModule.DoRegisterCommands;
+begin
+  inherited;
+  RegisterCommand('.ws', TWSEchoGetHomeCommand, false);
 end;
 
 end.
