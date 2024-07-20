@@ -67,9 +67,8 @@ type
   THomeModule = class(TmnwWebModule)
   private
   protected
-    procedure DoRegisterCommands; override;
-    procedure Created; override;
-    procedure Start; override;
+    function CreateRenderer(IsLocal: Boolean): TmnwRenderer; override;
+    procedure CreateItems; override;
   public
     destructor Destroy; override;
   end;
@@ -418,30 +417,24 @@ end;
 
 { THomeModule }
 
-procedure THomeModule.Created;
+function THomeModule.CreateRenderer(IsLocal: Boolean): TmnwRenderer;
 begin
-  inherited;
-  RendererClass := TmnwBootstrapRenderer;
+  Result := TmnwBootstrapRenderer.Create(Self, IsLocal);
 end;
-
-procedure THomeModule.Start;
-begin
-  inherited Start;
-  Schemas.RegisterSchema('welcome', TWelcomeSchema);
-  Schemas.RegisterSchema('assets', TAssetsSchema);
-  Schemas.RegisterSchema('login', TLoginSchema);
-  Schemas.RegisterSchema('ws', TWSShema);end;
 
 destructor THomeModule.Destroy;
 begin
-
   inherited;
 end;
 
-procedure THomeModule.DoRegisterCommands;
+procedure THomeModule.CreateItems;
 begin
   inherited;
   RegisterCommand('.ws', TWSEchoGetHomeCommand, false);
+  Schemas.RegisterSchema('welcome', TWelcomeSchema);
+  Schemas.RegisterSchema('assets', TAssetsSchema);
+  Schemas.RegisterSchema('login', TLoginSchema);
+  Schemas.RegisterSchema('ws', TWSShema);
 end;
 
 end.

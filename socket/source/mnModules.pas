@@ -455,8 +455,9 @@ type
     function GetActive: Boolean; virtual;
     function GetCommandClass(var CommandName: String): TmodCommandClass; virtual;
     procedure Created; override;
-    procedure DoRegisterCommands; virtual;
+    procedure DoRegisterCommands; virtual; //deprecated 'use RegisterItems';
     procedure RegisterCommands;
+    procedure CreateItems; virtual;
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
     procedure DoPrepareRequest(ARequest: TmodRequest); virtual;
 
@@ -1389,6 +1390,10 @@ begin
   DoRegisterCommands;
 end;
 
+procedure TmodModule.CreateItems;
+begin
+end;
+
 procedure TmodModule.Start;
 begin
 
@@ -1417,6 +1422,7 @@ begin
   end;
   FCommands := TmodCommandClasses.Create(True);
   FUse.KeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
+  CreateItems;
   RegisterCommands;
 end;
 

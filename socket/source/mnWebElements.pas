@@ -1025,13 +1025,10 @@ type
   TmnwWebModule = class(TmodWebModule)
   private
   protected
-    RendererClass: TmnwRendererClass;
-    procedure DoRegisterCommands; override;
-    procedure Start; override;
-    procedure Created; override;
-
+    function CreateRenderer(IsLocal: Boolean): TmnwRenderer; virtual;
+    procedure CreateItems; override;
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
-
+    procedure Created; override;
   public
     AppPath: string;
     Schemas: TmnwWebSchemas;
@@ -3432,7 +3429,7 @@ begin
       aContext.MultipartData := nil;
     Respond.PutHeader('Content-Type', DocumentToContentType('html'));
     Respond.HttpResult := hrOK;
-    aContext.Renderer := (Module as TmnwWebModule).RendererClass.Create(Module as TmodWebModule, True);
+    aContext.Renderer := (Module as TmnwWebModule).CreateRenderer(True);
     try
       Initialize(aRespondResult);
       aRespondResult.SessionID := '';
@@ -3462,27 +3459,22 @@ begin
   //ARequest.Path := DeleteSubPath(ARequest.Command, ARequest.Path);
 end;
 
-procedure TmnwWebModule.DoRegisterCommands;
+procedure TmnwWebModule.CreateItems;
 begin
   inherited;
-  RegisterCommand('page', TmnwHttpGetHomeCommand, true);
+  Schemas := TmnwWebSchemas.Create;
+  Schemas.Module := Self;
+  RegisterCommand('', TmnwHttpGetHomeCommand, true);
 end;
 
 procedure TmnwWebModule.Created;
 begin
   inherited;
-  RendererClass := TmnwHTMLRenderer;
 end;
 
-procedure TmnwWebModule.Start;
+function TmnwWebModule.CreateRenderer(IsLocal: Boolean): TmnwRenderer;
 begin
-  inherited;
-  Schemas := TmnwWebSchemas.Create;
-  Schemas.Module := Self;
-//  Schemas.RegisterSchema('welcome', TWelcomeSchema);
-//  Schemas.RegisterSchema('assets', TAssetsSchema);
-//  Schemas.RegisterSchema('login', TLoginSchema);
-//  Schemas.RegisterSchema('ws', TWSShema);
+  Result := TmnwHTMLRenderer.Create(Self, IsLocal);
 end;
 
 destructor TmnwWebModule.Destroy;
