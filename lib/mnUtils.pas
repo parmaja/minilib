@@ -37,7 +37,7 @@ procedure Nothing;
 {
   StrHave: test the string if it have Separators
 }
-function QuoteStr(Str: string; QuoteChar: string = '"'): string;
+function QuoteStr(Str: string; const QuoteChar: string = '"'): string;
 
 {**
   Resume: if false then stop, default is true
@@ -154,14 +154,14 @@ function CharArrayToSet(const ArrayOfChar : TArray<Char>) : TSysCharSet;
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 //Used by GetTickCount, return minuts,secons,miliseconds
 function TicksToString(vTicks: Int64): string;
-function DequoteStr(const Str: string; QuoteChar: string = #0): string;
-function ExcludeTrailing(const Str: string; TrailingChar: string = #0): string;
+function DequoteStr(const Str: string; const QuoteChar: string = #0): string;
+function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): string;
 function RemoveEncloseStr(const S, Left, Right: string): string;
 function EncloseStr(const S, Left, Right: string): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
 
-function ConcatString(const S1, Delimiter: string; const S2: string = ''): string;
+function ConcatString(const S1, Delimiter: string; const S2: string = ''): string; overload;
 function CollectStrings(Strings: TStrings; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
 function CollectStrings(Strings: array of string; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
 
@@ -270,10 +270,12 @@ type
     {$endif}
   end;
 
-function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload;
-function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload;
-function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload;
-function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_UTF8): string; overload;
+function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload; deprecated;
+function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload; deprecated;
+function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload; deprecated;
+function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_UTF8): string; overload; deprecated;
+
+function StringOfUTF8(const Value: PByte; Size: Integer): string;
 
 //TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
@@ -342,7 +344,7 @@ begin
   end;
 end;
 
-function QuoteStr(Str: string; QuoteChar: string): string;
+function QuoteStr(Str: string; const QuoteChar: string): string;
 begin
   if Str = '' then
     Result := QuoteChar + QuoteChar
@@ -363,7 +365,7 @@ begin
   end;
 end;
 
-function DequoteStr(const Str: string; QuoteChar: string = #0): string;
+function DequoteStr(const Str: string; const QuoteChar: string = #0): string;
 begin
   if Str = '' then
     Result := ''
@@ -395,7 +397,7 @@ begin
   end;
 end;
 
-function ExcludeTrailing(const Str: string; TrailingChar: string = #0): string;
+function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): string;
 begin
   if (TrailingChar > #0) and (RightStr(Str, 1) = TrailingChar) then
     Result := MidStr(Str, 1, Length(Str) - 1)
@@ -1913,7 +1915,7 @@ var
   aLen: Integer;
 begin
   Result := '';
-  if ByteCount<>0 then
+  if ByteCount <> 0 then
   begin
     aLen := GetCharCount(Bytes, ByteCount);
     if (aLen <>0) then
@@ -1972,6 +1974,17 @@ end;
 function StringOf(const Value: TBytes; CodePage: Word): string;
 begin
   Result := TEncoding.CodePageEncoding(CodePage).GetString(Value);
+end;
+
+function StringOfUTF8(const Value: PByte; Size: Integer): string;
+begin
+  {$ifdef FPC}
+  if Size = 0 then
+    exit('');
+  SetString(Result, PChar(Value), Size);
+  {$else}
+  Result := TEncoding.UTF8.GetString(Value, Size);
+  {$endif}
 end;
 
 function Hex2String(const vData: string): string; overload;

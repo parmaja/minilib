@@ -52,10 +52,13 @@ type
   public
   end;
 
+  { TLoginSchema }
+
   TLoginSchema = class(TCustomHomeSchema)
   private
   public
   protected
+    procedure DoAction(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
     procedure DoCompose; override;
   public
   end;
@@ -303,6 +306,7 @@ var
   aContext: TmnwRespondContext;
   aDate: TDateTime;
   aPath: string;
+  aRespondResult: TmnwRespondResult;
 begin
   Initialize(aContext);
   inherited;
@@ -321,7 +325,7 @@ begin
     if Request.ConnectionType = ctFormData then
     begin
       aContext.MultipartData := TmnMultipartData.Create;
-      aContext.MultipartData.Boundary := Request.Header.Field['Content-type'].SubValue('boundary');
+      aContext.MultipartData.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
       aContext.MultipartData.TempPath := (Module as THomeModule).WorkPath + 'temp';
       aContext.MultipartData.Read(Request.Stream);
     end
@@ -331,7 +335,11 @@ begin
     Respond.HttpResult := hrOK;
     aContext.Renderer := TmnwBootstrapRenderer.Create(Module as TmodWebModule, True);
     try
-      (Module as THomeModule).Schemas.Respond(aContext);
+      Initialize(aRespondResult);
+      aRespondResult.SessionID := '';
+      aRespondResult.HttpResult := hrOK;
+      aRespondResult.Location := '';
+      (Module as THomeModule).Schemas.Respond(aContext, aRespondResult);
       aDate := IncSecond(Now, 30 * SecsPerMin);
       aPath := '';
       Respond.SetCookie('home', 'session', Format('%s; Expires=%s; SameSite=None; Domain=%s; Path=/%s; Secure', ['session', FormatHTTPDate(aDate), (Module as THomeModule).DomainName, aPath]))
@@ -432,6 +440,22 @@ end;
 
 { TLoginSchema }
 
+procedure TLoginSchema.DoAction(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult);
+var
+  aUsername, aPassword: string;
+begin
+  if AContext.MultipartData <> nil then
+  begin
+    aUsername := AContext.MultipartData.Values['username'];
+    aPassword := AContext.MultipartData.Values['password'];
+    ARespondResult.SessionID := aUsername +'/'+ aPassword;
+    ARespondResult.Resume := False;
+    ARespondResult.HttpResult := hrRedirect;
+    ARespondResult.Location := IncludePathDelimiter(Module.GetHomeURL) + 'dashboard';
+  end;
+  inherited;
+end;
+
 procedure TLoginSchema.DoCompose;
 begin
   inherited;
@@ -469,9 +493,11 @@ begin
 
           with TForm.Create(This) do
           begin
+            PostTo := '.';
             with TInput.Create(This) do
             begin
               ID := 'username';
+              Name := 'username';
               Caption := 'Username';
               PlaceHolder := 'Type user name';
             end;
@@ -479,6 +505,7 @@ begin
             with TInputPassword.Create(This) do
             begin
               ID := 'password';
+              Name := 'password';
               Caption := 'Password';
             end;
 

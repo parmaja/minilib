@@ -81,7 +81,7 @@ type
     hrOK,
     hrUnauthorized,
     hrError,
-    hrFound, //302
+    hrRedirect, //302
     hrNotModified,
     hrMovedTemporarily, //307
     hrNotFound,
@@ -724,7 +724,7 @@ begin
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
     Request.Address := IncludeURLDelimiter(Request.Address);
     //Respond.SendHead('HTTP/1.1 301 Moved Permanently');
-    Respond.HttpResult := hrFound;
+    Respond.HttpResult := hrRedirect;
     //Respond.SendHead('HTTP/1.1 307 Temporary Redirect');
     Respond.AddHeader('Location', IncludeURLDelimiter(Request.Address));
     Respond.SendHeader;
@@ -939,7 +939,7 @@ begin
   end
   else
   begin
-    if Request.Header.Field['Content-type'].Have('multipart/form-data', [',']) then
+    if Request.Header.Field['Content-type'].Have('multipart/form-data', [';']) then
     begin
       Request.ConnectionType := ctFormData;
     end;
@@ -1124,7 +1124,7 @@ begin
     hrUnauthorized: Result := Result + '401 Unauthorized';
     hrNotFound: Result := Result + '404 NotFound';
     hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
-    hrFound: Result := Result + '302 Found';
+    hrRedirect: Result := Result + '302 Found';
     hrNotModified: Result := Result + '304 Not Modified';
     hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
     hrServiceUnavailable: Result := Result + '503 Service Unavailable';

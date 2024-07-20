@@ -99,6 +99,15 @@ var
 begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
+
+  HttpServer.Port := PortEdit.Text;
+  HttpServer.UseSSL := UseSSLChk.Checked;
+  if HttpServer.UseSSL then
+  begin
+    HttpServer.CertificateFile := 'HttpServer.crt';
+    HttpServer.PrivateKeyFile := 'HttpServer.private.key';
+  end;
+
   aHomePath := HomePathEdit.Text;
   if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
     aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
@@ -107,10 +116,15 @@ begin
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := 'home';
+    aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
+
+    aHomeModule.DomainName := 'localhost';
+    aHomeModule.Host := ComposeHostURL(HttpServer.UseSSL, aHomeModule.DomainName, HttpServer.Port);
+    aHomeModule.AssetsURL := aHomeModule.Host + '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.HomePath := aHomePath;
-    aHomeModule.HostURL := 'http://localhost:' + PortEdit.Text;
-    aHomeModule.HomeUrl := aHomeModule.HostURL + '/' + aHomeModule.AliasName;
-    aHomeModule.CachePath := ExtractFilePath(Application.ExeName) + 'cache';
+    aHomeModule.WorkPath := aHomeModule.AppPath;
+    ForceDirectories(aHomeModule.WorkPath + 'cache');
+    ForceDirectories(aHomeModule.WorkPath + 'temp');
   end;
 
   aDocModule := HttpServer.Modules.Find<TmodWebModule>;
@@ -124,14 +138,6 @@ begin
     else
       aDocModule.UseKeepAlive := ovNo;
     aDocModule.UseCompressing.AsBoolean := CompressChk.Checked;
-  end;
-  HttpServer.Port := PortEdit.Text;
-
-  HttpServer.UseSSL := UseSSLChk.Checked;
-  if HttpServer.UseSSL then
-  begin
-    HttpServer.CertificateFile := 'HttpServer.crt';
-    HttpServer.PrivateKeyFile := 'HttpServer.private.key';
   end;
 end;
 

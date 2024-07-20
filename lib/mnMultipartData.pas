@@ -20,6 +20,8 @@ uses
 type
   TmnMultipartData = class;
 
+  { TmnMultipartDataItem }
+
   TmnMultipartDataItem = class abstract(TmnNamedObject)
   private
     FData: TmnMultipartData;
@@ -36,7 +38,8 @@ type
     procedure DoWrite(vStream: TmnBufferStream); virtual;
     procedure DoRead(const Buffer; Count: Longint); virtual;
     procedure Prepare;
-    function GetValue: string; virtual;
+    function DoGetValue: string; virtual;
+    function GetValue: string;
   public
     constructor Create(vData: TmnMultipartData);
     destructor Destroy; override;
@@ -56,7 +59,7 @@ type
 
     procedure DoWrite(vStream: TmnBufferStream); override;
     procedure DoPrepare; override;
-    function GetValue: string; override;
+    function DoGetValue: string; override;
 
   public
     FileName: string;
@@ -70,9 +73,8 @@ type
 
     procedure DoPrepare; override;
     procedure DoWrite(vStream: TmnBufferStream); override;
-    function GetValue: string; override;
+    function DoGetValue: string; override;
   end;
-
 
   TmnMultipartDataMemory = class(TmnMultipartDataItem)
   protected
@@ -94,6 +96,8 @@ type
   private
     FBoundary: string;
     FTempPath: string;
+    function GetData(const Index: string): TmnMultipartDataItem;
+    function GetValues(const Index: string): string;
   protected
     function DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TmnMultipartDataItem; virtual;
     function CreateItem(vStream: TmnBufferStream): TmnMultipartDataItem;
@@ -104,6 +108,8 @@ type
 
     property Boundary: string read FBoundary write FBoundary;
     property TempPath: string read FTempPath write FTempPath;
+    property Values[const Index: string]: string read GetValues;
+    property Data[const Index: string]: TmnMultipartDataItem read GetData;
   end;
 
 implementation
@@ -134,12 +140,20 @@ end;
 
 function TmnMultipartDataItem.GetValue: string;
 begin
-  Result := '';
+  if Self <> nil then
+    Result := DoGetValue
+  else
+    Result := '';
 end;
 
 procedure TmnMultipartDataItem.Prepare;
 begin
   Header.Values['Content-Disposition'] := Format('form-data; name="%s"', [Name]);
+end;
+
+function TmnMultipartDataItem.DoGetValue: string;
+begin
+  Result := '';
 end;
 
 function TmnMultipartDataItem.Read(vStream: TmnBufferStream; const vBoundary: utf8string): Boolean;
@@ -166,7 +180,6 @@ end;
 
 procedure TmnMultipartDataItem.DoPrepare;
 begin
-
 end;
 
 procedure TmnMultipartDataItem.DoRead(const Buffer; Count: Longint);
@@ -175,12 +188,10 @@ end;
 
 procedure TmnMultipartDataItem.DoReadPrepare;
 begin
-
 end;
 
 procedure TmnMultipartDataItem.DoReadUnPrepare;
 begin
-
 end;
 
 procedure TmnMultipartDataItem.Write(vStream: TmnBufferStream);
@@ -238,6 +249,22 @@ begin
     raise;
   end;
 
+end;
+
+function TmnMultipartData.GetValues(const Index: string): string;
+var
+  item: TmnMultipartDataItem;
+begin
+  item := Find(Index);
+  if item <> nil then
+    Result := item.Value
+  else
+    Result := '';
+end;
+
+function TmnMultipartData.GetData(const Index: string): TmnMultipartDataItem;
+begin
+  Result := Find(Index);
 end;
 
 function TmnMultipartData.DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TmnMultipartDataItem;
@@ -314,17 +341,17 @@ procedure TmnMultipartDataValue.DoRead(const Buffer; Count: Longint);
 var
   s: string;
 begin
-  s := TEncoding.UTF8.GetString(PByte(Buffer), Count);
+  s := StringOfUTF8(PByte(Buffer), Count);
   FValue := FValue + s;
 end;
 
 procedure TmnMultipartDataValue.DoWrite(vStream: TmnBufferStream);
 begin
   inherited;
-  vStream.WriteUTF8(Value);
+  vStream.WriteUTF8String(Value);
 end;
 
-function TmnMultipartDataValue.GetValue: string;
+function TmnMultipartDataValue.DoGetValue: string;
 begin
   Result := FValue;
 end;
@@ -375,7 +402,7 @@ begin
 
 end;
 
-function TmnMultipartDataFileName.GetValue: string;
+function TmnMultipartDataFileName.DoGetValue: string;
 begin
   Result := LocalFileName;
 end;
