@@ -350,6 +350,9 @@ begin
 
     with Body do
     begin
+      with TComment.Create(This) do
+        Comment := 'This is just login page source';
+
       Header.Text := 'Creative Solutions';
       with TImage.Create(This) do
       begin

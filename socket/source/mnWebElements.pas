@@ -573,6 +573,11 @@ type
         Fixed: TmnwFixed;
       end;
 
+      TComment = class(THTMLElement)
+      public
+        Comment: string;
+      end;
+
       TBody = class;
       THeader = class;
       TFooter = class;
@@ -852,6 +857,13 @@ type
       protected
         procedure AddHead(AElement: TmnwElement; const Context: TmnwRenderContext); virtual;
         procedure DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwRenderContext); override;
+      end;
+
+      { TComment }
+
+      TComment = class(TElementHTML)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwRenderContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
       { TDocument }
@@ -1918,6 +1930,7 @@ begin
   RegisterRenderer(THTML.TFile, TFile);
   RegisterRenderer(THTML.TJSFile, TJSFile);
 
+  RegisterRenderer(THTML.TComment ,TComment);
   RegisterRenderer(THTML.TDocument ,TDocument);
   RegisterRenderer(THTML.TBody ,TBody);
   RegisterRenderer(THTML.TParagraph, TParagraph);
@@ -1948,6 +1961,17 @@ begin
   if Scope.Element.Comment <> '' then
     Context.Output.WriteLn('html', '<!-- ' + Scope.Element.Comment + ' -->');
   inherited;
+end;
+
+{ TmnwHTMLRenderer.TComment }
+
+procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwRenderContext; var ARespondResult: TmnwRespondResult);
+var
+  e: THTML.TComment;
+begin
+  inherited;
+  e := Scope.Element as THTML.TComment;
+  Context.Output.WriteLn('html', '<!--' + e.Comment + '-->', [woOpenTag, woCloseTag]);
 end;
 
 { TmnwHTMLRenderer.TDocumentHTML }
