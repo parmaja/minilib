@@ -174,6 +174,7 @@ type
     destructor Destroy; override;
     property SmartURL: Boolean read FSmartURL write FSmartURL;
   public
+    //protocol://domain:port/alias/directory
     DomainName: string; //localhost
     Host: string; //http://localhost:8080
     Directory: string; //* extra directory after AliasName can be empty

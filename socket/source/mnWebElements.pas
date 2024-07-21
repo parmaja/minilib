@@ -406,7 +406,7 @@ type
     FLock: TCriticalSection;
   protected
     NameingLastNumber: Integer;
-    procedure UpdateAttached; inline;
+    procedure UpdateAttached;
     procedure GenID(Element: TmnwElement); inline;
     procedure GenRoute(Element: TmnwElement); inline;
     procedure DoRespond(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
