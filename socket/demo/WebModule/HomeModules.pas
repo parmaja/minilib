@@ -165,7 +165,7 @@ begin
       begin
         Name := 'image_logo';
         Comment := 'Image from another module';
-        Source := IncludeURLDelimiter(Module.Host)+'doc/logo.png';
+        Source := IncludeURLDelimiter(Module.GetHostURL)+'doc/logo.png';
       end;
 
       Header.RenderIt := True;
@@ -339,8 +339,8 @@ end;
 procedure TLoginSchema.DoCompose;
 begin
   inherited;
-  Name := 'welcome';
-  Route := 'welcome';
+  Name := 'login';
+  Route := 'login';
   with TDocument.Create(This) do
   begin
     //Name := 'document';
@@ -354,7 +354,7 @@ begin
       with TImage.Create(This) do
       begin
         Comment := 'Image from another module';
-        Source := IncludeURLDelimiter(Module.Host)+'doc/logo.png';
+        Source := IncludeURLDelimiter(Module.GetHostURL)+'doc/logo.png';
       end;
 
       Header.RenderIt := True;

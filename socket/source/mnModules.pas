@@ -678,7 +678,7 @@ function FormatHTTPDate(vDate: TDateTime): string;
 function ExtractDomain(const URI: string): string;
 function DeleteSubPath(const SubKey, Path: string): string;
 
-function ComposeHostURL(UseSSL: Boolean; DomainName: string; Port: string = ''): string;
+function ComposeHttpURL(UseSSL: Boolean; DomainName: string; Port: string = ''; Directory: string = ''): string;
 
 const
   ProtocolVersion = 'HTTP/1.1'; //* Capital letter
@@ -689,7 +689,7 @@ implementation
 uses
   mnUtils;
 
-function ComposeHostURL(UseSSL: Boolean; DomainName: string; Port: string): string;
+function ComposeHttpURL(UseSSL: Boolean; DomainName: string; Port: string; Directory: string): string;
 begin
   if UseSSL then
   begin

@@ -270,8 +270,9 @@ type
     function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;
     function Find(const Name: string): TmnwElement;
     function FindByRoute(const Route: string): TmnwElement;
-    function FindByPath(const APath: string): TmnwElement;
+    function FindByPath(const APath: string): TmnwElement; deprecated;
     function FindByID(const aID: string): TmnwElement;
+    function FindByName(const aName: string): TmnwElement;
     function IndexOfName(vName: string): Integer;
 
     function This: TmnwElement; virtual; //I wish i have templates/meta programming in pascal
@@ -533,6 +534,7 @@ type
 
     procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
 
+    function FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
 		procedure GetElement(var Route: string; out Schema: TmnwSchema; out Element: TmnwElement);
 
     function Respond(var AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult): TmnwElement;
@@ -1037,9 +1039,12 @@ type
   { TmnwHttpGetHomeCommand }
 
   TmnwHttpGetHomeCommand = class(TmodHttpCommand)
+  private
+    function GetModule: TmnwWebModule;
   protected
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
+    property Module: TmnwWebModule read GetModule;
   end;
 
   TmnwWebSchema = class(THTML)
@@ -1684,6 +1689,20 @@ begin
   SchemaObject.Name := AName;
 	SchemaObject.SchemaClass := SchemaClass;
   inherited Add(SchemaObject);
+end;
+
+function TmnwSchemas.FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Items[i].Name, aSchemaName) and ((aSessionID = '') or ((Items[i].Schema <> nil) and (aSessionID = Items[i].Schema.SessionID))) then
+      Result := Items[i];
+    if Result <> nil then
+      break;
+  end;
 end;
 
 procedure TmnwSchemas.GetElement(var Route: string; out Schema: TmnwSchema; out Element: TmnwElement);
@@ -2649,6 +2668,22 @@ begin
   end;
 end;
 
+function TmnwElement.FindByName(const aName: string): TmnwElement;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Items[i].Name, aName) then
+      Result := Items[i]
+    else
+      Result := Items[i].FindByID(aName);
+    if Result <> nil then
+      break;
+  end;
+end;
+
 function TmnwElement.FindByRoute(const Route: string): TmnwElement;
 var
   i: Integer;
@@ -3425,6 +3460,11 @@ end;
 
 { TbsHttpGetHomeCommand }
 
+function TmnwHttpGetHomeCommand.GetModule: TmnwWebModule;
+begin
+  Result := (inherited Module) as TmnwWebModule;
+end;
+
 procedure TmnwHttpGetHomeCommand.RespondResult(var Result: TmodRespondResult);
 var
   aContext: TmnwRespondContext;
@@ -3444,11 +3484,11 @@ begin
     aContext.Route := DeleteSubPath('', Request.Path);
     aContext.Sender := Self;
     aContext.Stream := Respond.Stream;
+    aContext.MultipartData := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )
 
     aContext.SessionID := Request.Cookies.Values['session'];
     if Request.ConnectionType = ctFormData then
     begin
-      aContext.MultipartData := TmnMultipartData.Create;
       aContext.MultipartData.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
       aContext.MultipartData.TempPath := (Module as TmnwWebModule).WorkPath + 'temp';
       aContext.MultipartData.Read(Request.Stream);
@@ -3466,7 +3506,7 @@ begin
       (Module as TmnwWebModule).Schemas.Respond(aContext, aRespondResult);
       aDate := IncSecond(Now, 30 * SecsPerMin);
       aPath := '';
-      Respond.SetCookie('home', 'session', Format('%s; Expires=%s; SameSite=None; Domain=%s; Path=/%s; Secure', ['session', FormatHTTPDate(aDate), (Module as TmnwWebModule).DomainName, aPath]))
+      Respond.SetCookie('home', 'session', 'session; Expires='+FormatHTTPDate(aDate)+'; SameSite=None; Domain=' + Module.Domain + '; Path=/'+aPath+'; Secure');
       //SessionID
     finally
       aContext.Renderer.Free;

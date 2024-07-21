@@ -175,9 +175,12 @@ type
     property SmartURL: Boolean read FSmartURL write FSmartURL;
   public
     //protocol://domain:port/alias/directory
-    DomainName: string; //localhost
-    Host: string; //http://localhost:8080
+    UseSSL: Boolean;
+    Domain: string; //localhost
+    Port: string;
+    //Host: string; //http://localhost:8080
     Directory: string; //* extra directory after AliasName can be empty
+
     AssetsURL: string; //optional, default is HomeURL
 
     //Public Path
@@ -185,6 +188,7 @@ type
     //Private Path
     property WorkPath: string read FWorkPath write FWorkPath;
 
+    function GetHostURL: string;
     function GetHomeURL: string;
     function GetAssetsURL: string;
   end;
@@ -538,9 +542,14 @@ begin
   inherited Destroy;
 end;
 
+function TmodWebModule.GetHostURL: string;
+begin
+  Result := ComposeHttpURL(UseSSL, Domain, Port);
+end;
+
 function TmodWebModule.GetHomeURL: string;
 begin
-  Result := IncludeURLDelimiter(IncludeURLDelimiter(Host) + AliasName) + Directory;
+  Result := IncludeURLDelimiter(IncludeURLDelimiter(GetHostURL) + AliasName) + Directory;
 end;
 
 function TmodWebModule.GetAssetsURL: string;
