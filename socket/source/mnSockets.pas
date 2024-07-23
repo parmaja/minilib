@@ -150,6 +150,7 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
+    class constructor Init;
 
     function GetSocketError(Handle: TSocketHandle): Integer; virtual;
 
@@ -158,7 +159,7 @@ type
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
     //Connect used by clients
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); overload; virtual; abstract;
-    function ResolveIP(Address: string): string; virtual;
+    function ResolveIP(const Address: string): string; virtual;
   end;
 
   { Streams
@@ -245,7 +246,12 @@ begin
   Result := 0;
 end;
 
-function TmnCustomWallSocket.ResolveIP(Address: string): string;
+class constructor TmnCustomWallSocket.Init;
+begin
+  WallSocket; //create wall socket in case multi server
+end;
+
+function TmnCustomWallSocket.ResolveIP(const Address: string): string;
 begin
   Result := '';
 end;

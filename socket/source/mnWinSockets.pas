@@ -56,7 +56,6 @@ type
   TmnWallSocket = class(TmnCustomWallSocket)
   private
     FWSAData: TWSAData;
-    FCount: Integer;
     function LookupPort(Port: string): Word;
   protected
     procedure FreeSocket(var vHandle: TSocketHandle);
@@ -68,9 +67,7 @@ type
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; var Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-    function ResolveIP(Address: string): string; override;
-    procedure Startup;
-    procedure Cleanup;
+    function ResolveIP(const Address: string): string; override;
   end;
 
 implementation
@@ -353,13 +350,13 @@ end;
 constructor TmnWallSocket.Create;
 begin
   inherited;
-  Startup;
+  WSAStartup($0202, FWSAData);
 end;
 
 destructor TmnWallSocket.Destroy;
 begin
   inherited;
-  Cleanup;
+  WSACleanup;
 end;
 
 function TmnWallSocket.LookupPort(Port: string): Word;
@@ -650,7 +647,7 @@ begin
     vSocket := nil;
 end;
 
-function TmnWallSocket.ResolveIP(Address: string): string;
+function TmnWallSocket.ResolveIP(const Address: string): string;
 var
   aHostAddress: PHostEnt;
   aAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
@@ -671,26 +668,6 @@ begin
   end
   else
     Result := '';
-end;
-
-procedure TmnWallSocket.Startup;
-var
-  e: Integer;
-begin
-  if FCount = 0 then
-  begin
-    e := WSAStartup($0202, FWSAData);
-    if e <> 0 then
-      raise EmnException.Create('Failed to initialize WinSocket,error #' + IntToStr(e));
-  end;
-  Inc(FCount)
-end;
-
-procedure TmnWallSocket.Cleanup;
-begin
-  Dec(FCount);
-  if FCount = 0 then
-    WSACleanup;
 end;
 
 end.
