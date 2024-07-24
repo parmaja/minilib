@@ -205,11 +205,11 @@ begin
     Context.Output.Write('html', '<h5 class="card-header" id="'+e.id+'-header"');
     if e.Collapse then
       Context.Output.Write('html', 'role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
-    Context.Output.WriteLn('html', '>', [woOpenTag]);
-    Context.Output.WriteLn('html', e.Caption);
+    Context.Output.Write('html', '>', [woOpenTag]);
+    Context.Output.Write('html', e.Caption);
     if e.Collapse then
     begin
-      Context.Output.WriteLn('html', '<span class="icons float-right fa fa-arrow-alt-circle-up"></span>', [woOpenTag, woCloseTag]);
+      Context.Output.Write('html', '<span class="icons float-right fa fa-arrow-alt-circle-up"></span>', [woOpenTag, woCloseTag]);
     end;
     Context.Output.WriteLn('html', '</h5>', [woCloseTag]);
   end;

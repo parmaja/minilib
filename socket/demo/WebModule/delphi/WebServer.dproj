@@ -842,9 +842,6 @@
                     <Platform Name="Win64">
                         <Operation>1</Operation>
                     </Platform>
-                    <Platform Name="Win64x">
-                        <Operation>1</Operation>
-                    </Platform>
                 </DeployClass>
                 <DeployClass Name="ProjectiOSDeviceDebug">
                     <Platform Name="iOSDevice32">

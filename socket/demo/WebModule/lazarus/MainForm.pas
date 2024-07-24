@@ -101,7 +101,7 @@ begin
     ServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
   if ChallengeSSLChk.Checked then
     ChallengeServer.Start;
-  HttpServer.Start;
+  HttpServer.Start(True);  
 end;
 
 procedure TMain.FormHide(Sender: TObject);

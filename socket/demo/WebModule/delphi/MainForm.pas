@@ -118,9 +118,8 @@ begin
     aHomeModule.AliasName := 'home';
     aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
 
-    aHomeModule.DomainName := 'localhost';
-    aHomeModule.Host := ComposeHostURL(HttpServer.UseSSL, aHomeModule.DomainName, HttpServer.Port);
-    aHomeModule.AssetsURL := aHomeModule.Host + '/' + aHomeModule.AliasName + '/assets/';
+    aHomeModule.Domain := 'localhost';
+    aHomeModule.AssetsURL := aHomeModule.GetHostURL + '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.HomePath := aHomePath;
     aHomeModule.WorkPath := aHomeModule.AppPath;
     ForceDirectories(aHomeModule.WorkPath + 'cache');

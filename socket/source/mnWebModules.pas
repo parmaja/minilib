@@ -175,11 +175,11 @@ type
     property SmartURL: Boolean read FSmartURL write FSmartURL;
   public
     //protocol://domain:port/alias/directory
+    //--------HOST URL------/alias/directory
+    //----------HOME URL----------/directory
     UseSSL: Boolean;
     Domain: string; //localhost
     Port: string;
-    //Host: string; //http://localhost:8080
-    Directory: string; //* extra directory after AliasName can be empty
 
     AssetsURL: string; //optional, default is HomeURL
 
@@ -188,9 +188,9 @@ type
     //Private Path
     property WorkPath: string read FWorkPath write FWorkPath;
 
-    function GetHostURL: string;
-    function GetHomeURL: string;
-    function GetAssetsURL: string;
+    function GetHostURL: string; virtual;
+    function GetHomeURL: string; virtual;
+    function GetAssetsURL: string; virtual;
   end;
 
   { TmodWebFileModule }
@@ -549,7 +549,7 @@ end;
 
 function TmodWebModule.GetHomeURL: string;
 begin
-  Result := IncludeURLDelimiter(IncludeURLDelimiter(GetHostURL) + AliasName) + Directory;
+  Result := IncludeURLDelimiter(IncludeURLDelimiter(GetHostURL) + AliasName);
 end;
 
 function TmodWebModule.GetAssetsURL: string;
@@ -1037,7 +1037,6 @@ begin
       Exit;
     end;
 
-
     aDocStream := TFileStream.Create(vFile, fmOpenRead or fmShareDenyWrite);
     try
       {if Respond.KeepAlive then
@@ -1078,7 +1077,6 @@ begin
   begin
     RespondNotActive;
   end;
-
 end;
 
 procedure TmodHttpCommand.RespondNotActive;

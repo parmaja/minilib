@@ -270,7 +270,6 @@ type
     function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;
     function Find(const Name: string): TmnwElement;
     function FindByRoute(const Route: string): TmnwElement;
-    function FindByPath(const APath: string): TmnwElement; deprecated;
     function FindByID(const aID: string): TmnwElement;
     function FindByName(const aName: string): TmnwElement;
     function IndexOfName(vName: string): Integer;
@@ -579,9 +578,12 @@ type
       end;
 
       TBody = class;
+      TNavBar = class;
       THeader = class;
       TFooter = class;
       TContainer = class;
+      TImage = class;
+      //TButtons = class;
 
       TFileOptions = set of (ftEmbed, ftResource);
 
@@ -664,10 +666,12 @@ type
 
       TBody = class(TContent)
       private
+        //function GetNavBar: TNavBar;
         function GetHeader: THeader;
         function GetContainer: TContainer;
         function GetFooter: TFooter;
       protected
+        //FNavBar: TNavBar;
         FHeader: THeader;
         FFooter: TFooter;
         FContainer: TContainer;
@@ -683,6 +687,12 @@ type
       THeader = class(TContent)
       public
         Text: string;
+      end;
+
+      TNavBar = class(TContent)
+      public
+        //Logo: TImage;
+        //Items: TButtons;
       end;
 
       TFooter = class(TContent)
@@ -770,6 +780,9 @@ type
         property Caption: string read FCaption write SetCaption;
       end;
 
+      {TButtons = class(THTMLElement)
+      end;}
+
       { TInput }
 
       [TIDExtension]
@@ -784,6 +797,7 @@ type
         Caption: string;
         PlaceHolder: string;
         EditType: string;
+        Required: Boolean;
       public
         property Text: string read FText write SetText;
       end;
@@ -834,9 +848,14 @@ type
       end;
 
       //* Custom Tag
-      TTag = class(THTMLElement)
+      TTag = class(THTMLElement) //TODO
       public
       end;
+
+      TList = class(THTMLElement)
+      public
+      end;
+
   protected
     procedure DoRespond(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
     function GetContentType(Route: string): string; override;
@@ -1138,6 +1157,14 @@ begin
     Result := ' ' + DQ(Name) + '=' + DQ(Default)
   else
     Result := '';
+end;
+
+function When(Condition: Boolean; Value: string; Default: string = ''): string; inline;
+begin
+  if Condition then
+    Result := Value
+  else
+    Result := Default;
 end;
 
 var
@@ -2189,7 +2216,8 @@ begin
     Context.Output.WriteLn('html', '<label for="'+e.ID+'" >' + e.Caption + '</label>', [woOpenTag, woCloseTag]);
   if Context.Schema.Interactive then
     event := ' onchange="mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')"';
-  Context.Output.WriteLn('html', '<input'+ event + Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
+
+  Context.Output.WriteLn('html', '<input'+ event + When(e.Required, 'required') + Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -2654,26 +2682,6 @@ begin
   end;
   if RaiseException and (Result = nil) then
     raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
-end;
-
-function TmnwElement.FindByPath(const APath: string): TmnwElement;
-var
-  o: TmnwElement;
-begin
-{  if (FSchema = nil) and (APath = '')
-    exit(Self);}
-
-  if SameText(GetPath, APath) then
-    exit(Self);
-
-  Result := nil;
-
-  for o in Self do
-  begin
-    Result := o.FindByPath(APath);
-    if Result <> nil then
-      exit;
-  end;
 end;
 
 function TmnwElement.FindByID(const aID: string): TmnwElement;
@@ -3251,6 +3259,13 @@ end;
 
 { THTML.TBody }
 
+{function THTML.TBody.GetNavBar: TNavBar;
+begin
+  if FNavBar = nil then
+    FNavBar := TNavBar.Create(Self, [elEmbed], True);
+  Result := FNavBar;
+end;}
+
 function THTML.TBody.GetHeader: THeader;
 begin
   if FHeader = nil then
@@ -3516,9 +3531,7 @@ begin
       aContext.MultipartData.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
       aContext.MultipartData.TempPath := (Module as TmnwWebModule).WorkPath + 'temp';
       aContext.MultipartData.Read(Request.Stream);
-    end
-    else
-      aContext.MultipartData := nil;
+    end;
     Respond.PutHeader('Content-Type', DocumentToContentType('html'));
     Respond.HttpResult := hrOK;
     aContext.Renderer := (Module as TmnwWebModule).CreateRenderer(True);
