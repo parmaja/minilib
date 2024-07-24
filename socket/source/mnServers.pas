@@ -19,7 +19,7 @@ interface
 
 uses
   Classes, SysUtils,
-  mnUtils, mnOpenSSL,
+  mnUtils, mnOpenSSL, syncobjs,
   mnSockets, mnStreams, mnConnections;
 
 const
@@ -103,6 +103,7 @@ type
     FLogMessages: TStringList;
     FOptions: TmnsoOptions;
     FLastCheck: UInt64;
+    FEvent: TEvent;
     function GetConnected: Boolean;
     procedure SetOptions(AValue: TmnsoOptions);
   protected
@@ -137,6 +138,7 @@ type
     procedure Unprepare; virtual;
     procedure DropConnections; virtual;
     procedure TerminatedSet; override;
+    property Event: TEvent read FEvent;
   public
     constructor Create;
     destructor Destroy; override;
@@ -190,6 +192,7 @@ type
     procedure DoStart; virtual;
     procedure DoStop; virtual;
     procedure DoCheckSynchronize;
+    procedure WaitStartedEvent;
     //Idle is in Listener thread not in main thread
     procedure Idle(vListener: TmnListener);
   public
@@ -203,11 +206,12 @@ type
     //Server.Log This called from outside of any threads, i mean you should be in the main thread to call it, if not use Listener.Log
     procedure Log(const S: string);
 
-    procedure Start;
-    procedure Wait;
+    procedure Start(WaitToStart: Boolean = False);
     procedure Restart;
     procedure Disconnect; //* Disconnect stop listener connection
+    //Stop is always waiting
     procedure Stop;
+    procedure Wait; deprecated 'Where we use it?';
 
     property Listener: TmnListener read FListener;
     property Count: Integer read GetCount;
@@ -467,6 +471,14 @@ begin
   CheckSynchronize
 end;
 
+procedure TmnServer.WaitStartedEvent;
+begin
+  if (Listener <> nil) and (Listener.Event <> nil) then
+  begin
+    Listener.Event.WaitFor();
+  end;
+end;
+
 procedure TmnServer.DoBeforeClose;
 begin
 end;
@@ -543,6 +555,7 @@ end;
 constructor TmnListener.Create;
 begin
   inherited Create;
+  FEvent := TEvent.Create(nil, False, False, '');
   FreeOnTerminate := False;
   FLogMessages := TStringList.Create;
   FTimeout := cListenerTimeout;
@@ -607,6 +620,7 @@ end;
 destructor TmnListener.Destroy;
 begin
   FreeAndNil(FLogMessages);
+  FreeAndNil(FEvent);
   inherited;
 end;
 
@@ -631,6 +645,7 @@ begin
       Changed;
       Started;
     end;
+    Event.SetEvent;
     while Connected and not Terminated do
     begin
       try
@@ -708,6 +723,8 @@ begin
     end;
     Unprepare;
     Changed;
+    //for stop trigger too
+    Event.SetEvent;
   except
     on E: Exception  do
     begin
@@ -903,7 +920,7 @@ begin
   Start;
 end;
 
-procedure TmnServer.Start;
+procedure TmnServer.Start(WaitToStart: Boolean);
 begin
   if (FListener = nil) then // if its already active, dont start again
   begin
@@ -926,6 +943,8 @@ begin
         //FListener.Timeout := 500;
         DoStart;
         FListener.Start;
+        if WaitToStart then
+          WaitStartedEvent;
         FActive := True;
       except
         FreeAndNil(FListener); //case error because delphi call terminateset on free
