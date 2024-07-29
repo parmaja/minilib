@@ -57,7 +57,7 @@ type
   THomeModule = class(TUIWebModule)
   private
   protected
-    function CreateRenderer(IsLocal: Boolean): TmnwRenderer; override;
+    function CreateRenderer: TmnwRenderer; override;
     procedure CreateItems; override;
   public
     destructor Destroy; override;
@@ -386,9 +386,9 @@ end;
 
 { THomeModule }
 
-function THomeModule.CreateRenderer(IsLocal: Boolean): TmnwRenderer;
+function THomeModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwBootstrapRenderer.Create(Self, IsLocal);
+  Result := TmnwBootstrapRenderer.Create(Self, True);
 end;
 
 destructor THomeModule.Destroy;

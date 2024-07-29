@@ -229,6 +229,8 @@ type
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom);
 
+  TActionProc = reference to procedure (const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult);
+
   { TmnwElement }
 
   TmnwElement = class(TmnObjectList<TmnwElement>)
@@ -250,6 +252,7 @@ type
     FKind: TmnwElementKind;
     FState: TmnwElementState;
     FOnExecute: TElementExecute;
+    FOnAction: TActionProc;
     procedure SetState(const AValue: TmnwElementState);
   protected
     procedure Update; virtual;
@@ -299,6 +302,7 @@ type
 
     function GetContentType(Route: string): string; virtual;
 
+
     procedure Action(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult);
     procedure Respond(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult); overload;
     procedure Respond(AContext: TmnwRenderContext; var ARespondResult: TmnwRespondResult); overload;
@@ -326,6 +330,7 @@ type
     property State: TmnwElementState read FState write SetState;
 
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
+    property OnAction: TActionProc read FOnAction write FOnAction;
     property Handle: Integer read FHandle;
   end;
 
@@ -1114,10 +1119,12 @@ type
 
   TAssetsSchema = class(TUIWebSchema)
   private
-  public
   protected
+    FLogo: THTML.TFile;
     procedure DoCompose; override;
+    procedure Created; override;
   public
+    property Logo: THTML.TFile read FLogo;
   end;
 
   { TUIWebSchemas }
@@ -1140,7 +1147,7 @@ type
     FAppPath: string;
     FWebApp: TUIWebSchemas;
   protected
-    function CreateRenderer(IsLocal: Boolean): TmnwRenderer; virtual;
+    function CreateRenderer: TmnwRenderer; virtual;
     procedure CreateItems; override;
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
     procedure Created; override;
@@ -3041,6 +3048,8 @@ begin
   DoRespondHeader(AContext);
   ARespondResult.Resume := True;
   DoAction(AContext, ARespondResult);
+  if Assigned(FOnAction) then
+    FOnAction(AContext, ARespondResult);
   if ARespondResult.ContentType <> '' then
   (AContext.Sender as TmodHttpCommand).Respond.PutHeader('Content-Type', ARespondResult.ContentType); //* move outside of mnWebElement.pas please
 end;
@@ -3628,7 +3637,7 @@ begin
     end;
     Respond.PutHeader('Content-Type', DocumentToContentType('html'));
     Respond.HttpResult := hrOK;
-    aContext.Renderer := (Module as TUIWebModule).CreateRenderer(True);
+    aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     try
       Initialize(aRespondResult);
       aRespondResult.SessionID := '';
@@ -3652,6 +3661,15 @@ end;
 
 { TAssetsSchema }
 
+procedure TAssetsSchema.Created;
+begin
+  inherited;
+  FLogo := TFile.Create(This);
+  FLogo.Name := 'logo';
+  FLogo.Route := 'logo';
+  //FLogo.FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
+end;
+
 procedure TAssetsSchema.DoCompose;
 begin
   inherited;
@@ -3659,13 +3677,6 @@ begin
   Route := 'assets';
   ServeFiles := True;
   Kind := Kind + [elFallback];
-
-  with TFile.Create(This) do
-  begin
-    Name := 'logo';
-    Route := 'logo';
-    FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
-  end;
 end;
 
 { TUIWebModule }
@@ -3692,9 +3703,9 @@ begin
   inherited;
 end;
 
-function TUIWebModule.CreateRenderer(IsLocal: Boolean): TmnwRenderer;
+function TUIWebModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwHTMLRenderer.Create(Self, IsLocal);
+  Result := TmnwHTMLRenderer.Create(Self, False);
 end;
 
 destructor TUIWebModule.Destroy;
