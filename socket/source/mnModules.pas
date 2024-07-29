@@ -55,6 +55,7 @@ type
     resHeaderSending,
     resHeadSent, //reposnd line, first line before header
     resHeaderSent,
+    resLatch, //raise exception when writing to stream , i don't like it!
     //resBodySent,
     //resSuccess,
     //resKeepAlive,
@@ -98,6 +99,8 @@ type
     FContentLength: Int64;
     FParent: TmnCustomCommand;
     FStreamControl: TmodCommunicateStreamControl;
+    function GetLatch: Boolean;
+    procedure SetLatch(const AValue: Boolean);
     procedure SetHead(const Value: string);
   protected
     procedure DoWriting(vCount: Longint);
@@ -141,6 +144,7 @@ type
     property Parent: TmnCustomCommand read FParent;
     property ContentLength: Int64 read FContentLength write FContentLength;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
+    property Latch: Boolean read GetLatch write SetLatch;
   end;
 
   TmodRequestInfo = record
@@ -1849,6 +1853,19 @@ begin
   FHead := Value;
 end;
 
+function TmodCommunicate.GetLatch: Boolean;
+begin
+  Result := resLatch in Header.FStates;
+end;
+
+procedure TmodCommunicate.SetLatch(const AValue: Boolean);
+begin
+  if AValue then
+    Header.FStates := Header.FStates + [resLatch]
+  else
+    Header.FStates := Header.FStates - [resLatch];
+end;
+
 procedure TmodCommunicate.Reset;
 begin
   FWritingStarted := False;
@@ -1886,7 +1903,7 @@ begin
     Parent.DoSendHeader(Self);
 
   Stream.WriteUTF8Line(Utf8string(''));
-  Header.FStates := Header.FStates + [resHeaderSent];
+  Header.FStates := Header.FStates + [resHeaderSent] - [resHeaderSending];
 
   DoHeaderSent;
   if Parent<> nil then
@@ -1920,7 +1937,9 @@ begin
   begin
     FWritingStarted := True;
     try
-      if not (resHeaderSending in Header.FStates) and not (resHeaderSent in Header.FStates) then
+      if resLatch in Header.States then
+        raise TmodModuleException.Create('You can''t send data at this phase'); //maybe before sending header
+      if not (resHeaderSending in Header.States) and not (resHeaderSent in Header.States) then
         SendHeader(True);
     finally
       FWritingStarted := False;

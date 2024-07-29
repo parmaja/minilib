@@ -14,19 +14,9 @@ uses
 	mnLogs, mnWebElements, mnBootstraps;
 
 type
-  { TAssetsSchema }
-
-  TAssetsSchema = class(TmnwWebSchema)
-  private
-  public
-  protected
-    procedure DoCompose; override;
-  public
-  end;
-
   { TWelcomeSchema }
 
-  TWelcomeSchema = class(TmnwWebSchema)
+  TWelcomeSchema = class(TUIWebSchema)
   private
   protected
     Input1: THTML.TInput;
@@ -37,7 +27,7 @@ type
     class function GetCapabilities: TmnwSchemaCapabilities; override;
   end;
 
-  TWSShema = class(TmnwWebSchema)
+  TWSShema = class(TUIWebSchema)
   private
   public
   protected
@@ -47,7 +37,7 @@ type
 
   { TLoginSchema }
 
-  TLoginSchema = class(TmnwWebSchema)
+  TLoginSchema = class(TUIWebSchema)
   private
   public
   protected
@@ -64,7 +54,7 @@ type
 
   { THomeModule }
 
-  THomeModule = class(TmnwWebModule)
+  THomeModule = class(TUIWebModule)
   private
   protected
     function CreateRenderer(IsLocal: Boolean): TmnwRenderer; override;
@@ -270,33 +260,6 @@ begin
   //Result := Inherited GetCapabilities;
 end;
 
-{ TbsHttpGetHomeCommand }
-
-{ TAssetsSchema }
-
-procedure TAssetsSchema.DoCompose;
-begin
-  inherited;
-  Name := 'Assets';
-  Route := 'assets';
-  ServeFiles := True;
-  Kind := Kind + [elFallback];
-
-  with TFile.Create(This) do
-  begin
-    Name := 'jquery';
-    Route := 'jquery';
-    FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
-  end;
-
-  with TFile.Create(This) do
-  begin
-    Name := 'logo';
-    Route := 'logo';
-    FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
-  end;
-end;
-
 { TWSEchoGetHomeCommand }
 
 procedure TWSEchoGetHomeCommand.RespondResult(var Result: TmodRespondResult);
@@ -326,12 +289,15 @@ var
 begin
   if AContext.MultipartData <> nil then
   begin
-    aUsername := AContext.MultipartData.Values['username'];
-    aPassword := AContext.MultipartData.Values['password'];
-    ARespondResult.SessionID := aUsername +'/'+ aPassword;
-    ARespondResult.Resume := False;
-    ARespondResult.HttpResult := hrRedirect;
-    ARespondResult.Location := IncludePathDelimiter(Module.GetHomeURL) + 'dashboard';
+    if SameText(AContext.MultipartData.Values['execute'], 'true') then
+    begin
+      aUsername := AContext.MultipartData.Values['username'];
+      aPassword := AContext.MultipartData.Values['password'];
+      ARespondResult.SessionID := aUsername +'/'+ aPassword;
+      ARespondResult.Resume := False;
+      ARespondResult.HttpResult := hrRedirect;
+      ARespondResult.Location := IncludePathDelimiter(Module.GetHomeURL) + 'dashboard';
+    end;
   end;
   inherited;
 end;
@@ -356,7 +322,7 @@ begin
       Header.Text := 'Creative Solutions';
       with TImage.Create(This) do
       begin
-        Comment := 'Image from another module';
+        Comment := 'Image schama';
         Source := IncludeURLDelimiter(Module.GetHostURL)+'doc/logo.png';
       end;
 
@@ -376,7 +342,7 @@ begin
 
           with TForm.Create(This) do
           begin
-            PostTo := '.';
+            PostTo.Target := toSchema;
             with TInput.Create(This) do
             begin
               ID := 'username';
@@ -394,7 +360,7 @@ begin
 
             TBreak.Create(This);
 
-            Submit.Caption := 'Sumbit';
+            Submit.Caption := 'Submit';
             Reset.Caption := 'Reset';
 
           end;
@@ -433,11 +399,20 @@ end;
 procedure THomeModule.CreateItems;
 begin
   inherited;
-  RegisterCommand('.ws', TWSEchoGetHomeCommand, false);
-  Schemas.RegisterSchema('welcome', TWelcomeSchema);
-  Schemas.RegisterSchema('assets', TAssetsSchema);
-  Schemas.RegisterSchema('login', TLoginSchema);
-  Schemas.RegisterSchema('ws', TWSShema);
+  RegisterCommand('.ws', TWSEchoGetHomeCommand, False);
+  WebApp.RegisterSchema('welcome', TWelcomeSchema);
+  WebApp.RegisterSchema('assets', TAssetsSchema);
+  WebApp.RegisterSchema('login', TLoginSchema);
+  WebApp.RegisterSchema('ws', TWSShema);
+  with WebApp.Assets do
+  begin
+    with TFile.Create(This) do
+    begin
+      Name := 'jquery';
+      Route := 'jquery';
+      FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
+    end;
+  end;
 end;
 
 end.

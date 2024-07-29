@@ -639,11 +639,12 @@ begin
 
   try
     Connect;
-    Log('Server starting at port: ' + FPort);
+//    Log('Server starting at port: ' + FPort);
     if Connected then
     begin
       Changed;
       Started;
+      Log('Server started at port: ' + FPort);
     end;
     Event.SetEvent;
     while Connected and not Terminated do

@@ -87,17 +87,25 @@ type
     constructor Create; //* Leave it
   end;
 
-  { TIDExtension }
+  { TID_Extension }
 
-  TIDExtension = class(TElementExtension)
+  TID_Extension = class(TElementExtension)
   private
   public
     class procedure Update(Element: TmnwElement); override;
   end;
 
-  { TRouteExtension }
+  { TName_Extension }
 
-  TRouteExtension = class(TElementExtension)
+  TName_Extension = class(TElementExtension)
+  private
+  public
+    class procedure Update(Element: TmnwElement); override;
+  end;
+
+  { TRoute_Extension }
+
+  TRoute_Extension = class(TElementExtension)
   private
   public
     class procedure Update(Element: TmnwElement); override;
@@ -226,6 +234,7 @@ type
   TmnwElement = class(TmnObjectList<TmnwElement>)
   private
     FEnabled: Boolean;
+    FHandle: Integer;
     FVisible: Boolean;
     FRenderIt: Boolean;
     FSchema: TmnwSchema;
@@ -260,6 +269,7 @@ type
     procedure SendMessage(AMessage: string); overload;
     procedure SendMessage(JSON: TDON_Pair); overload; virtual;
     procedure ReceiveMessage(JSON: TDON_Pair); virtual;
+    function GenHandle: Integer;
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); virtual;
     destructor Destroy; override;
@@ -316,6 +326,7 @@ type
     property State: TmnwElementState read FState write SetState;
 
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
+    property Handle: Integer read FHandle;
   end;
 
   { TmnwWriter }
@@ -408,6 +419,7 @@ type
     NameingLastNumber: Integer;
     procedure UpdateAttached;
     procedure GenID(Element: TmnwElement); inline;
+    procedure GenName(Element: TmnwElement); inline;
     procedure GenRoute(Element: TmnwElement); inline;
     procedure DoRespond(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
     procedure ProcessMessage(const s: string);
@@ -515,6 +527,7 @@ type
   public
     SchemaClass: TmnwSchemaClass;
     Schema: TmnwSchema;
+    ManualSchema: Boolean; //Schema set from outside not by request
     constructor Create;
     destructor Destroy; override;
     property Lock: TCriticalSection read FLock;
@@ -531,7 +544,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
+    procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass; ASchemaObject: TmnwSchema = nil);
 
     function FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
 		procedure GetElement(var Route: string; out Schema: TmnwSchema; out Element: TmnwElement);
@@ -543,6 +556,17 @@ type
   end;
 
   TDirection = (dirUnkown, dirLTR, dirRTL);
+
+  TFormPostTo = (
+    toElement,
+    toSchema,
+    toHome
+  );
+
+  TFormPost = record
+    Target: TFormPostTo;
+    CustomTarget: string;
+  end;
 
 {-------------------------------------------------------}
 {-----------------    STANDARD    ----------------------}
@@ -591,7 +615,7 @@ type
 
       //* For resource Use FileName := 'myfile.js' but the resource name will took as myfile only, extention will be for mime
 
-      [TIDExtension]
+      [TID_Extension]
       TFile = class(THTMLElement)
       protected
         procedure DoRespond(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
@@ -640,8 +664,8 @@ type
         constructor Create(AParent: TmnwElement; AOnCompose: TContentComposeProc = nil); reintroduce;
       end;
 
-      [TIDExtension]
-      [TRouteExtension]
+      [TID_Extension]
+      [TRoute_Extension]
       TIntervalCompose = class(TContentCompose)
       end;
 
@@ -718,14 +742,14 @@ type
         Size: Integer;
       end;
 
-      [TIDExtension]
+      [TID_Extension]
       TCard = class(TContent)
       public
         Collapse: Boolean;
         Caption: string;
       end;
 
-      [TIDExtension]
+      [TID_Extension]
       TPanel = class(TContent)
       public
         Caption: string;
@@ -737,13 +761,16 @@ type
         Caption: string;
       end;
 
-      [TIDExtension]
+      [TID_Extension]
+      [TName_Extension]
       TForm = class(TContent)
       private
       protected
         procedure DoAction(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
+        procedure Created; override;
       public
-        PostTo: string;
+        PostTo: TFormPost;
+
         RedirectTo: string;
 
         Submit: TFormButton;
@@ -759,7 +786,7 @@ type
 
       { TAction }
 
-      [TRouteExtension]
+      [TRoute_Extension]
       TAction = class(THTMLElement)
       protected
         procedure DoRespond(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
@@ -785,7 +812,7 @@ type
 
       { TInput }
 
-      [TIDExtension]
+      [TID_Extension]
       TInput = class(THTMLElement)
       private
         FText: string;
@@ -804,13 +831,13 @@ type
 
       { TInputPassword }
 
-      [TIDExtension]
+      [TID_Extension]
       TInputPassword = class(TInput)
       protected
         procedure Created; override;
       end;
 
-      [TIDExtension]
+      [TID_Extension]
       TImage = class(THTMLElement)
       protected
         procedure DoCompose; override;
@@ -822,7 +849,7 @@ type
 
       { TMemoryImage }
 
-      [TIDExtension]
+      [TID_Extension]
       TMemoryImage = class(TImage)
       private
         FData: TMemoryStream;
@@ -1065,41 +1092,62 @@ type
     function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
   end;
 
-  TmnwWebModule = class;
+  TUIWebModule = class;
 
-  { TmnwHttpGetHomeCommand }
+  { TUIWebCommand }
 
-  TmnwHttpGetHomeCommand = class(TmodHttpCommand)
+  TUIWebCommand = class(TmodHttpCommand)
   private
-    function GetModule: TmnwWebModule;
+    function GetModule: TUIWebModule;
   protected
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
-    property Module: TmnwWebModule read GetModule;
+    property Module: TUIWebModule read GetModule;
   end;
 
-  TmnwWebSchema = class(THTML)
+  TUIWebSchema = class(THTML)
   public
-    Module: TmnwWebModule;
+    Module: TUIWebModule;
   end;
 
-  TmnwWebSchemas = class(TmnwSchemas)
-  protected
-    Module: TmnwWebModule;
-    procedure SchemaCreated(Schema: TmnwSchema); override;
-  end;
+  { TAssetsSchema }
 
-  TmnwWebModule = class(TmodWebModule)
+  TAssetsSchema = class(TUIWebSchema)
   private
+  public
+  protected
+    procedure DoCompose; override;
+  public
+  end;
+
+  { TUIWebSchemas }
+
+  TUIWebSchemas = class(TmnwSchemas)
+  private
+    FAssets: TAssetsSchema;
+  protected
+    FModule: TUIWebModule;
+    procedure SchemaCreated(Schema: TmnwSchema); override;
+  public
+    constructor Create(AModule: TUIWebModule);
+    destructor Destroy; override;
+    property Assets: TAssetsSchema read FAssets;
+    property Module: TUIWebModule read FModule;
+  end;
+
+  TUIWebModule = class(TmodWebModule)
+  private
+    FAppPath: string;
+    FWebApp: TUIWebSchemas;
   protected
     function CreateRenderer(IsLocal: Boolean): TmnwRenderer; virtual;
     procedure CreateItems; override;
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
     procedure Created; override;
   public
-    AppPath: string;
-    Schemas: TmnwWebSchemas;
     destructor Destroy; override;
+    property AppPath: string read FAppPath write FAppPath;
+    property WebApp: TUIWebSchemas read FWebApp;
   end;
 
 function LevelStr(vLevel: Integer): String;
@@ -1720,13 +1768,15 @@ begin
   FreeAndNil(FLock);
 end;
 
-procedure TmnwSchemas.RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass);
+procedure TmnwSchemas.RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass; ASchemaObject: TmnwSchema);
 var
   SchemaObject: TmnwSchemaObject;
 begin
   SchemaObject := TmnwSchemaObject.Create;
   SchemaObject.Name := AName;
 	SchemaObject.SchemaClass := SchemaClass;
+  SchemaObject.Schema := ASchemaObject;
+  SchemaObject.ManualSchema := ASchemaObject <> nil;
   inherited Add(SchemaObject);
 end;
 
@@ -1777,7 +1827,7 @@ begin
         if SchemaObject.Schema = nil then
         begin
           Schema := SchemaObject.SchemaClass.Create(nil);
-          Schema.Route := Route;
+          //Schema.Route := Route; //IDK
           SchemaCreated(Schema);
           Schema.Compose;
           if not (schemaDynamic in Schema.GetCapabilities) then
@@ -1827,7 +1877,13 @@ begin
   if Result <> nil then
   begin
     aContext.Schema := aSchema;
-    Result.Action(AContext, ARespondResult);
+    //resLatch
+    (AContext.Sender as TmodHttpCommand).Respond.Latch := True;
+    try
+      Result.Action(AContext, ARespondResult);
+    finally
+      (AContext.Sender as TmodHttpCommand).Respond.Latch := False;
+    end;
     if ARespondResult.Resume then
       Result.Respond(AContext, ARespondResult);
   end;
@@ -2133,19 +2189,19 @@ var
   aPostTo: string;
 begin
   e := Scope.Element as THTML.TForm;
-  if e.PostTo <> '' then
-  begin
-    if e.PostTo = '.' then
-      aPostTo := Renderer.Module.GetHomeUrl
-    else
-      aPostTo := e.PostTo
-  end
-  else
-    aPostTo := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + Scope.Element.GetPath;
+  if e.PostTo.CustomTarget <> '' then
+    aPostTo := e.PostTo.CustomTarget
+  else if e.PostTo.Target = toSchema then
+    aPostTo := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + e.Schema.GetPath
+  else if e.PostTo.Target = toElement then
+    aPostTo := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + e.GetPath
+  else if e.PostTo.Target = toHome then
+    aPostTo := IncludeURLDelimiter(Renderer.Module.GetHomeUrl);
   Context.Output.WriteLn('html', '<form method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   inherited;
   if e.RedirectTo <> '' then
     Context.Output.WriteLn('html', '<input type="hidden" name="redirect" value="'+e.RedirectTo+'">', [woOpenTag, woCloseTag]);
+  Context.Output.WriteLn('html', '<input type="hidden" name="execute" value="true">', [woOpenTag, woCloseTag]);
   Context.Output.WriteLn('html', '</form>', [woCloseTag]);
 
   if e.Submit.Caption <> '' then
@@ -2416,14 +2472,30 @@ var
 begin
   if Element.ID = '' then
   begin
-    Inc(NameingLastNumber);
     s := Element.ClassName;
     p := ReversePos('.', s);
     if p > 0 then
       s := Copy(s, p + 2, MaxInt) //* skip T
     else
       s := Copy(s, 2, MaxInt); //* skip T
-    Element.ID := LowerCase(s + '-' + NameingLastNumber.ToString);
+    Element.ID := LowerCase(s + '-' + Element.GenHandle.ToString);
+  end;
+end;
+
+procedure TmnwSchema.GenName(Element: TmnwElement);
+var
+  s: string;
+  p: Integer;
+begin
+  if Element.Name = '' then
+  begin
+    s := Element.ClassName;
+    p := ReversePos('.', s);
+    if p > 0 then
+      s := Copy(s, p + 2, MaxInt) //* skip T
+    else
+      s := Copy(s, 2, MaxInt); //* skip T
+    Element.Name := LowerCase(s + '-' + Element.GenHandle.ToString);
   end;
 end;
 
@@ -2434,14 +2506,13 @@ var
 begin
   if Element.Route = '' then
   begin
-    Inc(NameingLastNumber);
     s := Element.ClassName;
     p := ReversePos('.', s);
     if p > 0 then
       s := Copy(s, p + 2, MaxInt) //* skip T
     else
       s := Copy(s, 2, MaxInt); //* skip T
-    Element.Route := LowerCase(s + '-' + NameingLastNumber.ToString);
+    Element.Route := LowerCase(s + '-' + Element.GenHandle.ToString);
   end;
 end;
 
@@ -2774,6 +2845,16 @@ end;
 
 procedure TmnwElement.ReceiveMessage(JSON: TDON_Pair);
 begin
+end;
+
+function TmnwElement.GenHandle: Integer;
+begin
+  if Handle = 0 then
+  begin
+    Inc(Schema.NameingLastNumber);
+    FHandle := Schema.NameingLastNumber
+  end;
+  Result := Handle;
 end;
 
 procedure TmnwElement.DoRespond(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult);
@@ -3389,6 +3470,12 @@ begin
   end;
 end;
 
+procedure THTML.TForm.Created;
+begin
+  inherited;
+  PostTo.Target := toElement;
+end;
+
 { THTML.TParagraph }
 
 constructor THTML.TParagraph.Create(AParent: TmnwElement; AText: string);
@@ -3441,14 +3528,21 @@ end;
 
 { TNameAttribute }
 
-class procedure TIDExtension.Update(Element: TmnwElement);
+class procedure TID_Extension.Update(Element: TmnwElement);
 begin
   Element.Schema.GenID(Element);
 end;
 
-{ TRouteExtension }
+{ TName_Extension }
 
-class procedure TRouteExtension.Update(Element: TmnwElement);
+class procedure TName_Extension.Update(Element: TmnwElement);
+begin
+  Element.Schema.GenName(Element);
+end;
+
+{ TRoute_Extension }
+
+class procedure TRoute_Extension.Update(Element: TmnwElement);
 begin
   Element.Schema.GenRoute(Element);
 end;
@@ -3499,12 +3593,12 @@ end;
 
 { TbsHttpGetHomeCommand }
 
-function TmnwHttpGetHomeCommand.GetModule: TmnwWebModule;
+function TUIWebCommand.GetModule: TUIWebModule;
 begin
-  Result := (inherited Module) as TmnwWebModule;
+  Result := (inherited Module) as TUIWebModule;
 end;
 
-procedure TmnwHttpGetHomeCommand.RespondResult(var Result: TmodRespondResult);
+procedure TUIWebCommand.RespondResult(var Result: TmodRespondResult);
 var
   aContext: TmnwRespondContext;
   aDate: TDateTime;
@@ -3515,7 +3609,7 @@ begin
   inherited;
   if Request.ConnectionType = ctWebSocket then
   begin
-    (Module as TmnwWebModule).Schemas.Attach(DeleteSubPath('', Request.Path), Self, Respond.Stream); //Serve the websocket
+    (Module as TUIWebModule).WebApp.Attach(DeleteSubPath('', Request.Path), Self, Respond.Stream); //Serve the websocket
     //Result.Status := Result.Status - [mrKeepAlive]; // Disconnect
   end
   else
@@ -3529,21 +3623,25 @@ begin
     if Request.ConnectionType = ctFormData then
     begin
       aContext.MultipartData.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
-      aContext.MultipartData.TempPath := (Module as TmnwWebModule).WorkPath + 'temp';
+      aContext.MultipartData.TempPath := (Module as TUIWebModule).WorkPath + 'temp';
       aContext.MultipartData.Read(Request.Stream);
     end;
     Respond.PutHeader('Content-Type', DocumentToContentType('html'));
     Respond.HttpResult := hrOK;
-    aContext.Renderer := (Module as TmnwWebModule).CreateRenderer(True);
+    aContext.Renderer := (Module as TUIWebModule).CreateRenderer(True);
     try
       Initialize(aRespondResult);
       aRespondResult.SessionID := '';
       aRespondResult.HttpResult := hrOK;
       aRespondResult.Location := '';
-      (Module as TmnwWebModule).Schemas.Respond(aContext, aRespondResult);
+
+      (Module as TUIWebModule).WebApp.Respond(aContext, aRespondResult);
+
       aDate := IncSecond(Now, 30 * SecsPerMin);
       aPath := '';
       Respond.SetCookie('home', 'session', 'session; Expires='+FormatHTTPDate(aDate)+'; SameSite=None; Domain=' + Module.Domain + '; Path=/'+aPath+'; Secure');
+      //if aRespondResult.Location <> '' then
+
       //SessionID
     finally
       aContext.Renderer.Free;
@@ -3552,9 +3650,27 @@ begin
   end;
 end;
 
-{ TmnwWebModule }
+{ TAssetsSchema }
 
-procedure TmnwWebModule.DoPrepareRequest(ARequest: TmodRequest);
+procedure TAssetsSchema.DoCompose;
+begin
+  inherited;
+  Name := 'Assets';
+  Route := 'assets';
+  ServeFiles := True;
+  Kind := Kind + [elFallback];
+
+  with TFile.Create(This) do
+  begin
+    Name := 'logo';
+    Route := 'logo';
+    FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
+  end;
+end;
+
+{ TUIWebModule }
+
+procedure TUIWebModule.DoPrepareRequest(ARequest: TmodRequest);
 begin
   inherited;
   if StartsStr('.', ARequest.Route[ARequest.Route.Count - 1]) then
@@ -3564,37 +3680,52 @@ begin
   //ARequest.Path := DeleteSubPath(ARequest.Command, ARequest.Path);
 end;
 
-procedure TmnwWebModule.CreateItems;
+procedure TUIWebModule.CreateItems;
 begin
   inherited;
-  Schemas := TmnwWebSchemas.Create;
-  Schemas.Module := Self;
-  RegisterCommand('', TmnwHttpGetHomeCommand, true);
+  FWebApp := TUIWebSchemas.Create(Self);
+  RegisterCommand('', TUIWebCommand, true);
 end;
 
-procedure TmnwWebModule.Created;
+procedure TUIWebModule.Created;
 begin
   inherited;
 end;
 
-function TmnwWebModule.CreateRenderer(IsLocal: Boolean): TmnwRenderer;
+function TUIWebModule.CreateRenderer(IsLocal: Boolean): TmnwRenderer;
 begin
   Result := TmnwHTMLRenderer.Create(Self, IsLocal);
 end;
 
-destructor TmnwWebModule.Destroy;
+destructor TUIWebModule.Destroy;
 begin
   inherited;
-  FreeAndNil(Schemas); //keep behind inherited
+  FreeAndNil(FWebApp); //keep behind inherited
 end;
 
-{ TmnwWebSchemas }
+{ TUIWebSchemas }
 
-procedure TmnwWebSchemas.SchemaCreated(Schema: TmnwSchema);
+procedure TUIWebSchemas.SchemaCreated(Schema: TmnwSchema);
 begin
   inherited;
-  if Schema is TmnwWebSchema then
-    (Schema as TmnwWebSchema).Module := Module;
+  if Schema is TUIWebSchema then
+    (Schema as TUIWebSchema).Module := Module;
+end;
+
+constructor TUIWebSchemas.Create(AModule: TUIWebModule);
+begin
+  inherited Create;
+  FModule := AModule;
+  FAssets := TAssetsSchema.Create(nil);
+  FAssets.Route := 'assets';
+  SchemaCreated(FAssets);
+  RegisterSchema('assets', TAssetsSchema, FAssets);
+end;
+
+destructor TUIWebSchemas.Destroy;
+begin
+  //FreeAndNil(FAssets); no will be free with others
+  inherited;
 end;
 
 initialization
