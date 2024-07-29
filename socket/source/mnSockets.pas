@@ -109,7 +109,6 @@ type
     function DoPeek(var Buffer; var Count: Longint): TmnError; virtual; abstract;
     function DoPending: Boolean; virtual; abstract;
     function DoClose: TmnError; virtual; abstract;
-    property Options: TmnsoOptions read FOptions;
     property Kind: TSocketKind read FKind;
     property States: TmnSocketStates read FStates;
   public
@@ -137,6 +136,7 @@ type
     function GetRemoteAddress: string; virtual; abstract;
     function GetLocalName: string; virtual; abstract;
     function GetRemoteName: string; virtual; abstract;
+    property Options: TmnsoOptions read FOptions;
     //property Handle: TSocketHandle read FHandle; //I prefer not public it, but i need it into OpenSSL
 
     property HostAddress: string read FHostAddress;

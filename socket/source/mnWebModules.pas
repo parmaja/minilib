@@ -1,4 +1,4 @@
-unit mnWebModules;
+﻿unit mnWebModules;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -177,7 +177,6 @@ type
     //protocol://domain:port/alias/directory
     //--------HOST URL------/alias/directory
     //----------HOME URL----------/directory
-    UseSSL: Boolean;
     Domain: string; //localhost
     Port: string;
 
@@ -188,9 +187,6 @@ type
     //Private Path
     property WorkPath: string read FWorkPath write FWorkPath;
 
-    function GetHostURL: string; virtual;
-    function GetHomeURL: string; virtual;
-    function GetAssetsURL: string; virtual;
   end;
 
   { TmodWebFileModule }
@@ -540,23 +536,6 @@ end;
 destructor TmodWebModule.Destroy;
 begin
   inherited Destroy;
-end;
-
-function TmodWebModule.GetHostURL: string;
-begin
-  Result := ComposeHttpURL(UseSSL, Domain, Port);
-end;
-
-function TmodWebModule.GetHomeURL: string;
-begin
-  Result := IncludeURLDelimiter(IncludeURLDelimiter(GetHostURL) + AliasName);
-end;
-
-function TmodWebModule.GetAssetsURL: string;
-begin
-  Result := AssetsURL;
-  if Result = '' then
-    Result := GetHomeURL;
 end;
 
 procedure TmodWebModule.Log(S: string);

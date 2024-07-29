@@ -161,6 +161,7 @@ type
 
     Command: String;
     Client: String;
+    IsSSL: Boolean;
   end;
 
   TmnRoute = class(TStringList)
@@ -241,6 +242,7 @@ type
     //for module
     property Command: String read Info.Command write Info.Command;
     property Client: String read Info.Client write Info.Client;
+    property IsSSL: Boolean read Info.IsSSL write Info.IsSSL;
     property Path: String read FPath write FPath;
 
     property Route: TmnRoute read FRoute write FRoute;
@@ -682,7 +684,8 @@ function FormatHTTPDate(vDate: TDateTime): string;
 function ExtractDomain(const URI: string): string;
 function DeleteSubPath(const SubKey, Path: string): string;
 
-function ComposeHttpURL(UseSSL: Boolean; DomainName: string; Port: string = ''; Directory: string = ''): string;
+function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
+function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 
 const
   ProtocolVersion = 'HTTP/1.1'; //* Capital letter
@@ -693,23 +696,23 @@ implementation
 uses
   mnUtils;
 
-function ComposeHttpURL(UseSSL: Boolean; DomainName: string; Port: string; Directory: string): string;
+function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 begin
   if UseSSL then
-  begin
-    Result := 'https://';
-    if Port = '443' then
-      Port := '';
-  end
+    Result := ComposeHttpURL('https', DomainName, Port, Directory)
   else
-  begin
-    Result := 'http://';
-    if Port = '80' then
-      Port := '';
-  end;
-  Result := Result + DomainName;
-  if Port <> '' then
+    Result := ComposeHttpURL('http', DomainName, Port, Directory);
+end;
+
+function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
+begin
+  Result := Protocol + '://' + DomainName;
+
+  if (Port<>'') and ((Protocol='https') and (Port<>'443'))or((Protocol='http') and (Port<>'80')) then
     Result := Result + ':' + Port;
+
+  if Directory<>'' then
+    Result := Result + '/' + Directory;
 end;
 
 function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
@@ -1105,6 +1108,7 @@ begin
       else
         try
           aRequest.Client := RemoteIP;
+          aRequest.IsSSL := IsSSL;
           Result := aModule.Execute(aRequest);
         finally
           if Stream.Connected then

@@ -73,6 +73,7 @@ type
   private
     FRemoteIP: string;
     FStream: TmnConnectionStream;
+    FIsSSL: Boolean;
     function GetListener: TmnListener;
   protected
     function GetConnected: Boolean; override;
@@ -86,6 +87,7 @@ type
     property Stream: TmnConnectionStream read FStream;
     property Listener: TmnListener read GetListener;
     property RemoteIP: string read FRemoteIP;
+    property IsSSL: Boolean read FIsSSL;
   end;
 
   TmnServerConnectionClass = class of TmnServerConnection;
@@ -696,6 +698,7 @@ begin
             try
               aConnection := CreateConnection(aSocket) as TmnServerConnection;
               aConnection.FRemoteIP := aSocket.GetRemoteAddress;
+              aConnection.FIsSSL := soSSL in aSocket.Options;
             except
               on E: Exception do
               begin

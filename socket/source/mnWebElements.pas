@@ -479,7 +479,7 @@ type
 
   { TmnwRenderer }
 
-  TmnwRenderer = class(TmnwObject)
+  TmnwRenderer = class abstract(TmnwObject)
   private
     FModule: TmodWebModule;
     FLibraries: TmnwLibraries;
@@ -509,6 +509,14 @@ type
     property Params: TmnwAttributes read FParams;
     property Libraries: TmnwLibraries read FLibraries;
     property Module: TmodWebModule read FModule;
+
+    function GetHostURL: string; virtual;
+    function GetHomeURL: string; virtual;
+    function GetAssetsURL: string; virtual;
+  public
+    IsSSL: Boolean;
+    Domain: string; //localhost
+    Port: string;
   end;
 
   { TmnwSchemaObject }
@@ -2186,11 +2194,11 @@ begin
   if e.PostTo.CustomTarget <> '' then
     aPostTo := e.PostTo.CustomTarget
   else if e.PostTo.Target = toSchema then
-    aPostTo := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + e.Schema.GetPath
+    aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl) + e.Schema.GetPath
   else if e.PostTo.Target = toElement then
-    aPostTo := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + e.GetPath
+    aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl) + e.GetPath
   else if e.PostTo.Target = toHome then
-    aPostTo := IncludeURLDelimiter(Renderer.Module.GetHomeUrl);
+    aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl);
   Context.Writer.WriteLn('<form method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.Attributes.GetText(True)+'>', [woOpenTag]);
   inherited;
   if e.RedirectTo <> '' then
@@ -2303,7 +2311,7 @@ end;
 procedure TmnwHTMLRenderer.TMemoryImage.DoCollectAttributes(Scope: TmnwScope);
 begin
   inherited;
-  Scope.Attributes['src'] := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + Scope.Element.GetPath;
+  Scope.Attributes['src'] := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
 end;
 
@@ -3074,6 +3082,23 @@ begin
   DoEndRender;
 end;
 
+function TmnwRenderer.GetAssetsURL: string;
+begin
+  Result := Module.AssetsURL;
+  if Result = '' then
+    Result := GetHomeURL;
+end;
+
+function TmnwRenderer.GetHomeURL: string;
+begin
+  Result := IncludeURLDelimiter(IncludeURLDelimiter(GetHostURL) + Module.AliasName);
+end;
+
+function TmnwRenderer.GetHostURL: string;
+begin
+  Result := ComposeHttpURL(IsSSL, Domain, Port);
+end;
+
 procedure TmnwRenderer.DoBeginRender;
 begin
 end;
@@ -3272,7 +3297,7 @@ end;
 
 procedure TJQuery_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwRespondContext);
 begin
-  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.Module.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"></script>');
+  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"></script>');
 end;
 
 { THTML }
@@ -3522,7 +3547,7 @@ var
   URL: string;
 begin
   inherited;
-  URL := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + Scope.Element.GetPath;
+  URL := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
   Scope.Attributes['data-mnw-refresh-url'] := URL;
 end;
 
@@ -3543,7 +3568,7 @@ begin
   end
   else
   begin
-    src := IncludeURLDelimiter(Renderer.Module.GetHomeUrl) + Scope.Element.GetPath;
+    src := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
     Context.Writer.WriteLn('<script type="text/javascript" src='+ DQ(src) +' ></script>', [woOpenTag, woCloseTag]);
     inherited;
   end;
@@ -3562,7 +3587,7 @@ var
   aDate: TDateTime;
   aPath: string;
   aRespondResult: TmnwRespondResult;
-
+  aDomain, aPort: string;
 begin
 
   Initialize(aContext);
@@ -3579,6 +3604,19 @@ begin
     aContext.MultipartData := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )
 
     aContext.SessionID := Request.Cookies.Values['session'];
+    if Module.Domain<>'' then
+    begin
+      aDomain := Module.Domain;
+      aPort := Module.Port;
+    end
+    else
+    begin
+      SpliteStr(Request.Header['Host'], ':', aDomain, aPort);
+    end;
+
+    if aDomain='' then
+      raise Exception.Create('Ops domain is empty ');
+
     if Request.ConnectionType = ctFormData then
     begin
       aContext.MultipartData.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
@@ -3590,6 +3628,9 @@ begin
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Writer := TmnwWriter.Create('html', Respond.Stream);
     try
+      aContext.Renderer.IsSSL := Respond.Request.IsSSL;
+      aContext.Renderer.Domain := aDomain;
+      aContext.Renderer.Port := aPort;
 
       Initialize(aRespondResult);
       aRespondResult.SessionID := '';

@@ -155,8 +155,8 @@ end;
 
 procedure TBootstrap_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwRespondContext);
 begin
-  Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.Module.GetAssetsURL) + 'bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">');
-  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.Module.GetAssetsURL) + 'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
+  Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">');
+  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
 end;
 
 { TmnwBootstrapRenderer.TColumn }
