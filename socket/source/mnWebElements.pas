@@ -1,4 +1,4 @@
-﻿unit mnWebElements;//* BETA
+unit mnWebElements;//* BETA
 {$IFDEF FPC}
 {$mode delphi}
 {$modeswitch prefixedattributes}
@@ -60,7 +60,7 @@ uses
   LCLType, //* for RT_RCDATA
   {$endif}
   syncobjs, mnDON, mnJSON,
-	mnUtils, mnClasses, mnStreams, mnLogs, mnMIME, mnParams,
+  mnUtils, mnClasses, mnStreams, mnLogs, mnMIME, mnParams,
   mnMultipartData, mnModules, mnWebModules;
 
 {.$define rtti_objects}
@@ -250,6 +250,7 @@ type
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
 
     procedure DoCompose(const AContext: TmnwContext); virtual;
+    procedure DoComposed; virtual;
     procedure DoRespondHeader(AContext: TmnwContext); virtual;
     procedure DoAction(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult); virtual;
     procedure DoRespond(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult); virtual;
@@ -392,11 +393,11 @@ type
   end;
 
   TmnwSchamaCapability = (
-		schemaSession,
-		schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
+    schemaSession,
+    schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
     schemaInteractive,  //* Attach websocket
     schemaSessions
-	);
+  );
 
   TmnwSchemaCapabilities = set of TmnwSchamaCapability;
 
@@ -422,7 +423,7 @@ type
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
 
-		//* Attaching cap
+    //* Attaching cap
     function Interactive: Boolean;
 
     procedure Compose(const AContext: TmnwContext); override;
@@ -455,11 +456,11 @@ type
 
     //* Called to parent to wrap the child rendering, each chiled will wrap it with this render
     //* This method exists in parent render
-		procedure DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
+    procedure DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
     procedure DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     //* Called only if have parent but exists in a child
-		procedure DoEnterOuterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
+    procedure DoEnterOuterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
     procedure DoLeaveOuterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     //* Content render
@@ -547,7 +548,7 @@ type
     procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass; ASchemaObject: TmnwSchema = nil);
 
     function FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
-		procedure GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement);
+    procedure GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement);
 
     function Respond(var AContext: TmnwContext; var ARespondResult: TmnwRespondResult): TmnwElement;
     //for websocket
@@ -768,6 +769,7 @@ type
       protected
         procedure DoAction(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult); override;
         procedure Created; override;
+        procedure DoComposed; override;
       public
         PostTo: TFormPost;
 
@@ -1776,7 +1778,7 @@ var
 begin
   SchemaObject := TmnwSchemaObject.Create;
   SchemaObject.Name := AName;
-	SchemaObject.SchemaClass := SchemaClass;
+  SchemaObject.SchemaClass := SchemaClass;
   SchemaObject.Schema := ASchemaObject;
   SchemaObject.ManualSchema := ASchemaObject <> nil;
   inherited Add(SchemaObject);
@@ -2964,6 +2966,11 @@ begin
   begin
     o.Compose(AContext);
   end;
+  DoComposed;
+end;
+
+procedure TmnwElement.DoComposed;
+begin
 end;
 
 procedure TmnwElement.AddState(AState: TmnwElementState);
@@ -3020,7 +3027,7 @@ end;
 
 procedure TmnwWriter.Write(S: string; Options: TmnwWriterOptions);
 begin
-	if (woCloseTag in Options) and not (woOpenTag in Options) then
+  if (woCloseTag in Options) and not (woOpenTag in Options) then
     Dec(Level);
 
   if (NewLine) then
@@ -3028,7 +3035,7 @@ begin
 
   NewLine := False;
 
-	if (woEndLine in Options) then
+  if (woEndLine in Options) then
   begin
     NewLine := True;
     s := S + sWinEndOfLine;
@@ -3036,7 +3043,7 @@ begin
 
   FStream.WriteUtf8String(S);
 
-	if (woOpenTag in Options) and not (woCloseTag in Options) then
+  if (woOpenTag in Options) and not (woCloseTag in Options) then
     Inc(Level);
 end;
 
@@ -3462,6 +3469,13 @@ procedure THTML.TForm.Created;
 begin
   inherited;
   PostTo.Target := toElement;
+end;
+
+procedure THTML.TForm.DoComposed;
+begin
+  inherited;
+  if PostTo.Target = toElement then
+    GenRoute(Self);
 end;
 
 { THTML.TParagraph }

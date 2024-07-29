@@ -310,7 +310,7 @@ begin
   with TDocument.Create(This) do
   begin
     //Name := 'document';
-    Route := 'document';
+    //Route := 'document';
     Title := 'MyHome';
     Direction := dirLTR;
 
@@ -342,7 +342,7 @@ begin
 
           with TForm.Create(This) do
           begin
-            PostTo.Target := toSchema;
+            PostTo.Target := toElement;
             with TInput.Create(This) do
             begin
               ID := 'username';
