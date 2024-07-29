@@ -28,14 +28,14 @@ uses
 type
   TBootstrap_Library = class(TmnwLibrary)
   public
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwRespondContext); override;
+    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
   end;
 
   { TBootstrap_LocalLibrary }
 
   TBootstrap_LocalLibrary = class(TmnwLibrary)
   public
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwRespondContext); override;
+    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
   end;
 
   { TmnwBootstrap }
@@ -49,29 +49,29 @@ type
 
     TDocument = class(TmnwHTMLRenderer.TDocument)
     public
-      procedure AddHead(AElement: TmnwElement; const Context: TmnwRespondContext); override;
+      procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
     end;
 
     TContainer = class abstract(TElementHTML)
     protected
     public
-      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
     end;
 
     TRow = class(TmnwHTMLRenderer.TElementHTML)
     public
-      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
     end;
 
     TColumn = class(TmnwHTMLRenderer.TElementHTML)
     public
-      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
     end;
 
     TCard = class abstract(TElementHTML)
     protected
     public
-      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
     end;
 
   protected
@@ -136,7 +136,7 @@ end;
 
 { TmnwBootstrapRenderer.TBSInputHTML }
 
-procedure TmnwBootstrapRenderer.TDocument.AddHead(AElement: TmnwElement; const Context: TmnwRespondContext);
+procedure TmnwBootstrapRenderer.TDocument.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
   Context.Writer.WriteLn('<meta charset="UTF-8">');
   Context.Writer.WriteLn('<meta name="viewport" content="width=device-width, initial-scale=1">');
@@ -145,7 +145,7 @@ end;
 
 { TBootstrap_Library }
 
-procedure TBootstrap_Library.AddHead(AElement: TmnwElement; const Context: TmnwRespondContext);
+procedure TBootstrap_Library.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
   Context.Writer.WriteLn('<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
   Context.Writer.WriteLn('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
@@ -153,7 +153,7 @@ end;
 
 { TBootstrap_LocalLibrary }
 
-procedure TBootstrap_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwRespondContext);
+procedure TBootstrap_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
   Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">');
   Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
@@ -161,7 +161,7 @@ end;
 
 { TmnwBootstrapRenderer.TColumn }
 
-procedure TmnwBootstrapRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwRespondContext; var ARespondResult: TmnwRespondResult);
+procedure TmnwBootstrapRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
 var
   e: THTML.TColumn;
 begin
@@ -173,7 +173,7 @@ end;
 
 { TmnwBootstrapRenderer.TContainer }
 
-procedure TmnwBootstrapRenderer.TContainer.DoInnerRender(Scope: TmnwScope; Context: TmnwRespondContext; var ARespondResult: TmnwRespondResult);
+procedure TmnwBootstrapRenderer.TContainer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
 var
   e: THTML.TContainer;
 begin
@@ -193,7 +193,7 @@ end;
 //https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
 //https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
 
-procedure TmnwBootstrapRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwRespondContext; var ARespondResult: TmnwRespondResult);
+procedure TmnwBootstrapRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
 var
   e: THTML.TCard;
 begin
@@ -223,7 +223,7 @@ end;
 
 { TmnwBootstrapRenderer.TRow }
 
-procedure TmnwBootstrapRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwRespondContext; var ARespondResult: TmnwRespondResult);
+procedure TmnwBootstrapRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
 var
   e: THTML.TRow;
 begin

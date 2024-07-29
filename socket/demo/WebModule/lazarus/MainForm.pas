@@ -177,11 +177,11 @@ begin
     aHomeModule.AliasName := 'home';
     aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
 
-    aHomeModule.UseSSL := HttpServer.UseSSL;
+    //aHomeModule.IsSSL := HttpServer.UseSSL;
     aHomeModule.Domain := 'localhost';
     aHomeModule.Port := HttpServer.Port;
 
-    aHomeModule.AssetsURL := aHomeModule.GetHostURL + '/' + aHomeModule.AliasName + '/assets/';
+    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
 
     aHomeModule.HomePath := aHomePath;
     aHomeModule.WorkPath := aHomeModule.AppPath;

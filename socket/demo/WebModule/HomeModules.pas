@@ -22,7 +22,7 @@ type
     Input1: THTML.TInput;
     Input2: THTML.TInput;
     Input3: THTML.TInput;
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
     class function GetCapabilities: TmnwSchemaCapabilities; override;
   end;
@@ -31,7 +31,7 @@ type
   private
   public
   protected
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
 
@@ -41,8 +41,8 @@ type
   private
   public
   protected
-    procedure DoAction(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult); override;
-    procedure DoCompose; override;
+    procedure DoAction(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
 
@@ -133,7 +133,7 @@ end;
 
 { TWellcomeSchema }
 
-procedure TWelcomeSchema.DoCompose;
+procedure TWelcomeSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   Name := 'welcome';
@@ -155,7 +155,7 @@ begin
       begin
         Name := 'image_logo';
         Comment := 'Image from another module';
-        Source := IncludeURLDelimiter(Module.GetHostURL)+'doc/logo.png';
+        Source := '/doc/logo.png';
       end;
 
       Header.RenderIt := True;
@@ -283,7 +283,7 @@ end;
 
 { TLoginSchema }
 
-procedure TLoginSchema.DoAction(const AContext: TmnwRespondContext; var ARespondResult: TmnwRespondResult);
+procedure TLoginSchema.DoAction(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult);
 var
   aUsername, aPassword: string;
 begin
@@ -296,13 +296,13 @@ begin
       ARespondResult.SessionID := aUsername +'/'+ aPassword;
       ARespondResult.Resume := False;
       ARespondResult.HttpResult := hrRedirect;
-      ARespondResult.Location := IncludePathDelimiter(Module.GetHomeURL) + 'dashboard';
+      ARespondResult.Location := IncludePathDelimiter(AContext.Renderer.GetHomeURL) + 'dashboard';
     end;
   end;
   inherited;
 end;
 
-procedure TLoginSchema.DoCompose;
+procedure TLoginSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   Name := 'login';
@@ -323,7 +323,7 @@ begin
       with TImage.Create(This) do
       begin
         Comment := 'Image schama';
-        Source := IncludeURLDelimiter(Module.GetHostURL)+'doc/logo.png';
+        Source := '/doc/logo.png';
       end;
 
       Header.RenderIt := True;
@@ -372,7 +372,7 @@ end;
 
 { TWSShema }
 
-procedure TWSShema.DoCompose;
+procedure TWSShema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   Name := 'ws';

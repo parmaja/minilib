@@ -759,7 +759,7 @@ begin
   Respond.HttpResult := hrOK;
   Respond.SendHeader;
   //Respond.Stream.WriteLine('Server is running on port: ' + Module.Server.Port);
-  Respond.Stream.WriteLine('the server is: "' + ParamStr(0) + '"');
+  Respond.Stream.WriteLine(Utf8String('the server is: "' + ParamStr(0) + '"'));
 end;
 
 { TmodPutCommand }
@@ -1064,7 +1064,7 @@ var
 begin
   Respond.HttpResult := hrOK; //hrError
   Respond.AddHeader('Content-Type', 'text/plain');
-  Respond.Stream.WriteUTF8('404 Not Active');
+  Respond.Stream.WriteUTF8String('404 Not Active');
   Respond.KeepAlive := False;
 end;
 
