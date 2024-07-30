@@ -166,7 +166,7 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"'+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText + '>', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</div>', [woCloseTag]);
 end;
@@ -179,7 +179,7 @@ var
 begin
   e := Scope.Element as THTML.TContainer;
 //container-fluid for full width, container not full width
-  Context.Writer.WriteLn('<div class="container-fluid mt-'+e.Margin.ToString+'"'+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Context.Writer.WriteLn('<div class="container-fluid mt-'+e.Margin.ToString+'"'+Scope.Attributes.GetText+'>', [woOpenTag]);
   Context.Writer.WriteLn('<main>', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</main>', [woCloseTag]);
@@ -198,7 +198,11 @@ var
   e: THTML.TCard;
 begin
   e := Scope.Element as THTML.TCard;
-  Context.Writer.WriteLn('<div class="card' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '" '+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Scope.Classes.Add('card');
+  Scope.Classes.Add(BSFixedToStr(e.Fixed));
+  Scope.Classes.Add(BSAlignToStr(e.Align));
+
+  Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenTag]);
   if e.Caption <> '' then
   begin
 //    Context.Writer.WriteLn('<h5 class="card-header" id="'+e.id+'-header">', [woOpenTag]);

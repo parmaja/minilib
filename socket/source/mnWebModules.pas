@@ -16,7 +16,7 @@
 
 {
             Userinfo       Host      Port
-            ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
+            ┌──┴───┐ ┌──────┴────────┌┴┐
 GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top
                      └──────┬──────┘    └───────┬───────┘└───────────┬─────────────┘ └┬─┘
                        DomainName            Directory             Query             Fragment

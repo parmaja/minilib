@@ -1,4 +1,4 @@
-unit mnWebElements;//* BETA
+﻿unit mnWebElements;//* BETA
 {$IFDEF FPC}
 {$mode delphi}
 {$modeswitch prefixedattributes}
@@ -13,6 +13,7 @@ unit mnWebElements;//* BETA
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+ * @author    Belal Hamed <belal, belalhamed@gmail.com>
  *
  *}
 
@@ -21,13 +22,13 @@ unit mnWebElements;//* BETA
     Application
       Document
 
-┌──────┬──────── Header ──────────────────────┐
-│ Column                                      │
-│      │                                      │
-├──────┴──────────────────────────────────────┤
+┌────────┬────── Header ──────────────────────┐
+│  Logo  │                                    │
+│        │                                    │
+├────────┴────────────────────────────────────┤
 │ Navigator/Menu                              │
 ├────────────┬─ Content ─────────────┬────────┤
-│ ASideColumn │                      │ PeerColumn
+│  Column    │                       │ Column │
 │            │ ┌─ TabControl ──────┐ │        │
 │            │ │ Tab │    │        │ │        │
 │            │ ├─────┴────┴────────┤ │        │
@@ -49,6 +50,7 @@ unit mnWebElements;//* BETA
 
 Add:
   https://leafletjs.com/examples.html
+  https://github.com/mdbootstrap/mdb-ui-kit
 
 }
 
@@ -123,11 +125,47 @@ type
   protected
     procedure Created; override;
   public
-    function GetText(WithExtraSpace: Boolean = False): string;
+    function ToString: string; override;
+    function GetText: string;
     function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function UnsetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     procedure Append(AAttributes: TmnwAttributes);
+  end;
+
+
+  TDirection = (dirUnkown, dirLTR, dirRTL);
+
+  TLocationRelative = (
+    toNone,
+    toElement,
+    toSchema,
+    toHome,
+    toCustom
+  );
+
+  { TLocation }
+
+  TLocation = record
+    Where: TLocationRelative;
+    Custom: string;
+    class operator Explicit(const Source: string): TLocation;
+    class operator Implicit(Source : string) : TLocation;
+    class operator Implicit(Source : TLocation): string;
+    class operator Implicit(Source : TLocationRelative) : TLocation;
+    function IsDefeined: Boolean;
+  end;
+
+  TElementClasses = record
+    Items: TArray<String>;
+    function Find(const Name: string): Integer;
+    function Add(const Name: string): Integer;
+    function ToString: string;
+    class operator Add(A: TElementClasses; B: string): TElementClasses;
+    class operator Subtract(A: TElementClasses; B: string): TElementClasses;
+    class operator Explicit(const Source: string): TElementClasses;
+    class operator Implicit(Source : string) : TElementClasses;
+    class operator Implicit(Source : TElementClasses): string;
   end;
 
   { TmnwScope }
@@ -135,6 +173,9 @@ type
   TmnwScope = record
     Element: TmnwElement;
     Attributes: TmnwAttributes;
+    Classes: TElementClasses;
+    function ToString: string;
+    function GetText: string;
   end;
 
   TmnwContext = record
@@ -235,8 +276,7 @@ type
     FComment: String;
     FID: String;
     FName: String;
-    FStyleClass: String;
-    FStyle: String;
+    FElementClass: String;
     FAttributes: TmnwAttributes;
     FKind: TmnwElementKind;
     FState: TmnwElementState;
@@ -299,12 +339,13 @@ type
     //* Original Render
     procedure Render(Context: TmnwContext; var ARespondResult: TmnwRespondResult); overload;
 
+    function CanRender: Boolean; virtual;
+
     //* This will just prepare to Render(Context)
 
     property Route: String read FRoute write FRoute; //TODO change it to Alias
     property Name: String read FName write FName;
-    property StyleClass: String read FStyleClass write FStyleClass;
-    property Style: String read FStyle write FStyle;
+    property ElementClass: String read FElementClass write FElementClass;
     property ID: String read FID write FID;
     property Comment: String read FComment write FComment;
     property Visible: Boolean read FVisible write FVisible;
@@ -411,9 +452,6 @@ type
   protected
     NameingLastNumber: Integer;
     procedure UpdateAttached;
-    procedure GenID(Element: TmnwElement); inline;
-    procedure GenName(Element: TmnwElement; AddNumber: Boolean = True); inline;
-    procedure GenRoute(Element: TmnwElement); inline;
     procedure DoRespond(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult); override;
     procedure ProcessMessage(const s: string);
   public
@@ -447,7 +485,7 @@ type
     FRenderer: TmnwRenderer;
     FRendererRegister: TmnwRendererRegister;
   protected
-    procedure DoCollectAttributes(Scope: TmnwScope); virtual;
+    procedure DoCollectAttributes(var Scope: TmnwScope); virtual;
     //* This called once from the TmnwRenderer
     procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); virtual;
     procedure Prepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
@@ -556,19 +594,6 @@ type
     property Lock: TCriticalSection read FLock;
   end;
 
-  TDirection = (dirUnkown, dirLTR, dirRTL);
-
-  TFormPostTo = (
-    toElement,
-    toSchema,
-    toHome
-  );
-
-  TFormPost = record
-    Target: TFormPostTo;
-    CustomTarget: string;
-  end;
-
 {-------------------------------------------------------}
 {-----------------    STANDARD    ----------------------}
 {-------------------------------------------------------}
@@ -602,13 +627,14 @@ type
         Comment: string;
       end;
 
-      TBody = class;
       TNavBar = class;
+      TMenuBar = class;
       THeader = class;
       TFooter = class;
       TContainer = class;
       TImage = class;
-      //TButtons = class;
+      TButtons = class;
+      TBody = class;
 
       TFileOptions = set of (ftEmbed, ftResource);
 
@@ -627,10 +653,34 @@ type
         function GetContentType(Route: string): string; override;
       end;
 
+      { TMemoryImage }
+
+      [TID_Extension]
+      TMemory = class(THTMLElement)
+      private
+        ContentType: string;
+        FData: TMemoryStream;
+      protected
+        procedure DoRespond(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+      protected
+        procedure Created; override;
+      public
+        FileName: string;
+        FilePath: string;
+        destructor Destroy; override;
+        function GetContentType(Route: string): string; override;
+        procedure LoadFromFile(const AFileName: string);
+        procedure LoadFromStream(AStream: TStream; AContentType: string);
+        property Data: TMemoryStream read FData;
+      end;
+
       { TJSFile }
 
       TJSFile = class(TFile)
       protected
+        //A script that will be downloaded in parallel to parsing the page, and executed after the page has finished parsing:
+        Defer: Boolean;
+//        Async: Boolean;
       end;
 
       { TAssets }
@@ -691,12 +741,12 @@ type
 
       TBody = class(TContent)
       private
-        //function GetNavBar: TNavBar;
+        function GetNavBar: TNavBar;
+        function GetMenuBar: TMenuBar;
         function GetHeader: THeader;
         function GetContainer: TContainer;
         function GetFooter: TFooter;
       protected
-        //FNavBar: TNavBar;
         FHeader: THeader;
         FFooter: TFooter;
         FContainer: TContainer;
@@ -704,20 +754,27 @@ type
         procedure Created; override;
       public
         property Header: THeader read GetHeader;
+        property NavBar: TNavBar read GetNavBar;
+        property MenuBar: TMenuBar read GetMenuBar;
         property Container: TContainer read GetContainer;
         property Footer: TFooter read GetFooter;
         destructor Destroy; override;
       end;
 
       THeader = class(TContent)
+      protected
+        FNavBar: TNavBar;
+        FMenuBar: TMenuBar;
       public
         Text: string;
       end;
 
       TNavBar = class(TContent)
       public
-        //Logo: TImage;
-        //Items: TButtons;
+      end;
+
+      TMenuBar = class(TContent)
+      public
       end;
 
       TFooter = class(TContent)
@@ -771,8 +828,9 @@ type
         procedure Created; override;
         procedure DoComposed; override;
       public
-        PostTo: TFormPost;
+        PostTo: TLocation;
 
+        //RedirectTo: TLocation;
         RedirectTo: string;
 
         Submit: TFormButton;
@@ -796,21 +854,44 @@ type
         procedure Loop; virtual;
       end;
 
-      { TButton }
+      { TClickable }
 
-      TButton = class(THTMLElement)
+      TClickable = class abstract(THTMLElement)
       private
         FCaption: string;
         procedure SetCaption(const AValue: string);
       protected
         procedure ReceiveMessage(JSON: TDON_Pair); override;
-        procedure DoChanged; override;
       public
         property Caption: string read FCaption write SetCaption;
       end;
 
-      {TButtons = class(THTMLElement)
-      end;}
+      { TButton }
+
+      TButton = class(TClickable)
+      private
+      protected
+      end;
+
+      TMenuItem = class(TClickable)
+      private
+      protected
+      public
+      end;
+
+      TSubMenu = class(TClickable)
+      private
+      protected
+      public
+      end;
+
+      { TButtons }
+
+      TButtons = class(THTMLElement)
+      protected
+        procedure Added(Item: TmnwElement); override;
+      public
+      end;
 
       { TInput }
 
@@ -844,7 +925,7 @@ type
       protected
         procedure DoCompose(const AContext: TmnwContext); override;
       public
-        Source: string;
+        Source: TLocation;
         AltText: string;
         //Width, Height: double;
       end;
@@ -918,7 +999,7 @@ type
 
       TDocument = class(TElementHTML)
       protected
-        procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
@@ -926,7 +1007,7 @@ type
 
       TBody = class(TElementHTML)
       protected
-        procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
@@ -955,7 +1036,7 @@ type
 
       TIntervalCompose = class(TContentCompose)
       protected
-        procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
       end;
 
       { THeader }
@@ -1026,11 +1107,25 @@ type
 
       { TButton }
 
-      { TTButton }
-
       TButton = class(TElementHTML)
       protected
-        procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+      end;
+
+      { TMenuItem }
+
+      TMenuItem = class(TElementHTML)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+      end;
+
+      { TSubbMenu }
+
+      TSubbMenu = class(TElementHTML)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
@@ -1038,7 +1133,7 @@ type
 
       TInput = class(TElementHTML)
       protected
-        procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
@@ -1050,7 +1145,7 @@ type
       TImage = class(TElementHTML)
       protected
         procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
-        procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
@@ -1059,7 +1154,7 @@ type
       TMemoryImage = class(TElementHTML)
       protected
         procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
-        procedure DoCollectAttributes(Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
@@ -1117,11 +1212,11 @@ type
   TAssetsSchema = class(TUIWebSchema)
   private
   protected
-    FLogo: THTML.TFile;
+    FLogo: THTML.TMemory;
     procedure DoCompose(const AContext: TmnwContext); override;
     procedure Created; override;
   public
-    property Logo: THTML.TFile read FLogo;
+    property Logo: THTML.TMemory read FLogo;
   end;
 
   { TUIWebSchemas }
@@ -1181,6 +1276,22 @@ procedure CacheClasses;
 
 implementation
 
+function Space(const s: string): string; overload; inline;
+begin
+  if s <> '' then
+    Result := ' ' + s
+  else
+    Result := s;
+end;
+
+function Space(const s1, s2: string): string; overload; inline;
+begin
+  if (s1 <> '') and (s2 <> '') then
+    Result := s1 + ' ' + s2
+  else
+    Result := s1 + s2;
+end;
+
 function SQ(s: string): string; inline;
 begin
   Result := QuoteStr(s, '''');
@@ -1217,6 +1328,60 @@ begin
     Result := Value
   else
     Result := Default;
+end;
+
+procedure GenID(Element: TmnwElement);
+var
+  s: string;
+  p: Integer;
+begin
+  if Element.ID = '' then
+  begin
+    s := Element.ClassName;
+    p := ReversePos('.', s);
+    if p > 0 then
+      s := Copy(s, p + 2, MaxInt) //* skip T
+    else
+      s := Copy(s, 2, MaxInt); //* skip T
+    Element.ID := LowerCase(s + '-' + Element.GenHandle.ToString);
+  end;
+end;
+
+procedure GenName(Element: TmnwElement; AddNumber: Boolean = True);
+var
+  s: string;
+  p: Integer;
+begin
+  if Element.Name = '' then
+  begin
+    s := Element.ClassName;
+    p := ReversePos('.', s);
+    if p > 0 then
+      s := LowerCase(Copy(s, p + 2, MaxInt)) //* skip T
+    else
+      s := LowerCase(Copy(s, 2, MaxInt)); //* skip T
+    if AddNumber then
+      Element.Name := s + '-' + Element.GenHandle.ToString
+    else
+      Element.Name := s;
+  end;
+end;
+
+procedure GenRoute(Element: TmnwElement); inline;
+var
+  s: string;
+  p: Integer;
+begin
+  if Element.Route = '' then
+  begin
+    s := Element.ClassName;
+    p := ReversePos('.', s);
+    if p > 0 then
+      s := Copy(s, p + 2, MaxInt) //* skip T
+    else
+      s := Copy(s, 2, MaxInt); //* skip T
+    Element.Route := LowerCase(s + '-' + Element.GenHandle.ToString);
+  end;
 end;
 
 var
@@ -1290,7 +1455,6 @@ begin
     end;
   end;
 end;
-
 
 { TmnwOutput }
 
@@ -1436,17 +1600,9 @@ end;
 
 { TmnwAttributes }
 
-function TmnwAttributes.GetText(WithExtraSpace: Boolean): string;
-var
-  a: TmnwAttribute;
+function TmnwAttributes.GetText: string;
 begin
-  Result := '';
-  for a in Self do
-  begin
-    if Result <> '' then
-      Result := Result + ' ';
-    Result := Result + a.Name + '='+ QuoteStr(a.Value, '"');
-  end;
+  Result := ToString;
   if Result <> '' then
     Result := ' ' + Result;
 end;
@@ -1493,6 +1649,19 @@ begin
     end;
   finally
     SubValues.Free;
+  end;
+end;
+
+function TmnwAttributes.ToString: string;
+var
+  a: TmnwAttribute;
+begin
+  Result := '';
+  for a in Self do
+  begin
+    if Result <> '' then
+      Result := Result + ' ';
+    Result := Result + a.Name + '='+ QuoteStr(a.Value, '"');
   end;
 end;
 
@@ -1591,7 +1760,7 @@ procedure TmnwElementRenderer.DoLeaveOuterRender(Scope: TmnwScope; const Context
 begin
 end;
 
-procedure TmnwElementRenderer.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwElementRenderer.DoCollectAttributes(var Scope: TmnwScope);
 begin
 end;
 
@@ -1650,15 +1819,12 @@ end;
 procedure TmnwElementRenderer.CollectAttributes(Scope: TmnwScope);
 begin
   Scope.Attributes.Append(Scope.Element.Attributes);
+  Scope.Classes := Scope.Element.ElementClass;
 
   if Scope.Element.ID <> '' then
     Scope.Attributes['id'] := Scope.Element.ID;
   if Scope.Element.Name <> '' then
     Scope.Attributes['name'] := Scope.Element.Name;
-  if Scope.Element.Style <> '' then
-    Scope.Attributes['style'] := Scope.Element.Style;
-  if Scope.Element.StyleClass <> '' then
-    Scope.Attributes.SetSubValue('class', Scope.Element.StyleClass);
 
   DoCollectAttributes(Scope);
 end;
@@ -1681,7 +1847,7 @@ procedure TmnwElement.Render(Context: TmnwContext; var ARespondResult: TmnwRespo
 var
   Renderer: TmnwElementRenderer;
 begin
-  if RenderIt then
+  if CanRender then
   begin
     Renderer := CreateRender(Context);
     if Renderer <> nil then
@@ -1693,6 +1859,11 @@ begin
       end;
     end;
   end;
+end;
+
+function TmnwElement.CanRender: Boolean;
+begin
+  Result := RenderIt;
 end;
 
 function TmnwElement.CreateRender(Context: TmnwContext): TmnwElementRenderer;
@@ -1962,6 +2133,33 @@ begin
   inherited Create;
 end;
 
+{ TLocation }
+
+class operator TLocation.Implicit(Source: string): TLocation;
+begin
+  Result.Custom := Source;
+end;
+
+class operator TLocation.Implicit(Source: TLocationRelative): TLocation;
+begin
+  Result.Where := Source;
+end;
+
+class operator TLocation.Explicit(const Source: string): TLocation;
+begin
+  Result.Custom := Source;
+end;
+
+function TLocation.IsDefeined: Boolean;
+begin
+  Result := (Custom <> '') or (Where <> toNone);
+end;
+
+class operator TLocation.Implicit(Source: TLocation): string;
+begin
+  Result := Source.Custom;
+end;
+
 { THTML }
 
 procedure THTML.DoRespond(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult);
@@ -2023,6 +2221,7 @@ begin
   RegisterRenderer(THTML.TParagraph, TParagraph);
   RegisterRenderer(THTML.TBreak, TBreak);
   RegisterRenderer(THTML.TButton, TButton);
+  RegisterRenderer(THTML.TMenuItem, TMenuItem);
   RegisterRenderer(THTML.TInput, TInput);
   RegisterRenderer(THTML.TInputPassword, TInputPassword);
   RegisterRenderer(THTML.TImage, TImage);
@@ -2063,7 +2262,7 @@ end;
 
 { TmnwHTMLRenderer.TDocumentHTML }
 
-procedure TmnwHTMLRenderer.TDocument.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TDocument.DoCollectAttributes(var Scope: TmnwScope);
 var
   e: THTML.TDocument;
 begin
@@ -2085,7 +2284,7 @@ begin
   e := Scope.Element as THTML.TDocument;
 //  //Log.WriteLn(ClassName);
   Context.Writer.WriteLn('<!DOCTYPE html>');
-  Context.Writer.WriteLn('<html' + Scope.Attributes.GetText(True) + '>', [woOpenTag]);
+  Context.Writer.WriteLn('<html' + Scope.GetText + '>', [woOpenTag]);
   Context.Writer.WriteLn('<head>', [woOpenTag]);
   Context.Writer.WriteLn('<title>'+ e.Title + '</title>', [woOpenTag, woCloseTag]);
   Context.Writer.WriteLn('<link rel="shortcut icon" href="#" />', [woOpenTag, woCloseTag]);
@@ -2152,7 +2351,7 @@ var
   e: THTML.TContainer;
 begin
   e := Scope.Element as THTML.TContainer;
-  Context.Writer.WriteLn('<main class="container" '+Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Context.Writer.WriteLn('<main class="container" '+Scope.GetText+'>', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</main>', [woCloseTag]);
 end;
@@ -2164,7 +2363,8 @@ var
   e: THTML.TCard;
 begin
   e := Scope.Element as THTML.TCard;
-  Context.Writer.WriteLn('<div class="card">', [woOpenTag]);
+  Scope.Classes.Add('card');
+  Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenTag]);
   if e.Caption <> '' then
     Context.Writer.WriteLn('<div class="card-header">' + e.Caption + '</div>', [woOpenTag, woCloseTag]);
 
@@ -2178,7 +2378,7 @@ end;
 
 procedure TmnwHTMLRenderer.TForm.DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
-  Scope.Attributes.SetSubValue('class', 'form-control');
+  Scope.Classes.Add('form-control');
   inherited;
 end;
 
@@ -2193,18 +2393,18 @@ var
   aPostTo: string;
 begin
   e := Scope.Element as THTML.TForm;
-  if e.PostTo.CustomTarget <> '' then
-    aPostTo := e.PostTo.CustomTarget
-  else if e.PostTo.Target = toSchema then
+  if e.PostTo.Custom <> '' then
+    aPostTo := e.PostTo.Custom
+  else if e.PostTo.Where = toSchema then
     aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl) + e.Schema.GetPath
-  else if e.PostTo.Target = toElement then
+  else if e.PostTo.Where = toElement then
     aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl) + e.GetPath
-  else if e.PostTo.Target = toHome then
+  else if e.PostTo.Where = toHome then
     aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl);
-  Context.Writer.WriteLn('<form method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Context.Writer.WriteLn('<form method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText+'>', [woOpenTag]);
   inherited;
   if e.RedirectTo <> '' then
-    Context.Writer.WriteLn('<input type="hidden" name="redirect" value="'+e.RedirectTo+'">', [woOpenTag, woCloseTag]);
+    Context.Writer.WriteLn('<input type="hidden" name="redirect" value="' + e.RedirectTo + '">', [woOpenTag, woCloseTag]);
   Context.Writer.WriteLn('<input type="hidden" name="execute" value="true">', [woOpenTag, woCloseTag]);
   Context.Writer.WriteLn('</form>', [woCloseTag]);
 
@@ -2239,7 +2439,7 @@ end;
 
 { TmnwHTMLRenderer.TTButton }
 
-procedure TmnwHTMLRenderer.TButton.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TButton.DoCollectAttributes(var Scope: TmnwScope);
 begin
   inherited;
   //Scope.Attributes['type'] := (Scope.Element as THTML.TButton).EditType;
@@ -2253,13 +2453,44 @@ begin
   e := Scope.Element as THTML.TButton;
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
-  Context.Writer.WriteLn('<button type="button"' + event + '' + Scope.Attributes.GetText(True)+' >'+e.Caption+'</button>', [woOpenTag, woCloseTag]);
+  Context.Writer.WriteLn('<button type="button"' + event + '' + Scope.Attributes.GetText+' >'+e.Caption+'</button>', [woOpenTag, woCloseTag]);
   inherited;
+end;
+
+{ TmnwHTMLRenderer.TMenuItem }
+
+procedure TmnwHTMLRenderer.TMenuItem.DoCollectAttributes(var Scope: TmnwScope);
+begin
+  inherited DoCollectAttributes(Scope);
+end;
+
+procedure TmnwHTMLRenderer.TMenuItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
+var
+  e: THTML.TMenuItem;
+  event: string;
+begin
+  e := Scope.Element as THTML.TMenuItem;
+  if Context.Schema.Interactive then
+    event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
+  Context.Writer.WriteLn('<button role="menu" type="button"' + event + '' + Scope.Attributes.GetText+' >'+e.Caption+'</button>', [woOpenTag, woCloseTag]);
+  inherited;
+end;
+
+{ TmnwHTMLRenderer.TSubbMenu }
+
+procedure TmnwHTMLRenderer.TSubbMenu.DoCollectAttributes(var Scope: TmnwScope);
+begin
+  inherited DoCollectAttributes(Scope);
+end;
+
+procedure TmnwHTMLRenderer.TSubbMenu.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
+begin
+  inherited DoInnerRender(Scope, Context, ARespondResult);
 end;
 
 { TmnwHTMLRenderer.TInputHTML }
 
-procedure TmnwHTMLRenderer.TInput.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TInput.DoCollectAttributes(var Scope: TmnwScope);
 begin
   Scope.Attributes['placeholder'] := (Scope.Element as THTML.TInput).PlaceHolder;
   Scope.Attributes['type'] := (Scope.Element as THTML.TInput).EditType;
@@ -2277,7 +2508,7 @@ begin
   if Context.Schema.Interactive then
     event := ' onchange="mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')"';
 
-  Context.Writer.WriteLn('<input'+ event + When(e.Required, 'required') + Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
+  Context.Writer.WriteLn('<input'+ event + When(e.Required, 'required') + Scope.Attributes.GetText+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -2289,7 +2520,7 @@ begin
   ARenderer.Libraries.Use('JQuery');
 end;
 
-procedure TmnwHTMLRenderer.TImage.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TImage.DoCollectAttributes(var Scope: TmnwScope);
 begin
   Scope.Attributes['src'] := (Scope.Element as THTML.TImage).Source;
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText; //* always set
@@ -2298,7 +2529,7 @@ end;
 
 procedure TmnwHTMLRenderer.TImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
 begin
-  Context.Writer.WriteLn('<img' + Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
+  Context.Writer.WriteLn('<img' + Scope.Attributes.GetText+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -2310,7 +2541,7 @@ begin
   ARenderer.Libraries.Use('JQuery');
 end;
 
-procedure TmnwHTMLRenderer.TMemoryImage.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TMemoryImage.DoCollectAttributes(var Scope: TmnwScope);
 begin
   inherited;
   Scope.Attributes['src'] := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
@@ -2322,7 +2553,7 @@ var
   e: THTML.TMemoryImage;
 begin
   e := Scope.Element as THTML.TMemoryImage;
-  Context.Writer.WriteLn('<img'+ Scope.Attributes.GetText(True)+' >', [woOpenTag, woCloseTag]);
+  Context.Writer.WriteLn('<img'+ Scope.Attributes.GetText+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -2468,60 +2699,6 @@ begin
     FAttached := Attachments.Count > 0;
   finally
     Attachments.Lock.Leave;
-  end;
-end;
-
-procedure TmnwSchema.GenID(Element: TmnwElement);
-var
-  s: string;
-  p: Integer;
-begin
-  if Element.ID = '' then
-  begin
-    s := Element.ClassName;
-    p := ReversePos('.', s);
-    if p > 0 then
-      s := Copy(s, p + 2, MaxInt) //* skip T
-    else
-      s := Copy(s, 2, MaxInt); //* skip T
-    Element.ID := LowerCase(s + '-' + Element.GenHandle.ToString);
-  end;
-end;
-
-procedure TmnwSchema.GenName(Element: TmnwElement; AddNumber: Boolean);
-var
-  s: string;
-  p: Integer;
-begin
-  if Element.Name = '' then
-  begin
-    s := Element.ClassName;
-    p := ReversePos('.', s);
-    if p > 0 then
-      s := LowerCase(Copy(s, p + 2, MaxInt)) //* skip T
-    else
-      s := LowerCase(Copy(s, 2, MaxInt)); //* skip T
-    if AddNumber then
-      Element.Name := s + '-' + Element.GenHandle.ToString
-    else
-      Element.Name := s;
-  end;
-end;
-
-procedure TmnwSchema.GenRoute(Element: TmnwElement);
-var
-  s: string;
-  p: Integer;
-begin
-  if Element.Route = '' then
-  begin
-    s := Element.ClassName;
-    p := ReversePos('.', s);
-    if p > 0 then
-      s := Copy(s, p + 2, MaxInt) //* skip T
-    else
-      s := Copy(s, 2, MaxInt); //* skip T
-    Element.Route := LowerCase(s + '-' + Element.GenHandle.ToString);
   end;
 end;
 
@@ -3172,6 +3349,44 @@ begin
   Result := DocumentToContentType(FileName);
 end;
 
+procedure THTML.TMemory.DoRespond(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult);
+begin
+  Data.Seek(0, soBeginning);
+  AContext.Writer.Stream.WriteStream(Data, 0);
+end;
+
+procedure THTML.TMemory.Created;
+begin
+  inherited;
+  FData := TMemoryStream.Create;
+end;
+
+destructor THTML.TMemory.Destroy;
+begin
+  inherited;
+  FreeAndNil(FData);
+end;
+
+function THTML.TMemory.GetContentType(Route: string): string;
+begin
+  Result := ContentType;
+end;
+
+procedure THTML.TMemory.LoadFromFile(const AFileName: string);
+begin
+  Data.LoadFromFile(AFileName);
+  FileName := ExtractFilePath(ExtractFileName(AFileName));
+  ContentType := DocumentToContentType(FileName);
+end;
+
+procedure THTML.TMemory.LoadFromStream(AStream: TStream; AContentType: string);
+begin
+  Data.LoadFromStream(AStream);
+  ContentType := AContentType;
+  FileName := '';
+  FilePath := '';
+end;
+
 { THTML.TAssets }
 
 procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult);
@@ -3335,18 +3550,25 @@ end;
 
 { THTML.TBody }
 
-{function THTML.TBody.GetNavBar: TNavBar;
+function THTML.TBody.GetNavBar: TNavBar;
 begin
-  if FNavBar = nil then
-    FNavBar := TNavBar.Create(Self, [elEmbed], True);
-  Result := FNavBar;
-end;}
+  if Header.FNavBar = nil then
+    FHeader.FNavBar := TNavBar.Create(Self, [elEmbed], True);
+  Result := FHeader.FNavBar;
+end;
 
 function THTML.TBody.GetHeader: THeader;
 begin
   if FHeader = nil then
     FHeader := THeader.Create(Self, [elEmbed], True);
   Result := FHeader
+end;
+
+function THTML.TBody.GetMenuBar: TMenuBar;
+begin
+  if Header.FMenuBar = nil then
+    FHeader.FMenuBar := TMenuBar.Create(Self, [elEmbed], True);
+  Result := FHeader.FMenuBar;
 end;
 
 function THTML.TBody.GetContainer: TContainer;
@@ -3381,7 +3603,7 @@ end;
 
 { TmnwHTMLRenderer.TBody }
 
-procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(var Scope: TmnwScope);
 begin
   inherited;
 end;
@@ -3398,7 +3620,7 @@ var
   end;
 begin
   e := Scope.Element as THTML.TBody;
-  Context.Writer.WriteLn('<body' + Scope.Attributes.GetText(True) + GetAttach + '>', [woOpenTag]);
+  Context.Writer.WriteLn('<body' + Scope.GetText + GetAttach + '>', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</body>', [woCloseTag]);
 end;
@@ -3468,13 +3690,13 @@ end;
 procedure THTML.TForm.Created;
 begin
   inherited;
-  PostTo.Target := toElement;
+  PostTo.Where := toElement;
 end;
 
 procedure THTML.TForm.DoComposed;
 begin
   inherited;
-  if PostTo.Target = toElement then
+  if PostTo.Where = toElement then
     GenRoute(Self);
 end;
 
@@ -3502,9 +3724,9 @@ procedure THTML.TAction.Loop;
 begin
 end;
 
-{ THTML.TButton }
+{ THTML.TClickable }
 
-procedure THTML.TButton.SetCaption(const AValue: string);
+procedure THTML.TClickable.SetCaption(const AValue: string);
 begin
   if FCaption =AValue then Exit;
   FCaption :=AValue;
@@ -3512,7 +3734,7 @@ begin
     SendMessage('"command": "change", "content": ' + DQ(Caption));
 end;
 
-procedure THTML.TButton.ReceiveMessage(JSON: TDON_Pair);
+procedure THTML.TClickable.ReceiveMessage(JSON: TDON_Pair);
 begin
   if JSON['command'].AsString = 'change' then
   begin
@@ -3523,8 +3745,12 @@ begin
     Execute;
 end;
 
-procedure THTML.TButton.DoChanged;
+{ THTML.TButtons }
+
+procedure THTML.TButtons.Added(Item: TmnwElement);
 begin
+  if not (Item is TClickable) then
+    raise Exception.Create('Buttons accepts only TClickable');
   inherited;
 end;
 
@@ -3532,28 +3758,28 @@ end;
 
 class procedure TID_Extension.Update(Element: TmnwElement);
 begin
-  Element.Schema.GenID(Element);
+  GenID(Element);
 end;
 
 { TName_Extension }
 
 class procedure TName_Extension.Update(Element: TmnwElement);
 begin
-  Element.Schema.GenName(Element);
+  GenName(Element);
 end;
 
 { TRoute_Extension }
 
 class procedure TRoute_Extension.Update(Element: TmnwElement);
 begin
-  Element.Schema.GenRoute(Element);
+  GenRoute(Element);
 end;
 
 { TmnwHTMLRenderer.TContentCompose }
 
 procedure TmnwHTMLRenderer.TContentCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
 begin
-  Context.Writer.WriteLn('<div ' + Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+  Context.Writer.WriteLn('<div ' + Scope.Attributes.GetText+'>', [woOpenTag]);
   inherited;
   Scope.Element.Respond(Context, ARespondResult);
   Context.Writer.WriteLn('</div>', [woCloseTag]);
@@ -3561,7 +3787,7 @@ end;
 
 { TmnwHTMLRenderer.TIntervalCompose }
 
-procedure TmnwHTMLRenderer.TIntervalCompose.DoCollectAttributes(Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TIntervalCompose.DoCollectAttributes(var Scope: TmnwScope);
 var
   URL: string;
 begin
@@ -3580,7 +3806,7 @@ begin
   e := Scope.Element as THTML.TJSFile;
   if ftEmbed in e.Options then
   begin
-    Context.Writer.WriteLn('<script type="text/javascript"'+ Scope.Attributes.GetText(True)+'>', [woOpenTag]);
+    Context.Writer.WriteLn('<script type="text/javascript"'+ Scope.Attributes.GetText + '>', [woOpenTag]);
     inherited;
     Context.Writer.WriteLn('');
     Context.Writer.WriteLn('</script>', [woCloseTag]);
@@ -3588,7 +3814,7 @@ begin
   else
   begin
     src := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
-    Context.Writer.WriteLn('<script type="text/javascript" src='+ DQ(src) +' ></script>', [woOpenTag, woCloseTag]);
+    Context.Writer.WriteLn('<script type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src) +' ></script>', [woOpenTag, woCloseTag]);
     inherited;
   end;
 end;
@@ -3678,10 +3904,9 @@ end;
 procedure TAssetsSchema.Created;
 begin
   inherited;
-  FLogo := TFile.Create(This);
+  FLogo := TMemory.Create(This);
   FLogo.Name := 'logo';
   FLogo.Route := 'logo';
-  //FLogo.FileName := IncludePathDelimiter(Module.HomePath) + 'logo.png';
 end;
 
 procedure TAssetsSchema.DoCompose(const AContext: TmnwContext);
@@ -3751,6 +3976,109 @@ destructor TUIWebSchemas.Destroy;
 begin
   //FreeAndNil(FAssets); no will be free with others
   inherited;
+end;
+
+{ TElementClasses }
+
+function TElementClasses.Add(const Name: string): Integer;
+begin
+  if Name = '' then
+    exit(-1);
+
+  Result:= Find(Name);
+  if Result<0 then
+  begin
+    Items := Items + [Name];
+    Result := Length(Items) - 1;
+  end;
+end;
+
+function TElementClasses.Find(const Name: string): Integer;
+var
+ itm : String;
+ i: Integer;
+begin
+  for i := 0 to Length(Items) -1 do
+  begin
+    if SameText(Name, Items[i]) then
+      exit(i)
+  end;
+  Result := -1
+end;
+
+procedure Classes_StrToStringsExCallbackProc(Sender: Pointer; Index, CharIndex, NextIndex: Integer; S: string; var Resume: Boolean);
+type
+  PElementClasses = ^TElementClasses;
+begin
+  PElementClasses(Sender)^.Add(S);
+end;
+
+class operator TElementClasses.Add(A: TElementClasses; B: string): TElementClasses;
+begin
+  A.Add(B);
+end;
+
+class operator TElementClasses.Explicit(const Source: string): TElementClasses;
+var
+  MatchCount: Integer;
+begin
+  Initialize(Result);
+  StrToStringsExCallback(Source, 0, @Result, [' '], MatchCount, @Classes_StrToStringsExCallbackProc, []);
+end;
+
+class operator TElementClasses.Implicit(Source: string): TElementClasses;
+var
+  MatchCount: Integer;
+begin
+  Initialize(Result);
+  StrToStringsExCallback(Source, 0, @Result, [' '], MatchCount, @Classes_StrToStringsExCallbackProc, []);
+end;
+
+class operator TElementClasses.Implicit(Source: TElementClasses): string;
+begin
+  Result := Source.ToString
+end;
+
+class operator TElementClasses.Subtract(A: TElementClasses; B: string): TElementClasses;
+var
+  i: Integer;
+begin
+  i := A.Find(B);
+  if i>=0 then
+    Delete(A.Items,i, 0);
+end;
+
+function TElementClasses.ToString: string;
+var
+ itm : String;
+begin
+  Result := '';
+  for itm in Items do
+  begin
+    if Result <> '' then
+      Result := ' ' + itm
+    else
+      Result := itm;
+  end;
+end;
+
+{ TmnwScope }
+
+function TmnwScope.GetText: string;
+begin
+  Result := ToString;
+  if (Result <> '') then
+    Result := ' ' + Result;
+end;
+
+function TmnwScope.ToString: string;
+var
+  s: string;
+begin
+  s := Classes.ToString;
+  if s <> '' then
+    s := 'class="'+s+'"';
+  Result := Space(s, Attributes.ToString);
 end;
 
 initialization

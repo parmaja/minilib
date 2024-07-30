@@ -119,7 +119,7 @@ begin
     aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
 
     aHomeModule.Domain := 'localhost';
-    aHomeModule.AssetsURL := aHomeModule.GetHostURL + '/' + aHomeModule.AliasName + '/assets/';
+    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.HomePath := aHomePath;
     aHomeModule.WorkPath := aHomeModule.AppPath;
     ForceDirectories(aHomeModule.WorkPath + 'cache');

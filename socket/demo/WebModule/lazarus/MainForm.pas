@@ -167,9 +167,9 @@ begin
   end;
   //Server.Address := '127.0.0.1';
 
-  aHomePath := HomePathEdit.Text;
+  aHomePath := IncludePathDelimiter(HomePathEdit.Text);
   if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
-    aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
+    aHomePath := IncludePathDelimiter(ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt));
 
   aHomeModule := HttpServer.Modules.Find<THomeModule>;
   if aHomeModule <> nil then
@@ -182,6 +182,8 @@ begin
     aHomeModule.Port := HttpServer.Port;
 
     aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
+
+    aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomePath+'logo.png');
 
     aHomeModule.HomePath := aHomePath;
     aHomeModule.WorkPath := aHomeModule.AppPath;

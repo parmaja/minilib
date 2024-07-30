@@ -151,6 +151,20 @@ begin
       TJSFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.js'));
 
       Header.Text := 'Creative Solutions';
+      with NavBar do
+      begin
+        with TMenuItem.Create(This) do
+        begin
+          Caption := 'Home';
+
+        end;
+
+        with TMenuItem.Create(This) do
+        begin
+          Caption := 'SubMenu';
+        end;
+      end;
+
       with TImage.Create(This) do
       begin
         Name := 'image_logo';
@@ -322,7 +336,7 @@ begin
       Header.Text := 'Creative Solutions';
       with TImage.Create(This) do
       begin
-        Comment := 'Image schama';
+        Comment := 'Image Schema';
         Source := '/doc/logo.png';
       end;
 
@@ -342,7 +356,7 @@ begin
 
           with TForm.Create(This) do
           begin
-            PostTo.Target := toElement;
+            //PostTo.Where := toElement;
             with TInput.Create(This) do
             begin
               ID := 'username';
