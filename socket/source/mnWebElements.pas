@@ -444,7 +444,7 @@ type
 
   TmnwSchemaCapabilities = set of TmnwSchamaCapability;
 
-  TmnwSchemas = class;
+  TmnwApp = class;
 
   { TmnwSchema }
 
@@ -453,7 +453,7 @@ type
     FAttached: Boolean;
     FAttachments: TmnwAttachments;
     FLock: TCriticalSection;
-    FSchemas: TmnwSchemas;
+    FApp: TmnwApp;
   protected
     NameingLastNumber: Integer;
     procedure UpdateAttached;
@@ -461,7 +461,7 @@ type
     procedure ProcessMessage(const s: string);
   public
     SessionID: string;
-    constructor Create(ASchemas: TmnwSchemas; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); reintroduce;
+    constructor Create(AParent: TmnwApp; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); reintroduce;
     destructor Destroy; override;
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
@@ -477,7 +477,7 @@ type
     property Attachments: TmnwAttachments read FAttachments;
     property Attached: Boolean read FAttached;
     property Lock: TCriticalSection read FLock;
-    property Schemas: TmnwSchemas read FSchemas;
+    property App: TmnwApp read FApp;
   end;
 
   TmnwSchemaClass = class of TmnwSchema;
@@ -578,9 +578,9 @@ type
     property Lock: TCriticalSection read FLock;
   end;
 
-  { TmnwSchemas }
+  { TmnwApp }
 
-  TmnwSchemas = class(TmnNamedObjectList<TmnwSchemaObject>)
+  TmnwApp = class(TmnNamedObjectList<TmnwSchemaObject>)
   private
     FLock: TCriticalSection;
     FSessionTimeout: Integer;
@@ -1252,7 +1252,7 @@ type
 
   { TUIWebSchemas }
 
-  TUIWebSchemas = class(TmnwSchemas)
+  TUIWebSchemas = class(TmnwApp)
   private
     FAssets: TAssetsSchema;
   protected
@@ -1969,15 +1969,15 @@ begin
   inherited;
 end;
 
-{ TmnwSchemas }
+{ TmnwApp }
 
-destructor TmnwSchemas.Destroy;
+destructor TmnwApp.Destroy;
 begin
   inherited;
   FreeAndNil(FLock);
 end;
 
-procedure TmnwSchemas.RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass; ASchemaObject: TmnwSchema);
+procedure TmnwApp.RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass; ASchemaObject: TmnwSchema);
 var
   SchemaObject: TmnwSchemaObject;
 begin
@@ -1989,7 +1989,7 @@ begin
   inherited Add(SchemaObject);
 end;
 
-function TmnwSchemas.FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
+function TmnwApp.FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
 var
   i: Integer;
 begin
@@ -2003,7 +2003,7 @@ begin
   end;
 end;
 
-procedure TmnwSchemas.GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement);
+procedure TmnwApp.GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement);
 var
   SchemaObject: TmnwSchemaObject;
   aElement: TmnwElement;
@@ -2078,7 +2078,7 @@ begin
   end;
 end;
 
-function TmnwSchemas.Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): TmnwElement;
+function TmnwApp.Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): TmnwElement;
 
   function SessionCookies(const vData: string): string;
   var
@@ -2138,7 +2138,7 @@ begin
   end;
 end;
 
-function TmnwSchemas.Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
+function TmnwApp.Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 var
   SchemaObject: TmnwSchemaObject;
   Routes: TStringList;
@@ -2191,11 +2191,11 @@ begin
     Result := nil;
 end;
 
-procedure TmnwSchemas.SchemaCreated(Schema: TmnwSchema);
+procedure TmnwApp.SchemaCreated(Schema: TmnwSchema);
 begin
 end;
 
-constructor TmnwSchemas.Create;
+constructor TmnwApp.Create;
 begin
   FLock := TCriticalSection.Create;
   inherited Create;
@@ -2673,10 +2673,10 @@ end;
 
 { TmnwSchema }
 
-constructor TmnwSchema.Create(ASchemas: TmnwSchemas; AKind: TmnwElementKind; ARenderIt: Boolean);
+constructor TmnwSchema.Create(AParent: TmnwApp; AKind: TmnwElementKind; ARenderIt: Boolean);
 begin
   inherited Create(nil, AKind, ARenderIt);
-  FSchemas := ASchemas;
+  FApp := AParent;
   GenName(Self, False);
   FRoute := FName;
   FSchema := Self;
