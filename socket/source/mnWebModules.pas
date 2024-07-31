@@ -1029,7 +1029,7 @@ begin
       Respond.AddHeader('Cache-Control', 'max-age=600');
       //Respond.AddHeader('Cache-Control', 'public');
       //Respond.AddHeader('Date', Now);
-      Respond.AddHeader('Last-Modified', aDate);
+      Respond.AddHeader('Last-Modified', FormatHTTPDate(aDate));
       Respond.AddHeader('ETag', aFtag);
       if Respond.Stream.Connected then
       begin

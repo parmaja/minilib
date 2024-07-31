@@ -184,6 +184,7 @@ type
     Renderer: TmnwRenderer;
 
     SessionID: string;
+    Etag: string; //IfNone-Match
     Route: string;
 
     ParentRenderer: TmnwElementRenderer;
@@ -193,9 +194,11 @@ type
 
   TmnwRespondResult = record
     ContentType: string;
-    SessionID: string;
     HttpResult: THttpResult;
+    SessionID: string;
     Location: string; //* New local to forward
+    Headers: TmnHeader;
+    Cookies: TStrings;
     Resume: Boolean;
   end;
 
@@ -577,6 +580,7 @@ type
   TmnwSchemas = class(TmnNamedObjectList<TmnwSchemaObject>)
   private
     FLock: TCriticalSection;
+    FSessionTimeout: Integer;
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
   public
@@ -588,10 +592,11 @@ type
     function FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
     procedure GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement);
 
-    function Respond(var AContext: TmnwContext; var ARespondResult: TmnwRespondResult): TmnwElement;
+    function Respond(HttpRespond: TmodHttpRespond; var AContext: TmnwContext; var ARespondResult: TmnwRespondResult): TmnwElement;
     //for websocket
     function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
     property Lock: TCriticalSection read FLock;
+    property SessionTimeout: Integer read FSessionTimeout write FSessionTimeout; //in seconds
   end;
 
 {-------------------------------------------------------}
@@ -2063,7 +2068,23 @@ begin
   end;
 end;
 
-function TmnwSchemas.Respond(var AContext: TmnwContext; var ARespondResult: TmnwRespondResult): TmnwElement;
+function TmnwSchemas.Respond(HttpRespond: TmodHttpRespond; var AContext: TmnwContext; var ARespondResult: TmnwRespondResult): TmnwElement;
+
+  function SessionCookies(const vData: string): string;
+  var
+    aDate: TDateTime;
+    aPath, aDomain: string;
+  begin
+    aDate := IncSecond(Now, SessionTimeout);
+    aDomain := AContext.Renderer.Domain;
+    aPath := '';
+
+    if vData<>'' then
+      Result := Format('%s; Expires=%s; SameSite=None; Domain=%s; Path=/%s; Secure', [vData, FormatHTTPDate(aDate), aDomain, aPath.ToLower])
+    else
+      Result := Format('; max-age=0; SameSite=None; Domain=%s; Path=/%s; Secure', [aDomain, aPath.ToLower]);
+  end;
+
 var
   aSchema: TmnwSchema;
 begin
@@ -2078,8 +2099,19 @@ begin
     finally
       (AContext.Sender as TmodHttpCommand).Respond.Latch := False;
     end;
+
+    HttpRespond.HttpResult := ARespondResult.HttpResult;
+    if ARespondResult.Location<>'' then
+      ARespondResult.Headers.Add('Location', ARespondResult.Location);
+
+    if ARespondResult.SessionID<>'' then
+      ARespondResult.Cookies.Values['session'] := SessionCookies(ARespondResult.SessionID);
+
     if ARespondResult.Resume then
       Result.Respond(AContext, ARespondResult);
+
+    if not (resHeaderSent in HttpRespond.Header.States) then
+      HttpRespond.SendHeader(True);
   end;
 
   if aSchema <> nil then
@@ -3360,18 +3392,47 @@ end;
 procedure THTML.TFile.DoRespond(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult);
 var
   ResStream: TStream;
+
+  aDocSize: Int64;
+  aDocStream: TFileStream;
+  aDate: TDateTime;
+  aEtag, aFtag: string;
 begin
   inherited;
   if ftResource in Options then
   begin
-    ResStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA) //* remove extension
+    ResStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA); //* remove extension
+    try
+      AContext.Writer.Stream.WriteStream(ResStream, 0);
+    finally
+      ResStream.Free;
+    end;
   end
   else
+  begin
+    FileAge(FileName, aDate);
+    aFtag := DateTimeToUnix(aDate).ToString;
+    aEtag := AContext.Etag;
+    if (aEtag<>'') and (aEtag = aFtag) then
+    begin
+      ARespondResult.HttpResult := hrNotModified;
+      ARespondResult.Resume := False;
+      Exit;
+    end;
+
     ResStream := TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead);
-  try
-    AContext.Writer.Stream.WriteStream(ResStream, 0);
-  finally
-    ResStream.Free;
+    try
+      aDocSize := aDocStream.Size;
+
+      ARespondResult.Headers['Cache-Control']  := 'max-age=600';
+      ARespondResult.Headers['Last-Modified']  := FormatHTTPDate(aDate);
+      ARespondResult.Headers['ETag']           := aFtag;
+      ARespondResult.Headers['Content-Length'] := IntToStr(aDocSize);
+
+      AContext.Writer.Stream.WriteStream(ResStream, 0);
+    finally
+      ResStream.Free;
+    end;
   end;
 end;
 
@@ -3924,18 +3985,17 @@ begin
       aContext.Renderer.IsSSL := Respond.Request.IsSSL;
       aContext.Renderer.Domain := aDomain;
       aContext.Renderer.Port := aPort;
+      aContext.Etag := Request.Header['If-None-Match'];
 
       Initialize(aRespondResult);
       aRespondResult.SessionID := '';
       aRespondResult.HttpResult := hrOK;
       aRespondResult.Location := '';
+      aRespondResult.Headers := Respond.Header;
+      aRespondResult.Cookies := Respond.Cookies;
 
-      (Module as TUIWebModule).WebApp.Respond(aContext, aRespondResult);
+      (Module as TUIWebModule).WebApp.Respond(Respond, aContext, aRespondResult);
 
-      aDate := IncSecond(Now, 30 * SecsPerMin);
-      aPath := '';
-      Respond.SetCookie('home', 'session', 'session; Expires='+FormatHTTPDate(aDate)+'; SameSite=None; Domain=' + Module.Domain + '; Path=/'+aPath+'; Secure');
-      //if aRespondResult.Location <> '' then
 
       //SessionID
     finally
