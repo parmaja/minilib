@@ -178,13 +178,19 @@ var
   e: THTML.TContainer;
 begin
   e := Scope.Element as THTML.TContainer;
+  Scope.Classes.Add('main');
+  if e.Wide then
+    Scope.Classes.Add('container-fluid')
+  else
+    Scope.Classes.Add('container');
+  Scope.Classes.Add('mt-'+e.Margin.ToString);
 //container-fluid for full width, container not full width
-  Context.Writer.WriteLn('<div class="container-fluid mt-'+e.Margin.ToString+'"'+Scope.Attributes.GetText+'>', [woOpenTag]);
-  Context.Writer.WriteLn('<main>', [woOpenTag]);
+  Context.Writer.WriteLn('<main'+Scope.GetText+'>', [woOpenTag]);
+  //Context.Writer.WriteLn('<main>', [woOpenTag]);
   inherited;
-  Context.Writer.WriteLn('</main>', [woCloseTag]);
+  //Context.Writer.WriteLn('</main>', [woCloseTag]);
   //Context.Writer.WriteLn('</div>', [woCloseTag]);
-  Context.Writer.WriteLn('</div>', [woCloseTag]);
+  Context.Writer.WriteLn('</main>', [woCloseTag]);
 end;
 
 { TmnwBootstrapRenderer.TCard }

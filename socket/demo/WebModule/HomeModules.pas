@@ -59,6 +59,7 @@ type
   protected
     function CreateRenderer: TmnwRenderer; override;
     procedure CreateItems; override;
+    procedure Start; override;
   public
     destructor Destroy; override;
   end;
@@ -102,7 +103,7 @@ begin
   inherited;
   with (Schema as TWelcomeSchema) do
   begin
-	  Input3.Text := IntToStr(StrToIntDef(Input1.Text, 0) + StrToIntDef(Input2.Text, 0));
+	  Input3.Value := IntToStr(StrToIntDef(Input1.Value, 0) + StrToIntDef(Input2.Value, 0));
   end;
 end;
 
@@ -334,29 +335,29 @@ begin
         Comment := 'This is just login page source';
 
       Header.Text := 'Creative Solutions';
-      with TImage.Create(This) do
+      Header.RenderIt := True;
+      with Header do
       begin
-        Comment := 'Image Schema';
-        Source := '/doc/logo.png';
+        with TImage.Create(This) do
+        begin
+          Name := 'image_logo';
+          Comment := 'Image from another module';
+          Source := '/doc/logo.png';
+        end;
       end;
 
-      Header.RenderIt := True;
       Footer.RenderIt := True;
 
       with Container do
       begin
-        with TParagraph.Create(This) do
-        begin
-          Text := 'Hello Word';
-        end;
-
         with TCard.Create(This) do
         begin
           Caption := 'Login';
 
           with TForm.Create(This) do
           begin
-            //PostTo.Where := toElement;
+            PostTo.Where := toElement;
+
             with TInput.Create(This) do
             begin
               ID := 'username';
@@ -370,6 +371,7 @@ begin
               ID := 'password';
               Name := 'password';
               Caption := 'Password';
+              HelpText := 'You need to use numbers';
             end;
 
             TBreak.Create(This);
@@ -413,11 +415,11 @@ end;
 procedure THomeModule.CreateItems;
 begin
   inherited;
-  RegisterCommand('.ws', TWSEchoGetHomeCommand, False);
   WebApp.RegisterSchema('welcome', TWelcomeSchema);
   WebApp.RegisterSchema('assets', TAssetsSchema);
   WebApp.RegisterSchema('login', TLoginSchema);
   WebApp.RegisterSchema('ws', TWSShema);
+  RegisterCommand('.ws', TWSEchoGetHomeCommand, False);
   with WebApp.Assets do
   begin
     with TFile.Create(This) do
@@ -426,6 +428,15 @@ begin
       Route := 'jquery';
       FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
     end;
+  end;
+end;
+
+procedure THomeModule.Start;
+begin
+  inherited;
+  with WebApp.Assets do
+  begin
+    Logo.LoadFromFile(HomePath + 'logo.png');
   end;
 end;
 

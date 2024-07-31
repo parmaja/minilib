@@ -630,6 +630,7 @@ type
       TNavBar = class;
       TMenuBar = class;
       THeader = class;
+      TSideBar = class;
       TFooter = class;
       TContainer = class;
       TImage = class;
@@ -743,12 +744,14 @@ type
       private
         function GetNavBar: TNavBar;
         function GetMenuBar: TMenuBar;
+        function GetSideBar: TSideBar;
         function GetHeader: THeader;
         function GetContainer: TContainer;
         function GetFooter: TFooter;
       protected
         FHeader: THeader;
         FFooter: TFooter;
+        FSideBar: TSideBar;
         FContainer: TContainer;
       protected
         procedure Created; override;
@@ -764,7 +767,6 @@ type
       THeader = class(TContent)
       protected
         FNavBar: TNavBar;
-        FMenuBar: TMenuBar;
       public
         Text: string;
       end;
@@ -782,12 +784,18 @@ type
         Text: string;
       end;
 
+      TSideBar = class(TContent)
+      end;
+
       TContainer = class(TContent)
       protected
+        FMenuBar: TMenuBar;
         procedure Created; override;
       public
+        Wide: Boolean;
         Margin: Integer;
         Size: Integer;
+        property MenuBar: TMenuBar read FMenuBar;
       end;
 
       TRow = class(TContent)
@@ -898,18 +906,21 @@ type
       [TID_Extension]
       TInput = class(THTMLElement)
       private
-        FText: string;
-        procedure SetText(const AValue: string);
+        FCaption: string;
+        FValue: string;
+        procedure SetCaption(const AValue: string);
+        procedure SetValue(const AValue: string);
       protected
         procedure Created; override;
         procedure ReceiveMessage(JSON: TDON_Pair); override;
       public
-        Caption: string;
         PlaceHolder: string;
+        HelpText: string;
         EditType: string;
         Required: Boolean;
       public
-        property Text: string read FText write SetText;
+        property Value: string read FValue write SetValue;
+        property Caption: string read FCaption write SetCaption;
       end;
 
       { TInputPassword }
@@ -1053,38 +1064,43 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
+      TSideBar = class(TElementHTML)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+      end;
+
       { TContainer }
 
-      TContainer = class abstract(TElementHTML)
+      TContainer = class(TElementHTML)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
-      TRow = class abstract(TElementHTML)
+      TRow = class(TElementHTML)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
-      TColumn = class abstract(TElementHTML)
+      TColumn = class(TElementHTML)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
       { TCard }
 
-      TCard = class abstract(TElementHTML)
+      TCard = class(TElementHTML)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
-      TPanel = class abstract(TElementHTML)
+      TPanel = class(TElementHTML)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
       end;
 
       { TForm }
 
-      TForm = class abstract(TElementHTML)
+      TForm = class(TElementHTML)
       protected
         procedure DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext); override;
@@ -1273,6 +1289,9 @@ procedure CacheClasses;
 
 //* You need to compile it by brcc32 mnWebElements.rc or wait another 100 years till Delphi/FPC auto compile it
 {$R 'mnWebElements.res' 'mnWebElements.rc'}
+
+const
+  woFullTag = [woOpenTag, woCloseTag];
 
 implementation
 
@@ -2323,7 +2342,14 @@ var
   e: THTML.THeader;
 begin
   e := Scope.Element as THTML.THeader;
-  Context.Writer.WriteLn('<header class="bg-primary text-white text-left py-3">', [woOpenTag]);
+  Scope.Classes.Add('header');
+  //Scope.Classes.Add('bg-primary');
+  Scope.Classes.Add('d-flex');
+  Scope.Classes.Add('fixed-top');
+  Scope.Classes.Add('text-white');
+  Scope.Classes.Add('bg-dark');
+  Scope.Classes.Add('align-items-center');
+  Context.Writer.WriteLn('<header'+Scope.GetText+'>', [woOpenTag]);
   inherited;
   if e.Text <> '' then
     Context.Writer.WriteLn('<h1>'+e.Text+'</h1>', [woOpenTag, woCloseTag]);
@@ -2501,14 +2527,22 @@ procedure TmnwHTMLRenderer.TInput.DoInnerRender(Scope: TmnwScope; Context: TmnwC
 var
   e: THTML.TInput;
   event: string;
+  isFormChild: Boolean;
 begin
   e := Scope.Element as THTML.TInput;
+  isFormChild := True;
+  if isFormChild then
+    Scope.Classes.Add('form-control');
+
   if e.Caption <> '' then
-    Context.Writer.WriteLn('<label for="'+e.ID+'" >' + e.Caption + '</label>', [woOpenTag, woCloseTag]);
+    Context.Writer.WriteLn('<label'+When(isFormChild, ' class="form-label"')+' for="'+e.ID+'" >' + e.Caption + '</label>', [woOpenTag, woCloseTag]);
+
   if Context.Schema.Interactive then
     event := ' onchange="mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')"';
 
-  Context.Writer.WriteLn('<input'+ event + When(e.Required, 'required') + Scope.Attributes.GetText+' >', [woOpenTag, woCloseTag]);
+  Context.Writer.WriteLn('<input'+ event + When(e.Required, 'required') + Scope.GetText + ' >', [woOpenTag, woCloseTag]);
+  if e.HelpText <> '' then
+    Context.Writer.WriteLn('<div class="form-text">' + e.HelpText + '</div>', woFullTag);
   inherited;
 end;
 
@@ -2787,12 +2821,18 @@ end;
 
 { THTML.TInput }
 
-procedure THTML.TInput.SetText(const AValue: string);
+procedure THTML.TInput.SetValue(const AValue: string);
 begin
-  if FText =AValue then Exit;
-  FText :=AValue;
+  if FValue =AValue then Exit;
+  FValue :=AValue;
   if (estComposed in State) and (Schema <> nil) and Schema.Attached then
-    SendMessage('"command": "change", "content": ' + DQ(Text));
+    SendMessage('"command": "change", "content": ' + DQ(Value));
+end;
+
+procedure THTML.TInput.SetCaption(const AValue: string);
+begin
+  if FCaption =AValue then Exit;
+  FCaption :=AValue;
 end;
 
 procedure THTML.TInput.Created;
@@ -2806,9 +2846,9 @@ begin
   if JSON['command'].AsString = 'change' then
   begin
     if JSON['content'].IsExists then
-      FText := JSON['content'].AsString;
+      FValue := JSON['content'].AsString;
     if JSON['caption'].IsExists then
-      FText := JSON['caption'].AsString;
+      FCaption := JSON['caption'].AsString;
   end;
 end;
 
@@ -3557,6 +3597,13 @@ begin
   Result := FHeader.FNavBar;
 end;
 
+function THTML.TBody.GetSideBar: TSideBar;
+begin
+  if FSideBar = nil then
+    FSideBar := TSideBar.Create(Self, [elEmbed], True);
+   Result := FSideBar;
+end;
+
 function THTML.TBody.GetHeader: THeader;
 begin
   if FHeader = nil then
@@ -3566,9 +3613,9 @@ end;
 
 function THTML.TBody.GetMenuBar: TMenuBar;
 begin
-  if Header.FMenuBar = nil then
-    FHeader.FMenuBar := TMenuBar.Create(Self, [elEmbed], True);
-  Result := FHeader.FMenuBar;
+  if Container.FMenuBar = nil then
+    Container.FMenuBar := TMenuBar.Create(Self, [elEmbed], True);
+  Result := Container.FMenuBar;
 end;
 
 function THTML.TBody.GetContainer: TContainer;
@@ -4056,7 +4103,7 @@ begin
   for itm in Items do
   begin
     if Result <> '' then
-      Result := ' ' + itm
+      Result := Result + ' ' + itm
     else
       Result := itm;
   end;
@@ -4079,6 +4126,13 @@ begin
   if s <> '' then
     s := 'class="'+s+'"';
   Result := Space(s, Attributes.ToString);
+end;
+
+{ TmnwHTMLRenderer.TSideBar }
+
+procedure TmnwHTMLRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
+begin
+  inherited;
 end;
 
 initialization
