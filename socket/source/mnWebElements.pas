@@ -3988,7 +3988,7 @@ begin
       aContext.Etag := Request.Header['If-None-Match'];
 
       Initialize(aRespondResult);
-      aRespondResult.SessionID := '';
+      aRespondResult.SessionID := Request.GetCookie('', 'session');
       aRespondResult.HttpResult := hrOK;
       aRespondResult.Location := '';
       aRespondResult.Headers := Respond.Header;
