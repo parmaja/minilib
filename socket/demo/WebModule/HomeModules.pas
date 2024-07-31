@@ -41,7 +41,7 @@ type
   private
   public
   protected
-    procedure DoAction(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+    procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
     procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
@@ -298,7 +298,7 @@ end;
 
 { TLoginSchema }
 
-procedure TLoginSchema.DoAction(const AContext: TmnwContext; var ARespondResult: TmnwRespondResult);
+procedure TLoginSchema.DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn);
 var
   aUsername, aPassword: string;
 begin
@@ -308,10 +308,10 @@ begin
     begin
       aUsername := AContext.MultipartData.Values['username'];
       aPassword := AContext.MultipartData.Values['password'];
-      ARespondResult.SessionID := aUsername +'/'+ aPassword;
-      ARespondResult.Resume := False;
-      ARespondResult.HttpResult := hrRedirect;
-      ARespondResult.Location := IncludePathDelimiter(AContext.Renderer.GetHomeURL) + 'dashboard';
+      AReturn.SessionID := aUsername +'/'+ aPassword;
+      AReturn.Resume := False;
+      AReturn.Respond.HttpResult := hrRedirect;
+      AReturn.Location := IncludePathDelimiter(AContext.Renderer.GetHomeURL) + 'dashboard';
     end;
   end;
   inherited;
@@ -338,12 +338,6 @@ begin
       Header.RenderIt := True;
       with Header do
       begin
-        with TImage.Create(This) do
-        begin
-          Name := 'image_logo';
-          Comment := 'Image from another module';
-          Source := '/doc/logo.png';
-        end;
       end;
 
       Footer.RenderIt := True;
@@ -352,6 +346,7 @@ begin
       begin
         with TCard.Create(This) do
         begin
+          Size := szSmall;
           Caption := 'Login';
 
           with TForm.Create(This) do

@@ -55,23 +55,23 @@ type
     TContainer = class abstract(TElementHTML)
     protected
     public
-      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
     end;
 
     TRow = class(TmnwHTMLRenderer.TElementHTML)
     public
-      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
     end;
 
     TColumn = class(TmnwHTMLRenderer.TElementHTML)
     public
-      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
     end;
 
     TCard = class abstract(TElementHTML)
     protected
     public
-      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult); override;
+      procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
     end;
 
   protected
@@ -83,6 +83,7 @@ type
 
 function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
+function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
 
 implementation
 
@@ -113,6 +114,17 @@ begin
     Result := '';
   if (Result <> '') and WithSpace then
     Result := ' ' + Result;
+end;
+
+function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+begin
+  case Size of
+	  szVerySmall: Result := 'xm';
+		szSmall: Result := 'sm';
+		szNormal: Result := 'md';
+		szLarge: Result := 'lg';
+		szVeryLarge: Result := 'xl';
+  end;
 end;
 
 { TmnwBootstrapRenderer }
@@ -156,12 +168,13 @@ end;
 procedure TBootstrap_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
   Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">');
+  Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.rtl.min.css" rel="stylesheet" crossorigin="anonymous">');
   Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
 end;
 
 { TmnwBootstrapRenderer.TColumn }
 
-procedure TmnwBootstrapRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
+procedure TmnwBootstrapRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
   e: THTML.TColumn;
 begin
@@ -173,23 +186,25 @@ end;
 
 { TmnwBootstrapRenderer.TContainer }
 
-procedure TmnwBootstrapRenderer.TContainer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
+procedure TmnwBootstrapRenderer.TContainer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
   e: THTML.TContainer;
 begin
   e := Scope.Element as THTML.TContainer;
-  Scope.Classes.Add('main');
+  //Scope.Classes.Add('main');
   if e.Wide then
     Scope.Classes.Add('container-fluid')
   else
     Scope.Classes.Add('container');
-  Scope.Classes.Add('mt-'+e.Margin.ToString);
+  if e.Margin > 0 then
+    Scope.Classes.Add('mt-'+e.Margin.ToString);
+  Scope.Classes.Add('d-flex');
+  Scope.Classes.Add('justify-content-center');
 //container-fluid for full width, container not full width
   Context.Writer.WriteLn('<main'+Scope.GetText+'>', [woOpenTag]);
   //Context.Writer.WriteLn('<main>', [woOpenTag]);
   inherited;
   //Context.Writer.WriteLn('</main>', [woCloseTag]);
-  //Context.Writer.WriteLn('</div>', [woCloseTag]);
   Context.Writer.WriteLn('</main>', [woCloseTag]);
 end;
 
@@ -199,7 +214,7 @@ end;
 //https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
 //https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
 
-procedure TmnwBootstrapRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
+procedure TmnwBootstrapRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
   e: THTML.TCard;
 begin
@@ -207,6 +222,10 @@ begin
   Scope.Classes.Add('card');
   Scope.Classes.Add(BSFixedToStr(e.Fixed));
   Scope.Classes.Add(BSAlignToStr(e.Align));
+  Scope.Classes.Add('col-12');
+  Scope.Classes.Add('col-md-6');
+  if e.Shadow then
+    Scope.Classes.Add('shadow-sm');
 
   Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenTag]);
   if e.Caption <> '' then
@@ -233,7 +252,7 @@ end;
 
 { TmnwBootstrapRenderer.TRow }
 
-procedure TmnwBootstrapRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var ARespondResult: TmnwRespondResult);
+procedure TmnwBootstrapRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
   e: THTML.TRow;
 begin
