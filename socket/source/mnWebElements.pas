@@ -189,7 +189,7 @@ type
 
     ParentRenderer: TmnwElementRenderer;
     Writer: TmnwWriter;
-    MultipartData: TmnMultipartData;
+    Data: TmnMultipartData;
   end;
 
   TmnwReturn = record
@@ -461,7 +461,7 @@ type
     procedure ProcessMessage(const s: string);
   public
     SessionID: string;
-    constructor Create(AParent: TmnwApp; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); reintroduce;
+    constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); override;
     destructor Destroy; override;
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
@@ -578,14 +578,18 @@ type
     property Lock: TCriticalSection read FLock;
   end;
 
+  TAssetsSchema = class;
+
   { TmnwApp }
 
   TmnwApp = class(TmnNamedObjectList<TmnwSchemaObject>)
   private
+    FAssets: TAssetsSchema;
     FLock: TCriticalSection;
     FSessionTimeout: Integer;
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
+    procedure Created; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -600,6 +604,7 @@ type
     function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
     property Lock: TCriticalSection read FLock;
     property SessionTimeout: Integer read FSessionTimeout write FSessionTimeout; //in seconds
+    property Assets: TAssetsSchema read FAssets;
   end;
 
   TSize = (szVerySmall, szSmall, szNormal, szLarge, szVeryLarge);
@@ -824,7 +829,12 @@ type
       end;
 
       [TID_Extension]
+
+      { TCard }
+
       TCard = class(TContent)
+      protected
+        procedure Created; override;
       public
         Collapse: Boolean;
         Caption: string;
@@ -994,9 +1004,9 @@ type
 
   protected
     procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
-    function GetContentType(Route: string): string; override;
   public
     ServeFiles: Boolean;
+    function GetContentType(Route: string): string; override;
   end;
 
   { TmnwHTMLRenderer }
@@ -1254,16 +1264,16 @@ type
 
   TUIWebSchemas = class(TmnwApp)
   private
-    FAssets: TAssetsSchema;
   protected
     FModule: TUIWebModule;
     procedure SchemaCreated(Schema: TmnwSchema); override;
   public
     constructor Create(AModule: TUIWebModule);
     destructor Destroy; override;
-    property Assets: TAssetsSchema read FAssets;
     property Module: TUIWebModule read FModule;
   end;
+
+  { TUIWebModule }
 
   TUIWebModule = class(TmodWebModule)
   private
@@ -1276,6 +1286,7 @@ type
     procedure Created; override;
   public
     destructor Destroy; override;
+    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules =nil); override;
     property AppPath: string read FAppPath write FAppPath;
     property WebApp: TUIWebSchemas read FWebApp;
   end;
@@ -2193,12 +2204,23 @@ end;
 
 procedure TmnwApp.SchemaCreated(Schema: TmnwSchema);
 begin
+  Schema.FApp := Self;
+end;
+
+procedure TmnwApp.Created;
+begin
+  inherited;
+  FAssets := TAssetsSchema.Create(nil);
+  FAssets.Route := 'assets';
+  FAssets.Name := 'assets';
+  SchemaCreated(FAssets);
+  RegisterSchema('assets', TAssetsSchema, FAssets);
 end;
 
 constructor TmnwApp.Create;
 begin
   FLock := TCriticalSection.Create;
-  inherited Create;
+  inherited;
 end;
 
 { TLocation }
@@ -2415,9 +2437,12 @@ begin
 
   Context.Writer.WriteLn('<header'+Scope.GetText+' >', [woOpenTag]);
   //Context.Writer.WriteLn('<header'+Scope.GetText+' style="background-color: #222222;">', [woOpenTag]);
-
+  Context.Writer.WriteLn('<a class="navbar-brand" href="'+Context.Renderer.GetHomeURL+'">', [woOpenTag]);
+  if e.Schema.App.Assets.Logo.Data.Size > 0 then
+    Context.Writer.WriteLn('<img class="" src="' + Context.Renderer.GetHomeURL + e.Schema.App.Assets.Logo.GetPath + '">', [woOpenTag, woCloseTag]);
   if e.Text <> '' then
-    Context.Writer.WriteLn('<a class="navbar-brand" src="'+Context.Renderer.GetHomeURL+'">'+e.Text+'</a>', [woOpenTag, woCloseTag]);
+    Context.Writer.WriteLn(e.Text, [woOpenTag, woCloseTag]);
+  Context.Writer.WriteLn('</a>', [woCloseTag]);
   inherited;
   Context.Writer.WriteLn('</header>', [woCloseTag]);
 end;
@@ -2673,10 +2698,9 @@ end;
 
 { TmnwSchema }
 
-constructor TmnwSchema.Create(AParent: TmnwApp; AKind: TmnwElementKind; ARenderIt: Boolean);
+constructor TmnwSchema.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
 begin
-  inherited Create(nil, AKind, ARenderIt);
-  FApp := AParent;
+  inherited;
   GenName(Self, False);
   FRoute := FName;
   FSchema := Self;
@@ -3509,7 +3533,7 @@ end;
 procedure THTML.TMemory.LoadFromFile(const AFileName: string);
 begin
   Data.LoadFromFile(AFileName);
-  FileName := ExtractFilePath(ExtractFileName(AFileName));
+  FileName := ExtractFileName(AFileName);
   ContentType := DocumentToContentType(FileName);
 end;
 
@@ -3824,6 +3848,14 @@ begin
   Size := szNormal;
 end;
 
+{ THTML.TCard }
+
+procedure THTML.TCard.Created;
+begin
+  inherited;
+  Shadow := True;
+end;
+
 { THTML.TForm }
 
 procedure THTML.TForm.DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn);
@@ -3978,15 +4010,12 @@ end;
 procedure TUIWebCommand.RespondResult(var Result: TmodRespondResult);
 var
   aContext: TmnwContext;
-  aDate: TDateTime;
-  aPath: string;
-  AReturn: TmnwReturn;
+  aReturn: TmnwReturn;
   aDomain, aPort: string;
 begin
-
   Initialize(aContext);
+  Initialize(aReturn);
   inherited;
-
   aContext.Route := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
 
@@ -4011,15 +4040,15 @@ begin
   end
   else
   begin
-    aContext.MultipartData := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )
+    aContext.Data := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )
     if Request.ConnectionType = ctFormData then
     begin
-      aContext.MultipartData.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
-      aContext.MultipartData.TempPath := (Module as TUIWebModule).WorkPath + 'temp';
-      aContext.MultipartData.Read(Request.Stream);
+      aContext.Data.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
+      aContext.Data.TempPath := (Module as TUIWebModule).WorkPath + 'temp';
+      aContext.Data.Read(Request.Stream);
     end;
     Respond.PutHeader('Content-Type', DocumentToContentType('html'));
-    AReturn.Respond := Respond;
+    aReturn.Respond := Respond;
     Respond.HttpResult := hrOK;
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Writer := TmnwWriter.Create('html', Respond.Stream);
@@ -4029,18 +4058,17 @@ begin
       aContext.Renderer.Port := aPort;
       aContext.ETag := Request.Header['If-None-Match'];
 
-      Initialize(AReturn);
-      AReturn.SessionID := Request.GetCookie('', 'session');
-      AReturn.Respond.HttpResult := hrOK;
-      AReturn.Location := '';
+      aReturn.SessionID := Request.GetCookie('', 'session');
+      aReturn.Respond.HttpResult := hrOK;
+      aReturn.Location := '';
 
-      (Module as TUIWebModule).WebApp.Respond(aContext, AReturn);
+      (Module as TUIWebModule).WebApp.Respond(aContext, aReturn);
 
       //SessionID
     finally
       FreeAndNil(aContext.Writer);
       aContext.Renderer.Free;
-      aContext.MultipartData.Free;
+      aContext.Data.Free;
     end;
   end;
 end;
@@ -4050,6 +4078,8 @@ end;
 procedure TAssetsSchema.Created;
 begin
   inherited;
+  ServeFiles := True;
+  Kind := Kind + [elFallback];
   FLogo := TMemory.Create(This);
   FLogo.Name := 'logo';
   FLogo.Route := 'logo';
@@ -4060,8 +4090,6 @@ begin
   inherited;
   Name := 'Assets';
   Route := 'assets';
-  ServeFiles := True;
-  Kind := Kind + [elFallback];
 end;
 
 { TUIWebModule }
@@ -4079,7 +4107,6 @@ end;
 procedure TUIWebModule.CreateItems;
 begin
   inherited;
-  FWebApp := TUIWebSchemas.Create(Self);
   RegisterCommand('', TUIWebCommand, true);
 end;
 
@@ -4099,6 +4126,12 @@ begin
   FreeAndNil(FWebApp); //keep behind inherited
 end;
 
+constructor TUIWebModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules);
+begin
+  FWebApp := TUIWebSchemas.Create(Self);
+  inherited;
+end;
+
 { TUIWebSchemas }
 
 procedure TUIWebSchemas.SchemaCreated(Schema: TmnwSchema);
@@ -4110,12 +4143,8 @@ end;
 
 constructor TUIWebSchemas.Create(AModule: TUIWebModule);
 begin
-  inherited Create;
   FModule := AModule;
-  FAssets := TAssetsSchema.Create(nil);
-  FAssets.Route := 'assets';
-  SchemaCreated(FAssets);
-  RegisterSchema('assets', TAssetsSchema, FAssets);
+  inherited Create;
 end;
 
 destructor TUIWebSchemas.Destroy;
@@ -4141,7 +4170,6 @@ end;
 
 function TElementClasses.Find(const Name: string): Integer;
 var
- itm : String;
  i: Integer;
 begin
   for i := 0 to Length(Items) -1 do
@@ -4162,6 +4190,7 @@ end;
 class operator TElementClasses.Add(A: TElementClasses; B: string): TElementClasses;
 begin
   A.Add(B);
+  Result := A;
 end;
 
 class operator TElementClasses.Explicit(const Source: string): TElementClasses;
@@ -4192,6 +4221,7 @@ begin
   i := A.Find(B);
   if i>=0 then
     Delete(A.Items,i, 0);
+  Result := A;
 end;
 
 function TElementClasses.ToString: string;

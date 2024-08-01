@@ -302,12 +302,12 @@ procedure TLoginSchema.DoAction(const AContext: TmnwContext; var AReturn: TmnwRe
 var
   aUsername, aPassword: string;
 begin
-  if AContext.MultipartData <> nil then
+  if AContext.Data <> nil then
   begin
-    if SameText(AContext.MultipartData.Values['execute'], 'true') then
+    if SameText(AContext.Data.Values['execute'], 'true') then
     begin
-      aUsername := AContext.MultipartData.Values['username'];
-      aPassword := AContext.MultipartData.Values['password'];
+      aUsername := AContext.Data.Values['username'];
+      aPassword := AContext.Data.Values['password'];
       AReturn.SessionID := aUsername +'/'+ aPassword;
       AReturn.Resume := False;
       AReturn.Respond.HttpResult := hrRedirect;
@@ -415,15 +415,6 @@ begin
   WebApp.RegisterSchema('login', TLoginSchema);
   WebApp.RegisterSchema('ws', TWSShema);
   RegisterCommand('.ws', TWSEchoGetHomeCommand, False);
-  with WebApp.Assets do
-  begin
-    with TFile.Create(This) do
-    begin
-      Name := 'jquery';
-      Route := 'jquery';
-      FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
-    end;
-  end;
 end;
 
 procedure THomeModule.Start;
@@ -432,6 +423,12 @@ begin
   with WebApp.Assets do
   begin
     Logo.LoadFromFile(HomePath + 'logo.png');
+    with TFile.Create(This) do
+    begin
+      Name := 'jquery';
+      Route := 'jquery';
+      FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
+    end;
   end;
 end;
 

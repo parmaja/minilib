@@ -76,6 +76,7 @@ type
 
   protected
     procedure Created; override;
+    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
   public
 
     class constructor RegisterObjects;
@@ -135,6 +136,16 @@ begin
   Libraries.RegisterLibrary('Bootstrap', False, TBootstrap_Library);
   Libraries.RegisterLibrary('Bootstrap', True, TBootstrap_LocalLibrary);
   Libraries.Use('Bootstrap');
+end;
+
+procedure TmnwBootstrapRenderer.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+begin
+  inherited;
+  Context.Writer.WriteLn('<style type="text/css">', [woOpenTag]);
+  Context.Writer.WriteLn('.card {');
+  Context.Writer.WriteLn('    width: 25rem;');
+  Context.Writer.WriteLn('}');
+  Context.Writer.WriteLn('</style>', [woCloseTag]);
 end;
 
 class constructor TmnwBootstrapRenderer.RegisterObjects;
@@ -222,8 +233,8 @@ begin
   Scope.Classes.Add('card');
   Scope.Classes.Add(BSFixedToStr(e.Fixed));
   Scope.Classes.Add(BSAlignToStr(e.Align));
-  Scope.Classes.Add('col-12');
-  Scope.Classes.Add('col-md-6');
+  //Scope.Classes.Add('col-12');
+  //Scope.Classes.Add('col-lg-6');
   if e.Shadow then
     Scope.Classes.Add('shadow-sm');
 

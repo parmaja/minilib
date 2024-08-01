@@ -183,8 +183,6 @@ begin
 
     aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
 
-    aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomePath+'logo.png');
-
     aHomeModule.HomePath := aHomePath;
     aHomeModule.WorkPath := aHomeModule.AppPath;
     ForceDirectories(aHomeModule.WorkPath + 'cache');
