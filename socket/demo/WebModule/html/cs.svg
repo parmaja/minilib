@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="36" height="36" version="1.1" viewBox="0 0 9.5252 9.5252" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<defs>
+<filter id="a" x="-.088144" y="-.08518" width="1.1764" height="1.1704" color-interpolation-filters="sRGB">
+<feFlood flood-color="rgb(0,0,0)" flood-opacity=".79608" in="SourceGraphic" result="flood"/>
+<feGaussianBlur in="SourceGraphic" result="blur" stdDeviation="1"/>
+<feOffset dx="0.000000" dy="0.000000" in="blur" preserveAlpha="false" result="offset"/>
+<feComposite in="flood" in2="offset" operator="in" result="comp1"/>
+<feComposite in="SourceGraphic" in2="comp1" result="comp2"/>
+</filter>
+</defs>
+<metadata>
+<rdf:RDF>
+<cc:Work rdf:about="">
+<dc:format>image/svg+xml</dc:format>
+<dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+</cc:Work>
+</rdf:RDF>
+</metadata>
+<g transform="matrix(.071575 0 0 .071575 -.085415 -20.434)">
+<g filter="url(#filter3370-174-1)" opacity=".99">
+<path transform="matrix(3.8598 0 0 3.8598 .43015 -810.65)" d="m3.1635 298.03c-0.077663 6.6815 6.1369 11.505 10.661 11.505h10.935c2.9325 0 2.777-4.1665 0-4.1665h-7.76c-5.7067 0-9.4337-2.5074-9.4999-7.2231-0.055025-3.9228 3.0618-8.0146 6.8628-8.0808 3.5886-0.0625 9.5497 0.0179 15.118 0.0505-1.4781-1.5502-2.9943-3.9877-5.93-3.9141-6.0426-7e-3 -10.381-1e-3 -14.634 0.0182-2.6026 0-6.6622-0.48738-6.482-0.54745 1.6873 1.6503 3.0881 2.6939 5.468 3.132-3.5379 2.4103-4.6872 6.069-4.7394 9.2259zm6.6337-0.56121c0.028617 3.7734 2.9818 5.7447 5.9357 5.7447h7.0876c3.3149 0 5.7721 0.87083 5.9044 4.2593 0 1.8158-1.4601 4.1651-3.9652 4.1651h-15.45c-2.2407 0-4.813 1.6296-6.1313 5.1443 3.8752-1.156 6.0964-0.86664 9.223-0.86664h12.359c3.4919 0 7.7293-3.2156 7.6801-8.4785-0.06415-6.8669-6.2877-8.2345-9.404-8.1906-2.6941 0.0379-3.4026-0.0413-7.3029-0.0413-2.252 0-2.3094-3.0308 0-3.0308 3.8609 0 9.0629 0.0164 13.748-0.0126 2.4428 0 2.1085-4.149 0-4.149-4.9934 0-10.494 0.15519-13.748 0.13229-3.2537-0.0228-5.9584 2.3354-5.9357 5.3239z" color="#000000" fill="#a00" filter="url(#a)" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".5"/>
+</g>
+</g>
+</svg>
