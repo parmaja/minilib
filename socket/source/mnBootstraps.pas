@@ -45,6 +45,14 @@ type
   TmnwBootstrapRenderer = class(TmnwHTMLRenderer)
   public
     type
+
+    { TContent }
+
+    TContent = class(TElementHTML)
+    public
+      procedure DoCollectAttributes(var Scope: TmnwScope); override;
+    end;
+
     { TBSDocumentHTML }
 
     TDocument = class(TmnwHTMLRenderer.TDocument)
@@ -83,6 +91,7 @@ type
   end;
 
 function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+function BSContentAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
 function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
 
@@ -99,6 +108,22 @@ begin
     Result := 'align-self-Streach'
   else if Align = alignEnd then
     Result := 'align-self-end'
+  else
+    Result := '';
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
+end;
+
+function BSContentAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+begin
+  if Align = alignStart then
+    Result := 'justify-content-start'
+  else if Align = alignCenter then
+    Result := 'justify-content-center'
+  else if Align = alignStreach then
+    Result := 'justify-content-streach'
+  else if Align = alignEnd then
+    Result := 'justify-content-end'
   else
     Result := '';
   if (Result <> '') and WithSpace then
@@ -142,8 +167,12 @@ procedure TmnwBootstrapRenderer.AddHead(AElement: TmnwElement; const Context: Tm
 begin
   inherited;
   Context.Writer.WriteLn('<style type="text/css">', [woOpenTag]);
+  Context.Writer.WriteLn('.fixed-header {');
+  Context.Writer.WriteLn('  padding-top: 3rem;');
+  Context.Writer.WriteLn('}');
+  Context.Writer.WriteLn();
   Context.Writer.WriteLn('.card {');
-  Context.Writer.WriteLn('    width: 25rem;');
+  Context.Writer.WriteLn('    max-width: 22rem;');
   Context.Writer.WriteLn('}');
   Context.Writer.WriteLn('</style>', [woCloseTag]);
 end;
@@ -155,6 +184,18 @@ begin
   RegisterRenderer(THTML.TRow, TRow, Replace);
   RegisterRenderer(THTML.TColumn, TColumn, Replace);
   RegisterRenderer(THTML.TCard, TCard, Replace);
+end;
+
+{ TmnwBootstrapRenderer.TContent }
+
+procedure TmnwBootstrapRenderer.TContent.DoCollectAttributes(var Scope: TmnwScope);
+var
+  e: THTML.TContent;
+begin
+  e := Scope.Element as THTML.TContent;
+  inherited;
+  if e.Shadow then
+    Scope.Classes.Add('shadow-sm');
 end;
 
 { TmnwBootstrapRenderer.TBSInputHTML }
@@ -208,8 +249,8 @@ begin
   else
     Scope.Classes.Add('container');
   if e.Margin > 0 then
-    Scope.Classes.Add('mt-'+e.Margin.ToString);
-  Scope.Classes.Add('d-flex');
+    Scope.Classes.Add('m-'+e.Margin.ToString);
+  //Scope.Classes.Add('d-flex');
   Scope.Classes.Add('justify-content-center');
 //container-fluid for full width, container not full width
   Context.Writer.WriteLn('<main'+Scope.GetText+'>', [woOpenTag]);
@@ -237,6 +278,8 @@ begin
   //Scope.Classes.Add('col-lg-6');
   if e.Shadow then
     Scope.Classes.Add('shadow-sm');
+  if SameText(e.Style, 'center') then
+    Scope.Classes.Add('ms-auto');
 
   Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenTag]);
   if e.Caption <> '' then
@@ -268,6 +311,7 @@ var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
+  Scope.Classes.Add(BSContentAlignToStr(e.ContentAlign));
   Context.Writer.WriteLn('<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</div>', [woCloseTag]);

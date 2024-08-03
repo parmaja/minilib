@@ -151,16 +151,16 @@ begin
       //TJSFile.Create(This, [ftResource], 'mnWebElements.js');
       TJSFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.js'));
 
-      Header.Text := 'Creative Solutions';
+      Header.Caption := 'Creative Solutions';
       with NavBar do
       begin
-        with TMenuItem.Create(This) do
+        with TNavItem.Create(This) do
         begin
           Caption := 'Home';
 
         end;
 
-        with TMenuItem.Create(This) do
+        with TNavItem.Create(This) do
         begin
           Caption := 'SubMenu';
         end;
@@ -334,47 +334,76 @@ begin
       with TComment.Create(This) do
         Comment := 'This is just login page source';
 
-      Header.Text := 'Creative Solutions';
-      Header.RenderIt := True;
       with Header do
       begin
+        RenderIt := True;
+        Fixed := fixedTop;
+        Header.Caption := 'Creative Solutions';
+        with TNavItem.Create(This) do
+        begin
+          Caption := 'Item1';
+        end;
+        with TNavItem.Create(This) do
+        begin
+          Caption := 'Item2';
+        end;
       end;
 
       Footer.RenderIt := True;
 
       with Container do
       begin
-        with TCard.Create(This) do
+
+        {with TNavBar.Create(This) do
         begin
-          Size := szSmall;
-          Caption := 'Login';
-
-          with TForm.Create(This) do
+          Caption := 'Nav2';
+          //Fixed := fixedTop;
+          with TNavItem.Create(This) do
           begin
-            PostTo.Where := toElement;
-
-            with TInput.Create(This) do
-            begin
-              ID := 'username';
-              Name := 'username';
-              Caption := 'Username';
-              PlaceHolder := 'Type user name';
-            end;
-
-            with TInputPassword.Create(This) do
-            begin
-              ID := 'password';
-              Name := 'password';
-              Caption := 'Password';
-              HelpText := 'You need to use numbers';
-            end;
-
-            TBreak.Create(This);
-
-            Submit.Caption := 'Submit';
-            Reset.Caption := 'Reset';
-
+            Caption := 'Menu 1';
           end;
+          with TNavItem.Create(This) do
+          begin
+            Caption := 'Menu 2';
+          end;
+        end;}
+
+        //with TRow.Create(This) do
+        begin
+         // ContentAlign := alignCenter;
+          with TCard.Create(This) do
+          begin
+            Style := 'center';
+            Size := szSmall;
+            Caption := 'Login';
+
+            with TForm.Create(This) do
+            begin
+              PostTo.Where := toElement;
+
+              with TInput.Create(This) do
+              begin
+                ID := 'username';
+                Name := 'username';
+                Caption := 'Username';
+                PlaceHolder := 'Type user name';
+              end;
+
+              with TInputPassword.Create(This) do
+              begin
+                ID := 'password';
+                Name := 'password';
+                Caption := 'Password';
+                HelpText := 'You need to use numbers';
+              end;
+
+              TBreak.Create(This);
+
+              Submit.Caption := 'Submit';
+              Reset.Caption := 'Reset';
+
+            end;
+           end;
         end;
       end;
     end;
@@ -422,7 +451,8 @@ begin
   inherited;
   with WebApp.Assets do
   begin
-    Logo.LoadFromFile(HomePath + 'logo.png');
+    if Logo.Data.Size = 0 then
+      Logo.LoadFromFile(HomePath + 'logo.png');
     with TFile.Create(This) do
     begin
       Name := 'jquery';

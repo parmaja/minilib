@@ -178,13 +178,13 @@ begin
     aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
 
     //aHomeModule.IsSSL := HttpServer.UseSSL;
-    aHomeModule.Domain := 'localhost';
-    aHomeModule.Port := HttpServer.Port;
+    //aHomeModule.Domain := 'localhost';
+    //aHomeModule.Port := HttpServer.Port;
 
     aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
-
     aHomeModule.HomePath := aHomePath;
     aHomeModule.WorkPath := aHomeModule.AppPath;
+    aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs-v2.png');
     ForceDirectories(aHomeModule.WorkPath + 'cache');
     ForceDirectories(aHomeModule.WorkPath + 'temp');
   end;
