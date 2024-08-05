@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+    <head>
+        <title>MyHome</title>
+        <link rel="shortcut icon" href="#" />
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        <style type="text/css">
+            :root {
+                --header-size: 4rem;
+                --sidebar-size: 16rem;
+            }
+
+            body {
+            }
+
+            .header {
+                min-height: 4rem;
+            }
+
+            .content {
+                display: grid;
+                gap: 0em;
+                grid-template-areas: "header header" "sidebar main";
+                grid-template-rows: var(--header-size) calc(100vh - var(--header-size));
+                grid-template-columns: var(--sidebar-size) auto;
+                justify-items: stretch;
+            }
+
+            .sidebar {
+                display: flex;
+                position: fixed;
+                overflow-y: auto;
+                grid-area: sidebar;
+
+                top: var(--header-size);
+                width: var(--sidebar-size);
+                min-height: calc(100vh - var(--header-size));
+                height: auto;
+
+                z-index: 996;
+            }
+
+            .main{
+                grid-area: main;
+            }
+
+        </style>
+    </head>
+    <body class="container">
+        <nav class="header navbar shadow-sm fixed-top navbar-expand-md navbar-dark bg-dark" id="header-1">
+            <a class="logo navbar-brand d-flex align-items-center p-0" href="http://localhost:8080/home/">
+                <img class="" src="http://localhost:8080/home/assets/logo">
+                <span class="navbar-brand ms-1">Creative Solutions</span>
+            </a>
+            <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#header-1-items" aria-controls="header-1-items" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div id="header-1-items" class="collapse navbar-collapse">
+                <ul class="navbar-nav mr-auto d-flex mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a href="" class="nav-link">Item1</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="" class="nav-link">Item2</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <div id="content" class="content">
+                <aside id="sidebar" class="sidebar text-white bg-dark p-2">
+                    <div id="sidebar-nav" class="list-group text-sm-start">
+                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-bootstrap"></i> <span>Item</span> </a>
+                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-film"></i> <span>Item</span></a>
+                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-heart"></i> <span>Item</span></a>
+                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-bricks"></i> <span>Item</span></a>
+                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-clock"></i> <span>Item</span></a>
+                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-archive"></i> <span>Item</span></a>
+                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-gear"></i> <span>Item</span></a>
+                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-calendar"></i> <span>Item</span></a>
+                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-envelope"></i> <span>Item</span></a>
+                    </div>
+                </aside>
+
+                <main id="main" class="main container p-2">
+                      <div class="card shadow-sm" id="card-2">
+                            <h5 class="card-header" id="card-2-header">Login</h5>
+                            <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                    <label class="form-label" for="username" >Username</label>
+                                    <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                    <label class="form-label" for="password" >Password</label>
+                                    <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                    <div class="form-text">You need to use numbers</div>
+                                    <br>
+                                    <input type="hidden" name="execute" value="true">
+                                </form>
+                                <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            </div>
+                        </div>
+                      <div class="card shadow-sm" id="card-2">
+                            <h5 class="card-header" id="card-2-header">Login</h5>
+                            <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                    <label class="form-label" for="username" >Username</label>
+                                    <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                    <label class="form-label" for="password" >Password</label>
+                                    <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                    <div class="form-text">You need to use numbers</div>
+                                    <br>
+                                    <input type="hidden" name="execute" value="true">
+                                </form>
+                                <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            </div>
+                        </div>
+                      <div class="card shadow-sm" id="card-2">
+                            <h5 class="card-header" id="card-2-header">Login</h5>
+                            <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                    <label class="form-label" for="username" >Username</label>
+                                    <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                    <label class="form-label" for="password" >Password</label>
+                                    <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                    <div class="form-text">You need to use numbers</div>
+                                    <br>
+                                    <input type="hidden" name="execute" value="true">
+                                </form>
+                                <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            </div>
+                        </div>
+                      <div class="card shadow-sm" id="card-2">
+                            <h5 class="card-header" id="card-2-header">Login</h5>
+                            <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                    <label class="form-label" for="username" >Username</label>
+                                    <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                    <label class="form-label" for="password" >Password</label>
+                                    <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                    <div class="form-text">You need to use numbers</div>
+                                    <br>
+                                    <input type="hidden" name="execute" value="true">
+                                </form>
+                                <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            </div>
+                        </div>
+                      <div class="card shadow-sm" id="card-2">
+                            <h5 class="card-header" id="card-2-header">Login</h5>
+                            <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                    <label class="form-label" for="username" >Username</label>
+                                    <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                    <label class="form-label" for="password" >Password</label>
+                                    <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                    <div class="form-text">You need to use numbers</div>
+                                    <br>
+                                    <input type="hidden" name="execute" value="true">
+                                </form>
+                                <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            </div>
+                        </div>
+                      <div class="card shadow-sm" id="card-2">
+                            <h5 class="card-header" id="card-2-header">Login</h5>
+                            <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                    <label class="form-label" for="username" >Username</label>
+                                    <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                    <label class="form-label" for="password" >Password</label>
+                                    <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                    <div class="form-text">You need to use numbers</div>
+                                    <br>
+                                    <input type="hidden" name="execute" value="true">
+                                </form>
+                                <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            </div>
+                        </div>
+                </main>
+        </div>
+    </body>
+</html>
