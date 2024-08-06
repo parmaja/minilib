@@ -7,86 +7,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-        <style type="text/css">
-            :root {
-                --header-size: 4rem;
-                --sidebar-size: 16rem;
-            }
-
-            body {
-            }
-
-            header{
-                z-index: 1006;
-            }
-
-            aside{
-                z-index: 1005;
-            }
-
-            .header {
-                min-height: var(--header-size);
-            }
-
-            .fixed {
-                position: fixed !important; /* option to stick it without scroll */
-            }
-
-            .content {
-            }
-
-            @media(max-width: 768px) {
-                .sidebar {
-/*            	    visibility: collapse; */ /* dosnt work in iphone 6*/
-                    visibility: hidden;
-                    position: fixed;
-                }
-            }
-
-            .sidebar {
-                float: left;
-                overflow: auto;
-                top: 0;
-                bottom: 0;
-                height: auto;
-                padding: 0;
-                width: var(--sidebar-size);
-                min-height: calc(100vh - var(--header-size));
-                max-width: 100vh;
-            }
-
-            .sidebar-content {
-                position: fixed; /* option to stick it without scroll */
-                display: flex;
-                overflow-y: auto;
-                height: calc(100vh - var(--header-size));
-                width: var(--sidebar-size);
-                min-height: calc(100vh - var(--header-size));
-            }
-
-            .sidebar-items {
-                overflow-y: auto;
-                width: var(--sidebar-size));
-                max-width: 100vh;
-            }
-
-            .skip-header {
-               top: var(--header-size) !important;
-             }
-
-            .offcanvas.show, .offcanvas.showing {
-                top: var(--header-size);
-                box-shadow: 0px 0px 10px 5px rgba(0,0,0,0.5);
-                border: 0;
-            }
-
-            .navbar-toggler:focus {
-              outline: none;
-              box-shadow: none;
-            }
-        </style>
+        <link href="/home/assets/WebElements.css" rel="stylesheet">
     </head>
     <body>
+        <style type="text/css">
+            :root {--sidebar-size: 300px;}
+        </style>
         <header id="header-1" class="header sticky-top d-flex align-items-center navbar-dark bg-dark shadow-sm py-0 px-1" >
             <nav id="nav-header" class="navbar flex-nowrap shadow-md navbar-expand-md navbar-dark bg-dark w-100 px-1">
 
@@ -95,7 +21,7 @@
                 </button>
 
                 <a class="logo navbar-brand me-auto align-items-center" href="http://localhost:8080/home/">
-                    <img class="" src="http://localhost:8080/home/assets/logo">
+                    <img class="" src="/home/assets/logo">
                     <span class="navbar-brand">Creative Solutions</span>
                 </a>
 
@@ -103,7 +29,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div id="header-items" class="skip-header offcanvas offcanvas-end text-bg-dark" data-bs-backdrop="false">
+                <div id="header-items" class="skip-header offcanvas offcanvas-top text-bg-dark" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1">
                   <div class="offcanvas-body">
                     <ul class="navbar-nav mr-auto d-flex mb-2 mb-md-0">
                         <li class="nav-item">
@@ -126,7 +52,7 @@
             <div id="content" class="row content flex-nowrap">
                     <aside id="sidebar" class="sidebar navbar-expand-md text-bg-dark">  <!--d-none d-md-block -->
                         <nav id="sidebar-content" class="sidebar-content">
-                            <div id="sidebar-items" class="sidebar-items p-2 skip-header offcanvas offcanvas-start text-bg-dark" data-bs-backdrop="false">
+                            <div id="sidebar-items" class="sidebar-items p-2 skip-header offcanvas offcanvas-start text-bg-dark" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" >
                                 <div class="offcanvas-body">
                                     <div class="list-group d-flex flex-column text-sm-start">
                                         <p> Links1 </p>

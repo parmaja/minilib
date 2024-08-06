@@ -61,6 +61,7 @@ type
     procedure CreateItems; override;
     procedure Start; override;
   public
+    IsLocal: Boolean;
     destructor Destroy; override;
   end;
 
@@ -152,7 +153,7 @@ begin
       TJSFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.js'));
 
       Header.Caption := 'Creative Solutions';
-      with NavBar do
+      with Header.NavBar do
       begin
         with TNavItem.Create(This) do
         begin
@@ -174,11 +175,10 @@ begin
       end;
 
       Header.RenderIt := True;
-      Footer.RenderIt := True;
 
-      with Container do
+      with Main do
       begin
-        Name := 'Container';
+        Name := 'Main';
         with TParagraph.Create(This) do
         begin
           Text := 'Hello Word';
@@ -349,10 +349,18 @@ begin
         end;
       end;
 
-      Footer.RenderIt := True;
-
-      with Container do
+      with SideBar do
       begin
+        RenderIt := True;
+        with TLink.Create(This) do
+        begin
+          Text := 'Home';
+        end;
+      end;
+
+      with Main do
+      begin
+        Margin := 1;
 
         {with TNavBar.Create(This) do
         begin
@@ -370,6 +378,12 @@ begin
 
         //with TRow.Create(This) do
         begin
+          with TButton.Create(This) do
+          begin
+            Caption := 'OK';
+            Hint := 'Test';
+          end;
+
          // ContentAlign := alignCenter;
           with TCard.Create(This) do
           begin
@@ -428,7 +442,7 @@ end;
 
 function THomeModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwBootstrapRenderer.Create(Self, True);
+  Result := TmnwBootstrapRenderer.Create(Self, IsLocal);
 end;
 
 destructor THomeModule.Destroy;
@@ -453,12 +467,18 @@ begin
   begin
     if Logo.Data.Size = 0 then
       Logo.LoadFromFile(HomePath + 'logo.png');
+      //Logo.LoadFromFile(HomePath + 'logo.png');
     with TFile.Create(This) do
     begin
       Name := 'jquery';
       Route := 'jquery';
       FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
+
+      //TCSSFile.Create(This, [ftResource], 'mnWebElements.css');
     end;
+
+    TFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.css'), 'WebElements.css');
+    TFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.js'), 'WebElements.js');
   end;
 end;
 

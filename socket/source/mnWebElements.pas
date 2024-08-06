@@ -20,38 +20,41 @@
 {
 
     Application
-      Document
+     Document
 
-┌────────┬────── Header ──────────────────────┐
-│  Logo  │                                    │
-│        │                                    │
-├────────┴────────────────────────────────────┤
-│ Navigator/Menu                              │
-├────────────┬─ Content ─────────────┬────────┤
-│  Column    │                       │ Column │
-│            │ ┌─ TabControl ──────┐ │        │
-│            │ │ Tab │    │        │ │        │
-│            │ ├─────┴────┴────────┤ │        │
-│            │ │                   │ │        │
-│            │ ├─ Form ────────────┤ │        │
-│            │ │                   │ │        │
-│            │ │ ┌─ Control ────┐  │ │        │
-│            │ │ └──────────────┘  │ │        │
-│            │ │                   │ │        │
-│            │ │                   │ │        │
-│            │ │                   │ │        │
-│            │ │                   │ │        │
-│            │ └───────────────────┘ │        │
-│            │                       │        │
-├────────────┴── Footer ─────────────┴────────┤
-│                                             │
-│                                             │
-└─────────────────────────────────────────────┘
+┌──────┬──────────────────────────────────────┐  ─┐
+│ Logo │ Brand NavBar                         │   │
+├──────┴──────────────────────────────────────┤   ├─ Header
+│ MenuBar                                     │   │
+├────────────┬────────────────────────────────┤  ─┤
+│ Sidebar    │ Main                           │   │
+│            │                                │   ├─ Container
+│ Accordion  │ ┌─ TabControl ──────┐ ┌──────┐ │   │
+│            │ │ Tab │    │        │ │ Card │ │   │
+│            │ ├─────┴────┴────────┤ ├──────┤ │   │
+│            │ │ ┌─ Control ────┐  │ │      │ │   │
+│            │ │ └──────────────┘  │ │      │ │   │
+│            │ └───────────────────┘ └──────┘ │   │
+│            │ ┌─ Form ────────────┐ ┌──────┐ │   │
+│            │ │                   │ │ Card │ │   │
+│            │ │ ┌─ Control ────┐  │ │      │ │   │
+│            │ │ └──────────────┘  │ │      │ │   │
+│            │ │ ┌─ Control ────┐  │ │      │ │   │
+│            │ │ └──────────────┘  │ │      │ │   │
+│            │ └───────────────────┘ └──────┘ │   │
+│            │                                │   │
+├────────────┴── Footer ──────────────────────┤  ─┤
+│                                             │   ├─ Footer
+└─────────────────────────────────────────────┘  ─┘
 
-Add:
+  https://bootstrap.build/app
+  https://www.layoutit.com
+  https://coreui.io/bootstrap/docs/components/card/
   https://leafletjs.com/examples.html
   https://github.com/mdbootstrap/mdb-ui-kit
 
+Good example:
+  https://bootstrapmade.com/demo/templates/NiceAdmin/index.html
 }
 
 interface
@@ -236,6 +239,13 @@ type
   { TJQuery_LocalLibrary }
 
   TJQuery_LocalLibrary = class(TmnwLibrary)
+  public
+    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
+  end;
+
+  { TWebElements_Library }
+
+  TWebElements_Library = class(TmnwLibrary)
   public
     procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
   end;
@@ -502,8 +512,8 @@ type
 
     //* Called to parent to wrap the child rendering, each chiled will wrap it with this render
     //* This method exists in parent render
-    procedure DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
-    procedure DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
+    procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); virtual;
+    procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     //* Called only if have parent but exists in a child
     procedure DoEnterOuterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
@@ -615,6 +625,14 @@ type
 {-----------------    STANDARD    ----------------------}
 {-------------------------------------------------------}
 
+  { TmnwHTMLWriterHelper }
+
+  TmnwHTMLWriterHelper = class helper for TmnwWriter
+  public
+    procedure OpenTag(const Tag: string);
+    procedure CloseTag(const Tag: string);
+  end;
+
   { THTML }
 
   THTML =class(TmnwSchema)
@@ -629,11 +647,12 @@ type
       public
       end;
 
-      { TContent }
+      { THTMLComponent }
 
-      TContent = class abstract(THTMLElement)
+      THTMLComponent = class abstract(THTMLElement)
       protected
       public
+        Hint: string;
         Align: TmnwAlign;
         Fixed: TmnwFixed;
         Shadow: Boolean;
@@ -647,9 +666,10 @@ type
       TNavBar = class;
       TMenuBar = class;
       THeader = class;
+      TContent = class;
       TSideBar = class;
       TFooter = class;
-      TContainer = class;
+      TMain = class;
       TImage = class;
       TButtons = class;
       TBody = class;
@@ -667,7 +687,7 @@ type
       public
         FileName: string;
         Options: TFileOptions;
-        constructor Create(AParent: TmnwElement; AOptions: TFileOptions = []; AFileName: string = ''); reintroduce;
+        constructor Create(AParent: TmnwElement; AOptions: TFileOptions = []; AFileName: string = ''; ARoute: string = ''); reintroduce;
         function GetContentType(Route: string): string; override;
       end;
 
@@ -700,6 +720,10 @@ type
         //A script that will be downloaded in parallel to parsing the page, and executed after the page has finished parsing:
         Defer: Boolean;
 //        Async: Boolean;
+      end;
+
+      TCSSFile = class(TFile)
+      protected
       end;
 
       { TAssets }
@@ -758,75 +782,90 @@ type
 
       { TBody }
 
-      TBody = class(TContent)
+      TBody = class(THTMLComponent)
       private
-        function GetNavBar: TNavBar;
-        function GetMenuBar: TMenuBar;
         function GetSideBar: TSideBar;
-        function GetHeader: THeader;
-        function GetContainer: TContainer;
-        function GetFooter: TFooter;
+        function GetMain: TMain;
       protected
         FHeader: THeader;
-        FFooter: TFooter;
+        FContent: TContent;
         FSideBar: TSideBar;
-        FContainer: TContainer;
+        FMain: TMain;
+        FFooter: TFooter;
       protected
         procedure Created; override;
       public
-        property Header: THeader read GetHeader;
-        property NavBar: TNavBar read GetNavBar;
-        property MenuBar: TMenuBar read GetMenuBar;
-        property Container: TContainer read GetContainer;
-        property Footer: TFooter read GetFooter;
+        constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: Boolean =True); override;
         destructor Destroy; override;
+        property Header: THeader read FHeader;
+        property SideBar: TSideBar read GetSideBar;
+        property Main: TMain read GetMain;
+        property Footer: TFooter read FFooter;
       end;
 
       { THeader }
 
       [TID_Extension]
-      TNavBar = class(TContent)
+      TNavBar = class(THTMLComponent)
       public
         Caption: string;
       end;
 
       THeader = class(TNavBar)
+      private
+        function GetMenuBar: TMenuBar;
+        function GetNavBar: TNavBar;
       protected
         FNavBar: TNavBar;
+        FMenuBar: TMenuBar;
         procedure Created; override;
       public
         LogoImage: string;
+        property MenuBar: TMenuBar read GetMenuBar;
+        property NavBar: TNavBar read GetNavBar;
+      end;
+
+      TContent = class(THTMLComponent)
+      public
+        Wide: Boolean;
+      end;
+
+      TLink = class(THTMLComponent)
+      public
+        Location: string;
+        Text: string;
       end;
 
       TMenuBar = class(TNavBar)
       public
       end;
 
-      TFooter = class(TContent)
+      TFooter = class(THTMLComponent)
       public
         Text: string;
       end;
 
-      TSideBar = class(TContent)
+      { TSideBar }
+
+      TSideBar = class(THTMLComponent)
+      protected
+        procedure Created; override;
       end;
 
-      TContainer = class(TContent)
+      TMain = class(THTMLComponent)
       protected
-        FMenuBar: TMenuBar;
         procedure Created; override;
       public
-        Wide: Boolean;
         Margin: Integer;
         Size: TSize;
-        property MenuBar: TMenuBar read FMenuBar;
       end;
 
-      TRow = class(TContent)
+      TRow = class(THTMLComponent)
       public
         ContentAlign: TmnwAlign;
       end;
 
-      TColumn = class(TContent)
+      TColumn = class(THTMLComponent)
       public
         Size: Integer;
       end;
@@ -835,7 +874,7 @@ type
 
       { TCard }
 
-      TCard = class(TContent)
+      TCard = class(THTMLComponent)
       protected
         procedure Created; override;
       public
@@ -844,7 +883,7 @@ type
       end;
 
       [TID_Extension]
-      TPanel = class(TContent)
+      TPanel = class(THTMLComponent)
       public
         Caption: string;
       end;
@@ -857,7 +896,7 @@ type
 
       [TID_Extension]
       [TName_Extension]
-      TForm = class(TContent)
+      TForm = class(THTMLComponent)
       private
       protected
         procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
@@ -874,7 +913,7 @@ type
         Reset: TFormButton;
       end;
 
-      TParagraph = class(TContent)
+      TParagraph = class(THTMLComponent)
       public
         Text: string;
         constructor Create(AParent: TmnwElement; AText: string = ''); reintroduce;
@@ -1071,6 +1110,13 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
+      { TCSSFile }
+
+      TCSSFile = class(TFile)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+      end;
+
       { TContentCompose }
 
       TContentCompose = class(TElementHTML)
@@ -1090,8 +1136,8 @@ type
       TNavBar = class(TElementHTML)
       protected
         procedure DoRenderBrand(Scope: TmnwScope; Context: TmnwContext); virtual;
-        procedure DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
@@ -1107,8 +1153,15 @@ type
 
       TMenuBar = class(TElementHTML)
       protected
-        procedure DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+      end;
+
+      { TLink }
+
+      TLink = class(TElementHTML)
+      protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
@@ -1119,22 +1172,37 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
+      { TContent }
+
+      TContent = class(TElementHTML)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+      end;
+
+      { TSideBar }
+
       TSideBar = class(TElementHTML)
       protected
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
-      { TContainer }
+      { TMain }
 
-      TContainer = class(TElementHTML)
+      TMain = class(TElementHTML)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
+
+      { TRow }
 
       TRow = class(TElementHTML)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
+
+      { TColumn }
 
       TColumn = class(TElementHTML)
       protected
@@ -1157,8 +1225,8 @@ type
 
       TForm = class(TElementHTML)
       protected
-        procedure DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
@@ -1403,7 +1471,15 @@ begin
     Result := '';
 end;
 
-function When(Condition: Boolean; Value: string; Default: string = ''): string; inline;
+function When(const Value: string; const Default: string = ''): string; overload; inline;
+begin
+  if Value = '' then
+    Result := Default
+  else
+    Result := Value;
+end;
+
+function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
 begin
   if Condition then
     Result := Value
@@ -1812,7 +1888,7 @@ begin
   end;
 end;
 
-procedure TmnwElementRenderer.DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwElementRenderer.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
 end;
 
@@ -1829,7 +1905,7 @@ procedure TmnwElementRenderer.DoAfterRender(Scope: TmnwScope; const Context: Tmn
 begin
 end;
 
-procedure TmnwElementRenderer.DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwElementRenderer.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
 end;
 
@@ -2150,11 +2226,11 @@ begin
   begin
     aContext.Schema := aSchema;
     //resLatch
-    (AContext.Sender as TmodHttpCommand).Respond.Latch := True;
+//    (AContext.Sender as TmodHttpCommand).Respond.Latch := True;
     try
       Result.Action(AContext, AReturn);
     finally
-      (AContext.Sender as TmodHttpCommand).Respond.Latch := False;
+//      (AContext.Sender as TmodHttpCommand).Respond.Latch := False;
     end;
 
     if AReturn.Location <> '' then
@@ -2259,6 +2335,18 @@ begin
   inherited;
 end;
 
+{ TmnwHTMLWriterHelper }
+
+procedure TmnwHTMLWriterHelper.OpenTag(const Tag: string);
+begin
+  WriteLn('<'+Tag+'>', [woOpenTag])
+end;
+
+procedure TmnwHTMLWriterHelper.CloseTag(const Tag: string);
+begin
+  WriteLn('</'+Tag+'>', [woCloseTag])
+end;
+
 { TLocation }
 
 class operator TLocation.Implicit(Source: string): TLocation;
@@ -2329,6 +2417,8 @@ begin
   inherited;
   Libraries.RegisterLibrary('JQuery', False, TJQuery_Library);
   Libraries.RegisterLibrary('JQuery', False, TJQuery_LocalLibrary);
+  Libraries.RegisterLibrary('WebElements', False, TWebElements_Library);
+  Libraries.Use('WebElements');
 end;
 
 procedure TmnwHTMLRenderer.AddHead(AElement: TmnwElement; const Context: TmnwContext);
@@ -2342,6 +2432,7 @@ begin
   RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
   RegisterRenderer(THTML.TFile, TFile);
   RegisterRenderer(THTML.TJSFile, TJSFile);
+  RegisterRenderer(THTML.TCSSFile, TCSSFile);
 
   RegisterRenderer(THTML.TComment ,TComment);
   RegisterRenderer(THTML.TDocument ,TDocument);
@@ -2350,6 +2441,12 @@ begin
   RegisterRenderer(THTML.TBreak, TBreak);
   RegisterRenderer(THTML.TNavBar, TNavBar);
   RegisterRenderer(THTML.TMenuBar, TMenuBar);
+  RegisterRenderer(THTML.THeader, THeader);
+  RegisterRenderer(THTML.TContent, TContent);
+  RegisterRenderer(THTML.TSideBar, TSideBar);
+  RegisterRenderer(THTML.TMain, TMain);
+  RegisterRenderer(THTML.TFooter, TFooter);
+  RegisterRenderer(THTML.TLink, TLink);
   RegisterRenderer(THTML.TButton, TButton);
   RegisterRenderer(THTML.TNavItem, TNavItem);
   RegisterRenderer(THTML.TMenuItem, TMenuItem);
@@ -2357,9 +2454,6 @@ begin
   RegisterRenderer(THTML.TInputPassword, TInputPassword);
   RegisterRenderer(THTML.TImage, TImage);
   RegisterRenderer(THTML.TMemoryImage, TMemoryImage);
-  RegisterRenderer(THTML.THeader, THeader);
-  RegisterRenderer(THTML.TFooter, TFooter);
-  RegisterRenderer(THTML.TContainer, TContainer);
   RegisterRenderer(THTML.TCard, TCard);
   RegisterRenderer(THTML.TForm, TForm);
   RegisterRenderer(THTML.TRow, TRow);
@@ -2482,14 +2576,33 @@ begin
   Context.Writer.WriteLn('</footer>', [woCloseTag]);
 end;
 
-{ TmnwHTMLRenderer.TContainerHTML }
+{ TmnwHTMLRenderer.TContent }
 
-procedure TmnwHTMLRenderer.TContainer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TContent.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
-  e: THTML.TContainer;
+  e: THTML.TContent;
 begin
-  e := Scope.Element as THTML.TContainer;
-  Context.Writer.WriteLn('<main class="container" '+Scope.GetText+'>', [woOpenTag]);
+  e := Scope.Element as THTML.TContent;
+  if e.Wide then
+    Scope.Classes.Add('container-fluid')
+  else
+    Scope.Classes.Add('container');
+  Context.Writer.OpenTag('div'+Scope.GetText);
+  Context.Writer.OpenTag('div id="content" class="content row" '+Scope.GetText);
+  inherited;
+  Context.Writer.CloseTag('div');
+  Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TMainHTML }
+
+procedure TmnwHTMLRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+var
+  e: THTML.TMain;
+begin
+  e := Scope.Element as THTML.TMain;
+  Scope.Classes.Add('container');
+  Context.Writer.WriteLn('<main'+Scope.GetText+'>', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</main>', [woCloseTag]);
 end;
@@ -2514,13 +2627,13 @@ end;
 
 { TmnwHTMLRenderer.TFormHTML }
 
-procedure TmnwHTMLRenderer.TForm.DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TForm.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   Scope.Classes.Add('form-control');
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TForm.DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TForm.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
 end;
@@ -2589,6 +2702,7 @@ var
   event: string;
 begin
   e := Scope.Element as THTML.TButton;
+  Scope.Classes.Add('btn');
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Context.Writer.WriteLn('<button type="button"' + event + '' + Scope.Attributes.GetText+' >'+e.Caption+'</button>', [woOpenTag, woCloseTag]);
@@ -3473,9 +3587,7 @@ end;
 procedure THTML.TFile.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
 var
   ResStream: TStream;
-
   aDocSize: Int64;
-  aDocStream: TFileStream;
   aDate: TDateTime;
   aEtag, aFTag: string;
 begin
@@ -3503,7 +3615,7 @@ begin
 
     ResStream := TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead);
     try
-      aDocSize := aDocStream.Size;
+      aDocSize := ResStream.Size;
 
       AReturn.Respond.Header['Cache-Control']  := 'max-age=600';
       AReturn.Respond.Header['Last-Modified']  := FormatHTTPDate(aDate);
@@ -3517,13 +3629,16 @@ begin
   end;
 end;
 
-constructor THTML.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string);
+constructor THTML.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string; ARoute: string );
 begin
   inherited Create(AParent);
   Options := AOptions;
   FileName := AFileName;
   if not (ftEmbed in Options) then
-    Route := ChangeFileExt(ExtractFileName(FileName), '');
+    if (ARoute = '') then
+      Route := ExtractFileName(FileName)
+    else
+      Route := ARoute;
 end;
 
 function THTML.TFile.GetContentType(Route: string): string;
@@ -3714,6 +3829,14 @@ begin
   Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"></script>');
 end;
 
+{ TWebElements_Library }
+
+procedure TWebElements_Library.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+begin
+  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"></script>');
+  Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.css" rel="stylesheet" crossorigin="anonymous"></link>');
+end;
+
 { THTML }
 
 { THTML.TImage }
@@ -3737,49 +3860,18 @@ end;
 
 { THTML.TBody }
 
-function THTML.TBody.GetNavBar: TNavBar;
-begin
-  if Header.FNavBar = nil then
-    FHeader.FNavBar := TNavBar.Create(Header, [elEmbed], True);
-  Result := FHeader.FNavBar;
-end;
-
 function THTML.TBody.GetSideBar: TSideBar;
 begin
   if FSideBar = nil then
-    FSideBar := TSideBar.Create(Self, [elEmbed], True);
+    FSideBar := TSideBar.Create(FContent, [elEmbed], True);
    Result := FSideBar;
 end;
 
-function THTML.TBody.GetHeader: THeader;
+function THTML.TBody.GetMain: TMain;
 begin
-  if FHeader = nil then
-    FHeader := THeader.Create(Self, [elEmbed], True);
-  Result := FHeader
-end;
-
-function THTML.TBody.GetMenuBar: TMenuBar;
-begin
-  if Container.FMenuBar = nil then
-    Container.FMenuBar := TMenuBar.Create(Container, [elEmbed], True);
-  Result := Container.FMenuBar;
-end;
-
-function THTML.TBody.GetContainer: TContainer;
-begin
-  if FContainer = nil then
-    FContainer := TContainer.Create(Self, [elEmbed], True);
-   Result := FContainer;
-end;
-
-function THTML.TBody.GetFooter: TFooter;
-begin
-  if FFooter = nil then
-  begin
-    GetContainer; //force Container be created before footer
-    FFooter := TFooter.Create(Self, [elEmbed], True);
-  end;
-  Result := FFooter;
+  if FMain = nil then
+    FMain := TMain.Create(FContent, [elEmbed], True);
+   Result := FMain;
 end;
 
 procedure THTML.TBody.Created;
@@ -3787,20 +3879,49 @@ begin
   inherited;
 end;
 
+constructor THTML.TBody.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
+begin
+  inherited;
+  FHeader := THeader.Create(Self, [elEmbed], True);
+  FContent := TContent.Create(Self, [elEmbed], True);
+  FFooter := TFooter.Create(Self, [elEmbed], True);
+end;
+
 destructor THTML.TBody.Destroy;
 begin
 {  FreeAndNil(FHeader); Nope
   FreeAndNil(FFooter);
-  FreeAndNil(FContainer);}
+  FreeAndNil(FMain);}
   inherited;
 end;
 
 { THTML.THeader }
 
+function THTML.THeader.GetMenuBar: TMenuBar;
+begin
+  if FMenuBar = nil then
+    FMenuBar := TMenuBar.Create(Self, [elEmbed], True);
+  Result := FMenuBar;
+end;
+
+function THTML.THeader.GetNavBar: TNavBar;
+begin
+  if FNavBar = nil then
+    FNavBar := TNavBar.Create(Self, [elEmbed], True);
+  Result := FNavBar;
+end;
+
 procedure THTML.THeader.Created;
 begin
   inherited;
   Shadow := True;
+end;
+
+{ THTML.TSideBar }
+
+procedure THTML.TSideBar.Created;
+begin
+  inherited Created;
 end;
 
 { TmnwHTMLRenderer.TBody }
@@ -3870,9 +3991,9 @@ begin
   Context.Writer.WriteLn('</div>', [woCloseTag]);
 end;
 
-{ THTML.TContainer }
+{ THTML.TMain }
 
-procedure THTML.TContainer.Created;
+procedure THTML.TMain.Created;
 begin
   inherited;
   Margin := 0;
@@ -4019,13 +4140,13 @@ begin
     Context.Writer.WriteLn('<span class="navbar-brand ms-1">'+e.Caption+'</span>', [woOpenTag, woCloseTag]);
 end;
 
-procedure TmnwHTMLRenderer.TNavBar.DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TNavBar.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   Context.Writer.WriteLn('<li class="nav-item">', [woOpenTag]);
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TNavBar.DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TNavBar.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
   Context.Writer.WriteLn('</li>', [woCloseTag]);
@@ -4061,12 +4182,12 @@ end;
 
 { TmnwHTMLRenderer.TMenuBar }
 
-procedure TmnwHTMLRenderer.TMenuBar.DoEnterChildRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TMenuBar.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TMenuBar.DoLeaveChildRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TMenuBar.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
 end;
@@ -4074,6 +4195,22 @@ end;
 procedure TmnwHTMLRenderer.TMenuBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 begin
   inherited;
+end;
+
+{ TmnwHTMLRenderer.TLink }
+
+procedure TmnwHTMLRenderer.TLink.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+var
+  e: THTML.TLink;
+begin
+  e := Scope.Element as THTML.TLink;
+  Context.Writer.Write('<a' + Scope.GetText + ' href='+When(e.Location, '#') +'>', [woOpenTag]);
+  if e.Text <> '' then
+    Context.Writer.Write(e.Text)
+  else
+    Context.Writer.Write('#');
+  inherited;
+  Context.Writer.WriteLn('</a>', [woCloseTag]);
 end;
 
 { TmnwHTMLRenderer.TJSFile }
@@ -4095,6 +4232,29 @@ begin
   begin
     src := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
     Context.Writer.WriteLn('<script type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src) +' ></script>', [woOpenTag, woCloseTag]);
+    inherited;
+  end;
+end;
+
+{ TmnwHTMLRenderer.TCSSFile }
+
+procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+var
+  e: THTML.TCSSFile;
+  src: string;
+begin
+  e := Scope.Element as THTML.TCSSFile;
+  if ftEmbed in e.Options then
+  begin
+    Context.Writer.WriteLn('<style type="text/css"'+ Scope.Attributes.GetText + '>', [woOpenTag]);
+    inherited;
+    Context.Writer.WriteLn('');
+    Context.Writer.WriteLn('</style>', [woCloseTag]);
+  end
+  else
+  begin
+    src := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
+    Context.Writer.WriteLn('<link rel="stylesheet" href='+ DQ(src) +' ></link>', [woOpenTag, woCloseTag]);
     inherited;
   end;
 end;
@@ -4356,9 +4516,28 @@ end;
 
 { TmnwHTMLRenderer.TSideBar }
 
-procedure TmnwHTMLRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TSideBar.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+{  Context.Writer.WriteLn('<li class="sidebar-item">', [woOpenTag]);
+  if (Scope.Element is THTML.TLink) then
+    Scope.Classes.Add('sidebar-link');}
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TSideBar.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
+//  Context.Writer.WriteLn('</li>', [woCloseTag]);
+end;
+
+procedure TmnwHTMLRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+var
+  e: THTML.TSideBar;
+begin
+  e := Scope.Element as THTML.TSideBar;
+  Context.Writer.OpenTag('aside id="sidebar" class="sidebar col-3 min-vh-100 position-sticky text-white bg-dark"');
+  inherited;
+  Context.Writer.CloseTag('aside');
 end;
 
 initialization

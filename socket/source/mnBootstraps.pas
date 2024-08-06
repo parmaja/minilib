@@ -9,6 +9,10 @@ unit mnBootstraps;
   https://fastbootstrap.com/components/accordion/
   https://fastbootstrap.com/components/layout/
   https://freefrontend.com/bootstrap-sidebars/
+
+  https://dev.to/codeply/bootstrap-5-sidebar-examples-38pb
+
+  https://bootswatch.com/darkly/
  *}
 
 {$M+}
@@ -46,9 +50,9 @@ type
   public
     type
 
-    { TContent }
+    { THTMLComponent }
 
-    TContent = class(TElementHTML)
+    THTMLComponent = class(TElementHTML)
     public
       procedure DoCollectAttributes(var Scope: TmnwScope); override;
     end;
@@ -60,7 +64,7 @@ type
       procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
     end;
 
-    TContainer = class abstract(TElementHTML)
+    TMain = class abstract(TElementHTML)
     protected
     public
       procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
@@ -174,25 +178,35 @@ begin
   Context.Writer.WriteLn('.card {');
   Context.Writer.WriteLn('    max-width: 22rem;');
   Context.Writer.WriteLn('}');
+  Context.Writer.WriteLn('.sidebar {');
+  Context.Writer.WriteLn('    width: 15rem;');
+  Context.Writer.WriteLn('    max-width: 15rem;');
+  Context.Writer.WriteLn('}');
   Context.Writer.WriteLn('</style>', [woCloseTag]);
 end;
 
 class constructor TmnwBootstrapRenderer.RegisterObjects;
 begin
   RegisterRenderer(THTML.TDocument, TDocument, Replace);
-  RegisterRenderer(THTML.TContainer, TContainer, Replace);
+  RegisterRenderer(THTML.TMain, TMain, Replace);
   RegisterRenderer(THTML.TRow, TRow, Replace);
   RegisterRenderer(THTML.TColumn, TColumn, Replace);
   RegisterRenderer(THTML.TCard, TCard, Replace);
 end;
 
-{ TmnwBootstrapRenderer.TContent }
+{ TmnwBootstrapRenderer.THTMLComponent }
 
-procedure TmnwBootstrapRenderer.TContent.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwBootstrapRenderer.THTMLComponent.DoCollectAttributes(var Scope: TmnwScope);
 var
-  e: THTML.TContent;
+  e: THTML.THTMLComponent;
 begin
-  e := Scope.Element as THTML.TContent;
+  e := Scope.Element as THTML.THTMLComponent;
+  if e.Hint <> '' then
+  begin
+    e.Attributes['data-bs-toggle'] := 'tooltip';
+    e.Attributes['data-bs-original-title'] := e.Hint;
+  end;
+
   inherited;
   if e.Shadow then
     Scope.Classes.Add('shadow-sm');
@@ -236,32 +250,30 @@ begin
   Context.Writer.WriteLn('</div>', [woCloseTag]);
 end;
 
-{ TmnwBootstrapRenderer.TContainer }
+{ TmnwBootstrapRenderer.TMain }
 
-procedure TmnwBootstrapRenderer.TContainer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwBootstrapRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
-  e: THTML.TContainer;
+  e: THTML.TMain;
 begin
-  e := Scope.Element as THTML.TContainer;
+  e := Scope.Element as THTML.TMain;
+  Context.Writer.OpenTag('div class="row flex-nowrap"');
   //Scope.Classes.Add('main');
-  if e.Wide then
-    Scope.Classes.Add('container-fluid')
-  else
-    Scope.Classes.Add('container');
   if e.Margin > 0 then
     Scope.Classes.Add('m-'+e.Margin.ToString);
+  if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
+    Scope.Classes.Add('col-9');
   //Scope.Classes.Add('d-flex');
+  Scope.Classes.Add('flex-nowrap');
   Scope.Classes.Add('justify-content-center');
 //container-fluid for full width, container not full width
   Context.Writer.WriteLn('<main'+Scope.GetText+'>', [woOpenTag]);
-  //Context.Writer.WriteLn('<main>', [woOpenTag]);
   inherited;
-  //Context.Writer.WriteLn('</main>', [woCloseTag]);
   Context.Writer.WriteLn('</main>', [woCloseTag]);
+  Context.Writer.CloseTag('div');
 end;
 
 { TmnwBootstrapRenderer.TCard }
-
 
 //https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
 //https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
@@ -279,7 +291,10 @@ begin
   if e.Shadow then
     Scope.Classes.Add('shadow-sm');
   if SameText(e.Style, 'center') then
+  begin
     Scope.Classes.Add('ms-auto');
+    Scope.Classes.Add('me-auto');
+  end;
 
   Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenTag]);
   if e.Caption <> '' then

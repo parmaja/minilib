@@ -1,0 +1,76 @@
+:root {
+    --header-size: 4rem;
+    --sidebar-size: 16rem;
+}
+
+body {
+}
+
+header{
+    z-index: 1006;
+}
+
+aside{
+    z-index: 1005;
+}
+
+.header {
+    min-height: var(--header-size);
+}
+
+.fixed {
+    position: fixed !important; /* option to stick it without scroll */
+}
+
+.content {
+}
+
+@media(max-width: 768px) {
+    .sidebar {
+/*            	    visibility: collapse; */ /* dosnt work in iphone 6*/
+        visibility: hidden;
+        position: fixed;
+    }
+}
+
+.sidebar {
+    float: left;
+    overflow: auto;
+    top: 0;
+    bottom: 0;
+    height: auto;
+    padding: 0;
+    width: var(--sidebar-size);
+    max-width: 100vh;
+    min-height: calc(100vh - var(--header-size));
+}
+
+.sidebar-content {
+    position: fixed; /* option to stick it without scroll */
+    display: flex;
+    overflow-y: auto;
+    height: calc(100vh - var(--header-size));
+    width: var(--sidebar-size);
+    min-height: calc(100vh - var(--header-size));
+}
+
+.sidebar-items {
+    overflow-y: auto;
+    width: var(--sidebar-size));
+    max-width: 100vh;
+}
+
+.skip-header {
+   top: var(--header-size) !important;
+ }
+
+.offcanvas.show, .offcanvas.showing {
+    top: var(--header-size);
+    box-shadow: 0px 0px 10px 5px rgba(0,0,0,0.5);
+    border: 0;
+}
+
+.navbar-toggler:focus {
+  outline: none;
+  box-shadow: none;
+}

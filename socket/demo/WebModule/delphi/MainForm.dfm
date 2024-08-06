@@ -52,8 +52,6 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
-    ExplicitWidth = 431
-    ExplicitHeight = 210
   end
   object StartBtn: TButton
     Left = 361
@@ -76,7 +74,6 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 2
     Text = 'c:\offline\'
-    ExplicitWidth = 264
   end
   object StopBtn: TButton
     Left = 361
@@ -118,13 +115,12 @@ object Main: TMain
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
-    ExplicitWidth = 431
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
       Top = 6
       Width = 60
-      Height = 25
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -149,7 +145,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 13
+      Height = 22
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -162,13 +158,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object Label3: TLabel
       AlignWithMargins = True
       Left = 101
       Top = 6
       Width = 20
-      Height = 13
+      Height = 22
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -181,13 +178,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object MaxOfThreadsLabel: TLabel
       AlignWithMargins = True
       Left = 127
       Top = 6
       Width = 60
-      Height = 25
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -212,7 +210,7 @@ object Main: TMain
       Left = 35
       Top = 6
       Width = 60
-      Height = 25
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -235,7 +233,7 @@ object Main: TMain
       Left = 3
       Top = 3
       Width = 29
-      Height = 13
+      Height = 28
       Align = alLeft
       Caption = 'Count'
       Color = clBtnFace
@@ -248,6 +246,7 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
   end
   object Button1: TButton
@@ -290,7 +289,6 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 10
     Text = 'doc'
-    ExplicitWidth = 189
   end
   object KeepAliveChk: TCheckBox
     Left = 10
