@@ -16,9 +16,12 @@
             body {
             }
 
+            aside, header{
+                z-index: 1005;
+            }
+
             .header {
                 min-height: var(--header-size);
-                z-index: 1050;
             }
 
             .fixed-header {
@@ -26,7 +29,6 @@
             }
             
             .content {
-
             }
 
             .sidebar {
@@ -36,9 +38,14 @@
                 width: var(--sidebar-size);
                 min-height: calc(100vh - var(--header-size));
                 height: auto;
-                /*z-index: 2000;*/
                 padding: 0;
                 overflow-y: auto;
+            }
+
+            @media(max-width: 768px) {
+                .sidebar {
+                    visibility: collapse;
+                }
             }
 
             .sidebar-content {
@@ -51,17 +58,13 @@
                 overflow-y: auto;
             }
 
-            .sidebar-button{
-                position: absolute;
-                top: var(--header-size);
-                left: 0; /* Adjust left position */
-                z-index: 995;
-                cursor: pointer;
-             }
-
              .skip-header {
                 top: var(--header-size) !important;
               }
+
+             .offcanvas.show, .offcanvas.showing {
+                 top: var(--header-size);
+             }
 
         </style>
     </head>
@@ -69,7 +72,7 @@
         <header id="header-1" class="header sticky-top d-flex align-items-center navbar-dark bg-dark shadow-sm p-0" >
             <nav id="nav-header" class="navbar flex-nowrap shadow-md navbar-expand-md navbar-dark bg-dark w-100 p-1">
 
-                <button class="navbar-toggler me-0 ms-0 navbar-dark bg-dark p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar-content" aria-controls="" aria-expanded="false" aria-label="Toggle Sidebar">
+                <button class="navbar-toggler me-0 ms-0 navbar-dark bg-dark p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar-items" aria-controls="sidebar-items" aria-expanded="false" aria-label="Toggle Sidebar">
                     <span class="carousel-control-next-icon"></span>
                 </button>
 
@@ -78,11 +81,11 @@
                     <span class="navbar-brand">Creative Solutions</span>
                 </a>
 
-                <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#header-1-items" aria-controls="header-1-items" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#header-items" aria-controls="header-items" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div id="header-1-items" class="skip-header offcanvas offcanvas-end text-bg-dark">
+                <div id="header-items" class="skip-header offcanvas offcanvas-end text-bg-dark">
                   <div class="offcanvas-body">
                     <ul class="navbar-nav mr-auto d-flex mb-2 mb-md-0">
                         <li class="nav-item">
@@ -103,28 +106,29 @@
         <div class="container">
 
             <div id="content" class="row content flex-nowrap">
-                    <aside id="sidebar" class="navbar sidebar navbar text-bg-dark">
-                        <div id="sidebar-content" class="sidebar-content skip-header offcanvas offcanvas-start text-bg-dark" data-bs-backdrop="scroll" data-bs-scroll="true">
-                            <div class="offcanvas-body">
-                                <div class="list-group d-flex flex-column text-sm-start">
-                                    <p> Links1 </p>
-                                    <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-bootstrap"></i> <span>Item jhkjh kjhk jhlkj hkl jhkl jh</span> </a>
-                                    <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-film"></i> <span>Item</span></a>
-                                    <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-heart"></i> <span>Item</span></a>
-                                    <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-bricks"></i> <span>Item</span></a>
-                                    <p> Links2 </p>
-                                    <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-clock"></i> <span>Item</span></a>
-                                    <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-archive"></i> <span>Item</span></a>
-                                    <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-gear"></i> <span>Item</span></a>
-                                    <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-calendar"></i> <span>Item</span></a>
-                                    <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-envelope"></i> <span>Item</span></a>
+                    <aside id="sidebar" class="sidebar text-bg-dark">  <!--d-none d-md-block -->
+                        <nav id="sidebar-content" class="sidebar-content navbar-expand-md text-bg-dark" data-bs-backdrop="scroll" data-bs-scroll="true">
+                            <div id="sidebar-items" class="sidebar-items skip-header offcanvas offcanvas-start text-bg-dark">
+                                <div class="offcanvas-body">
+                                    <div class="list-group d-flex flex-column text-sm-start">
+                                        <p> Links1 </p>
+                                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-bootstrap"></i> <span>Item jhkjh kjhk jhlkj hkl jhkl jh</span> </a>
+                                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-film"></i> <span>Item</span></a>
+                                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-heart"></i> <span>Item</span></a>
+                                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-bricks"></i> <span>Item</span></a>
+                                        <p> Links2 </p>
+                                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-clock"></i> <span>Item</span></a>
+                                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-archive"></i> <span>Item</span></a>
+                                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-gear"></i> <span>Item</span></a>
+                                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-calendar"></i> <span>Item</span></a>
+                                        <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-envelope"></i> <span>Item</span></a>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </nav>
                     </aside>
 
                     <main id="main" class="col">
-                        <main id="main-content" class="">
                           <div class="card shadow-sm" id="card-2">
                                 <h5 class="card-header" id="card-2-header">Login</h5>
                                 <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
@@ -206,7 +210,7 @@
                                 </div>
                             </div>
                         </div>
-                    </main>
+                   </main>
             </div>
         </div>
     </body>
