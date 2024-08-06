@@ -18,6 +18,7 @@
 
             .header {
                 min-height: var(--header-size);
+                z-index: 1050;
             }
 
             .fixed-header {
@@ -58,8 +59,8 @@
                 cursor: pointer;
              }
 
-             .sidebar-content.offcanvas.offcanvas-start {
-                top: var(--header-size);
+             .skip-header {
+                top: var(--header-size) !important;
               }
 
         </style>
@@ -68,11 +69,11 @@
         <header id="header-1" class="header sticky-top d-flex align-items-center navbar-dark bg-dark shadow-sm p-0" >
             <nav id="nav-header" class="navbar flex-nowrap shadow-md navbar-expand-md navbar-dark bg-dark w-100 p-1">
 
-                <button class="navbar-toggler navbar-dark bg-dark p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar-content" aria-controls="sidebar-content" aria-expanded="false" aria-label="Toggle Sidebar">
+                <button class="navbar-toggler me-0 ms-0 navbar-dark bg-dark p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar-content" aria-controls="" aria-expanded="false" aria-label="Toggle Sidebar">
                     <span class="carousel-control-next-icon"></span>
                 </button>
 
-                <a class="logo navbar-brand align-items-center" href="http://localhost:8080/home/">
+                <a class="logo navbar-brand me-auto align-items-center" href="http://localhost:8080/home/">
                     <img class="" src="http://localhost:8080/home/assets/logo">
                     <span class="navbar-brand">Creative Solutions</span>
                 </a>
@@ -81,10 +82,11 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div id="header-1-items" class="collapse navbar-collapse">
+                <div id="header-1-items" class="skip-header offcanvas offcanvas-end text-bg-dark">
+                  <div class="offcanvas-body">
                     <ul class="navbar-nav mr-auto d-flex mb-2 mb-md-0">
                         <li class="nav-item">
-                            <a href="" class="nav-link">Home</a>
+                            <a href="" class="nav-link">Dashboard</a>
                         </li>
                         <li class="nav-item">
                             <a href="" class="nav-link">About</a>
@@ -93,6 +95,7 @@
                             <a href="" class="nav-link">User</a>
                         </li>
                     </ul>
+                  </div>
                 </div>
             </nav>
         </header>
@@ -100,10 +103,10 @@
         <div class="container">
 
             <div id="content" class="row content flex-nowrap">
-                    <aside id="sidebar" class="sidebar text-white bg-dark">
-                        <div id="sidebar-content" class="sidebar-content d-none d-md-block text-white bg-dark" data-bs-backdrop="scroll" data-bs-scroll="true">
-                            <div class="offcanvas-body1">
-                                <div class="list-group text-sm-start">
+                    <aside id="sidebar" class="navbar sidebar navbar text-bg-dark">
+                        <div id="sidebar-content" class="sidebar-content skip-header offcanvas offcanvas-start text-bg-dark" data-bs-backdrop="scroll" data-bs-scroll="true">
+                            <div class="offcanvas-body">
+                                <div class="list-group d-flex flex-column text-sm-start">
                                     <p> Links1 </p>
                                     <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-bootstrap"></i> <span>Item jhkjh kjhk jhlkj hkl jhkl jh</span> </a>
                                     <a href="#" class="list-group-item border-end-0 d-inline-block text-truncate" data-bs-parent="#sidebar"><i class="bi bi-film"></i> <span>Item</span></a>
