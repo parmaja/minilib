@@ -148,7 +148,7 @@ end;
 
 procedure TMain.HttpServerBeforeOpen(Sender: TObject);
 var
-  aHomePath: string;
+  aAppPath, aHomePath: string;
   aDocModule: TmodWebModule;
   aHomeModule: THomeModule;
 begin
@@ -175,15 +175,15 @@ begin
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := 'home';
-    aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
+    aAppPath := ExtractFilePath(Application.ExeName);
 
     //aHomeModule.IsSSL := HttpServer.UseSSL;
     //aHomeModule.Domain := 'localhost';
     //aHomeModule.Port := HttpServer.Port;
     aHomeModule.IsLocal := False;
-    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
+//    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.HomePath := aHomePath;
-    aHomeModule.WorkPath := aHomeModule.AppPath;
+    aHomeModule.WorkPath := aAppPath;
     //aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs-v2.png');
     aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs.svg');
     ForceDirectories(aHomeModule.WorkPath + 'cache');

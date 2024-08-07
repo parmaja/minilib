@@ -16,7 +16,7 @@ uses
 type
   { TWelcomeSchema }
 
-  TWelcomeSchema = class(TUIWebSchema)
+  TWelcomeSchema = class(THTML)
   private
   protected
     Input1: THTML.TInput;
@@ -27,7 +27,7 @@ type
     class function GetCapabilities: TmnwSchemaCapabilities; override;
   end;
 
-  TWSShema = class(TUIWebSchema)
+  TWSShema = class(THTML)
   private
   public
   protected
@@ -37,7 +37,7 @@ type
 
   { TLoginSchema }
 
-  TLoginSchema = class(TUIWebSchema)
+  TLoginSchema = class(THTML)
   private
   public
   protected
@@ -61,7 +61,6 @@ type
     procedure CreateItems; override;
     procedure Start; override;
   public
-    IsLocal: Boolean;
     destructor Destroy; override;
   end;
 
@@ -149,8 +148,8 @@ begin
     Direction := dirLTR;
     with Body do
     begin
-      //TJSFile.Create(This, [ftResource], 'mnWebElements.js');
-      TJSFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.js'));
+      //TJSFile.Create(This, [ftResource], 'WebElements_JS', 'WebElements.js');
+      TJSFile.Create(This, [], ExpandFileName(GetCurrentDir + '../../source/mnWebElements.js'));
 
       Header.NavBar.Title := 'Creative Solutions';
       with Header.NavBar do
@@ -199,7 +198,7 @@ begin
           begin
             Name := 'logo';
             Route := 'logo';
-            LoadFromFile(IncludePathDelimiter(Module.HomePath) + 'logo.png');
+            LoadFromFile(IncludePathDelimiter(App.HomePath) + 'logo.png');
           end;
 
 {          with TImage.Create(This) do
@@ -437,7 +436,7 @@ begin
   with TFile.Create(This) do
   begin
     Route := 'echo';
-    FileName := IncludePathDelimiter(Module.HomePath) + 'ws.html';
+    FileName := IncludePathDelimiter(App.HomePath) + 'ws.html';
   end;
 end;
 
@@ -471,17 +470,12 @@ begin
     if Logo.Data.Size = 0 then
       Logo.LoadFromFile(HomePath + 'logo.png');
       //Logo.LoadFromFile(HomePath + 'logo.png');
-    with TFile.Create(This) do
+    with thtml.TFile.Create(This) do
     begin
       Name := 'jquery';
       Route := 'jquery';
-      FileName := IncludePathDelimiter(Module.HomePath) + 'jquery-3.7.1.min.js';
-
-      //TCSSFile.Create(This, [ftResource], 'mnWebElements.css');
+      FileName := IncludePathDelimiter(HomePath) + 'jquery-3.7.1.min.js';
     end;
-
-    TFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.css'), 'WebElements.css');
-    TFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.js'), 'WebElements.js');
   end;
 end;
 

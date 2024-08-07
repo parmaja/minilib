@@ -52,7 +52,7 @@ type
 
     { THTMLComponent }
 
-    THTMLComponent = class(TElementHTML)
+    THTMLComponent = class(THTMLElement)
     public
       procedure DoCollectAttributes(var Scope: TmnwScope); override;
     end;
@@ -64,23 +64,23 @@ type
       procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
     end;
 
-    TMain = class abstract(TElementHTML)
+    TMain = class abstract(THTMLElement)
     protected
     public
       procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
     end;
 
-    TRow = class(TmnwHTMLRenderer.TElementHTML)
+    TRow = class(TmnwHTMLRenderer.THTMLElement)
     public
       procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
     end;
 
-    TColumn = class(TmnwHTMLRenderer.TElementHTML)
+    TColumn = class(TmnwHTMLRenderer.THTMLElement)
     public
       procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
     end;
 
-    TCard = class abstract(TElementHTML)
+    TCard = class abstract(THTMLElement)
     protected
     public
       procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
@@ -294,7 +294,7 @@ begin
 //    Context.Writer.WriteLn('<h5 class="card-header" id="'+e.id+'-header">', [woOpenTag]);
     Context.Writer.Write('<h5 class="card-header" id="'+e.id+'-header"');
     if e.Collapse then
-      Context.Writer.Write('role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
+      Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
     Context.Writer.Write('>', [woOpenTag]);
     Context.Writer.Write(e.Caption);
     if e.Collapse then

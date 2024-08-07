@@ -298,6 +298,7 @@ type
     FState: TmnwElementState;
     FOnExecute: TElementExecute;
     FOnAction: TActionProc;
+    FPrepared: Boolean;
     procedure SetState(const AValue: TmnwElementState);
   protected
     procedure Update; virtual;
@@ -305,6 +306,7 @@ type
     procedure Check; virtual;
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
 
+    procedure DoPrepare; virtual;
     procedure DoCompose(const AContext: TmnwContext); virtual;
     procedure DoComposed; virtual;
     procedure DoRespondHeader(AContext: TmnwContext); virtual;
@@ -315,6 +317,7 @@ type
     procedure Execute;
     procedure DoChanged; virtual;
     procedure Changed;
+    procedure Prepare;
     procedure SendMessage(AMessage: string); overload;
     procedure SendMessage(JSON: TDON_Pair); overload; virtual;
     procedure ReceiveMessage(JSON: TDON_Pair); virtual;
@@ -460,6 +463,7 @@ type
   TmnwSchemaCapabilities = set of TmnwSchamaCapability;
 
   TmnwApp = class;
+  TUIWebModule = class;
 
   { TmnwSchema }
 
@@ -475,6 +479,8 @@ type
     procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
     procedure ProcessMessage(const s: string);
   public
+    HomePath: string;
+    ServeFiles: Boolean;
     SessionID: string;
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); override;
     destructor Destroy; override;
@@ -493,6 +499,55 @@ type
     property Attached: Boolean read FAttached;
     property Lock: TCriticalSection read FLock;
     property App: TmnwApp read FApp;
+  public
+    type
+    TFileOptions = set of (ftEmbed, ftResource);
+
+    { TFile }
+
+    //* For resource Use FileName := 'myfile.js' but the resource name will took as myfile only, extention will be for mime
+
+    { TElement }
+
+    TElement = class(TmnwElement) //nothing
+    public
+      constructor Create(AParent: TmnwElement; ARoute: string); reintroduce;
+    end;
+
+    [TID_Extension]
+    TFile = class(TmnwElement)
+    protected
+      procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+    public
+      FileName: string;
+      Options: TFileOptions;
+      constructor Create(AParent: TmnwElement; AOptions: TFileOptions = []; AFileName: string = ''; ARoute: string = ''); reintroduce;
+      function GetContentType(Route: string): string; override;
+    end;
+
+    { TMemoryImage }
+
+    [TID_Extension]
+    TMemory = class(TmnwElement)
+    private
+      ContentType: string;
+      FData: TMemoryStream;
+    protected
+      procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+    protected
+      procedure Created; override;
+    public
+      FileDate: TDateTime;
+      FileName: string;
+      FilePath: string;
+      destructor Destroy; override;
+      function GetContentType(Route: string): string; override;
+      procedure LoadFromFile(const AFileName: string);
+      procedure LoadFromStream(AStream: TStream; AContentType: string);
+      property Data: TMemoryStream read FData;
+    end;
+
+
   end;
 
   TmnwSchemaClass = class of TmnwSchema;
@@ -601,6 +656,7 @@ type
 
   TmnwApp = class(TmnNamedObjectList<TmnwSchemaObject>)
   private
+    FHomePath: string;
     FAssets: TAssetsSchema;
     FLock: TCriticalSection;
     FSessionTimeout: Integer;
@@ -610,11 +666,12 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    procedure Start;
 
     procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass; ASchemaObject: TmnwSchema = nil);
 
     function FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
-    procedure GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement);
+    function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 
     function Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): TmnwElement;
     //for websocket
@@ -622,6 +679,7 @@ type
     property Lock: TCriticalSection read FLock;
     property SessionTimeout: Integer read FSessionTimeout write FSessionTimeout; //in seconds
     property Assets: TAssetsSchema read FAssets;
+    property HomePath: string read FHomePath write FHomePath;
   end;
 
   TSize = (szVerySmall, szSmall, szNormal, szLarge, szVeryLarge);
@@ -685,45 +743,6 @@ type
       TImage = class;
       TButtons = class;
       TBody = class;
-
-      TFileOptions = set of (ftEmbed, ftResource);
-
-      { TFile }
-
-      //* For resource Use FileName := 'myfile.js' but the resource name will took as myfile only, extention will be for mime
-
-      [TID_Extension]
-      TFile = class(THTMLElement)
-      protected
-        procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
-      public
-        FileName: string;
-        Options: TFileOptions;
-        constructor Create(AParent: TmnwElement; AOptions: TFileOptions = []; AFileName: string = ''; ARoute: string = ''); reintroduce;
-        function GetContentType(Route: string): string; override;
-      end;
-
-      { TMemoryImage }
-
-      [TID_Extension]
-      TMemory = class(THTMLElement)
-      private
-        ContentType: string;
-        FData: TMemoryStream;
-      protected
-        procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
-      protected
-        procedure Created; override;
-      public
-        FileDate: TDateTime;
-        FileName: string;
-        FilePath: string;
-        destructor Destroy; override;
-        function GetContentType(Route: string): string; override;
-        procedure LoadFromFile(const AFileName: string);
-        procedure LoadFromStream(AStream: TStream; AContentType: string);
-        property Data: TMemoryStream read FData;
-      end;
 
       { TJSFile }
 
@@ -796,11 +815,15 @@ type
 
       TBody = class(THTMLElement)
       private
+        function GetWide: Boolean;
+        procedure SetWide(const Value: Boolean);
       protected
         FHeader: THeader;
+
         FContent: TContent;
         FSideBar: TSideBar;
         FMain: TMain;
+
         FFooter: TFooter;
       protected
       public
@@ -810,6 +833,7 @@ type
         property SideBar: TSideBar read FSideBar;
         property Main: TMain read FMain;
         property Footer: TFooter read FFooter;
+        property Wide: Boolean read GetWide write SetWide;
       end;
 
       { THeader }
@@ -836,8 +860,9 @@ type
       end;
 
       TContent = class(THTMLElement)
-      public
+      protected
         Wide: Boolean;
+      public
       end;
 
       TLink = class(THTMLComponent)
@@ -1068,9 +1093,7 @@ type
       end;
 
   protected
-    procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
   public
-    ServeFiles: Boolean;
     function GetContentType(Route: string): string; override;
   end;
 
@@ -1083,7 +1106,7 @@ type
 
       { TElement }
 
-      TElementHTML = class abstract(TmnwElementRenderer)
+      THTMLElement = class abstract(TmnwElementRenderer)
       protected
         procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); virtual;
         procedure DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
@@ -1091,21 +1114,21 @@ type
 
       { THTMLComponent }
 
-      THTMLComponent = class(TElementHTML)
+      THTMLComponent = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
       end;
 
       { TComment }
 
-      TComment = class(TElementHTML)
+      TComment = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
       { TDocument }
 
-      TDocument = class(TElementHTML)
+      TDocument = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
@@ -1113,7 +1136,7 @@ type
 
       { TBody }
 
-      TBody = class(TElementHTML)
+      TBody = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
@@ -1121,7 +1144,7 @@ type
 
       { TFile }
 
-      TFile = class(TElementHTML)
+      TFile = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -1142,7 +1165,7 @@ type
 
       { TContentCompose }
 
-      TContentCompose = class(TElementHTML)
+      TContentCompose = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -1156,7 +1179,7 @@ type
 
       { THeader }
 
-      THeader = class(TElementHTML)
+      THeader = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -1189,21 +1212,21 @@ type
 
       { TFooter }
 
-      TFooter = class(TElementHTML)
+      TFooter = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
       { TContent }
 
-      TContent = class(TElementHTML)
+      TContent = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
       { TSideBar }
 
-      TSideBar = class(TElementHTML)
+      TSideBar = class(THTMLElement)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
@@ -1212,21 +1235,21 @@ type
 
       { TMain }
 
-      TMain = class(TElementHTML)
+      TMain = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
       { TRow }
 
-      TRow = class(TElementHTML)
+      TRow = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
       { TColumn }
 
-      TColumn = class(TElementHTML)
+      TColumn = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -1245,7 +1268,7 @@ type
 
       { TForm }
 
-      TForm = class(TElementHTML)
+      TForm = class(THTMLElement)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
@@ -1254,14 +1277,14 @@ type
 
       { TParagraph }
 
-      TParagraph = class(TElementHTML)
+      TParagraph = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
       { TBreak }
 
-      TBreak = class(TElementHTML)
+      TBreak = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -1290,7 +1313,7 @@ type
 
       { TSubbMenu }
 
-      TSubMenu = class(TElementHTML)
+      TSubMenu = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
@@ -1356,8 +1379,6 @@ type
     function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
   end;
 
-  TUIWebModule = class;
-
   { TUIWebCommand }
 
   TUIWebCommand = class(TmodHttpCommand)
@@ -1369,52 +1390,35 @@ type
     property Module: TUIWebModule read GetModule;
   end;
 
-  TUIWebSchema = class(THTML)
-  public
-    Module: TUIWebModule;
-  end;
-
   { TAssetsSchema }
 
-  TAssetsSchema = class(TUIWebSchema)
+  TAssetsSchema = class(TmnwSchema)
   private
   protected
     FLogo: THTML.TMemory;
+    procedure DoPrepare; override;
     procedure DoCompose(const AContext: TmnwContext); override;
     procedure Created; override;
   public
     property Logo: THTML.TMemory read FLogo;
   end;
 
-  { TUIWebSchemas }
-
-  TUIWebSchemas = class(TmnwApp)
-  private
-  protected
-    FModule: TUIWebModule;
-    procedure SchemaCreated(Schema: TmnwSchema); override;
-  public
-    constructor Create(AModule: TUIWebModule);
-    destructor Destroy; override;
-    property Module: TUIWebModule read FModule;
-  end;
-
   { TUIWebModule }
 
   TUIWebModule = class(TmodWebModule)
   private
-    FAppPath: string;
-    FWebApp: TUIWebSchemas;
+    FWebApp: TmnwApp;
   protected
     function CreateRenderer: TmnwRenderer; virtual;
     procedure CreateItems; override;
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
     procedure Created; override;
+    procedure Start; override;
   public
+    IsLocal: Boolean;
     destructor Destroy; override;
     constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules =nil); override;
-    property AppPath: string read FAppPath write FAppPath;
-    property WebApp: TUIWebSchemas read FWebApp;
+    property WebApp: TmnwApp read FWebApp;
   end;
 
 function LevelStr(vLevel: Integer): String;
@@ -2122,6 +2126,11 @@ begin
   FreeAndNil(FLock);
 end;
 
+procedure TmnwApp.Start;
+begin
+  FAssets.Prepare;
+end;
+
 procedure TmnwApp.RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass; ASchemaObject: TmnwSchema);
 var
   SchemaObject: TmnwSchemaObject;
@@ -2148,7 +2157,7 @@ begin
   end;
 end;
 
-procedure TmnwApp.GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement);
+function TmnwApp.GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 var
   SchemaObject: TmnwSchemaObject;
   aElement: TmnwElement;
@@ -2199,6 +2208,7 @@ begin
 
     if aElement <> nil then
     begin
+      Result := True;
       Element := aElement;
       i := 0;
       while i < Routes.Count do
@@ -2208,19 +2218,25 @@ begin
         if aElement = nil then
         begin
           //if elFallback in Element.Kind then
+          Result := False;
           break;
         end
         else
         begin
           AContext.Route := DeleteSubPath(aRoute, AContext.Route);
           Element := aElement;
+          Result := True;
         end;
         inc(i);
       end;
-    end;
+    end
+    else
+      Result := False;
+
   finally
     Routes.Free;
   end;
+
 end;
 
 function TmnwApp.Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): TmnwElement;
@@ -2247,6 +2263,7 @@ begin
   if Result <> nil then
   begin
     aContext.Schema := aSchema;
+    AReturn.Respond.ContentType := Result.GetContentType(AContext.Route);
     //resLatch
 //    (AContext.Sender as TmodHttpCommand).Respond.Latch := True;
     try
@@ -2274,6 +2291,10 @@ begin
       else
         AReturn.Respond.SendHeader;
     end;
+  end
+  else if aSchema <> nil then
+  begin
+
   end;
 
   if aSchema <> nil then
@@ -2413,34 +2434,6 @@ end;
 
 { THTML }
 
-procedure THTML.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
-var
-  fs: TFileStream;
-  aFileName: string;
-begin
-  inherited;
-  if ServeFiles then
-  begin
-    if AContext.Renderer.Module.HomePath <> '' then
-    begin
-      if WebExpandFile(AContext.Renderer.Module.HomePath, AContext.Route, aFileName) then
-      begin
-        if FileExists(aFileName) then
-        begin
-          fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
-          try
-            AContext.Writer.Stream.WriteStream(fs, 0);
-          finally
-            fs.Free;
-          end;
-        end
-        else
-          AReturn.Respond.HttpResult := hrNotFound;
-      end;
-    end;
-  end;
-end;
-
 function THTML.GetContentType(Route: string): string;
 begin
   if Route = '' then
@@ -2460,8 +2453,6 @@ end;
 
 procedure TmnwHTMLRenderer.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
-  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"></script>');
-  Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.css" rel="stylesheet" crossorigin="anonymous"></link>');
 end;
 
 class constructor TmnwHTMLRenderer.RegisterObjects;
@@ -2500,13 +2491,13 @@ begin
   RegisterRenderer(THTML.TPanel, TPanel);
 end;
 
-{ TmnwHTMLRenderer.TElementHTML }
+{ TmnwHTMLRenderer.THTMLElement }
 
-procedure TmnwHTMLRenderer.TElementHTML.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.THTMLElement.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
 end;
 
-procedure TmnwHTMLRenderer.TElementHTML.DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.THTMLElement.DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   if Scope.Element.Comment <> '' then
     Context.Writer.WriteLn('<!-- ' + Scope.Element.Comment + ' -->');
@@ -2561,7 +2552,7 @@ var
   e: THTML.TDocument;
   aLibrary: TmnwLibrary;
 //  o: TmnwElement;
-//  r: TElementHTML;
+//  r: THTMLElement;
 begin
   e := Scope.Element as THTML.TDocument;
 //  //Log.WriteLn(ClassName);
@@ -2586,7 +2577,7 @@ begin
   begin
     if o is THTML.THTMLElement then
     begin
-      r := Renderer.CreateRenderer(o) as TElementHTML;
+      r := Renderer.CreateRenderer(o) as THTMLElement;
       try
         r.AddHeader(o, Context);
       finally
@@ -2664,7 +2655,7 @@ begin
   Scope.Classes.Add('card');
   Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenTag]);
   if e.Caption <> '' then
-    Context.Writer.WriteLn('<div class="card-header">' + e.Caption + '</div>', [woOpenTag, woCloseTag]);
+    Context.Writer.AddTag('div', 'class="card-header"' + e.Caption);
 
   Context.Writer.WriteLn('<div class="card-body">', [woOpenTag]);
   inherited;
@@ -2847,7 +2838,7 @@ end;
 
 procedure TmnwHTMLRenderer.TImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 begin
-  Context.Writer.WriteLn('<img' + Scope.Attributes.GetText+' >', [woOpenTag, woCloseTag]);
+  Context.Writer.WriteLn('<img' + Scope.GetText+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
@@ -2933,9 +2924,40 @@ begin
 end;
 
 procedure TmnwSchema.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+var
+  fs: TFileStream;
+  aFileName: string;
+  aHomePath: string;
 begin
   inherited;
-  Render(AContext, AReturn);
+  if ServeFiles and (AContext.Route <> '') then
+  begin
+    aHomePath := When(HomePath, App.FHomePath);
+    if aHomePath <> '' then
+    begin
+      if WebExpandFile(aHomePath, AContext.Route, aFileName) then
+      begin
+        if FileExists(aFileName) then
+        begin
+          AReturn.Respond.ContentType := DocumentToContentType(aFileName);
+          fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
+          try
+            AContext.Writer.Stream.WriteStream(fs, 0);
+          finally
+            fs.Free;
+          end;
+        end
+        else
+          AReturn.Respond.HttpResult := hrNotFound;
+      end
+      else
+        AReturn.Respond.HttpResult := hrUnauthorized;
+    end
+    else
+      Render(AContext, AReturn);
+  end
+  else
+    Render(AContext, AReturn);
 end;
 
 procedure TmnwSchema.ProcessMessage(const s: string);
@@ -3018,6 +3040,14 @@ begin
   finally
     Attachments.Lock.Leave;
   end;
+end;
+
+{ TmnwSchema.TElement }
+
+constructor TmnwSchema.TElement.Create(AParent: TmnwElement; ARoute: string);
+begin
+  inherited Create(AParent);
+  Route := ARoute;
 end;
 
 {$ifdef rtti_objects}
@@ -3258,6 +3288,10 @@ begin
     raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
 end;
 
+procedure TmnwElement.DoPrepare;
+begin
+end;
+
 function TmnwElement.FindByID(const aID: string): TmnwElement;
 var
   i: Integer;
@@ -3334,6 +3368,15 @@ end;
 procedure TmnwElement.Changed;
 begin
 
+end;
+
+procedure TmnwElement.Prepare;
+begin
+  if not FPrepared then
+  begin
+    DoPrepare;
+    FPrepared := True;
+  end;
 end;
 
 procedure TmnwElement.SendMessage(AMessage: string);
@@ -3454,6 +3497,7 @@ var
   o: TmnwElement;
 begin
 //  Clear; //*Should not clear here
+  Prepare;
   DoCompose(AContext);
   UpdateElement(Self);
   for o in Self do
@@ -3632,7 +3676,7 @@ end;
 
 { THTML.TFile }
 
-procedure THTML.TFile.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
 var
   ResStream: TStream;
   aDocSize: Int64;
@@ -3677,7 +3721,7 @@ begin
   end;
 end;
 
-constructor THTML.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string; ARoute: string );
+constructor TmnwSchema.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string; ARoute: string );
 begin
   inherited Create(AParent);
   Options := AOptions;
@@ -3689,12 +3733,12 @@ begin
       Route := ARoute;
 end;
 
-function THTML.TFile.GetContentType(Route: string): string;
+function TmnwSchema.TFile.GetContentType(Route: string): string;
 begin
   Result := DocumentToContentType(FileName);
 end;
 
-procedure THTML.TMemory.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
 begin
   if FileDate <> 0 then
     AReturn.Respond.Header['Last-Modified']  := FormatHTTPDate(FileDate);
@@ -3704,24 +3748,24 @@ begin
   AContext.Writer.Stream.WriteStream(Data, 0);
 end;
 
-procedure THTML.TMemory.Created;
+procedure TmnwSchema.TMemory.Created;
 begin
   inherited;
   FData := TMemoryStream.Create;
 end;
 
-destructor THTML.TMemory.Destroy;
+destructor TmnwSchema.TMemory.Destroy;
 begin
   inherited;
   FreeAndNil(FData);
 end;
 
-function THTML.TMemory.GetContentType(Route: string): string;
+function TmnwSchema.TMemory.GetContentType(Route: string): string;
 begin
   Result := ContentType;
 end;
 
-procedure THTML.TMemory.LoadFromFile(const AFileName: string);
+procedure TmnwSchema.TMemory.LoadFromFile(const AFileName: string);
 begin
   Data.LoadFromFile(AFileName);
   FileAge(AFileName, FileDate);
@@ -3729,7 +3773,7 @@ begin
   ContentType := DocumentToContentType(AFileName);
 end;
 
-procedure THTML.TMemory.LoadFromStream(AStream: TStream; AContentType: string);
+procedure TmnwSchema.TMemory.LoadFromStream(AStream: TStream; AContentType: string);
 begin
   Data.LoadFromStream(AStream);
   ContentType := AContentType;
@@ -3845,7 +3889,10 @@ end;
 procedure TmnwLibraries.Use(ALibrary: TmnwLibrary);
 begin
   if ALibrary <> nil then
-    ALibrary.IncUsage
+  begin
+    ALibrary.IncUsage;
+    Move(IndexOf(ALibrary), 0);
+  end
   else
     raise Exception.Create('library is nil');
 end;
@@ -3881,8 +3928,8 @@ end;
 
 procedure TWebElements_Library.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
-//  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"></script>');
-//  Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.css" rel="stylesheet" crossorigin="anonymous"></link>');
+  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"></script>');
+  Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.css" rel="stylesheet" crossorigin="anonymous">');
 end;
 
 { THTML }
@@ -3924,6 +3971,16 @@ begin
   FreeAndNil(FFooter);
   FreeAndNil(FMain);}
   inherited;
+end;
+
+function THTML.TBody.GetWide: Boolean;
+begin
+  Result := FContent.Wide
+end;
+
+procedure THTML.TBody.SetWide(const Value: Boolean);
+begin
+  FContent.Wide := Value;
 end;
 
 { THTML.THeader }
@@ -4391,18 +4448,36 @@ end;
 procedure TAssetsSchema.Created;
 begin
   inherited;
-  ServeFiles := True;
   Kind := Kind + [elFallback];
-  FLogo := TMemory.Create(This);
+  FLogo := THTML.TMemory.Create(This);
   FLogo.Name := 'logo';
   FLogo.Route := 'logo';
+  ServeFiles := True;
+end;
+
+procedure TAssetsSchema.DoPrepare;
+begin
+  inherited;
+  Name := 'Assets';
+  Route := 'assets';
+  //TCSSFile.Create(This, [ftResource], 'mnWebElements.css');
+  {$ifdef TEST}
+  TFile.Create(This, [], ExpandFileName(GetCurrentDir + '../../source/mnWebElements.css'), 'WebElements.css');
+  TFile.Create(This, [], ExpandFileName(GetCurrentDir + '../../source/mnWebElements.js'), 'WebElements.js');
+  {$else}
+  TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
+  TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
+  {$endif}
+  with TElement.Create(This, 'resource') do
+  begin
+    TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
+    TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
+  end;
 end;
 
 procedure TAssetsSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
-  Name := 'Assets';
-  Route := 'assets';
 end;
 
 { TUIWebModule }
@@ -4415,6 +4490,15 @@ begin
   else
     ARequest.Command := ARequest.Route[1];
   //ARequest.Path := DeleteSubPath(ARequest.Command, ARequest.Path);
+end;
+
+procedure TUIWebModule.Start;
+begin
+  inherited;
+  AssetsURL := '/' + AliasName + '/' + WebApp.Assets.Route;
+  WebApp.Assets.HomePath := HomePath;
+  WebApp.Assets.ServeFiles := True;
+  WebApp.Start;
 end;
 
 procedure TUIWebModule.CreateItems;
@@ -4430,7 +4514,7 @@ end;
 
 function TUIWebModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwHTMLRenderer.Create(Self, False);
+  Result := TmnwHTMLRenderer.Create(Self, IsLocal);
 end;
 
 destructor TUIWebModule.Destroy;
@@ -4441,28 +4525,8 @@ end;
 
 constructor TUIWebModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules);
 begin
-  FWebApp := TUIWebSchemas.Create(Self);
-  inherited;
-end;
-
-{ TUIWebSchemas }
-
-procedure TUIWebSchemas.SchemaCreated(Schema: TmnwSchema);
-begin
-  inherited;
-  if Schema is TUIWebSchema then
-    (Schema as TUIWebSchema).Module := Module;
-end;
-
-constructor TUIWebSchemas.Create(AModule: TUIWebModule);
-begin
-  FModule := AModule;
-  inherited Create;
-end;
-
-destructor TUIWebSchemas.Destroy;
-begin
-  //FreeAndNil(FAssets); no will be free with others
+  FWebApp := TmnwApp.Create;
+  FWebApp.FHomePath := HomePath;
   inherited;
 end;
 

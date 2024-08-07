@@ -186,7 +186,6 @@ type
     property HomePath: string read FHomePath write SetHomePath;
     //Private Path
     property WorkPath: string read FWorkPath write FWorkPath;
-
   end;
 
   { TmodWebFileModule }
