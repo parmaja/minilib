@@ -1022,7 +1022,7 @@ type
       end;
 
       [TID_Extension]
-      TImage = class(THTMLElement)
+      TImage = class(THTMLComponent)
       protected
         procedure DoCompose(const AContext: TmnwContext); override;
       public
@@ -2871,7 +2871,7 @@ var
   e: THTML.TMemoryImage;
 begin
   e := Scope.Element as THTML.TMemoryImage;
-  Context.Writer.WriteLn('<img'+ Scope.Attributes.GetText+' >', [woOpenTag, woCloseTag]);
+  Context.Writer.WriteLn('<img'+ Scope.GetText+' >', [woOpenTag, woCloseTag]);
   inherited;
 end;
 
