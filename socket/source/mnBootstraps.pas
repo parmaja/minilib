@@ -237,8 +237,7 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  //Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText + '>', [woOpenTag]);
-  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + '"' + Scope.Attributes.GetText + '>', [woOpenTag]);
+  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText + '>', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</div>', [woCloseTag]);
 end;
@@ -320,8 +319,7 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add(BSContentAlignToStr(e.ContentAlign));
-  //Context.Writer.WriteLn('<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenTag]);
-  Context.Writer.WriteLn('<div class="row">', [woOpenTag]);
+  Context.Writer.WriteLn('<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</div>', [woCloseTag]);
 end;

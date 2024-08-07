@@ -655,15 +655,18 @@ type
       public
       end;
 
-      { THTMLComponent }
-
-      THTMLComponent = class abstract(THTMLElement)
-      protected
-
+      THTMLLayoutElement = class(THTMLElement)
       public
-        Hint: string;
         Align: TmnwAlign;
         Fixed: TmnwFixed;
+      end;
+
+      { THTMLComponent }
+
+      THTMLComponent = class abstract(THTMLLayoutElement)
+      protected
+      public
+        Hint: string;
         Shadow: Boolean;
       end;
 
@@ -870,12 +873,12 @@ type
         Size: TSize;
       end;
 
-      TRow = class(THTMLElement)
+      TRow = class(THTMLLayoutElement)
       public
         ContentAlign: TmnwAlign;
       end;
 
-      TColumn = class(THTMLElement)
+      TColumn = class(THTMLLayoutElement)
       public
         Size: Integer;
       end;
