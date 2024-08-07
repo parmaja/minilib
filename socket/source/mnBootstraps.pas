@@ -171,16 +171,8 @@ procedure TmnwBootstrapRenderer.AddHead(AElement: TmnwElement; const Context: Tm
 begin
   inherited;
   Context.Writer.WriteLn('<style type="text/css">', [woOpenTag]);
-  Context.Writer.WriteLn('.fixed-header {');
-  Context.Writer.WriteLn('  padding-top: 3rem;');
-  Context.Writer.WriteLn('}');
-  Context.Writer.WriteLn();
-  Context.Writer.WriteLn('.card {');
+  Context.Writer.WriteLn('.small-card {');
   Context.Writer.WriteLn('    max-width: 22rem;');
-  Context.Writer.WriteLn('}');
-  Context.Writer.WriteLn('.sidebar {');
-  Context.Writer.WriteLn('    width: 15rem;');
-  Context.Writer.WriteLn('    max-width: 15rem;');
   Context.Writer.WriteLn('}');
   Context.Writer.WriteLn('</style>', [woCloseTag]);
 end;
@@ -245,7 +237,8 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText + '>', [woOpenTag]);
+  //Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText + '>', [woOpenTag]);
+  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + '"' + Scope.Attributes.GetText + '>', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</div>', [woCloseTag]);
 end;
@@ -327,7 +320,8 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add(BSContentAlignToStr(e.ContentAlign));
-  Context.Writer.WriteLn('<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenTag]);
+  //Context.Writer.WriteLn('<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenTag]);
+  Context.Writer.WriteLn('<div class="row">', [woOpenTag]);
   inherited;
   Context.Writer.WriteLn('</div>', [woCloseTag]);
 end;

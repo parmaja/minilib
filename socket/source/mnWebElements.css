@@ -46,23 +46,17 @@ aside{
 }
 
 .sidebar-content {
-    position: fixed; /* option to stick it without scroll */
     display: flex;
     overflow-y: auto;
     height: calc(100vh - var(--header-size));
-    width: var(--sidebar-size);
+    width: var(--sidebar-size)  !important;
     min-height: calc(100vh - var(--header-size));
 }
 
 .sidebar-items {
     overflow-y: auto;
-    width: var(--sidebar-size));
-    max-width: 100vh;
+    width: var(--sidebar-size) !important;
 }
-
-.skip-header {
-   top: var(--header-size) !important;
- }
 
 .offcanvas.show, .offcanvas.showing {
     top: var(--header-size);

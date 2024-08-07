@@ -152,7 +152,7 @@ begin
       //TJSFile.Create(This, [ftResource], 'mnWebElements.js');
       TJSFile.Create(This, [], ExpandFileName(Module.AppPath + '../../source/mnWebElements.js'));
 
-      Header.Caption := 'Creative Solutions';
+      Header.NavBar.Title := 'Creative Solutions';
       with Header.NavBar do
       begin
         with TNavItem.Create(This) do
@@ -337,15 +337,18 @@ begin
       with Header do
       begin
         RenderIt := True;
-        Fixed := fixedTop;
-        Header.Caption := 'Creative Solutions';
-        with TNavItem.Create(This) do
+//        Fixed := fixedTop;
+        with NavBar do
         begin
-          Caption := 'Item1';
-        end;
-        with TNavItem.Create(This) do
-        begin
-          Caption := 'Item2';
+          Title := 'Creative Solutions';
+          with TNavItem.Create(This) do
+          begin
+            Caption := 'Item1';
+          end;
+          with TNavItem.Create(This) do
+          begin
+            Caption := 'Item2';
+          end;
         end;
       end;
 
