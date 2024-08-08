@@ -180,8 +180,6 @@ type
     Domain: string; //localhost
     Port: string;
 
-    AssetsURL: string; //optional, default is HomeURL
-
     //Public Path
     property HomePath: string read FHomePath write SetHomePath;
     //Private Path

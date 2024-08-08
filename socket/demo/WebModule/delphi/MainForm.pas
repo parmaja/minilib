@@ -121,7 +121,7 @@ begin
 
 //    aHomeModule.Domain := 'localhost';
 //    aHomeModule.Port := HttpServer.Port;
-    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
+//    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.WebApp.HomePath := IncludePathDelimiter(aHomePath);
     aHomeModule.HomePath := IncludePathDelimiter(aHomePath);
     aHomeModule.WorkPath := aHomeModule.WebApp.AppPath;

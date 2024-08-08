@@ -3633,11 +3633,10 @@ begin
   DoEndRender;
 end;
 
+
 function TmnwRenderer.GetAssetsURL: string;
 begin
-  Result := Module.AssetsURL;
-  if Result = '' then
-    Result := GetHomeURL;
+  Result := GetHomeURL + 'assets/';
 end;
 
 function TmnwRenderer.GetHomeURL: string;
@@ -4508,7 +4507,7 @@ end;
 procedure TUIWebModule.Start;
 begin
   inherited;
-  AssetsURL := '/' + AliasName + '/' + WebApp.Assets.Route;
+//  AssetsURL := '/' + AliasName + '/' + WebApp.Assets.Route;
   WebApp.Assets.HomePath := HomePath;
   WebApp.Assets.ServeFiles := True;
   WebApp.Start;
