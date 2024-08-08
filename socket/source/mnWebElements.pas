@@ -657,6 +657,7 @@ type
   TmnwApp = class(TmnNamedObjectList<TmnwSchemaObject>)
   private
     FHomePath: string;
+    FAppPath: string;
     FAssets: TAssetsSchema;
     FLock: TCriticalSection;
     FSessionTimeout: Integer;
@@ -680,6 +681,7 @@ type
     property SessionTimeout: Integer read FSessionTimeout write FSessionTimeout; //in seconds
     property Assets: TAssetsSchema read FAssets;
     property HomePath: string read FHomePath write FHomePath;
+    property AppPath: string read FAppPath write FAppPath;
   end;
 
   TSize = (szVerySmall, szSmall, szNormal, szLarge, szVeryLarge);
@@ -2514,7 +2516,8 @@ begin
   if e.Hint <> '' then
   begin
     Scope.Attributes['data-bs-toggle'] := 'tooltip';
-    Scope.Attributes['data-bs-original-title'] := e.Hint;
+    Scope.Attributes['data-bs-placement'] := 'top';
+    Scope.Attributes['title'] := e.Hint;
   end;
 
   inherited;
@@ -3678,7 +3681,7 @@ end;
 
 procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
 var
-  ResStream: TStream;
+  aStream: TStream;
   aDocSize: Int64;
   aDate: TDateTime;
   aEtag, aFTag: string;
@@ -3686,37 +3689,47 @@ begin
   inherited;
   if ftResource in Options then
   begin
-    ResStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA); //* remove extension
+    aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA); //* remove extension
     try
-      AContext.Writer.Stream.WriteStream(ResStream, 0);
+      AContext.Writer.Stream.WriteStream(aStream, 0);
     finally
-      ResStream.Free;
+      aStream.Free;
     end;
   end
   else
   begin
-    FileAge(FileName, aDate);
-    aFtag := DateTimeToUnix(aDate).ToString;
-    aEtag := AContext.ETag;
-    if (aEtag<>'') and (aEtag = aFtag) then
+    if not FileExists(FileName) then
     begin
-      AReturn.Respond.HttpResult := hrNotModified;
+      log.WriteLn('404: '+FileName);
+      AReturn.Respond.HttpResult := hrNotFound;
       AReturn.Resume := False;
       exit;
-    end;
+    end
+    else
+    begin
+      FileAge(FileName, aDate);
+      aFtag := DateTimeToUnix(aDate).ToString;
+      aEtag := AContext.ETag;
+      if (aEtag<>'') and (aEtag = aFtag) then
+      begin
+        AReturn.Respond.HttpResult := hrNotModified;
+        AReturn.Resume := False;
+        exit;
+      end;
 
-    ResStream := TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead);
-    try
-      aDocSize := ResStream.Size;
+      aStream := TFileStream.Create(FileName, fmShareDenyNone or fmOpenRead);
+      try
+        aDocSize := aStream.Size;
 
-      AReturn.Respond.Header['Cache-Control']  := 'max-age=600';
-      AReturn.Respond.Header['Last-Modified']  := FormatHTTPDate(aDate);
-      AReturn.Respond.Header['ETag']           := aFTag;
-      AReturn.Respond.Header['Content-Length'] := IntToStr(aDocSize);
+        AReturn.Respond.Header['Cache-Control']  := 'max-age=600';
+        AReturn.Respond.Header['Last-Modified']  := FormatHTTPDate(aDate);
+        AReturn.Respond.Header['ETag']           := aFTag;
+        AReturn.Respond.Header['Content-Length'] := IntToStr(aDocSize);
 
-      AContext.Writer.Stream.WriteStream(ResStream, 0);
-    finally
-      ResStream.Free;
+        AContext.Writer.Stream.WriteStream(aStream, 0);
+      finally
+        aStream.Free;
+      end;
     end;
   end;
 end;
@@ -4462,8 +4475,8 @@ begin
   Route := 'assets';
   //TCSSFile.Create(This, [ftResource], 'mnWebElements.css');
   {$ifdef TEST}
-  TFile.Create(This, [], ExpandFileName(GetCurrentDir + '../../source/mnWebElements.css'), 'WebElements.css');
-  TFile.Create(This, [], ExpandFileName(GetCurrentDir + '../../source/mnWebElements.js'), 'WebElements.js');
+  TFile.Create(This, [], ExpandFileName(App.AppPath + '../../source/mnWebElements.js'), 'WebElements.js');
+  TFile.Create(This, [], ExpandFileName(App.AppPath + '../../source/mnWebElements.css'), 'WebElements.css');
   {$else}
   TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
   TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
