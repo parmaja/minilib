@@ -116,12 +116,15 @@ begin
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := 'home';
-    aHomeModule.AppPath := ExtractFilePath(Application.ExeName);
+    aHomeModule.WebApp.AppPath := ExtractFilePath(Application.ExeName);
 
-    aHomeModule.Domain := 'localhost';
+
+//    aHomeModule.Domain := 'localhost';
+//    aHomeModule.Port := HttpServer.Port;
     aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
+    aHomeModule.WebApp.HomePath := IncludePathDelimiter(aHomePath);
     aHomeModule.HomePath := IncludePathDelimiter(aHomePath);
-    aHomeModule.WorkPath := aHomeModule.AppPath;
+    aHomeModule.WorkPath := aHomeModule.WebApp.AppPath;
     ForceDirectories(aHomeModule.WorkPath + 'cache');
     ForceDirectories(aHomeModule.WorkPath + 'temp');
   end;

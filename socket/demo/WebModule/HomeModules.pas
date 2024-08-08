@@ -198,7 +198,7 @@ begin
           begin
             Name := 'logo';
             Route := 'logo';
-            LoadFromFile(IncludePathDelimiter(App.HomePath) + 'logo.png');
+            LoadFromFile(IncludePathDelimiter(App.HomePath) + 'cs.png');
           end;
 
 {          with TImage.Create(This) do
@@ -246,22 +246,27 @@ begin
           begin
           end;}
 {$else}
-          with TIntervalCompose.Create(This) do
+          with TCard.Create(This) do
           begin
-            Route := 'clock';
-            OnCompose := procedure(Inner: TmnwElement)
+            Style := 'center';
+            Size := szSmall;
+            Caption := 'Login';
+            with TIntervalCompose.Create(This) do
             begin
-              TParagraph.Create(Inner, TimeToStr(Now));
-              {with TImage.Create(Inner) do
+              Route := 'clock';
+              OnCompose := procedure(Inner: TmnwElement)
               begin
-                Name := 'file_logo';
-      //          Route := 'logo'; 
-                Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
-              end;}
+                TParagraph.Create(Inner, TimeToStr(Now));
+                {with TImage.Create(Inner) do
+                begin
+                  Name := 'file_logo';
+        //          Route := 'logo';
+                  Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
+                end;}
+              end;
             end;
           end;
 {$endif}
-
         end;
       end;
     end;
