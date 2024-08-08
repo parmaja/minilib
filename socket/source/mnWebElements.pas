@@ -672,10 +672,11 @@ type
     destructor Destroy; override;
     procedure Start;
 
-    procedure RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass; ASchemaObject: TmnwSchema = nil);
+    procedure RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass; ASchema: TmnwSchema = nil);
 
-    function FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
+    function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchemaObject;
     function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
+    procedure ClearSchema(const aSchemaName: string; const aSessionID: string);
 
     function Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): TmnwElement;
     //for websocket
@@ -892,6 +893,7 @@ type
       public
         Location: string;
         Text: string;
+        constructor Create(AParent: TmnwElement; const ALocation, AText: string); reintroduce;
       end;
 
       TMenuBar = class(TNavBar)
@@ -2167,19 +2169,19 @@ begin
   FAssets.Prepare;
 end;
 
-procedure TmnwApp.RegisterSchema(AName: string; SchemaClass: TmnwSchemaClass; ASchemaObject: TmnwSchema);
+procedure TmnwApp.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass; ASchema: TmnwSchema);
 var
   SchemaObject: TmnwSchemaObject;
 begin
   SchemaObject := TmnwSchemaObject.Create;
   SchemaObject.Name := AName;
   SchemaObject.SchemaClass := SchemaClass;
-  SchemaObject.Schema := ASchemaObject;
-  SchemaObject.ManualSchema := ASchemaObject <> nil;
+  SchemaObject.Schema := ASchema;
+  SchemaObject.ManualSchema := ASchema <> nil;
   inherited Add(SchemaObject);
 end;
 
-function TmnwApp.FindBy(aSchemaName: string; aSessionID: string): TmnwSchemaObject;
+function TmnwApp.FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchemaObject;
 var
   i: Integer;
 begin
@@ -2430,6 +2432,21 @@ begin
   FAssets.Name := 'assets';
   SchemaCreated(FAssets);
   RegisterSchema('assets', TAssetsSchema, FAssets);
+end;
+
+procedure TmnwApp.ClearSchema(const aSchemaName, aSessionID: string);
+var
+  s: TmnwSchemaObject;
+begin
+  s := FindBy(aSchemaName, aSessionID);
+  if s=nil then Exit;
+
+  s.Lock.Enter;
+  try
+    FreeAndNil(s.Schema);
+  finally
+    s.Lock.Leave;
+  end;
 end;
 
 constructor TmnwApp.Create;
@@ -4758,6 +4775,15 @@ begin
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('nav');
   Context.Writer.CloseTag('aside');
+end;
+
+{ THTML.TLink }
+
+constructor THTML.TLink.Create(AParent: TmnwElement; const ALocation, AText: string);
+begin
+  inherited Create(AParent);
+  Location := ALocation;
+  Text := AText;
 end;
 
 initialization
