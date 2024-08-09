@@ -170,11 +170,15 @@ end;
 procedure TmnwBootstrapRenderer.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
   inherited;
-  Context.Writer.WriteLn('<style type="text/css">', [woOpenTag]);
+  Context.Writer.WriteLn('<style type="text/css">', [woOpenIndent]);
+  Context.Writer.WriteLn(':root {');
+  Context.Writer.WriteLn('    --bs-border-radius: 0.2rem;');
+  Context.Writer.WriteLn('}');
+
   Context.Writer.WriteLn('.small-card {');
   Context.Writer.WriteLn('    max-width: 22rem;');
   Context.Writer.WriteLn('}');
-  Context.Writer.WriteLn('</style>', [woCloseTag]);
+  Context.Writer.WriteLn('</style>', [woCloseIndent]);
 end;
 
 class constructor TmnwBootstrapRenderer.RegisterObjects;
@@ -217,7 +221,10 @@ end;
 
 procedure TBootstrap_Library.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
-  Context.Writer.WriteLn('<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
+  if AElement.Schema.Direction = dirRightToLeft then
+    Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" integrity="sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb" crossorigin="anonymous">')
+  else
+    Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
   Context.Writer.WriteLn('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
 end;
 
@@ -225,8 +232,10 @@ end;
 
 procedure TBootstrap_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
-  Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">');
-  Context.Writer.WriteLn('<link href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.rtl.min.css" rel="stylesheet" crossorigin="anonymous">');
+  if AElement.Schema.Direction = dirRightToLeft then
+    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.rtl.min.css" crossorigin="anonymous">')
+  else
+    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.min.css" crossorigin="anonymous">');
   Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
 end;
 
@@ -237,9 +246,9 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText + '>', [woOpenTag]);
+  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText + '>', [woOpenIndent]);
   inherited;
-  Context.Writer.WriteLn('</div>', [woCloseTag]);
+  Context.Writer.WriteLn('</div>', [woCloseIndent]);
 end;
 
 { TmnwBootstrapRenderer.TMain }
@@ -259,9 +268,9 @@ begin
   Scope.Classes.Add('flex-nowrap');
   Scope.Classes.Add('justify-content-center');
 //container-fluid for full width, container not full width
-  Context.Writer.WriteLn('<main'+Scope.GetText+'>', [woOpenTag]);
+  Context.Writer.WriteLn('<main'+Scope.GetText+'>', [woOpenIndent]);
   inherited;
-  Context.Writer.WriteLn('</main>', [woCloseTag]);
+  Context.Writer.WriteLn('</main>', [woCloseIndent]);
   Context.Writer.CloseTag('div');
 end;
 
@@ -288,27 +297,27 @@ begin
     Scope.Classes.Add('me-auto');
   end;
 
-  Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenTag]);
+  Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenIndent]);
   if e.Caption <> '' then
   begin
-//    Context.Writer.WriteLn('<h5 class="card-header" id="'+e.id+'-header">', [woOpenTag]);
+//    Context.Writer.WriteLn('<h5 class="card-header" id="'+e.id+'-header">', [woOpenIndent]);
     Context.Writer.Write('<h5 class="card-header" id="'+e.id+'-header"');
     if e.Collapse then
       Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
-    Context.Writer.Write('>', [woOpenTag]);
+    Context.Writer.Write('>', [woOpenIndent]);
     Context.Writer.Write(e.Caption);
     if e.Collapse then
     begin
-      Context.Writer.Write('<span class="icons float-right fa fa-arrow-alt-circle-up"></span>', [woOpenTag, woCloseTag]);
+      Context.Writer.Write('<span class="icons float-right fa fa-arrow-alt-circle-up"></span>', [woOpenIndent, woCloseIndent]);
     end;
-    Context.Writer.WriteLn('</h5>', [woCloseTag]);
+    Context.Writer.WriteLn('</h5>', [woCloseIndent]);
   end;
 
-  Context.Writer.WriteLn('<div class="card-body collapse show" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body">', [woOpenTag]);
+  Context.Writer.WriteLn('<div class="card-body collapse show" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body">', [woOpenIndent]);
 //  collapse
   inherited;
-  Context.Writer.WriteLn('</div>', [woCloseTag]);
-  Context.Writer.WriteLn('</div>', [woCloseTag]);
+  Context.Writer.WriteLn('</div>', [woCloseIndent]);
+  Context.Writer.WriteLn('</div>', [woCloseIndent]);
 end;
 
 { TmnwBootstrapRenderer.TRow }
@@ -319,9 +328,9 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add(BSContentAlignToStr(e.ContentAlign));
-  Context.Writer.WriteLn('<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenTag]);
+  Context.Writer.WriteLn('<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenIndent]);
   inherited;
-  Context.Writer.WriteLn('</div>', [woCloseTag]);
+  Context.Writer.WriteLn('</div>', [woCloseIndent]);
 end;
 
 end.

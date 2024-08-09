@@ -145,7 +145,7 @@ begin
     Name := 'document';
     //Route := 'document';
     Title := 'MyHome';
-    Direction := dirLTR;
+    Direction := dirLeftToRight;
     with Body do
     begin
       //TJSFile.Create(This, [ftResource], 'WebElements_JS', 'WebElements.js');
@@ -198,7 +198,7 @@ begin
           begin
             Name := 'logo';
             Route := 'logo';
-            LoadFromFile(IncludePathDelimiter(App.HomePath) + 'cs.png');
+            LoadFromFile(IncludePathDelimiter(App.HomePath) + 'logo.png');
           end;
 
 {          with TImage.Create(This) do
@@ -331,7 +331,7 @@ begin
     //Name := 'document';
     //Route := 'document';
     Title := 'MyHome';
-    Direction := dirLTR;
+    Direction := dirLeftToRight;
 
     with Body do
     begin

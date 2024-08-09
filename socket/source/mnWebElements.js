@@ -90,6 +90,7 @@ mnw.attach = function(url)
   this.connect();
 }
 
+var interval = 1000;
 var reload_elements = [];
 
 function reloadElements() 
@@ -114,11 +115,14 @@ function init()
   reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');
   if (reload_elements.length > 0) 
   {
-    var interval = document.body.hasAttribute('data-mnw-refresh-interval');
-    if (interval == 0)
-    interval = 1000;
-    setInterval(reloadElements, interval);
-    console.log('Interval enabled ' + interval);
+    if (document.body.hasAttribute('data-mnw-refresh-interval')
+        interval = parseInt(document.body.getAttribute('data-mnw-refresh-interval'), interval) * 1000;
+
+    if (interval > 0)
+    {
+        setInterval(reloadElements, interval);
+        console.log('Interval enabled ' + interval);
+    }
   }
 
   mnw.interactive = document.body.hasAttribute('data-mnw-interactive');

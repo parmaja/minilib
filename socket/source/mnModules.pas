@@ -133,6 +133,8 @@ type
 
     procedure  Clear; virtual;
 
+    function IsHeaderSent: Boolean;
+
     //Add new header, can dublicate
     procedure AddHeader(const AName: string; AValue: TDateTime); overload;
     procedure AddHeader(const AName, AValue: String); overload; virtual;
@@ -560,6 +562,7 @@ type
   private
   protected
     function ModuleServer: TmodModuleServer;
+    procedure HandleException(E: Exception); override;
     procedure Process; override;
     procedure Prepare; override;
   public
@@ -1070,6 +1073,12 @@ begin
   Result :=  (Listener.Server as TmodModuleServer);
 end;
 
+procedure TmodModuleConnection.HandleException(E: Exception);
+begin
+  inherited;
+  //ModuleServer.Log(E.Message);
+end;
+
 procedure TmodModuleConnection.Prepare;
 begin
   inherited;
@@ -1285,8 +1294,11 @@ function TwebCommand.Execute: TmodRespondResult;
 begin
   Result.Status := []; //default to be not keep alive, not sure, TODO
   Prepare(Result);
-  RespondResult(Result);
-  Unprepare(Result);
+  try
+    RespondResult(Result);
+  finally
+    Unprepare(Result);
+  end;
 end;
 
 procedure TwebCommand.Prepare(var Result: TmodRespondResult);
@@ -1759,6 +1771,11 @@ end;
 procedure TmodCommunicate.Clear;
 begin
   FHeader.Clear;
+end;
+
+function TmodCommunicate.IsHeaderSent: Boolean;
+begin
+  Result := (resHeaderSent in Header.States);
 end;
 
 constructor TmodCommunicate.Create(ACommand: TmnCustomCommand);
