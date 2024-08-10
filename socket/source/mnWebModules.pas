@@ -79,6 +79,7 @@ type
   THttpResult = (
     hrNone,
     hrOK,
+    hrNoContent,
     hrUnauthorized,
     hrError,
     hrRedirect, //302
@@ -1104,6 +1105,7 @@ begin
   case Self of
     hrNone: Result := '';
     hrOK: Result := Result + '200 OK';
+    hrNoContent: Result := Result + '204 No Content';
     hrError: Result := Result + '500 Internal Server Error';
     hrUnauthorized: Result := Result + '401 Unauthorized';
     hrNotFound: Result := Result + '404 NotFound';

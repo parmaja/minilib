@@ -889,7 +889,7 @@ type
       public
       end;
 
-      TLink = class(THTMLComponent)
+      TLink = class(THTMLControl)
       public
         Location: string;
         Text: string;
@@ -2301,6 +2301,7 @@ function TmnwApp.Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): Tm
 
 var
   aSchema: TmnwSchema;
+
 begin
   try
     GetElement(AContext, aSchema, Result);
@@ -2327,7 +2328,12 @@ begin
 
       if not (AReturn.Respond.IsHeaderSent) then
       begin
-        if AReturn.Respond.HttpResult = hrNotFound then
+        if (AReturn.Respond.HttpResult = hrOK) and (AReturn.Resume=False) then
+        begin
+          AReturn.Respond.HttpResult := hrNoContent;
+          AReturn.Respond.ContentLength := 0;
+        end
+        else if AReturn.Respond.HttpResult = hrNotFound then
         begin
           AReturn.Respond.ContentType := 'text/html';
           AContext.Writer.WriteLn('404 Not Found');
