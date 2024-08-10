@@ -99,12 +99,33 @@ type
     procedure DoExecute; override;
   end;
 
+  { TMyLink }
+
+  TMyLink = class(THTML.TLink)
+  public
+    procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+    procedure DoExecute; override;
+  end;
+
   { TMyButton }
 
   TMyButton = class(THTML.TButton)
   public
     procedure DoExecute; override;
   end;
+
+{ TMyLink }
+
+procedure TMyLink.DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn);
+begin
+  inherited;
+  AReturn.Resume := False;
+end;
+
+procedure TMyLink.DoExecute;
+begin
+  inherited;
+end;
 
 { TMyButton }
 
@@ -113,7 +134,7 @@ begin
   inherited;
   with (Schema as TWelcomeSchema) do
   begin
-	  Input3.Value := IntToStr(StrToIntDef(Input1.Value, 0) + StrToIntDef(Input2.Value, 0));
+    log.WriteLn('Clicked')
   end;
 end;
 
@@ -147,8 +168,6 @@ end;
 procedure TWelcomeSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
-  Name := 'welcome';
-  Route := 'welcome';
   RefreshInterval := 5;
   with TDocument.Create(This) do
   begin
@@ -334,8 +353,6 @@ end;
 procedure TLoginSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
-  Name := 'login';
-  Route := 'login';
   with TDocument.Create(This) do
   begin
     //Name := 'document';
@@ -359,6 +376,7 @@ begin
           begin
             Caption := 'Item1';
           end;
+
           with TNavItem.Create(This) do
           begin
             Caption := 'Item2';
@@ -369,9 +387,16 @@ begin
       with SideBar do
       begin
         RenderIt := True;
-        with TLink.Create(This) do
+        with TLink.Create(This, 'http://www.google.com', 'Google') do
         begin
-          Text := 'Home';
+          ClickType := clickNavigate;
+        end;
+
+        with TMyLink.Create(This, '', 'Home') do
+        begin
+          Route := 'my_link';
+          Location := AContext.Renderer.GetHomeURL + GetPath;
+          ClickType := clickAction;
         end;
       end;
 

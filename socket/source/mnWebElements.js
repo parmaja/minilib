@@ -110,6 +110,16 @@ function reloadElements()
   });
 }
 
+mnw.click = function(event, sender) 
+{
+  const url = sender.getAttribute('href');
+  fetch(url)
+  .then(response => response.text())
+  .then(data => console.log(data));  
+  event.preventDefault();
+  return false;
+}
+
 function init()
 {
   reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');

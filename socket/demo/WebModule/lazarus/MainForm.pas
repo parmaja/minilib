@@ -180,7 +180,7 @@ begin
     //aHomeModule.IsSSL := HttpServer.UseSSL;
     //aHomeModule.Domain := 'localhost';
     //aHomeModule.Port := HttpServer.Port;
-    aHomeModule.IsLocal := False;
+    aHomeModule.IsLocal := True;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.HomePath := aHomePath;
     aHomeModule.WorkPath := aAppPath;

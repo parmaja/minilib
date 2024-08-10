@@ -322,6 +322,9 @@ type
     procedure SendMessage(JSON: TDON_Pair); overload; virtual;
     procedure ReceiveMessage(JSON: TDON_Pair); virtual;
     function GenHandle: Integer;
+    function GenID: string;
+    function GenRoute: string;
+    function GenName: string;
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); virtual;
     destructor Destroy; override;
@@ -484,7 +487,7 @@ type
     HomePath: string;
     ServeFiles: Boolean;
     SessionID: string;
-    constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: Boolean = True); override;
+    constructor Create(AName:string; ARoute: string = ''); reintroduce;
     destructor Destroy; override;
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
@@ -889,20 +892,12 @@ type
       public
       end;
 
-      TLink = class(THTMLControl)
-      public
-        Location: string;
-        Text: string;
-        constructor Create(AParent: TmnwElement; const ALocation, AText: string); reintroduce;
-      end;
-
       TMenuBar = class(TNavBar)
       public
       end;
 
       TFooter = class(THTMLComponent)
       public
-        Text: string;
       end;
 
       { TSideBar }
@@ -934,7 +929,7 @@ type
 
       [TID_Extension]
 
-      THTMLCaptionComponent =class(THTMLComponent)
+      THTMLCaptionComponent =class abstract(THTMLComponent)
       public
         Caption: string;
       end;
@@ -950,6 +945,14 @@ type
 
       [TID_Extension]
       TPanel = class(THTMLCaptionComponent)
+      public
+      end;
+
+      TList = class(THTMLControl)
+      public
+      end;
+
+      TViewItem = class(THTMLCaptionComponent)
       public
       end;
 
@@ -994,6 +997,8 @@ type
         procedure Loop; virtual;
       end;
 
+      TClickType = (clickNavigate, clickAction, clickNone);
+
       { TClickable }
 
       TClickable = class abstract(THTMLControl)
@@ -1003,7 +1008,16 @@ type
       protected
         procedure ReceiveMessage(JSON: TDON_Pair); override;
       public
+        ClickType: TClickType;
         property Caption: string read FCaption write SetCaption;
+      end;
+
+      { TLink }
+
+			TLink = class(TClickable)
+      public
+        Location: string;
+        constructor Create(AParent: TmnwElement; const ALocation, ACaption: string); reintroduce;
       end;
 
       { TButton }
@@ -1109,10 +1123,6 @@ type
 
       //* Custom Tag
       TTag = class(THTMLElement) //TODO
-      public
-      end;
-
-      TList = class(THTMLElement)
       public
       end;
 
@@ -1544,7 +1554,7 @@ begin
     Result := Default;
 end;
 
-procedure GenID(Element: TmnwElement);
+procedure NewID(Element: TmnwElement);
 var
   s: string;
   p: Integer;
@@ -1561,7 +1571,7 @@ begin
   end;
 end;
 
-procedure GenName(Element: TmnwElement; AddNumber: Boolean = True);
+procedure NewName(Element: TmnwElement; AddNumber: Boolean = True);
 var
   s: string;
   p: Integer;
@@ -1581,7 +1591,7 @@ begin
   end;
 end;
 
-procedure GenRoute(Element: TmnwElement); inline;
+procedure NewRoute(Element: TmnwElement); inline;
 var
   s: string;
   p: Integer;
@@ -1651,7 +1661,6 @@ var
   attribute: TCustomAttributeClass;
   list: TClassList;
 begin
-//  log.Write(Element.ClassName);
   if ElementClass = nil then
     raise Exception.Create('Element is nil');
   if ElementClass <> nil then
@@ -1713,7 +1722,6 @@ begin
   begin
     if Stream.ReadUTF8String(s) then
     begin
-      log.writeln('Socket: '+s);
 {      Schema.Attachments.Lock.Enter;
       try
         Schema.Attachments.Messages.Add(s);
@@ -2227,11 +2235,8 @@ begin
       try
         if SchemaObject.Schema = nil then
         begin
-          Schema := SchemaObject.SchemaClass.Create(nil);
+          Schema := SchemaObject.SchemaClass.Create(SchemaObject.Name, SchemaObject.Name);
           try
-            Schema := SchemaObject.SchemaClass.Create(nil);
-            Schema.Name := SchemaObject.Name;
-            Schema.Route := SchemaObject.Name; //IDK
             SchemaCreated(Schema);
             Schema.Compose(AContext);
             if not (schemaDynamic in Schema.GetCapabilities) then
@@ -2402,7 +2407,7 @@ begin
       begin
         if not (schemaDynamic in SchemaObject.SchemaClass.GetCapabilities) then
         begin
-          aSchema := SchemaObject.SchemaClass.Create(nil);
+          aSchema := SchemaObject.SchemaClass.Create(SchemaObject.Name);
           aSchema.Route := AContext.Route;
           SchemaCreated(aSchema);
           aSchema.Compose(AContext);
@@ -2433,9 +2438,7 @@ end;
 procedure TmnwApp.Created;
 begin
   inherited;
-  FAssets := TAssetsSchema.Create(nil);
-  FAssets.Route := 'assets';
-  FAssets.Name := 'assets';
+  FAssets := TAssetsSchema.Create('assets');
   SchemaCreated(FAssets);
   RegisterSchema('assets', TAssetsSchema, FAssets);
 end;
@@ -2659,7 +2662,6 @@ var
 //  r: THTMLElement;
 begin
   e := Scope.Element as THTML.TDocument;
-//  //Log.WriteLn(ClassName);
   Context.Writer.WriteLn('<!DOCTYPE html>');
   Context.Writer.WriteLn('<html' + Scope.GetText + '>', [woOpenIndent]);
   Context.Writer.WriteLn('<head>', [woOpenIndent]);
@@ -2794,7 +2796,7 @@ begin
     aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl) + e.GetPath
   else if e.PostTo.Where = toHome then
     aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl);
-  Context.Writer.WriteLn('<form method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText+'>', [woOpenIndent]);
+  Context.Writer.WriteLn('<form ajax="true" method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText+'>', [woOpenIndent]);
   inherited;
   if e.RedirectTo <> '' then
     Context.Writer.WriteLn('<input type="hidden" name="redirect" value="' + e.RedirectTo + '">', [woOpenIndent, woCloseIndent]);
@@ -2986,11 +2988,14 @@ end;
 
 { TmnwSchema }
 
-constructor TmnwSchema.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
+constructor TmnwSchema.Create(AName: string; ARoute: string);
 begin
-  inherited;
-  GenName(Self, False);
-  FRoute := FName;
+  inherited Create(nil);
+  FName := AName;
+  if ARoute = '' then
+    FRoute := FName
+  else
+    FRoute := ARoute;
   FSchema := Self;
   FAttachments := TmnwAttachments.Create;
   FLock := TCriticalSection.Create;
@@ -3072,7 +3077,6 @@ var
   elementID: string;
   Error: string;
 begin
-  log.WriteLn(s);
   if s.StartsWith('{') then
   begin
     Json := JsonParseStringPair(s, Error, [jsoSafe]);
@@ -3100,7 +3104,6 @@ var
   attribute: TCustomAttributeClass;
   list: TClassList;
 begin
-//  log.Write(Element.ClassName);
   if Element = nil then
     raise Exception.Create('Element is nil');
   if Element.ClassType <> nil then
@@ -3179,7 +3182,6 @@ begin
   aRendererRegister := ElementRenderers.Find(AElementClass);
   if aRendererRegister <> nil then
   begin
-//    log.WriteLn('Replacing : '+AObjectClass.ClassName);
     if (How = Replace) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
       aRendererRegister.RendererClass := ARendererClass
     else if (How = Extend) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
@@ -3191,7 +3193,6 @@ begin
   begin
     if (How = Extend) then
       raise Exception.Create('Ops we can''t add extended, we need to optimize code: '+ AElementClass.ClassName);
-    //log.WriteLn(AObjectClass.ClassName);
     aRendererRegister := TmnwRendererRegister.Create;
     aRendererRegister.ElementClass := AElementClass;
     aRendererRegister.RendererClass := ARendererClass;
@@ -3508,6 +3509,24 @@ begin
   Result := Handle;
 end;
 
+function TmnwElement.GenID: string;
+begin
+  NewID(Self);
+  Result := ID
+end;
+
+function TmnwElement.GenRoute: string;
+begin
+  NewRoute(Self);
+  Result := Route;
+end;
+
+function TmnwElement.GenName: string;
+begin
+  NewName(Self);
+  Result := Name;
+end;
+
 procedure TmnwElement.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
 begin
 end;
@@ -3801,7 +3820,6 @@ begin
   begin
     if not FileExists(FileName) then
     begin
-      log.WriteLn('404: '+FileName);
       AReturn.Respond.HttpResult := hrNotFound;
       AReturn.Resume := False;
       exit;
@@ -3948,7 +3966,8 @@ begin
 
   InnerComposer := TInnerComposer.Create(nil);
   try
-    //InnerComposer.FSchema := Schema;
+    InnerComposer.FSchema := Schema;
+    InnerComposer.FParent := Self; //Fake Parent do not add it to the list;
     InnerCompose(InnerComposer);
     if Assigned(OnCompose) then
       OnCompose(InnerComposer);
@@ -4238,7 +4257,7 @@ procedure THTML.TForm.DoComposed;
 begin
   inherited;
   if PostTo.Where = toElement then
-    GenRoute(Self);
+    NewRoute(Self);
 end;
 
 { THTML.TParagraph }
@@ -4299,21 +4318,21 @@ end;
 
 class procedure TID_Extension.Update(Element: TmnwElement);
 begin
-  GenID(Element);
+  NewID(Element);
 end;
 
 { TName_Extension }
 
 class procedure TName_Extension.Update(Element: TmnwElement);
 begin
-  GenName(Element);
+  NewName(Element);
 end;
 
 { TRoute_Extension }
 
 class procedure TRoute_Extension.Update(Element: TmnwElement);
 begin
-  GenRoute(Element);
+  NewRoute(Element);
 end;
 
 { TmnwHTMLRenderer.TContentCompose }
@@ -4432,11 +4451,14 @@ end;
 procedure TmnwHTMLRenderer.TLink.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
   e: THTML.TLink;
+  event: string;
 begin
   e := Scope.Element as THTML.TLink;
-  Context.Writer.Write('<a' + Scope.GetText + ' href='+When(e.Location, '#') +'>', [woOpenIndent]);
-  if e.Text <> '' then
-    Context.Writer.Write(e.Text)
+  if e.ClickType = clickAction then
+    event :=' onclick="mnw.click(event, this)"';
+  Context.Writer.Write('<a' + Scope.GetText + ' href="'+When(e.Location, '#') + '"'+ event + '>', [woOpenIndent]);
+  if e.Caption <> '' then
+    Context.Writer.Write(e.Caption)
   else
     Context.Writer.Write('#');
   inherited;
@@ -4573,18 +4595,25 @@ begin
 end;
 
 procedure TAssetsSchema.DoPrepare;
+var
+  minilib: string;
 begin
   inherited;
   Name := 'Assets';
   Route := 'assets';
   //TCSSFile.Create(This, [ftResource], 'mnWebElements.css');
-  {$ifdef TEST}
-  TFile.Create(This, [], ExpandFileName(App.AppPath + '../../source/mnWebElements.js'), 'WebElements.js');
-  TFile.Create(This, [], ExpandFileName(App.AppPath + '../../source/mnWebElements.css'), 'WebElements.css');
-  {$else}
-  TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
-  TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
-  {$endif}
+  minilib := GetEnvironmentVariable('minilib');
+  if minilib = '' then
+  begin
+    TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
+    TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
+  end
+  else
+  begin
+    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/socket/source/mnWebElements.js'), 'WebElements.js');
+    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/socket/source/mnWebElements.css'), 'WebElements.css');
+  end;
+
   with TElement.Create(This, 'resource') do
   begin
     TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
@@ -4785,11 +4814,11 @@ end;
 
 { THTML.TLink }
 
-constructor THTML.TLink.Create(AParent: TmnwElement; const ALocation, AText: string);
+constructor THTML.TLink.Create(AParent: TmnwElement; const ALocation, ACaption: string);
 begin
   inherited Create(AParent);
   Location := ALocation;
-  Text := AText;
+  FCaption := ACaption;
 end;
 
 initialization
