@@ -2337,6 +2337,7 @@ begin
         begin
           AReturn.Respond.HttpResult := hrNoContent;
           AReturn.Respond.ContentLength := 0;
+          AReturn.Respond.SendHeader;
         end
         else if AReturn.Respond.HttpResult = hrNotFound then
         begin
@@ -2714,8 +2715,6 @@ var
 begin
   e := Scope.Element as THTML.TFooter;
   Context.Writer.WriteLn('<footer class="bg-body-tertiary text-center text-lg-start">', [woOpenIndent]);
-  if e.Text <> '' then
-    Context.Writer.WriteLn('<h6>'+e.Text+'</h6>', [woOpenIndent, woCloseIndent]);
   inherited;
   Context.Writer.WriteLn('</footer>', [woCloseIndent]);
 end;
