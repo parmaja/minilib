@@ -115,13 +115,17 @@ function init()
   reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');
   if (reload_elements.length > 0) 
   {
-    if (document.body.hasAttribute('data-mnw-refresh-interval')
-        interval = parseInt(document.body.getAttribute('data-mnw-refresh-interval'), interval) * 1000;
+    console.log('Interval is ' + document.body.getAttribute('data-mnw-refresh-interval'));
+
+    if (document.body.hasAttribute('data-mnw-refresh-interval'))
+        interval = parseInt(document.body.getAttribute('data-mnw-refresh-interval')) * 1000;
+
+    console.log('Interval is ' + interval.toString());
 
     if (interval > 0)
     {
         setInterval(reloadElements, interval);
-        console.log('Interval enabled ' + interval);
+        console.log('Interval enabled ' + interval.toString());
     }
   }
 

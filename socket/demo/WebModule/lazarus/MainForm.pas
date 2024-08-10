@@ -184,6 +184,7 @@ begin
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.HomePath := aHomePath;
     aHomeModule.WorkPath := aAppPath;
+    aHomeModule.WebApp.HomePath := aHomePath;
     aHomeModule.WebApp.AppPath := Application.Location;
     //aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs-v2.png');
     aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs.svg');

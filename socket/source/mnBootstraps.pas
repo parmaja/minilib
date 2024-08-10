@@ -50,13 +50,6 @@ type
   public
     type
 
-    { THTMLComponent }
-
-    THTMLComponent = class(THTMLElement)
-    public
-      procedure DoCollectAttributes(var Scope: TmnwScope); override;
-    end;
-
     { TBSDocumentHTML }
 
     TDocument = class(TmnwHTMLRenderer.TDocument)
@@ -188,24 +181,6 @@ begin
   RegisterRenderer(THTML.TRow, TRow, Replace);
   RegisterRenderer(THTML.TColumn, TColumn, Replace);
   RegisterRenderer(THTML.TCard, TCard, Replace);
-end;
-
-{ TmnwBootstrapRenderer.THTMLComponent }
-
-procedure TmnwBootstrapRenderer.THTMLComponent.DoCollectAttributes(var Scope: TmnwScope);
-var
-  e: THTML.THTMLComponent;
-begin
-  e := Scope.Element as THTML.THTMLComponent;
-  if e.Hint <> '' then
-  begin
-    e.Attributes['data-bs-toggle'] := 'tooltip';
-    e.Attributes['data-bs-original-title'] := e.Hint;
-  end;
-
-  inherited;
-  if e.Shadow then
-    Scope.Classes.Add('shadow-sm');
 end;
 
 { TmnwBootstrapRenderer.TBSInputHTML }

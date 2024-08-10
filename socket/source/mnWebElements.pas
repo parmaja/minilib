@@ -342,7 +342,7 @@ type
 
     function GetPath: string; virtual;
 
-    function CreateRender(Context: TmnwContext): TmnwElementRenderer;
+    function CreateRender(const Context: TmnwContext): TmnwElementRenderer;
     procedure Compose(const AContext: TmnwContext); virtual;
     procedure AddState(AState: TmnwElementState);
     procedure RemoveState(AState: TmnwElementState);
@@ -356,7 +356,7 @@ type
     procedure Respond(const AContext: TmnwContext; var AReturn: TmnwReturn);
 
     //* Original Render
-    procedure Render(Context: TmnwContext; var AReturn: TmnwReturn); overload;
+    procedure Render(const Context: TmnwContext; var AReturn: TmnwReturn); overload;
 
     function CanRender: Boolean; virtual;
 
@@ -480,7 +480,7 @@ type
     procedure ProcessMessage(const s: string);
   public
     Direction: TDirection;
-    RefreshInterval: Integer; //* in seconds
+    RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
     HomePath: string;
     ServeFiles: Boolean;
     SessionID: string;
@@ -503,6 +503,7 @@ type
     property App: TmnwApp read FApp;
   public
     type
+
     TFileOptions = set of (ftEmbed, ftResource);
 
     { TFile }
@@ -587,7 +588,7 @@ type
     property Renderer: TmnwRenderer read FRenderer;
     property RendererRegister: TmnwRendererRegister read FRendererRegister;
   public
-    procedure Render(AElement: TmnwElement; Context: TmnwContext; var AReturn: TmnwReturn);
+    procedure Render(AElement: TmnwElement; const Context: TmnwContext; var AReturn: TmnwReturn);
     constructor Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwRendererRegister); virtual; //useful for creating it by RendererClass.Create
     procedure CollectAttributes(var Scope: TmnwScope);
   end;
@@ -686,7 +687,16 @@ type
     property AppPath: string read FAppPath write FAppPath;
   end;
 
-  TSize = (szVerySmall, szSmall, szNormal, szLarge, szVeryLarge);
+  TSize = (
+	  szVerySmall,
+		szSmall,
+		szNormal,
+		szLarge,
+		szVeryLarge,
+
+    szParent,
+    szContent
+	);
 
 {-------------------------------------------------------}
 {-----------------    STANDARD    ----------------------}
@@ -712,25 +722,35 @@ type
 
       { THTMLElement }
 
-      THTMLElement = class(TmnwElement)
+      THTMLElement = class abstract(TmnwElement)
       protected
       public
       end;
 
-      THTMLLayoutElement = class(THTMLElement)
+      THTMLLayout = class abstract(THTMLElement)
       public
         Align: TmnwAlign;
         Fixed: TmnwFixed;
+        Margin: Integer;
+        Padding: Integer;
+        Size: TSize;
       end;
 
       { THTMLComponent }
 
-      THTMLComponent = class abstract(THTMLLayoutElement)
+      THTMLComponent = class abstract(THTMLLayout)
       protected
+        procedure Created; override;
       public
-        Hint: string;
         Shadow: Boolean;
       end;
+
+      THTMLControl = class abstract(THTMLComponent)
+      public
+        Hint: string;
+      end;
+
+      { TComment }
 
       TComment = class(THTMLElement)
       public
@@ -848,7 +868,7 @@ type
 //        LogoImage: string;
       end;
 
-      THeader = class(THTMLElement)
+      THeader = class(THTMLComponent)
       private
         function GetMenuBar: TMenuBar;
         function GetNavBar: TNavBar;
@@ -862,7 +882,7 @@ type
         property NavBar: TNavBar read GetNavBar;
       end;
 
-      TContent = class(THTMLElement)
+      TContent = class(THTMLComponent)
       protected
         Wide: Boolean;
       public
@@ -878,7 +898,7 @@ type
       public
       end;
 
-      TFooter = class(THTMLElement)
+      TFooter = class(THTMLComponent)
       public
         Text: string;
       end;
@@ -893,20 +913,19 @@ type
         function CanRender: Boolean; override;
       end;
 
-      TMain = class(THTMLElement)
+      TMain = class(THTMLComponent)
       protected
         procedure Created; override;
       public
-        Margin: Integer;
         Size: TSize;
       end;
 
-      TRow = class(THTMLLayoutElement)
+      TRow = class(THTMLLayout)
       public
         ContentAlign: TmnwAlign;
       end;
 
-      TColumn = class(THTMLLayoutElement)
+      TColumn = class(THTMLLayout)
       public
         Size: Integer;
       end;
@@ -975,7 +994,7 @@ type
 
       { TClickable }
 
-      TClickable = class abstract(THTMLComponent)
+      TClickable = class abstract(THTMLControl)
       private
         FCaption: string;
         procedure SetCaption(const AValue: string);
@@ -1013,7 +1032,7 @@ type
 
       { TButtons }
 
-      TButtons = class(THTMLElement)
+      TButtons = class(THTMLLayout)
       protected
         procedure Added(Item: TmnwElement); override;
       public
@@ -1122,6 +1141,13 @@ type
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
       end;
 
+      { THTMLControl }
+
+      THTMLControl = class(THTMLComponent)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+      end;
+
       { TComment }
 
       TComment = class(THTMLElement)
@@ -1182,7 +1208,7 @@ type
 
       { THeader }
 
-      THeader = class(THTMLElement)
+      THeader = class(THTMLComponent)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -1208,14 +1234,14 @@ type
 
       { TLink }
 
-      TLink = class(THTMLComponent)
+      TLink = class(THTMLControl)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
       { TFooter }
 
-      TFooter = class(THTMLElement)
+      TFooter = class(THTMLComponent)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -1971,7 +1997,7 @@ begin
   end;
 end;
 
-procedure TmnwElementRenderer.Render(AElement: TmnwElement; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElementRenderer.Render(AElement: TmnwElement; const Context: TmnwContext; var AReturn: TmnwReturn);
 var
   aScope: TmnwScope;
 begin
@@ -2029,7 +2055,7 @@ begin
     StrToStrings(Value, Result, vSeparators, []);
 end;
 
-procedure TmnwElement.Render(Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElement.Render(const Context: TmnwContext; var AReturn: TmnwReturn);
 var
   Renderer: TmnwElementRenderer;
 begin
@@ -2039,7 +2065,14 @@ begin
     if Renderer <> nil then
     begin
       try
-        Renderer.Render(Self, Context, AReturn);
+        try
+          Renderer.Render(Self, Context, AReturn);
+        except
+          on E: Exception do
+          begin
+            raise Exception.Create('Error in '+ ClassName +': ' + E.Message);
+          end;
+        end;
       finally
         Renderer.Free;
       end;
@@ -2052,7 +2085,7 @@ begin
   Result := RenderIt;
 end;
 
-function TmnwElement.CreateRender(Context: TmnwContext): TmnwElementRenderer;
+function TmnwElement.CreateRender(const Context: TmnwContext): TmnwElementRenderer;
 begin
   if (Context.Renderer <> nil) then
     Result := Context.Renderer.CreateRenderer(Self)
@@ -2194,7 +2227,9 @@ begin
         begin
           Schema := SchemaObject.SchemaClass.Create(nil);
           try
-            //Schema.Route := Route; //IDK
+            Schema := SchemaObject.SchemaClass.Create(nil);
+            Schema.Name := SchemaObject.Name;
+            Schema.Route := SchemaObject.Name; //IDK
             SchemaCreated(Schema);
             Schema.Compose(AContext);
             if not (schemaDynamic in Schema.GetCapabilities) then
@@ -2383,6 +2418,8 @@ end;
 procedure TmnwApp.SchemaCreated(Schema: TmnwSchema);
 begin
   Schema.FApp := Self;
+  if Schema.HomePath = '' then
+    Schema.HomePath := HomePath;
 end;
 
 procedure TmnwApp.Created;
@@ -2465,6 +2502,17 @@ begin
     Result := DocumentToContentType(Route);
 end;
 
+{ THTML.THTMLComponent }
+
+procedure THTML.THTMLComponent.Created;
+begin
+  inherited;
+  Margin := 0;
+  Size := szNormal;
+end;
+
+{ THTML.THTMLComponent }
+
 procedure TmnwHTMLRenderer.Created;
 begin
   inherited;
@@ -2534,16 +2582,25 @@ var
   e: THTML.THTMLComponent;
 begin
   e := Scope.Element as THTML.THTMLComponent;
+  inherited;
+  if e.Shadow then
+    Scope.Classes.Add('shadow-sm');
+end;
+
+{ TmnwHTMLRenderer.THTMLControl }
+
+procedure TmnwHTMLRenderer.THTMLControl.DoCollectAttributes(var Scope: TmnwScope);
+var
+  e: THTML.THTMLControl;
+begin
+  e := Scope.Element as THTML.THTMLControl;
   if e.Hint <> '' then
   begin
     Scope.Attributes['data-bs-toggle'] := 'tooltip';
     Scope.Attributes['data-bs-placement'] := 'top';
     Scope.Attributes['title'] := e.Hint;
   end;
-
   inherited;
-  if e.Shadow then
-    Scope.Classes.Add('shadow-sm');
 end;
 
 { TmnwHTMLRenderer.TComment }
@@ -2568,8 +2625,6 @@ begin
     Scope.Attributes['dir'] := 'rtl'
   else if e.Schema.Direction = dirLeftToRight then
     Scope.Attributes['dir'] := 'ltr';
-  if e.Schema.RefreshInterval >=0 then
-    Scope.Attributes['data-mnw-interactive'] := e.Schema.RefreshInterval.ToString;
   Scope.Attributes['lang'] := 'en'
 end;
 
@@ -4056,8 +4111,13 @@ end;
 { TmnwHTMLRenderer.TBody }
 
 procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(var Scope: TmnwScope);
+var
+  e: THTML.TBody;
 begin
+  e := Scope.Element as THTML.TBody;
   inherited;
+  if e.Schema.RefreshInterval <> 1 then //* not default, 0 Disable it
+    Scope.Attributes['data-mnw-refresh-interval'] := e.Schema.RefreshInterval.ToString;
 end;
 
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
@@ -4123,8 +4183,6 @@ end;
 procedure THTML.TMain.Created;
 begin
   inherited;
-  Margin := 0;
-  Size := szNormal;
 end;
 
 { THTML.TCard }
@@ -4421,8 +4479,8 @@ var
   aReturn: TmnwReturn;
   aDomain, aPort: string;
 begin
-  Initialize(aContext);
-  Initialize(aReturn);
+  InitMemory(aContext, SizeOf(aContext));
+  InitMemory(aReturn, SizeOf(aReturn));
   inherited;
   aContext.Route := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
@@ -4562,7 +4620,6 @@ end;
 constructor TUIWebModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules);
 begin
   FWebApp := TmnwApp.Create;
-  FWebApp.FHomePath := HomePath;
   inherited;
 end;
 
@@ -4615,13 +4672,13 @@ end;
 
 class operator TElementClasses.Explicit(const Source: string): TElementClasses;
 begin
-  Initialize(Result);
+  InitMemory(Result, SizeOf(Result));
   Result.AddClasses(Source)
 end;
 
 class operator TElementClasses.Implicit(Source: string): TElementClasses;
 begin
-  Initialize(Result);
+  InitMemory(Result, SizeOf(Result));
   Result.AddClasses(Source)
 end;
 

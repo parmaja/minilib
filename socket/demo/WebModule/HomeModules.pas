@@ -46,6 +46,16 @@ type
   public
   end;
 
+  { TSimpleSchema }
+
+  TSimpleSchema = class(THTML)
+  private
+  public
+  protected
+    procedure DoCompose(const AContext: TmnwContext); override;
+  public
+  end;
+
   TWSEchoGetHomeCommand = class(TmodHttpCommand)
   protected
   public
@@ -139,7 +149,7 @@ begin
   inherited;
   Name := 'welcome';
   Route := 'welcome';
-
+  RefreshInterval := 5;
   with TDocument.Create(This) do
   begin
     Name := 'document';
@@ -149,7 +159,7 @@ begin
     with Body do
     begin
       //TJSFile.Create(This, [ftResource], 'WebElements_JS', 'WebElements.js');
-      TJSFile.Create(This, [], ExpandFileName(GetCurrentDir + '../../source/mnWebElements.js'));
+//      TJSFile.Create(This, [], ExpandFileName(GetCurrentDir + '../../source/mnWebElements.js'));
 
       Header.NavBar.Title := 'Creative Solutions';
       with Header.NavBar do
@@ -198,7 +208,7 @@ begin
           begin
             Name := 'logo';
             Route := 'logo';
-            LoadFromFile(IncludePathDelimiter(App.HomePath) + 'logo.png');
+            LoadFromFile(IncludePathDelimiter(Schema.HomePath) + 'logo.png');
           end;
 
 {          with TImage.Create(This) do
@@ -431,6 +441,13 @@ begin
   end;
 end;
 
+{ TSimpleSchema }
+
+procedure TSimpleSchema.DoCompose(const AContext: TmnwContext);
+begin
+  inherited;
+end;
+
 { TWSShema }
 
 procedure TWSShema.DoCompose(const AContext: TmnwContext);
@@ -463,6 +480,7 @@ begin
   WebApp.RegisterSchema('welcome', TWelcomeSchema);
   WebApp.RegisterSchema('assets', TAssetsSchema);
   WebApp.RegisterSchema('login', TLoginSchema);
+  WebApp.RegisterSchema('simple', TSimpleSchema);
   WebApp.RegisterSchema('ws', TWSShema);
   RegisterCommand('.ws', TWSEchoGetHomeCommand, False);
 end;
