@@ -2333,7 +2333,7 @@ begin
 
       if not (AReturn.Respond.IsHeaderSent) then
       begin
-        if (AReturn.Respond.HttpResult = hrOK) and (AReturn.Resume=False) then
+        if (AReturn.Respond.HttpResult = hrOK) and (AReturn.Resume = False) then
         begin
           AReturn.Respond.HttpResult := hrNoContent;
           AReturn.Respond.ContentLength := 0;
@@ -2344,7 +2344,7 @@ begin
           AContext.Writer.WriteLn('404 Not Found');
         end;
 
-        if not (AReturn.Respond.IsHeaderSent) then
+        if not (AReturn.Respond.IsHeaderSent) and (AReturn.Respond.HttpResult > hrNone) then
           AReturn.Respond.SendHeader;
       end;
     end
