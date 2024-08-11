@@ -337,6 +337,8 @@ type
     function FindByRoute(const Route: string): TmnwElement;
     function FindByID(const aID: string): TmnwElement;
     function FindByName(const aName: string): TmnwElement;
+    function FindParentName(const aName: string): TmnwElement;
+    function FindParentID(const aID: string): TmnwElement;
     function IndexOfName(vName: string): Integer;
 
     function This: TmnwElement; virtual; //I wish i have templates/meta programming in pascal
@@ -3319,6 +3321,9 @@ end;
 
 function TmnwElement.GetPath: string;
 begin
+  if Self=nil then
+    Exit('/');
+
   if (Parent <> nil) then
   begin
     if Route <> '' then
@@ -3391,6 +3396,38 @@ begin
   end;
   if RaiseException and (Result = nil) then
     raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
+end;
+
+function TmnwElement.FindParentID(const aID: string): TmnwElement;
+var
+  p: TmnwElement;
+begin
+  p := Self;
+  while p<>nil do
+  begin
+    if SameText(p.ID, aID) then
+      Exit(p);
+
+    p := p.Parent;
+  end;
+
+  Result := nil;
+end;
+
+function TmnwElement.FindParentName(const aName: string): TmnwElement;
+var
+  p: TmnwElement;
+begin
+  p := Self;
+  while p<>nil do
+  begin
+    if SameText(p.Name, aName) then
+      Exit(p);
+
+    p := p.Parent;
+  end;
+
+  Result := nil;
 end;
 
 procedure TmnwElement.DoPrepare;
