@@ -903,7 +903,7 @@ type
       { TSideBar }
 
       [TID_Extension]
-      TSideBar = class(THTMLElement)
+      TSideBar = class(THTMLControl)
       protected
         procedure Created; override;
       public
@@ -1267,7 +1267,7 @@ type
 
       { TSideBar }
 
-      TSideBar = class(THTMLElement)
+      TSideBar = class(THTMLControl)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
@@ -2337,14 +2337,14 @@ begin
         begin
           AReturn.Respond.HttpResult := hrNoContent;
           AReturn.Respond.ContentLength := 0;
-          AReturn.Respond.SendHeader;
         end
         else if AReturn.Respond.HttpResult = hrNotFound then
         begin
           AReturn.Respond.ContentType := 'text/html';
           AContext.Writer.WriteLn('404 Not Found');
-        end
-        else
+        end;
+
+        if not (AReturn.Respond.IsHeaderSent) then
           AReturn.Respond.SendHeader;
       end;
     end

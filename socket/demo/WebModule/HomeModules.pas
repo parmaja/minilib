@@ -386,6 +386,7 @@ begin
 
       with SideBar do
       begin
+        Shadow := True;
         RenderIt := True;
         with TLink.Create(This, 'http://www.google.com', 'Google') do
         begin
