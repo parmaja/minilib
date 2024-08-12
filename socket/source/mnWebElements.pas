@@ -470,6 +470,13 @@ type
   TmnwApp = class;
   TUIWebModule = class;
 
+  TmnwSchemaPhase = (
+    scmpNew,
+    scmpNormal,
+    scmpReleased
+	);
+
+
   { TmnwSchema }
 
   TmnwSchema = class(TmnwElement)
@@ -478,12 +485,16 @@ type
     FAttachments: TmnwAttachments;
     FLock: TCriticalSection;
     FApp: TmnwApp;
+    FPhase: TmnwSchemaPhase;
+    function GetReleased: Boolean;
   protected
+    Usage: Integer;
     NameingLastNumber: Integer;
     procedure UpdateAttached;
     procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
     procedure ProcessMessage(const s: string);
   public
+    IsManual: Boolean;
     Direction: TDirection;
     RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
     HomePath: string;
@@ -504,6 +515,8 @@ type
 
     property Attachments: TmnwAttachments read FAttachments;
     property Attached: Boolean read FAttached;
+    property Released: Boolean read GetReleased;
+    property Phase: TmnwSchemaPhase read FPhase;
     property Lock: TCriticalSection read FLock;
     property App: TmnwApp read FApp;
   public
@@ -644,13 +657,23 @@ type
     Port: string;
   end;
 
+  { TmnwSchemaItem }
+
+  TmnwSchemaItem = class(TmnNamedObject)
+  public
+    SchemaClass: TmnwSchemaClass;
+    destructor Destroy; override;
+  end;
+
+  TRegisteredSchemas = class(TmnNamedObjectList<TmnwSchemaItem>)
+  end;
+
   { TmnwSchemaObject }
 
-  TmnwSchemaObject = class(TmnNamedObject)
+  TmnwSchemaObject = class(TmnwSchemaItem)
   private
     FLock: TCriticalSection;
   public
-    SchemaClass: TmnwSchemaClass;
     Schema: TmnwSchema;
     ManualSchema: Boolean; //Schema set from outside not by request
     constructor Create;
@@ -662,13 +685,15 @@ type
 
   { TmnwApp }
 
-  TmnwApp = class(TmnNamedObjectList<TmnwSchemaObject>)
+  TmnwApp = class(TmnObjectList<TmnwSchema>)
   private
+    FRegistered: TRegisteredSchemas;
     FHomePath: string;
     FAppPath: string;
     FAssets: TAssetsSchema;
     FLock: TCriticalSection;
     FSessionTimeout: Integer;
+    FShutdown: Boolean;
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
@@ -676,21 +701,26 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Start;
+    procedure Stop;
 
-    procedure RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass; ASchema: TmnwSchema = nil);
+    procedure RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass);
+    property Registered: TRegisteredSchemas read FRegistered;
 
-    function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchemaObject;
+    function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
+    function CreateSchema(const aSchemaName: string): TmnwSchema;
     function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
-    procedure ClearSchema(const aSchemaName: string; const aSessionID: string);
 
+    //for HTML
     function Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): TmnwElement;
-    //for websocket
+    //for WebSocket
     function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
+
     property Lock: TCriticalSection read FLock;
     property SessionTimeout: Integer read FSessionTimeout write FSessionTimeout; //in seconds
     property Assets: TAssetsSchema read FAssets;
     property HomePath: string read FHomePath write FHomePath;
     property AppPath: string read FAppPath write FAppPath;
+    property Shutdown: Boolean read FShutdown;
   end;
 
   TSize = (
@@ -1457,6 +1487,7 @@ type
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
     procedure Created; override;
     procedure Start; override;
+    procedure Stop; override;
   public
     IsLocal: Boolean;
     destructor Destroy; override;
@@ -2171,6 +2202,7 @@ end;
 destructor TmnwApp.Destroy;
 begin
   inherited;
+  FreeAndNil(FRegistered);
   FreeAndNil(FLock);
 end;
 
@@ -2179,35 +2211,51 @@ begin
   FAssets.Prepare;
 end;
 
-procedure TmnwApp.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass; ASchema: TmnwSchema);
-var
-  SchemaObject: TmnwSchemaObject;
+procedure TmnwApp.Stop;
 begin
-  SchemaObject := TmnwSchemaObject.Create;
-  SchemaObject.Name := AName;
-  SchemaObject.SchemaClass := SchemaClass;
-  SchemaObject.Schema := ASchema;
-  SchemaObject.ManualSchema := ASchema <> nil;
-  inherited Add(SchemaObject);
+  FShutdown := True;
+  Clear;
 end;
 
-function TmnwApp.FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchemaObject;
+procedure TmnwApp.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass);
+var
+  aSchemaItem: TmnwSchemaItem;
+begin
+  aSchemaItem := TmnwSchemaItem.Create;
+  aSchemaItem.Name := AName;
+  aSchemaItem.SchemaClass := SchemaClass;
+  Registered.Add(aSchemaItem);
+end;
+
+function TmnwApp.FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
 var
   i: Integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
   begin
-    if SameText(Items[i].Name, aSchemaName) and ((aSessionID = '') or ((Items[i].Schema <> nil) and (aSessionID = Items[i].Schema.SessionID))) then
+    if SameText(Items[i].Name, aSchemaName) and (aSessionID = Items[i].SessionID) then
       Result := Items[i];
     if Result <> nil then
       break;
   end;
 end;
 
+function TmnwApp.CreateSchema(const aSchemaName: string): TmnwSchema;
+var
+  SchemaItem: TmnwSchemaItem;
+begin
+	SchemaItem := Registered.Find(aSchemaName);
+  if SchemaItem <> nil then
+  begin
+    Result := SchemaItem.SchemaClass.Create(SchemaItem.Name, SchemaItem.Name);
+    SchemaCreated(Result);
+    //Add(SchemaObject); no, when compose it we add it
+  end;
+end;
+
 function TmnwApp.GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 var
-  SchemaObject: TmnwSchemaObject;
   aElement: TmnwElement;
   Routes: TStringList;
   i: Integer;
@@ -2223,40 +2271,45 @@ begin
       aSchemaName := Routes[0];
       Routes.Delete(0);
       AContext.Route := DeleteSubPath(aSchemaName, AContext.Route);
-      SchemaObject := Find(aSchemaName);
+      Lock.Enter;
+      try
+        Schema := FindBy(aSchemaName, AContext.SessionID);
+        if Schema = nil then
+          Schema := CreateSchema(aSchemaName);
+        if Schema <> nil then
+          Inc(Schema.Usage);
+			finally
+        Lock.Leave;
+      end;
     end
     else
-      SchemaObject := nil;
+      Schema := nil;
 
-    if SchemaObject = nil then
-      SchemaObject := First; //* fallback
+    if Schema = nil then
+      Schema := First; //* fallback
 
-    if SchemaObject <> nil then
+    if Schema <> nil then
     begin
-      SchemaObject.Lock.Enter;
-      try
-        if SchemaObject.Schema = nil then
-        begin
-          Schema := SchemaObject.SchemaClass.Create(SchemaObject.Name, SchemaObject.Name);
+      if not (estComposed in Schema.State) then
+      begin
+        Schema.Lock.Enter;
+        try
           try
-            SchemaCreated(Schema);
+            Schema.SessionID := AContext.SessionID;
             Schema.Compose(AContext);
-            if not (schemaDynamic in Schema.GetCapabilities) then
-              SchemaObject.Schema := Schema;
           except
+            Schema.Lock.Leave;
             FreeAndNil(Schema);
             raise;
           end;
-        end
-        else
-          Schema := SchemaObject.Schema;
-      finally
-        SchemaObject.Lock.Leave;
+        finally
+          if Schema <> nil then
+            Schema.Lock.Leave;
+        end;
       end;
-      aElement := Schema;
-    end
-    else
-      aElement := nil;
+    end;
+
+    aElement := Schema;
 
     if aElement <> nil then
     begin
@@ -2284,6 +2337,7 @@ begin
     end
     else
       Result := False;
+
   finally
     Routes.Free;
   end;
@@ -2308,8 +2362,10 @@ function TmnwApp.Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): Tm
 
 var
   aSchema: TmnwSchema;
-
 begin
+  if Shutdown then
+    exit(nil);
+
   try
     GetElement(AContext, aSchema, Result);
     if Result <> nil then
@@ -2330,6 +2386,7 @@ begin
       if AReturn.SessionID<>'' then
         AReturn.Respond.Cookies.Values['session'] := SessionCookies(AReturn.SessionID);
 
+      //* We will render it now
       if AReturn.Resume then
         Result.Respond(AContext, AReturn);
 
@@ -2349,19 +2406,28 @@ begin
         if not (AReturn.Respond.IsHeaderSent) and (AReturn.Respond.HttpResult > hrNone) then
           AReturn.Respond.SendHeader;
       end;
-    end
-    else if aSchema <> nil then
-    begin
-
     end;
 
     if aSchema <> nil then
     begin
-      if (aSchema <> nil) and (schemaDynamic in aSchema.GetCapabilities) then
-        aSchema.Free;
+      Lock.Enter;
+      try
+        Dec(aSchema.Usage);
+        if (aSchema.Usage = 0) and (aSchema.Released) then
+          FreeAndNil(aSchema)
+        else
+        begin
+          if aSchema.Phase = scmpNew then
+          begin
+            aSchema.FPhase := scmpNormal;
+            Add(aSchema);
+          end;
+        end;
+      finally
+        Lock.Leave;
+      end;
     end;
   except
-
     {$ifdef DEBUG}
     on E: Exception do
     begin
@@ -2380,12 +2446,14 @@ end;
 
 function TmnwApp.Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 var
-  SchemaObject: TmnwSchemaObject;
   Routes: TStringList;
   i: Integer;
   aRoute: string;
   aSchema: TmnwSchema;
 begin
+  if Shutdown then
+    exit(nil);
+
   aSchema := nil;
   Routes := TStringList.Create;
   try
@@ -2395,29 +2463,15 @@ begin
     begin
       aRoute := Routes[i];
       inc(i);
-      SchemaObject := Find(aRoute);
-    end
-    else
-      SchemaObject := nil;
+      aSchema := FindBy(aRoute, '');
+    end;
 
-    if SchemaObject = nil then
-      SchemaObject := First; //* fallback
+    if aSchema = nil then
+      aSchema := First; //* fallback
 
-    if SchemaObject <> nil then
+    if aSchema <> nil then
     begin
       DeleteSubPath(aRoute, AContext.Route);
-      if SchemaObject.Schema = nil then
-      begin
-        if not (schemaDynamic in SchemaObject.SchemaClass.GetCapabilities) then
-        begin
-          aSchema := SchemaObject.SchemaClass.Create(SchemaObject.Name);
-          aSchema.Route := AContext.Route;
-          SchemaCreated(aSchema);
-          aSchema.Compose(AContext);
-        end;
-      end
-      else
-        aSchema := SchemaObject.Schema;
     end;
   finally
     Routes.Free;
@@ -2441,29 +2495,16 @@ end;
 procedure TmnwApp.Created;
 begin
   inherited;
-  FAssets := TAssetsSchema.Create('assets');
-  SchemaCreated(FAssets);
-  RegisterSchema('assets', TAssetsSchema, FAssets);
-end;
-
-procedure TmnwApp.ClearSchema(const aSchemaName, aSessionID: string);
-var
-  s: TmnwSchemaObject;
-begin
-  s := FindBy(aSchemaName, aSessionID);
-  if s=nil then Exit;
-
-  s.Lock.Enter;
-  try
-    FreeAndNil(s.Schema);
-  finally
-    s.Lock.Leave;
-  end;
+  RegisterSchema('assets', TAssetsSchema);
+  FAssets := CreateSchema('assets') as TAssetsSchema;
+  FAssets.FPhase := scmpNormal;
+  Add(FAssets);
 end;
 
 constructor TmnwApp.Create;
 begin
   FLock := TCriticalSection.Create;
+  FRegistered := TRegisteredSchemas.Create;
   inherited;
 end;
 
@@ -3139,6 +3180,11 @@ begin
   inherited;
   RemoveState([estComposing]);
   AddState([estComposed]);
+end;
+
+function TmnwSchema.GetReleased: Boolean;
+begin
+  Result := (FPhase = scmpReleased) or (schemaDynamic in GetCapabilities);
 end;
 
 procedure TmnwSchema.UpdateAttached;
@@ -3818,6 +3864,13 @@ class constructor TmnwRenderer.RegisterObjects;
 begin
   ElementRenderers := TmnwElementRenderers.Create;
   RegisterRenderer(TmnwElement, TmnwElementRenderer);
+end;
+
+{ TmnwSchemaItem }
+
+destructor TmnwSchemaItem.Destroy;
+begin
+  inherited;
 end;
 
 {$ifdef rtti_objects}
@@ -4681,6 +4734,12 @@ begin
   WebApp.Assets.HomePath := HomePath;
   WebApp.Assets.ServeFiles := True;
   WebApp.Start;
+end;
+
+procedure TUIWebModule.Stop;
+begin
+  WebApp.Stop;
+  inherited;
 end;
 
 procedure TUIWebModule.CreateItems;
