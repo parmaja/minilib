@@ -164,10 +164,6 @@ procedure TmnwBootstrapRenderer.AddHead(AElement: TmnwElement; const Context: Tm
 begin
   inherited;
   Context.Writer.WriteLn('<style type="text/css">', [woOpenIndent]);
-  Context.Writer.WriteLn(':root {');
-  Context.Writer.WriteLn('    --bs-border-radius: 0.2rem;');
-  Context.Writer.WriteLn('}');
-
   Context.Writer.WriteLn('.small-card {');
   Context.Writer.WriteLn('    max-width: 22rem;');
   Context.Writer.WriteLn('}');

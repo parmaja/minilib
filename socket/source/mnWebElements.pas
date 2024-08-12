@@ -1334,7 +1334,7 @@ type
 
       { TButton }
 
-      TButton = class(THTMLComponent)
+      TButton = class(THTMLControl)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
@@ -1356,7 +1356,7 @@ type
 
       { TSubbMenu }
 
-      TSubMenu = class(THTMLElement)
+      TSubMenu = class(THTMLControl)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;

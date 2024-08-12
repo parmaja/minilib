@@ -1,18 +1,6 @@
 :root {
     --header-size: 4rem;
     --sidebar-size: 16rem;
-
-    --bs-border-radius: 0.2rem;
-
-    --bs-spacer: 0.5rem;
-    --bs-paragraph-margin-bottom: 0.8rem;
-    --bs-font-size-base: 0.8rem;
-    --bs-input-btn-padding-y: .175rem;
-}
-
-.card {
-    --bs-card-spacer-y: 0.5rem;
-    --bs-card-spacer-x: 0.5rem;
 }
 
 .form-control {
