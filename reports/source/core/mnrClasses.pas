@@ -1883,7 +1883,7 @@ end;
 
 function TmnrSection.GetAppendTitlesStored: Boolean;
 begin
-  Result := FAppendReportTotals <> GetAppendTitlesDefault;
+  Result := FAppendReportTitles <> GetAppendTitlesDefault;
 end;
 
 function TmnrSection.GetCaption: string;
