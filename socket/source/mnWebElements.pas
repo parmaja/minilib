@@ -461,7 +461,6 @@ type
   TmnwSchamaCapability = (
     schemaSession,
     schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
-    schemaInteractive,  //* Attach websocket
     schemaSessions
   );
 
@@ -475,7 +474,6 @@ type
     scmpNormal,
     scmpReleased
 	);
-
 
   { TmnwSchema }
 
@@ -494,19 +492,21 @@ type
     procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
     procedure ProcessMessage(const s: string);
   public
+    LastAccess: TDateTime;
     IsManual: Boolean;
     Direction: TDirection;
     RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
     HomePath: string;
     ServeFiles: Boolean;
     SessionID: string;
+    Interactive: Boolean;
     constructor Create(AName:string; ARoute: string = ''); reintroduce;
     destructor Destroy; override;
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
 
     //* Attaching cap
-    function Interactive: Boolean;
+    //function Interactive: Boolean;
 
     procedure Compose(const AContext: TmnwContext); override;
 
@@ -708,6 +708,7 @@ type
 
     function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
     function CreateSchema(const aSchemaName: string): TmnwSchema;
+    function ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
     function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 
     //for HTML
@@ -799,6 +800,7 @@ type
       TContent = class;
       TSideBar = class;
       TFooter = class;
+      TToast = class;
       TMain = class;
       TImage = class;
       TButtons = class;
@@ -884,6 +886,7 @@ type
         FMain: TMain;
 
         FFooter: TFooter;
+        FToast: TToast;
       protected
       public
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: Boolean =True); override;
@@ -892,6 +895,7 @@ type
         property SideBar: TSideBar read FSideBar;
         property Main: TMain read FMain;
         property Footer: TFooter read FFooter;
+        property Toast: TToast read FToast;
         property Wide: Boolean read GetWide write SetWide;
       end;
 
@@ -929,6 +933,10 @@ type
       end;
 
       TFooter = class(THTMLComponent)
+      public
+      end;
+
+      TToast = class(THTMLComponent)
       public
       end;
 
@@ -1286,6 +1294,13 @@ type
       { TFooter }
 
       TFooter = class(THTMLComponent)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+      end;
+
+      { TToast }
+
+      TToast = class(THTMLComponent)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -2254,6 +2269,23 @@ begin
   end;
 end;
 
+function TmnwApp.ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
+var
+  aSchema: TmnwSchema;
+begin
+  Lock.Enter;
+  try
+    aSchema := FindBy(aSchemaName, aSessionID);
+    if aSchema <> nil then
+    begin
+      Extract(aSchema);
+      aSchema.FPhase := scmpReleased;
+    end;
+  finally
+    Lock.Leave
+  end;
+end;
+
 function TmnwApp.GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 var
   aElement: TmnwElement;
@@ -2375,6 +2407,7 @@ begin
       //resLatch
   //    (AContext.Sender as TmodHttpCommand).Respond.Latch := True;
       try
+        //You should not send any text/data content only set headers or refuse to continue
         Result.Action(AContext, AReturn);
       finally
   //      (AContext.Sender as TmodHttpCommand).Respond.Latch := False;
@@ -2406,12 +2439,22 @@ begin
         if not (AReturn.Respond.IsHeaderSent) and (AReturn.Respond.HttpResult > hrNone) then
           AReturn.Respond.SendHeader;
       end;
+    end
+    else
+    begin
+      if not (AReturn.Respond.IsHeaderSent) then
+      begin
+        AReturn.Respond.HttpResult := hrNotFound;
+        AReturn.Respond.ContentType := 'text/html';
+        AContext.Writer.WriteLn('404 Not Found');
+      end;
     end;
 
     if aSchema <> nil then
     begin
       Lock.Enter;
       try
+        aSchema.LastAccess := Now;
         Dec(aSchema.Usage);
         if (aSchema.Usage = 0) and (aSchema.Released) then
           FreeAndNil(aSchema)
@@ -2617,6 +2660,7 @@ begin
   RegisterRenderer(THTML.TSideBar, TSideBar);
   RegisterRenderer(THTML.TMain, TMain);
   RegisterRenderer(THTML.TFooter, TFooter);
+  RegisterRenderer(THTML.TToast, TToast);
   RegisterRenderer(THTML.TLink, TLink);
   RegisterRenderer(THTML.TButton, TButton);
   RegisterRenderer(THTML.TNavItem, TNavItem);
@@ -2760,6 +2804,20 @@ begin
   Context.Writer.WriteLn('<footer class="bg-body-tertiary text-center text-lg-start">', [woOpenIndent]);
   inherited;
   Context.Writer.WriteLn('</footer>', [woCloseIndent]);
+end;
+
+{ TmnwHTMLRenderer.TToast }
+
+procedure TmnwHTMLRenderer.TToast.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+var
+  e: THTML.TToast;
+begin
+  e := Scope.Element as THTML.TToast;
+  Context.Writer.OpenTag('div aria-live="polite" aria-atomic="true"');
+  Context.Writer.OpenTag('div id="toast-container" class ="toast-container position-absolute p-3" style="z-index:9;"');
+  inherited;
+  Context.Writer.CloseTag('div');
+  Context.Writer.CloseTag('div');
 end;
 
 { TmnwHTMLRenderer.TContent }
@@ -3169,10 +3227,10 @@ begin
   Result := [];
 end;
 
-function TmnwSchema.Interactive: Boolean;
+{function TmnwSchema.Interactive: Boolean;
 begin
   Result := schemaInteractive in GetCapabilities;
-end;
+end;}
 
 procedure TmnwSchema.Compose(const AContext: TmnwContext);
 begin
@@ -4180,18 +4238,22 @@ end;
 constructor THTML.TBody.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
 begin
   inherited;
-  FHeader := THeader.Create(Self, [elEmbed], True);
+  //This object auto free by parents
+  FHeader := THeader.Create(Self, [elEmbed], False);
+
   FContent := TContent.Create(Self, [elEmbed], True);
-  FFooter := TFooter.Create(Self, [elEmbed], True);
-  FSideBar := TSideBar.Create(FContent, [elEmbed], True);
-  FMain := TMain.Create(FContent, [elEmbed], True);
+  with FContent do
+  begin
+    FSideBar := TSideBar.Create(This, [elEmbed], True);
+    FMain := TMain.Create(This, [elEmbed], True);
+  end;
+
+  FFooter := TFooter.Create(Self, [elEmbed], False);
+  FToast := TToast.Create(Self, [elEmbed], False);
 end;
 
 destructor THTML.TBody.Destroy;
 begin
-{  FreeAndNil(FHeader); Nope
-  FreeAndNil(FFooter);
-  FreeAndNil(FMain);}
   inherited;
 end;
 
@@ -4256,7 +4318,7 @@ var
   e: THTML.TBody;
   function GetAttach: string;
   begin
-    if schemaInteractive in Context.Schema.GetCapabilities then
+    if Context.Schema.Interactive then
     begin
       Result := ' data-mnw-interactive="true"';
     end;
@@ -4619,7 +4681,6 @@ begin
   aContext.Route := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
 
-  aContext.SessionID := Request.Cookies.Values['session'];
   if Module.Domain<>'' then
   begin
     aDomain := Module.Domain;
@@ -4638,6 +4699,9 @@ begin
   end
   else
   begin
+    aContext.SessionID := Request.Params.Values['session'];
+    if aContext.SessionID = '' then
+      aContext.SessionID := Request.Cookies.Values['session'];
     aContext.Data := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )
     if Request.ConnectionType = ctFormData then
     begin

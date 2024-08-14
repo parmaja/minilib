@@ -120,6 +120,57 @@ mnw.click = function(event, sender)
   return false;
 }
 
+function createToastElement(type, content) 
+{
+  let toastContainer = document.createElement('div');
+  toastContainer.classList.add('toast-container');
+
+  let toast = document.createElement('div');
+  toast.classList.add('toast');
+
+  let toastBody = document.createElement('div');
+  toastBody.classList.add('toast-body', type);
+  toastBody.innerText = content;
+
+  toast.appendChild(toastBody);
+  toastContainer.appendChild(toast);
+
+  if ($('.wrapping-element').length <= 0) {
+      let wrappingElement = document.createElement('div');
+      wrappingElement.classList.add('wrapping-element');
+      wrappingElement.appendChild(toastContainer);
+      document.body.appendChild(wrappingElement);
+  }
+  else {
+      $('.wrapping-element').append(toastContainer);
+  }
+}
+
+mnw.showToast = function(content, type = "info") 
+{
+}
+
+function showToast(content, type = "info") {
+  var delay = 15000;
+  var toastContainer = document.querySelector("#toast-container");
+
+  var html = `<div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex"><div class="toast-body h6 p-3 m-0">${content}</div>
+                  <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+              </div>`;
+  var element = toastContainer.insertAdjacentHTML('beforeend', html);  
+  
+  var toast = new bootstrap.Toast(toast, {delay: delay, animation: true});
+
+/*  element.on('hidden.bs.toast', function () {
+    element.remove();
+  });*/
+
+  toast.show();
+  setTimeout(() => toast.remove(), delay + 15000);
+}
+
 function init()
 {
   reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');

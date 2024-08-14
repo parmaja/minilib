@@ -14,9 +14,17 @@ uses
 	mnLogs, mnWebElements, mnBootstraps;
 
 type
+
+  { TmySchema }
+
+  TmySchema = class abstract(THTML)
+  protected
+    procedure DoCompose(const AContext: TmnwContext); override;
+  end;
+
   { TWelcomeSchema }
 
-  TWelcomeSchema = class(THTML)
+  TWelcomeSchema = class(TmySchema)
   private
   protected
     Input1: THTML.TInput;
@@ -163,17 +171,23 @@ begin
   end;
 end;
 
+{ TmySchema }
+
+procedure TmySchema.DoCompose(const AContext: TmnwContext);
+begin
+  inherited;
+end;
+
 { TWellcomeSchema }
 
 procedure TWelcomeSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
-  RefreshInterval := 5;
+  RefreshInterval := 1;
+  Interactive := True;
   with TDocument.Create(This) do
   begin
-    Name := 'document';
-    //Route := 'document';
-    Title := 'MyHome';
+    Title := 'My Home';
     Direction := dirLeftToRight;
     with Body do
     begin
@@ -203,6 +217,7 @@ begin
       end;
 
       Header.RenderIt := True;
+      Toast.RenderIt := True;
 
       with Main do
       begin
@@ -271,9 +286,9 @@ begin
           end;
 
 {$ifdef fpc}
-{          with TClockCompose.Create(This) do
+          with TClockCompose.Create(This) do
           begin
-          end;}
+          end;
 {$else}
           with TCard.Create(This) do
           begin
@@ -304,8 +319,8 @@ end;
 
 class function TWelcomeSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
-  Result := [schemaInteractive] + Inherited GetCapabilities;
-  //Result := Inherited GetCapabilities;
+  //Result := [schemaInteractive] + Inherited GetCapabilities;
+  Result := Inherited GetCapabilities;
 end;
 
 { TWSEchoGetHomeCommand }
