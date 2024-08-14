@@ -714,7 +714,7 @@ begin
   if (Port<>'') and ((Protocol='https') and (Port<>'443'))or((Protocol='http') and (Port<>'80')) then
     Result := Result + ':' + Port;
 
-  if Directory<>'' then
+  if Directory <> '' then
     Result := Result + '/' + Directory;
 end;
 

@@ -307,7 +307,7 @@ type
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
 
     procedure DoPrepare; virtual;
-    procedure DoCompose(const AContext: TmnwContext); virtual;
+    procedure DoCompose; virtual;
     procedure DoComposed; virtual;
     procedure DoRespondHeader(AContext: TmnwContext); virtual;
     procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); virtual;
@@ -345,10 +345,10 @@ type
     property Schema: TmnwSchema read FSchema;
     property Parent: TmnwElement read FParent;
 
-    function GetPath: string; virtual;
+    function GetPath(Full: Boolean = True): string; virtual;
 
     function CreateRender(const Context: TmnwContext): TmnwElementRenderer;
-    procedure Compose(const AContext: TmnwContext); virtual;
+    procedure Compose; virtual;
     procedure AddState(AState: TmnwElementState);
     procedure RemoveState(AState: TmnwElementState);
 
@@ -508,7 +508,7 @@ type
     //* Attaching cap
     //function Interactive: Boolean;
 
-    procedure Compose(const AContext: TmnwContext); override;
+    procedure Compose; override;
 
     // Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
     procedure Attach(Route: string; Sender: TObject; AStream: TmnBufferStream); // in connection thread
@@ -646,15 +646,9 @@ type
     property Libraries: TmnwLibraries read FLibraries;
     property Module: TmodWebModule read FModule;
 
-    function GetHostURL: string; virtual;
-    function GetHomeURL: string; virtual;
-    function GetAssetsURL: string; virtual;
-
     procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); virtual; abstract;
   public
-    IsSSL: Boolean;
-    Domain: string; //localhost
-    Port: string;
+    RendererID: Integer;
   end;
 
   { TmnwSchemaItem }
@@ -694,10 +688,16 @@ type
     FLock: TCriticalSection;
     FSessionTimeout: Integer;
     FShutdown: Boolean;
+    FWorkPath: string;
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
   public
+    IsSSL: Boolean;
+    Domain: string; //localhost
+    Port: string;
+    Directory: string;
+    Alias: string; //ModuleName
     constructor Create;
     destructor Destroy; override;
     procedure Start;
@@ -716,10 +716,17 @@ type
     //for WebSocket
     function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
+    function GetPath: string; virtual;
+    function GetHostURL: string; virtual;
+    function GetHomeURL: string; virtual;
+    //Relative
+    function GetAssetsURL: string; virtual;
+
     property Lock: TCriticalSection read FLock;
     property SessionTimeout: Integer read FSessionTimeout write FSessionTimeout; //in seconds
     property Assets: TAssetsSchema read FAssets;
     property HomePath: string read FHomePath write FHomePath;
+    property WorkPath: string read FWorkPath write FWorkPath;
     property AppPath: string read FAppPath write FAppPath;
     property Shutdown: Boolean read FShutdown;
   end;
@@ -1127,7 +1134,7 @@ type
       [TID_Extension]
       TImage = class(THTMLComponent)
       protected
-        procedure DoCompose(const AContext: TmnwContext); override;
+        procedure DoCompose; override;
       public
         Source: TLocation;
         AltText: string;
@@ -1474,6 +1481,7 @@ type
     function GetModule: TUIWebModule;
   protected
   public
+    RendererID: Integer;
     procedure RespondResult(var Result: TmodRespondResult); override;
     property Module: TUIWebModule read GetModule;
   end;
@@ -1485,7 +1493,7 @@ type
   protected
     FLogo: THTML.TMemory;
     procedure DoPrepare; override;
-    procedure DoCompose(const AContext: TmnwContext); override;
+    procedure DoCompose; override;
     procedure Created; override;
   public
     property Logo: THTML.TMemory read FLogo;
@@ -2115,16 +2123,16 @@ end;
 
 procedure TmnwElement.Render(const Context: TmnwContext; var AReturn: TmnwReturn);
 var
-  Renderer: TmnwElementRenderer;
+  er: TmnwElementRenderer;
 begin
   if CanRender then
   begin
-    Renderer := CreateRender(Context);
-    if Renderer <> nil then
+    er := CreateRender(Context);
+    if er <> nil then
     begin
       try
         try
-          Renderer.Render(Self, Context, AReturn);
+          er.Render(Self, Context, AReturn);
         except
           on E: Exception do
           begin
@@ -2132,7 +2140,7 @@ begin
           end;
         end;
       finally
-        Renderer.Free;
+        er.Free;
       end;
     end;
   end;
@@ -2328,7 +2336,7 @@ begin
         try
           try
             Schema.SessionID := AContext.SessionID;
-            Schema.Compose(AContext);
+            Schema.Compose; //Compose
           except
             Schema.Lock.Leave;
             FreeAndNil(Schema);
@@ -2383,13 +2391,12 @@ function TmnwApp.Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): Tm
     aPath, aDomain: string;
   begin
     aDate := IncSecond(Now, SessionTimeout);
-    aDomain := AContext.Renderer.Domain;
     aPath := '';
 
     if vData<>'' then
-      Result := Format('%s; Expires=%s; SameSite=None; Domain=%s; Path=/%s; Secure', [vData, FormatHTTPDate(aDate), aDomain, aPath.ToLower])
+      Result := Format('%s; Expires=%s; SameSite=None; Domain=%s; Path=/%s; Secure', [vData, FormatHTTPDate(aDate), Domain, aPath.ToLower])
     else
-      Result := Format('; max-age=0; SameSite=None; Domain=%s; Path=/%s; Secure', [aDomain, aPath.ToLower]);
+      Result := Format('; max-age=0; SameSite=None; Domain=%s; Path=/%s; Secure', [Domain, aPath.ToLower]);
   end;
 
 var
@@ -2528,6 +2535,11 @@ begin
     Result := nil;
 end;
 
+function TmnwApp.GetPath: string;
+begin
+  Result := '/' + IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Alias);
+end;
+
 procedure TmnwApp.SchemaCreated(Schema: TmnwSchema);
 begin
   Schema.FApp := Self;
@@ -2549,6 +2561,21 @@ begin
   FLock := TCriticalSection.Create;
   FRegistered := TRegisteredSchemas.Create;
   inherited;
+end;
+
+function TmnwApp.GetAssetsURL: string;
+begin
+  Result := GetPath + 'assets/'; //relative
+end;
+
+function TmnwApp.GetHostURL: string;
+begin
+  Result := IncludeURLDelimiter(ComposeHttpURL(IsSSL, Domain, Port));
+end;
+
+function TmnwApp.GetHomeURL: string;
+begin
+  Result := GetHostURL + IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Alias);
 end;
 
 { TmnwHTMLWriterHelper }
@@ -2891,11 +2918,11 @@ begin
   if e.PostTo.Custom <> '' then
     aPostTo := e.PostTo.Custom
   else if e.PostTo.Where = toSchema then
-    aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl) + e.Schema.GetPath
+    aPostTo := e.Schema.GetPath
   else if e.PostTo.Where = toElement then
-    aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl) + e.GetPath
+    aPostTo := e.GetPath
   else if e.PostTo.Where = toHome then
-    aPostTo := IncludeURLDelimiter(Renderer.GetHomeUrl);
+    aPostTo := '/';
   Context.Writer.WriteLn('<form ajax="true" method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText+'>', [woOpenIndent]);
   inherited;
   if e.RedirectTo <> '' then
@@ -3059,7 +3086,7 @@ end;
 procedure TmnwHTMLRenderer.TMemoryImage.DoCollectAttributes(var Scope: TmnwScope);
 begin
   inherited;
-  Scope.Attributes['src'] := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
+  Scope.Attributes['src'] := Scope.Element.GetPath;
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
 end;
 
@@ -3232,7 +3259,7 @@ begin
   Result := schemaInteractive in GetCapabilities;
 end;}
 
-procedure TmnwSchema.Compose(const AContext: TmnwContext);
+procedure TmnwSchema.Compose;
 begin
   AddState([estComposing]);
   inherited;
@@ -3423,20 +3450,24 @@ begin
   Result := Self;
 end;
 
-function TmnwElement.GetPath: string;
+function TmnwElement.GetPath(Full: Boolean): string;
 begin
-  if Self=nil then
-    Exit('/');
+  if Self = nil then
+    exit('');
 
   if (Parent <> nil) then
   begin
     if Route <> '' then
-      Result := IncludeURLDelimiter(Parent.GetPath) + Route
+      Result := IncludeURLDelimiter(Parent.GetPath(False)) + Route
     else
-      Result := Parent.GetPath;
+      Result := Parent.GetPath(False);
   end
   else
     Result := Route;
+  if Full then
+    Result := IncludeURLDelimiter(Schema.App.GetPath + Result)
+  else
+    Result := IncludeURLDelimiter(Result);
 end;
 
 procedure TmnwElement.SetState(const AValue: TmnwElementState);
@@ -3504,18 +3535,17 @@ end;
 
 function TmnwElement.FindParentID(const aID: string): TmnwElement;
 var
-  p: TmnwElement;
+  e: TmnwElement;
 begin
-  p := Self;
-  while p<>nil do
-  begin
-    if SameText(p.ID, aID) then
-      Exit(p);
-
-    p := p.Parent;
-  end;
-
   Result := nil;
+  e := Self;
+  while e <> nil do
+  begin
+    if SameText(e.ID, aID) then
+      Exit(e);
+
+    e := e.Parent;
+  end;
 end;
 
 function TmnwElement.FindParentName(const aName: string): TmnwElement;
@@ -3591,7 +3621,7 @@ begin
     Result := Self;}
 end;
 
-procedure TmnwElement.DoCompose(const AContext: TmnwContext);
+procedure TmnwElement.DoCompose;
 begin
 end;
 
@@ -3756,17 +3786,17 @@ begin
   DoRespond(AContext, AReturn);
 end;
 
-procedure TmnwElement.Compose(const AContext: TmnwContext);
+procedure TmnwElement.Compose;
 var
   o: TmnwElement;
 begin
 //  Clear; //*Should not clear here
   Prepare;
-  DoCompose(AContext);
+  DoCompose;
   UpdateElement(Self);
   for o in Self do
   begin
-    o.Compose(AContext);
+    o.Compose; //Compose
   end;
   DoComposed;
 end;
@@ -3892,22 +3922,6 @@ end;
 procedure TmnwRenderer.EndRender;
 begin
   DoEndRender;
-end;
-
-
-function TmnwRenderer.GetAssetsURL: string;
-begin
-  Result := GetHomeURL + 'assets/';
-end;
-
-function TmnwRenderer.GetHomeURL: string;
-begin
-  Result := IncludeURLDelimiter(IncludeURLDelimiter(GetHostURL) + Module.AliasName);
-end;
-
-function TmnwRenderer.GetHostURL: string;
-begin
-  Result := ComposeHttpURL(IsSSL, Domain, Port);
 end;
 
 procedure TmnwRenderer.DoBeginRender;
@@ -4103,14 +4117,6 @@ var
   InnerComposer: TInnerComposer;
 begin
   inherited;
-  //Clear; //here not in Compose
-  //Compose;
-  {InnerComposer := TInnerComposer.Create(nil);
-  InnerComposer.FParent := Self;
-  TContentCompose(InnerComposer).DoCompose(const AContext: TmnwContext);
-  //InnerComposer.OnCompose;
-  Render(ARenderer, Sender, AStream);}
-
   InnerComposer := TInnerComposer.Create(nil);
   try
     InnerComposer.FSchema := Schema;
@@ -4201,22 +4207,22 @@ end;
 
 procedure TJQuery_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
-  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"></script>');
+  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"></script>');
 end;
 
 { TWebElements_Library }
 
 procedure TWebElements_Library.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
-  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"></script>');
-  Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'WebElements.css" crossorigin="anonymous">');
+  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"></script>');
+  Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css" crossorigin="anonymous">');
 end;
 
 { THTML }
 
 { THTML.TImage }
 
-procedure THTML.TImage.DoCompose(const AContext: TmnwContext);
+procedure THTML.TImage.DoCompose;
 begin
   inherited;
 end;
@@ -4499,12 +4505,9 @@ end;
 { TmnwHTMLRenderer.TIntervalCompose }
 
 procedure TmnwHTMLRenderer.TIntervalCompose.DoCollectAttributes(var Scope: TmnwScope);
-var
-  URL: string;
 begin
   inherited;
-  URL := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
-  Scope.Attributes['data-mnw-refresh-url'] := URL;
+  Scope.Attributes['data-mnw-refresh-url'] := Scope.Element.GetPath;
 end;
 
 { TmnwHTMLRenderer.TNavBar }
@@ -4514,9 +4517,9 @@ var
   e: THTML.TNavBar;
 begin
   e := Scope.Element as THTML.TNavBar;
-  Context.Writer.WriteLn('<a class="logo navbar-brand d-flex align-items-center p-0 ms-0" href="'+Context.Renderer.GetHomeURL+'">', [woOpenIndent]);
+  Context.Writer.WriteLn('<a class="logo navbar-brand d-flex align-items-center p-0 ms-0" href="'+e.GetPath+'">', [woOpenIndent]);
   if e.Schema.App.Assets.Logo.Data.Size > 0 then
-    Context.Writer.WriteLn('<img class="" src="' + Context.Renderer.GetHomeURL + e.Schema.App.Assets.Logo.GetPath + '">', [woOpenIndent, woCloseIndent]);
+    Context.Writer.WriteLn('<img class="" src="' + e.Schema.App.Assets.Logo.GetPath + '">', [woOpenIndent, woCloseIndent]);
   if e.Title <> '' then
     Context.Writer.WriteLn('<span class="navbar-brand ms-1">'+e.Title+'</span>', [woOpenIndent, woCloseIndent]);
   Context.Writer.WriteLn('</a>', [woCloseIndent]);
@@ -4633,7 +4636,7 @@ begin
   end
   else
   begin
-    src := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
+    src := e.GetPath;
     Context.Writer.WriteLn('<script type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src) +' ></script>', [woOpenIndent, woCloseIndent]);
     inherited;
   end;
@@ -4656,7 +4659,7 @@ begin
   end
   else
   begin
-    src := IncludeURLDelimiter(Renderer.GetHomeUrl) + Scope.Element.GetPath;
+    src := e.GetPath;
     Context.Writer.WriteLn('<link rel="stylesheet" href='+ DQ(src) +' ></link>', [woOpenIndent, woCloseIndent]);
     inherited;
   end;
@@ -4675,19 +4678,32 @@ var
   aReturn: TmnwReturn;
   aDomain, aPort: string;
 begin
+  inherited;
+  AtomicIncrement(RendererID);
   InitMemory(aContext, SizeOf(aContext));
   InitMemory(aReturn, SizeOf(aReturn));
-  inherited;
+
   aContext.Route := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
 
-  if Module.Domain<>'' then
+  if Module.Domain <> '' then
   begin
     aDomain := Module.Domain;
     aPort := Module.Port;
   end
   else
     SpliteStr(Request.Header['Host'], ':', aDomain, aPort);
+
+  Module.WebApp.Lock.Enter; //smart huh, first connection will setup the domain name, i don't like it
+  try
+    if Module.WebApp.Domain = '' then
+    begin
+      Module.WebApp.Domain := aDomain;
+      Module.WebApp.Port := aPort;
+    end;
+  finally
+    Module.WebApp.Lock.Leave;
+  end;
 
   if aDomain='' then
     raise Exception.Create('Domain is not defined');
@@ -4713,11 +4729,9 @@ begin
     aReturn.Respond := Respond;
     Respond.HttpResult := hrOK;
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
+    aContext.Renderer.RendererID := RendererID;
     aContext.Writer := TmnwWriter.Create('html', Respond.Stream);
     try
-      aContext.Renderer.IsSSL := Respond.Request.IsSSL;
-      aContext.Renderer.Domain := aDomain;
-      aContext.Renderer.Port := aPort;
       aContext.ETag := Request.Header['If-None-Match'];
 
       aReturn.SessionID := Request.GetCookie('', 'session');
@@ -4729,8 +4743,8 @@ begin
       //SessionID
     finally
       FreeAndNil(aContext.Writer);
-      aContext.Renderer.Free;
-      aContext.Data.Free;
+      FreeAndNil(aContext.Renderer);
+      FreeAndNil(aContext.Data);
     end;
   end;
 end;
@@ -4774,7 +4788,7 @@ begin
   end;
 end;
 
-procedure TAssetsSchema.DoCompose(const AContext: TmnwContext);
+procedure TAssetsSchema.DoCompose;
 begin
   inherited;
 end;
@@ -4795,8 +4809,20 @@ procedure TUIWebModule.Start;
 begin
   inherited;
 //  AssetsURL := '/' + AliasName + '/' + WebApp.Assets.Route;
+  if WebApp.HomePath = '' then
+    WebApp.HomePath := HomePath;
+  if WebApp.Domain = '' then
+    WebApp.Domain := Domain;
+  if WebApp.Port = '' then
+    WebApp.Port := Port;
+  if WebApp.WorkPath = '' then
+    WebApp.WorkPath := WorkPath;
+  if WebApp.Alias = '' then
+    WebApp.Alias := AliasName;
+
   WebApp.Assets.HomePath := HomePath;
   WebApp.Assets.ServeFiles := True;
+
   WebApp.Start;
 end;
 

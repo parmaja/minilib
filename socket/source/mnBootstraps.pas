@@ -204,10 +204,10 @@ end;
 procedure TBootstrap_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwContext);
 begin
   if AElement.Schema.Direction = dirRightToLeft then
-    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.rtl.min.css" crossorigin="anonymous">')
+    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.rtl.min.css" crossorigin="anonymous">')
   else
-    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.min.css" crossorigin="anonymous">');
-  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Renderer.GetAssetsURL) + 'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
+    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.min.css" crossorigin="anonymous">');
+  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.bundle.min.js" crossorigin="anonymous"></script>');
 end;
 
 { TmnwBootstrapRenderer.TColumn }

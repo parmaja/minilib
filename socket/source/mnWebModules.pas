@@ -17,12 +17,12 @@
 {
             Userinfo       Host      Port
             ┌──┴───┐ ┌──────┴────────┌┴┐
-GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top
-                     └──────┬──────┘    └───────┬───────┘└───────────┬─────────────┘ └┬─┘
-                       DomainName            Directory             Query             Fragment
-                                        └─┬──┘                       ┬
-                                        Module.AliasName           Params
-    └────────────────────────┬─────────────────────────┘
+GET https://john.doe@www.example.com:123/username/forum/questions/?tag=networking&order=newest#top
+                     └──────┬──────┘    └───────────────┬────────┘└───────────┬─────────────┘ └┬─┘
+                       DomainName                      Path(Full)           Query             Fragment
+                                        └───┬───┘└──┬──┘└──┬─────┘            ┬
+                                        Directory Alias   Path              Params
+    └────────────────────────┬─────────┘
                           HomeURL
 }
 

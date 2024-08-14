@@ -19,7 +19,7 @@ type
 
   TmySchema = class abstract(THTML)
   protected
-    procedure DoCompose(const AContext: TmnwContext); override;
+    procedure DoCompose; override;
   end;
 
   { TWelcomeSchema }
@@ -30,7 +30,7 @@ type
     Input1: THTML.TInput;
     Input2: THTML.TInput;
     Input3: THTML.TInput;
-    procedure DoCompose(const AContext: TmnwContext); override;
+    procedure DoCompose; override;
   public
     class function GetCapabilities: TmnwSchemaCapabilities; override;
   end;
@@ -39,7 +39,7 @@ type
   private
   public
   protected
-    procedure DoCompose(const AContext: TmnwContext); override;
+    procedure DoCompose; override;
   public
   end;
 
@@ -50,7 +50,7 @@ type
   public
   protected
     procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
-    procedure DoCompose(const AContext: TmnwContext); override;
+    procedure DoCompose; override;
   public
   end;
 
@@ -60,7 +60,7 @@ type
   private
   public
   protected
-    procedure DoCompose(const AContext: TmnwContext); override;
+    procedure DoCompose; override;
   public
   end;
 
@@ -173,14 +173,14 @@ end;
 
 { TmySchema }
 
-procedure TmySchema.DoCompose(const AContext: TmnwContext);
+procedure TmySchema.DoCompose;
 begin
   inherited;
 end;
 
 { TWellcomeSchema }
 
-procedure TWelcomeSchema.DoCompose(const AContext: TmnwContext);
+procedure TWelcomeSchema.DoCompose;
 begin
   inherited;
   RefreshInterval := 1;
@@ -359,13 +359,13 @@ begin
       AReturn.SessionID := aUsername +'/'+ aPassword;
       AReturn.Resume := False;
       AReturn.Respond.HttpResult := hrRedirect;
-      AReturn.Location := IncludePathDelimiter(AContext.Renderer.GetHomeURL) + 'dashboard';
+      AReturn.Location := IncludePathDelimiter(AContext.Schema.App.GetPath) + 'dashboard';
     end;
   end;
   inherited;
 end;
 
-procedure TLoginSchema.DoCompose(const AContext: TmnwContext);
+procedure TLoginSchema.DoCompose;
 begin
   inherited;
   with TDocument.Create(This) do
@@ -411,7 +411,7 @@ begin
         with TMyLink.Create(This, '', 'Home') do
         begin
           Route := 'my_link';
-          Location := AContext.Renderer.GetHomeURL + GetPath;
+          Location := GetPath;
           ClickType := clickAction;
         end;
       end;
@@ -484,14 +484,14 @@ end;
 
 { TSimpleSchema }
 
-procedure TSimpleSchema.DoCompose(const AContext: TmnwContext);
+procedure TSimpleSchema.DoCompose;
 begin
   inherited;
 end;
 
 { TWSShema }
 
-procedure TWSShema.DoCompose(const AContext: TmnwContext);
+procedure TWSShema.DoCompose;
 begin
   inherited;
   Name := 'ws';
