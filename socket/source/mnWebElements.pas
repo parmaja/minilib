@@ -215,7 +215,7 @@ type
   protected
   public
     IsLocal: Boolean;
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); virtual; abstract;
+    procedure AddHead(const Context: TmnwContext); virtual; abstract;
     procedure IncUsage;
     procedure DecUsage;
     property Usage: Integer read FUsage;
@@ -236,21 +236,21 @@ type
 
   TJQuery_Library = class(TmnwLibrary)
   public
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
+    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   { TJQuery_LocalLibrary }
 
   TJQuery_LocalLibrary = class(TmnwLibrary)
   public
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
+    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   { TWebElements_Library }
 
   TWebElements_Library = class(TmnwLibrary)
   public
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
+    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   TElementExecute = reference to procedure;
@@ -646,7 +646,7 @@ type
     property Libraries: TmnwLibraries read FLibraries;
     property Module: TmodWebModule read FModule;
 
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); virtual; abstract;
+    procedure AddHead(const Context: TmnwContext); virtual; abstract;
   public
     RendererID: Integer;
   end;
@@ -1189,7 +1189,7 @@ type
 
       THTMLElement = class abstract(TmnwElementRenderer)
       protected
-        procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); virtual;
+        procedure AddHead(const Context: TmnwContext); virtual;
         procedure DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
@@ -1445,7 +1445,7 @@ type
 
   protected
     procedure Created; override;
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
+    procedure AddHead(const Context: TmnwContext); override;
     class constructor RegisterObjects;
   public
   end;
@@ -2662,7 +2662,7 @@ begin
   Libraries.Use('WebElements');
 end;
 
-procedure TmnwHTMLRenderer.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.AddHead(const Context: TmnwContext);
 begin
 end;
 
@@ -2705,7 +2705,7 @@ end;
 
 { TmnwHTMLRenderer.THTMLElement }
 
-procedure TmnwHTMLRenderer.THTMLElement.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.THTMLElement.AddHead(const Context: TmnwContext);
 begin
 end;
 
@@ -2784,13 +2784,13 @@ begin
   Context.Writer.WriteLn('<link rel="shortcut icon" href="#" />', [woOpenIndent, woCloseIndent]);
   if e.Parent <> nil then // Only root have head
   begin
-    AddHead(Scope.Element, Context);
+    AddHead(Context);
     for aLibrary in Renderer.Libraries do
     begin
       if aLibrary.Usage > 0 then
-        aLibrary.AddHead(Scope.Element, Context);
+        aLibrary.AddHead(Context);
     end;
-    (Renderer as TmnwHTMLRenderer).AddHead(Scope.Element, Context);
+    (Renderer as TmnwHTMLRenderer).AddHead(Context);
   end;
 
   //* Collect head from childs
@@ -4198,21 +4198,21 @@ end;
 
 { TJQuery_Library }
 
-procedure TJQuery_Library.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TJQuery_Library.AddHead(const Context: TmnwContext);
 begin
   Context.Writer.WriteLn('<script src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"></script>');
 end;
 
 { TJQuery_LocalLibrary }
 
-procedure TJQuery_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TJQuery_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
   Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"></script>');
 end;
 
 { TWebElements_Library }
 
-procedure TWebElements_Library.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
   Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"></script>');
   Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css" crossorigin="anonymous">');

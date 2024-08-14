@@ -32,14 +32,14 @@ uses
 type
   TBootstrap_Library = class(TmnwLibrary)
   public
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
+    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   { TBootstrap_LocalLibrary }
 
   TBootstrap_LocalLibrary = class(TmnwLibrary)
   public
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
+    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   { TmnwBootstrap }
@@ -54,7 +54,7 @@ type
 
     TDocument = class(TmnwHTMLRenderer.TDocument)
     public
-      procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
+      procedure AddHead(const Context: TmnwContext); override;
     end;
 
     TMain = class abstract(THTMLElement)
@@ -81,7 +81,7 @@ type
 
   protected
     procedure Created; override;
-    procedure AddHead(AElement: TmnwElement; const Context: TmnwContext); override;
+    procedure AddHead(const Context: TmnwContext); override;
   public
 
     class constructor RegisterObjects;
@@ -102,7 +102,7 @@ begin
   else if Align = alignCenter then
     Result := 'align-self-center'
   else if Align = alignStreach then
-    Result := 'align-self-Streach'
+    Result := 'align-self-streach'
   else if Align = alignEnd then
     Result := 'align-self-end'
   else
@@ -160,7 +160,7 @@ begin
   Libraries.Use('Bootstrap');
 end;
 
-procedure TmnwBootstrapRenderer.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TmnwBootstrapRenderer.AddHead(const Context: TmnwContext);
 begin
   inherited;
   Context.Writer.WriteLn('<style type="text/css">', [woOpenIndent]);
@@ -181,7 +181,7 @@ end;
 
 { TmnwBootstrapRenderer.TBSInputHTML }
 
-procedure TmnwBootstrapRenderer.TDocument.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TmnwBootstrapRenderer.TDocument.AddHead(const Context: TmnwContext);
 begin
   Context.Writer.WriteLn('<meta charset="UTF-8">');
   Context.Writer.WriteLn('<meta name="viewport" content="width=device-width, initial-scale=1">');
@@ -190,9 +190,9 @@ end;
 
 { TBootstrap_Library }
 
-procedure TBootstrap_Library.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TBootstrap_Library.AddHead(const Context: TmnwContext);
 begin
-  if AElement.Schema.Direction = dirRightToLeft then
+  if Context.Schema.Direction = dirRightToLeft then
     Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" integrity="sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb" crossorigin="anonymous">')
   else
     Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
@@ -201,9 +201,9 @@ end;
 
 { TBootstrap_LocalLibrary }
 
-procedure TBootstrap_LocalLibrary.AddHead(AElement: TmnwElement; const Context: TmnwContext);
+procedure TBootstrap_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
-  if AElement.Schema.Direction = dirRightToLeft then
+  if Context.Schema.Direction = dirRightToLeft then
     Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.rtl.min.css" crossorigin="anonymous">')
   else
     Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.min.css" crossorigin="anonymous">');
