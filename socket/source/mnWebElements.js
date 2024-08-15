@@ -153,14 +153,14 @@ mnw.showToast = function(content, type = "warning")
 
  
   var element = document.createElement('div');
-  element.className = `toast align-items-center bg-${type} text-black border-0`;
+  element.className = `toast align-items-center bg-${type} text-black border-black shadow-thin`;
   element.setAttribute('role', 'alert');
   element.setAttribute('aria-live', 'assertive');  
   element.setAttribute('aria-atomic', 'true');
-  element.innerHTML = 
-                    `<div class="d-flex"><div class="toast-body h6 p-3 m-0">${content}</div>
-                      <button type="button" class="btn-close btn-close-black me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>`;
+  element.innerHTML = `<div class="d-flex">
+                        <div class="toast-body h6 p-3 m-0">${content}</div>
+                        <button type="button" class="btn-close btn-close-black me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                      </div>`;
 
   toastContainer.appendChild(element);  
   

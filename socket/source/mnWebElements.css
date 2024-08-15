@@ -1,10 +1,48 @@
 :root {
     --header-size: 4rem;
     --sidebar-size: 16rem;
+    --content-height: calc(100vh - var(--header-size));
+    --size-unit: 120pt;    
 }
+
+.max-w-xs {
+    max-width: calc(var(--size-unit) * 1);
+}
+
+.max-w-sm {
+    max-width: calc(var(--size-unit) * 2);
+}
+
+.max-w-md {
+    max-width: calc(var(--size-unit) * 3);
+}
+
+.max-w-lg {
+    max-width: calc(var(--size-unit) * 6);
+}
+
+.max-w-xl {
+    max-width: calc(var(--size-unit) * 7);
+}
+
+.max-w-xxl {
+    max-width: calc(var(--size-unit) * 9);
+}
+
+/*******************************************************************/
 
 .form-control {
   padding: .175rem .75rem;
+}
+
+.shadow-sharp
+{
+    box-shadow: 0px 0px 3px 3px rgba(0,0,0,0.5);
+}
+
+.shadow-thin
+{
+    box-shadow: 0px 0px 3px 3px rgba(0,0,0,0.3);
 }
 
 body {
@@ -29,6 +67,11 @@ aside{
 .content {
 }
 
+.main {
+    overflow-y: auto;
+    height: var(--content-height);
+}
+
 @media(max-width: 768px) {
     .sidebar {
 /*            	    visibility: collapse; */ /* dosnt work in iphone 6*/
@@ -46,20 +89,25 @@ aside{
     padding: 0;
     width: var(--sidebar-size);
     max-width: 100vh;
-    min-height: calc(100vh - var(--header-size));
+    min-height: var(--content-height);
+    background-color: #404E67;
 }
 
 .sidebar-content {
     display: flex;
     overflow-y: auto;
-    height: calc(100vh - var(--header-size));
+    height: var(--content-height);
     width: var(--sidebar-size)  !important;
-    min-height: calc(100vh - var(--header-size));
+    min-height: var(--content-height);
 }
 
 .sidebar-items {
     overflow-y: auto;
     width: var(--sidebar-size) !important;
+}
+
+.sidebar-active {
+    background-color: #38445A;
 }
 
 .offcanvas.show, .offcanvas.showing {

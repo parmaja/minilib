@@ -730,7 +730,8 @@ type
   end;
 
   TSize = (
-	  szVerySmall,
+		szUndefined,
+	 	szVerySmall,
 		szSmall,
 		szNormal,
 		szLarge,
@@ -775,7 +776,6 @@ type
         Fixed: TmnwFixed;
         Margin: Integer;
         Padding: Integer;
-        Size: TSize;
       end;
 
       { THTMLComponent }
@@ -784,6 +784,7 @@ type
       protected
         procedure Created; override;
       public
+        Size: TSize; //Max Width
         Shadow: Boolean;
       end;
 
@@ -834,11 +835,11 @@ type
         function GetContentType(Route: string): string; override;
       end;
 
-      TContentComposeProc = reference to procedure(Inner: TmnwElement);
+      TComposeProc = reference to procedure(Inner: TmnwElement);
 
-      { TContentCompose }
+      { TDynamicCompose }
 
-      TContentCompose = class(THTMLElement)
+      TDynamicCompose = class(THTMLElement)
       protected
         type
 
@@ -852,13 +853,13 @@ type
 
         procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
       public
-        OnCompose: TContentComposeProc;
-        constructor Create(AParent: TmnwElement; AOnCompose: TContentComposeProc = nil); reintroduce;
+        OnCompose: TComposeProc;
+        constructor Create(AParent: TmnwElement; AOnCompose: TComposeProc = nil); reintroduce;
       end;
 
       [TID_Extension]
       [TRoute_Extension]
-      TIntervalCompose = class(TContentCompose)
+      TIntervalCompose = class(TDynamicCompose)
       end;
 
       { TDocument }
@@ -922,7 +923,6 @@ type
         FMenuBar: TMenuBar;
         procedure Created; override;
       public
-        Shadow: Boolean;
         property MenuBar: TMenuBar read GetMenuBar;
         property NavBar: TNavBar read GetNavBar;
       end;
@@ -959,7 +959,6 @@ type
       protected
         procedure Created; override;
       public
-        Size: TSize;
       end;
 
       TRow = class(THTMLLayout)
@@ -1249,16 +1248,16 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
-      { TContentCompose }
+      { TDynamicCompose }
 
-      TContentCompose = class(THTMLElement)
+      TDynamicCompose = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
       { TIntervalCompose }
 
-      TIntervalCompose = class(TContentCompose)
+      TIntervalCompose = class(TDynamicCompose)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
       end;
@@ -1544,7 +1543,71 @@ procedure CacheClasses;
 const
   woFullTag = [woOpenIndent, woCloseIndent];
 
+function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+function BSContentAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
+function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+
 implementation
+
+function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+begin
+  if Align = alignStart then
+    Result := 'align-self-start'
+
+  else if Align = alignCenter then
+    Result := 'align-self-center'
+  else if Align = alignStreach then
+    Result := 'align-self-streach'
+  else if Align = alignEnd then
+    Result := 'align-self-end'
+  else
+    Result := '';
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
+end;
+
+function BSContentAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+begin
+  if Align = alignStart then
+    Result := 'justify-content-start'
+  else if Align = alignCenter then
+    Result := 'justify-content-center'
+  else if Align = alignStreach then
+    Result := 'justify-content-streach'
+  else if Align = alignEnd then
+    Result := 'justify-content-end'
+  else
+    Result := '';
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
+end;
+
+function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
+begin
+  if Fixed = fixedTop then
+    Result := 'fixed-top'
+  else if Fixed = fixedBottom then
+    Result := 'fixed-bottom'
+  else
+    Result := '';
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
+end;
+
+function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+begin
+  case Size of
+    szUndefined: Result := '';
+	  szVerySmall: Result := 'xs';
+		szSmall: Result := 'sm';
+		szNormal: Result := 'md';
+		szLarge: Result := 'lg';
+		szVeryLarge: Result := 'xl';
+    else
+      Result := '';
+  end;
+end;
 
 function Space(const s: string): string; overload; inline;
 begin
@@ -2312,6 +2375,7 @@ begin
       Lock.Enter;
       try
         Schema := FindBy(aSchemaName, AContext.SessionID);
+
         if Schema = nil then
           Schema := CreateSchema(aSchemaName);
         if Schema <> nil then
@@ -2333,7 +2397,8 @@ begin
         Schema.Lock.Enter;
         try
           try
-            Schema.SessionID := AContext.SessionID;
+            if schemaSession in Schema.GetCapabilities then
+              Schema.SessionID := AContext.SessionID;
             Schema.Compose; //Compose
           except
             Schema.Lock.Leave;
@@ -2646,7 +2711,8 @@ procedure THTML.THTMLComponent.Created;
 begin
   inherited;
   Margin := 0;
-  Size := szNormal;
+  Padding := 0;
+  Size := szUndefined;
 end;
 
 { THTML.THTMLComponent }
@@ -2667,7 +2733,7 @@ end;
 class constructor TmnwHTMLRenderer.RegisterObjects;
 begin
   //RegisterClasses(THTML);
-  RegisterRenderer(THTML.TContentCompose, TContentCompose);
+  RegisterRenderer(THTML.TDynamicCompose, TDynamicCompose);
   RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
   RegisterRenderer(THTML.TFile, TFile);
   RegisterRenderer(THTML.TJSFile, TJSFile);
@@ -2723,7 +2789,13 @@ begin
   e := Scope.Element as THTML.THTMLComponent;
   inherited;
   if e.Shadow then
-    Scope.Classes.Add('shadow-sm');
+    Scope.Classes.Add('shadow-thin');
+  if e.Margin > 0 then
+    Scope.Classes.Add('m-'+e.Margin.ToString);
+  if e.Padding > 0 then
+    Scope.Classes.Add('p-'+e.Padding.ToString);
+  if e.Size > szUndefined then
+    Scope.Classes.Add('max-w-'+BSSizeToStr(e.Size));
 end;
 
 { TmnwHTMLRenderer.THTMLControl }
@@ -2776,10 +2848,12 @@ var
 begin
   e := Scope.Element as THTML.TDocument;
   Context.Writer.WriteLn('<!DOCTYPE html>');
-  Context.Writer.WriteLn('<html' + Scope.GetText + '>', [woOpenIndent]);
-  Context.Writer.WriteLn('<head>', [woOpenIndent]);
-  Context.Writer.WriteLn('<title>'+ e.Title + '</title>', [woOpenIndent, woCloseIndent]);
+  Context.Writer.OpenTag('html' + Scope.GetText);
+  Context.Writer.OpenTag('head');
+  Context.Writer.AddTag('title', '', e.Title);
   Context.Writer.WriteLn('<link rel="shortcut icon" href="#" />', [woOpenIndent, woCloseIndent]);
+  Context.Writer.WriteLn('<meta charset="UTF-8">');
+  Context.Writer.WriteLn('<meta name="viewport" content="width=device-width, initial-scale=1">');
   if e.Parent <> nil then // Only root have head
   begin
     AddHead(Context);
@@ -2804,16 +2878,16 @@ begin
       end;
     end;
   end;}
-  Context.Writer.WriteLn('</head>', [woCloseIndent]);
+  Context.Writer.CloseTag('head');
   e.Body.Render(Context, AReturn);
-  Context.Writer.WriteLn('</html>', [woCloseIndent]);
+  Context.Writer.CloseTag('html');
 end;
 
 { TmnwHTMLRenderer.THeaderHTML }
 
 procedure TmnwHTMLRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 begin
-  Scope.Classes.AddClasses('header sticky-top d-flex align-items-center navbar-dark bg-dark shadow-sm py-0 px-1');
+  Scope.Classes.AddClasses('header sticky-top d-flex align-items-center navbar-dark bg-dark py-0 px-1');
   Context.Writer.OpenTag('header', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('header');
@@ -2870,13 +2944,25 @@ var
   e: THTML.TMain;
 begin
   e := Scope.Element as THTML.TMain;
-  Scope.Classes.Add('container');
-  Context.Writer.WriteLn('<main'+Scope.GetText+'>', [woOpenIndent]);
+  //Context.Writer.OpenTag('div class="row flex-nowrap"');
+
+  Scope.Classes.Add('main');
+  if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
+    Scope.Classes.Add('col-md-9');
+  //Scope.Classes.Add('d-flex');
+  Scope.Classes.Add('flex-nowrap');
+  Scope.Classes.Add('justify-content-center');
+//container-fluid for full width, container not full width
+  Context.Writer.OpenTag('main' + Scope.GetText);
   inherited;
-  Context.Writer.WriteLn('</main>', [woCloseIndent]);
+  Context.Writer.CloseTag('main');
+  //Context.Writer.CloseTag('div');
 end;
 
 { TmnwHTMLRenderer.TCardHTML }
+
+//https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
+//https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
 
 procedure TmnwHTMLRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
@@ -2884,11 +2970,33 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
+  Scope.Classes.Add(BSFixedToStr(e.Fixed));
+  Scope.Classes.Add(BSAlignToStr(e.Align));
+  Scope.Classes.Add('shadow-sm');
+  if SameText(e.Style, 'center') then
+  begin
+    Scope.Classes.Add('ms-auto');
+    Scope.Classes.Add('me-auto');
+  end;
+
   Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenIndent]);
   if e.Caption <> '' then
-    Context.Writer.AddTag('div', 'class="card-header"' + e.Caption);
+  begin
+//    Context.Writer.WriteLn('<h5 class="card-header" id="'+e.id+'-header">', [woOpenIndent]);
+    Context.Writer.Write('<h5 class="card-header" id="'+e.id+'-header"');
+    if e.Collapse then
+      Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
+    Context.Writer.Write('>', [woOpenIndent]);
+    Context.Writer.Write(e.Caption);
+    if e.Collapse then
+    begin
+      Context.Writer.Write('<span class="icons float-right fa fa-arrow-alt-circle-up"></span>', [woOpenIndent, woCloseIndent]);
+    end;
+    Context.Writer.WriteLn('</h5>', [woCloseIndent]);
+  end;
 
-  Context.Writer.WriteLn('<div class="card-body">', [woOpenIndent]);
+  Context.Writer.WriteLn('<div class="card-body collapse show" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body">', [woOpenIndent]);
+//  collapse
   inherited;
   Context.Writer.WriteLn('</div>', [woCloseIndent]);
   Context.Writer.WriteLn('</div>', [woCloseIndent]);
@@ -4102,15 +4210,15 @@ begin
   Result := DocumentToContentType(Route);
 end;
 
-{ THTML.TContentCompose }
+{ THTML.TDynamicCompose }
 
-constructor THTML.TContentCompose.Create(AParent: TmnwElement; AOnCompose: TContentComposeProc);
+constructor THTML.TDynamicCompose.Create(AParent: TmnwElement; AOnCompose: TComposeProc);
 begin
   inherited Create(AParent);
   OnCompose := AOnCompose;
 end;
 
-procedure THTML.TContentCompose.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure THTML.TDynamicCompose.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
 var
   InnerComposer: TInnerComposer;
 begin
@@ -4129,7 +4237,7 @@ begin
 
 end;
 
-procedure THTML.TContentCompose.InnerCompose(Inner: TmnwElement);
+procedure THTML.TDynamicCompose.InnerCompose(Inner: TmnwElement);
 begin
 end;
 
@@ -4358,7 +4466,8 @@ var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
-  Context.Writer.WriteLn('<div class="row">', [woOpenIndent]);
+  Scope.Classes.Add(BSContentAlignToStr(e.ContentAlign));
+  Context.Writer.WriteLn('<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenIndent]);
   inherited;
   Context.Writer.WriteLn('</div>', [woCloseIndent]);
 end;
@@ -4370,7 +4479,7 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  Context.Writer.WriteLn('<div class="column">', [woOpenIndent]);
+  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText + '>', [woOpenIndent]);
   inherited;
   Context.Writer.WriteLn('</div>', [woCloseIndent]);
 end;
@@ -4490,9 +4599,9 @@ begin
   NewRoute(Element);
 end;
 
-{ TmnwHTMLRenderer.TContentCompose }
+{ TmnwHTMLRenderer.TDynamicCompose }
 
-procedure TmnwHTMLRenderer.TContentCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 begin
   Context.Writer.WriteLn('<div ' + Scope.Attributes.GetText+'>', [woOpenIndent]);
   inherited;
@@ -4515,11 +4624,11 @@ var
   e: THTML.TNavBar;
 begin
   e := Scope.Element as THTML.TNavBar;
-  Context.Writer.WriteLn('<a class="logo navbar-brand d-flex align-items-center p-0 ms-0" href="'+e.GetPath+'">', [woOpenIndent]);
+  Context.Writer.WriteLn('<a class="logo navbar-brand align-items-center me-auto" href="'+e.GetPath+'">', [woOpenIndent]);
   if e.Schema.App.Assets.Logo.Data.Size > 0 then
     Context.Writer.WriteLn('<img class="" src="' + e.Schema.App.Assets.Logo.GetPath + '">', [woOpenIndent, woCloseIndent]);
   if e.Title <> '' then
-    Context.Writer.WriteLn('<span class="navbar-brand ms-1">'+e.Title+'</span>', [woOpenIndent, woCloseIndent]);
+    Context.Writer.WriteLn('<span class="navbar-brand">'+e.Title+'</span>', [woOpenIndent, woCloseIndent]);
   Context.Writer.WriteLn('</a>', [woCloseIndent]);
 end;
 
@@ -4547,8 +4656,7 @@ begin
   Scope.Classes.Add('navbar-expand-md');
   Scope.Classes.Add('navbar-dark');
   Scope.Classes.Add('bg-dark');
-  Scope.Classes.Add('p-1');
-  Scope.Classes.AddClasses('flex-nowrap shadow-md navbar-expand-md navbar-dark bg-dark w-100 px-1');
+  Scope.Classes.AddClasses('flex-nowrap navbar-expand-md navbar-dark bg-dark w-100 px-1');
 
   Context.Writer.WriteLn('<nav'+Scope.GetText+'>', [woOpenIndent]);
 
@@ -4986,7 +5094,7 @@ var
   e: THTML.TSideBar;
 begin
   e := Scope.Element as THTML.TSideBar;
-  Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar navbar-expand-md text-bg-dark"');
+  Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar navbar-expand-md"');
   Context.Writer.OpenTag('nav id="' + e.ID + '-content' + '" class="sidebar-content fixed"');
   Context.Writer.OpenTag('div id="' + e.ID + '-items" class="sidebar-items p-2 offcanvas offcanvas-start text-bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
   inherited;

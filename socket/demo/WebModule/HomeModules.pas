@@ -446,7 +446,7 @@ begin
           with TCard.Create(This) do
           begin
             Style := 'center';
-            Size := szSmall;
+            Size := szNormal;
             Caption := 'Login';
 
             with TForm.Create(This) do
