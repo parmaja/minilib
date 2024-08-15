@@ -4820,7 +4820,7 @@ begin
   if WebApp.Alias = '' then
     WebApp.Alias := AliasName;
 
-  WebApp.Assets.HomePath := HomePath;
+  WebApp.Assets.HomePath := WebApp.HomePath;
   WebApp.Assets.ServeFiles := True;
 
   WebApp.Start;

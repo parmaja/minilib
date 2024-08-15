@@ -104,12 +104,15 @@ type
     function GetImageIndex: Integer; virtual;
   end;
 
+  TmnrCellAction = TProc<TmnrCell>;
+
   TmnrCell = class(TmnrBaseCell)
   private
     FReference: TmnrReference;
     FDesignCell: TmnrDesignCell;
     FLayout: TmnrLayout;
     FIsNull: Boolean;
+    FAction: TmnrCellAction;
 
     function GetNext: TmnrCell;
     function GetPrior: TmnrCell;
@@ -124,6 +127,7 @@ type
     procedure Created; override;
   public
     function DisplayText: string; override;
+    function ExecuteAction: Boolean;
     function Compare(vCell: TmnrCell): Integer;
     procedure SumCell(vCell: TmnrCell);
     property Layout: TmnrLayout read GetLayout;
@@ -134,6 +138,7 @@ type
     property Prior: TmnrCell read GetPrior;
     property Reference: TmnrReference read FReference;
     property IsNull: Boolean read FIsNull write FIsNull default False;
+    property Action: TmnrCellAction read FAction write FAction;
   end;
 
   TmnrRow = class(TmnrRowNode)
@@ -2783,6 +2788,13 @@ begin
     end;
     AsString := s;
   end;
+end;
+
+function TmnrCell.ExecuteAction: Boolean;
+begin
+  Result := Assigned(FAction);
+  if Result then
+    FAction(Self);
 end;
 
 function TmnrCell.GetDesignCell: TmnrDesignCell;
