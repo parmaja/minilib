@@ -270,7 +270,6 @@ type
     elFallback //* if no child have the route name, it take the respond if have a name
   );
 
-
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom);
 
@@ -567,7 +566,6 @@ type
       procedure LoadFromStream(AStream: TStream; AContentType: string);
       property Data: TMemoryStream read FData;
     end;
-
 
   end;
 

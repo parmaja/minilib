@@ -146,29 +146,31 @@ function createToastElement(type, content)
   }
 }
 
-mnw.showToast = function(content, type = "info") 
+mnw.showToast = function(content, type = "warning")
 {
-}
-
-function showToast(content, type = "info") {
   var delay = 15000;
   var toastContainer = document.querySelector("#toast-container");
 
-  var html = `<div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex"><div class="toast-body h6 p-3 m-0">${content}</div>
-                  <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-              </div>`;
-  var element = toastContainer.insertAdjacentHTML('beforeend', html);  
-  
-  var toast = new bootstrap.Toast(toast, {delay: delay, animation: true});
+ 
+  var element = document.createElement('div');
+  element.className = `toast align-items-center bg-${type} text-black border-0`;
+  element.setAttribute('role', 'alert');
+  element.setAttribute('aria-live', 'assertive');  
+  element.setAttribute('aria-atomic', 'true');
+  element.innerHTML = 
+                    `<div class="d-flex"><div class="toast-body h6 p-3 m-0">${content}</div>
+                      <button type="button" class="btn-close btn-close-black me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>`;
 
-/*  element.on('hidden.bs.toast', function () {
+  toastContainer.appendChild(element);  
+  
+  var toast = new bootstrap.Toast(element, {delay: delay, autohide: true, animation: true});
+
+  element.addEventListener('hidden.bs.toast', function () {
     element.remove();
-  });*/
+  })
 
   toast.show();
-  setTimeout(() => toast.remove(), delay + 15000);
 }
 
 function init()
