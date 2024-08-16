@@ -1,8 +1,8 @@
 :root {
+    --size-unit: 9rem;
     --header-size: 4rem;
-    --sidebar-size: 16rem;
     --content-height: calc(100vh - var(--header-size));
-    --size-unit: 120pt;    
+    --sidebar-size: calc(var(--size-unit) * 2);
 }
 
 .max-w-xs {
@@ -32,10 +32,10 @@
 /*******************************************************************/
 
 .form-control {
-  padding: .175rem .75rem;
+/*  padding: .175rem .75rem; */
 }
 
-.shadow-sharp
+.shadow-thick
 {
     box-shadow: 0px 0px 3px 3px rgba(0,0,0,0.5);
 }
@@ -49,7 +49,6 @@ body {
 }
 
 header{
-    z-index: 1006;
 }
 
 aside{
@@ -68,8 +67,12 @@ aside{
 }
 
 .main {
-    overflow-y: auto;
-    height: var(--content-height);
+    margin-top: 1rem;
+    max-height: var(--content-height);
+    overflow-y: auto; //nope it show main scroll when add margine to main
+}
+
+.main-content {
 }
 
 @media(max-width: 768px) {
@@ -90,7 +93,9 @@ aside{
     width: var(--sidebar-size);
     max-width: 100vh;
     min-height: var(--content-height);
-    background-color: #404E67;
+    /* background-color: #404E67;*/
+
+/*    overflow-y: auto; */
 }
 
 .sidebar-content {
@@ -99,15 +104,17 @@ aside{
     height: var(--content-height);
     width: var(--sidebar-size)  !important;
     min-height: var(--content-height);
+    background-color: #2d3748; 
 }
 
 .sidebar-items {
     overflow-y: auto;
     width: var(--sidebar-size) !important;
+    background-color: #2d3748; 
 }
 
 .sidebar-active {
-    background-color: #38445A;
+    background-color: rgb(71, 86, 113);
 }
 
 .offcanvas.show, .offcanvas.showing {
@@ -119,4 +126,8 @@ aside{
 .navbar-toggler:focus {
   outline: none;
   box-shadow: none;
+}
+
+.card-header {
+    background-color: #2d3748; 
 }

@@ -172,6 +172,7 @@ type
     class operator Explicit(const Source: string): TElementClasses;
     class operator Implicit(Source : string) : TElementClasses;
     class operator Implicit(Source : TElementClasses): string;
+    procedure Init(classes: string = '');
   end;
 
   { TmnwScope }
@@ -895,6 +896,7 @@ type
         FToast: TToast;
       protected
       public
+        Theme: string;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: Boolean =True); override;
         destructor Destroy; override;
         property Header: THeader read FHeader;
@@ -948,17 +950,19 @@ type
       { TSideBar }
 
       [TID_Extension]
-      TSideBar = class(THTMLControl)
+      TSideBar = class(THTMLComponent)
       protected
         procedure Created; override;
       public
         function CanRender: Boolean; override;
       end;
 
-      TMain = class(THTMLComponent)
+      TMain = class(THTMLElement)
       protected
         procedure Created; override;
       public
+        Margin: Integer;
+        Padding: Integer;
       end;
 
       TRow = class(THTMLLayout)
@@ -1318,7 +1322,7 @@ type
 
       { TSideBar }
 
-      TSideBar = class(THTMLControl)
+      TSideBar = class(THTMLComponent)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
@@ -2836,7 +2840,7 @@ begin
     Scope.Attributes['dir'] := 'rtl'
   else if e.Schema.Direction = dirLeftToRight then
     Scope.Attributes['dir'] := 'ltr';
-  Scope.Attributes['lang'] := 'en'
+  Scope.Attributes['lang'] := 'en';
 end;
 
 procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
@@ -2942,19 +2946,31 @@ end;
 procedure TmnwHTMLRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
   e: THTML.TMain;
+  classes: TElementClasses;
 begin
   e := Scope.Element as THTML.TMain;
   //Context.Writer.OpenTag('div class="row flex-nowrap"');
 
-  Scope.Classes.Add('main');
+
+  classes.Init('main');
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
-    Scope.Classes.Add('col-md-9');
+    classes.Add('col-md');
+
+  Context.Writer.OpenTag('main', classes.ToString);
+
+  Scope.Classes.Add('main-content');
+  if e.Margin > 0 then
+    Scope.Classes.Add('m-md-' + e.Margin.ToString);
+  if e.Padding > 0 then
+    Scope.Classes.Add('p-' + e.Padding.ToString);
   //Scope.Classes.Add('d-flex');
   Scope.Classes.Add('flex-nowrap');
   Scope.Classes.Add('justify-content-center');
 //container-fluid for full width, container not full width
-  Context.Writer.OpenTag('main' + Scope.GetText);
+  Context.Writer.OpenTag('div',  Scope.GetText);
   inherited;
+  Context.Writer.CloseTag('div');
+
   Context.Writer.CloseTag('main');
   //Context.Writer.CloseTag('div');
 end;
@@ -4423,6 +4439,8 @@ begin
   inherited;
   if e.Schema.RefreshInterval <> 1 then //* not default, 0 Disable it
     Scope.Attributes['data-mnw-refresh-interval'] := e.Schema.RefreshInterval.ToString;
+  if e.Theme <> '' then
+    Scope.Attributes['data-bs-theme'] := e.Theme;
 end;
 
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
@@ -4678,7 +4696,7 @@ begin
   end;
 
   //Context.Writer.WriteLn('<div id="'+e.id+'-items'+'" class="collapse navbar-collapse">', [woOpenIndent]);
-  Context.Writer.WriteLn('<div id="'+e.id+'-items'+'" class="offcanvas offcanvas-top text-bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1">', [woOpenIndent]);
+  Context.Writer.WriteLn('<div id="'+e.id+'-items'+'" class="offcanvas offcanvas-top navbar-dark bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1">', [woOpenIndent]);
   Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
 
   Context.Writer.WriteLn('<ul class="navbar-nav mr-auto mb-2 mb-md-0">', [woOpenIndent]);
@@ -5030,6 +5048,12 @@ begin
   Result := Source.ToString
 end;
 
+procedure TElementClasses.Init(classes: string);
+begin
+  InitMemory(Self, SizeOf(Self));
+  AddClasses(classes);
+end;
+
 class operator TElementClasses.Subtract(A: TElementClasses; B: string): TElementClasses;
 var
   i: Integer;
@@ -5052,6 +5076,9 @@ begin
     else
       Result := itm;
   end;
+
+  if Result <> '' then
+    Result := 'class="'+Result+'"';
 end;
 
 { TmnwScope }
@@ -5068,8 +5095,6 @@ var
   s: string;
 begin
   s := Classes.ToString;
-  if s <> '' then
-    s := 'class="'+s+'"';
   Result := Space(s, Attributes.ToString);
 end;
 
@@ -5094,9 +5119,9 @@ var
   e: THTML.TSideBar;
 begin
   e := Scope.Element as THTML.TSideBar;
-  Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar navbar-expand-md"');
+  Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar shadow-thin navbar-expand-md"');
   Context.Writer.OpenTag('nav id="' + e.ID + '-content' + '" class="sidebar-content fixed"');
-  Context.Writer.OpenTag('div id="' + e.ID + '-items" class="sidebar-items p-2 offcanvas offcanvas-start text-bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
+  Context.Writer.OpenTag('div id="' + e.ID + '-items" class="sidebar-items p-2 offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('nav');

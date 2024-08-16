@@ -377,6 +377,7 @@ begin
 
     with Body do
     begin
+      Theme := 'dark';
       with TComment.Create(This) do
         Comment := 'This is just login page source';
 
@@ -418,7 +419,7 @@ begin
 
       with Main do
       begin
-        Margin := 1;
+        Padding := 1;
 
         {with TNavBar.Create(This) do
         begin
@@ -436,11 +437,6 @@ begin
 
         //with TRow.Create(This) do
         begin
-          with TButton.Create(This) do
-          begin
-            Caption := 'OK';
-            Hint := 'Test';
-          end;
 
          // ContentAlign := alignCenter;
           with TCard.Create(This) do
