@@ -22,7 +22,7 @@ GET https://john.doe@www.example.com:123/username/forum/questions/?tag=networkin
                        DomainName                      Path(Full)           Query             Fragment
                                         └───┬───┘└──┬──┘└──┬─────┘            ┬
                                         Directory Alias   Path              Params
-    └────────────────────────┬─────────┘
+    └────────────────────────┬─────────┘       Module Name
                           HomeURL
 }
 

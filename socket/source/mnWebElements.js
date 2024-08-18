@@ -173,6 +173,14 @@ mnw.showToast = function(content, type = "warning")
   toast.show();
 }
 
+mnw.switch_theme = function(event)
+{
+  if (document.body.getAttribute('data-bs-theme') == 'dark')
+    document.body.setAttribute('data-bs-theme', 'light');
+  else
+    document.body.setAttribute('data-bs-theme', 'dark');    
+}
+
 function init()
 {
   reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');
@@ -195,6 +203,9 @@ function init()
   mnw.interactive = document.body.hasAttribute('data-mnw-interactive');
   if (mnw.interactive)  
     mnw.attach(window.location.href);
+
+
+  // JavaScript to toggle dark mode
 }
 
 function finish()

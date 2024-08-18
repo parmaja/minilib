@@ -540,6 +540,14 @@ begin
           begin
             Caption := 'Item2';
           end;
+
+          with Buttons do
+          begin
+            with TThemeModeButton.Create(This) do
+            begin
+              Caption := 'Mode';
+            end;
+          end;
         end;
       end;
 

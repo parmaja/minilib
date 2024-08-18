@@ -18,15 +18,27 @@
  *}
 
 {
+            Userinfo       Host      Port
+            ┌──┴───┐ ┌──────┴────────┬┴┐
+GET https://john.doe@www.example.com:123/username/forum/questions/qst1/?tag=networking&order=newest#top
+                     └──────┬──────┘    └───────────────┬────────┘└───────────┬─────────────┘ └┬─┘
+                       DomainName                      Path(Full)           Query             Fragment
+                                        └───┬───┘└──┬──┘└──┬─────┘──┬─┘         ┬
+                                        Directory Alias   Schema  Path      Params
+    └────────────────────────┬─────────┘─ ─ ┘    Module Name
+                          HomeURL
+}
+
+{
 
     Application
      Document
 
 ┌──────┬──────────────────────────────────────┐  ─┐
-│ Logo │ Brand NavBar                         │   │
-├──────┴──────────────────────────────────────┤   ├─ Header
+│>Logo │ Brand NavBar                        =│   ├─ Header
+├──────┴──────────────────────────────────────┤  ─│
 │ MenuBar                                     │   │
-├────────────┬────────────────────────────────┤  ─┤
+├────────────┬────────────────────────────────┤   │
 │ Sidebar    │ Main                           │   │
 │    ─┬─     │                                │   ├─ Container
 │ Accordion  │ ┌─ TabControl ──────┐ ┌──────┐ │   │
@@ -913,9 +925,14 @@ type
 
       [TID_Extension]
       TNavBar = class(THTMLComponent)
+      private
+        FButtons: THTMLElement;
       public
         Title: string;
 //        LogoImage: string;
+        constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: Boolean =True); override;
+        destructor Destroy; override;
+        property Buttons: THTMLElement read FButtons;
       end;
 
       THeader = class(THTMLComponent)
@@ -1007,6 +1024,10 @@ type
       end;
 
       TViewItem = class(THTMLCaptionComponent)
+      public
+      end;
+
+      TThemeModeButton = class(THTMLCaptionComponent)
       public
       end;
 
@@ -1282,11 +1303,13 @@ type
       { TNavBar }
 
       TNavBar = class(THTMLComponent)
+      private
       protected
         procedure DoRenderBrand(Scope: TmnwScope; Context: TmnwContext); virtual;
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+      public
       end;
 
       { TMenuBar }
@@ -1371,6 +1394,13 @@ type
       { TCollapseCaption }
 
       TCollapseCaption = class(THTMLComponent)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+      end;
+
+      { TThemeModeButton }
+
+      TThemeModeButton = class(THTMLComponent)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -2381,6 +2411,7 @@ var
 begin
   Element := nil;
   Schema := nil;
+  Result := False;
   Routes := TStringList.Create;
   try
     StrToStrings(AContext.Route, Routes, ['/']);
@@ -2430,35 +2461,35 @@ begin
       end;
     end;
 
-    aElement := Schema;
-
-    if aElement <> nil then
+    if (estComposed in Schema.State) then
     begin
-      Result := True;
-      Element := aElement;
-      i := 0;
-      while i < Routes.Count do
-      begin
-        aRoute := Routes[i];
-        aElement := aElement.FindByRoute(aRoute);
-        if aElement = nil then
-        begin
-          //if elFallback in Element.Kind then
-          Result := False;
-          break;
-        end
-        else
-        begin
-          AContext.Route := DeleteSubPath(aRoute, AContext.Route);
-          Element := aElement;
-          Result := True;
-        end;
-        inc(i);
-      end;
-    end
-    else
-      Result := False;
+      aElement := Schema;
 
+      if aElement <> nil then
+      begin
+        Result := True;
+        Element := aElement;
+        i := 0;
+        while i < Routes.Count do
+        begin
+          aRoute := Routes[i];
+          aElement := aElement.FindByRoute(aRoute);
+          if aElement = nil then
+          begin
+            //if elFallback in Element.Kind then
+            Result := False;
+            break;
+          end
+          else
+          begin
+            AContext.Route := DeleteSubPath(aRoute, AContext.Route);
+            Element := aElement;
+            Result := True;
+          end;
+          inc(i);
+        end;
+      end;
+    end;
   finally
     Routes.Free;
   end;
@@ -2784,6 +2815,8 @@ begin
   RegisterRenderer(THTML.TRow, TRow);
   RegisterRenderer(THTML.TColumn, TColumn);
   RegisterRenderer(THTML.TPanel, TPanel);
+
+  RegisterRenderer(THTML.TThemeModeButton, TThemeModeButton);
 end;
 
 { TmnwHTMLRenderer.THTMLElement }
@@ -4415,6 +4448,19 @@ begin
   FContent.Wide := Value;
 end;
 
+{ THTML.TNavBar }
+
+constructor THTML.TNavBar.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
+begin
+  inherited;
+  FButtons := THTMLElement.Create(This, [elInternal, elEmbed], True);
+end;
+
+destructor THTML.TNavBar.Destroy;
+begin
+  inherited;
+end;
+
 { THTML.THeader }
 
 function THTML.THeader.GetMenuBar: TMenuBar;
@@ -4489,14 +4535,14 @@ var
   e: THTML.TPanel;
 begin
   e := Scope.Element as THTML.TPanel;
-  Context.Writer.WriteLn('<div class="panel">', [woOpenIndent]);
+  Context.Writer.OpenTag('div', 'class="panel"');
   if e.Caption <> '' then
-    Context.Writer.WriteLn('<div class="panel-header">' + e.Caption + '</div>', [woOpenIndent, woCloseIndent]);
+    Context.Writer.AddTag('div', 'class="panel-header"', e.Caption);
 
-  Context.Writer.WriteLn('<div class="panel-body">', [woOpenIndent]);
+  Context.Writer.OpenTag('div', 'class="panel-body"');
   inherited;
-  Context.Writer.WriteLn('</div>', [woCloseIndent]);
-  Context.Writer.WriteLn('</div>', [woCloseIndent]);
+  Context.Writer.CloseTag('div');
+  Context.Writer.CloseTag('div');
 end;
 
 { TmnwHTMLRenderer.TCollapseCaption }
@@ -4515,6 +4561,19 @@ begin
   Context.Writer.CloseTag('div');
 end;
 
+{ TmnwHTMLRenderer.TThemeModeButton }
+
+procedure TmnwHTMLRenderer.TThemeModeButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+var
+  e: THTML.TThemeModeButton;
+begin
+  e := Scope.Element as THTML.TThemeModeButton;
+  Context.Writer.OpenTag('button', 'class="navbar-toggler me-0 ms-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
+  Context.Writer.AddTag('span', 'class="invert icon bi-moon-stars"');
+  inherited;
+  Context.Writer.CloseTag('button');
+end;
+
 { TmnwHTMLRenderer.TRow }
 
 procedure TmnwHTMLRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
@@ -4523,9 +4582,9 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add(BSContentAlignToStr(e.ContentAlign));
-  Context.Writer.WriteLn('<div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '">', [woOpenIndent]);
+  Context.Writer.OpenTag('div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align));
   inherited;
-  Context.Writer.WriteLn('</div>', [woCloseIndent]);
+  Context.Writer.CloseTag('div');
 end;
 
 { TmnwHTMLRenderer.TColumn }
@@ -4535,9 +4594,9 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  Context.Writer.WriteLn('<div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText + '>', [woOpenIndent]);
+  Context.Writer.OpenTag('div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
   inherited;
-  Context.Writer.WriteLn('</div>', [woCloseIndent]);
+  Context.Writer.CloseTag('div');
 end;
 
 { THTML.TMain }
@@ -4725,6 +4784,8 @@ begin
   end;
 
 	DoRenderBrand(Scope, Context);
+
+  e.Buttons.Render(Context, AReturn); // Render buttons
 
   if e.Count > 0 then
   begin
