@@ -136,7 +136,6 @@ type
     procedure Append(AAttributes: TmnwAttributes);
   end;
 
-
   TDirection = (dirUnkown, dirLeftToRight, dirRightToLeft);
 
   TLocationRelative = (
@@ -4936,8 +4935,16 @@ begin
   minilib := GetEnvironmentVariable('minilib');
   if minilib = '' then
   begin
-    TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
-    TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
+    if FileExists(HomePath + 'mnWebElements.js') then
+    begin
+      TFile.Create(This, [], HomePath + 'mnWebElements.js', 'WebElements.js');
+      TFile.Create(This, [], HomePath + 'mnWebElements.css', 'WebElements.css');
+    end
+    else
+    begin
+      TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
+      TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
+    end;
   end
   else
   begin
@@ -4947,6 +4954,7 @@ begin
 
   with TElement.Create(This, 'resource') do
   begin
+
     TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
     TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
   end;
