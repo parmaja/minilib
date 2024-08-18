@@ -490,6 +490,7 @@ type
     NameingLastNumber: Integer;
     procedure UpdateAttached;
     procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+    procedure DoAccept(var Resume: Boolean); virtual;
     procedure ProcessMessage(const s: string);
   public
     LastAccess: TDateTime;
@@ -508,6 +509,7 @@ type
     //* Attaching cap
     //function Interactive: Boolean;
 
+    function Accept: Boolean;
     procedure Compose; override;
 
     // Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
@@ -2415,7 +2417,8 @@ begin
           try
             if schemaSession in Schema.GetCapabilities then
               Schema.SessionID := AContext.SessionID;
-            Schema.Compose; //Compose
+            if Schema.Accept then
+              Schema.Compose; //Compose
           except
             Schema.Lock.Leave;
             FreeAndNil(Schema);
@@ -3328,6 +3331,10 @@ begin
     Render(AContext, AReturn);
 end;
 
+procedure TmnwSchema.DoAccept(var Resume: Boolean);
+begin
+end;
+
 procedure TmnwSchema.ProcessMessage(const s: string);
 var
   Json: TDON_Pair;
@@ -3383,6 +3390,12 @@ end;
 class function TmnwSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
   Result := [];
+end;
+
+function TmnwSchema.Accept: Boolean;
+begin
+  Result := True;
+  DoAccept(Result);
 end;
 
 {function TmnwSchema.Interactive: Boolean;
