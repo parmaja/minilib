@@ -997,9 +997,8 @@ type
       public
       end;
 
-      TExpandableText = class(THTMLCaptionComponent)
+      TCollapseCaption = class(THTMLCaptionComponent)
       public
-        Text: string;
       end;
 
       TList = class(THTMLControl)
@@ -1368,9 +1367,9 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
 
-      { TExpandableText }
+      { TCollapseCaption }
 
-      TExpandableText = class(THTMLComponent)
+      TCollapseCaption = class(THTMLComponent)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
       end;
@@ -2778,7 +2777,7 @@ begin
   RegisterRenderer(THTML.TImage, TImage);
   RegisterRenderer(THTML.TMemoryImage, TMemoryImage);
   RegisterRenderer(THTML.TCard, TCard);
-  RegisterRenderer(THTML.TExpandableText, TExpandableText);
+  RegisterRenderer(THTML.TCollapseCaption, TCollapseCaption);
   RegisterRenderer(THTML.TForm, TForm);
   RegisterRenderer(THTML.TRow, TRow);
   RegisterRenderer(THTML.TColumn, TColumn);
@@ -4488,21 +4487,20 @@ begin
   Context.Writer.WriteLn('</div>', [woCloseIndent]);
 end;
 
-{ TmnwHTMLRenderer.TExpandableText }
+{ TmnwHTMLRenderer.TCollapseCaption }
 
-procedure TmnwHTMLRenderer.TExpandableText.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TCollapseCaption.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
 var
-  e: THTML.TExpandableText;
+  e: THTML.TCollapseCaption;
 begin
-  e := Scope.Element as THTML.TExpandableText;
+  e := Scope.Element as THTML.TCollapseCaption;
   Context.Writer.OpenTag('p', 'class="panel d-flex m-0" data-bs-toggle="collapse" role="button" data-bs-target="#'+e.ID+'-text" aria-expanded="false" aria-controls="'+e.ID+'-text"');
   Context.Writer.WriteLn(e.Caption);
   Context.Writer.WriteLn('<span class="ms-auto p-0 align-bottom icon bi-three-dots"></span>');
   Context.Writer.CloseTag('p');
-  Context.Writer.OpenTag('p', 'id="'+e.ID+'-text" class="panel-body m-0 collapse"');
-  Context.Writer.WriteLn(e.Text);
+  Context.Writer.OpenTag('div', 'id="'+e.ID+'-text" class="panel-body m-0 collapse"');
   inherited;
-  Context.Writer.CloseTag('p');
+  Context.Writer.CloseTag('div');
 end;
 
 { TmnwHTMLRenderer.TRow }

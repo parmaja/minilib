@@ -623,10 +623,10 @@ begin
             Caption := 'Task';
             Anchor := True;
 
-            with TExpandableText.Create(This) do
+            with TCollapseCaption.Create(This) do
             begin
               Caption := 'You must go!';
-              Text := 'Yes you must go to the police to tell them the full story!'
+              TParagraph.Create(This, 'Yes you must go to the police to tell them the full story!');
             end;
           end;
         end;
