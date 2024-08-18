@@ -10,52 +10,42 @@
         <script src="/home/assets/WebElements.js" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="/home/assets/WebElements.css" crossorigin="anonymous">        
     </head>
-    <body>
-        <style type="text/css">
-            :root {--sidebar-size: 200pt;}
-        </style>
-
-        <header id="header-1" class="header sticky-top d-flex align-items-center navbar-dark bg-dark shadow-thin py-0 px-1" >
-            <nav id="nav-header" class="navbar flex-nowrap navbar-expand-md navbar-dark bg-dark w-100 px-1">
-
-                <button class="navbar-toggler me-0 ms-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar-items" aria-controls="sidebar-items" aria-expanded="false" aria-label="Toggle Sidebar">
+    <body data-bs-theme="light">
+        <header class="shadow-thin header sticky-top d-flex align-items-center navbar-dark bg-dark py-0 px-1">
+            <nav class="navbar navbar-expand-md navbar-dark bg-dark flex-nowrap w-100 px-1" id="navbar-1">
+                <button class="navbar-toggler me-0 ms-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar-2-items" aria-controls="sidebar-2-items" aria-expanded="false" aria-label="Toggle Sidebar">
                     <span class="carousel-control-next-icon"></span>
                 </button>
-
-                <a class="logo navbar-brand me-auto align-items-center" href="http://localhost:8080/home/">
-                    <img class="" src="/home/assets/logo">
+                <a class="logo navbar-brand align-items-center me-auto" href="/home/login/">
+                    <img class="" src="/home/assets/logo/">
                     <span class="navbar-brand">Creative Solutions</span>
                 </a>
-
-                <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#header-items" aria-controls="header-items" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbar-1-items" aria-controls="navbar-1-items" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
-                <div id="header-items" class="offcanvas offcanvas-top text-bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1">
-                  <div class="offcanvas-body">
-                    <ul class="navbar-nav mr-auto d-flex mb-2 mb-md-0">
-                        <li class="nav-item">
-                            <a href="" class="nav-link">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="" class="nav-link">About</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="" class="nav-link">User</a>
-                        </li>
-                    </ul>
-                  </div>
+                <button title="Use dark mode" id="theme-btn" class="me-0 ms-0 py-0 px-1 text-bg-dark border-0">
+                    <span class="invert bi-caret-left-fill"></span>
+                </button>
+                <div id="navbar-1-items" class="offcanvas offcanvas-top navbar-dark bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1">
+                    <div class="offcanvas-body">
+                        <ul class="navbar-nav mr-auto mb-2 mb-md-0">
+                            <li class="nav-item">
+                                <a href="" class="nav-link">Item1</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="" class="nav-link">Item2</a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </nav>
         </header>
-
         <div class="container">
 
             <div id="content" class="row content flex-nowrap">
-                    <aside id="sidebar" class="sidebar navbar-expand-md">  <!--d-none d-md-block -->
-                        <nav id="sidebar-content" class="sidebar-content fixed">
-                            <div id="sidebar-items" class="sidebar-items p-2 offcanvas offcanvas-start text-bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1" >
-                              <div class="offcanvas-body">
+                    <aside id="sidebar" class="sidebar shadow-thin navbar-expand-md">  <!--d-none d-md-block -->
+                        <div id="sidebar-content" class="sidebar-content fixed">
+                            <div id="sidebar-items" class="sidebar-items  p-2 offcanvas offcanvas-start text-bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1" >
                                 <div class="list-group d-flex flex-column">
                                     <p> Links1 </p>
                                     <p class="list-group-item">Item 1 "long life is not good"</p>
@@ -69,93 +59,94 @@
                                     <p class="list-group-item">Item 8</p>
                                 </div>
                             </div>
-                            </div>
-                        </nav>
+                        </div>
                     </aside>
 
-                    <main id="main" class="main col p-1">
-                        <button class="btn btn-primary" type="button" onclick="mnw.showToast('Hello World')">
-                            Show Toast
-                        </button>
-                
-                          <div class="card max-size-1 shadow-sm" id="card-2">
-                                <h5 class="card-header" id="card-2-header">Login</h5>
-                                <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
-                                    <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
-                                        <label class="form-label" for="username" >Username</label>
-                                        <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
-                                        <label class="form-label" for="password" >Password</label>
-                                        <input class="form-control" id="password" name="password" placeholder="" type="password" >
-                                        <div class="form-text">You need to use numbers</div>
-                                        <br>
-                                        <input type="hidden" name="execute" value="true">
-                                    </form>
-                                    <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
-                                    <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                    <main class="main col-md">
+                        <div  class="main-content flex-nowrap justify-content-center">
+                            <button class="btn btn-primary" type="button" onclick="mnw.showToast('Hello World')">
+                                Show Toast
+                            </button>
+                    
+                            <div class="card max-size-1 shadow-sm" id="card-2">
+                                    <h5 class="card-header" id="card-2-header">Login</h5>
+                                    <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                        <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                            <label class="form-label" for="username" >Username</label>
+                                            <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                            <label class="form-label" for="password" >Password</label>
+                                            <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                            <div class="form-text">You need to use numbers</div>
+                                            <br>
+                                            <input type="hidden" name="execute" value="true">
+                                        </form>
+                                        <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                        <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                                    </div>
                                 </div>
-                            </div>
-                          <div class="card max-size-2 shadow-sm" id="card-2">
-                                <h5 class="card-header" id="card-2-header">Login</h5>
-                                <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
-                                    <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
-                                        <label class="form-label" for="username" >Username</label>
-                                        <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
-                                        <label class="form-label" for="password" >Password</label>
-                                        <input class="form-control" id="password" name="password" placeholder="" type="password" >
-                                        <div class="form-text">You need to use numbers</div>
-                                        <br>
-                                        <input type="hidden" name="execute" value="true">
-                                    </form>
-                                    <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
-                                    <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            <div class="card max-size-2 shadow-sm" id="card-2">
+                                    <h5 class="card-header" id="card-2-header">Login</h5>
+                                    <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                        <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                            <label class="form-label" for="username" >Username</label>
+                                            <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                            <label class="form-label" for="password" >Password</label>
+                                            <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                            <div class="form-text">You need to use numbers</div>
+                                            <br>
+                                            <input type="hidden" name="execute" value="true">
+                                        </form>
+                                        <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                        <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                                    </div>
                                 </div>
-                            </div>
-                          <div class="card shadow-sm" id="card-2">
-                                <h5 class="card-header" id="card-2-header">Login</h5>
-                                <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
-                                    <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
-                                        <label class="form-label" for="username" >Username</label>
-                                        <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
-                                        <label class="form-label" for="password" >Password</label>
-                                        <input class="form-control" id="password" name="password" placeholder="" type="password" >
-                                        <div class="form-text">You need to use numbers</div>
-                                        <br>
-                                        <input type="hidden" name="execute" value="true">
-                                    </form>
-                                    <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
-                                    <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            <div class="card shadow-sm" id="card-2">
+                                    <h5 class="card-header" id="card-2-header">Login</h5>
+                                    <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                        <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                            <label class="form-label" for="username" >Username</label>
+                                            <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                            <label class="form-label" for="password" >Password</label>
+                                            <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                            <div class="form-text">You need to use numbers</div>
+                                            <br>
+                                            <input type="hidden" name="execute" value="true">
+                                        </form>
+                                        <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                        <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                                    </div>
                                 </div>
-                            </div>
-                          <div class="card shadow-sm" id="card-2">
-                                <h5 class="card-header" id="card-2-header">Login</h5>
-                                <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
-                                    <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
-                                        <label class="form-label" for="username" >Username</label>
-                                        <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
-                                        <label class="form-label" for="password" >Password</label>
-                                        <input class="form-control" id="password" name="password" placeholder="" type="password" >
-                                        <div class="form-text">You need to use numbers</div>
-                                        <br>
-                                        <input type="hidden" name="execute" value="true">
-                                    </form>
-                                    <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
-                                    <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            <div class="card shadow-sm" id="card-2">
+                                    <h5 class="card-header" id="card-2-header">Login</h5>
+                                    <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                        <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                            <label class="form-label" for="username" >Username</label>
+                                            <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                            <label class="form-label" for="password" >Password</label>
+                                            <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                            <div class="form-text">You need to use numbers</div>
+                                            <br>
+                                            <input type="hidden" name="execute" value="true">
+                                        </form>
+                                        <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                        <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                                    </div>
                                 </div>
-                            </div>
-                          <div class="card shadow-sm" id="card-2">
-                                <h5 class="card-header" id="card-2-header">Login</h5>
-                                <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
-                                    <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
-                                        <label class="form-label" for="username" >Username</label>
-                                        <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
-                                        <label class="form-label" for="password" >Password</label>
-                                        <input class="form-control" id="password" name="password" placeholder="" type="password" >
-                                        <div class="form-text">You need to use numbers</div>
-                                        <br>
-                                        <input type="hidden" name="execute" value="true">
-                                    </form>
-                                    <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
-                                    <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                            <div class="card shadow-sm" id="card-2">
+                                    <h5 class="card-header" id="card-2-header">Login</h5>
+                                    <div class="card-body collapse show" aria-labelledby="card-2-header" id="card-2-body">
+                                        <form method="post" action="http://localhost:8080/home/login/form-3" enctype="multipart/form-data" id="form-3" name="form-3">
+                                            <label class="form-label" for="username" >Username</label>
+                                            <input class="form-control" id="username" name="username" placeholder="Type user name" type="text" >
+                                            <label class="form-label" for="password" >Password</label>
+                                            <input class="form-control" id="password" name="password" placeholder="" type="password" >
+                                            <div class="form-text">You need to use numbers</div>
+                                            <br>
+                                            <input type="hidden" name="execute" value="true">
+                                        </form>
+                                        <button class="btn btn-success" type="submit" form="form-3" value="Submit">Submit</button>
+                                        <button class="btn btn-primary" type="reset" form="form-3" value="Reset">Reset</button>
+                                    </div>
                                 </div>
                             </div>
                    </main>

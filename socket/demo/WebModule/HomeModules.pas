@@ -54,6 +54,17 @@ type
   public
   end;
 
+  { TDemoSchema }
+
+  TDemoSchema = class(THTML)
+  private
+  public
+  protected
+    procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+    procedure DoCompose; override;
+  public
+  end;
+
   { TSimpleSchema }
 
   TSimpleSchema = class(THTML)
@@ -292,7 +303,7 @@ begin
 {$else}
           with TCard.Create(This) do
           begin
-            Style := 'center';
+            Anchor := True;
             Size := szSmall;
             Caption := 'Login';
             with TIntervalCompose.Create(This) do
@@ -441,7 +452,7 @@ begin
          // ContentAlign := alignCenter;
           with TCard.Create(This) do
           begin
-            Style := 'center';
+            Anchor := True;
             Size := szNormal;
             Caption := 'Login';
 
@@ -472,6 +483,152 @@ begin
 
             end;
            end;
+        end;
+      end;
+    end;
+  end;
+end;
+
+{ TDemoSchema }
+
+procedure TDemoSchema.DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn);
+var
+  aUsername, aPassword: string;
+begin
+  if AContext.Data <> nil then
+  begin
+    if SameText(AContext.Data.Values['execute'], 'true') then
+    begin
+      aUsername := AContext.Data.Values['username'];
+      aPassword := AContext.Data.Values['password'];
+      AReturn.SessionID := aUsername +'/'+ aPassword;
+      AReturn.Resume := False;
+      AReturn.Respond.HttpResult := hrRedirect;
+      AReturn.Location := IncludePathDelimiter(AContext.Schema.App.GetPath) + 'dashboard';
+    end;
+  end;
+  inherited;
+end;
+
+procedure TDemoSchema.DoCompose;
+begin
+  inherited;
+  with TDocument.Create(This) do
+  begin
+    Title := 'Demo Title';
+    Direction := dirLeftToRight;
+
+    with Body do
+    begin
+      Theme := 'light';
+      with TComment.Create(This) do
+        Comment := 'This is just login page source';
+
+      with Header do
+      begin
+        RenderIt := True;
+//        Fixed := fixedTop;
+        with NavBar do
+        begin
+          Title := 'Creative Solutions';
+          with TNavItem.Create(This) do
+          begin
+            Caption := 'Item1';
+          end;
+
+          with TNavItem.Create(This) do
+          begin
+            Caption := 'Item2';
+          end;
+        end;
+      end;
+
+      with SideBar do
+      begin
+        Shadow := True;
+        RenderIt := True;
+        with TLink.Create(This, 'http://www.google.com', 'Google') do
+        begin
+          ClickType := clickNavigate;
+        end;
+
+        with TMyLink.Create(This, '', 'Home') do
+        begin
+          Route := 'my_link';
+          Location := GetPath;
+          ClickType := clickAction;
+        end;
+      end;
+
+      with Main do
+      begin
+        Padding := 1;
+
+        {with TNavBar.Create(This) do
+        begin
+          Caption := 'Nav2';
+          //Fixed := fixedTop;
+          with TNavItem.Create(This) do
+          begin
+            Caption := 'Menu 1';
+          end;
+          with TNavItem.Create(This) do
+          begin
+            Caption := 'Menu 2';
+          end;
+        end;}
+
+        //with TRow.Create(This) do
+        begin
+
+         // ContentAlign := alignCenter;
+          with TCard.Create(This) do
+          begin
+            Size := szNormal;
+            Caption := 'Login';
+            Collapse := True;
+            Anchor := True;
+
+            with TForm.Create(This) do
+            begin
+              PostTo.Where := toElement;
+
+              with TInput.Create(This) do
+              begin
+                ID := 'username';
+                Name := 'username';
+                Caption := 'Username';
+                PlaceHolder := 'Type user name';
+              end;
+
+              with TInputPassword.Create(This) do
+              begin
+                ID := 'password';
+                Name := 'password';
+                Caption := 'Password';
+                HelpText := 'You need to use numbers';
+              end;
+
+              TBreak.Create(This);
+
+              Submit.Caption := 'Submit';
+              Reset.Caption := 'Reset';
+
+            end;
+           end;
+
+          with TCard.Create(This) do
+          begin
+            Size := szNormal;
+            Caption := 'Task';
+            Anchor := True;
+
+            with TExpandableText.Create(This) do
+            begin
+              Caption := 'You must go!';
+              Text := 'Yes you must go to the police to tell them the full story!'
+            end;
+          end;
         end;
       end;
     end;
@@ -517,6 +674,7 @@ begin
   WebApp.RegisterSchema('welcome', TWelcomeSchema);
   WebApp.RegisterSchema('assets', TAssetsSchema);
   WebApp.RegisterSchema('login', TLoginSchema);
+  WebApp.RegisterSchema('demo', TDemoSchema);
   WebApp.RegisterSchema('simple', TSimpleSchema);
   WebApp.RegisterSchema('ws', TWSShema);
   RegisterCommand('.ws', TWSEchoGetHomeCommand, False);

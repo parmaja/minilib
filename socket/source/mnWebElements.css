@@ -1,8 +1,21 @@
 :root {
     --size-unit: 9rem;
-    --header-size: 4rem;
+    --header-size: 3.2rem;
     --content-height: calc(100vh - var(--header-size));
     --sidebar-size: calc(var(--size-unit) * 2);
+ 
+    --bi-caret-down-fill-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16"><path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>');    
+    --bi-caret-left-fill-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-left-fill" viewBox="0 0 16 16"><path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z"/></svg>');
+
+    --bi-chevron-left-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-left" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/></svg>');
+    --bi-chevron-down-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"/></svg>');
+    --bi-chevron-right-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/></svg>');
+
+    --bi-circle-half-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/></svg>>');
+    --bi-list-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/></svg>');
+    --bi-three-dots-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16"><path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"/></svg>');
+    --bi-three-dots-vertical-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/></svg>');
+    --bi-card-list-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-card-list" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/><path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8m0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5m0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5m-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0M4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>');
 }
 
 .max-w-xs {
@@ -27,6 +40,75 @@
 
 .max-w-xxl {
     max-width: calc(var(--size-unit) * 9);
+}
+
+svg {
+    fill: currentColor;
+}
+
+.icon-animate {
+    transition: .3s transform ease-in-out;
+  }
+
+.icon-animate.collapsed {
+    transform: rotate(180deg);
+}  
+
+/* Bootstrap Icon */
+/* I copied here to reduce size */
+/* https://www.svgbackgrounds.com/tools/svg-to-css/ */
+
+.icon{
+    background-repeat: no-repeat no-repeat;
+    background-position: center center;
+    background-size: contain;
+    display: inline-block;         
+    width: 1.2em;
+    height: 1.2em; 
+}
+
+.icon.bi-caret-down-fill{    
+    background-image: var(--bi-caret-down-fill-bg);
+}   
+
+.icon.bi-caret-left-fill{    
+    background-image: var(--bi-caret-left-fill-bg);
+}  
+
+.icon.bi-chevron-left{    
+    background-image: var(--bi-chevron-left-bg);
+} 
+
+.icon.bi-chevron-right{
+    background-image: var(--bi-chevron-right-bg);
+} 
+
+.icon.bi-chevron-down{    
+    background-image: var(--bi-chevron-down-bg);
+} 
+
+.icon.bi-circle-half{
+    background-image: var(--bi-circle-half-bg);
+}
+
+.icon.bi-list{
+    background-image: var(--bi-list-bg);
+}
+
+.icon.bi-three-dots{
+    background-image: var(--bi-three-dots-bg);
+}
+
+.icon.bi-three-dots-vertical{
+    background-image: var(--bi-three-dots-vertical-bg);
+}
+
+.invert {     
+    filter: invert(1); /* this is really stupid idea */
+}
+
+[data-bs-theme=dark] .icon { 
+    filter: invert(1); 
 }
 
 /*******************************************************************/
@@ -67,9 +149,9 @@ aside{
 }
 
 .main {
-    margin-top: 1rem;
+    padding-top: 1rem;
     max-height: var(--content-height);
-    overflow-y: auto; //nope it show main scroll when add margine to main
+    overflow-y: auto; 
 }
 
 .main-content {
@@ -128,6 +210,6 @@ aside{
   box-shadow: none;
 }
 
-.card-header {
+[data-bs-theme=dark] .card-header {
     background-color: #2d3748; 
 }
