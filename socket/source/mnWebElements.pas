@@ -851,7 +851,7 @@ type
         function GetContentType(Route: string): string; override;
       end;
 
-      TComposeProc = reference to procedure(Inner: TmnwElement);
+      TComposeProc = reference to procedure(Inner: TmnwElement; const AReturn: TmnwReturn);
 
       { TDynamicCompose }
 
@@ -876,6 +876,8 @@ type
       [TID_Extension]
       [TRoute_Extension]
       TIntervalCompose = class(TDynamicCompose)
+      public
+        Code: string;
       end;
 
       { TDocument }
@@ -4311,13 +4313,14 @@ var
   InnerComposer: TInnerComposer;
 begin
   inherited;
+  //Scope.Attributes['data-mnw-code'] := (Scope.Element as THTML.TIntervalCompose).Code;
   InnerComposer := TInnerComposer.Create(nil);
   try
     InnerComposer.FSchema := Schema;
     InnerComposer.FParent := Self; //Fake Parent do not add it to the list;
     InnerCompose(InnerComposer);
     if Assigned(OnCompose) then
-      OnCompose(InnerComposer);
+      OnCompose(InnerComposer, AReturn);
     InnerComposer.Compose;
     InnerComposer.Render(AContext, AReturn);
   finally
