@@ -370,19 +370,20 @@ type
   TwebRespond = class(TmodRespond)
   private
     FContentType: String;
+    FETag: string;
     function GetRequest: TwebRequest;
   protected
     procedure DoPrepareHeader; override; //Called by Server
     procedure DoSendHeader; override;
     procedure DoHeaderSent; override;
     procedure DoHeaderReceived; override; //Called by Client
-
   public
-    property ContentType: string read FContentType write FContentType;
     function StatusCode: Integer;
     function StatusResult: string;
     function StatusVersion: string;
     property Request: TwebRequest read GetRequest;
+    property ContentType: string read FContentType write FContentType;
+    property ETag: string read FETag write FETag;
   end;
 
   TwebCommand = class(TmnCustomServerCommand)
@@ -2151,6 +2152,9 @@ begin
   if (Header.Field['Content-Type'].IsExists) then
     ContentType  := Header.Field['Content-Type'].AsString;
 
+  if (Header.Field['ETag'].IsExists) then
+    ETag  := Header.Field['ETag'].AsString; //* or maybe 'If-None-Match'
+
   if (Header.Field['Connection'].IsExists) then
     KeepAlive := SameText(Header['Connection'], 'Keep-Alive');
 
@@ -2174,6 +2178,9 @@ begin
     PutHeader('Content-Length', IntToStr(ContentLength));
   if (ContentType <> '') then
     PutHeader('Content-Type', ContentType);
+
+  if (ETag <> '') then
+    PutHeader('ETag', ETag);
 
   if smRespondCompress in Request.Mode then
     PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);

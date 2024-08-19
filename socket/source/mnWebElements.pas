@@ -83,6 +83,11 @@ uses
 {.$define rtti_objects}
 
 type
+{$ifdef FPC}
+  THandle = Cardinal;
+{$else}
+  THandle = Int64;
+{$endif}
 
   TmnwSchema = class;
   TmnwRenderer = class;
@@ -94,6 +99,8 @@ type
   TmnwElementClass = class of TmnwElement;
   TElementExtension = class;
   TElementExtensionClass = class of TElementExtension;
+
+  TUIWebRespond = class;
 
   { TElementExtension }
 
@@ -199,6 +206,7 @@ type
   TmnwContext = record
     Sender: TObject;
     Schema: TmnwSchema;
+    Element: TmnwElement;
     Renderer: TmnwRenderer;
 
     SessionID: string;
@@ -208,15 +216,6 @@ type
     ParentRenderer: TmnwElementRenderer;
     Writer: TmnwWriter;
     Data: TmnMultipartData;
-  end;
-
-  TmnwReturn = record
-    //ContentType: string;
-    SessionID: string;
-    Location: string; //* New location to forward
-
-    Respond: TmodHttpRespond;
-    Resume: Boolean;
   end;
 
   TmnwObject = class(TmnNamedObject);
@@ -285,14 +284,14 @@ type
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom);
 
-  TActionProc = reference to procedure (const AContext: TmnwContext; var AReturn: TmnwReturn);
+  TActionProc = reference to procedure (const AContext: TmnwContext; AResponse: TUIWebRespond);
 
   { TmnwElement }
 
   TmnwElement = class(TmnObjectList<TmnwElement>)
   private
     FEnabled: Boolean;
-    FHandle: Int64;
+    FHandle: THandle;
     FStyle: String;
     FVisible: Boolean;
     FRenderIt: Boolean;
@@ -321,8 +320,8 @@ type
     procedure DoCompose; virtual;
     procedure DoComposed; virtual;
     procedure DoRespondHeader(AContext: TmnwContext); virtual;
-    procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); virtual;
-    procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); virtual;
+    procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); virtual;
+    procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); virtual;
 
     procedure DoExecute; virtual;
     procedure Execute;
@@ -368,11 +367,11 @@ type
     function GetContentType(Route: string): string; virtual;
 
 
-    procedure Action(const AContext: TmnwContext; var AReturn: TmnwReturn);
-    procedure Respond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+    procedure Action(const AContext: TmnwContext; AResponse: TUIWebRespond);
+    procedure Respond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 
     //* Original Render
-    procedure Render(const Context: TmnwContext; var AReturn: TmnwReturn); overload;
+    procedure Render(const Context: TmnwContext; AResponse: TUIWebRespond); overload;
 
     function CanRender: Boolean; virtual;
 
@@ -395,7 +394,7 @@ type
 
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
     property OnAction: TActionProc read FOnAction write FOnAction;
-    property Handle: Int64 read FHandle;
+    property Handle: THandle read FHandle;
   end;
 
   { TmnwWriter }
@@ -495,12 +494,12 @@ type
     FLock: TCriticalSection;
     FApp: TmnwApp;
     FPhase: TmnwSchemaPhase;
-    FNameingLastNumber: Int64;
+    FNamingLastNumber: THandle;
     function GetReleased: Boolean;
   protected
     Usage: Integer;
     procedure UpdateAttached;
-    procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+    procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
     procedure DoAccept(var Resume: Boolean); virtual;
     procedure ProcessMessage(const s: string);
   public
@@ -516,7 +515,7 @@ type
     destructor Destroy; override;
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
-    function NewHandle: Int64;
+    function NewHandle: THandle;
 
     //* Attaching cap
     //function Interactive: Boolean;
@@ -552,7 +551,7 @@ type
     [TID_Extension]
     TFile = class(TmnwElement)
     protected
-      procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+      procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
     public
       FileName: string;
       Options: TFileOptions;
@@ -568,7 +567,7 @@ type
       ContentType: string;
       FData: TMemoryStream;
     protected
-      procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+      procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
     protected
       procedure Created; override;
     public
@@ -600,7 +599,7 @@ type
     procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); virtual;
     procedure Prepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
 
-    procedure RenderChilds(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+    procedure RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 
     //* Called to parent to wrap the child rendering, each chiled will wrap it with this render
     //* This method exists in parent render
@@ -613,13 +612,13 @@ type
 
     //* Content render
     procedure DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
-    procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); virtual;
+    procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); virtual;
     procedure DoAfterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     property Renderer: TmnwRenderer read FRenderer;
     property RendererRegister: TmnwRendererRegister read FRendererRegister;
   public
-    procedure Render(AElement: TmnwElement; const Context: TmnwContext; var AReturn: TmnwReturn);
+    procedure Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TUIWebRespond);
     constructor Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwRendererRegister); virtual; //useful for creating it by RendererClass.Create
     procedure CollectAttributes(var Scope: TmnwScope);
   end;
@@ -725,7 +724,7 @@ type
     function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 
     //for HTML
-    function Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): TmnwElement;
+    procedure Respond(var AContext: TmnwContext; AResponse: TUIWebRespond);
     //for WebSocket
     function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
@@ -845,13 +844,13 @@ type
 
       TAssets = class(THTMLElement)
       protected
-        procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
       public
         HomePath: string;
         function GetContentType(Route: string): string; override;
       end;
 
-      TComposeProc = reference to procedure(Inner: TmnwElement; const AReturn: TmnwReturn);
+      TComposeProc = reference to procedure(Inner: TmnwElement; AResponse: TUIWebRespond);
 
       { TDynamicCompose }
 
@@ -859,15 +858,15 @@ type
       protected
         type
 
-          { TInnerComposer }
+          { TInner}
 
-          TInnerComposer = class(THTMLElement)
+          TInner = class(TmnwElement)
           public
           end;
 
-        procedure InnerCompose(Inner: TmnwElement); virtual;
+        procedure InnerCompose(Inner: TmnwElement; AResponse: TUIWebRespond); virtual;
 
-        procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
       public
         OnCompose: TComposeProc;
         constructor Create(AParent: TmnwElement; AOnCompose: TComposeProc = nil); reintroduce;
@@ -1048,7 +1047,7 @@ type
       TForm = class(THTMLElement)
       private
       protected
-        procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
         procedure Created; override;
         procedure DoComposed; override;
       public
@@ -1073,7 +1072,7 @@ type
       [TRoute_Extension]
       TAction = class(THTMLElement)
       protected
-        procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
       public
         procedure Loop; virtual;
       end;
@@ -1182,7 +1181,7 @@ type
       private
         FData: TMemoryStream;
       protected
-        procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
       protected
         procedure Created; override;
       public
@@ -1245,7 +1244,7 @@ type
 
       TComment = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TDocument }
@@ -1253,7 +1252,7 @@ type
       TDocument = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TBody }
@@ -1261,35 +1260,35 @@ type
       TBody = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TFile }
 
       TFile = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TJSFile }
 
       TJSFile = class(TFile)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TCSSFile }
 
       TCSSFile = class(TFile)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TDynamicCompose }
 
       TDynamicCompose = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TIntervalCompose }
@@ -1303,7 +1302,7 @@ type
 
       THeader = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TNavBar }
@@ -1314,7 +1313,7 @@ type
         procedure DoRenderBrand(Scope: TmnwScope; Context: TmnwContext); virtual;
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       public
       end;
 
@@ -1324,35 +1323,35 @@ type
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TLink }
 
       TLink = class(THTMLControl)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TFooter }
 
       TFooter = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TToast }
 
       TToast = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TContent }
 
       TContent = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TSideBar }
@@ -1361,54 +1360,54 @@ type
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TMain }
 
       TMain = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TRow }
 
       TRow = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TColumn }
 
       TColumn = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TCard }
 
       TCard = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       TPanel = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TCollapseCaption }
 
       TCollapseCaption = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TThemeModeButton }
 
       TThemeModeButton = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TForm }
@@ -1417,21 +1416,21 @@ type
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TParagraph }
 
       TParagraph = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TBreak }
 
       TBreak = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TButton }
@@ -1439,21 +1438,21 @@ type
       TButton = class(THTMLControl)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TNavItem }
 
       TNavItem = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TMenuItem }
 
       TMenuItem = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TSubbMenu }
@@ -1461,7 +1460,7 @@ type
       TSubMenu = class(THTMLControl)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TInput }
@@ -1469,7 +1468,7 @@ type
       TInput = class(THTMLComponent)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       TInputPassword = class(TInput)
@@ -1481,7 +1480,7 @@ type
       protected
         procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
       { TMemoryImage }
@@ -1490,7 +1489,7 @@ type
       protected
         procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
       end;
 
   protected
@@ -1524,16 +1523,28 @@ type
     function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
   end;
 
+  TUIWebRespond = class(TmodHttpRespond)
+  private
+    FResume: Boolean;
+  public
+    SessionID: string;
+    Location: string; //* New location to forward
+    property Resume: Boolean read FResume write FResume;
+  end;
+
   { TUIWebCommand }
 
   TUIWebCommand = class(TmodHttpCommand)
   private
     function GetModule: TUIWebModule;
+    function GetRespond: TUIWebRespond;
   protected
+    function CreateRespond: TmodRespond; override;
   public
     RendererID: Integer;
     procedure RespondResult(var Result: TmodRespondResult); override;
     property Module: TUIWebModule read GetModule;
+    property Respond: TUIWebRespond read GetRespond;
   end;
 
   { TAssetsSchema }
@@ -2103,7 +2114,7 @@ end;
 
 { TmnwElementRenderer }
 
-procedure TmnwElementRenderer.RenderChilds(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElementRenderer.RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   o: TmnwElement;
 begin
@@ -2112,14 +2123,14 @@ begin
   begin
     if (elHighLevel in o.Kind) then
       if not (elInternal in o.Kind) then
-        o.Render(Context, AReturn);
+        o.Render(Context, AResponse);
   end;
 
   for o in Scope.Element do
   begin
     if not (elHighLevel in o.Kind) then
       if not (elInternal in o.Kind) then
-        o.Render(Context, AReturn);
+        o.Render(Context, AResponse);
   end;
 end;
 
@@ -2131,9 +2142,9 @@ procedure TmnwElementRenderer.DoEnterInnerRender(Scope: TmnwScope; const Context
 begin
 end;
 
-procedure TmnwElementRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElementRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 begin
-  RenderChilds(Scope, Context, AReturn);
+  RenderChilds(Scope, Context, AResponse);
 end;
 
 procedure TmnwElementRenderer.DoAfterRender(Scope: TmnwScope; const Context: TmnwContext);
@@ -2177,7 +2188,7 @@ begin
   end;
 end;
 
-procedure TmnwElementRenderer.Render(AElement: TmnwElement; const Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElementRenderer.Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TUIWebRespond);
 var
   aScope: TmnwScope;
 begin
@@ -2190,7 +2201,7 @@ begin
       Context.ParentRenderer.DoEnterChildRender(aScope, Context);
 
     DoEnterInnerRender(aScope, Context);
-    DoInnerRender(aScope, Context, AReturn);
+    DoInnerRender(aScope, Context, AResponse);
     DoAfterRender(aScope, Context);
 
     if Context.ParentRenderer <> nil then
@@ -2235,7 +2246,7 @@ begin
     StrToStrings(Value, Result, vSeparators, []);
 end;
 
-procedure TmnwElement.Render(const Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElement.Render(const Context: TmnwContext; AResponse: TUIWebRespond);
 var
   er: TmnwElementRenderer;
 begin
@@ -2246,7 +2257,7 @@ begin
     begin
       try
         try
-          er.Render(Self, Context, AReturn);
+          er.Render(Self, Context, AResponse);
         except
           on E: Exception do
           begin
@@ -2511,7 +2522,7 @@ begin
   end;
 end;
 
-function TmnwApp.Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): TmnwElement;
+procedure TmnwApp.Respond(var AContext: TmnwContext; AResponse: TUIWebRespond);
 
   function SessionCookies(const vData: string): string;
   var
@@ -2529,58 +2540,55 @@ function TmnwApp.Respond(var AContext: TmnwContext; var AReturn: TmnwReturn): Tm
 
 var
   aSchema: TmnwSchema;
+  aElement: TmnwElement;
 begin
   if Shutdown then
-    exit(nil);
+    exit;
 
   try
-    GetElement(AContext, aSchema, Result);
-    if Result <> nil then
+    GetElement(AContext, aSchema, aElement);
+    if aElement <> nil then
     begin
       aContext.Schema := aSchema;
-      AReturn.Respond.ContentType := Result.GetContentType(AContext.Route);
-      //resLatch
-  //    (AContext.Sender as TmodHttpCommand).Respond.Latch := True;
-      try
-        //You should not send any text/data content only set headers or refuse to continue
-        Result.Action(AContext, AReturn);
-      finally
-  //      (AContext.Sender as TmodHttpCommand).Respond.Latch := False;
-      end;
+      aContext.Element := aElement;
 
-      if AReturn.Location <> '' then
-        AReturn.Respond.Header['Location'] := AReturn.Location;
+      AResponse.ContentType := aElement.GetContentType(AContext.Route);
 
-      if AReturn.SessionID<>'' then
-        AReturn.Respond.Cookies.Values['session'] := SessionCookies(AReturn.SessionID);
+      aElement.Action(AContext, AResponse);
+
+      if AResponse.Location <> '' then
+        AResponse.Header['Location'] := AResponse.Location;
+
+      if AResponse.SessionID<>'' then
+        AResponse.Cookies.Values['session'] := SessionCookies(AResponse.SessionID);
 
       //* We will render it now
-      if AReturn.Resume then
-        Result.Respond(AContext, AReturn);
+      if AResponse.Resume then
+        aElement.Respond(AContext, AResponse);
 
-      if not (AReturn.Respond.IsHeaderSent) then
+      if not (AResponse.IsHeaderSent) then
       begin
-        if (AReturn.Respond.HttpResult = hrOK) and (AReturn.Resume = False) then
+        if (AResponse.HttpResult = hrOK) and (AResponse.Resume = False) then
         begin
-          AReturn.Respond.HttpResult := hrNoContent;
-          AReturn.Respond.ContentLength := 0;
+          AResponse.HttpResult := hrNoContent;
+          AResponse.ContentLength := 0;
         end
-        else if AReturn.Respond.HttpResult = hrNotFound then
+        else if AResponse.HttpResult = hrNotFound then
         begin
-          AReturn.Respond.ContentType := 'text/html';
+          AResponse.ContentType := 'text/html';
           AContext.Writer.WriteLn('404 Not Found');
         end;
 
-        if not (AReturn.Respond.IsHeaderSent) and (AReturn.Respond.HttpResult > hrNone) then
-          AReturn.Respond.SendHeader;
+        if not (AResponse.IsHeaderSent) and (AResponse.HttpResult > hrNone) then
+          AResponse.SendHeader;
       end;
     end
     else
     begin
-      if not (AReturn.Respond.IsHeaderSent) then
+      if not (AResponse.IsHeaderSent) then
       begin
-        AReturn.Respond.HttpResult := hrNotFound;
-        AReturn.Respond.ContentType := 'text/html';
+        AResponse.HttpResult := hrNotFound;
+        AResponse.ContentType := 'text/html';
         AContext.Writer.WriteLn('404 Not Found');
       end;
     end;
@@ -2609,10 +2617,10 @@ begin
     {$ifdef DEBUG}
     on E: Exception do
     begin
-      if not (AReturn.Respond.IsHeaderSent) then
+      if not (AResponse.IsHeaderSent) then
       begin
-        AReturn.Respond.HttpResult := hrError;
-        AReturn.Respond.ContentType := 'text/html';
+        AResponse.HttpResult := hrError;
+        AResponse.ContentType := 'text/html';
       end;
       AContext.Writer.WriteLn('Server Error: ' + E.Message);
     end;
@@ -2884,7 +2892,7 @@ end;
 
 { TmnwHTMLRenderer.TComment }
 
-procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TComment;
 begin
@@ -2907,7 +2915,7 @@ begin
   Scope.Attributes['lang'] := 'en';
 end;
 
-procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TDocument;
   aLibrary: TmnwLibrary;
@@ -2947,13 +2955,13 @@ begin
     end;
   end;}
   Context.Writer.CloseTag('head');
-  e.Body.Render(Context, AReturn);
+  e.Body.Render(Context, AResponse);
   Context.Writer.CloseTag('html');
 end;
 
 { TmnwHTMLRenderer.THeaderHTML }
 
-procedure TmnwHTMLRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 begin
   Scope.Classes.AddClasses('header sticky-top d-flex align-items-center navbar-dark bg-dark py-0 px-1');
   Context.Writer.OpenTag('header', Scope.ToString);
@@ -2963,7 +2971,7 @@ end;
 
 { TmnwHTMLRenderer.TFooterHTML }
 
-procedure TmnwHTMLRenderer.TFooter.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TFooter.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TFooter;
 begin
@@ -2975,7 +2983,7 @@ end;
 
 { TmnwHTMLRenderer.TToast }
 
-procedure TmnwHTMLRenderer.TToast.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TToast.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TToast;
 begin
@@ -2989,7 +2997,7 @@ end;
 
 { TmnwHTMLRenderer.TContent }
 
-procedure TmnwHTMLRenderer.TContent.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TContent.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TContent;
 begin
@@ -3007,7 +3015,7 @@ end;
 
 { TmnwHTMLRenderer.TMainHTML }
 
-procedure TmnwHTMLRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TMain;
   classes: TElementClasses;
@@ -3044,7 +3052,7 @@ end;
 //https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
 //https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
 
-procedure TmnwHTMLRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TCard;
 begin
@@ -3091,7 +3099,7 @@ begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TForm.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TForm.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TForm;
   aPostTo: string;
@@ -3122,7 +3130,7 @@ end;
 
 { TmnwHTMLRenderer.TParagraphHTML }
 
-procedure TmnwHTMLRenderer.TParagraph.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TParagraph.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TParagraph;
 begin
@@ -3136,7 +3144,7 @@ end;
 
 { TmnwHTMLRenderer.TBreakHTML }
 
-procedure TmnwHTMLRenderer.TBreak.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TBreak.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 begin
   Context.Writer.WriteLn('<br>');
 end;
@@ -3149,7 +3157,7 @@ begin
   //Scope.Attributes['type'] := (Scope.Element as THTML.TButton).EditType;
 end;
 
-procedure TmnwHTMLRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TButton;
   event: string;
@@ -3165,7 +3173,7 @@ end;
 
 { TmnwHTMLRenderer.TNavItem }
 
-procedure TmnwHTMLRenderer.TNavItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TNavItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TNavItem;
   event: string;
@@ -3180,7 +3188,7 @@ end;
 
 { TmnwHTMLRenderer.TMenuItem }
 
-procedure TmnwHTMLRenderer.TMenuItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TMenuItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TMenuItem;
   event: string;
@@ -3199,7 +3207,7 @@ begin
   inherited DoCollectAttributes(Scope);
 end;
 
-procedure TmnwHTMLRenderer.TSubMenu.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TSubMenu.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 begin
   inherited;
 end;
@@ -3213,7 +3221,7 @@ begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TInput;
   event: string;
@@ -3251,7 +3259,7 @@ begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 begin
   Context.Writer.WriteLn('<img' + Scope.GetText+' >', [woOpenIndent, woCloseIndent]);
   inherited;
@@ -3272,7 +3280,7 @@ begin
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
 end;
 
-procedure TmnwHTMLRenderer.TMemoryImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TMemoryImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TMemoryImage;
 begin
@@ -3342,7 +3350,7 @@ begin
   end;
 end;
 
-procedure TmnwSchema.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwSchema.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 var
   fs: TFileStream;
   aFileName: string;
@@ -3358,7 +3366,7 @@ begin
       begin
         if FileExists(aFileName) then
         begin
-          AReturn.Respond.ContentType := DocumentToContentType(aFileName);
+          AResponse.ContentType := DocumentToContentType(aFileName);
           fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
           try
             AContext.Writer.Stream.WriteStream(fs, 0);
@@ -3367,16 +3375,16 @@ begin
           end;
         end
         else
-          AReturn.Respond.HttpResult := hrNotFound;
+          AResponse.HttpResult := hrNotFound;
       end
       else
-        AReturn.Respond.HttpResult := hrUnauthorized;
+        AResponse.HttpResult := hrUnauthorized;
     end
     else
-      Render(AContext, AReturn);
+      Render(AContext, AResponse);
   end
   else
-    Render(AContext, AReturn);
+    Render(AContext, AResponse);
 end;
 
 procedure TmnwSchema.DoAccept(var Resume: Boolean);
@@ -3464,10 +3472,10 @@ begin
   Result := (FPhase = scmpReleased) or (schemaDynamic in GetCapabilities);
 end;
 
-function TmnwSchema.NewHandle: Int64;
+function TmnwSchema.NewHandle: THandle;
 begin
-  AtomicIncrement(FNameingLastNumber);
-  Result := FNameingLastNumber;
+  AtomicIncrement(FNamingLastNumber);
+  Result := FNamingLastNumber;
 end;
 
 procedure TmnwSchema.UpdateAttached;
@@ -3622,7 +3630,7 @@ begin
   Result := DocumentToContentType(FileName);
 end;
 
-procedure THTML.TMemoryImage.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure THTML.TMemoryImage.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 begin
   Data.Seek(0, soBeginning);
   AContext.Writer.Stream.WriteStream(Data, 0);
@@ -3893,7 +3901,7 @@ begin
   Result := Name;
 end;
 
-procedure TmnwElement.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElement.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 begin
 end;
 
@@ -3901,7 +3909,7 @@ procedure TmnwElement.DoRespondHeader(AContext: TmnwContext);
 begin
 end;
 
-procedure TmnwElement.DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElement.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
 begin
 end;
 
@@ -3977,9 +3985,9 @@ begin
   Result := StringOfChar(' ', vLevel * 4);
 end;
 
-procedure TmnwElement.Respond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElement.Respond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 begin
-  DoRespond(AContext, AReturn);
+  DoRespond(AContext, AResponse);
 end;
 
 procedure TmnwElement.Compose;
@@ -4034,14 +4042,14 @@ begin
   Result := 'text/html';
 end;
 
-procedure TmnwElement.Action(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwElement.Action(const AContext: TmnwContext; AResponse: TUIWebRespond);
 begin
-  AReturn.Respond.PutHeader('Content-Type', GetContentType(AContext.Route));
+  AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
   DoRespondHeader(AContext);
-  AReturn.Resume := True;
-  DoAction(AContext, AReturn);
+  AResponse.Resume := True;
+  DoAction(AContext, AResponse);
   if Assigned(FOnAction) then
-    FOnAction(AContext, AReturn);
+    FOnAction(AContext, AResponse);
 end;
 
 constructor TmnwWriter.Create(AName: string; AStream: TmnBufferStream);
@@ -4156,7 +4164,7 @@ end;
 
 { THTML.TFile }
 
-procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 var
   aStream: TStream;
   aDocSize: Int64;
@@ -4177,8 +4185,8 @@ begin
   begin
     if not FileExists(FileName) then
     begin
-      AReturn.Respond.HttpResult := hrNotFound;
-      AReturn.Resume := False;
+      AResponse.HttpResult := hrNotFound;
+      AResponse.Resume := False;
       exit;
     end
     else
@@ -4188,8 +4196,8 @@ begin
       aEtag := AContext.ETag;
       if (aEtag<>'') and (aEtag = aFtag) then
       begin
-        AReturn.Respond.HttpResult := hrNotModified;
-        AReturn.Resume := False;
+        AResponse.HttpResult := hrNotModified;
+        AResponse.Resume := False;
         exit;
       end;
 
@@ -4197,10 +4205,10 @@ begin
       try
         aDocSize := aStream.Size;
 
-        AReturn.Respond.Header['Cache-Control']  := 'max-age=600';
-        AReturn.Respond.Header['Last-Modified']  := FormatHTTPDate(aDate);
-        AReturn.Respond.Header['ETag']           := aFTag;
-        AReturn.Respond.Header['Content-Length'] := IntToStr(aDocSize);
+        AResponse.ETag := aFTag;
+        AResponse.Header['Cache-Control']  := 'max-age=600';
+        AResponse.Header['Last-Modified']  := FormatHTTPDate(aDate);
+        AResponse.Header['Content-Length'] := IntToStr(aDocSize);
 
         AContext.Writer.Stream.WriteStream(aStream, 0);
       finally
@@ -4227,12 +4235,12 @@ begin
   Result := DocumentToContentType(FileName);
 end;
 
-procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 begin
   if FileDate <> 0 then
-    AReturn.Respond.Header['Last-Modified']  := FormatHTTPDate(FileDate);
-  AReturn.Respond.Header['Content-Length'] := IntToStr(Data.Size);
-  AReturn.Respond.Header['Cache-Control']  := 'public, max-age=3600';
+    AResponse.Header['Last-Modified']  := FormatHTTPDate(FileDate);
+  AResponse.Header['Content-Length'] := IntToStr(Data.Size);
+  AResponse.Header['Cache-Control']  := 'public, max-age=3600';
   Data.Seek(0, soBeginning);
   AContext.Writer.Stream.WriteStream(Data, 0);
 end;
@@ -4272,7 +4280,7 @@ end;
 
 { THTML.TAssets }
 
-procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 var
   fs: TFileStream;
   aFileName: string;
@@ -4308,28 +4316,28 @@ begin
   OnCompose := AOnCompose;
 end;
 
-procedure THTML.TDynamicCompose.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure THTML.TDynamicCompose.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 var
-  InnerComposer: TInnerComposer;
+  Inner: TInner;
 begin
   inherited;
-  //Scope.Attributes['data-mnw-code'] := (Scope.Element as THTML.TIntervalCompose).Code;
-  InnerComposer := TInnerComposer.Create(nil);
+  Inner:= TInner.Create(nil);
   try
-    InnerComposer.FSchema := Schema;
-    InnerComposer.FParent := Self; //Fake Parent do not add it to the list;
-    InnerCompose(InnerComposer);
-    if Assigned(OnCompose) then
-      OnCompose(InnerComposer, AReturn);
-    InnerComposer.Compose;
-    InnerComposer.Render(AContext, AReturn);
-  finally
-    InnerComposer.Free;
-  end;
+    Inner.FSchema := Schema;
+    Inner.FParent := Self; //Fake Parent do not add it to the list;
 
+    InnerCompose(Inner, AResponse);
+    if Assigned(OnCompose) then
+      OnCompose(Inner, AResponse);
+    Inner.Compose;
+
+    Inner.Render(AContext, AResponse);
+  finally
+    Inner.Free;
+  end;
 end;
 
-procedure THTML.TDynamicCompose.InnerCompose(Inner: TmnwElement);
+procedure THTML.TDynamicCompose.InnerCompose(Inner: TmnwElement; AResponse: TUIWebRespond);
 begin
 end;
 
@@ -4427,13 +4435,13 @@ end;
 
 { TmnwHTMLRenderer.TFile }
 
-procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TFile;
 begin
   e := Scope.Element as THTML.TFile;
   if ftEmbed in e.Options then
-    Scope.Element.Respond(Context, AReturn);
+    Scope.Element.Respond(Context, AResponse);
   inherited;
 end;
 
@@ -4534,7 +4542,7 @@ begin
     Scope.Attributes['data-bs-theme'] := e.Theme;
 end;
 
-procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TBody;
   function GetAttach: string;
@@ -4553,7 +4561,7 @@ end;
 
 { TmnwHTMLRenderer.TPanel }
 
-procedure TmnwHTMLRenderer.TPanel.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TPanel.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TPanel;
 begin
@@ -4570,7 +4578,7 @@ end;
 
 { TmnwHTMLRenderer.TCollapseCaption }
 
-procedure TmnwHTMLRenderer.TCollapseCaption.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TCollapseCaption.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TCollapseCaption;
 begin
@@ -4586,7 +4594,7 @@ end;
 
 { TmnwHTMLRenderer.TThemeModeButton }
 
-procedure TmnwHTMLRenderer.TThemeModeButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TThemeModeButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TThemeModeButton;
 begin
@@ -4599,7 +4607,7 @@ end;
 
 { TmnwHTMLRenderer.TRow }
 
-procedure TmnwHTMLRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TRow;
 begin
@@ -4612,7 +4620,7 @@ end;
 
 { TmnwHTMLRenderer.TColumn }
 
-procedure TmnwHTMLRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TColumn;
 begin
@@ -4639,13 +4647,13 @@ end;
 
 { THTML.TForm }
 
-procedure THTML.TForm.DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure THTML.TForm.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
 begin
   inherited;
-  if (RedirectTo <> '') and (AReturn.Respond.HttpResult = hrNone) then
+  if (RedirectTo <> '') and (AResponse.HttpResult = hrNone) then
   begin
-    AReturn.Respond.HttpResult := hrRedirect;
-    AReturn.Location := RedirectTo;
+    AResponse.HttpResult := hrRedirect;
+    AResponse.Location := RedirectTo;
   end;
 end;
 
@@ -4672,7 +4680,7 @@ end;
 
 { THTML.TAction }
 
-procedure THTML.TAction.DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure THTML.TAction.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
 begin
   inherited;
   try
@@ -4739,11 +4747,11 @@ end;
 
 { TmnwHTMLRenderer.TDynamicCompose }
 
-procedure TmnwHTMLRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 begin
   Context.Writer.WriteLn('<div ' + Scope.Attributes.GetText+'>', [woOpenIndent]);
   inherited;
-  Scope.Element.Respond(Context, AReturn);
+  Scope.Element.Respond(Context, AResponse);
   Context.Writer.WriteLn('</div>', [woCloseIndent]);
 end;
 
@@ -4782,7 +4790,7 @@ begin
   Context.Writer.WriteLn('</li>', [woCloseIndent]);
 end;
 
-procedure TmnwHTMLRenderer.TNavBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TNavBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TNavBar;
   sb: THTML.TSideBar;
@@ -4816,7 +4824,7 @@ begin
   Context.Writer.CloseTag('ul');
   Context.Writer.WriteLn('</div>', [woCloseIndent]);
   //Context.Writer.WriteLn('</div>', [woCloseIndent]);
-  e.Buttons.Render(Context, AReturn); // Render buttons
+  e.Buttons.Render(Context, AResponse); // Render buttons
 
   if e.Count > 0 then
   begin
@@ -4839,14 +4847,14 @@ begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TMenuBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TMenuBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 begin
   inherited;
 end;
 
 { TmnwHTMLRenderer.TLink }
 
-procedure TmnwHTMLRenderer.TLink.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TLink.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TLink;
   event: string;
@@ -4865,7 +4873,7 @@ end;
 
 { TmnwHTMLRenderer.TJSFile }
 
-procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TJSFile;
   src: string;
@@ -4888,7 +4896,7 @@ end;
 
 { TmnwHTMLRenderer.TCSSFile }
 
-procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TCSSFile;
   src: string;
@@ -4911,21 +4919,29 @@ end;
 
 { TbsHttpGetHomeCommand }
 
+function TUIWebCommand.CreateRespond: TmodRespond;
+begin
+  Result := TUIWebRespond.Create(Request);
+end;
+
 function TUIWebCommand.GetModule: TUIWebModule;
 begin
   Result := (inherited Module) as TUIWebModule;
 end;
 
+function TUIWebCommand.GetRespond: TUIWebRespond;
+begin
+  Result := inherited Respond as TUIWebRespond;
+end;
+
 procedure TUIWebCommand.RespondResult(var Result: TmodRespondResult);
 var
   aContext: TmnwContext;
-  aReturn: TmnwReturn;
   aDomain, aPort: string;
 begin
   inherited;
   AtomicIncrement(RendererID);
   InitMemory(aContext, SizeOf(aContext));
-  InitMemory(aReturn, SizeOf(aReturn));
 
   aContext.Route := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
@@ -4970,7 +4986,6 @@ begin
       aContext.Data.Read(Request.Stream);
     end;
     Respond.PutHeader('Content-Type', DocumentToContentType('html'));
-    aReturn.Respond := Respond;
     Respond.HttpResult := hrOK;
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
@@ -4978,11 +4993,11 @@ begin
     try
       aContext.ETag := Request.Header['If-None-Match'];
 
-      aReturn.SessionID := Request.GetCookie('', 'session');
-      aReturn.Respond.HttpResult := hrOK;
-      aReturn.Location := '';
+      Respond.SessionID := Request.GetCookie('', 'session');
+      Respond.HttpResult := hrOK;
+      Respond.Location := '';
 
-      (Module as TUIWebModule).WebApp.Respond(aContext, aReturn);
+      (Module as TUIWebModule).WebApp.Respond(aContext, Respond);
 
       //SessionID
     finally
@@ -5243,7 +5258,7 @@ begin
 //  Context.Writer.WriteLn('</li>', [woCloseIndent]);
 end;
 
-procedure TmnwHTMLRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; var AReturn: TmnwReturn);
+procedure TmnwHTMLRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
 var
   e: THTML.TSideBar;
 begin

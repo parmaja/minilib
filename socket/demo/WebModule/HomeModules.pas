@@ -50,7 +50,7 @@ type
   private
   public
   protected
-    procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+    procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
     procedure DoCompose; override;
   public
   end;
@@ -61,7 +61,7 @@ type
   private
   public
   protected
-    procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+    procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
     procedure DoCompose; override;
   public
   end;
@@ -105,7 +105,7 @@ type
 
   TClockCompose = class(THTML.TIntervalCompose)
   public
-    procedure InnerCompose(Inner: TmnwElement); override;
+    procedure InnerCompose(Inner: TmnwElement; AResponse: TUIWebRespond); override;
   end;
 
   TThreadTimer = class(TThread)
@@ -123,7 +123,7 @@ type
 
   TMyLink = class(THTML.TLink)
   public
-    procedure DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
+    procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
     procedure DoExecute; override;
   end;
 
@@ -136,10 +136,10 @@ type
 
 { TMyLink }
 
-procedure TMyLink.DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TMyLink.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
 begin
   inherited;
-  AReturn.Resume := False;
+  AResponse.Resume := False;
 end;
 
 procedure TMyLink.DoExecute;
@@ -169,7 +169,7 @@ end;
 
 { TClockComposer }
 
-procedure TClockCompose.InnerCompose(Inner: TmnwElement);
+procedure TClockCompose.InnerCompose(Inner: TmnwElement; AResponse: TUIWebRespond);
 begin
   with THTML do
   begin
@@ -194,13 +194,13 @@ end;
 
 procedure TWelcomeSchema.DoAccept(var Resume: Boolean);
 begin
-  Resume := False;
+  Resume := True;
 end;
 
 procedure TWelcomeSchema.DoCompose;
 begin
   inherited;
-  RefreshInterval := 1;
+  RefreshInterval := 10000;
   Interactive := True;
   with TDocument.Create(This) do
   begin
@@ -315,7 +315,7 @@ begin
             with TIntervalCompose.Create(This) do
             begin
               Route := 'clock';
-              OnCompose := procedure(Inner: TmnwElement)
+              OnCompose := procedure(Inner: TmnwElement; const AReturn: TmnwReturn)
               begin
                 TParagraph.Create(Inner, TimeToStr(Now));
                 {with TImage.Create(Inner) do
@@ -363,7 +363,7 @@ end;
 
 { TLoginSchema }
 
-procedure TLoginSchema.DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TLoginSchema.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
 var
   aUsername, aPassword: string;
 begin
@@ -373,10 +373,10 @@ begin
     begin
       aUsername := AContext.Data.Values['username'];
       aPassword := AContext.Data.Values['password'];
-      AReturn.SessionID := aUsername +'/'+ aPassword;
-      AReturn.Resume := False;
-      AReturn.Respond.HttpResult := hrRedirect;
-      AReturn.Location := IncludePathDelimiter(AContext.Schema.App.GetPath) + 'dashboard';
+      AResponse.SessionID := aUsername +'/'+ aPassword;
+      AResponse.Resume := False;
+      AResponse.HttpResult := hrRedirect;
+      AResponse.Location := IncludePathDelimiter(AContext.Schema.App.GetPath) + 'dashboard';
     end;
   end;
   inherited;
@@ -497,7 +497,7 @@ end;
 
 { TDemoSchema }
 
-procedure TDemoSchema.DoAction(const AContext: TmnwContext; var AReturn: TmnwReturn);
+procedure TDemoSchema.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
 var
   aUsername, aPassword: string;
 begin
@@ -507,10 +507,10 @@ begin
     begin
       aUsername := AContext.Data.Values['username'];
       aPassword := AContext.Data.Values['password'];
-      AReturn.SessionID := aUsername +'/'+ aPassword;
-      AReturn.Resume := False;
-      AReturn.Respond.HttpResult := hrRedirect;
-      AReturn.Location := IncludePathDelimiter(AContext.Schema.App.GetPath) + 'dashboard';
+      AResponse.SessionID := aUsername +'/'+ aPassword;
+      AResponse.Resume := False;
+      AResponse.HttpResult := hrRedirect;
+      AResponse.Location := IncludePathDelimiter(AContext.Schema.App.GetPath) + 'dashboard';
     end;
   end;
   inherited;

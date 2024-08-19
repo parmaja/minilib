@@ -98,7 +98,17 @@ function reloadElements()
   reload_elements.forEach(element => {
     const tagId = element.id;
     const tagUrl = element.getAttribute('data-mnw-refresh-url');
-    fetch(tagUrl) 
+    let tagCode = '';
+    if (element.firstElementChild)
+      tagCode = element.firstElementChild.getAttribute('data-mnw-code');
+
+    const myHeaders = new Headers();
+    if (tagCode) 
+    {
+      myHeaders.append("ETag", "tagCode");
+    }
+
+    fetch(tagUrl, myHeaders) 
       .then(response => response.text())
       .then(data => {
         element.innerHTML = data;
