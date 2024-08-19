@@ -200,7 +200,7 @@ end;
 procedure TWelcomeSchema.DoCompose;
 begin
   inherited;
-  RefreshInterval := 10000;
+  RefreshInterval := 5;
   Interactive := True;
   with TDocument.Create(This) do
   begin
@@ -317,6 +317,7 @@ begin
               Route := 'clock';
               OnCompose := procedure(Inner: TmnwElement; AResponse: TmnwResponse)
               begin
+                AResponse.ETag := TimeToStr(Now);
                 TParagraph.Create(Inner, TimeToStr(Now));
                 {with TImage.Create(Inner) do
                 begin

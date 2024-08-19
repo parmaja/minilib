@@ -98,19 +98,19 @@ function reloadElements()
   reload_elements.forEach(element => {
     const tagId = element.id;
     const tagUrl = element.getAttribute('data-mnw-refresh-url');
-    let tagCode = '';
-    if (element.firstElementChild)
-      tagCode = element.firstElementChild.getAttribute('data-mnw-code');
+    let tagStamp =  element.getAttribute('data-mnw-stamp');    
+    /*if (tagStamp == '' && element.firstElementChild)
+      tagStamp = element.firstElementChild.getAttribute('data-mnw-stamp');*/
 
-    const myHeaders = new Headers();
-    if (tagCode) 
-    {
-      myHeaders.append("ETag", "tagCode");
-    }
-
-    fetch(tagUrl, myHeaders) 
-      .then(response => response.text())
-      .then(data => {
+    fetch(tagUrl, { headers:{"If-None-Match": tagStamp }}) 
+      .then(response => {
+          const etag = response.headers.get('ETag');
+          const data = response.text();    
+          return Promise.all([etag, data]);      
+        }
+      )
+      .then(([etag, data]) => {
+        element.setAttribute('data-mnw-stamp', etag);
         element.innerHTML = data;
       })
       .catch(error => {

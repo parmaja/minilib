@@ -213,7 +213,7 @@ type
     Renderer: TmnwRenderer;
 
     SessionID: string;
-    ETag: string; //IfNone-Match
+    Stamp: string; //IfNone-Match
     Route: string;
 
     ParentRenderer: TmnwElementRenderer;
@@ -3161,9 +3161,9 @@ var
   e: THTML.TParagraph;
 begin
   e := Scope.Element as THTML.TParagraph;
-  Context.Writer.OpenInlineTag('p', '');
+  Context.Writer.OpenInlineTag('p', Scope.ToString);
   if e.Text <> '' then
-    Context.Writer.Write(e.Text, []);
+    Context.Writer.Write(e.Text);
   inherited;
   Context.Writer.CloseTag('p');
 end;
@@ -4226,7 +4226,7 @@ begin
     begin
       FileAge(FileName, aDate);
       aFtag := DateTimeToUnix(aDate).ToString;
-      aEtag := AContext.ETag;
+      aEtag := AContext.Stamp;
       if (aEtag<>'') and (aEtag = aFtag) then
       begin
         AResponse.HttpResult := hrNotModified;
@@ -5024,7 +5024,7 @@ begin
     aContext.Writer := TmnwWriter.Create('html', Respond.Stream);
     aContext.Writer.Compact := Module.CompactMode;
     try
-      aContext.ETag := Request.Header['If-None-Match'];
+      aContext.Stamp := Request.Header['If-None-Match'];
 
       Respond.SessionID := Request.GetCookie('', 'session');
       Respond.HttpResult := hrOK;
