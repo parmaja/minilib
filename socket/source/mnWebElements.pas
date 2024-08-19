@@ -4568,7 +4568,7 @@ var
   e: THTML.TThemeModeButton;
 begin
   e := Scope.Element as THTML.TThemeModeButton;
-  Context.Writer.OpenTag('button', 'class="navbar-toggler me-0 ms-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
+  Context.Writer.OpenTag('button', 'class="bg-dark me-0 ms-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
   Context.Writer.AddTag('span', 'class="invert icon bi-moon-stars"');
   inherited;
   Context.Writer.CloseTag('button');
@@ -4785,6 +4785,14 @@ begin
 
 	DoRenderBrand(Scope, Context);
 
+  //Context.Writer.WriteLn('<div id="'+e.id+'-items'+'" class="collapse navbar-collapse">', [woOpenIndent]);
+  Context.Writer.WriteLn('<div id="'+e.id+'-items'+'" class="offcanvas offcanvas-top navbar-dark bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1">', [woOpenIndent]);
+  //Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
+  Context.Writer.OpenTag('ul class="navbar-nav mr-auto m-2 m-md-0"');
+  inherited;
+  Context.Writer.CloseTag('ul');
+  Context.Writer.WriteLn('</div>', [woCloseIndent]);
+  //Context.Writer.WriteLn('</div>', [woCloseIndent]);
   e.Buttons.Render(Context, AReturn); // Render buttons
 
   if e.Count > 0 then
@@ -4793,17 +4801,6 @@ begin
     Context.Writer.WriteLn('<span class="invert icon bi-list"></span>');
     Context.Writer.WriteLn('</button>', [woCloseIndent]);
   end;
-
-  //Context.Writer.WriteLn('<div id="'+e.id+'-items'+'" class="collapse navbar-collapse">', [woOpenIndent]);
-  Context.Writer.WriteLn('<div id="'+e.id+'-items'+'" class="offcanvas offcanvas-top navbar-dark bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1">', [woOpenIndent]);
-  //Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
-
-  Context.Writer.OpenTag('ul class="navbar-nav mr-auto m-2 m-md-0"');
-
-  inherited;
-  Context.Writer.CloseTag('ul');
-  Context.Writer.WriteLn('</div>', [woCloseIndent]);
-  //Context.Writer.WriteLn('</div>', [woCloseIndent]);
   Context.Writer.WriteLn('</nav>', [woCloseIndent]);
 end;
 

@@ -58,11 +58,12 @@ svg {
 /* I copied here to reduce size */
 /* https://www.svgbackgrounds.com/tools/svg-to-css/ */
 
-.icon{
+.icon{    
     background-repeat: no-repeat no-repeat;
     background-position: center center;
     background-size: contain;
     display: inline-block;         
+    vertical-align: middle;
     width: 1.2em;
     height: 1.2em; 
 }
