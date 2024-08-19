@@ -100,7 +100,7 @@ type
   TElementExtension = class;
   TElementExtensionClass = class of TElementExtension;
 
-  TUIWebRespond = class;
+  TmnwResponse = class;
 
   { TElementExtension }
 
@@ -277,14 +277,15 @@ type
 //    elRender,
     elEmbed, //* created by parent
     elInternal, //* do not render we will call it manually
-    elHighLevel, //Rendered first like scripts
     elFallback //* if no child have the route name, it take the respond if have a name
   );
+
+  TmnwOrder = (orderNormal, orderStart, orderEnd);
 
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom);
 
-  TActionProc = reference to procedure (const AContext: TmnwContext; AResponse: TUIWebRespond);
+  TActionProc = reference to procedure (const AContext: TmnwContext; AResponse: TmnwResponse);
 
   { TmnwElement }
 
@@ -305,6 +306,7 @@ type
     FElementClass: String;
     FAttributes: TmnwAttributes;
     FKind: TmnwElementKind;
+    FOrder: TmnwOrder;
     FState: TmnwElementState;
     FOnExecute: TElementExecute;
     FOnAction: TActionProc;
@@ -321,8 +323,8 @@ type
     procedure DoCompose; virtual;
     procedure DoComposed; virtual;
     procedure DoRespondHeader(AContext: TmnwContext); virtual;
-    procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); virtual;
-    procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); virtual;
+    procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
+    procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
 
     procedure DoExecute; virtual;
     procedure Execute;
@@ -368,11 +370,11 @@ type
     function GetContentType(Route: string): string; virtual;
 
 
-    procedure Action(const AContext: TmnwContext; AResponse: TUIWebRespond);
-    procedure Respond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+    procedure Action(const AContext: TmnwContext; AResponse: TmnwResponse);
+    procedure Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
 
     //* Original Render
-    procedure Render(const Context: TmnwContext; AResponse: TUIWebRespond); overload;
+    procedure Render(const Context: TmnwContext; AResponse: TmnwResponse); overload;
 
     function CanRender: Boolean; virtual;
 
@@ -393,6 +395,7 @@ type
 
     property Attributes: TmnwAttributes read FAttributes;
     property Kind: TmnwElementKind read FKind write FKind;
+    property Order: TmnwOrder read FOrder write FOrder;
     property State: TmnwElementState read FState write SetState;
 
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
@@ -502,7 +505,7 @@ type
   protected
     Usage: Integer;
     procedure UpdateAttached;
-    procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+    procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAccept(var Resume: Boolean); virtual;
     procedure ProcessMessage(const s: string);
   public
@@ -554,7 +557,7 @@ type
     [TID_Extension]
     TFile = class(TmnwElement)
     protected
-      procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+      procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     public
       FileName: string;
       Options: TFileOptions;
@@ -570,7 +573,7 @@ type
       ContentType: string;
       FData: TMemoryStream;
     protected
-      procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+      procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     protected
       procedure Created; override;
     public
@@ -602,7 +605,7 @@ type
     procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); virtual;
     procedure Prepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
 
-    procedure RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+    procedure RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 
     //* Called to parent to wrap the child rendering, each chiled will wrap it with this render
     //* This method exists in parent render
@@ -615,13 +618,13 @@ type
 
     //* Content render
     procedure DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
-    procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); virtual;
+    procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoAfterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     property Renderer: TmnwRenderer read FRenderer;
     property RendererRegister: TmnwRendererRegister read FRendererRegister;
   public
-    procedure Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TUIWebRespond);
+    procedure Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TmnwResponse);
     constructor Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwRendererRegister); virtual; //useful for creating it by RendererClass.Create
     procedure CollectAttributes(var Scope: TmnwScope);
   end;
@@ -727,7 +730,7 @@ type
     function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 
     //for HTML
-    procedure Respond(var AContext: TmnwContext; AResponse: TUIWebRespond);
+    procedure Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
     //for WebSocket
     function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
@@ -767,8 +770,10 @@ type
   TmnwHTMLWriterHelper = class helper for TmnwWriter
   public
     procedure OpenTag(const Tag: string); overload;
-    procedure OpenTag(const TagName, TagAttributes: string); overload;
+    procedure OpenTag(const TagName, TagAttributes: string; TagText: string = ''); overload;
+    procedure OpenInlineTag(const TagName, TagAttributes: string; TagText: string = ''); overload; // keep inline
     procedure CloseTag(const Tag: string);
+    procedure AddShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
     procedure AddTag(const TagName, TagAttributes: string); overload;
     procedure AddTag(const TagName, TagAttributes, Value: string); overload;
   end;
@@ -847,13 +852,13 @@ type
 
       TAssets = class(THTMLElement)
       protected
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public
         HomePath: string;
         function GetContentType(Route: string): string; override;
       end;
 
-      TComposeProc = reference to procedure(Inner: TmnwElement; AResponse: TUIWebRespond);
+      TComposeProc = reference to procedure(Inner: TmnwElement; AResponse: TmnwResponse);
 
       { TDynamicCompose }
 
@@ -867,9 +872,9 @@ type
           public
           end;
 
-        procedure InnerCompose(Inner: TmnwElement; AResponse: TUIWebRespond); virtual;
+        procedure InnerCompose(Inner: TmnwElement; AResponse: TmnwResponse); virtual;
 
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public
         OnCompose: TComposeProc;
         constructor Create(AParent: TmnwElement; AOnCompose: TComposeProc = nil); reintroduce;
@@ -1050,7 +1055,7 @@ type
       TForm = class(THTMLElement)
       private
       protected
-        procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
         procedure Created; override;
         procedure DoComposed; override;
       public
@@ -1075,7 +1080,7 @@ type
       [TRoute_Extension]
       TAction = class(THTMLElement)
       protected
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public
         procedure Loop; virtual;
       end;
@@ -1184,7 +1189,7 @@ type
       private
         FData: TMemoryStream;
       protected
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       protected
         procedure Created; override;
       public
@@ -1247,7 +1252,7 @@ type
 
       TComment = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TDocument }
@@ -1255,7 +1260,7 @@ type
       TDocument = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TBody }
@@ -1263,35 +1268,35 @@ type
       TBody = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TFile }
 
       TFile = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TJSFile }
 
       TJSFile = class(TFile)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TCSSFile }
 
       TCSSFile = class(TFile)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TDynamicCompose }
 
       TDynamicCompose = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TIntervalCompose }
@@ -1305,7 +1310,7 @@ type
 
       THeader = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TNavBar }
@@ -1316,7 +1321,7 @@ type
         procedure DoRenderBrand(Scope: TmnwScope; Context: TmnwContext); virtual;
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       public
       end;
 
@@ -1326,35 +1331,35 @@ type
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TLink }
 
       TLink = class(THTMLControl)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TFooter }
 
       TFooter = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TToast }
 
       TToast = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TContent }
 
       TContent = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TSideBar }
@@ -1363,54 +1368,54 @@ type
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TMain }
 
       TMain = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TRow }
 
       TRow = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TColumn }
 
       TColumn = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TCard }
 
       TCard = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       TPanel = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TCollapseCaption }
 
       TCollapseCaption = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TThemeModeButton }
 
       TThemeModeButton = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TForm }
@@ -1419,21 +1424,21 @@ type
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TParagraph }
 
       TParagraph = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TBreak }
 
       TBreak = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TButton }
@@ -1441,21 +1446,21 @@ type
       TButton = class(THTMLControl)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TNavItem }
 
       TNavItem = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TMenuItem }
 
       TMenuItem = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TSubbMenu }
@@ -1463,7 +1468,7 @@ type
       TSubMenu = class(THTMLControl)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TInput }
@@ -1471,7 +1476,7 @@ type
       TInput = class(THTMLComponent)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       TInputPassword = class(TInput)
@@ -1483,7 +1488,7 @@ type
       protected
         procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TMemoryImage }
@@ -1492,7 +1497,7 @@ type
       protected
         procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
   protected
@@ -1526,7 +1531,7 @@ type
     function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
   end;
 
-  TUIWebRespond = class(TmodHttpRespond)
+  TmnwResponse = class(TmodHttpRespond)
   private
     FResume: Boolean;
   public
@@ -1540,14 +1545,14 @@ type
   TUIWebCommand = class(TmodHttpCommand)
   private
     function GetModule: TUIWebModule;
-    function GetRespond: TUIWebRespond;
+    function GetRespond: TmnwResponse;
   protected
     function CreateRespond: TmodRespond; override;
   public
     RendererID: Integer;
     procedure RespondResult(var Result: TmodRespondResult); override;
     property Module: TUIWebModule read GetModule;
-    property Respond: TUIWebRespond read GetRespond;
+    property Respond: TmnwResponse read GetRespond;
   end;
 
   { TAssetsSchema }
@@ -2061,7 +2066,12 @@ end;
 function TmnwAttributes.ToString: string;
 var
   a: TmnwAttribute;
+  idItem: Integer;
 begin
+  idItem := IndexOfName('id');
+  if (idItem > 0) then
+    Move(idItem, 0);
+
   Result := '';
   for a in Self do
   begin
@@ -2117,24 +2127,22 @@ end;
 
 { TmnwElementRenderer }
 
-procedure TmnwElementRenderer.RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwElementRenderer.RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   o: TmnwElement;
 begin
   Context.ParentRenderer := Self;
   for o in Scope.Element do
-  begin
-    if (elHighLevel in o.Kind) then
-      if not (elInternal in o.Kind) then
+    if (orderStart = o.Order) and not (elInternal in o.Kind) then
         o.Render(Context, AResponse);
-  end;
 
   for o in Scope.Element do
-  begin
-    if not (elHighLevel in o.Kind) then
-      if not (elInternal in o.Kind) then
+    if (orderNormal = o.Order) and not (elInternal in o.Kind) then
         o.Render(Context, AResponse);
-  end;
+
+  for o in Scope.Element do
+    if (orderEnd = o.Order) and not (elInternal in o.Kind) then
+        o.Render(Context, AResponse);
 end;
 
 procedure TmnwElementRenderer.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
@@ -2145,7 +2153,7 @@ procedure TmnwElementRenderer.DoEnterInnerRender(Scope: TmnwScope; const Context
 begin
 end;
 
-procedure TmnwElementRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwElementRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   RenderChilds(Scope, Context, AResponse);
 end;
@@ -2191,7 +2199,7 @@ begin
   end;
 end;
 
-procedure TmnwElementRenderer.Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwElementRenderer.Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TmnwResponse);
 var
   aScope: TmnwScope;
 begin
@@ -2249,7 +2257,7 @@ begin
     StrToStrings(Value, Result, vSeparators, []);
 end;
 
-procedure TmnwElement.Render(const Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwElement.Render(const Context: TmnwContext; AResponse: TmnwResponse);
 var
   er: TmnwElementRenderer;
 begin
@@ -2525,7 +2533,7 @@ begin
   end;
 end;
 
-procedure TmnwApp.Respond(var AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwApp.Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
 
   function SessionCookies(const vData: string): string;
   var
@@ -2724,14 +2732,24 @@ begin
   WriteLn('<'+Tag+'>', [woOpenIndent])
 end;
 
-procedure TmnwHTMLWriterHelper.OpenTag(const TagName, TagAttributes: string);
+procedure TmnwHTMLWriterHelper.OpenTag(const TagName, TagAttributes: string; TagText: string);
 begin
-  WriteLn('<'+TagName + ' ' + TagAttributes +'>', [woOpenIndent])
+  WriteLn('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
+end;
+
+procedure TmnwHTMLWriterHelper.OpenInlineTag(const TagName, TagAttributes: string; TagText: string);
+begin
+  Write('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
 end;
 
 procedure TmnwHTMLWriterHelper.CloseTag(const Tag: string);
 begin
   WriteLn('</'+Tag+'>', [woCloseIndent])
+end;
+
+procedure TmnwHTMLWriterHelper.AddShortTag(const TagName: string; TagAttributes: string);
+begin
+  WriteLn('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
 end;
 
 procedure TmnwHTMLWriterHelper.AddTag(const TagName, TagAttributes: string);
@@ -2895,7 +2913,7 @@ end;
 
 { TmnwHTMLRenderer.TComment }
 
-procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TComment;
 begin
@@ -2918,7 +2936,7 @@ begin
   Scope.Attributes['lang'] := 'en';
 end;
 
-procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TDocument;
   aLibrary: TmnwLibrary;
@@ -2927,12 +2945,12 @@ var
 begin
   e := Scope.Element as THTML.TDocument;
   Context.Writer.WriteLn('<!DOCTYPE html>');
-  Context.Writer.OpenTag('html' + Scope.GetText);
+  Context.Writer.OpenTag('html', Scope.ToString);
   Context.Writer.OpenTag('head');
   Context.Writer.AddTag('title', '', e.Title);
-  Context.Writer.WriteLn('<link rel="shortcut icon" href="#" />', [woOpenIndent, woCloseIndent]);
-  Context.Writer.WriteLn('<meta charset="UTF-8">');
-  Context.Writer.WriteLn('<meta name="viewport" content="width=device-width, initial-scale=1">');
+  Context.Writer.AddShortTag('link', 'rel="shortcut icon" href="#"');
+  Context.Writer.AddShortTag('meta', 'charset="UTF-8"');
+  Context.Writer.AddShortTag('meta', 'name="viewport" content="width=device-width, initial-scale=1"');
   if e.Parent <> nil then // Only root have head
   begin
     AddHead(Context);
@@ -2964,7 +2982,7 @@ end;
 
 { TmnwHTMLRenderer.THeaderHTML }
 
-procedure TmnwHTMLRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   Scope.Classes.AddClasses('header sticky-top d-flex align-items-center navbar-dark bg-dark py-0 px-1');
   Context.Writer.OpenTag('header', Scope.ToString);
@@ -2974,19 +2992,19 @@ end;
 
 { TmnwHTMLRenderer.TFooterHTML }
 
-procedure TmnwHTMLRenderer.TFooter.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TFooter.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TFooter;
 begin
   e := Scope.Element as THTML.TFooter;
-  Context.Writer.WriteLn('<footer class="bg-body-tertiary text-center text-lg-start">', [woOpenIndent]);
+  Context.Writer.OpenTag('footer', 'class="text-center"');
   inherited;
-  Context.Writer.WriteLn('</footer>', [woCloseIndent]);
+  Context.Writer.CloseTag('footer');
 end;
 
 { TmnwHTMLRenderer.TToast }
 
-procedure TmnwHTMLRenderer.TToast.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TToast.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TToast;
 begin
@@ -3000,7 +3018,7 @@ end;
 
 { TmnwHTMLRenderer.TContent }
 
-procedure TmnwHTMLRenderer.TContent.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TContent.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TContent;
 begin
@@ -3009,7 +3027,7 @@ begin
     Scope.Classes.Add('container-fluid')
   else
     Scope.Classes.Add('container');
-  Context.Writer.OpenTag('div'+Scope.GetText);
+  Context.Writer.OpenTag('div', Scope.ToString);
   Context.Writer.OpenTag('div id="content" class="content row flex-nowrap"');
   inherited;
   Context.Writer.CloseTag('div');
@@ -3018,7 +3036,7 @@ end;
 
 { TmnwHTMLRenderer.TMainHTML }
 
-procedure TmnwHTMLRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TMain;
   classes: TElementClasses;
@@ -3042,7 +3060,7 @@ begin
   Scope.Classes.Add('flex-nowrap');
   Scope.Classes.Add('justify-content-center');
 //container-fluid for full width, container not full width
-  Context.Writer.OpenTag('div',  Scope.GetText);
+  Context.Writer.OpenTag('div',  Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
 
@@ -3055,7 +3073,7 @@ end;
 //https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
 //https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
 
-procedure TmnwHTMLRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TCard;
 begin
@@ -3067,22 +3085,22 @@ begin
   if e.Anchor then
     Scope.Classes.Add('mx-auto');
 
-  Context.Writer.WriteLn('<div' + Scope.GetText + '>', [woOpenIndent]);
+  Context.Writer.OpenTag('div', Scope.ToString);
   if e.Caption <> '' then
   begin
-    Context.Writer.WriteLn('<h5 class="card-header d-flex" id="' + e.id + '-header">');
-    Context.Writer.Write(e.Caption);
+    Context.Writer.OpenTag('h5', 'class="card-header d-flex" id="' + e.id + '-header"');
+    Context.Writer.WriteLn(e.Caption);
     if e.Collapse then
     begin
-      Context.Writer.WriteLn('<span class="ms-auto my-auto icon-animate icon bi-chevron-down"', [woOpenIndent, woCloseIndent]);
+      Context.Writer.Write('<span class="ms-auto my-auto icon-animate icon bi-chevron-down"');
       if e.Collapse then
           Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
-      Context.Writer.Write('></span>', [woOpenIndent]);
+      Context.Writer.WriteLn('></span>');
     end;
     Context.Writer.CloseTag('h5');
   end;
 
-  Context.Writer.WriteLn('<div class="card-body collapse show" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body">', [woOpenIndent]);
+  Context.Writer.OpenTag('div', 'class="card-body collapse show" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body"');
 //  collapse
   inherited;
   Context.Writer.CloseTag('div');
@@ -3102,7 +3120,7 @@ begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TForm.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TForm.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TForm;
   aPostTo: string;
@@ -3116,40 +3134,40 @@ begin
     aPostTo := e.GetPath
   else if e.PostTo.Where = toHome then
     aPostTo := '/';
-  Context.Writer.WriteLn('<form ajax="true" method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText+'>', [woOpenIndent]);
+  Context.Writer.OpenTag('form', 'method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText);
   inherited;
   if e.RedirectTo <> '' then
-    Context.Writer.WriteLn('<input type="hidden" name="redirect" value="' + e.RedirectTo + '">', [woOpenIndent, woCloseIndent]);
-  Context.Writer.WriteLn('<input type="hidden" name="execute" value="true">', [woOpenIndent, woCloseIndent]);
-  Context.Writer.WriteLn('</form>', [woCloseIndent]);
+    Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo);
+  Context.Writer.AddShortTag('input', 'type="hidden" name="execute" value="true"');
+  Context.Writer.CloseTag('form');
 
   if e.Submit.Caption <> '' then
-    Context.Writer.WriteLn('<button class="btn btn-success" type="submit" form="'+e.ID+'" value="Submit">' + e.Submit.Caption + '</button>', [woOpenIndent, woCloseIndent]);
+    Context.Writer.AddTag('button', 'class="btn btn-success" type="submit" form="'+e.ID+'" value="Submit"', e.Submit.Caption);
   if e.Cancel.Caption <> '' then
-    Context.Writer.WriteLn('<button class="btn btn-primary" type="cancel" form="'+e.ID+'" value="Cancel">' + e.Cancel.Caption + '</button>', [woOpenIndent, woCloseIndent]);
+    Context.Writer.AddTag('button', 'class="btn btn-primary" type="cancel" form="'+e.ID+'" value="Cancel"', e.Cancel.Caption);
   if e.Reset.Caption <> '' then
-    Context.Writer.WriteLn('<button class="btn btn-primary" type="reset" form="'+e.ID+'" value="Reset">' + e.Reset.Caption + '</button>', [woOpenIndent, woCloseIndent]);
+    Context.Writer.AddTag('button', 'class="btn btn-primary" type="reset" form="'+e.ID+'" value="Reset"', e.Reset.Caption);
 end;
 
 { TmnwHTMLRenderer.TParagraphHTML }
 
-procedure TmnwHTMLRenderer.TParagraph.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TParagraph.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TParagraph;
 begin
   e := Scope.Element as THTML.TParagraph;
-  Context.Writer.Write('<p>', [woOpenIndent]);
+  Context.Writer.OpenInlineTag('p', '');
   if e.Text <> '' then
     Context.Writer.Write(e.Text, []);
   inherited;
-  Context.Writer.WriteLn('</p>', [woCloseIndent]);
+  Context.Writer.CloseTag('p');
 end;
 
 { TmnwHTMLRenderer.TBreakHTML }
 
-procedure TmnwHTMLRenderer.TBreak.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TBreak.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
-  Context.Writer.WriteLn('<br>');
+  Context.Writer.AddShortTag('br');
 end;
 
 { TmnwHTMLRenderer.TTButton }
@@ -3160,7 +3178,7 @@ begin
   //Scope.Attributes['type'] := (Scope.Element as THTML.TButton).EditType;
 end;
 
-procedure TmnwHTMLRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TButton;
   event: string;
@@ -3176,7 +3194,7 @@ end;
 
 { TmnwHTMLRenderer.TNavItem }
 
-procedure TmnwHTMLRenderer.TNavItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TNavItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TNavItem;
   event: string;
@@ -3185,13 +3203,13 @@ begin
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Scope.Classes.Add('nav-link');
-  Context.Writer.WriteLn('<a href="'+e.LinkTo+'"' + event + '' + Scope.GetText+'>'+e.Caption+'</a>', [woOpenIndent, woCloseIndent]);
+  Context.Writer.AddTag('a', 'href="'+e.LinkTo+'"' + event + Scope.GetText, e.Caption);
   inherited;
 end;
 
 { TmnwHTMLRenderer.TMenuItem }
 
-procedure TmnwHTMLRenderer.TMenuItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TMenuItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TMenuItem;
   event: string;
@@ -3199,7 +3217,7 @@ begin
   e := Scope.Element as THTML.TMenuItem;
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
-  Context.Writer.WriteLn('<button role="menu" type="button"' + event + '' + Scope.Attributes.GetText+' >'+e.Caption+'</button>', [woOpenIndent, woCloseIndent]);
+  Context.Writer.AddTag('button', 'role="menu" type="button"' + event + Scope.Attributes.GetText, e.Caption);
   inherited;
 end;
 
@@ -3210,7 +3228,7 @@ begin
   inherited DoCollectAttributes(Scope);
 end;
 
-procedure TmnwHTMLRenderer.TSubMenu.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TSubMenu.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
 end;
@@ -3224,7 +3242,7 @@ begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TInput;
   event: string;
@@ -3236,14 +3254,14 @@ begin
     Scope.Classes.Add('form-control');
 
   if e.Caption <> '' then
-    Context.Writer.WriteLn('<label'+When(isFormChild, ' class="form-label"')+' for="'+e.ID+'" >' + e.Caption + '</label>', [woOpenIndent, woCloseIndent]);
+    Context.Writer.AddTag('label', When(isFormChild, 'class="form-label"') + ' for="' + e.ID + '"', e.Caption);
 
   if Context.Schema.Interactive then
     event := ' onchange="mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')"';
 
-  Context.Writer.WriteLn('<input'+ event + When(e.Required, 'required') + Scope.GetText + ' >', [woOpenIndent, woCloseIndent]);
+  Context.Writer.AddShortTag('input', event + When(e.Required, 'required') + Scope.GetText);
   if e.HelpText <> '' then
-    Context.Writer.WriteLn('<div class="form-text">' + e.HelpText + '</div>', woFullTag);
+    Context.Writer.AddTag('div', 'class="form-text"', e.HelpText);
   inherited;
 end;
 
@@ -3262,9 +3280,9 @@ begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
-  Context.Writer.WriteLn('<img' + Scope.GetText+' >', [woOpenIndent, woCloseIndent]);
+  Context.Writer.AddShortTag('img', Scope.ToString);
   inherited;
 end;
 
@@ -3283,12 +3301,12 @@ begin
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
 end;
 
-procedure TmnwHTMLRenderer.TMemoryImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TMemoryImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TMemoryImage;
 begin
   e := Scope.Element as THTML.TMemoryImage;
-  Context.Writer.WriteLn('<img'+ Scope.GetText+' >', [woOpenIndent, woCloseIndent]);
+  Context.Writer.AddShortTag('img', Scope.ToString);
   inherited;
 end;
 
@@ -3354,7 +3372,7 @@ begin
   end;
 end;
 
-procedure TmnwSchema.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwSchema.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   fs: TFileStream;
   aFileName: string;
@@ -3634,7 +3652,7 @@ begin
   Result := DocumentToContentType(FileName);
 end;
 
-procedure THTML.TMemoryImage.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure THTML.TMemoryImage.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
   AContext.Writer.Stream.WriteStream(Data, 0);
@@ -3905,7 +3923,7 @@ begin
   Result := Name;
 end;
 
-procedure TmnwElement.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwElement.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
 end;
 
@@ -3913,7 +3931,7 @@ procedure TmnwElement.DoRespondHeader(AContext: TmnwContext);
 begin
 end;
 
-procedure TmnwElement.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwElement.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
 end;
 
@@ -3989,7 +4007,7 @@ begin
   Result := StringOfChar(' ', vLevel * 4);
 end;
 
-procedure TmnwElement.Respond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwElement.Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   DoRespond(AContext, AResponse);
 end;
@@ -4046,7 +4064,7 @@ begin
   Result := 'text/html';
 end;
 
-procedure TmnwElement.Action(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwElement.Action(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
   DoRespondHeader(AContext);
@@ -4168,7 +4186,7 @@ end;
 
 { THTML.TFile }
 
-procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   aStream: TStream;
   aDocSize: Int64;
@@ -4239,7 +4257,7 @@ begin
   Result := DocumentToContentType(FileName);
 end;
 
-procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   if FileDate <> 0 then
     AResponse.Header['Last-Modified']  := FormatHTTPDate(FileDate);
@@ -4284,7 +4302,7 @@ end;
 
 { THTML.TAssets }
 
-procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   fs: TFileStream;
   aFileName: string;
@@ -4320,7 +4338,7 @@ begin
   OnCompose := AOnCompose;
 end;
 
-procedure THTML.TDynamicCompose.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure THTML.TDynamicCompose.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   Inner: TInner;
 begin
@@ -4329,7 +4347,7 @@ begin
   try
     Inner.FSchema := Schema;
     Inner.FParent := Self; //Fake Parent do not add it to the list;
-    Inner.IsRoot := AContext.Element = Self;
+    Inner.IsRoot := AContext.Element = Self; // if compused from Schema of parents, or just directly composed
     InnerCompose(Inner, AResponse);
     if Assigned(OnCompose) then
       OnCompose(Inner, AResponse);
@@ -4341,7 +4359,7 @@ begin
   end;
 end;
 
-procedure THTML.TDynamicCompose.InnerCompose(Inner: TmnwElement; AResponse: TUIWebRespond);
+procedure THTML.TDynamicCompose.InnerCompose(Inner: TmnwElement; AResponse: TmnwResponse);
 begin
 end;
 
@@ -4410,22 +4428,22 @@ end;
 
 procedure TJQuery_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.WriteLn('<script src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"></script>');
+  Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"');
 end;
 
 { TJQuery_LocalLibrary }
 
 procedure TJQuery_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"></script>');
+  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"');
 end;
 
 { TWebElements_Library }
 
 procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"></script>');
-  Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css" crossorigin="anonymous">');
+  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"');
+  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css" crossorigin="anonymous"');
 end;
 
 { THTML }
@@ -4439,7 +4457,7 @@ end;
 
 { TmnwHTMLRenderer.TFile }
 
-procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TFile;
 begin
@@ -4456,16 +4474,20 @@ begin
   inherited;
   //This object auto free by parents
   FHeader := THeader.Create(Self, [elEmbed], False);
+  FHeader.Order := orderStart;
 
   FContent := TContent.Create(Self, [elEmbed], True);
   with FContent do
   begin
     FSideBar := TSideBar.Create(This, [elEmbed], True);
+    FSideBar.Order := orderStart;
     FMain := TMain.Create(This, [elEmbed], True);
   end;
 
   FFooter := TFooter.Create(Self, [elEmbed], False);
+  FFooter.Order := orderEnd;
   FToast := TToast.Create(Self, [elEmbed], False);
+  FToast.Order := orderEnd;
 end;
 
 destructor THTML.TBody.Destroy;
@@ -4546,7 +4568,7 @@ begin
     Scope.Attributes['data-bs-theme'] := e.Theme;
 end;
 
-procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TBody;
   function GetAttach: string;
@@ -4558,14 +4580,14 @@ var
   end;
 begin
   e := Scope.Element as THTML.TBody;
-  Context.Writer.WriteLn('<body' + Scope.GetText + GetAttach + '>', [woOpenIndent]);
+  Context.Writer.OpenTag('body', Scope.ToString + GetAttach);
   inherited;
-  Context.Writer.WriteLn('</body>', [woCloseIndent]);
+  Context.Writer.CloseTag('body');
 end;
 
 { TmnwHTMLRenderer.TPanel }
 
-procedure TmnwHTMLRenderer.TPanel.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TPanel.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TPanel;
 begin
@@ -4582,14 +4604,14 @@ end;
 
 { TmnwHTMLRenderer.TCollapseCaption }
 
-procedure TmnwHTMLRenderer.TCollapseCaption.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TCollapseCaption.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TCollapseCaption;
 begin
   e := Scope.Element as THTML.TCollapseCaption;
   Context.Writer.OpenTag('p', 'class="panel d-flex m-0" data-bs-toggle="collapse" role="button" data-bs-target="#'+e.ID+'-text" aria-expanded="false" aria-controls="'+e.ID+'-text"');
   Context.Writer.WriteLn(e.Caption);
-  Context.Writer.WriteLn('<span class="ms-auto p-0 align-bottom icon bi-three-dots"></span>');
+  Context.Writer.AddTag('span', 'class="ms-auto p-0 align-bottom icon bi-three-dots"');
   Context.Writer.CloseTag('p');
   Context.Writer.OpenTag('div', 'id="'+e.ID+'-text" class="panel-body m-0 collapse"');
   inherited;
@@ -4598,7 +4620,7 @@ end;
 
 { TmnwHTMLRenderer.TThemeModeButton }
 
-procedure TmnwHTMLRenderer.TThemeModeButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TThemeModeButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TThemeModeButton;
 begin
@@ -4611,7 +4633,7 @@ end;
 
 { TmnwHTMLRenderer.TRow }
 
-procedure TmnwHTMLRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TRow;
 begin
@@ -4624,12 +4646,12 @@ end;
 
 { TmnwHTMLRenderer.TColumn }
 
-procedure TmnwHTMLRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  Context.Writer.OpenTag('div class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
+  Context.Writer.OpenTag('div', 'class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -4651,7 +4673,7 @@ end;
 
 { THTML.TForm }
 
-procedure THTML.TForm.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure THTML.TForm.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
   if (RedirectTo <> '') and (AResponse.HttpResult = hrNone) then
@@ -4684,7 +4706,7 @@ end;
 
 { THTML.TAction }
 
-procedure THTML.TAction.DoRespond(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure THTML.TAction.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
   try
@@ -4751,12 +4773,12 @@ end;
 
 { TmnwHTMLRenderer.TDynamicCompose }
 
-procedure TmnwHTMLRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
-  Context.Writer.WriteLn('<div ' + Scope.Attributes.GetText+'>', [woOpenIndent]);
+  Context.Writer.OpenTag('div', Scope.Attributes.ToString);
   inherited;
   Scope.Element.Respond(Context, AResponse);
-  Context.Writer.WriteLn('</div>', [woCloseIndent]);
+  Context.Writer.CloseTag('div');
 end;
 
 { TmnwHTMLRenderer.TIntervalCompose }
@@ -4774,27 +4796,27 @@ var
   e: THTML.TNavBar;
 begin
   e := Scope.Element as THTML.TNavBar;
-  Context.Writer.WriteLn('<a class="logo navbar-brand align-items-center me-auto" href="'+e.GetPath+'">', [woOpenIndent]);
+  Context.Writer.OpenTag('a', 'class="logo navbar-brand align-items-center me-auto" href="' + e.GetPath+'"');
   if e.Schema.App.Assets.Logo.Data.Size > 0 then
-    Context.Writer.WriteLn('<img class="" src="' + e.Schema.App.Assets.Logo.GetPath + '">', [woOpenIndent, woCloseIndent]);
+    Context.Writer.AddShortTag('img', 'src="' + e.Schema.App.Assets.Logo.GetPath+ '"');
   if e.Title <> '' then
-    Context.Writer.WriteLn('<span class="navbar-brand">'+e.Title+'</span>', [woOpenIndent, woCloseIndent]);
-  Context.Writer.WriteLn('</a>', [woCloseIndent]);
+    Context.Writer.AddTag('span', 'class="navbar-brand"', e.Title);
+  Context.Writer.CloseTag('a');
 end;
 
 procedure TmnwHTMLRenderer.TNavBar.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
-  Context.Writer.WriteLn('<li class="nav-item">', [woOpenIndent]);
+  Context.Writer.OpenTag('li', 'class="nav-item"');
   inherited;
 end;
 
 procedure TmnwHTMLRenderer.TNavBar.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
-  Context.Writer.WriteLn('</li>', [woCloseIndent]);
+  Context.Writer.CloseTag('li');
 end;
 
-procedure TmnwHTMLRenderer.TNavBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TNavBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TNavBar;
   sb: THTML.TSideBar;
@@ -4808,7 +4830,7 @@ begin
   Scope.Classes.Add('bg-dark');
   Scope.Classes.AddClasses('flex-nowrap navbar-expand-md navbar-dark bg-dark w-100 py-0 px-1');
 
-  Context.Writer.WriteLn('<nav'+Scope.GetText+'>', [woOpenIndent]);
+  Context.Writer.OpenTag('nav', Scope.ToString);
 
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
   begin
@@ -4820,23 +4842,22 @@ begin
 
 	DoRenderBrand(Scope, Context);
 
-  //Context.Writer.WriteLn('<div id="'+e.id+'-items'+'" class="collapse navbar-collapse">', [woOpenIndent]);
-  Context.Writer.WriteLn('<div id="'+e.id+'-items'+'" class="offcanvas offcanvas-top navbar-dark bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1">', [woOpenIndent]);
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top navbar-dark bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
   //Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
-  Context.Writer.OpenTag('ul class="navbar-nav mr-auto m-2 m-md-0"');
+  Context.Writer.OpenTag('ul', 'class="navbar-nav mr-auto m-2 m-md-0"');
   inherited;
   Context.Writer.CloseTag('ul');
-  Context.Writer.WriteLn('</div>', [woCloseIndent]);
+  Context.Writer.CloseTag('div');
   //Context.Writer.WriteLn('</div>', [woCloseIndent]);
   e.Buttons.Render(Context, AResponse); // Render buttons
 
   if e.Count > 0 then
   begin
-    Context.Writer.WriteLn('<button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#'+e.ID+'-items'+'" aria-controls="'+e.ID+'-items'+'" aria-expanded="false" aria-label="Toggle navigation">', [woOpenIndent]);
-    Context.Writer.WriteLn('<span class="invert icon bi-list"></span>');
-    Context.Writer.WriteLn('</button>', [woCloseIndent]);
+    Context.Writer.OpenTag('button', 'class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#'+e.ID+'-items'+'" aria-controls="'+e.ID+'-items'+'" aria-expanded="false" aria-label="Toggle navigation"');
+    Context.Writer.AddTag('span', 'class="invert icon bi-list"');
+    Context.Writer.CloseTag('button');
   end;
-  Context.Writer.WriteLn('</nav>', [woCloseIndent]);
+  Context.Writer.CloseTag('nav');
 end;
 
 { TmnwHTMLRenderer.TMenuBar }
@@ -4851,14 +4872,14 @@ begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TMenuBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TMenuBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
 end;
 
 { TmnwHTMLRenderer.TLink }
 
-procedure TmnwHTMLRenderer.TLink.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TLink.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TLink;
   event: string;
@@ -4866,18 +4887,14 @@ begin
   e := Scope.Element as THTML.TLink;
   if e.ClickType = clickAction then
     event :=' onclick="mnw.click(event, this)"';
-  Context.Writer.Write('<a' + Scope.GetText + ' href="'+When(e.Location, '#') + '"'+ event + '>', [woOpenIndent]);
-  if e.Caption <> '' then
-    Context.Writer.Write(e.Caption)
-  else
-    Context.Writer.Write('#');
+  Context.Writer.OpenInlineTag('a', 'href="'+When(e.Location, '#') + '"'+ event + Scope.GetText, When(e.Caption, '#'));
   inherited;
-  Context.Writer.WriteLn('</a>', [woCloseIndent]);
+  Context.Writer.CloseTag('a');
 end;
 
 { TmnwHTMLRenderer.TJSFile }
 
-procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TJSFile;
   src: string;
@@ -4885,22 +4902,22 @@ begin
   e := Scope.Element as THTML.TJSFile;
   if ftEmbed in e.Options then
   begin
-    Context.Writer.WriteLn('<script type="text/javascript"'+ Scope.Attributes.GetText + '>', [woOpenIndent]);
+    Context.Writer.OpenTag('script', 'type="text/javascript"' + Scope.GetText);
     inherited;
     Context.Writer.WriteLn('');
-    Context.Writer.WriteLn('</script>', [woCloseIndent]);
+    Context.Writer.CloseTag('script');
   end
   else
   begin
     src := e.GetPath;
-    Context.Writer.WriteLn('<script type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src) +' ></script>', [woOpenIndent, woCloseIndent]);
+    Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src));
     inherited;
   end;
 end;
 
 { TmnwHTMLRenderer.TCSSFile }
 
-procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TCSSFile;
   src: string;
@@ -4908,15 +4925,15 @@ begin
   e := Scope.Element as THTML.TCSSFile;
   if ftEmbed in e.Options then
   begin
-    Context.Writer.WriteLn('<style type="text/css"'+ Scope.Attributes.GetText + '>', [woOpenIndent]);
+    Context.Writer.OpenTag('style', 'type="text/css"'+ Scope.GetText);
     inherited;
-    Context.Writer.WriteLn('');
-    Context.Writer.WriteLn('</style>', [woCloseIndent]);
+    Context.Writer.WriteLn();
+    Context.Writer.CloseTag('style');
   end
   else
   begin
     src := e.GetPath;
-    Context.Writer.WriteLn('<link rel="stylesheet" href='+ DQ(src) +' ></link>', [woOpenIndent, woCloseIndent]);
+    Context.Writer.AddTag('link', 'rel="stylesheet" href='+ DQ(src));
     inherited;
   end;
 end;
@@ -4925,7 +4942,7 @@ end;
 
 function TUIWebCommand.CreateRespond: TmodRespond;
 begin
-  Result := TUIWebRespond.Create(Request);
+  Result := TmnwResponse.Create(Request);
 end;
 
 function TUIWebCommand.GetModule: TUIWebModule;
@@ -4933,9 +4950,9 @@ begin
   Result := (inherited Module) as TUIWebModule;
 end;
 
-function TUIWebCommand.GetRespond: TUIWebRespond;
+function TUIWebCommand.GetRespond: TmnwResponse;
 begin
-  Result := inherited Respond as TUIWebRespond;
+  Result := inherited Respond as TmnwResponse;
 end;
 
 procedure TUIWebCommand.RespondResult(var Result: TmodRespondResult);
@@ -5242,8 +5259,8 @@ function TmnwScope.ToString: string;
 var
   s: string;
 begin
-  s := Classes.ToString;
-  Result := Space(s, Attributes.ToString);
+  s := Attributes.ToString;
+  Result := Space(s, Classes.ToString);
 end;
 
 { TmnwHTMLRenderer.TSideBar }
@@ -5262,7 +5279,7 @@ begin
 //  Context.Writer.WriteLn('</li>', [woCloseIndent]);
 end;
 
-procedure TmnwHTMLRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TUIWebRespond);
+procedure TmnwHTMLRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TSideBar;
 begin

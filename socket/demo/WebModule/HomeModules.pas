@@ -50,7 +50,7 @@ type
   private
   public
   protected
-    procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+    procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoCompose; override;
   public
   end;
@@ -61,7 +61,7 @@ type
   private
   public
   protected
-    procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+    procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoCompose; override;
   public
   end;
@@ -105,7 +105,7 @@ type
 
   TClockCompose = class(THTML.TIntervalCompose)
   public
-    procedure InnerCompose(Inner: TmnwElement; AResponse: TUIWebRespond); override;
+    procedure InnerCompose(Inner: TmnwElement; AResponse: TmnwResponse); override;
   end;
 
   TThreadTimer = class(TThread)
@@ -123,7 +123,7 @@ type
 
   TMyLink = class(THTML.TLink)
   public
-    procedure DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond); override;
+    procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoExecute; override;
   end;
 
@@ -136,7 +136,7 @@ type
 
 { TMyLink }
 
-procedure TMyLink.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TMyLink.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
   AResponse.Resume := False;
@@ -169,7 +169,7 @@ end;
 
 { TClockComposer }
 
-procedure TClockCompose.InnerCompose(Inner: TmnwElement; AResponse: TUIWebRespond);
+procedure TClockCompose.InnerCompose(Inner: TmnwElement; AResponse: TmnwResponse);
 begin
   with THTML do
   begin
@@ -315,7 +315,7 @@ begin
             with TIntervalCompose.Create(This) do
             begin
               Route := 'clock';
-              OnCompose := procedure(Inner: TmnwElement; AResponse: TUIWebRespond)
+              OnCompose := procedure(Inner: TmnwElement; AResponse: TmnwResponse)
               begin
                 TParagraph.Create(Inner, TimeToStr(Now));
                 {with TImage.Create(Inner) do
@@ -363,7 +363,7 @@ end;
 
 { TLoginSchema }
 
-procedure TLoginSchema.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TLoginSchema.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   aUsername, aPassword: string;
 begin
@@ -497,7 +497,7 @@ end;
 
 { TDemoSchema }
 
-procedure TDemoSchema.DoAction(const AContext: TmnwContext; AResponse: TUIWebRespond);
+procedure TDemoSchema.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   aUsername, aPassword: string;
 begin
