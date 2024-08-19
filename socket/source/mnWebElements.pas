@@ -2438,55 +2438,65 @@ begin
     if Schema = nil then
       Schema := First; //* fallback
 
-    if Schema <> nil then
+    if (Schema <> nil) then
     begin
-      if not (estComposed in Schema.State) then
+      if schemaSession in Schema.GetCapabilities then
       begin
         Schema.Lock.Enter;
         try
-          try
-            if schemaSession in Schema.GetCapabilities then
-              Schema.SessionID := AContext.SessionID;
-            if Schema.Accept then
-              Schema.Compose; //Compose
-          except
-            Schema.Lock.Leave;
-            FreeAndNil(Schema);
-            raise;
-          end;
+          Schema.SessionID := AContext.SessionID;
         finally
-          if Schema <> nil then
-            Schema.Lock.Leave;
+          Schema.Lock.Leave;
         end;
       end;
-    end;
 
-    if (estComposed in Schema.State) then
-    begin
-      aElement := Schema;
-
-      if aElement <> nil then
+      if Schema.Accept then
       begin
-        Result := True;
-        Element := aElement;
-        i := 0;
-        while i < Routes.Count do
+        if not (estComposed in Schema.State) then
         begin
-          aRoute := Routes[i];
-          aElement := aElement.FindByRoute(aRoute);
-          if aElement = nil then
-          begin
-            //if elFallback in Element.Kind then
-            Result := False;
-            break;
-          end
-          else
-          begin
-            AContext.Route := DeleteSubPath(aRoute, AContext.Route);
-            Element := aElement;
-            Result := True;
+          Schema.Lock.Enter;
+          try
+            try
+              Schema.Compose; //Compose
+            except
+              Schema.Lock.Leave;
+              FreeAndNil(Schema);
+              raise;
+            end;
+          finally
+            if Schema <> nil then
+              Schema.Lock.Leave;
           end;
-          inc(i);
+        end;
+
+        if (estComposed in Schema.State) then
+        begin
+          aElement := Schema;
+
+          if aElement <> nil then
+          begin
+            Result := True;
+            Element := aElement;
+            i := 0;
+            while i < Routes.Count do
+            begin
+              aRoute := Routes[i];
+              aElement := aElement.FindByRoute(aRoute);
+              if aElement = nil then
+              begin
+                //if elFallback in Element.Kind then
+                Result := False;
+                break;
+              end
+              else
+              begin
+                AContext.Route := DeleteSubPath(aRoute, AContext.Route);
+                Element := aElement;
+                Result := True;
+              end;
+              inc(i);
+            end;
+          end;
         end;
       end;
     end;

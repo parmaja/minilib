@@ -30,6 +30,7 @@ type
     Input1: THTML.TInput;
     Input2: THTML.TInput;
     Input3: THTML.TInput;
+    procedure DoAccept(var Resume: Boolean); override;
     procedure DoCompose; override;
   public
     class function GetCapabilities: TmnwSchemaCapabilities; override;
@@ -190,6 +191,11 @@ begin
 end;
 
 { TWellcomeSchema }
+
+procedure TWelcomeSchema.DoAccept(var Resume: Boolean);
+begin
+  Resume := False;
+end;
 
 procedure TWelcomeSchema.DoCompose;
 begin
