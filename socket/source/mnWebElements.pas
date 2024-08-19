@@ -292,7 +292,7 @@ type
   TmnwElement = class(TmnObjectList<TmnwElement>)
   private
     FEnabled: Boolean;
-    FHandle: Integer;
+    FHandle: Int64;
     FStyle: String;
     FVisible: Boolean;
     FRenderIt: Boolean;
@@ -395,7 +395,7 @@ type
 
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
     property OnAction: TActionProc read FOnAction write FOnAction;
-    property Handle: Integer read FHandle;
+    property Handle: Int64 read FHandle;
   end;
 
   { TmnwWriter }
@@ -495,10 +495,10 @@ type
     FLock: TCriticalSection;
     FApp: TmnwApp;
     FPhase: TmnwSchemaPhase;
+    FNameingLastNumber: Int64;
     function GetReleased: Boolean;
   protected
     Usage: Integer;
-    NameingLastNumber: Integer;
     procedure UpdateAttached;
     procedure DoRespond(const AContext: TmnwContext; var AReturn: TmnwReturn); override;
     procedure DoAccept(var Resume: Boolean); virtual;
@@ -516,6 +516,7 @@ type
     destructor Destroy; override;
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
+    function NewHandle: Int64;
 
     //* Attaching cap
     //function Interactive: Boolean;
@@ -995,7 +996,6 @@ type
       end;
 
       [TID_Extension]
-
       THTMLCaptionComponent =class abstract(THTMLComponent)
       public
         Caption: string;
@@ -1015,7 +1015,11 @@ type
       public
       end;
 
+      [TID_Extension]
       TCollapseCaption = class(THTMLCaptionComponent)
+      protected
+        procedure DoCompose; override;
+
       public
       end;
 
@@ -3458,6 +3462,12 @@ begin
   Result := (FPhase = scmpReleased) or (schemaDynamic in GetCapabilities);
 end;
 
+function TmnwSchema.NewHandle: Int64;
+begin
+  AtomicIncrement(FNameingLastNumber);
+  Result := FNameingLastNumber;
+end;
+
 procedure TmnwSchema.UpdateAttached;
 begin
   Attachments.Lock.Enter;
@@ -3858,8 +3868,7 @@ function TmnwElement.GenHandle: Integer;
 begin
   if Handle = 0 then
   begin
-    Inc(Schema.NameingLastNumber);
-    FHandle := Schema.NameingLastNumber
+    FHandle := Schema.NewHandle
   end;
   Result := Handle;
 end;
@@ -4309,6 +4318,7 @@ begin
     InnerCompose(InnerComposer);
     if Assigned(OnCompose) then
       OnCompose(InnerComposer);
+    InnerComposer.Compose;
     InnerComposer.Render(AContext, AReturn);
   finally
     InnerComposer.Free;
@@ -4592,7 +4602,7 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add(BSContentAlignToStr(e.ContentAlign));
-  Context.Writer.OpenTag('div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align));
+  Context.Writer.OpenTag('div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align)+'"');
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -5251,6 +5261,14 @@ begin
   inherited Create(AParent);
   Location := ALocation;
   FCaption := ACaption;
+end;
+
+{ THTML.TCollapseCaption }
+
+procedure THTML.TCollapseCaption.DoCompose;
+begin
+  inherited;
+
 end;
 
 initialization
