@@ -82,6 +82,9 @@ uses
 
 {.$define rtti_objects}
 
+const
+  cIndentSpaces = 2;
+
 type
 {$ifdef FPC}
   THandle = Cardinal;
@@ -413,6 +416,7 @@ type
     NewLine: Boolean;
     FStream: TmnBufferStream;
   public
+    Compact: Boolean;
     constructor Create(AName: string; AStream: TmnBufferStream);
     procedure Write(S: string; Options: TmnwWriterOptions = []); virtual;
     procedure WriteLn(const S: string = ''; Options: TmnwWriterOptions = []);
@@ -1582,6 +1586,7 @@ type
     procedure Stop; override;
   public
     IsLocal: Boolean;
+    CompactMode: Boolean;
     destructor Destroy; override;
     constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules =nil); override;
     property WebApp: TmnwApp read FWebApp;
@@ -3259,7 +3264,7 @@ begin
   if Context.Schema.Interactive then
     event := ' onchange="mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')"';
 
-  Context.Writer.AddShortTag('input', event + When(e.Required, 'required') + Scope.GetText);
+  Context.Writer.AddShortTag('input', event + When(e.Required, 'required') + Scope.GetText); //TODO need to generate less spaces
   if e.HelpText <> '' then
     Context.Writer.AddTag('div', 'class="form-text"', e.HelpText);
   inherited;
@@ -4004,7 +4009,7 @@ end;
 
 function LevelStr(vLevel: Integer): String;
 begin
-  Result := StringOfChar(' ', vLevel * 4);
+  Result := StringOfChar(' ', vLevel * cIndentSpaces);
 end;
 
 procedure TmnwElement.Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
@@ -4086,15 +4091,21 @@ begin
   if (woCloseIndent in Options) and not (woOpenIndent in Options) then
     Dec(Level);
 
-  if (NewLine) then
-    S := LevelStr(Level) + S;
+  if not Compact then
+  begin
+    if (NewLine) then
+      S := LevelStr(Level) + S;
+  end;
 
   NewLine := False;
 
   if (woEndLine in Options) then
   begin
     NewLine := True;
-    s := S + sWinEndOfLine;
+    if not Compact then
+    begin
+      s := S + sWinEndOfLine;
+    end;
   end;
 
   FStream.WriteUtf8String(S);
@@ -5011,6 +5022,7 @@ begin
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
     aContext.Writer := TmnwWriter.Create('html', Respond.Stream);
+    aContext.Writer.Compact := Module.CompactMode;
     try
       aContext.ETag := Request.Header['If-None-Match'];
 

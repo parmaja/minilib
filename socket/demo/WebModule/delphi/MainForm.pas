@@ -125,6 +125,7 @@ begin
     aHomeModule.WebApp.HomePath := IncludePathDelimiter(aHomePath);
     aHomeModule.HomePath := IncludePathDelimiter(aHomePath);
     aHomeModule.WorkPath := aHomeModule.WebApp.AppPath;
+    aHomeModule.CompactMode := False;
     ForceDirectories(aHomeModule.WorkPath + 'cache');
     ForceDirectories(aHomeModule.WorkPath + 'temp');
   end;
