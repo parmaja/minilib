@@ -315,7 +315,7 @@ begin
             with TIntervalCompose.Create(This) do
             begin
               Route := 'clock';
-              OnCompose := procedure(Inner: TmnwElement; const AReturn: TmnwReturn)
+              OnCompose := procedure(Inner: TmnwElement; AResponse: TUIWebRespond)
               begin
                 TParagraph.Create(Inner, TimeToStr(Now));
                 {with TImage.Create(Inner) do

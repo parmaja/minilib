@@ -309,6 +309,7 @@ type
     FOnExecute: TElementExecute;
     FOnAction: TActionProc;
     FPrepared: Boolean;
+    FIsRoot: Boolean;
     procedure SetState(const AValue: TmnwElementState);
   protected
     procedure Update; virtual;
@@ -387,6 +388,8 @@ type
     property Enabled: Boolean read FEnabled write FEnabled;
 
     property RenderIt: Boolean read FRenderIt write FRenderIt;
+    property IsRoot: Boolean read FIsRoot write FIsRoot;
+
 
     property Attributes: TmnwAttributes read FAttributes;
     property Kind: TmnwElementKind read FKind write FKind;
@@ -3314,6 +3317,7 @@ begin
   else
     FRoute := ARoute;
   FSchema := Self;
+  FIsRoot := True;
   FAttachments := TmnwAttachments.Create;
   FLock := TCriticalSection.Create;
   RefreshInterval := 1;
@@ -4325,7 +4329,7 @@ begin
   try
     Inner.FSchema := Schema;
     Inner.FParent := Self; //Fake Parent do not add it to the list;
-
+    Inner.IsRoot := AContext.Element = Self;
     InnerCompose(Inner, AResponse);
     if Assigned(OnCompose) then
       OnCompose(Inner, AResponse);
