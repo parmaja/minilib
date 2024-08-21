@@ -420,6 +420,7 @@ type
     constructor Create(AName: string; AStream: TmnBufferStream);
     procedure Write(S: string; Options: TmnwWriterOptions = []); virtual;
     procedure WriteLn(const S: string = ''; Options: TmnwWriterOptions = []);
+    function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload; inline;
     property Stream: TmnBufferStream read FStream write FStream;
   end;
 
@@ -519,6 +520,7 @@ type
     RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
     HomePath: string;
     ServeFiles: Boolean;
+    AllowIndex: Boolean;
     SessionID: string;
     Interactive: Boolean;
     constructor Create(AName:string; ARoute: string = ''); reintroduce;
@@ -775,11 +777,12 @@ type
   public
     procedure OpenTag(const Tag: string); overload;
     procedure OpenTag(const TagName, TagAttributes: string; TagText: string = ''); overload;
-    procedure OpenInlineTag(const TagName, TagAttributes: string; TagText: string = ''); overload; // keep inline
+    procedure OpenInlineTag(const TagName:string; TagAttributes: string = ''; TagText: string = ''); overload; // keep inline
     procedure CloseTag(const Tag: string);
     procedure AddShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
     procedure AddTag(const TagName, TagAttributes: string); overload;
     procedure AddTag(const TagName, TagAttributes, Value: string); overload;
+    procedure AddInlineTag(const TagName, TagAttributes, Value: string); overload;
   end;
 
   { THTML }
@@ -2415,7 +2418,9 @@ begin
     Result := SchemaItem.SchemaClass.Create(SchemaItem.Name, SchemaItem.Name);
     SchemaCreated(Result);
     //Add(SchemaObject); no, when compose it we add it
-  end;
+  end
+  else
+    Result := nil;
 end;
 
 function TmnwApp.ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
@@ -2742,7 +2747,7 @@ begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
 end;
 
-procedure TmnwHTMLWriterHelper.OpenInlineTag(const TagName, TagAttributes: string; TagText: string);
+procedure TmnwHTMLWriterHelper.OpenInlineTag(const TagName: string; TagAttributes: string; TagText: string);
 begin
   Write('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
 end;
@@ -2765,6 +2770,11 @@ end;
 procedure TmnwHTMLWriterHelper.AddTag(const TagName, TagAttributes, Value: string);
 begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
+end;
+
+procedure TmnwHTMLWriterHelper.AddInlineTag(const TagName, TagAttributes, Value: string);
+begin
+  Write('<'+TagName + ' ' + TagAttributes + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
 end;
 
 { TLocation }
@@ -3382,6 +3392,8 @@ var
   fs: TFileStream;
   aFileName: string;
   aHomePath: string;
+  files: TStringList;
+  s: string;
 begin
   inherited;
   if ServeFiles and (AContext.Route <> '') then
@@ -3391,12 +3403,60 @@ begin
     begin
       if WebExpandFile(aHomePath, AContext.Route, aFileName) then
       begin
-        if FileExists(aFileName) then
+        if EndsDelimiter(aFileName) and AllowIndex then
+        begin
+          AResponse.ContentType := DocumentToContentType('html');
+          files := TStringList.Create;
+          try
+            AContext.Writer.WriteLn('<!DOCTYPE html>');
+            AContext.Writer.OpenTag('html');
+            AContext.Writer.OpenTag('head');
+            AContext.Writer.AddTag('title', '', 'Index of ' + aFileName);
+            AContext.Writer.AddTag('style', '', 'body { font-family: monospace; }');
+            AContext.Writer.CloseTag('head');
+            AContext.Writer.OpenTag('body');
+            EnumFiles(files, aFileName, '*.*', [efDirectory]);
+            AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.Route);
+            AContext.Writer.AddTag('h2', '', 'Folders');
+            AContext.Writer.OpenTag('ul', '', '');
+            for s in files do
+            begin
+              if not StartsText('.', s) then
+              begin
+                AContext.Writer.OpenInlineTag('ui');
+                AContext.Writer.AddInlineTag('a', 'href="' + s + '\"', s);
+                AContext.Writer.AddShortTag('br');
+                AContext.Writer.CloseTag('ui');
+              end;
+            end;
+            AContext.Writer.CloseTag('ul');
+            AContext.Writer.AddTag('h2', '', 'Files');
+            files.Clear;
+            EnumFiles(files, aFileName, '*.*', [efFile]);
+            AContext.Writer.OpenTag('ul', '', '');
+            for s in files do
+            begin
+              if not StartsText('.', s) then
+              begin
+                AContext.Writer.OpenInlineTag('ui');
+                AContext.Writer.AddInlineTag('a', 'href="' + s + '"', s);
+                AContext.Writer.AddShortTag('br');
+                AContext.Writer.CloseTag('ui');
+              end;
+            end;
+            AContext.Writer.CloseTag('ul');
+            AContext.Writer.CloseTag('body');
+            AContext.Writer.CloseTag('html');
+          finally
+            files.Free;
+          end;
+        end
+        else if FileExists(aFileName) and not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots
         begin
           AResponse.ContentType := DocumentToContentType(aFileName);
           fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
           try
-            AContext.Writer.Stream.WriteStream(fs, 0);
+            AContext.Writer.WriteStream(fs, 0);
           finally
             fs.Free;
           end;
@@ -3660,7 +3720,7 @@ end;
 procedure THTML.TMemoryImage.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
-  AContext.Writer.Stream.WriteStream(Data, 0);
+  AContext.Writer.WriteStream(Data, 0);
 end;
 
 procedure THTML.TMemoryImage.LoadFromFile(const AFileName: string);
@@ -4119,6 +4179,11 @@ begin
   Write(S, Options + [woEndLine]);
 end;
 
+function TmnwWriter.WriteStream(AStream: TStream; Count: TFileSize): TFileSize;
+begin
+  Result := Stream.WriteStream(AStream, Count);
+end;
+
 { TmnwRenderer }
 
 procedure TmnwRenderer.BeginRender;
@@ -4209,7 +4274,7 @@ begin
   begin
     aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA); //* remove extension
     try
-      AContext.Writer.Stream.WriteStream(aStream, 0);
+      AContext.Writer.WriteStream(aStream, 0);
     finally
       aStream.Free;
     end;
@@ -4243,7 +4308,7 @@ begin
         AResponse.Header['Last-Modified']  := FormatHTTPDate(aDate);
         AResponse.Header['Content-Length'] := IntToStr(aDocSize);
 
-        AContext.Writer.Stream.WriteStream(aStream, 0);
+        AContext.Writer.WriteStream(aStream, 0);
       finally
         aStream.Free;
       end;
@@ -4275,7 +4340,7 @@ begin
   AResponse.Header['Content-Length'] := IntToStr(Data.Size);
   AResponse.Header['Cache-Control']  := 'public, max-age=3600';
   Data.Seek(0, soBeginning);
-  AContext.Writer.Stream.WriteStream(Data, 0);
+  AContext.Writer.WriteStream(Data, 0);
 end;
 
 procedure TmnwSchema.TMemory.Created;
@@ -4327,7 +4392,7 @@ begin
       begin
         fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
         try
-          AContext.Writer.Stream.WriteStream(fs, 0);
+          AContext.Writer.WriteStream(fs, 0);
         finally
           fs.Free;
         end;
@@ -4722,7 +4787,7 @@ begin
   inherited;
   try
     Execute;
-    AContext.Writer.Stream.WriteUTF8Line('Executed');
+    AContext.Writer.WriteLn('Executed');
   finally
   end;
 end;
@@ -5122,7 +5187,6 @@ begin
     WebApp.Alias := AliasName;
 
   WebApp.Assets.HomePath := WebApp.HomePath;
-  WebApp.Assets.ServeFiles := True;
 
   WebApp.Start;
 end;
