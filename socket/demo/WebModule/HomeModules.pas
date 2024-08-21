@@ -307,25 +307,19 @@ begin
           begin
           end;
 {$else}
-          with TCard.Create(This) do
+          with TIntervalCompose.Create(This) do
           begin
-            Anchor := True;
-            Size := szSmall;
-            Caption := 'Login';
-            with TIntervalCompose.Create(This) do
+            Route := 'clock';
+            OnCompose := procedure(Inner: TmnwElement; AResponse: TmnwResponse)
             begin
-              Route := 'clock';
-              OnCompose := procedure(Inner: TmnwElement; AResponse: TmnwResponse)
+              AResponse.ETag := TimeToStr(Now);
+              TParagraph.Create(Inner, TimeToStr(Now));
+              {with TImage.Create(Inner) do
               begin
-                AResponse.ETag := TimeToStr(Now);
-                TParagraph.Create(Inner, TimeToStr(Now));
-                {with TImage.Create(Inner) do
-                begin
-                  Name := 'file_logo';
-        //          Route := 'logo';
-                  Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
-                end;}
-              end;
+                Name := 'file_logo';
+      //          Route := 'logo';
+                Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo.png';
+              end;}
             end;
           end;
 {$endif}
