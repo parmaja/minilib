@@ -780,6 +780,7 @@ type
     procedure OpenInlineTag(const TagName:string; TagAttributes: string = ''; TagText: string = ''); overload; // keep inline
     procedure CloseTag(const Tag: string);
     procedure AddShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
+    procedure AddInlineShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
     procedure AddTag(const TagName, TagAttributes: string); overload;
     procedure AddTag(const TagName, TagAttributes, Value: string); overload;
     procedure AddInlineTag(const TagName, TagAttributes, Value: string); overload;
@@ -999,6 +1000,7 @@ type
       public
         Margin: Integer;
         Padding: Integer;
+        Gap: Integer;
       end;
 
       TRow = class(THTMLLayout)
@@ -2762,6 +2764,11 @@ begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
 end;
 
+procedure TmnwHTMLWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
+begin
+  Write('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
+end;
+
 procedure TmnwHTMLWriterHelper.AddTag(const TagName, TagAttributes: string);
 begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '></' + TagName + '>', [woOpenIndent, woCloseIndent]);
@@ -3043,7 +3050,7 @@ begin
   else
     Scope.Classes.Add('container');
   Context.Writer.OpenTag('div', Scope.ToString);
-  Context.Writer.OpenTag('div id="content" class="content row flex-nowrap"');
+  Context.Writer.OpenTag('div id="content" class="content row"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -3057,12 +3064,14 @@ var
   classes: TElementClasses;
 begin
   e := Scope.Element as THTML.TMain;
-  //Context.Writer.OpenTag('div class="row flex-nowrap"');
+  //Context.Writer.OpenTag('div class="row"');
 
 
   classes.Init('main');
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
     classes.Add('col-md');
+  classes.Add('p-0');
+  classes.Add('m-0');
 
   Context.Writer.OpenTag('main', classes.ToString);
 
@@ -3071,8 +3080,14 @@ begin
     Scope.Classes.Add('m-md-' + e.Margin.ToString);
   if e.Padding > 0 then
     Scope.Classes.Add('p-' + e.Padding.ToString);
+  if e.Gap > 0 then
+    //Scope.Classes.Add('gap-' + e.Gap.ToString);
+    Scope.Classes.Add('m-childs-' + e.Gap.ToString);
+
   //Scope.Classes.Add('d-flex');
-  Scope.Classes.Add('flex-nowrap');
+  //Scope.Classes.Add('flex-column');
+
+  //Scope.Classes.Add('flex-wrap');
   Scope.Classes.Add('justify-content-center');
 //container-fluid for full width, container not full width
   Context.Writer.OpenTag('div',  Scope.ToString);
@@ -3080,7 +3095,6 @@ begin
   Context.Writer.CloseTag('div');
 
   Context.Writer.CloseTag('main');
-  //Context.Writer.CloseTag('div');
 end;
 
 { TmnwHTMLRenderer.TCardHTML }
@@ -3425,7 +3439,7 @@ begin
               begin
                 AContext.Writer.OpenInlineTag('ui');
                 AContext.Writer.AddInlineTag('a', 'href="' + s + '\"', s);
-                AContext.Writer.AddShortTag('br');
+                AContext.Writer.AddInlineShortTag('br');
                 AContext.Writer.CloseTag('ui');
               end;
             end;
@@ -3440,7 +3454,7 @@ begin
               begin
                 AContext.Writer.OpenInlineTag('ui');
                 AContext.Writer.AddInlineTag('a', 'href="' + s + '"', s);
-                AContext.Writer.AddShortTag('br');
+                AContext.Writer.AddInlineShortTag('br');
                 AContext.Writer.CloseTag('ui');
               end;
             end;
@@ -4737,6 +4751,7 @@ end;
 procedure THTML.TMain.Created;
 begin
   inherited;
+  Gap := 1;
 end;
 
 { THTML.TCard }
@@ -5360,7 +5375,7 @@ var
   e: THTML.TSideBar;
 begin
   e := Scope.Element as THTML.TSideBar;
-  Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar shadow-thin navbar-expand-md"');
+  Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar p-0 m-0 shadow-thin navbar-expand-md"');
   Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content fixed"');
   Context.Writer.OpenTag('div id="' + e.ID + '-items" class="sidebar-items offcanvas offcanvas-start p-2" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
   inherited;
