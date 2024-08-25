@@ -235,6 +235,12 @@ type
     property Usage: Integer read FUsage;
   end;
 
+  TmnwCustomLibrary = class(TmnwLibrary)
+  public
+    Source: string;
+    procedure AddHead(const Context: TmnwContext); override;
+  end;
+
   TmnwLibraryClass = class of TmnwLibrary;
 
   { TmnwLibraries }
@@ -245,7 +251,8 @@ type
     procedure Use(ALibrary: TmnwLibrary); overload;
     procedure Use(ALibraryName: string); overload;
     function Find(ALibrary: string; OnlyLocal: Boolean = False): TmnwLibrary; overload;
-    procedure RegisterLibrary(ALibraryName: string; IsLocal: Boolean; ALibraryClass: TmnwLibraryClass);
+    procedure RegisterLibrary(ALibraryName: string; IsLocal: Boolean; ALibraryClass: TmnwLibraryClass); overload;
+    procedure RegisterLibrary(ALibraryName: string; IsLocal: Boolean; Source: string); overload;
   end;
 
   TJQuery_Library = class(TmnwLibrary)
@@ -283,7 +290,7 @@ type
     elFallback //* if no child have the route name, it take the respond if have a name
   );
 
-  TmnwOrder = (orderNormal, orderStart, orderEnd);
+  TmnwPriority = (priorityNormal, priorityStart, priorityEnd);
 
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom);
@@ -309,7 +316,7 @@ type
     FElementClass: String;
     FAttributes: TmnwAttributes;
     FKind: TmnwElementKind;
-    FOrder: TmnwOrder;
+    FPriority: TmnwPriority;
     FState: TmnwElementState;
     FOnExecute: TElementExecute;
     FOnAction: TActionProc;
@@ -398,7 +405,7 @@ type
 
     property Attributes: TmnwAttributes read FAttributes;
     property Kind: TmnwElementKind read FKind write FKind;
-    property Order: TmnwOrder read FOrder write FOrder;
+    property Priority: TmnwPriority read FPriority write FPriority;
     property State: TmnwElementState read FState write SetState;
 
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
@@ -722,6 +729,8 @@ type
     Port: string;
     Directory: string;
     Alias: string; //ModuleName
+    CompactMode: Boolean;
+    IsLocal: Boolean;
     constructor Create;
     destructor Destroy; override;
     procedure Start;
@@ -1037,7 +1046,6 @@ type
       TCollapseCaption = class(THTMLCaptionComponent)
       protected
         procedure DoCompose; override;
-
       public
       end;
 
@@ -1239,7 +1247,7 @@ type
 
       THTMLElement = class abstract(TmnwElementRenderer)
       protected
-        procedure AddHead(const Context: TmnwContext); virtual;
+        procedure AddHead(const Scope: TmnwScope; const Context: TmnwContext); virtual;
         procedure DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
@@ -1590,8 +1598,6 @@ type
     procedure Start; override;
     procedure Stop; override;
   public
-    IsLocal: Boolean;
-    CompactMode: Boolean;
     destructor Destroy; override;
     constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules =nil); override;
     property WebApp: TmnwApp read FWebApp;
@@ -1629,6 +1635,7 @@ function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 function BSContentAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
 function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+function DirectionToStr(Direction: TDirection): string;
 
 implementation
 
@@ -1689,6 +1696,14 @@ begin
     else
       Result := '';
   end;
+end;
+
+function DirectionToStr(Direction: TDirection): string;
+begin
+  if Direction = dirRightToLeft then
+    Result := 'rtl'
+  else if Direction = dirLeftToRight then
+    Result := 'ltr';
 end;
 
 function Space(const s: string): string; overload; inline;
@@ -2143,15 +2158,15 @@ var
 begin
   Context.ParentRenderer := Self;
   for o in Scope.Element do
-    if (orderStart = o.Order) and not (elInternal in o.Kind) then
+    if (priorityStart = o.Priority) and not (elInternal in o.Kind) then
         o.Render(Context, AResponse);
 
   for o in Scope.Element do
-    if (orderNormal = o.Order) and not (elInternal in o.Kind) then
+    if (priorityNormal = o.Priority) and not (elInternal in o.Kind) then
         o.Render(Context, AResponse);
 
   for o in Scope.Element do
-    if (orderEnd = o.Order) and not (elInternal in o.Kind) then
+    if (priorityEnd = o.Priority) and not (elInternal in o.Kind) then
         o.Render(Context, AResponse);
 end;
 
@@ -2888,7 +2903,7 @@ end;
 
 { TmnwHTMLRenderer.THTMLElement }
 
-procedure TmnwHTMLRenderer.THTMLElement.AddHead(const Context: TmnwContext);
+procedure TmnwHTMLRenderer.THTMLElement.AddHead(const Scope: TmnwScope; const Context: TmnwContext);
 begin
 end;
 
@@ -2975,7 +2990,7 @@ begin
   Context.Writer.AddShortTag('meta', 'name="viewport" content="width=device-width, initial-scale=1"');
   if e.Parent <> nil then // Only root have head
   begin
-    AddHead(Context);
+    AddHead(Scope, Context);
     for aLibrary in Renderer.Libraries do
     begin
       if aLibrary.Usage > 0 then
@@ -4501,6 +4516,17 @@ begin
     raise Exception.Create('library is nil');
 end;
 
+procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; IsLocal: Boolean; Source: string);
+var
+  lib: TmnwCustomLibrary;
+begin
+  lib := TmnwCustomLibrary.Create;
+  lib.Name := ALibraryName;
+  lib.IsLocal := IsLocal;
+  lib.Source := Source;
+  Add(lib);
+end;
+
 procedure TmnwLibraries.Use(ALibraryName: string);
 var
   ALibrary: TmnwLibrary;
@@ -4564,20 +4590,20 @@ begin
   inherited;
   //This object auto free by parents
   FHeader := THeader.Create(Self, [elEmbed], False);
-  FHeader.Order := orderStart;
+  FHeader.Priority := priorityStart;
 
   FContent := TContent.Create(Self, [elEmbed], True);
   with FContent do
   begin
     FSideBar := TSideBar.Create(This, [elEmbed], True);
-    FSideBar.Order := orderStart;
+    FSideBar.Priority := priorityStart;
     FMain := TMain.Create(This, [elEmbed], True);
   end;
 
   FFooter := TFooter.Create(Self, [elEmbed], False);
-  FFooter.Order := orderEnd;
+  FFooter.Priority := priorityEnd;
   FToast := TToast.Create(Self, [elEmbed], False);
-  FToast.Order := orderEnd;
+  FToast.Priority := priorityEnd;
 end;
 
 destructor THTML.TBody.Destroy;
@@ -4729,7 +4755,7 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add(BSContentAlignToStr(e.ContentAlign));
-  Context.Writer.OpenTag('div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align)+'"');
+  Context.Writer.OpenTag('div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align)+' flex-nowrap"');
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -5102,7 +5128,7 @@ begin
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
     aContext.Writer := TmnwWriter.Create('html', Respond.Stream);
-    aContext.Writer.Compact := Module.CompactMode;
+    aContext.Writer.Compact := Module.WebApp.CompactMode;
     try
       aContext.Stamp := Request.Header['If-None-Match'];
 
@@ -5225,7 +5251,7 @@ end;
 
 function TUIWebModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwHTMLRenderer.Create(Self, IsLocal);
+  Result := TmnwHTMLRenderer.Create(Self, WebApp.IsLocal);
 end;
 
 destructor TUIWebModule.Destroy;
@@ -5399,6 +5425,13 @@ procedure THTML.TCollapseCaption.DoCompose;
 begin
   inherited;
 
+end;
+
+{ TmnwCustomLibrary }
+
+procedure TmnwCustomLibrary.AddHead(const Context: TmnwContext);
+begin
+  Context.Writer.AddTag('script', 'src="' + Source + '" crossorigin="anonymous"');
 end;
 
 initialization

@@ -32,15 +32,15 @@
 }
 
 .max-w-lg {
-    max-width: calc(var(--size-unit) * 6);
+    max-width: calc(var(--size-unit) * 4);
 }
 
 .max-w-xl {
-    max-width: calc(var(--size-unit) * 7);
+    max-width: calc(var(--size-unit) * 6);
 }
 
 .max-w-xxl {
-    max-width: calc(var(--size-unit) * 9);
+    max-width: calc(var(--size-unit) * 8);
 }
 
 svg {

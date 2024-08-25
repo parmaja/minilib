@@ -669,7 +669,7 @@ end;
 
 function THomeModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwBootstrapRenderer.Create(Self, IsLocal);
+  Result := TmnwBootstrapRenderer.Create(Self, WebApp.IsLocal);
 end;
 
 destructor THomeModule.Destroy;
