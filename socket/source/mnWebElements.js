@@ -130,6 +130,21 @@ mnw.click = function(event, sender)
   return false;
 }
 
+mnw.action = function(event, url, data) 
+{  
+  console.log(JSON.stringify(data));
+  fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: {
+      'Content-Type': 'application/json'  
+    }
+  })
+  .then(response => response.text())
+  .then(data => console.log(data));  
+  return false;
+}
+
 function createToastElement(type, content) 
 {
   let toastContainer = document.createElement('div');
