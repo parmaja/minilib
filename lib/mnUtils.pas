@@ -252,8 +252,9 @@ function GetFormatSettings: TFormatSettings;
 procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False); overload;
 function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload;
 
-function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; TimeSeparator: Char = ':'; WithTime: Boolean = False): String; overload;
+function ISODateTimeToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '): String; overload;
+
 function DateTimeToRFC822(vDateTime: TDateTime): string;
 
 function IsAllLowerCase(S: string): Boolean;
@@ -1868,6 +1869,11 @@ begin
   end;
 end;
 
+function ISODateTimeToStr(DateTime: TDateTime; vDateSeparator: Char; TimeDivider: Char): String;
+begin
+  Result := ISODateToStr(DateTime, vDateSeparator, TimeDivider, ':',  True);
+end;
+
 function DateTimeToRFC822(vDateTime: TDateTime): string;
 const
   MonthNames: array[1..12] of String =
@@ -1884,11 +1890,6 @@ var
 begin
   DecodeDate(vDateTime, aYear, aMonth, aDay);
   Result := DayNames[DayOfWeek(vDateTime)] +', ' + IntToStr(aDay) +' ' + MonthNames[aMonth] + ' ' + FormatDateTime('yyyy hh":"nn":"ss', vDateTime) +' ' + '+000';
-end;
-
-function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char; TimeDivider: Char; WithTime: Boolean): String;
-begin
-  Result := ISODateToStr(DateTime, vDateSeparator, TimeDivider, ':',  WithTime);
 end;
 
 //* thanks to https://stackoverflow.com/a/41726706/585304

@@ -793,6 +793,7 @@ type
     procedure AddTag(const TagName, TagAttributes: string); overload;
     procedure AddTag(const TagName, TagAttributes, Value: string); overload;
     procedure AddInlineTag(const TagName, TagAttributes, Value: string); overload;
+    procedure ReadFromFile(FileName: string);
   end;
 
   { THTML }
@@ -2762,6 +2763,25 @@ end;
 procedure TmnwHTMLWriterHelper.OpenTag(const TagName, TagAttributes: string; TagText: string);
 begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
+end;
+
+procedure TmnwHTMLWriterHelper.ReadFromFile(FileName: string);
+var
+  stream: TmnBufferStream;
+  s: UTF8String;
+begin
+  stream := TmnWrapperStream.Create(TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead), True);
+  try
+    while not (cloRead in stream.State) do
+    begin
+        if stream.ReadLine(s) then
+        begin
+          WriteLn(s);
+        end;
+    end;
+  finally
+    stream.Free;
+  end;
 end;
 
 procedure TmnwHTMLWriterHelper.OpenInlineTag(const TagName: string; TagAttributes: string; TagText: string);
