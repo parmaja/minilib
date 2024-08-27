@@ -2050,6 +2050,9 @@ var
 begin
   inherited;
 
+  if (Header.Field['Content-Length'].IsExists) then
+    ContentLength := Header.Field['Content-Length'].AsInt64;
+
   Cookies.DelimitedText := Header['Cookie'];
 
   FAccept := Header.ReadString('Connection');
