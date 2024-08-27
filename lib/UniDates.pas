@@ -107,6 +107,9 @@ function udtStartOfTheYear(const AValue: TDateTime): TDateTime;
 function udtEndOfTheYear(const AValue: TDateTime): TDateTime;
 function udtIncDay(const AValue: TDateTime; const ANumberOfDays: Integer = 1): TDateTime;
 
+function udtTruncSeconds(const AValue: TDateTime): TDateTime;
+
+
 function udtCorrectYear(y: Integer): Integer;
 function udtCurrentMonth: Word;
 function udtSeasonOfDate(Date: TDateTime): Integer;
@@ -482,6 +485,14 @@ end;
 function udtIncDay(const AValue: TDateTime; const ANumberOfDays: Integer = 1): TDateTime;
 begin
   Result := IncDay(AValue, ANumberOfDays);
+end;
+
+function udtTruncSeconds(const AValue: TDateTime): TDateTime;
+var
+  LYear, LMonth, LDay, LHour, LMinute, LSecond, LMilliSecond: Word;
+begin
+  DecodeDateTime(AValue, LYear, LMonth, LDay, LHour, LMinute, LSecond, LMilliSecond);
+  Result := EncodeDateTime(LYear, LMonth, LDay, LHour, LMinute, 0, 0);
 end;
 
 procedure udtDecodeDate(UDS: TUniviersalDateSystem; const DateTime: TDateTime; out Year, Month, Day: Word);
