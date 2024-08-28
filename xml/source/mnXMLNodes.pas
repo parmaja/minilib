@@ -517,12 +517,16 @@ var
   Reader: TmnXMLNodeReader;
 begin
   AWrapperStream := TmnWrapperStream.Create(AStream);
-  Reader := TmnXMLNodeReader.Create(AWrapperStream, False);
   try
-    Reader.Nodes := Self;
-    Reader.Start;
+    Reader := TmnXMLNodeReader.Create(AWrapperStream, False);
+    try
+      Reader.Nodes := Self;
+      Reader.Start;
+    finally
+      Reader.Free;
+    end;
   finally
-    Reader.Free;
+    AWrapperStream.Free;
   end;
 end;
 
