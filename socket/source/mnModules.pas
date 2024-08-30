@@ -676,6 +676,7 @@ type
     property Terminated: Boolean read FTerminated;
   end;
 
+function URIDecode(const S: UTF8String): utf8string;
 function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
 function ParseURI(const URI: String; out Address, Params: string): Boolean;
 procedure ParseQuery(const Query: String; mnParams: TmnFields);
@@ -719,6 +720,38 @@ begin
     Result := Result + '/' + Directory;
 end;
 
+function URIDecode(const S: UTF8String): utf8string;
+var
+  c: AnsiChar;
+  D: Ansistring;
+  i: Integer;
+  R: RawByteString;
+begin
+  Result := '';
+  i := Low(S);
+  R := '';
+  while i <= High(S) do
+  begin
+    C := S[i];
+    {if C = '+' then
+    begin
+      R := R + ' ';
+    end
+    else}
+    if C = '%' then
+    begin
+      D := copy(S, i + 1, 2);
+      R := R + AnsiChar(StrToInt('$'+D));
+      inc(i, 2);
+    end
+    else
+      R := R + c;
+    Inc(i);
+  end;
+  //SetCodePage(R, CP_UTF8, False);
+  Result := R;
+end;
+
 function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
 var
   aRequests: TStringList;
@@ -729,7 +762,7 @@ begin
     if aRequests.Count > 0 then
       Method := aRequests[0];
     if aRequests.Count > 1 then
-      URI := aRequests[1];
+      URI := URIDecode(aRequests[1]);
     if aRequests.Count > 2 then
       Protocol := aRequests[2];
   finally
