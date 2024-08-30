@@ -799,9 +799,20 @@ type
   { THTML }
 
   THTML =class(TmnwSchema)
-  private
   public
     type
+      TNavBar = class;
+      TMenuBar = class;
+      THeader = class;
+      TContent = class;
+      TSideBar = class;
+      TFooter = class;
+      TToast = class;
+      TMain = class;
+      TImage = class;
+      TButtons = class;
+      TBody = class;
+      TDocument = class;
 
       { THTMLElement }
 
@@ -840,18 +851,6 @@ type
       public
         Comment: string;
       end;
-
-      TNavBar = class;
-      TMenuBar = class;
-      THeader = class;
-      TContent = class;
-      TSideBar = class;
-      TFooter = class;
-      TToast = class;
-      TMain = class;
-      TImage = class;
-      TButtons = class;
-      TBody = class;
 
       { TJSFile }
 
@@ -1232,9 +1231,13 @@ type
       public
       end;
 
+  private
+    FDocument: TDocument;
   protected
+    procedure Created; override;
   public
     function GetContentType(Route: string): string; override;
+    property Document: TDocument read FDocument;
   end;
 
   { TmnwHTMLRenderer }
@@ -2848,6 +2851,12 @@ end;
 
 { THTML }
 
+procedure THTML.Created;
+begin
+  inherited;
+  FDocument := TDocument.Create(Self, [elEmbed], True);
+end;
+
 function THTML.GetContentType(Route: string): string;
 begin
   if Route = '' then
@@ -3100,9 +3109,9 @@ var
 begin
   e := Scope.Element as THTML.TMain;
   //Context.Writer.OpenTag('div class="row"');
-
-
   classes.Init('main');
+  if (e.Schema as THTML).Document.Body.Header.CanRender  then
+    classes.Add('max-content-height');
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
     classes.Add('col-md');
   classes.Add('p-0');
@@ -4969,9 +4978,9 @@ begin
 
   Context.Writer.OpenTag('nav', Scope.ToString);
 
-  if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
+  if (e.Schema as THTML).Document.Body.SideBar.CanRender then
   begin
-    sb := (e.Parent.Parent as THTML.TBody).SideBar;
+    sb := (e.Schema as THTML).Document.Body.SideBar;
     Context.Writer.OpenTag('button', 'class="navbar-toggler me-0 ms-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + sb.id + '-items' + '" aria-controls="' + sb.id + '-items' + '" aria-expanded="false" aria-label="Toggle Sidebar"');
     Context.Writer.AddTag('span', 'class="invert icon bi-chevron-right"');
     Context.Writer.CloseTag('button');
@@ -4979,7 +4988,7 @@ begin
 
 	DoRenderBrand(Scope, Context);
 
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top navbar-dark bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
   //Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
   Context.Writer.OpenTag('ul', 'class="navbar-nav mr-auto m-2 m-md-0"');
   inherited;
@@ -5421,8 +5430,8 @@ var
   e: THTML.TSideBar;
 begin
   e := Scope.Element as THTML.TSideBar;
-  Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar p-0 m-0 shadow-thin navbar-expand-md"');
-  Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content fixed"');
+  Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar '+When((e.Schema as THTML).Document.Body.Header.CanRender, 'min-content-height') + ' p-0 m-0 shadow-thin navbar-expand-md"');
+  Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content ' + When((e.Schema as THTML).Document.Body.Header.CanRender, 'min-content-height') + ' fixed"');
   Context.Writer.OpenTag('div id="' + e.ID + '-items" class="sidebar-items offcanvas offcanvas-start p-2" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
   inherited;
   Context.Writer.CloseTag('div');

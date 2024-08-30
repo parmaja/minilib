@@ -202,7 +202,7 @@ begin
   inherited;
   RefreshInterval := 5;
   Interactive := True;
-  with TDocument.Create(This) do
+  with Document do
   begin
     Title := 'My Home';
     Direction := dirLeftToRight;
@@ -380,7 +380,7 @@ end;
 procedure TLoginSchema.DoCompose;
 begin
   inherited;
-  with TDocument.Create(This) do
+  with Document do
   begin
     //Name := 'document';
     //Route := 'document';
@@ -514,7 +514,7 @@ end;
 procedure TDemoSchema.DoCompose;
 begin
   inherited;
-  with TDocument.Create(This) do
+  with Document do
   begin
     Title := 'Demo Title';
     Direction := dirLeftToRight;

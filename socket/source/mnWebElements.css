@@ -19,6 +19,8 @@
     --bi-moon-stars-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-moon-stars" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/><path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/></svg>');
 }
 
+/** Max Width */
+
 .max-w-xs {
     max-width: calc(--size-unit);
 }
@@ -32,7 +34,7 @@
 }
 
 .max-w-lg {
-    max-width: calc(var(--size-unit) * 4);
+    max-width: calc(var(--size-unit) * 4.5);
 }
 
 .max-w-xl {
@@ -42,6 +44,30 @@
 .max-w-xxl {
     max-width: calc(var(--size-unit) * 8);
 }
+
+/** Gaps                                     */
+
+.m-childs-1 > * {
+    margin: var(--gap-unit);
+}
+
+.m-childs-2 > * {
+    margin: calc(var(--gap-unit) * 2);
+}
+
+.m-childs-3 > * {
+    margin: calc(var(--gap-unit) * 3);
+}
+
+.m-childs-4 > * {
+    margin: calc(var(--gap-unit) * 4);
+}
+
+.m-childs-5 > * {
+    margin: calc(var(--gap-unit) * 5);
+}
+
+/********************************************/
 
 svg {
     fill: currentColor;
@@ -113,11 +139,7 @@ svg {
     filter: invert(1); 
 }
 
-/*******************************************************************/
-
-.form-control {
-/*  padding: .175rem .75rem; */
-}
+/** Shadow */
 
 .shadow-thick
 {
@@ -129,10 +151,14 @@ svg {
     box-shadow: 0px 0px 3px 3px rgba(0,0,0,0.3);
 }
 
-body {
-}
+/** Contents                            */
 
-header{
+@media(max-width: 768px) {
+    .sidebar {
+/*            	    visibility: collapse; */ /* dosnt work in iphone 6*/
+        visibility: hidden;
+        position: fixed;
+    }
 }
 
 aside{
@@ -147,43 +173,28 @@ aside{
     position: fixed !important; /* option to stick it without scroll */
 }
 
-.content {
+.content-top {
+    top: var(--header-size) !important; 
+}
+
+.max-content-height {
+    max-height: var(--content-height)  !important; 
+}
+
+.min-content-height {
+    min-height: var(--content-height)  !important;  
 }
 
 .main {
-    max-height: var(--content-height);
     overflow-y: auto; 
 }
 
-.main-content > * {
+.container {
+    
 }
 
-.m-childs-1 > * {
-    margin: var(--gap-unit);
-}
-
-.m-childs-2 > * {
-    margin: calc(var(--gap-unit) * 2);
-}
-
-.m-childs-3 > * {
-    margin: calc(var(--gap-unit) * 3);
-}
-
-.m-childs-4 > * {
-    margin: calc(var(--gap-unit) * 4);
-}
-
-.m-childs-5 > * {
-    margin: calc(var(--gap-unit) * 5);
-}
-
-@media(max-width: 768px) {
-    .sidebar {
-/*            	    visibility: collapse; */ /* dosnt work in iphone 6*/
-        visibility: hidden;
-        position: fixed;
-    }
+.content {
+    height: 100%;
 }
 
 .sidebar {
@@ -191,11 +202,10 @@ aside{
     overflow: auto;
     top: 0;
     bottom: 0;
-    height: auto;
     padding: 0;
     width: var(--sidebar-size);
-    max-width: 100vh;
-    min-height: var(--content-height);
+     min-height: var(--content-height);
+    background-color: #2d3748; 
     /* background-color: #404E67;*/
 
 /*    overflow-y: auto; */
@@ -204,10 +214,7 @@ aside{
 .sidebar-content {
     display: flex;
     overflow-y: auto;
-    height: var(--content-height);
-    width: var(--sidebar-size)  !important;
-    min-height: var(--content-height);
-    background-color: #2d3748; 
+    width: var(--sidebar-size) !important;
 }
 
 .sidebar-items {
