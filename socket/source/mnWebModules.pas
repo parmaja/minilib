@@ -1060,7 +1060,6 @@ end;
 procedure TmodWebModules.ParseHead(ARequest: TmodRequest; const RequestLine: string);
 begin
   inherited;
-  ARequest.URI := URIDecode(ARequest.URI);
   //ARequest.ParsePath(ARequest.URI); duplicate in parse head :)
   ARequest.Command := ARequest.Method;
 end;

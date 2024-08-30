@@ -1714,7 +1714,6 @@ begin
 
   StrToStrings(ARequest.Path, ARequest.Route, ['/']);
 
-
 {  if (ARequest.Address<>'') and (ARequest.Address<>'/') then
   begin
     if StartsText(URLPathDelim, ARequest.Address) then
