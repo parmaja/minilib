@@ -527,7 +527,7 @@ begin
 
       with Header do
       begin
-        RenderIt := True;
+        RenderIt := False;
 //        Fixed := fixedTop;
         with NavBar do
         begin
@@ -628,7 +628,7 @@ begin
 
           with TCard.Create(This) do
           begin
-            Size := szNormal;
+            Size := szVeryLarge;
             Caption := 'Task';
             Anchor := True;
 

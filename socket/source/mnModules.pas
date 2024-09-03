@@ -198,9 +198,14 @@ type
 		ctWebSocket
 	);
 
+  TmodParams = class(TmnFields)
+  public
+//    property Field; default;
+  end;
+
   TmodRequest = class(TmodCommunicate)
   private
-    FParams: TmnFields;
+    FParams: TmodParams;
     FRoute: TmnRoute;
     FPath: String;
     FConnectionType: TConnectionType;
@@ -248,7 +253,7 @@ type
     property Path: String read FPath write FPath;
 
     property Route: TmnRoute read FRoute write FRoute;
-    property Params: TmnFields read FParams;
+    property Params: TmodParams read FParams;
 
     function CollectURI: string;
 
@@ -973,7 +978,7 @@ procedure TmodRequest.Created;
 begin
   inherited;
   FRoute := TmnRoute.Create;
-  FParams := TmnFields.Create;
+  FParams := TmodParams.Create;
 end;
 
 destructor TmodRequest.Destroy;

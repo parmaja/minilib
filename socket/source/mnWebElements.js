@@ -9,8 +9,7 @@ mnw.url = "";
 mnw.pool = [];
 
 mnw.raw_receive = function(msg)
-{
-  console.log(msg);
+{  
   if (msg.charAt(0) === '{')
   {    
     const json = JSON.parse(msg);
@@ -37,8 +36,7 @@ mnw.raw_receive = function(msg)
 }
 
 mnw.raw_send = function(msg) 
-{
-  console.log(msg);
+{  
   this.ws.send(msg);
 }
 
@@ -125,14 +123,14 @@ mnw.click = function(event, sender)
   const url = sender.getAttribute('href');
   fetch(url)
   .then(response => response.text())
-  .then(data => console.log(data));  
+  .then(data => console.log("Error on click: " + data));
   event.preventDefault();
   return false;
 }
 
 mnw.action = function(event, url, data) 
 {  
-  console.log(JSON.stringify(data));
+  //console.log(JSON.stringify(data));
   fetch(url, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -141,7 +139,7 @@ mnw.action = function(event, url, data)
     }
   })
   .then(response => response.text())
-  .then(data => console.log(data));  
+  .then(data => console.log("Error in action: "+data));  
   return false;
 }
 

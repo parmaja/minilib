@@ -427,6 +427,7 @@ type
     constructor Create(AName: string; AStream: TmnBufferStream);
     procedure Write(S: string; Options: TmnwWriterOptions = []); virtual;
     procedure WriteLn(const S: string = ''; Options: TmnwWriterOptions = []);
+    procedure WriteLines(const S: string = ''; Options: TmnwWriterOptions = []);
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload; inline;
     property Stream: TmnBufferStream read FStream write FStream;
   end;
@@ -4235,6 +4236,11 @@ end;
 procedure TmnwWriter.WriteLn(const S: string; Options: TmnwWriterOptions);
 begin
   Write(S, Options + [woEndLine]);
+end;
+
+procedure TmnwWriter.WriteLines(const S: string; Options: TmnwWriterOptions);
+begin
+  Write(S, Options + [woEndLine]); //TODO
 end;
 
 function TmnwWriter.WriteStream(AStream: TStream; Count: TFileSize): TFileSize;
