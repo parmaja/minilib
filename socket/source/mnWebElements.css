@@ -161,6 +161,9 @@ svg {
     }
 }
 
+body{
+}
+
 aside{
     z-index: 1005;
 }
@@ -187,14 +190,15 @@ aside{
 
 .main {
     overflow-y: auto; 
+    height: 100vh;    
+    max-height: 100vh;    
 }
 
 .container {
-    
 }
 
 .content {
-    height: 100%;
+    
 }
 
 .sidebar {
@@ -204,7 +208,7 @@ aside{
     bottom: 0;
     padding: 0;
     width: var(--sidebar-size);
-     min-height: var(--content-height);
+    /*min-height: var(--content-height);*/
     background-color: #2d3748; 
     /* background-color: #404E67;*/
 
