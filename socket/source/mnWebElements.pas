@@ -322,6 +322,7 @@ type
     FOnAction: TActionProc;
     FPrepared: Boolean;
     FIsRoot: Boolean;
+    FTimeStamp: Int64;
     procedure SetState(const AValue: TmnwElementState);
   protected
     procedure Update; virtual;
@@ -411,6 +412,7 @@ type
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
     property OnAction: TActionProc read FOnAction write FOnAction;
     property Handle: THandle read FHandle;
+    property TimeStamp: Int64 read FTimeStamp;
   end;
 
   { TmnwWriter }
@@ -1641,8 +1643,16 @@ function BSContentAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): strin
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
 function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
 function DirectionToStr(Direction: TDirection): string;
+function GetTimeStamp: Int64;
 
 implementation
+
+function GetTimeStamp: Int64;
+var
+  t: Double absolute Result;
+begin
+  t := Now;
+end;
 
 function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
 begin
@@ -4062,6 +4072,7 @@ end;
 constructor TmnwElement.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: Boolean);
 begin
   inherited Create;
+  FTimeStamp := GetTimeStamp;
   FEnabled := True;
   FVisible := True;
   FRenderIt := ARenderIt;
@@ -4586,15 +4597,15 @@ end;
 
 procedure TJQuery_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { TWebElements_Library }
 
 procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js" crossorigin="anonymous"');
-  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { THTML }
@@ -5062,7 +5073,7 @@ begin
   else
   begin
     src := e.GetPath;
-    Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src));
+    Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src)+'?v='+IntToStr(Context.Schema.TimeStamp));
     inherited;
   end;
 end;
@@ -5085,7 +5096,7 @@ begin
   else
   begin
     src := e.GetPath;
-    Context.Writer.AddTag('link', 'rel="stylesheet" href='+ DQ(src));
+    Context.Writer.AddTag('link', 'rel="stylesheet" href='+ DQ(src) + '?v=' + IntToStr(Context.Schema.TimeStamp));
     inherited;
   end;
 end;
