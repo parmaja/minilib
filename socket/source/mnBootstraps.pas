@@ -35,14 +35,20 @@ type
     procedure AddHead(const Context: TmnwContext); override;
   end;
 
-  { TBootstrap_LocalLibrary }
-
   TBootstrap_LocalLibrary = class(TmnwLibrary)
   public
     procedure AddHead(const Context: TmnwContext); override;
   end;
 
-  { TmnwBootstrap }
+  TBootstrapIcons_Library = class(TmnwLibrary)
+  public
+    procedure AddHead(const Context: TmnwContext); override;
+  end;
+
+  TBootstrapIcons_LocalLibrary = class(TmnwLibrary)
+  public
+    procedure AddHead(const Context: TmnwContext); override;
+  end;
 
   { TmnwBootstrapRenderer }
 
@@ -50,9 +56,8 @@ type
   public
   protected
     procedure Created; override;
-    procedure AddHead(const Context: TmnwContext); override;
   public
-
+    procedure AddHead(const Context: TmnwContext); override;
     class constructor RegisterObjects;
   end;
 
@@ -64,7 +69,9 @@ procedure TmnwBootstrapRenderer.Created;
 begin
   inherited;
   Libraries.RegisterLibrary('Bootstrap', False, TBootstrap_Library);
+  Libraries.RegisterLibrary('BootstrapIcons', False, TBootstrapIcons_Library);
   Libraries.RegisterLibrary('Bootstrap', True, TBootstrap_LocalLibrary);
+  Libraries.RegisterLibrary('BootstrapIcons', True, TBootstrapIcons_LocalLibrary);
   Libraries.Use('Bootstrap');
 end;
 
@@ -104,6 +111,22 @@ begin
   Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.bundle.min.js?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous"></script>');
 end;
 
+
+{ TBootstrapIcons_Library }
+
+procedure TBootstrapIcons_Library.AddHead(const Context: TmnwContext);
+begin
+  inherited;
+  Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">');
+end;
+
+{ TBootstrapIcons_LocalLibrary }
+
+procedure TBootstrapIcons_LocalLibrary.AddHead(const Context: TmnwContext);
+begin
+  inherited;
+  Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap-icons.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous">');
+end;
 
 end.
 
