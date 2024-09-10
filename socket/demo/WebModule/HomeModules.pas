@@ -527,7 +527,7 @@ begin
 
       with Header do
       begin
-        RenderIt := False;
+        RenderIt := True;
 //        Fixed := fixedTop;
         with NavBar do
         begin

@@ -74,7 +74,7 @@ interface
 uses
   Classes, SysUtils, StrUtils, DateUtils, Contnrs, Variants, Types, RTTI,
   {$ifdef FPC}
-  LCLType, //* for RT_RCDATA
+  resource, //* for RT_RCDATA
   {$endif}
   syncobjs, mnDON, mnJSON,
   mnUtils, mnClasses, mnStreams, mnLogs, mnMIME, mnParams,
@@ -1096,6 +1096,10 @@ type
       end;
 
       { TAction }
+
+      {
+        Not rendered, but can have a route and contain childs
+      }
 
       [TRoute_Extension]
       TAction = class(THTMLElement)
@@ -4347,7 +4351,11 @@ begin
   inherited;
   if ftResource in Options then
   begin
+    {$ifdef FPC}
+    aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), 'RT_RCDATA'); //* remove extension
+    {$else}
     aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA); //* remove extension
+    {$endif}
     try
       AContext.Writer.WriteStream(aStream, 0);
     finally
@@ -4590,22 +4598,22 @@ end;
 
 procedure TJQuery_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" defer crossorigin="anonymous"');
 end;
 
 { TJQuery_LocalLibrary }
 
 procedure TJQuery_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" defer crossorigin="anonymous"');
 end;
 
 { TWebElements_Library }
 
 procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
-  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" defer crossorigin="anonymous"');
+  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" defer crossorigin="anonymous"');
 end;
 
 { THTML }
@@ -4773,7 +4781,7 @@ begin
   e := Scope.Element as THTML.TCollapseCaption;
   Context.Writer.OpenTag('p', 'class="panel d-flex m-0" data-bs-toggle="collapse" role="button" data-bs-target="#'+e.ID+'-text" aria-expanded="false" aria-controls="'+e.ID+'-text"');
   Context.Writer.WriteLn(e.Caption);
-  Context.Writer.AddTag('span', 'class="ms-auto p-0 align-bottom icon bi-three-dots"');
+  Context.Writer.AddTag('span', 'class="ms-auto p-0 align-bottom icon mw-three-dots"');
   Context.Writer.CloseTag('p');
   Context.Writer.OpenTag('div', 'id="'+e.ID+'-text" class="panel-body m-0 collapse"');
   inherited;
@@ -4788,7 +4796,7 @@ var
 begin
   e := Scope.Element as THTML.TThemeModeButton;
   Context.Writer.OpenTag('button', 'class="bg-dark me-0 ms-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
-  Context.Writer.AddTag('span', 'class="invert icon bi-moon-stars"');
+  Context.Writer.AddTag('span', 'class="invert icon mw-moon-stars"');
   inherited;
   Context.Writer.CloseTag('button');
 end;
@@ -4999,7 +5007,7 @@ begin
   begin
     sb := (e.Schema as THTML).Document.Body.SideBar;
     Context.Writer.OpenTag('button', 'class="navbar-toggler me-0 ms-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + sb.id + '-items' + '" aria-controls="' + sb.id + '-items' + '" aria-expanded="false" aria-label="Toggle Sidebar"');
-    Context.Writer.AddTag('span', 'class="invert icon bi-chevron-right"');
+    Context.Writer.AddTag('span', 'class="invert icon mw-chevron-right"');
     Context.Writer.CloseTag('button');
   end;
 
@@ -5017,7 +5025,7 @@ begin
   if e.Count > 0 then
   begin
     Context.Writer.OpenTag('button', 'class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#'+e.ID+'-items'+'" aria-controls="'+e.ID+'-items'+'" aria-expanded="false" aria-label="Toggle navigation"');
-    Context.Writer.AddTag('span', 'class="invert icon bi-list"');
+    Context.Writer.AddTag('span', 'class="invert icon mw-list"');
     Context.Writer.CloseTag('button');
   end;
   Context.Writer.CloseTag('nav');
@@ -5477,7 +5485,7 @@ end;
 
 procedure TmnwCustomLibrary.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + Source + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + Source + '" defer crossorigin="anonymous"');
 end;
 
 initialization

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <PathDelim Value="\"/>
+    <Name Value="MiniWebElements"/>
+    <Author Value="Zaher Dirkey"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)\"/>
+      </SearchPaths>
+      <Other>
+        <ConfigFile>
+          <WriteConfigFilePath Value=""/>
+        </ConfigFile>
+      </Other>
+    </CompilerOptions>
+    <Description Value="Mini Web Element, Web Server HTML/Front End Generator"/>
+    <Files>
+      <Item>
+        <Filename Value="mnWebElements.css"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="mnWebElements.pas"/>
+        <UnitName Value="mnWebElements"/>
+      </Item>
+      <Item>
+        <Filename Value="mnWebElements.rc"/>
+        <Type Value="Text"/>
+      </Item>
+    </Files>
+    <RequiredPkgs>
+      <Item>
+        <PackageName Value="MiniSockets"/>
+      </Item>
+      <Item>
+        <PackageName Value="MiniLib"/>
+      </Item>
+      <Item>
+        <PackageName Value="FCL"/>
+      </Item>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>
