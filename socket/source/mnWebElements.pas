@@ -4964,7 +4964,7 @@ begin
   e := Scope.Element as THTML.TAccordionSection;
   Context.Writer.OpenTag('div', 'class="accordion-item"');
   Context.Writer.OpenTag('h', 'id="'+e.id+'-header" class="accordion-header"');
-  Context.Writer.OpenTag('button ', 'class="accordion-button p-2" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
+  Context.Writer.OpenTag('button ', 'class="accordion-button p-2 '+ When(not e.Expanded, 'collapsed')+'" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
   Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('button');
   Context.Writer.CloseTag('h');
