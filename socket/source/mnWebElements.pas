@@ -1025,6 +1025,43 @@ type
         Size: Integer;
       end;
 
+      TClickType = (clickNavigate, clickAction, clickNone);
+
+      { TClickable }
+
+      TClickable = class abstract(THTMLControl)
+      private
+        FCaption: string;
+        procedure SetCaption(const AValue: string);
+      protected
+        procedure ReceiveMessage(JSON: TDON_Pair); override;
+      public
+        ClickType: TClickType;
+        property Caption: string read FCaption write SetCaption;
+      end;
+
+      [TID_Extension]
+
+      { TAccordion }
+
+      TAccordion = class(THTMLLayout)
+      protected
+        procedure Created; override;
+      public
+        AlwaysOpen: Boolean;
+      end;
+
+      [TID_Extension]
+      TAccordionSection = class(THTMLLayout)
+      public
+        Caption: string;
+        Expanded: Boolean;
+      end;
+
+      TAccordionItem = class(TClickable)
+      public
+      end;
+
       [TID_Extension]
       THTMLCaptionComponent =class abstract(THTMLComponent)
       public
@@ -1040,8 +1077,11 @@ type
         Collapse: Boolean;
       end;
 
-      [TID_Extension]
       TPanel = class(THTMLCaptionComponent)
+      public
+      end;
+
+      TBar = class(THTMLLayout)
       public
       end;
 
@@ -1107,21 +1147,6 @@ type
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public
         procedure Loop; virtual;
-      end;
-
-      TClickType = (clickNavigate, clickAction, clickNone);
-
-      { TClickable }
-
-      TClickable = class abstract(THTMLControl)
-      private
-        FCaption: string;
-        procedure SetCaption(const AValue: string);
-      protected
-        procedure ReceiveMessage(JSON: TDON_Pair); override;
-      public
-        ClickType: TClickType;
-        property Caption: string read FCaption write SetCaption;
       end;
 
       { TLink }
@@ -1433,6 +1458,31 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
+      { TAccordion }
+
+      TAccordion = class(THTMLElement)
+      protected
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TAccordionSection }
+
+      TAccordionSection = class(THTMLElement)
+      protected
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TAccordionItem }
+
+      TAccordionItem = class(THTMLControl)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
       { TCard }
 
       TCard = class(THTMLComponent)
@@ -1441,6 +1491,13 @@ type
       end;
 
       TPanel = class(THTMLComponent)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TBar }
+
+      TBar = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -1543,9 +1600,9 @@ type
 
   protected
     procedure Created; override;
-    procedure AddHead(const Context: TmnwContext); override;
     class constructor RegisterObjects;
   public
+    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   { TmnwRendererRegister }
@@ -2937,6 +2994,9 @@ begin
   RegisterRenderer(THTML.THeader, THeader);
   RegisterRenderer(THTML.TContent, TContent);
   RegisterRenderer(THTML.TSideBar, TSideBar);
+  RegisterRenderer(THTML.TAccordion, TAccordion);
+  RegisterRenderer(THTML.TAccordionSection, TAccordionSection);
+  RegisterRenderer(THTML.TAccordionItem, TAccordionItem);
   RegisterRenderer(THTML.TMain, TMain);
   RegisterRenderer(THTML.TFooter, TFooter);
   RegisterRenderer(THTML.TToast, TToast);
@@ -2955,6 +3015,7 @@ begin
   RegisterRenderer(THTML.TRow, TRow);
   RegisterRenderer(THTML.TColumn, TColumn);
   RegisterRenderer(THTML.TPanel, TPanel);
+  RegisterRenderer(THTML.TBar, TBar);
 
   RegisterRenderer(THTML.TThemeModeButton, TThemeModeButton);
 end;
@@ -4776,13 +4837,28 @@ var
   e: THTML.TPanel;
 begin
   e := Scope.Element as THTML.TPanel;
-  Context.Writer.OpenTag('div', 'class="panel"');
+  Context.Writer.OpenTag('div', 'class="panel fit-content"');
   if e.Caption <> '' then
     Context.Writer.AddTag('div', 'class="panel-header"', e.Caption);
 
-  Context.Writer.OpenTag('div', 'class="panel-body"');
+  Scope.Classes.Add('panel-body');
+  Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
+  Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TBar }
+
+procedure TmnwHTMLRenderer.TBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TBar;
+begin
+  e := Scope.Element as THTML.TBar;
+  Scope.Classes.Add('py-2');
+  Scope.Classes.Add('fit-contents');
+  Context.Writer.OpenTag('div', Scope.ToString);
+  inherited;
   Context.Writer.CloseTag('div');
 end;
 
@@ -4838,6 +4914,86 @@ begin
   Context.Writer.OpenTag('div', 'class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
   inherited;
   Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TAccordion }
+
+procedure TmnwHTMLRenderer.TAccordion.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+//  Context.Writer.OpenTag('div', 'class="accordion"');
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TAccordion.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
+  //Context.Writer.CloseTag('div');
+end;
+
+procedure TmnwHTMLRenderer.TAccordion.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TAccordion;
+begin
+  e := Scope.Element as THTML.TAccordion;
+  Scope.Classes.Add('accordion');
+  Scope.Classes.Add('col');
+  Scope.Classes.Add('accordion-flush');
+  Context.Writer.OpenTag('div', Scope.ToString);
+  inherited;
+  Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TAccordionSection }
+
+procedure TmnwHTMLRenderer.TAccordionSection.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+  Context.Writer.OpenTag('li', 'class="list-group-item"');
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TAccordionSection.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
+  Context.Writer.CloseTag('li');
+end;
+
+procedure TmnwHTMLRenderer.TAccordionSection.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TAccordionSection;
+begin
+  e := Scope.Element as THTML.TAccordionSection;
+  Context.Writer.OpenTag('div', 'class="accordion-item"');
+  Context.Writer.OpenTag('h', 'id="'+e.id+'-header" class="accordion-header"');
+  Context.Writer.OpenTag('button ', 'class="accordion-button p-2" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
+  Context.Writer.WriteLn(e.Caption);
+  Context.Writer.CloseTag('button');
+  Context.Writer.CloseTag('h');
+
+  Scope.Classes.Add('accordion-collapse');
+  Scope.Classes.Add('collapse');
+  if e.Expanded then
+    Scope.Classes.Add('show');
+  if (e.Parent is THTML.TAccordion) and //* Should be
+    not (e.Parent as THTML.TAccordion).AlwaysOpen then
+      Scope.Attributes.Add('data-bs-parent', '#'+e.Parent.ID);
+  Context.Writer.OpenTag('div', Scope.ToString + ' aria-labelledby="' + e.ID + '-header"');
+  Context.Writer.OpenTag('ul', 'class="accordion-body list-group list-group-flush p-0"');
+  inherited;
+  Context.Writer.CloseTag('ul');
+
+  Context.Writer.CloseTag('div');
+  Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TAccordionItem }
+
+procedure TmnwHTMLRenderer.TAccordionItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TAccordionItem;
+begin
+  e := Scope.Element as THTML.TAccordionItem;
+  //Scope.Classes.Add('');
+  inherited;
 end;
 
 { THTML.TMain }
@@ -4924,6 +5080,13 @@ begin
   end
   else if JSON['command'].AsString = 'click' then
     Execute;
+end;
+
+{ THTML.TAccordion }
+
+procedure THTML.TAccordion.Created;
+begin
+  inherited;
 end;
 
 { THTML.TButtons }
@@ -5471,7 +5634,7 @@ begin
   e := Scope.Element as THTML.TSideBar;
   Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar '+When((e.Schema as THTML).Document.Body.Header.CanRender, 'min-content-height') + ' p-0 m-0 shadow-thin navbar-expand-md"');
   Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content ' + When((e.Schema as THTML).Document.Body.Header.CanRender, 'min-content-height') + ' fixed"');
-  Context.Writer.OpenTag('div id="' + e.ID + '-items" class="sidebar-items offcanvas offcanvas-start p-2" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
+  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas offcanvas-start p-2" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');

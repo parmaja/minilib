@@ -223,7 +223,7 @@ aside{
     width: var(--sidebar-size) !important;
 }
 
-.sidebar-items {
+.sidebar-body {
     overflow-y: auto;
     width: var(--sidebar-size) !important;
     background-color: #2d3748; 

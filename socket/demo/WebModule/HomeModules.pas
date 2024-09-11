@@ -556,17 +556,51 @@ begin
       begin
         Shadow := True;
         RenderIt := True;
-        with TLink.Create(This, 'http://www.google.com', 'Google') do
+        with TAccordion.Create(This) do
         begin
-          ClickType := clickNavigate;
+          AlwaysOpen := True;
+          with TBar.Create(This) do
+          begin
+            with TThemeModeButton.Create(This) do
+            begin
+              Caption := 'Mode';
+            end;
+          end;
+
+          with TAccordionSection.Create(This) do
+          begin
+            Caption := 'Accounts';
+            Expanded := True;
+            //with TAccordionSection.Create(This) do
+            with TLink.Create(This, 'http://www.google.com', 'Google') do
+            begin
+              ClickType := clickNavigate;
+            end;
+
+            with TMyLink.Create(This, '', 'Home') do
+            begin
+              Route := 'my_link';
+              Location := GetPath;
+              ClickType := clickAction;
+            end;
+          end;
+
+          with TAccordionSection.Create(This) do
+          begin
+            Caption := 'Favorites';
+            with TLink.Create(This, 'http://www.parmaja.org', 'parmaja') do
+            begin
+              ClickType := clickNavigate;
+            end;
+
+            with TMyLink.Create(This, '', 'About') do
+            begin
+              Location := GetPath;
+              ClickType := clickAction;
+            end;
+          end;
         end;
 
-        with TMyLink.Create(This, '', 'Home') do
-        begin
-          Route := 'my_link';
-          Location := GetPath;
-          ClickType := clickAction;
-        end;
       end;
 
       with Main do
