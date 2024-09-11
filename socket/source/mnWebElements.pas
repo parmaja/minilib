@@ -1129,7 +1129,13 @@ type
 			TLink = class(TClickable)
       public
         Location: string;
-        constructor Create(AParent: TmnwElement; const ALocation, ACaption: string); reintroduce;
+        constructor Create(AParent: TmnwElement; const ALocation: string; ACaption: string = ''); reintroduce;
+      end;
+
+			TSpan = class(THTMLElement)
+      public
+        Text: string;
+        constructor Create(AParent: TmnwElement; const AText: string); reintroduce;
       end;
 
       { TButton }
@@ -1365,6 +1371,13 @@ type
       { TLink }
 
       TLink = class(THTMLControl)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TSpan }
+
+      TSpan = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -2928,6 +2941,7 @@ begin
   RegisterRenderer(THTML.TFooter, TFooter);
   RegisterRenderer(THTML.TToast, TToast);
   RegisterRenderer(THTML.TLink, TLink);
+  RegisterRenderer(THTML.TSpan, TSpan);
   RegisterRenderer(THTML.TButton, TButton);
   RegisterRenderer(THTML.TNavItem, TNavItem);
   RegisterRenderer(THTML.TMenuItem, TMenuItem);
@@ -5058,7 +5072,7 @@ begin
   e := Scope.Element as THTML.TLink;
   if e.ClickType = clickAction then
     event :=' onclick="mnw.click(event, this)"';
-  Context.Writer.OpenInlineTag('a', 'href="'+When(e.Location, '#') + '"'+ event + Scope.GetText, When(e.Caption, '#'));
+  Context.Writer.OpenInlineTag('a', 'href="'+When(e.Location, '#') + '"'+ event + Scope.GetText, e.Caption);
   inherited;
   Context.Writer.CloseTag('a');
 end;
@@ -5466,7 +5480,7 @@ end;
 
 { THTML.TLink }
 
-constructor THTML.TLink.Create(AParent: TmnwElement; const ALocation, ACaption: string);
+constructor THTML.TLink.Create(AParent: TmnwElement; const ALocation: string; ACaption: string = '');
 begin
   inherited Create(AParent);
   Location := ALocation;
@@ -5486,6 +5500,27 @@ end;
 procedure TmnwCustomLibrary.AddHead(const Context: TmnwContext);
 begin
   Context.Writer.AddTag('script', 'src="' + Source + '" defer crossorigin="anonymous"');
+end;
+
+{ THTML.TSpan }
+
+constructor THTML.TSpan.Create(AParent: TmnwElement; const AText: string);
+begin
+  inherited Create(AParent);
+  Text := AText;
+end;
+
+{ TmnwHTMLRenderer.TSpan }
+
+procedure TmnwHTMLRenderer.TSpan.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TSpan;
+  event: string;
+begin
+  e := Scope.Element as THTML.TSpan;
+  Context.Writer.OpenInlineTag('span', Scope.ToString, e.Text);
+  inherited;
+  Context.Writer.CloseTag('span');
 end;
 
 initialization
