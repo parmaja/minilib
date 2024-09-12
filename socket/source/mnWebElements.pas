@@ -1025,7 +1025,7 @@ type
         Size: Integer;
       end;
 
-      TClickType = (clickNavigate, clickAction, clickNone);
+      TClickType = (clickNavigate, clickNewWindow, clickAction, clickNone);
 
       { TClickable }
 
@@ -5234,7 +5234,9 @@ var
 begin
   e := Scope.Element as THTML.TLink;
   if e.ClickType = clickAction then
-    event :=' onclick="mnw.click(event, this)"';
+    event :=' onclick="mnw.click(event, this)"'
+  else if e.ClickType = clickNewWindow then
+    event :=' target="_blank"';
   Context.Writer.OpenInlineTag('a', 'href="'+When(e.Location, '#') + '"'+ event + Scope.GetText, e.Caption);
   inherited;
   Context.Writer.CloseTag('a');
