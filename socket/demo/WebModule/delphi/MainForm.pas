@@ -11,7 +11,7 @@ interface
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
   mnOpenSSLUtils, mnOpenSSL, mnLogs, mnOpenSSLAPI,
-  mnModules, mnStreamUtils, mnUtils,
+  mnModules, mnStreamUtils, mnUtils, mnWebElements,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules,
   HomeModules;
 
@@ -223,7 +223,7 @@ end;
 procedure TMain.Button2Click(Sender: TObject);
 var
 //  HttpClient: TmnHttpClient;
-  MemoryStream: TMemoryStream;
+//  MemoryStream: TMemoryStream;
 begin
 (*  //LogEdit.Lines.Add('Getting from URL ' + HostEdit.Text);
   MemoryStream := TMemoryStream.Create;

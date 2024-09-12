@@ -213,7 +213,7 @@ aside{
     overflow: auto;
     top: 0;
     bottom: 0;
-    opacity: 90%;
+    opacity: 100%;
     padding: 0;
     width: var(--sidebar-size);
     /*min-height: var(--content-height);*/
@@ -232,7 +232,7 @@ aside{
 .sidebar-body {
     overflow-y: auto;
     width: var(--sidebar-size) !important;
-    background-color: #2d3748; 
+    background-color: var(--dark-panel);
 }
 
 .sidebar-active {

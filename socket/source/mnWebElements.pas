@@ -180,6 +180,24 @@ type
     function IsDefeined: Boolean;
   end;
 
+  { TmnwBounding }
+
+  TmnwBounding = record
+    Top, Bottom, Right, Left: Double;
+    class operator Explicit(const Source: Integer): TmnwBounding;
+    class operator Implicit(Source : Integer) : TmnwBounding;
+    class operator Implicit(Source : TmnwBounding): Integer;
+
+    class operator Explicit(const Source: Double): TmnwBounding;
+    class operator Implicit(Source : Double) : TmnwBounding;
+    class operator Implicit(Source : TmnwBounding): Double;
+    function ToString: string; inline;
+    function ToBSString(prefix: string): string; {$ifndef DEBUG}inline;{$endif}
+    class operator Initialize({$ifdef FPC}var{$else}out{$endif}Dest: TmnwBounding);
+    procedure SetTopBottom(Value: Double);
+    procedure SetLeftRight(Value: Double);
+	end;
+
   { TElementClasses }
 
   TElementClasses = record
@@ -291,6 +309,8 @@ type
   );
 
   TmnwPriority = (priorityNormal, priorityStart, priorityEnd);
+
+  TmnwShadow = (shadowLight, shadowHeavy);
 
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignBaseline, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
@@ -833,13 +853,14 @@ type
 
       THTMLLayout = class abstract(THTMLElement)
       public
-        Anchor: Boolean;
+        Fixed: TmnwFixed;
+        Solitary: Boolean; //* Single in Row
         Align: TmnwAlign;
         AlignItems: TmnwAlign;
         JustifyItems: TmnwAlign;
-        Fixed: TmnwFixed;
-        Margin: Integer;
-        Padding: Integer;
+        Margin: TmnwBounding;
+        Padding: TmnwBounding;
+        Medium: Boolean; //Medium or above
       end;
 
       { THTMLComponent }
@@ -857,7 +878,7 @@ type
         procedure Created; override;
       public
         Size: TSize; //Max Width
-        Shadow: Boolean;
+        Shadow: TmnwShadow;
         Hint: string;
       end;
 
@@ -1012,12 +1033,10 @@ type
         function CanRender: Boolean; override;
       end;
 
-      TMain = class(THTMLElement)
+      TMain = class(THTMLLayout)
       protected
         procedure Created; override;
       public
-        Margin: Integer;
-        Padding: Integer;
         Gap: Integer;
       end;
 
@@ -1031,7 +1050,11 @@ type
         Size: Integer;
       end;
 
+      { TBar }
+
       TBar = class(THTMLLayout)
+      protected
+        procedure Created; override;
       public
       end;
 
@@ -1160,6 +1183,7 @@ type
 			TLink = class(TClickable)
       public
         Location: string;
+        NoDecoration: Boolean;
         constructor Create(AParent: TmnwElement; const ALocation: string; ACaption: string = ''); reintroduce;
       end;
 
@@ -1442,16 +1466,14 @@ type
 
       { TSideBar }
 
-      TSideBar = class(THTMLComponent)
+      TSideBar = class(THTMLControl)
       protected
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TMain }
 
-      TMain = class(THTMLElement)
+      TMain = class(THTMLLayout)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -1733,6 +1755,9 @@ function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
 
 function DirectionToStr(Direction: TDirection): string;
 function GetTimeStamp: Int64;
+
+function SQ(s: string): string; inline;
+function DQ(s: string): string; inline;
 
 implementation
 
@@ -2963,6 +2988,117 @@ begin
   Result := Source.Custom;
 end;
 
+{ TmnwBounding }
+
+class operator TmnwBounding.Explicit(const Source: Integer): TmnwBounding;
+begin
+  Result.Left := Source;
+  Result.Top := Source;
+  Result.Right := Source;
+  Result.Bottom := Source;
+end;
+
+class operator TmnwBounding.Implicit(Source: Integer): TmnwBounding;
+begin
+  Result.Left := Source;
+  Result.Top := Source;
+  Result.Right := Source;
+  Result.Bottom := Source;
+end;
+
+class operator TmnwBounding.Implicit(Source: TmnwBounding): Integer;
+begin
+  Result := Round(Source.Top);
+  //maybe exception if not equal
+end;
+
+class operator TmnwBounding.Explicit(const Source: Double): TmnwBounding;
+begin
+  Result.Left := Source;
+  Result.Top := Source;
+  Result.Right := Source;
+  Result.Bottom := Source;
+end;
+
+class operator TmnwBounding.Implicit(Source: Double): TmnwBounding;
+begin
+  Result.Left := Source;
+  Result.Top := Source;
+  Result.Right := Source;
+  Result.Bottom := Source;
+end;
+
+class operator TmnwBounding.Implicit(Source: TmnwBounding): Double;
+begin
+  Result := Source.Left;
+end;
+
+function TmnwBounding.ToString: string;
+begin
+  if (Top = Left) and (Top = Bottom) and ((Top = Right)) then
+    Result := Top.ToString
+  else if (Top = Bottom) and (Left = Right) then
+    Result := Top.ToString + ' ' + Left.ToString
+  else
+    Result := Top.ToString + ' ' + Bottom.ToString + ' ' + Right.ToString + ' ' + Left.ToString
+end;
+
+function TmnwBounding.ToBSString(prefix: string): string;
+begin
+  Result := '';
+  if (Top = Left) and (Top = Bottom) and ((Top = Right)) then
+  begin
+    if Top >= 0 then
+      Result := prefix + '-' + Top.ToString;
+  end
+  else
+  begin
+      if (Top = Bottom) and (Top >= 0) then
+        Result := CollectStrings([Result, prefix+'y-' + Top.ToString], ' ')
+      else
+      begin
+        Result := CollectStrings([
+  			    Result,
+  					When(Top>=0, prefix+'t-' + Top.ToString),
+  					When(Bottom>=0, prefix+'b-' + Bottom.ToString)
+          ], ' '
+  			);
+      end;
+
+      if (Left = Right) and (Left >= 0) then
+        Result := CollectStrings([Result, prefix+'x-' + Left.ToString], ' ')
+      else
+      begin
+        Result := CollectStrings([
+  			    Result,
+  					When(Left>=0, prefix+'s-' + Left.ToString),
+  					When(Right>=0, prefix+'e-' + Right.ToString)
+          ], ' '
+  			)
+      end;
+  end;
+end;
+
+class operator TmnwBounding.Initialize({$ifdef FPC}var{$else}out{$endif}Dest: TmnwBounding);
+begin
+  Dest.Top := -1;
+  Dest.Bottom := -1;
+  Dest.Right := -1;
+  Dest.Left := -1;
+end;
+
+procedure TmnwBounding.SetTopBottom(Value: Double);
+begin
+  Top := Value;
+  Bottom := Value;
+end;
+
+procedure TmnwBounding.SetLeftRight(Value: Double);
+begin
+  Left := Value;
+  Right := Value;
+end;
+
 { THTML }
 
 procedure THTML.Created;
@@ -3092,8 +3228,10 @@ begin
   end;
   if e.Size > szUndefined then
     Scope.Classes.Add('max-w-'+BSSizeToStr(e.Size));
-  if e.Shadow then
-    Scope.Classes.Add('shadow-thin');
+  case e.Shadow of
+    shadowLight: Scope.Classes.Add('shadow-sm');
+    ShadowHeavy: Scope.Classes.Add('shadow-thin');
+  end;
   inherited;
 end;
 
@@ -3236,14 +3374,9 @@ begin
     classes.Add('col-md');
   classes.Add('p-0');
   classes.Add('m-0');
-
   Context.Writer.OpenTag('main', classes.ToString);
 
   Scope.Classes.Add('main-content');
-  if e.Margin > 0 then
-    Scope.Classes.Add('m-md-' + e.Margin.ToString);
-  if e.Padding > 0 then
-    Scope.Classes.Add('p-' + e.Padding.ToString);
   if e.Gap > 0 then
     //Scope.Classes.Add('gap-' + e.Gap.ToString);
     Scope.Classes.Add('m-childs-' + e.Gap.ToString);
@@ -3272,9 +3405,6 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
-  Scope.Classes.Add('shadow-sm');
-  if e.Anchor then
-    Scope.Classes.Add('mx-auto');
 
   Context.Writer.OpenTag('div', Scope.ToString);
   if e.Caption <> '' then
@@ -4810,7 +4940,7 @@ end;
 procedure THTML.THeader.Created;
 begin
   inherited;
-  Shadow := True;
+  Shadow := shadowHeavy;
   if ID = '' then
     ID := 'header';
 end;
@@ -4825,6 +4955,7 @@ end;
 procedure THTML.TSideBar.Created;
 begin
   inherited;
+  Shadow := shadowHeavy;
 end;
 
 { TmnwHTMLRenderer.TBody }
@@ -4899,7 +5030,7 @@ var
   e: THTML.TThemeModeButton;
 begin
   e := Scope.Element as THTML.TThemeModeButton;
-  Context.Writer.OpenTag('button', 'class="bg-dark me-0 ms-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
+  Context.Writer.OpenTag('button', 'class="bg-dark mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
   Context.Writer.AddTag('span', 'class="invert icon mw-moon-stars"');
   inherited;
   Context.Writer.CloseTag('button');
@@ -4913,7 +5044,7 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add( BSContentJustifyToStr(e.ContentAlign));
-  Context.Writer.OpenTag('div class="d-flex row flex-md-nowrap' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"');
+  Context.Writer.OpenTag('div class="row flex-md-nowrap' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"');
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -4930,7 +5061,7 @@ begin
     s := ' col-'+e.Size.ToString
   else
     s := 'col';
-  Context.Writer.OpenTag('div', 'class="d-flex' + s + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
+  Context.Writer.OpenTag('div', 'class="' + s + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -4940,11 +5071,10 @@ end;
 procedure TmnwHTMLRenderer.TBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TBar;
-  s: string;
 begin
   e := Scope.Element as THTML.TBar;
-  s := '';
-  Context.Writer.OpenTag('div', 'class="d-flex' + s + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
+  Scope.Classes.Add('d-flex');
+  Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -5037,12 +5167,20 @@ begin
   Gap := 1;
 end;
 
+{ THTML.TBar }
+
+procedure THTML.TBar.Created;
+begin
+  inherited;
+  //Padding := -1;
+end;
+
 { THTML.TCard }
 
 procedure THTML.TCard.Created;
 begin
   inherited;
-  Shadow := True;
+  Shadow := shadowLight;
 end;
 
 { THTML.TForm }
@@ -5216,7 +5354,7 @@ begin
   if (e.Schema as THTML).Document.Body.SideBar.CanRender then
   begin
     sb := (e.Schema as THTML).Document.Body.SideBar;
-    Context.Writer.OpenTag('button', 'class="navbar-toggler me-0 ms-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + sb.id + '-body' + '" aria-controls="' + sb.id + '-items' + '" aria-expanded="false" aria-label="Toggle Sidebar"');
+    Context.Writer.OpenTag('button', 'class="navbar-toggler my-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + sb.id + '-body' + '" aria-controls="' + sb.id + '-items' + '" aria-expanded="false" aria-label="Toggle Sidebar"');
     Context.Writer.AddTag('span', 'class="invert icon mw-chevron-right"');
     Context.Writer.CloseTag('button');
   end;
@@ -5270,6 +5408,8 @@ begin
     s :=' onclick="mnw.click(event, this)"'
   else if e.ClickType = clickNewWindow then
     s :=' target="_blank"';
+  if e.NoDecoration then
+    Scope.Classes.Add('text-decoration-none');
   Context.Writer.OpenInlineTag('a', 'href="'+When(e.Location, '#') + '"'+ s + Scope.GetText, e.Caption);
   inherited;
   Context.Writer.CloseTag('a');
@@ -5648,26 +5788,18 @@ end;
 
 { TmnwHTMLRenderer.TSideBar }
 
-procedure TmnwHTMLRenderer.TSideBar.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-begin
-{  Context.Writer.WriteLn('<li class="sidebar-item">', [woOpenIndent]);
-  if (Scope.Element is THTML.TLink) then
-    Scope.Classes.Add('sidebar-link');}
-  inherited;
-end;
-
-procedure TmnwHTMLRenderer.TSideBar.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
-//  Context.Writer.WriteLn('</li>', [woCloseIndent]);
-end;
-
 procedure TmnwHTMLRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TSideBar;
 begin
   e := Scope.Element as THTML.TSideBar;
-  Context.Writer.OpenTag('aside id="'+e.ID+'" class="sidebar '+When((e.Schema as THTML).Document.Body.Header.CanRender, 'min-content-height') + ' p-0 m-0 shadow-thin navbar-expand-md"');
+  Scope.Classes.Add('sidebar');
+  Scope.Classes.Add('navbar-expand-md');
+  if (e.Schema as THTML).Document.Body.Header.CanRender then
+    Scope.Classes.Add('min-content-height');
+  Scope.Classes.Add('p-0');
+  Scope.Classes.Add('m-0');
+  Context.Writer.OpenTag('aside', Scope.ToString);
   Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content ' + When((e.Schema as THTML).Document.Body.Header.CanRender, 'min-content-height') + ' fixed"');
   Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas offcanvas-start p-2" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
   inherited;
@@ -5728,14 +5860,21 @@ var
 begin
   e := Scope.Element as THTML.THTMLLayout;
   inherited;
-  Scope.Classes.Add(BSFixedToStr(e.Fixed));
-  Scope.Classes.Add(BSAlignToStr(e.Align));
-  Scope.Classes.Add(BSAlignItemsToStr(e.AlignItems));
-  Scope.Classes.Add(BSContentJustifyToStr(e.JustifyItems));
-  if e.Margin > 0 then
-    Scope.Classes.Add('m-'+e.Margin.ToString);
-  if e.Padding > 0 then
-    Scope.Classes.Add('p-'+e.Padding.ToString);
+  Scope.Classes.Add(BSFixedToStr(e.Fixed, False));
+  Scope.Classes.Add(BSAlignToStr(e.Align, False));
+  Scope.Classes.Add(BSAlignItemsToStr(e.AlignItems, False));
+  Scope.Classes.Add(BSContentJustifyToStr(e.JustifyItems, False));
+  if e.Solitary then
+    Scope.Classes.Add('mx-auto');
+  if e.Medium then
+    Scope.Classes.Add(e.Margin.ToBSString('m-md'))
+  else
+    Scope.Classes.Add(e.Margin.ToBSString('m'));
+
+  if e.Medium then
+    Scope.Classes.Add(e.Padding.ToBSString('p-md'))
+  else
+    Scope.Classes.Add(e.Padding.ToBSString('p'));
 end;
 
 initialization

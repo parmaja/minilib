@@ -414,11 +414,11 @@ begin
 
       with SideBar do
       begin
-        Shadow := True;
         RenderIt := True;
         with TLink.Create(This, 'http://www.google.com', 'Google') do
         begin
           ClickType := clickNavigate;
+          NoDecoration := True;
         end;
 
         with TMyLink.Create(This, '', 'Home') do
@@ -426,6 +426,7 @@ begin
           Route := 'my_link';
           Location := GetPath;
           ClickType := clickAction;
+          NoDecoration := True;
         end;
       end;
 
@@ -453,7 +454,7 @@ begin
          // ContentAlign := alignCenter;
           with TCard.Create(This) do
           begin
-            Anchor := True;
+            Solitary := True;
             Size := szNormal;
             Caption := 'Login';
 
@@ -554,13 +555,13 @@ begin
 
       with SideBar do
       begin
-        Shadow := True;
         RenderIt := True;
         with TAccordion.Create(This) do
         begin
           AlwaysOpen := True;
           with TBar.Create(This) do
           begin
+            Padding.SetTopBottom(2);
             with TThemeModeButton.Create(This) do
             begin
               Caption := 'Mode';
@@ -624,13 +625,25 @@ begin
         //with TRow.Create(This) do
         begin
 
+          with This.Add<TColumn> do
+          begin
+            Size := 8;
+            with TCard.Create(This) do
+            begin
+              Collapse := True;
+              Size := szVeryLarge;
+              Caption := 'Empty';
+              //Solitary := True;
+            end;
+          end;
+
          // ContentAlign := alignCenter;
           with TCard.Create(This) do
           begin
             Collapse := True;
             Size := szNormal;
             Caption := 'Login';
-            Anchor := True;
+            Solitary := True;
 
             with TForm.Create(This) do
             begin
@@ -664,7 +677,7 @@ begin
           begin
             Size := szVeryLarge;
             Caption := 'Task';
-            Anchor := True;
+            Solitary := True;
             Collapse := True;
 
             with TCollapseCaption.Create(This) do

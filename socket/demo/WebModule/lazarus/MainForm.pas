@@ -20,7 +20,7 @@ uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
   mnLogs, mnUtils, rtti,
   StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSL, mnBootstraps,
-  HomeModules, mnModules,
+  HomeModules, mnModules, mnWebElements,
   LResources, Buttons, Menus;
 
 type
