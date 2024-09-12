@@ -3255,7 +3255,7 @@ begin
     Context.Writer.WriteLn(e.Caption);
     if e.Collapse then
     begin
-      Context.Writer.Write('<span class="ms-auto my-auto icon-animate icon bi-chevron-down"');
+      Context.Writer.Write('<span class="ms-auto my-auto icon-animate icon mw-chevron-up"');
       if e.Collapse then
           Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
       Context.Writer.WriteLn('></span>');
@@ -5183,7 +5183,7 @@ begin
   if (e.Schema as THTML).Document.Body.SideBar.CanRender then
   begin
     sb := (e.Schema as THTML).Document.Body.SideBar;
-    Context.Writer.OpenTag('button', 'class="navbar-toggler me-0 ms-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + sb.id + '-items' + '" aria-controls="' + sb.id + '-items' + '" aria-expanded="false" aria-label="Toggle Sidebar"');
+    Context.Writer.OpenTag('button', 'class="navbar-toggler me-0 ms-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + sb.id + '-body' + '" aria-controls="' + sb.id + '-items' + '" aria-expanded="false" aria-label="Toggle Sidebar"');
     Context.Writer.AddTag('span', 'class="invert icon mw-chevron-right"');
     Context.Writer.CloseTag('button');
   end;

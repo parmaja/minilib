@@ -627,9 +627,9 @@ begin
          // ContentAlign := alignCenter;
           with TCard.Create(This) do
           begin
+            Collapse := True;
             Size := szNormal;
             Caption := 'Login';
-            Collapse := True;
             Anchor := True;
 
             with TForm.Create(This) do
@@ -665,6 +665,7 @@ begin
             Size := szVeryLarge;
             Caption := 'Task';
             Anchor := True;
+            Collapse := True;
 
             with TCollapseCaption.Create(This) do
             begin
