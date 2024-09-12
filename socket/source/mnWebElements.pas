@@ -292,8 +292,8 @@ type
 
   TmnwPriority = (priorityNormal, priorityStart, priorityEnd);
 
-  TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignEnd);
-  TmnwFixed= (fixedDefault, fixedTop, fixedBottom);
+  TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignBaseline, alignEnd);
+  TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
 
   TActionProc = reference to procedure (const AContext: TmnwContext; AResponse: TmnwResponse);
 
@@ -824,10 +824,19 @@ type
       public
       end;
 
+      { TComment }
+
+      TComment = class(THTMLElement)
+      public
+        Comment: string;
+      end;
+
       THTMLLayout = class abstract(THTMLElement)
       public
         Anchor: Boolean;
         Align: TmnwAlign;
+        AlignItems: TmnwAlign;
+        JustifyItems: TmnwAlign;
         Fixed: TmnwFixed;
         Margin: Integer;
         Padding: Integer;
@@ -839,20 +848,17 @@ type
       protected
         procedure Created; override;
       public
-        Size: TSize; //Max Width
-        Shadow: Boolean;
       end;
+
+      { THTMLControl }
 
       THTMLControl = class abstract(THTMLComponent)
+      protected
+        procedure Created; override;
       public
+        Size: TSize; //Max Width
+        Shadow: Boolean;
         Hint: string;
-      end;
-
-      { TComment }
-
-      TComment = class(THTMLElement)
-      public
-        Comment: string;
       end;
 
       { TJSFile }
@@ -965,7 +971,7 @@ type
         property Buttons: THTMLElement read FButtons;
       end;
 
-      THeader = class(THTMLComponent)
+      THeader = class(THTMLControl)
       private
         function GetMenuBar: TMenuBar;
         function GetNavBar: TNavBar;
@@ -999,7 +1005,7 @@ type
       { TSideBar }
 
       [TID_Extension]
-      TSideBar = class(THTMLComponent)
+      TSideBar = class(THTMLControl)
       protected
         procedure Created; override;
       public
@@ -1023,6 +1029,10 @@ type
       TColumn = class(THTMLLayout)
       public
         Size: Integer;
+      end;
+
+      TBar = class(THTMLLayout)
+      public
       end;
 
       TClickType = (clickNavigate, clickNewWindow, clickAction, clickNone);
@@ -1063,7 +1073,7 @@ type
       end;
 
       [TID_Extension]
-      THTMLCaptionComponent =class abstract(THTMLComponent)
+      THTMLCaptionComponent =class abstract(THTMLControl)
       public
         Caption: string;
       end;
@@ -1078,10 +1088,6 @@ type
       end;
 
       TPanel = class(THTMLCaptionComponent)
-      public
-      end;
-
-      TBar = class(THTMLLayout)
       public
       end;
 
@@ -1293,9 +1299,15 @@ type
         procedure DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
+      THTMLLayout = class(THTMLElement)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+      public
+      end;
+
       { THTMLComponent }
 
-      THTMLComponent = class(THTMLElement)
+      THTMLComponent = class(THTMLLayout)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
       end;
@@ -1446,14 +1458,21 @@ type
 
       { TRow }
 
-      TRow = class(THTMLElement)
+      TRow = class(THTMLLayout)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TColumn }
 
-      TColumn = class(THTMLElement)
+      TColumn = class(THTMLLayout)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TBar }
+
+      TBar = class(THTMLLayout)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -1491,13 +1510,6 @@ type
       end;
 
       TPanel = class(THTMLComponent)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
-      { TBar }
-
-      TBar = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -1713,9 +1725,12 @@ const
   woFullTag = [woOpenIndent, woCloseIndent];
 
 function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
-function BSContentAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
 function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+
 function DirectionToStr(Direction: TDirection): string;
 function GetTimeStamp: Int64;
 
@@ -1728,47 +1743,61 @@ begin
   t := Now;
 end;
 
-function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+function BSCustomAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean): string; inline;
 begin
   if Align = alignStart then
-    Result := 'align-self-start'
-
+    Result := s + '-start'
   else if Align = alignCenter then
-    Result := 'align-self-center'
+    Result := s + '-center'
   else if Align = alignStreach then
-    Result := 'align-self-streach'
+    Result := s + '-streach'
+  else if Align = alignBaseline then
+    Result := s + '-baseline'
   else if Align = alignEnd then
-    Result := 'align-self-end'
+    Result := s + '-end'
   else
     Result := '';
   if (Result <> '') and WithSpace then
     Result := ' ' + Result;
 end;
 
-function BSContentAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
 begin
-  if Align = alignStart then
-    Result := 'justify-content-start'
-  else if Align = alignCenter then
-    Result := 'justify-content-center'
-  else if Align = alignStreach then
-    Result := 'justify-content-streach'
-  else if Align = alignEnd then
-    Result := 'justify-content-end'
-  else
-    Result := '';
-  if (Result <> '') and WithSpace then
-    Result := ' ' + Result;
+  Result := BSCustomAlignToStr('align-self', Align, WithSpace);
+end;
+
+function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+begin
+  Result := BSCustomAlignToStr('justify-content', Align, WithSpace);
+end;
+
+function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+begin
+  Result := BSCustomAlignToStr('align-items-', Align, WithSpace);
 end;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
 begin
-  if Fixed = fixedTop then
-    Result := 'fixed-top'
-  else if Fixed = fixedBottom then
-    Result := 'fixed-bottom'
-  else
-    Result := '';
+  case Fixed of
+    fixedTop:
+      Result := 'fixed-top';
+    fixedBottom:
+      Result := 'fixed-bottom';
+    fixedStart:
+      Result := 'fixed-start'; // not exists
+    fixedEnd:
+      Result := 'fixed-end'; // not exists
+    stickyTop:
+      Result := 'sticky-top';
+    stickyBottom:
+      Result := 'sticky-bottom';
+    stickyStart:
+      Result := 'sticky-start'; // not exists
+    stickyEnd:
+      Result := 'sticky-end'; // not exists
+    else
+      Result := '';
+  end;
   if (Result <> '') and WithSpace then
     Result := ' ' + Result;
 end;
@@ -2955,8 +2984,13 @@ end;
 procedure THTML.THTMLComponent.Created;
 begin
   inherited;
-  Margin := 0;
-  Padding := 0;
+end;
+
+{ THTML.THTMLControl }
+
+procedure THTML.THTMLControl.Created;
+begin
+  inherited;
   Size := szUndefined;
 end;
 
@@ -3041,14 +3075,6 @@ var
 begin
   e := Scope.Element as THTML.THTMLComponent;
   inherited;
-  if e.Shadow then
-    Scope.Classes.Add('shadow-thin');
-  if e.Margin > 0 then
-    Scope.Classes.Add('m-'+e.Margin.ToString);
-  if e.Padding > 0 then
-    Scope.Classes.Add('p-'+e.Padding.ToString);
-  if e.Size > szUndefined then
-    Scope.Classes.Add('max-w-'+BSSizeToStr(e.Size));
 end;
 
 { TmnwHTMLRenderer.THTMLControl }
@@ -3064,6 +3090,8 @@ begin
     Scope.Attributes['data-bs-placement'] := 'top';
     Scope.Attributes['title'] := e.Hint;
   end;
+  if e.Size > szUndefined then
+    Scope.Classes.Add('max-w-'+BSSizeToStr(e.Size));
   inherited;
 end;
 
@@ -3242,8 +3270,6 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
-  Scope.Classes.Add(BSFixedToStr(e.Fixed));
-  Scope.Classes.Add(BSAlignToStr(e.Align));
   Scope.Classes.Add('shadow-sm');
   if e.Anchor then
     Scope.Classes.Add('mx-auto');
@@ -4848,20 +4874,6 @@ begin
   Context.Writer.CloseTag('div');
 end;
 
-{ TmnwHTMLRenderer.TBar }
-
-procedure TmnwHTMLRenderer.TBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TBar;
-begin
-  e := Scope.Element as THTML.TBar;
-  Scope.Classes.Add('py-2');
-  Scope.Classes.Add('fit-contents');
-  Context.Writer.OpenTag('div', Scope.ToString);
-  inherited;
-  Context.Writer.CloseTag('div');
-end;
-
 { TmnwHTMLRenderer.TCollapseCaption }
 
 procedure TmnwHTMLRenderer.TCollapseCaption.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
@@ -4898,8 +4910,8 @@ var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
-  Scope.Classes.Add(BSContentAlignToStr(e.ContentAlign));
-  Context.Writer.OpenTag('div class="row' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align)+' flex-md-nowrap"');
+  Scope.Classes.Add( BSContentJustifyToStr(e.ContentAlign));
+  Context.Writer.OpenTag('div class="d-flex row flex-md-nowrap' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"');
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -4909,9 +4921,28 @@ end;
 procedure TmnwHTMLRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TColumn;
+  s: string;
 begin
   e := Scope.Element as THTML.TColumn;
-  Context.Writer.OpenTag('div', 'class="col-md-'+e.Size.ToString + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
+  if e.Size > 0 then
+    s := ' col-'+e.Size.ToString
+  else
+    s := 'col';
+  Context.Writer.OpenTag('div', 'class="d-flex' + s + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
+  inherited;
+  Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TBar }
+
+procedure TmnwHTMLRenderer.TBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TBar;
+  s: string;
+begin
+  e := Scope.Element as THTML.TBar;
+  s := '';
+  Context.Writer.OpenTag('div', 'class="d-flex' + s + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -5234,9 +5265,7 @@ var
 begin
   e := Scope.Element as THTML.TLink;
   if e.ClickType = clickAction then
-    event :=' onclick="mnw.click(event, this)"'
-  else if e.ClickType = clickNewWindow then
-    event :=' target="_blank"';
+    event :=' onclick="mnw.click(event, this)"';
   Context.Writer.OpenInlineTag('a', 'href="'+When(e.Location, '#') + '"'+ event + Scope.GetText, e.Caption);
   inherited;
   Context.Writer.CloseTag('a');
@@ -5680,12 +5709,27 @@ end;
 procedure TmnwHTMLRenderer.TSpan.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TSpan;
-  event: string;
 begin
   e := Scope.Element as THTML.TSpan;
   Context.Writer.OpenInlineTag('span', Scope.ToString, e.Text);
   inherited;
   Context.Writer.CloseTag('span');
+end;
+
+{ TmnwHTMLRenderer.THTMLLayout }
+
+procedure TmnwHTMLRenderer.THTMLLayout.DoCollectAttributes(var Scope: TmnwScope);
+var
+  e: THTML.THTMLLayout;
+begin
+  e := Scope.Element as THTML.THTMLLayout;
+  inherited;
+  Scope.Classes.Add(BSFixedToStr(e.Fixed));
+  Scope.Classes.Add(BSAlignToStr(e.Align));
+  Scope.Classes.Add(BSAlignItemsToStr(e.AlignItems));
+  Scope.Classes.Add(BSContentJustifyToStr(e.JustifyItems));
+  Scope.Classes.Add('m-'+e.Margin.ToString);
+  Scope.Classes.Add('p-'+e.Padding.ToString);
 end;
 
 initialization
