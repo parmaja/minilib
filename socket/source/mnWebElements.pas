@@ -1379,7 +1379,7 @@ type
 
       { THeader }
 
-      THeader = class(THTMLComponent)
+      THeader = class(THTMLControl)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -1504,19 +1504,19 @@ type
 
       { TCard }
 
-      TCard = class(THTMLComponent)
+      TCard = class(THTMLControl)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
-      TPanel = class(THTMLComponent)
+      TPanel = class(THTMLControl)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TCollapseCaption }
 
-      TCollapseCaption = class(THTMLComponent)
+      TCollapseCaption = class(THTMLControl)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -3092,6 +3092,8 @@ begin
   end;
   if e.Size > szUndefined then
     Scope.Classes.Add('max-w-'+BSSizeToStr(e.Size));
+  if e.Shadow then
+    Scope.Classes.Add('shadow-thin');
   inherited;
 end;
 
@@ -4699,22 +4701,22 @@ end;
 
 procedure TJQuery_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" defer crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"');
 end;
 
 { TJQuery_LocalLibrary }
 
 procedure TJQuery_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" defer crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { TWebElements_Library }
 
 procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" defer crossorigin="anonymous"');
-  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" defer crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { THTML }
@@ -5261,12 +5263,14 @@ end;
 procedure TmnwHTMLRenderer.TLink.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TLink;
-  event: string;
+  s: string;
 begin
   e := Scope.Element as THTML.TLink;
   if e.ClickType = clickAction then
-    event :=' onclick="mnw.click(event, this)"';
-  Context.Writer.OpenInlineTag('a', 'href="'+When(e.Location, '#') + '"'+ event + Scope.GetText, e.Caption);
+    s :=' onclick="mnw.click(event, this)"'
+  else if e.ClickType = clickNewWindow then
+    s :=' target="_blank"';
+  Context.Writer.OpenInlineTag('a', 'href="'+When(e.Location, '#') + '"'+ s + Scope.GetText, e.Caption);
   inherited;
   Context.Writer.CloseTag('a');
 end;
@@ -5728,8 +5732,10 @@ begin
   Scope.Classes.Add(BSAlignToStr(e.Align));
   Scope.Classes.Add(BSAlignItemsToStr(e.AlignItems));
   Scope.Classes.Add(BSContentJustifyToStr(e.JustifyItems));
-  Scope.Classes.Add('m-'+e.Margin.ToString);
-  Scope.Classes.Add('p-'+e.Padding.ToString);
+  if e.Margin > 0 then
+    Scope.Classes.Add('m-'+e.Margin.ToString);
+  if e.Padding > 0 then
+    Scope.Classes.Add('p-'+e.Padding.ToString);
 end;
 
 initialization

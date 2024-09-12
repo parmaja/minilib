@@ -94,10 +94,10 @@ end;
 procedure TBootstrap_Library.AddHead(const Context: TmnwContext);
 begin
   if Context.Schema.Direction = dirRightToLeft then
-    Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" integrity="sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb" defer crossorigin="anonymous">')
+    Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" integrity="sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb" crossorigin="anonymous">')
   else
-    Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" defer crossorigin="anonymous">');
-  Context.Writer.WriteLn('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" defer crossorigin="anonymous"></script>');
+    Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
+  Context.Writer.WriteLn('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
 end;
 
 { TBootstrap_LocalLibrary }
@@ -105,10 +105,10 @@ end;
 procedure TBootstrap_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
   if Context.Schema.Direction = dirRightToLeft then
-    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.rtl.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" defer crossorigin="anonymous">')
+    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.rtl.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous">')
   else
-    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" defer crossorigin="anonymous">');
-  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.bundle.min.js?v='+IntToStr(Context.Schema.TimeStamp)+'" defer crossorigin="anonymous"></script>');
+    Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous">');
+  Context.Writer.WriteLn('<script src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap.bundle.min.js?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous"></script>');
 end;
 
 { TBootstrapIcons_Library }
@@ -124,7 +124,7 @@ end;
 procedure TBootstrapIcons_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
   inherited;
-  Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap-icons.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" defer crossorigin="anonymous">');
+  Context.Writer.WriteLn('<link rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'bootstrap-icons.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous">');
 end;
 
 end.
