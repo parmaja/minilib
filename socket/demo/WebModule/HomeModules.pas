@@ -389,7 +389,6 @@ begin
 
     with Body do
     begin
-      Theme := 'dark';
       with TComment.Create(This) do
         Comment := 'This is just login page source';
 
@@ -524,7 +523,6 @@ begin
 
     with Body do
     begin
-      Theme := 'light';
       with TComment.Create(This) do
         Comment := 'This is just login page source';
 
@@ -563,7 +561,7 @@ begin
           AlwaysOpen := True;
           with TBar.Create(This) do
           begin
-            Padding.SetTopBottom(2);
+            Padding := 2;
             with TThemeModeButton.Create(This) do
             begin
               Caption := 'Mode';

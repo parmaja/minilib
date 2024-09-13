@@ -310,6 +310,7 @@ type
 
   TmnwPriority = (priorityNormal, priorityStart, priorityEnd);
 
+  TTheme = (themeUndefined, themeLight, themeDark);
   TmnwShadow = (shadowLight, shadowHeavy);
 
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignBaseline, alignEnd);
@@ -858,6 +859,7 @@ type
         Align: TmnwAlign;
         AlignItems: TmnwAlign;
         JustifyItems: TmnwAlign;
+
         Margin: TmnwBounding;
         Padding: TmnwBounding;
         Medium: Boolean; //Medium or above
@@ -967,7 +969,7 @@ type
         FToast: TToast;
       protected
       public
-        Theme: string;
+        Theme: TTheme;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: Boolean =True); override;
         destructor Destroy; override;
         property Header: THeader read FHeader;
@@ -1030,6 +1032,7 @@ type
       protected
         procedure Created; override;
       public
+        Theme: TTheme;
         function CanRender: Boolean; override;
       end;
 
@@ -4958,6 +4961,7 @@ procedure THTML.TSideBar.Created;
 begin
   inherited;
   Shadow := shadowHeavy;
+  Theme := themeUndefined;
 end;
 
 { TmnwHTMLRenderer.TBody }
@@ -4970,8 +4974,11 @@ begin
   inherited;
   if e.Schema.RefreshInterval <> 1 then //* not default, 0 Disable it
     Scope.Attributes['data-mnw-refresh-interval'] := e.Schema.RefreshInterval.ToString;
-  if e.Theme <> '' then
-    Scope.Attributes['data-bs-theme'] := e.Theme;
+  if e.Theme = themeDark then
+    Scope.Attributes['data-bs-theme'] := 'dark'
+  else if e.Theme = themeLight then
+    Scope.Attributes['data-bs-theme'] := 'light';
+
 end;
 
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
@@ -5033,7 +5040,7 @@ var
 begin
   e := Scope.Element as THTML.TThemeModeButton;
   Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
-  Context.Writer.AddTag('span', 'class="invert icon mw-moon-stars"');
+  Context.Writer.AddTag('span', 'class="icon mw-moon-stars"');
   inherited;
   Context.Writer.CloseTag('button');
 end;
@@ -5075,6 +5082,8 @@ var
   e: THTML.TBar;
 begin
   e := Scope.Element as THTML.TBar;
+  Scope.Classes.Add('bar');
+  Scope.Classes.Add('bg-body');
   Scope.Classes.Add('d-flex');
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
@@ -5354,6 +5363,7 @@ begin
   Scope.Classes.Add('navbar-dark');
   Scope.Classes.Add('bg-black');
   Scope.Classes.AddClasses('flex-nowrap navbar-expand-md w-100 py-0 px-1');
+  Scope.Attributes.Add('data-bs-theme', 'dark');
 
   Context.Writer.OpenTag('nav', Scope.ToString);
 
@@ -5361,7 +5371,7 @@ begin
   begin
     sb := (e.Schema as THTML).Document.Body.SideBar;
     Context.Writer.OpenTag('button', 'class="navbar-toggler my-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + sb.id + '-body' + '" aria-controls="' + sb.id + '-items' + '" aria-expanded="false" aria-label="Toggle Sidebar"');
-    Context.Writer.AddTag('span', 'class="invert icon mw-chevron-right"');
+    Context.Writer.AddTag('span', 'class="icon mw-chevron-right"');
     Context.Writer.CloseTag('button');
   end;
 
@@ -5379,7 +5389,7 @@ begin
   if e.Count > 0 then
   begin
     Context.Writer.OpenTag('button', 'class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#'+e.ID+'-items'+'" aria-controls="'+e.ID+'-items'+'" aria-expanded="false" aria-label="Toggle navigation"');
-    Context.Writer.AddTag('span', 'class="invert icon mw-list"');
+    Context.Writer.AddTag('span', 'class="icon mw-list"');
     Context.Writer.CloseTag('button');
   end;
   Context.Writer.CloseTag('nav');
@@ -5805,11 +5815,19 @@ begin
     Scope.Classes.Add('min-content-height');
   Scope.Classes.Add('p-0');
   Scope.Classes.Add('m-0');
-  Scope.Classes.Add('bg-dark');
-  Scope.Attributes.Add('data-bs-theme', 'dark');
+  if e.Theme = themeDark then
+  begin
+    Scope.Classes.Add('bg-dark');
+    Scope.Attributes.Add('data-bs-theme', 'dark');
+  end
+  else if e.Theme = themeLight then
+  begin
+    Scope.Classes.Add('bg-light');
+    Scope.Attributes.Add('data-bs-theme', 'light');
+  end;
   Context.Writer.OpenTag('aside', Scope.ToString);
   Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content ' + When((e.Schema as THTML).Document.Body.Header.CanRender, 'min-content-height') + ' fixed"');
-  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body bg-dark offcanvas offcanvas-start p-2" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
+  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');

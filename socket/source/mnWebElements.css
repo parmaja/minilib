@@ -167,7 +167,7 @@ svg {
     }
 }
 
-body{
+body{    
 }
 
 aside{
@@ -217,7 +217,9 @@ aside{
     bottom: 0;
     opacity: 100%;
     padding: 0;
-    width: var(--sidebar-size);    
+    width: var(--sidebar-size);
+    background-color: var(--bs-body-bg);
+    /*background-color: hsl(from var(--bs-body-bg) h s calc(l - 5));*/
 }
 
 .sidebar-content {
