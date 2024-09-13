@@ -1,9 +1,8 @@
-/* version:1.31 */
+/* version:1.35 */
 :root {
     --size-unit: 8rem;
     --gap-unit: 0.25rem;
     --header-size: 3.2rem;
-    --dark-panel: #111111;
     --content-height: calc(100vh - var(--header-size));
     --sidebar-size: calc(var(--size-unit) * 2);
  
@@ -183,6 +182,8 @@ aside{
     position: fixed !important; /* option to stick it without scroll */
 }
 
+/** for header **/
+
 .content-top {
     top: var(--header-size) !important; 
 }
@@ -194,6 +195,8 @@ aside{
 .min-content-height {
     min-height: var(--content-height)  !important;  
 }
+
+/** main  **/
 
 .main {
     overflow-y: auto; 
@@ -210,33 +213,23 @@ aside{
 
 .sidebar {
     float: left;
-    overflow: auto;
     top: 0;
     bottom: 0;
     opacity: 100%;
     padding: 0;
-    width: var(--sidebar-size);
-    /*min-height: var(--content-height);*/
-    background-color: var(--dark-panel);
-    /* background-color: #404E67;*/
-
-/*    overflow-y: auto; */
+    width: var(--sidebar-size);    
 }
 
 .sidebar-content {
     display: flex;
-    overflow-y: auto;
     width: var(--sidebar-size) !important;
+    height: 100%;
 }
 
 .sidebar-body {
     overflow-y: auto;
+    scrollbar-width: thin;
     width: var(--sidebar-size) !important;
-    background-color: var(--dark-panel);
-}
-
-.sidebar-active {
-    background-color: rgb(71, 86, 113);
 }
 
 .offcanvas.show, .offcanvas.showing {
@@ -250,7 +243,11 @@ aside{
   box-shadow: none;
 }
 
-[data-bs-theme=dark] .card-header {
-    /*background-color: #2d3748; */
-    background-color: var(--dark-panel);
+.card-header {    
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.accordion-button {
+    /*border-width: 0.1rem;*/
+    background-color: var(--bs-accordion-active-bg);
 }

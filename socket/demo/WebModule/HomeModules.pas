@@ -513,6 +513,8 @@ begin
 end;
 
 procedure TDemoSchema.DoCompose;
+var
+  i: Integer;
 begin
   inherited;
   with Document do
@@ -589,15 +591,19 @@ begin
           with TAccordionSection.Create(This) do
           begin
             Caption := 'Favorites';
+            Expanded := True;
             with TLink.Create(This, 'http://www.parmaja.org', 'parmaja') do
             begin
               ClickType := clickNavigate;
             end;
 
-            with TMyLink.Create(This, '', 'About') do
+            for i := 0 to 20 do
             begin
-              Location := GetPath;
-              ClickType := clickAction;
+	            with TMyLink.Create(This, '', 'Link'+IntToStr(i)) do
+              begin
+                Location := GetPath;
+                ClickType := clickAction;
+              end;
             end;
           end;
         end;

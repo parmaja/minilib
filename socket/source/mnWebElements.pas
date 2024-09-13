@@ -1087,6 +1087,8 @@ type
       [TID_Extension]
       TAccordionSection = class(THTMLLayout)
       public
+        ImagePath: string;
+        Icon: string;
         Caption: string;
         Expanded: Boolean;
       end;
@@ -3308,7 +3310,7 @@ end;
 
 procedure TmnwHTMLRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
-  Scope.Classes.AddClasses('header sticky-top d-flex align-items-center navbar-dark bg-dark py-0 px-1');
+  Scope.Classes.AddClasses('header sticky-top d-flex align-items-center navbar-dark bg-black py-0 px-1');
   Context.Writer.OpenTag('header', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('header');
@@ -3421,7 +3423,7 @@ begin
     Context.Writer.CloseTag('h5');
   end;
 
-  Context.Writer.OpenTag('div', 'class="card-body collapse show" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body"');
+  Context.Writer.OpenTag('div', 'class="card-body overflow-hidden collapse show" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body"');
 //  collapse
   inherited;
   Context.Writer.CloseTag('div');
@@ -5030,7 +5032,7 @@ var
   e: THTML.TThemeModeButton;
 begin
   e := Scope.Element as THTML.TThemeModeButton;
-  Context.Writer.OpenTag('button', 'class="bg-dark mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
+  Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
   Context.Writer.AddTag('span', 'class="invert icon mw-moon-stars"');
   inherited;
   Context.Writer.CloseTag('button');
@@ -5127,7 +5129,11 @@ begin
   e := Scope.Element as THTML.TAccordionSection;
   Context.Writer.OpenTag('div', 'class="accordion-item"');
   Context.Writer.OpenTag('h', 'id="'+e.id+'-header" class="accordion-header"');
-  Context.Writer.OpenTag('button ', 'class="accordion-button p-2 '+ When(not e.Expanded, 'collapsed')+'" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
+  Context.Writer.OpenTag('button ', 'class="accordion-button p-2'+ When(not e.Expanded, ' collapsed')+'" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
+  if e.Icon <> '' then
+    Context.Writer.AddShortTag('span', 'class='+ DQ('bi bi-'+e.Icon))
+  else if e.ImagePath <> '' then
+    Context.Writer.AddShortTag('img', 'src='+ DQ(e.ImagePath));
   Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('button');
   Context.Writer.CloseTag('h');
@@ -5140,7 +5146,7 @@ begin
     not (e.Parent as THTML.TAccordion).AlwaysOpen then
       Scope.Attributes.Add('data-bs-parent', '#'+e.Parent.ID);
   Context.Writer.OpenTag('div', Scope.ToString + ' aria-labelledby="' + e.ID + '-header"');
-  Context.Writer.OpenTag('ul', 'class="accordion-body list-group list-group-flush p-0"');
+  Context.Writer.OpenTag('ul', 'class="accordion-body list-group list-group-flush p-1"');
   inherited;
   Context.Writer.CloseTag('ul');
 
@@ -5346,8 +5352,8 @@ begin
     Scope.Classes.Add('fixed-top');
   Scope.Classes.Add('navbar-expand-md');
   Scope.Classes.Add('navbar-dark');
-  Scope.Classes.Add('bg-dark');
-  Scope.Classes.AddClasses('flex-nowrap navbar-expand-md navbar-dark bg-dark w-100 py-0 px-1');
+  Scope.Classes.Add('bg-black');
+  Scope.Classes.AddClasses('flex-nowrap navbar-expand-md w-100 py-0 px-1');
 
   Context.Writer.OpenTag('nav', Scope.ToString);
 
@@ -5361,7 +5367,7 @@ begin
 
 	DoRenderBrand(Scope, Context);
 
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-dark" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
   //Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
   Context.Writer.OpenTag('ul', 'class="navbar-nav mr-auto m-2 m-md-0"');
   inherited;
@@ -5799,9 +5805,11 @@ begin
     Scope.Classes.Add('min-content-height');
   Scope.Classes.Add('p-0');
   Scope.Classes.Add('m-0');
+  Scope.Classes.Add('bg-dark');
+  Scope.Attributes.Add('data-bs-theme', 'dark');
   Context.Writer.OpenTag('aside', Scope.ToString);
   Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content ' + When((e.Schema as THTML).Document.Body.Header.CanRender, 'min-content-height') + ' fixed"');
-  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas offcanvas-start p-2" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
+  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body bg-dark offcanvas offcanvas-start p-2" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
