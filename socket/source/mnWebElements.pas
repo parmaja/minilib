@@ -35,7 +35,7 @@ GET https://john.doe@www.example.com:123/username/forum/questions/qst1/?tag=netw
      Document
 
 ┌──────┬──────────────────────────────────────┐  ─┐
-│>Logo │ Brand NavBar                        =│   ├─ Header
+│>Logo │ Brand NavBar                      c =│   ├─ Header
 ├──────┴──────────────────────────────────────┤  ─│
 │ MenuBar                                     │   │
 ├────────────┬────────────────────────────────┤   │
@@ -311,7 +311,7 @@ type
   TmnwPriority = (priorityNormal, priorityStart, priorityEnd);
 
   TTheme = (themeUndefined, themeLight, themeDark);
-  TmnwShadow = (shadowLight, shadowHeavy);
+  TmnwShadow = (shadowUndefined, shadowLight, shadowHeavy);
 
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignBaseline, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
@@ -5083,7 +5083,7 @@ var
 begin
   e := Scope.Element as THTML.TBar;
   Scope.Classes.Add('bar');
-  Scope.Classes.Add('bg-body');
+  //Scope.Classes.Add('bg-body');
   Scope.Classes.Add('d-flex');
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
@@ -5121,7 +5121,7 @@ end;
 
 procedure TmnwHTMLRenderer.TAccordionSection.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
-  Context.Writer.OpenTag('li', 'class="list-group-item"');
+  Context.Writer.OpenTag('li', 'class="list-group-item bg-transparent"');
   inherited;
 end;
 
@@ -5136,7 +5136,7 @@ var
   e: THTML.TAccordionSection;
 begin
   e := Scope.Element as THTML.TAccordionSection;
-  Context.Writer.OpenTag('div', 'class="accordion-item"');
+  Context.Writer.OpenTag('div', 'class="accordion-item bg-transparent"');
   Context.Writer.OpenTag('h', 'id="'+e.id+'-header" class="accordion-header"');
   Context.Writer.OpenTag('button ', 'class="accordion-button p-2'+ When(not e.Expanded, ' collapsed')+'" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
   if e.Icon <> '' then

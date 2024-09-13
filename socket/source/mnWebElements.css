@@ -217,9 +217,9 @@ aside{
     bottom: 0;
     opacity: 100%;
     padding: 0;
-    width: var(--sidebar-size);
-    background-color: var(--bs-body-bg);
-    /*background-color: hsl(from var(--bs-body-bg) h s calc(l - 5));*/
+    width: var(--sidebar-size);            
+    background-color: var(--bs-secondary-bg);
+    /*background-color: color-mix(in srgb, var(--bs-body-bg), black 5%);*/
 }
 
 .sidebar-content {
@@ -232,6 +232,8 @@ aside{
     overflow-y: auto;
     scrollbar-width: thin;
     width: var(--sidebar-size) !important;
+    padding: 0.25rem;
+    background-color: var(--bs-secondary-bg);
 }
 
 .offcanvas.show, .offcanvas.showing {
