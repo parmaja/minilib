@@ -970,6 +970,7 @@ type
       protected
       public
         Theme: TTheme;
+        FontName: string;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: Boolean =True); override;
         destructor Destroy; override;
         property Header: THeader read FHeader;
@@ -4984,6 +4985,7 @@ end;
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TBody;
+  s: string;
   function GetAttach: string;
   begin
     if Context.Schema.Interactive then
@@ -4993,7 +4995,13 @@ var
   end;
 begin
   e := Scope.Element as THTML.TBody;
-  Context.Writer.OpenTag('body', Scope.ToString + GetAttach);
+
+  if e.FontName<>'' then
+    s := ' style="font-family: '+SQ(e.FontName)+'!important;"'
+  else
+    s := '';
+
+  Context.Writer.OpenTag('body', Scope.ToString + GetAttach + s);
   inherited;
   Context.Writer.CloseTag('body');
 end;

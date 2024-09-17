@@ -104,8 +104,8 @@ type
     procedure WriteAsTime(const AValue: TDateTime);
     function ReadIsNull: Boolean;
     procedure WriteIsNull(const AValue: Boolean);
-    function ReadAsForeign: Integer;
-    procedure WriteAsForeign(const Value: Integer);
+    function ReadAsForeign: Int64;
+    procedure WriteAsForeign(const Value: Int64);
     function ReadIsExists: Boolean;
     function ReadAsAsUID: string;
     procedure WriteAsUID(const Value: string);
@@ -169,7 +169,7 @@ type
     property AsText: string read ReadAsText write WriteAsText; //binary text blob convert to hex
     property AsBytes: TBytes read ReadAsBytes write WriteAsBytes;
     property AsGuid: TGUID read ReadAsGuid write WriteAsGuid;
-    property AsForeign: Integer read ReadAsForeign write WriteAsForeign; // alias for as integer for foreign fields
+    property AsForeign: Int64 read ReadAsForeign write WriteAsForeign; // alias for as integer for foreign fields
     property AsUID: string read ReadAsAsUID write WriteAsUID; // alias for as integer for foreign fields
 
     property IsNull: Boolean read ReadIsNull write WriteIsNull;
@@ -767,9 +767,9 @@ begin
     end;
 end;
 
-function TmnCustomField.ReadAsForeign: Integer;
+function TmnCustomField.ReadAsForeign: Int64;
 begin
-  Result := AsInteger;
+  Result := AsInt64;
 end;
 
 function TmnCustomField.ReadAsGuid: TGUID;
@@ -783,7 +783,7 @@ begin
   SetAsDouble(AValue);
 end;
 
-procedure TmnCustomField.WriteAsForeign(const Value: Integer);
+procedure TmnCustomField.WriteAsForeign(const Value: Int64);
 begin
   if Value = 0 then
     Clear
