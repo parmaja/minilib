@@ -65,6 +65,9 @@ GET https://john.doe@www.example.com:123/username/forum/questions/qst1/?tag=netw
   https://leafletjs.com/examples.html
   https://github.com/mdbootstrap/mdb-ui-kit
 
+  Testing
+    https://pagespeed.web.dev/analysis/http-dirkey-ddns-net-home-demo/zourq3i3sg?form_factor=mobile
+
 Good example:
   https://bootstrapmade.com/demo/templates/NiceAdmin/index.html
 }
@@ -3415,19 +3418,19 @@ begin
   Context.Writer.OpenTag('div', Scope.ToString);
   if e.Caption <> '' then
   begin
-    Context.Writer.OpenTag('h5', 'class="card-header d-flex" id="' + e.id + '-header"');
+    Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header d-flex"');
     Context.Writer.WriteLn(e.Caption);
     if e.Collapse then
     begin
       Context.Writer.Write('<span class="ms-auto my-auto icon-animate icon mw-chevron-up"');
       if e.Collapse then
-          Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-expanded="true" aria-controls="'+e.id+'-body"');
+          Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-labelledby="' + e.id + '-header" aria-expanded="true" aria-controls="'+e.id+'-body"');
       Context.Writer.WriteLn('></span>');
     end;
     Context.Writer.CloseTag('h5');
   end;
 
-  Context.Writer.OpenTag('div', 'class="card-body overflow-hidden collapse show" aria-labelledby="'+e.id+'-header" id="'+e.id+'-body"');
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show" aria-labelledby="'+e.id+'-header"');
 //  collapse
   inherited;
   Context.Writer.CloseTag('div');
@@ -3530,7 +3533,7 @@ begin
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Scope.Classes.Add('nav-link');
-  Context.Writer.AddTag('a', 'href="'+e.LinkTo+'"' + event + Scope.GetText, e.Caption);
+  Context.Writer.AddTag('a', 'href="'+When(e.LinkTo+'"', '#') + event + Scope.GetText, e.Caption);
   inherited;
 end;
 
@@ -5150,7 +5153,7 @@ begin
   if e.Icon <> '' then
     Context.Writer.AddShortTag('span', 'class='+ DQ('bi bi-'+e.Icon))
   else if e.ImagePath <> '' then
-    Context.Writer.AddShortTag('img', 'src='+ DQ(e.ImagePath));
+    Context.Writer.AddShortTag('img', 'src='+ DQ(e.ImagePath) + ' alt=""');
   Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('button');
   Context.Writer.CloseTag('h');
@@ -5340,7 +5343,7 @@ begin
   e := Scope.Element as THTML.TNavBar;
   Context.Writer.OpenTag('a', 'class="logo navbar-brand align-items-center me-auto" href="' + e.GetPath+'"');
   if e.Schema.App.Assets.Logo.Data.Size > 0 then
-    Context.Writer.AddShortTag('img', 'src="' + e.Schema.App.Assets.Logo.GetPath+ '"');
+    Context.Writer.AddShortTag('img', 'src="' + e.Schema.App.Assets.Logo.GetPath+ '" alt=""');
   if e.Title <> '' then
     Context.Writer.AddTag('span', 'class="navbar-brand"', e.Title);
   Context.Writer.CloseTag('a');
