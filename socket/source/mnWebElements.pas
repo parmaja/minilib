@@ -171,6 +171,17 @@ type
     toCustom
   );
 
+  //Decorate
+  TItemStyle = (
+    styleUndefined,
+    stylePrimary,
+    styleSecondary,
+    styleSuccess,
+    styleDanger,
+    styleWarning,
+    styleInfo
+  );
+
   { TLocation }
 
   TLocation = record
@@ -181,6 +192,23 @@ type
     class operator Implicit(Source : TLocation): string;
     class operator Implicit(Source : TLocationRelative) : TLocation;
     function IsDefeined: Boolean;
+  end;
+
+  TImageLocationType = (imgIcon, imgPath);
+
+  { TImageLocation }
+
+  TImageLocation = record
+  private
+    FLocationType: TImageLocationType;
+    FValue: string;
+    function GetIcon: string;
+    function GetPath: string;
+    procedure SetIcon(const AValue: string);
+    procedure SetPath(const AValue: string);
+  public
+    property Path: string read GetPath write SetPath;
+    property Icon: string read GetIcon write SetIcon;
   end;
 
   { TmnwBounding }
@@ -837,7 +865,6 @@ type
       TToast = class;
       TMain = class;
       TImage = class;
-      TButtons = class;
       TBody = class;
       TDocument = class;
 
@@ -1065,19 +1092,25 @@ type
       public
       end;
 
+      THTMLItem = class abstract(THTMLControl)
+      private
+        FCaption: string;
+        procedure SetCaption(const AValue: string);
+      public
+        ItemStyle: TItemStyle;
+        property Caption: string read FCaption write SetCaption;
+      end;
+
       TClickType = (clickNavigate, clickNewWindow, clickAction, clickNone);
 
       { TClickable }
 
-      TClickable = class abstract(THTMLControl)
+      TClickable = class abstract(THTMLItem)
       private
-        FCaption: string;
-        procedure SetCaption(const AValue: string);
       protected
         procedure ReceiveMessage(JSON: TDON_Pair); override;
       public
         ClickType: TClickType;
-        property Caption: string read FCaption write SetCaption;
       end;
 
       [TID_Extension]
@@ -1094,8 +1127,7 @@ type
       [TID_Extension]
       TAccordionSection = class(THTMLLayout)
       public
-        ImagePath: string;
-        Icon: string;
+        Image: TImageLocation;
         Caption: string;
         Expanded: Boolean;
       end;
@@ -1104,41 +1136,61 @@ type
       public
       end;
 
-      [TID_Extension]
-      THTMLCaptionComponent =class abstract(THTMLControl)
-      public
-        Caption: string;
-      end;
-
       { TCard }
 
-      TCard = class(THTMLCaptionComponent)
+      [TID_Extension]
+      TCard = class(THTMLItem)
       protected
         procedure Created; override;
       public
         Collapse: Boolean;
       end;
 
-      TPanel = class(THTMLCaptionComponent)
+      TPanel = class(THTMLItem)
       public
       end;
 
       [TID_Extension]
-      TCollapseCaption = class(THTMLCaptionComponent)
+      TCollapseCaption = class(THTMLItem)
       protected
         procedure DoCompose; override;
       public
       end;
 
-      TList = class(THTMLControl)
+      TThemeModeButton = class(THTMLItem)
       public
       end;
 
-      TViewItem = class(THTMLCaptionComponent)
+      TDropdownOptions = set of (dropArraw, dropSplit);
+
+      { TDropdown }
+
+      [TID_Extension]
+      TDropdown = class(THTMLItem)
+      protected
+        procedure Created; override;
+      public
+        Options: TDropdownOptions;
+      end;
+
+      { THTMLGroup }
+
+      THTMLGroup = class(THTMLElement)
+      protected
+      public
+        function CanRender: Boolean; override;
+      end;
+            { TGroupButtons }
+
+      [TID_Extension]
+      TGroupButtons = class(THTMLGroup)
+      protected
       public
       end;
 
-      TThemeModeButton = class(THTMLCaptionComponent)
+      [TID_Extension]
+      TToolbar = class(THTMLGroup)
+      protected
       public
       end;
 
@@ -1207,6 +1259,21 @@ type
       TButton = class(TClickable)
       private
       protected
+        JSFunction: string;
+        procedure Created; override;
+      public
+        Image: TImageLocation;
+      end;
+
+      { TFontButtons }
+
+      TFontButtons = class(TGroupButtons)
+      protected
+        FButtonSmall: TButton;
+        FButtonNormal: TButton;
+        FButtonLarge: TButton;
+        procedure Created; override;
+      public
       end;
 
       TNavItem = class(TClickable)
@@ -1225,14 +1292,6 @@ type
       TSubMenu = class(TClickable)
       private
       protected
-      public
-      end;
-
-      { TButtons }
-
-      TButtons = class(THTMLLayout)
-      protected
-        procedure Added(Item: TmnwElement); override;
       public
       end;
 
@@ -1559,6 +1618,29 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
+      { TDropdown }
+
+      TDropdown = class(THTMLComponent)
+      protected
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TGroupButtons }
+
+      TGroupButtons = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TToolbar }
+
+      TToolbar = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
       { TForm }
 
       TForm = class(THTMLElement)
@@ -1587,6 +1669,13 @@ type
       TButton = class(THTMLControl)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TFontButtons }
+
+      TFontButtons = class(TGroupButtons)
+      protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -1761,6 +1850,7 @@ function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
 function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = True): string;
 
 function DirectionToStr(Direction: TDirection): string;
 function GetTimeStamp: Int64;
@@ -1847,6 +1937,21 @@ begin
 		szVeryLarge: Result := 'xl';
     else
       Result := '';
+  end;
+end;
+
+function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean): string;
+begin
+  case Style of
+    styleUndefined: Result := '';
+    stylePrimary: Result := Prefix + 'primary';
+    styleSecondary: Result := Prefix + 'secondary';
+    styleSuccess: Result := Prefix + 'success';
+    styleDanger: Result := Prefix + 'danger';
+    styleWarning: Result := Prefix + 'warning';
+    styleInfo: Result := Prefix + 'info';
+  else
+    Result := '';
   end;
 end;
 
@@ -2997,6 +3102,38 @@ begin
   Result := Source.Custom;
 end;
 
+{ TImageLocation }
+
+procedure TImageLocation.SetPath(const AValue: string);
+begin
+  if FValue =AValue then Exit;
+  FValue :=AValue;
+  FLocationType := imgPath;
+end;
+
+procedure TImageLocation.SetIcon(const AValue: string);
+begin
+  if FValue =AValue then Exit;
+  FValue :=AValue;
+  FLocationType := imgIcon;
+end;
+
+function TImageLocation.GetIcon: string;
+begin
+  if FLocationType = imgIcon then
+    Result := FValue
+  else
+    Result := '';
+end;
+
+function TImageLocation.GetPath: string;
+begin
+  if FLocationType = imgPath then
+    Result := FValue
+  else
+    Result := '';
+end;
+
 { TmnwBounding }
 
 class operator TmnwBounding.Explicit(const Source: Integer): TmnwBounding;
@@ -3189,6 +3326,10 @@ begin
   RegisterRenderer(THTML.TImage, TImage);
   RegisterRenderer(THTML.TMemoryImage, TMemoryImage);
   RegisterRenderer(THTML.TCard, TCard);
+  RegisterRenderer(THTML.TDropdown, TDropdown);
+  RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
+  RegisterRenderer(THTML.TToolbar, TToolbar);
+  RegisterRenderer(THTML.TFontButtons, TFontButtons);
   RegisterRenderer(THTML.TCollapseCaption, TCollapseCaption);
   RegisterRenderer(THTML.TForm, TForm);
   RegisterRenderer(THTML.TRow, TRow);
@@ -3342,8 +3483,8 @@ var
   e: THTML.TToast;
 begin
   e := Scope.Element as THTML.TToast;
-  Context.Writer.OpenTag('div aria-live="polite" aria-atomic="true"');
-  Context.Writer.OpenTag('div id="toast-container" class ="toast-container position-absolute p-3" style="z-index:9;"');
+  Context.Writer.OpenTag('div', 'aria-live="polite" aria-atomic="true"');
+  Context.Writer.OpenTag('div', 'id="toast-container" class ="toast-container position-absolute p-3" style="z-index:9;"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -3361,7 +3502,7 @@ begin
   else
     Scope.Classes.Add('container');
   Context.Writer.OpenTag('div', Scope.ToString);
-  Context.Writer.OpenTag('div id="content" class="content row"');
+  Context.Writer.OpenTag('div', 'id="content" class="content row"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -3375,7 +3516,7 @@ var
   classes: TElementClasses;
 begin
   e := Scope.Element as THTML.TMain;
-  //Context.Writer.OpenTag('div class="row"');
+  //Context.Writer.OpenTag('div', 'class="row"');
   classes.Init('main');
   if (e.Schema as THTML).Document.Body.Header.CanRender  then
     classes.Add('max-content-height');
@@ -3396,7 +3537,7 @@ begin
   //Scope.Classes.Add('flex-wrap');
   Scope.Classes.Add('justify-content-center');
 //container-fluid for full width, container not full width
-  Context.Writer.OpenTag('div',  Scope.ToString);
+  Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
 
@@ -3515,11 +3656,19 @@ var
 begin
   e := Scope.Element as THTML.TButton;
   Scope.Classes.Add('btn');
-  Scope.Classes.Add('btn-primary');
-  if Context.Schema.Interactive then
+  Scope.Classes.Add(BSItemStyleToStr('btn-', e.ItemStyle));
+  if e.JSFunction <> '' then
+    event := ' onclick="'+e.JSFunction+'(this, event)"'
+  else if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
-  Context.Writer.AddTag('button', 'type="button"' + event + Scope.GetText, e.Caption);
+  Context.Writer.OpenTag('button', 'type="button"' + event + Scope.GetText);
+  if e.Image.Icon <> '' then
+    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Icon))
+  else if e.Image.Path <> '' then
+    Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
+  Context.Writer.WriteLn(e.Caption);
   inherited;
+  Context.Writer.CloseTag('button');
 end;
 
 { TmnwHTMLRenderer.TNavItem }
@@ -5050,10 +5199,87 @@ var
   e: THTML.TThemeModeButton;
 begin
   e := Scope.Element as THTML.TThemeModeButton;
-  Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
+  Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(this, event)"');
   Context.Writer.AddTag('span', 'class="icon mw-moon-stars"');
   inherited;
   Context.Writer.CloseTag('button');
+end;
+
+{ TmnwHTMLRenderer.TDropdown }
+
+procedure TmnwHTMLRenderer.TDropdown.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
+  Scope.Classes.Add('dropdown-item');
+//  Context.Writer.OpenTag('dropdown-item', 'class="dropdown-item"');
+end;
+
+procedure TmnwHTMLRenderer.TDropdown.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TDropdown;
+begin
+  e := Scope.Element as THTML.TDropdown;
+
+  Scope.Classes.Add('btn');
+  if dropArraw in e.Options then
+    Scope.Classes.Add('dropdown-toggle');
+  if dropSplit in e.Options then
+    Scope.Classes.Add('dropdown-toggle-split');
+  Scope.Classes.Add(BSItemStyleToStr('btn-', e.ItemStyle));
+	Scope.Attributes.Add('data-bs-toggle', 'dropdown');
+  Scope.Attributes.Add('aria-expanded', 'false');
+  Scope.Attributes.Add('type', 'button');
+
+  Context.Writer.OpenTag('div', 'class="dropdown"');
+  Context.Writer.OpenTag('button', Scope.ToString);
+  Context.Writer.WriteLn(e.Caption);
+  Context.Writer.CloseTag('button');
+  Context.Writer.OpenTag('div', 'class="dropdown-menu" aria-labelledby="' + e.ID + '"');
+  inherited;
+  Context.Writer.CloseTag('div');
+  Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TGroupButtons }
+
+procedure TmnwHTMLRenderer.TGroupButtons.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TGroupButtons;
+begin
+  e := Scope.Element as THTML.TGroupButtons;
+  Scope.Classes.Add('btn-group');
+  Scope.Attributes.Add('role', 'group');
+  Scope.Attributes.Add('aria-label', e.ID);
+  Context.Writer.OpenTag('div', Scope.ToString);
+  inherited;
+  Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TToolbar }
+
+procedure TmnwHTMLRenderer.TToolbar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TToolbar;
+begin
+  e := Scope.Element as THTML.TToolbar;
+  Scope.Classes.Add('btn-toolbar');
+  Scope.Attributes.Add('role', 'toolbar');
+  Scope.Attributes.Add('aria-label', e.ID);
+  Context.Writer.OpenTag('div', Scope.ToString);
+  inherited;
+  Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TFontButtons }
+
+procedure TmnwHTMLRenderer.TFontButtons.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+begin
+  inherited;
 end;
 
 { TmnwHTMLRenderer.TRow }
@@ -5064,7 +5290,7 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add( BSContentJustifyToStr(e.ContentAlign));
-  Context.Writer.OpenTag('div class="row flex-md-nowrap' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"');
+  Context.Writer.OpenTag('div', 'class="row flex-md-nowrap' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"');
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -5150,10 +5376,10 @@ begin
   Context.Writer.OpenTag('div', 'class="accordion-item bg-transparent"');
   Context.Writer.OpenTag('h', 'id="'+e.id+'-header" class="accordion-header"');
   Context.Writer.OpenTag('button ', 'class="accordion-button p-2'+ When(not e.Expanded, ' collapsed')+'" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
-  if e.Icon <> '' then
-    Context.Writer.AddShortTag('span', 'class='+ DQ('bi bi-'+e.Icon))
-  else if e.ImagePath <> '' then
-    Context.Writer.AddShortTag('img', 'src='+ DQ(e.ImagePath) + ' alt=""');
+  if e.Image.Icon <> '' then
+    Context.Writer.AddShortTag('span', 'class='+ DQ('bi bi-'+e.Image.Icon))
+  else if e.Image.Path <> '' then
+    Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
   Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('button');
   Context.Writer.CloseTag('h');
@@ -5258,15 +5484,17 @@ procedure THTML.TAction.Loop;
 begin
 end;
 
-{ THTML.TClickable }
+{ THTMLItem }
 
-procedure THTML.TClickable.SetCaption(const AValue: string);
+procedure THTML.THTMLItem.SetCaption(const AValue: string);
 begin
   if FCaption =AValue then Exit;
   FCaption :=AValue;
   if (estComposed in State) and (Schema <> nil) and Schema.Attached then
     SendMessage('"command": "change", "content": ' + DQ(Caption));
 end;
+
+{ THTML.TClickable }
 
 procedure THTML.TClickable.ReceiveMessage(JSON: TDON_Pair);
 begin
@@ -5283,15 +5511,6 @@ end;
 
 procedure THTML.TAccordion.Created;
 begin
-  inherited;
-end;
-
-{ THTML.TButtons }
-
-procedure THTML.TButtons.Added(Item: TmnwElement);
-begin
-  if not (Item is TClickable) then
-    raise Exception.Create('Buttons accepts only TClickable');
   inherited;
 end;
 
@@ -5432,7 +5651,7 @@ var
 begin
   e := Scope.Element as THTML.TLink;
   if e.ClickType = clickAction then
-    s :=' onclick="mnw.click(event, this)"'
+    s :=' onclick="mnw.click(this, event)"'
   else if e.ClickType = clickNewWindow then
     s :=' target="_blank"';
   if e.NoDecoration then
@@ -5862,6 +6081,45 @@ begin
 
 end;
 
+{ THTML.TDropdown }
+
+procedure THTML.TDropdown.Created;
+begin
+  inherited Created;
+  Options := [dropArraw];
+end;
+
+{ THTML.TFontButtons }
+
+procedure THTML.TFontButtons.Created;
+begin
+  inherited;
+  FButtonSmall := TButton.Create(Self, [elEmbed], True);
+  FButtonSmall.ID := 'font-small';
+  FButtonSmall.ItemStyle := styleUndefined;
+  FButtonSmall.Image.Icon := 'icon mw-font-small';
+  FButtonSmall.JSFunction := 'mnw.switch_zoom';
+
+  FButtonNormal := TButton.Create(Self, [elEmbed], True);
+  FButtonNormal.ID := 'font-normal';
+  FButtonNormal.ItemStyle := styleUndefined;
+  FButtonNormal.Image.Icon := 'icon mw-font-normal';
+  FButtonNormal.JSFunction := 'mnw.switch_zoom';
+
+  FButtonLarge := TButton.Create(Self, [elEmbed], True);
+  FButtonLarge.ID := 'font-large';
+  FButtonLarge.ItemStyle := styleUndefined;
+  FButtonLarge.Image.Icon := 'icon mw-font-large';
+  FButtonLarge.JSFunction := 'mnw.switch_zoom';
+end;
+
+{ THTML.THTMLGroup }
+
+function THTML.THTMLGroup.CanRender: Boolean;
+begin
+  Result :=inherited CanRender and (Count>0);
+end;
+
 { TmnwCustomLibrary }
 
 procedure TmnwCustomLibrary.AddHead(const Context: TmnwContext);
@@ -5875,6 +6133,12 @@ constructor THTML.TSpan.Create(AParent: TmnwElement; const AText: string);
 begin
   inherited Create(AParent);
   Text := AText;
+end;
+
+procedure THTML.TButton.Created;
+begin
+  inherited;
+  ItemStyle := stylePrimary;
 end;
 
 { TmnwHTMLRenderer.TSpan }

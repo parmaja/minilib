@@ -1,3 +1,4 @@
+/* version 1.5 */
 "use-strict";
 
 let mnw = {};
@@ -118,7 +119,7 @@ function reloadElements()
   });
 }
 
-mnw.click = function(event, sender) 
+mnw.click = function(sender, event) 
 {
   const url = sender.getAttribute('href');
   fetch(url)
@@ -196,12 +197,72 @@ mnw.showToast = function(content, type = "warning")
   toast.show();
 }
 
-mnw.switch_theme = function(event)
+mnw.init_theme = function()
 {
-  if (document.body.getAttribute('data-bs-theme') == 'dark')
-    document.body.setAttribute('data-bs-theme', 'light');
+  if (!document.body.getAttribute('data-bs-theme'))
+  {
+    let bs_theme = localStorage.getItem('bs-theme');
+    document.body.setAttribute('data-bs-theme', bs_theme);
+  }
+
+  /*let font_theme = localStorage.getItem('font-theme');
+  if (font_theme)
+    if (font_theme!="font-normal")
+      document.body.classList.add(font_theme);*/
+}
+
+mnw.switch_zoom = function(sender, event) 
+{
+  let bs_zoom = '';
+  if (sender.id == "font-large")
+    bs_zoom = 'large';
+  else if (sender.id == "font-small")
+    bs_zoom = 'small';
   else
-    document.body.setAttribute('data-bs-theme', 'dark');    
+    bs_zoom = '';
+  if (bs_zoom)
+  {
+    document.body.setAttribute('data-bs-zoom', bs_zoom);
+    localStorage.setItem('bs-zoom', sender.id);    
+  }
+  else
+  {
+    document.body.removeAttribute('data-bs-zoom');
+    localStorage.removeItem('bs-zoom');
+  }
+}
+
+mnw.switch_font = function(sender, event) 
+{
+  if (sender.id == "font-large")
+  {
+    document.body.classList.remove("font-small");
+    document.body.classList.add(sender.id);
+  }
+  else if (sender.id == "font-small")
+  {
+    document.body.classList.remove("font-large");
+    document.body.classList.add(sender.id);
+  }
+  else if (sender.id == "font-normal")
+  {
+    document.body.classList.remove("font-small");
+    document.body.classList.remove("font-large");
+  }
+  else
+    return;
+
+  localStorage.setItem('font-theme', sender.id);    
+}
+
+mnw.switch_theme = function(sender, event)
+{
+  let bs_theme = 'dark';
+  if (document.body.getAttribute('data-bs-theme') == 'dark')
+    bs_theme = 'light';
+
+  document.body.setAttribute('data-bs-theme', bs_theme);
+  localStorage.setItem('bs-theme', bs_theme);
 }
 
 function init()
@@ -226,8 +287,7 @@ function init()
   mnw.interactive = document.body.hasAttribute('data-mnw-interactive');
   if (mnw.interactive)  
     mnw.attach(window.location.href);
-
-
+  
   // JavaScript to toggle dark mode
 }
 
@@ -236,6 +296,10 @@ function finish()
 /*  if (mnw.ws)
     mnw.ws.close();*/
 }
+
+document.addEventListener('DOMContentLoaded', function() {  
+  mnw.init_theme();      
+});
 
 window.addEventListener('load', init);
 window.addEventListener("beforeunload", finish);

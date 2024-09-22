@@ -523,6 +523,7 @@ begin
 
     with Body do
     begin
+
       with TComment.Create(This) do
         Comment := 'This is just login page source';
 
@@ -548,6 +549,11 @@ begin
             with TThemeModeButton.Create(This) do
             begin
               Caption := 'Mode';
+            end;
+
+            with TFontButtons.Create(This) do
+            begin
+              //Caption := 'Font';
             end;
           end;
         end;
@@ -628,6 +634,45 @@ begin
 
         //with TRow.Create(This) do
         begin
+          with TDropdown.Create(This) do
+          begin
+            Caption := 'Font';
+            with TButton.Create(This) do
+            begin
+              Caption := 'A';
+            end;
+
+            with TButton.Create(This) do
+            begin
+              Caption := 'B';
+            end;
+          end;
+
+          with TGroupButtons.Create(This) do
+          begin
+            with TButton.Create(This) do
+            begin
+              Caption := 'A';
+            end;
+
+            with TButton.Create(This) do
+            begin
+              Caption := 'B';
+            end;
+          end;
+
+          with TToolbar.Create(This) do
+          begin
+            with TButton.Create(This) do
+            begin
+              Caption := 'A';
+            end;
+
+            with TButton.Create(This) do
+            begin
+              Caption := 'B';
+            end;
+          end;
 
           with This.Add<TColumn> do
           begin
