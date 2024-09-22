@@ -6095,19 +6095,19 @@ procedure THTML.TFontButtons.Created;
 begin
   inherited;
   FButtonSmall := TButton.Create(Self, [elEmbed], True);
-  FButtonSmall.ID := 'font-small';
+  FButtonSmall.ID := 'zoom-small';
   FButtonSmall.ItemStyle := styleUndefined;
   FButtonSmall.Image.Icon := 'icon mw-font-small';
   FButtonSmall.JSFunction := 'mnw.switch_zoom';
 
   FButtonNormal := TButton.Create(Self, [elEmbed], True);
-  FButtonNormal.ID := 'font-normal';
+  FButtonNormal.ID := 'zoom-normal';
   FButtonNormal.ItemStyle := styleUndefined;
   FButtonNormal.Image.Icon := 'icon mw-font-normal';
   FButtonNormal.JSFunction := 'mnw.switch_zoom';
 
   FButtonLarge := TButton.Create(Self, [elEmbed], True);
-  FButtonLarge.ID := 'font-large';
+  FButtonLarge.ID := 'zoom-large';
   FButtonLarge.ItemStyle := styleUndefined;
   FButtonLarge.Image.Icon := 'icon mw-font-large';
   FButtonLarge.JSFunction := 'mnw.switch_zoom';

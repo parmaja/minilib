@@ -202,28 +202,32 @@ mnw.init_theme = function()
   if (!document.body.getAttribute('data-bs-theme'))
   {
     let bs_theme = localStorage.getItem('bs-theme');
-    document.body.setAttribute('data-bs-theme', bs_theme);
+    if (bs_theme)
+      document.body.setAttribute('data-bs-theme', bs_theme);
   }
 
-  /*let font_theme = localStorage.getItem('font-theme');
-  if (font_theme)
-    if (font_theme!="font-normal")
-      document.body.classList.add(font_theme);*/
+  if (!document.body.getAttribute('data-bs-zoom'))
+  {
+    let bs_zoom = localStorage.getItem('bs-zoom');
+    if (bs_zoom)
+      document.body.setAttribute('data-bs-zoom', bs_zoom);
+  }
 }
 
 mnw.switch_zoom = function(sender, event) 
 {
   let bs_zoom = '';
-  if (sender.id == "font-large")
+  if (sender.id == "zoom-large")
     bs_zoom = 'large';
-  else if (sender.id == "font-small")
+  else if (sender.id == "zoom-small")
     bs_zoom = 'small';
   else
     bs_zoom = '';
+
   if (bs_zoom)
   {
     document.body.setAttribute('data-bs-zoom', bs_zoom);
-    localStorage.setItem('bs-zoom', sender.id);    
+    localStorage.setItem('bs-zoom', bs_zoom);
   }
   else
   {
@@ -231,30 +235,6 @@ mnw.switch_zoom = function(sender, event)
     localStorage.removeItem('bs-zoom');
   }
 }
-
-mnw.switch_font = function(sender, event) 
-{
-  if (sender.id == "font-large")
-  {
-    document.body.classList.remove("font-small");
-    document.body.classList.add(sender.id);
-  }
-  else if (sender.id == "font-small")
-  {
-    document.body.classList.remove("font-large");
-    document.body.classList.add(sender.id);
-  }
-  else if (sender.id == "font-normal")
-  {
-    document.body.classList.remove("font-small");
-    document.body.classList.remove("font-large");
-  }
-  else
-    return;
-
-  localStorage.setItem('font-theme', sender.id);    
-}
-
 mnw.switch_theme = function(sender, event)
 {
   let bs_theme = 'dark';
