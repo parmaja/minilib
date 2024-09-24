@@ -551,9 +551,12 @@ begin
               Caption := 'Mode';
             end;
 
-            with TFontButtons.Create(This) do
+            with TDropdown.Create(This) do
             begin
-              //Caption := 'Font';
+              with TZoomButtons.Create(This) do
+              begin
+                //Caption := 'Font';
+              end;
             end;
           end;
         end;

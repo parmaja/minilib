@@ -1,3 +1,4 @@
+
 /* version 1.5 */
 "use-strict";
 
@@ -210,7 +211,7 @@ mnw.init_theme = function()
   {
     let bs_zoom = localStorage.getItem('bs-zoom');
     if (bs_zoom)
-      document.body.setAttribute('data-bs-zoom', bs_zoom);
+    document.documentElement.setAttribute('data-bs-zoom', bs_zoom);
   }
 }
 
@@ -226,12 +227,12 @@ mnw.switch_zoom = function(sender, event)
 
   if (bs_zoom)
   {
-    document.body.setAttribute('data-bs-zoom', bs_zoom);
+    document.documentElement.setAttribute('data-bs-zoom', bs_zoom);
     localStorage.setItem('bs-zoom', bs_zoom);
   }
   else
   {
-    document.body.removeAttribute('data-bs-zoom');
+    document.documentElement.removeAttribute('data-bs-zoom');
     localStorage.removeItem('bs-zoom');
   }
 }

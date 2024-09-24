@@ -1,18 +1,22 @@
 /* version:1.36 */
 
-body[data-bs-zoom="large"] {
-    zoom: 110%;
+[data-bs-zoom="large"] {
+    /*zoom: 110%;*/
+    /*--bs-body-font-size: 20px;*/
+    font-size: 125%;*/
 }
 
-body[data-bs-zoom="small"] {
-    zoom: 87.5%;
+[data-bs-zoom="small"] {
+    /*zoom: 87.5%;*/
+    /*--bs-body-font-size: 10px;*/
+    font-size: 87.5%;
 }
 
 :root {
-    --size-unit: 8em;
-    --gap-unit: 0.25em;
-    --header-size: 3.2em;
-    --content-height: calc(100vh - var(--header-size));
+    --size-unit: 8rem;
+    --gap-unit: 0.25rem;
+    --header-size: 3.2rem;
+    --content-height: calc(100dvh - var(--header-size));
     --sidebar-size: calc(var(--size-unit) * 2);
  
     --mw-caret-down-fill-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16"><path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>');    
@@ -195,6 +199,7 @@ svg {
 }
 
 body{    
+    height: 100svh !important;
 }
 
 aside{

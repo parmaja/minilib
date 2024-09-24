@@ -1265,9 +1265,9 @@ type
         Image: TImageLocation;
       end;
 
-      { TFontButtons }
+      { TZoomButtons }
 
-      TFontButtons = class(TGroupButtons)
+      TZoomButtons = class(TGroupButtons)
       protected
         FButtonSmall: TButton;
         FButtonNormal: TButton;
@@ -1672,9 +1672,9 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
-      { TFontButtons }
+      { TZoomButtons }
 
-      TFontButtons = class(TGroupButtons)
+      TZoomButtons = class(TGroupButtons)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -3329,7 +3329,7 @@ begin
   RegisterRenderer(THTML.TDropdown, TDropdown);
   RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
   RegisterRenderer(THTML.TToolbar, TToolbar);
-  RegisterRenderer(THTML.TFontButtons, TFontButtons);
+  RegisterRenderer(THTML.TZoomButtons, TZoomButtons);
   RegisterRenderer(THTML.TCollapseCaption, TCollapseCaption);
   RegisterRenderer(THTML.TForm, TForm);
   RegisterRenderer(THTML.TRow, TRow);
@@ -3560,7 +3560,8 @@ begin
   if e.Caption <> '' then
   begin
     Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header d-flex"');
-    Context.Writer.WriteLn(e.Caption);
+    if e.Caption <> '' then
+      Context.Writer.WriteLn(e.Caption);
     if e.Collapse then
     begin
       Context.Writer.Write('<span class="ms-auto my-auto icon-animate icon mw-chevron-up"');
@@ -3662,11 +3663,13 @@ begin
   else if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Context.Writer.OpenTag('button', 'type="button"' + event + Scope.GetText);
+
   if e.Image.Icon <> '' then
     Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Icon))
   else if e.Image.Path <> '' then
     Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
-  Context.Writer.WriteLn(e.Caption);
+  if e.Caption <> '' then
+    Context.Writer.WriteLn(e.Caption);
   inherited;
   Context.Writer.CloseTag('button');
 end;
@@ -5184,7 +5187,8 @@ var
 begin
   e := Scope.Element as THTML.TCollapseCaption;
   Context.Writer.OpenTag('p', 'class="panel d-flex m-0" data-bs-toggle="collapse" role="button" data-bs-target="#'+e.ID+'-text" aria-expanded="false" aria-controls="'+e.ID+'-text"');
-  Context.Writer.WriteLn(e.Caption);
+  if e.Caption <> '' then
+    Context.Writer.WriteLn(e.Caption);
   Context.Writer.AddTag('span', 'class="ms-auto p-0 align-bottom icon mw-three-dots"');
   Context.Writer.CloseTag('p');
   Context.Writer.OpenTag('div', 'id="'+e.ID+'-text" class="panel-body m-0 collapse"');
@@ -5237,7 +5241,8 @@ begin
 
   Context.Writer.OpenTag('div', 'class="dropdown"');
   Context.Writer.OpenTag('button', Scope.ToString);
-  Context.Writer.WriteLn(e.Caption);
+  if e.Caption <> '' then
+    Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('button');
   Context.Writer.OpenTag('div', 'class="dropdown-menu" aria-labelledby="' + e.ID + '"');
   inherited;
@@ -5275,9 +5280,9 @@ begin
   Context.Writer.CloseTag('div');
 end;
 
-{ TmnwHTMLRenderer.TFontButtons }
+{ TmnwHTMLRenderer.TZoomButtons }
 
-procedure TmnwHTMLRenderer.TFontButtons.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TZoomButtons.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
 end;
@@ -5377,10 +5382,11 @@ begin
   Context.Writer.OpenTag('h', 'id="'+e.id+'-header" class="accordion-header"');
   Context.Writer.OpenTag('button ', 'class="accordion-button p-2'+ When(not e.Expanded, ' collapsed')+'" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
   if e.Image.Icon <> '' then
-    Context.Writer.AddShortTag('span', 'class='+ DQ('bi bi-'+e.Image.Icon))
+    Context.Writer.AddTag('span', 'class='+ DQ('bi bi-'+e.Image.Icon))
   else if e.Image.Path <> '' then
     Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
-  Context.Writer.WriteLn(e.Caption);
+  if e.Caption <> '' then
+    Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('button');
   Context.Writer.CloseTag('h');
 
@@ -6078,20 +6084,19 @@ end;
 procedure THTML.TCollapseCaption.DoCompose;
 begin
   inherited;
-
 end;
 
 { THTML.TDropdown }
 
 procedure THTML.TDropdown.Created;
 begin
-  inherited Created;
+  inherited;
   Options := [dropArraw];
 end;
 
-{ THTML.TFontButtons }
+{ THTML.TZoomButtons }
 
-procedure THTML.TFontButtons.Created;
+procedure THTML.TZoomButtons.Created;
 begin
   inherited;
   FButtonSmall := TButton.Create(Self, [elEmbed], True);
