@@ -22,8 +22,8 @@ curl -C - --progress-bar --remote-name http://downloads.freepascal.org/fpc/snaps
 echo Downloading win64 compileer for windows
 curl -C - --progress-bar --remote-name http://downloads.freepascal.org/fpc/snapshot/trunk/x86_64-win64/fpc-3.3.1.x86_64-win64.built.on.x86_64-linux.tar.gz
 
-rem curl -C - --progress-bar --remote-name http://downloads.freepascal.org/fpc/contrib/utils/win32/makew32.zip
-rem curl -C - --progress-bar --remote-name http://downloads.freepascal.org/fpc/contrib/cross/mingw/win64/binutils-2.21-win32-x86_64-win64.zip
+curl -C - --progress-bar --remote-name http://downloads.freepascal.org/fpc/contrib/utils/win32/makew32.zip
+curl -C - --progress-bar --remote-name http://downloads.freepascal.org/fpc/contrib/cross/mingw/win64/binutils-2.21-win32-x86_64-win64.zip
 
 :erroroccurred
 rem cd ..
