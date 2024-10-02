@@ -311,8 +311,6 @@ type
     FHandle: UTF8String;
     FResultFormat: TmpgResultFormat;
     FStatus: TExecStatusType;
-    FBOF: Boolean;
-    FEOF: Boolean;
     function GetColumns: TmncPGColumns;
 
     property Connection: TmncPGConnection read GetConnection;
@@ -385,7 +383,6 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetDone: Boolean;
     function GetActive: Boolean; override;
     procedure DoClose; override;
     function FetchSQL: UTF8String;
@@ -409,6 +406,7 @@ end;
 
 function PQLibVersion: Integer;
 begin
+  PGLib.Load;
   Result := mncPGHeader.PQlibVersion();
 end;
 
@@ -1097,11 +1095,11 @@ begin
 
 
   FStatus := PQresultStatus(FStatement);
-  FBOF := True;
+
   if SingleRowMode then
-    FEOF := (FStatement=nil) or not (FStatus in [PGRES_SINGLE_TUPLE])
+    HitDone((FStatement=nil) or not (FStatus in [PGRES_SINGLE_TUPLE]))
   else
-    FEOF := (FStatement=nil) or not (FStatus in [PGRES_TUPLES_OK]);
+    HitDone((FStatement=nil) or not (FStatus in [PGRES_TUPLES_OK]));
 
   FTuple := 0;
   FTuples := PQntuples(FStatement);
@@ -1119,12 +1117,11 @@ end;
 
 procedure TmncPGCommand.DoNext;
 begin
-  if not FEOF then
+  if not Done then
   begin
-    if FBOF then
+    if Ready then
     begin
       FetchFields(FStatement);
-      FBOF := False;
       FTuple := 0;
     end
     else
@@ -1135,12 +1132,12 @@ begin
       FetchValues(FStatement, FTuple);
       PQclear(FStatement);
       FStatement := PQgetResult(Transaction.DBHandle);
-      FEOF := (Statement = nil);
+      HitDone(Statement = nil);
     end
     else
     begin
-      FEOF := FTuple >= FTuples;
-      if not FEOF then
+      HitDone(FTuple >= FTuples);
+      if not Done then
         FetchValues(FStatement, FTuple);
     end;
   end;
@@ -1154,7 +1151,6 @@ var
 //  i: Integer;
 //  z: Integer;
 begin
-  FBOF := True;
   FHandle := Transaction.NewToken;
   c := Transaction.DBHandle;
   s := UTF8Encode(GetProcessedSQL);
@@ -1494,8 +1490,7 @@ var
   s: UTF8String;
   r: PPGresult;
 begin
-  FBOF := True;
-  FEOF := True;
+  HitDone;
   s := UTF8Encode(SQL.Text);
   r := PQexec(Transaction.DBHandle, PByte(s));
   try
@@ -1593,7 +1588,7 @@ end;
 procedure TmncCustomPGCommand.Clear;
 begin
   inherited;
-  FBOF := True;
+  //Reset;
 end;
 
 constructor TmncCustomPGCommand.CreateBy(vTransaction: TmncPGTransaction);
@@ -1897,8 +1892,7 @@ begin
     FreeParamValues(Values);
   end;
   FStatus := PQresultStatus(aStatement);
-  FBOF := True;
-  FEOF := not (FStatus in [PGRES_COMMAND_OK]);
+  HitDone(not (FStatus in [PGRES_COMMAND_OK]));
   try
     RaiseResultError(aStatement);
   except
@@ -1909,27 +1903,25 @@ end;
 
 procedure TmncPGCursorCommand.DoNext;
 begin
-  if FStatement<>nil then PQclear(FStatement);
+  if FStatement<>nil then
+    PQclear(FStatement);
 
   FStatement := PQexec(Transaction.DBHandle, PByte(FetchSQL));
-  if FStatement<>nil then
+  if FStatement <> nil then
   begin
     FStatus := PQresultStatus(FStatement);
     if (Status in [PGRES_TUPLES_OK]) then
     begin
-      if FBOF then
+      if Ready then
       begin
         FetchFields(FStatement);
-        FBOF := False;
       end;
       FetchValues(FStatement, 0);
       if TmncPostgreFields(Fields).IsNull then
-        FEOF := True
-      else
-        FEOF := False;
+        HitDone;
     end
     else
-      FEOF := True;
+      HitDone;
   end;
 end;
 
@@ -1940,7 +1932,6 @@ var
   c: PPGconn;
   i: Integer;
 begin
-  FBOF := True;
   FHandle := Transaction.NewToken;
   ParseSQL([psoAddParamsID]);
   c := Transaction.DBHandle;
@@ -1972,19 +1963,13 @@ end;
 
 function TmncPGCursorCommand.GetActive: Boolean;
 begin
-  Result := not FBOF;
-end;
-
-function TmncPGCursorCommand.GetDone: Boolean;
-begin
-  Result := FEOF;
+  Result := FStatement <> nil;
 end;
 
 procedure TmncPGCursorCommand.InternalClose;
 begin
   PQexec(Transaction.DBHandle, PByte(CloseSQL));
   FStatus := PGRES_EMPTY_QUERY;
-  FBOF := True;
 end;
 
 { TmncPGColumn }

@@ -93,7 +93,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    procedure Execute(vSQL: string);
+    procedure Execute(const vSQL: string); override;
     property Handle: TISC_TR_HANDLE read FHandle;
     property TPB: TBytes read FTPB;
     property Connection: TmncFBConnection read GetConnection write SetConnection;
@@ -591,7 +591,7 @@ begin
   Result := TmncFBCommand.CreateBy(Self);
 end;
 
-procedure TmncFBTransaction.Execute(vSQL: string);
+procedure TmncFBTransaction.Execute(const vSQL: string);
 var
   StatusVector: TStatusVector;
   s: UTF8String;
@@ -1274,7 +1274,6 @@ begin
       else if (fetch_res > 0) then
         FBRaiseError(StatusVector)
   end;
-  HitUnready;
 end;
 
 function TmncFBCommand.CreateBinds: TmncBinds;

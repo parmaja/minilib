@@ -816,7 +816,6 @@ begin
   end
   else
     CheckError(FLastStepResult);
-  HitUnready;
 end;
 
 procedure TmncSQLiteCommand.DoPrepare;

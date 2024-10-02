@@ -1045,7 +1045,6 @@ begin
     else
       HitDone;
   end;
-  HitUnready;
 end;
 
 procedure TmncMySQLCommand.DoPrepare;

@@ -132,7 +132,7 @@ end;
 destructor TmncLinkObject.Destroy;
 begin
   Link := nil;
-  inherited Destroy;
+  inherited;
 end;
 
 constructor TmncLinkObject.CreateBy(vLink: TmncLinksObject);

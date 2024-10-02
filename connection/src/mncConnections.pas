@@ -152,7 +152,7 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    function QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
+//    function QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     class function Capabilities: TmncCapabilities; virtual; abstract;
     class function EngineName: string; virtual; abstract;
     procedure Connect;
@@ -855,7 +855,7 @@ end;
 procedure TmncConnection.Prepare;
 begin
 end;
-
+(*
 function TmncConnection.QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj): longint;
 begin
   if GetInterface(IID, Obj) then
@@ -863,7 +863,7 @@ begin
   else
     Result := E_NOINTERFACE;
 end;
-
+*)
 function TmncConnection._AddRef: longint;
 begin
   Result := 0;
@@ -1026,6 +1026,7 @@ end;
 function TmncCommand.Next: Boolean;
 begin
   DoNext;
+  HitUnready;
   Result := not Done;
   if Result then
     Inc(FIndex);
