@@ -261,11 +261,24 @@ aside{
 }
 
 .sidebar-body {
-    overflow-y: auto;
-    scrollbar-width: thin;
+    overflow-y: hidden;
+    scrollbar-width: thin;    
+    scrollbar-gutter: 10;
     width: var(--sidebar-size) !important;
     padding: 0.25rem;
     background-color: var(--bs-secondary-bg);
+}
+
+/*
+.sidebar-body:dir(ltr) {   
+}
+
+.sidebar-body:dir(rtl) {   
+}
+*/
+
+.sidebar-body:hover {   
+    overflow: overlay !important;
 }
 
 .offcanvas.show, .offcanvas.showing {

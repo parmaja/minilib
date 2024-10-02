@@ -685,9 +685,9 @@ type
     procedure DoLeaveOuterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     //* Content render
-    procedure DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
+    procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
     procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); virtual;
-    procedure DoAfterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
+    procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     property Renderer: TmnwRenderer read FRenderer;
     property RendererRegister: TmnwRendererRegister read FRendererRegister;
@@ -1098,6 +1098,8 @@ type
         procedure SetCaption(const AValue: string);
       public
         ItemStyle: TItemStyle;
+        Image: TImageLocation;
+        AutoHideText: Boolean;
         property Caption: string read FCaption write SetCaption;
       end;
 
@@ -1262,7 +1264,6 @@ type
         JSFunction: string;
         procedure Created; override;
       public
-        Image: TImageLocation;
       end;
 
       { TZoomButtons }
@@ -1388,7 +1389,7 @@ type
       THTMLElement = class abstract(TmnwElementRenderer)
       protected
         procedure AddHead(const Scope: TmnwScope; const Context: TmnwContext); virtual;
-        procedure DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       THTMLLayout = class(THTMLElement)
@@ -1495,6 +1496,15 @@ type
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { THTMLItem }
+
+      THTMLItem = class(THTMLControl)
+      protected
+        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      public
       end;
 
       { TLink }
@@ -1620,11 +1630,13 @@ type
 
       { TDropdown }
 
-      TDropdown = class(THTMLComponent)
+      TDropdown = class(THTMLItem)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+
+        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TGroupButtons }
@@ -1666,9 +1678,8 @@ type
 
       { TButton }
 
-      TButton = class(THTMLControl)
+      TButton = class(THTMLItem)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -2431,7 +2442,7 @@ procedure TmnwElementRenderer.DoEnterChildRender(var Scope: TmnwScope; const Con
 begin
 end;
 
-procedure TmnwElementRenderer.DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwElementRenderer.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
 end;
 
@@ -2440,7 +2451,7 @@ begin
   RenderChilds(Scope, Context, AResponse);
 end;
 
-procedure TmnwElementRenderer.DoAfterRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwElementRenderer.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
 end;
 
@@ -2493,9 +2504,9 @@ begin
     if Context.ParentRenderer <> nil then
       Context.ParentRenderer.DoEnterChildRender(aScope, Context);
 
-    DoEnterInnerRender(aScope, Context);
+    DoEnterRender(aScope, Context);
     DoInnerRender(aScope, Context, AResponse);
-    DoAfterRender(aScope, Context);
+    DoLeaveRender(aScope, Context);
 
     if Context.ParentRenderer <> nil then
       Context.ParentRenderer.DoLeaveChildRender(aScope, Context);
@@ -3346,7 +3357,7 @@ procedure TmnwHTMLRenderer.THTMLElement.AddHead(const Scope: TmnwScope; const Co
 begin
 end;
 
-procedure TmnwHTMLRenderer.THTMLElement.DoEnterInnerRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.THTMLElement.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   if Scope.Element.Comment <> '' then
     Context.Writer.WriteLn('<!-- ' + Scope.Element.Comment + ' -->');
@@ -3644,12 +3655,6 @@ end;
 
 { TmnwHTMLRenderer.TTButton }
 
-procedure TmnwHTMLRenderer.TButton.DoCollectAttributes(var Scope: TmnwScope);
-begin
-  inherited;
-  //Scope.Attributes['type'] := (Scope.Element as THTML.TButton).EditType;
-end;
-
 procedure TmnwHTMLRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TButton;
@@ -3663,13 +3668,6 @@ begin
   else if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Context.Writer.OpenTag('button', 'type="button"' + event + Scope.GetText);
-
-  if e.Image.Icon <> '' then
-    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Icon))
-  else if e.Image.Path <> '' then
-    Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
-  if e.Caption <> '' then
-    Context.Writer.WriteLn(e.Caption);
   inherited;
   Context.Writer.CloseTag('button');
 end;
@@ -5218,7 +5216,7 @@ begin
 //  Context.Writer.OpenTag('dropdown-item', 'class="dropdown-item"');
 end;
 
-procedure TmnwHTMLRenderer.TDropdown.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TDropdown.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
 end;
@@ -5248,6 +5246,11 @@ begin
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
+end;
+
+procedure TmnwHTMLRenderer.TDropdown.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
 end;
 
 { TmnwHTMLRenderer.TGroupButtons }
@@ -5646,6 +5649,32 @@ end;
 procedure TmnwHTMLRenderer.TMenuBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
+end;
+
+{ TmnwHTMLRenderer.THTMLItem }
+
+procedure TmnwHTMLRenderer.THTMLItem.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.THTMLItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.THTMLItem;
+begin
+  e := Scope.Element as THTML.THTMLItem;
+  if e.Image.Icon <> '' then
+    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Icon))
+  else if e.Image.Path <> '' then
+    Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
+  inherited;
+  if e.Caption <> '' then
+  begin
+    if e.AutoHideText then
+      Context.Writer.AddInlineTag('span', 'autohide', e.Caption)
+    else
+      Context.Writer.WriteLn(e.Caption);
+  end;
 end;
 
 { TmnwHTMLRenderer.TLink }

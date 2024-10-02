@@ -302,7 +302,7 @@ begin
 
           end;
 
-{$ifdef fpc}
+{$ifdef fpc1}
           with TClockCompose.Create(This) do
           begin
           end;
@@ -553,6 +553,7 @@ begin
 
             with TDropdown.Create(This) do
             begin
+              Image.Icon := 'icon mw-font-normal';
               with TZoomButtons.Create(This) do
               begin
                 //Caption := 'Font';

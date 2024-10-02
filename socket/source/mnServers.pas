@@ -213,7 +213,7 @@ type
     procedure Disconnect; //* Disconnect stop listener connection
     //Stop is always waiting
     procedure Stop;
-    procedure Wait; deprecated 'Where we use it?';
+    procedure Wait; //* used in web service like csweb
 
     property Listener: TmnListener read FListener;
     property Count: Integer read GetCount;
