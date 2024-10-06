@@ -316,9 +316,9 @@ type
     function ReadUTF8Line(out s: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadUTF8Line(out s: string; ExcludeEOL: Boolean = True): Boolean; overload;
     //TODO ReadLineUTF8 to ReadUTF8Line
-    function ReadLineUTF8(out s: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload; deprecated;
-    function ReadLineUTF8(out s: string; ExcludeEOL: Boolean = True): Boolean; overload; deprecated;
-    function ReadLineUTF8(ExcludeEOL: Boolean = True): UTF8String; overload; deprecated;
+    function ReadLineUTF8(out s: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload; deprecated 'use ReadUTF8Line';
+    function ReadLineUTF8(out s: string; ExcludeEOL: Boolean = True): Boolean; overload; deprecated 'use ReadUTF8Line';
+    function ReadLineUTF8(ExcludeEOL: Boolean = True): UTF8String; overload; deprecated 'use ReadUTF8Line';
 
     function ReadLineRawByte(out s: rawbytestring; ExcludeEOL: Boolean = True): Boolean; overload;
 

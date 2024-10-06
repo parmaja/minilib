@@ -390,9 +390,11 @@ procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
 //Used in JSON parser
 procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 
+function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
+
 implementation
 
-function donAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
+function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
 
   procedure CreateValue(VT: TDONType; const s: string; out res: TObject); inline;
   begin
@@ -437,12 +439,12 @@ procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; 
 begin
   case ValueType of
     aqPair: (AParentObject as TDON_Object_Value).AcquirePair(Value, AObject);
-    aqObject: AObject := donAcquireValue(AParentObject, Value, donObject);
-    aqArray: AObject := donAcquireValue(AParentObject, Value, donArray);
-    aqString: AObject := donAcquireValue(AParentObject, Value, donString);
-    aqIdentifier: AObject := donAcquireValue(AParentObject, Value, donIdentifier);
-    aqNumber: AObject := donAcquireValue(AParentObject, Value, donNumber);
-    aqBoolean: AObject := donAcquireValue(AParentObject, Value, donBoolean);
+    aqObject: AObject := JsonAcquireValue(AParentObject, Value, donObject);
+    aqArray: AObject := JsonAcquireValue(AParentObject, Value, donArray);
+    aqString: AObject := JsonAcquireValue(AParentObject, Value, donString);
+    aqIdentifier: AObject := JsonAcquireValue(AParentObject, Value, donIdentifier);
+    aqNumber: AObject := JsonAcquireValue(AParentObject, Value, donNumber);
+    aqBoolean: AObject := JsonAcquireValue(AParentObject, Value, donBoolean);
   end;
 end;
 
