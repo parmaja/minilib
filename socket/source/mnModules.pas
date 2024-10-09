@@ -692,7 +692,10 @@ function ParseAddress(const Request: string; out URIPath: string; out URIParams:
 procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
 function FormatHTTPDate(vDate: TDateTime): string;
 function ExtractDomain(const URI: string): string;
+
+function GetSubPath(const Path: string): string;
 function DeleteSubPath(const SubKey, Path: string): string;
+function StartsSubPath(const SubKey, Path: string): Boolean;
 
 function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
@@ -903,12 +906,29 @@ begin
   Result := '';
 end;
 
+function GetSubPath(const Path: string): string;
+begin
+  if StartsText(URLPathDelim, Path) then
+    Result := SubStr(Path, URLPathDelim, 1)
+  else
+    Result := SubStr(Path, URLPathDelim, 0)
+end;
+
+
 function DeleteSubPath(const SubKey, Path: string): string;
 begin
   if StartsText(URLPathDelim, Path) then
     Result := Copy(Path, Length(URLPathDelim) + Length(SubKey) + 1, MaxInt)
   else
-    Result := Copy(Path, Length(SubKey) + 1, MaxInt);;
+    Result := Copy(Path, Length(SubKey) + 1, MaxInt);
+end;
+
+function StartsSubPath(const SubKey, Path: string): Boolean;
+begin
+  if StartsText(URLPathDelim, Path) then
+    Result := StartsStr(Path, URLPathDelim + SubKey)
+  else
+    Result := StartsStr(Path, SubKey);
 end;
 
 { TmodRespond }

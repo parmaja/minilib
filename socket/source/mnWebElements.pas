@@ -4601,7 +4601,7 @@ begin
   DoRespondHeader(AContext);
   AResponse.Resume := True;
   DoAction(AContext, AResponse);
-  if Assigned(FOnAction) then
+  if AResponse.Resume and Assigned(FOnAction) then
     FOnAction(AContext, AResponse);
 end;
 
