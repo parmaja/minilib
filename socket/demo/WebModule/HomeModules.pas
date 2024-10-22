@@ -371,7 +371,7 @@ begin
       AResponse.SessionID := aUsername +'/'+ aPassword;
       AResponse.Resume := False;
       AResponse.HttpResult := hrRedirect;
-      AResponse.Location := IncludePathDelimiter(AContext.Schema.App.GetPath) + 'dashboard';
+      AResponse.Location := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
     end;
   end;
   inherited;
@@ -505,7 +505,7 @@ begin
       AResponse.SessionID := aUsername +'/'+ aPassword;
       AResponse.Resume := False;
       AResponse.HttpResult := hrRedirect;
-      AResponse.Location := IncludePathDelimiter(AContext.Schema.App.GetPath) + 'dashboard';
+      AResponse.Location := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
     end;
   end;
   inherited;

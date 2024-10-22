@@ -221,7 +221,7 @@ begin
 end;
 
 procedure TMain.Button2Click(Sender: TObject);
-var
+//var
 //  HttpClient: TmnHttpClient;
 //  MemoryStream: TMemoryStream;
 begin

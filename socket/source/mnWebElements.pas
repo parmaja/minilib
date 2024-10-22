@@ -264,10 +264,14 @@ type
     SessionID: string;
     Stamp: string; //IfNone-Match
     Route: string;
+    Directory: string;
 
     ParentRenderer: TmnwElementRenderer;
     Writer: TmnwWriter;
     Data: TmnMultipartData;
+    function GetPath: string; overload;
+    function GetPath(e: TmnwElement): string; overload;
+    function GetAssetsURL: string;
   end;
 
   TmnwObject = class(TmnNamedObject);
@@ -421,7 +425,7 @@ type
     property Schema: TmnwSchema read FSchema;
     property Parent: TmnwElement read FParent;
 
-    function GetPath(Full: Boolean = True): string; virtual;
+    function GetPath: string;
 
     function CreateRender(const Context: TmnwContext): TmnwElementRenderer;
     procedure Compose; virtual;
@@ -668,7 +672,7 @@ type
     FRenderer: TmnwRenderer;
     FRendererRegister: TmnwRendererRegister;
   protected
-    procedure DoCollectAttributes(var Scope: TmnwScope); virtual;
+    procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); virtual;
     //* This called once from the TmnwRenderer
     procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); virtual;
     procedure Prepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
@@ -694,7 +698,7 @@ type
   public
     procedure Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TmnwResponse);
     constructor Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwRendererRegister); virtual; //useful for creating it by RendererClass.Create
-    procedure CollectAttributes(var Scope: TmnwScope);
+    procedure CollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
   end;
 
   TmnwElementRendererClass = class of TmnwElementRenderer;
@@ -804,11 +808,9 @@ type
     //for WebSocket
     function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
-    function GetPath: string; virtual;
+    //function GetPath: string; virtual;
     function GetHostURL: string; virtual;
     function GetHomeURL: string; virtual;
-    //Relative
-    function GetAssetsURL: string; virtual;
 
     property Lock: TCriticalSection read FLock;
     property SessionTimeout: Integer read FSessionTimeout write FSessionTimeout; //in seconds
@@ -1394,7 +1396,7 @@ type
 
       THTMLLayout = class(THTMLElement)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       public
       end;
 
@@ -1402,14 +1404,14 @@ type
 
       THTMLComponent = class(THTMLLayout)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { THTMLControl }
 
       THTMLControl = class(THTMLComponent)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TComment }
@@ -1423,7 +1425,7 @@ type
 
       TDocument = class(THTMLElement)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -1431,7 +1433,7 @@ type
 
       TBody = class(THTMLElement)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -1467,7 +1469,7 @@ type
 
       TIntervalCompose = class(TDynamicCompose)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { THeader }
@@ -1708,7 +1710,7 @@ type
 
       TSubMenu = class(THTMLControl)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -1716,7 +1718,7 @@ type
 
       TInput = class(THTMLComponent)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -1728,7 +1730,7 @@ type
       TImage = class(THTMLComponent)
       protected
         procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -1737,7 +1739,7 @@ type
       TMemoryImage = class(THTMLComponent)
       protected
         procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
-        procedure DoCollectAttributes(var Scope: TmnwScope); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -2467,7 +2469,7 @@ procedure TmnwElementRenderer.DoLeaveOuterRender(Scope: TmnwScope; const Context
 begin
 end;
 
-procedure TmnwElementRenderer.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwElementRenderer.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
 end;
 
@@ -2499,7 +2501,7 @@ begin
   aScope.Attributes := TmnwAttributes.Create;
   aScope.Element := AElement;
   try
-    CollectAttributes(aScope);
+    CollectAttributes(aScope, Context);
 
     if Context.ParentRenderer <> nil then
       Context.ParentRenderer.DoEnterChildRender(aScope, Context);
@@ -2523,7 +2525,7 @@ begin
   FRendererRegister:= ARendererRegister;
 end;
 
-procedure TmnwElementRenderer.CollectAttributes(var Scope: TmnwScope);
+procedure TmnwElementRenderer.CollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   Scope.Attributes.Append(Scope.Element.Attributes);
   Scope.Classes := Scope.Element.ElementClass;
@@ -2533,7 +2535,7 @@ begin
   if Scope.Element.Name <> '' then
     Scope.Attributes['name'] := Scope.Element.Name;
 
-  DoCollectAttributes(Scope);
+  DoCollectAttributes(Scope, Context);
 end;
 
 { TElementExtension }
@@ -2977,10 +2979,10 @@ begin
     Result := nil;
 end;
 
-function TmnwApp.GetPath: string;
+{function TmnwApp.GetPath: string;
 begin
   Result := '/' + IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Alias);
-end;
+end;}
 
 procedure TmnwApp.SchemaCreated(Schema: TmnwSchema);
 begin
@@ -3003,11 +3005,6 @@ begin
   FLock := TCriticalSection.Create;
   FRegistered := TRegisteredSchemas.Create;
   inherited;
-end;
-
-function TmnwApp.GetAssetsURL: string;
-begin
-  Result := GetPath + 'assets/'; //relative
 end;
 
 function TmnwApp.GetHostURL: string;
@@ -3366,7 +3363,7 @@ end;
 
 { TmnwHTMLRenderer.THTMLComponent }
 
-procedure TmnwHTMLRenderer.THTMLComponent.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.THTMLComponent.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THTMLComponent;
 begin
@@ -3376,7 +3373,7 @@ end;
 
 { TmnwHTMLRenderer.THTMLControl }
 
-procedure TmnwHTMLRenderer.THTMLControl.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.THTMLControl.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THTMLControl;
 begin
@@ -3409,7 +3406,7 @@ end;
 
 { TmnwHTMLRenderer.TDocumentHTML }
 
-procedure TmnwHTMLRenderer.TDocument.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TDocument.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TDocument;
 begin
@@ -3612,9 +3609,9 @@ begin
   if e.PostTo.Custom <> '' then
     aPostTo := e.PostTo.Custom
   else if e.PostTo.Where = toSchema then
-    aPostTo := e.Schema.GetPath
+    aPostTo := Context.GetPath(e.Schema)
   else if e.PostTo.Where = toElement then
-    aPostTo := e.GetPath
+    aPostTo := Context.GetPath(e)
   else if e.PostTo.Where = toHome then
     aPostTo := '/';
   Context.Writer.OpenTag('form', 'method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText);
@@ -3703,9 +3700,9 @@ end;
 
 { TmnwHTMLRenderer.TSubbMenu }
 
-procedure TmnwHTMLRenderer.TSubMenu.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TSubMenu.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
-  inherited DoCollectAttributes(Scope);
+  inherited DoCollectAttributes(Scope, Context);
 end;
 
 procedure TmnwHTMLRenderer.TSubMenu.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
@@ -3715,7 +3712,7 @@ end;
 
 { TmnwHTMLRenderer.TInputHTML }
 
-procedure TmnwHTMLRenderer.TInput.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   Scope.Attributes['placeholder'] := (Scope.Element as THTML.TInput).PlaceHolder;
   Scope.Attributes['type'] := (Scope.Element as THTML.TInput).EditType;
@@ -3753,7 +3750,7 @@ begin
   ARenderer.Libraries.Use('JQuery');
 end;
 
-procedure TmnwHTMLRenderer.TImage.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TImage.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   Scope.Attributes['src'] := (Scope.Element as THTML.TImage).Source;
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText; //* always set
@@ -3774,11 +3771,11 @@ begin
   ARenderer.Libraries.Use('JQuery');
 end;
 
-procedure TmnwHTMLRenderer.TMemoryImage.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TMemoryImage.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
-  inherited;
-  Scope.Attributes['src'] := Scope.Element.GetPath;
+  Scope.Attributes['src'] := Context.GetPath(Scope.Element);
   Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
+  inherited;
 end;
 
 procedure TmnwHTMLRenderer.TMemoryImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
@@ -4208,7 +4205,7 @@ begin
   Result := Self;
 end;
 
-function TmnwElement.GetPath(Full: Boolean): string;
+function TmnwElement.GetPath: string;
 begin
   if Self = nil then
     exit('');
@@ -4216,16 +4213,14 @@ begin
   if (Parent <> nil) then
   begin
     if Route <> '' then
-      Result := IncludeURLDelimiter(Parent.GetPath(False)) + Route
+      Result := IncludeURLDelimiter(Parent.GetPath) + Route
     else
-      Result := Parent.GetPath(False);
+      Result := Parent.GetPath;
   end
   else
     Result := Route;
-  if Full then
-    Result := IncludeURLDelimiter(Schema.App.GetPath + Result)
-  else
-    Result := IncludeURLDelimiter(Result);
+
+  Result := IncludeURLDelimiter(Result);
 end;
 
 procedure TmnwElement.SetState(const AValue: TmnwElementState);
@@ -4997,15 +4992,15 @@ end;
 
 procedure TJQuery_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + Context.GetPath(Context.Schema.App.Assets) + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { TWebElements_Library }
 
 procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
-  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + IncludeURLDelimiter(Context.Schema.App.GetAssetsURL) + 'WebElements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'WebElements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + Context.GetAssetsURL + 'WebElements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { THTML }
@@ -5120,7 +5115,7 @@ end;
 
 { TmnwHTMLRenderer.TBody }
 
-procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TBody;
 begin
@@ -5556,10 +5551,10 @@ end;
 
 { TmnwHTMLRenderer.TIntervalCompose }
 
-procedure TmnwHTMLRenderer.TIntervalCompose.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.TIntervalCompose.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Scope.Attributes['data-mnw-refresh-url'] := Scope.Element.GetPath;
+  Scope.Attributes['data-mnw-refresh-url'] := Context.GetPath(Scope.Element);
 end;
 
 { TmnwHTMLRenderer.TNavBar }
@@ -5569,9 +5564,9 @@ var
   e: THTML.TNavBar;
 begin
   e := Scope.Element as THTML.TNavBar;
-  Context.Writer.OpenTag('a', 'class="logo navbar-brand align-items-center me-auto" href="' + e.GetPath+'"');
+  Context.Writer.OpenTag('a', 'class="logo navbar-brand align-items-center me-auto" href="' + Context.GetPath(e)+'"');
   if e.Schema.App.Assets.Logo.Data.Size > 0 then
-    Context.Writer.AddShortTag('img', 'src="' + e.Schema.App.Assets.Logo.GetPath+ '" alt=""');
+    Context.Writer.AddShortTag('img', 'src="' + Context.GetPath(e.Schema.App.Assets.Logo)+ '" alt=""');
   if e.Title <> '' then
     Context.Writer.AddTag('span', 'class="navbar-brand"', e.Title);
   Context.Writer.CloseTag('a');
@@ -5713,7 +5708,7 @@ begin
   end
   else
   begin
-    src := e.GetPath;
+    src := Context.GetPath(e);
     Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src)+'?v='+IntToStr(Context.Schema.TimeStamp));
     inherited;
   end;
@@ -5736,7 +5731,7 @@ begin
   end
   else
   begin
-    src := e.GetPath;
+    src := Context.GetPath(e);
     Context.Writer.AddTag('link', 'rel="stylesheet" href='+ DQ(src) + '?v=' + IntToStr(Context.Schema.TimeStamp));
     inherited;
   end;
@@ -5770,6 +5765,7 @@ begin
 
   aContext.Route := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
+  aContext.Directory := Request.Directory;
 
   if Module.Domain <> '' then
   begin
@@ -6189,7 +6185,7 @@ end;
 
 { TmnwHTMLRenderer.THTMLLayout }
 
-procedure TmnwHTMLRenderer.THTMLLayout.DoCollectAttributes(var Scope: TmnwScope);
+procedure TmnwHTMLRenderer.THTMLLayout.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THTMLLayout;
 begin
@@ -6210,6 +6206,23 @@ begin
     Scope.Classes.Add(e.Padding.ToBSString('p-md'))
   else
     Scope.Classes.Add(e.Padding.ToBSString('p'));
+end;
+
+{ TmnwContext }
+
+function TmnwContext.GetAssetsURL: string;
+begin
+  Result := GetPath(Schema.App.Assets);
+end;
+
+function TmnwContext.GetPath: string;
+begin
+  Result := '/' + IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Schema.App.Alias);
+end;
+
+function TmnwContext.GetPath(e: TmnwElement): string;
+begin
+  Result := IncludeURLDelimiter(GetPath) + e.GetPath
 end;
 
 initialization

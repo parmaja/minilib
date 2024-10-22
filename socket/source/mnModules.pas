@@ -216,6 +216,7 @@ type
     FChunkedProxy: TmnChunkStreamProxy;
     FStream: TmnBufferStream;
     FMode: TStreamMode;
+    FDirectory: String;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetCompressProxy(const Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -252,6 +253,7 @@ type
     property IsSSL: Boolean read Info.IsSSL write Info.IsSSL;
     property Path: String read FPath write FPath;
 
+    property Directory: String read FDirectory write FDirectory;
     property Route: TmnRoute read FRoute write FRoute;
     property Params: TmodParams read FParams;
 
