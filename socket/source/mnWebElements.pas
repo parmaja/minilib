@@ -786,7 +786,6 @@ type
     IsSSL: Boolean;
     Domain: string; //localhost
     Port: string;
-    Directory: string;
     Alias: string; //ModuleName
     CompactMode: Boolean;
     IsLocal: Boolean;
@@ -810,7 +809,6 @@ type
 
     //function GetPath: string; virtual;
     function GetHostURL: string; virtual;
-    function GetHomeURL: string; virtual;
 
     property Lock: TCriticalSection read FLock;
     property SessionTimeout: Integer read FSessionTimeout write FSessionTimeout; //in seconds
@@ -2979,11 +2977,6 @@ begin
     Result := nil;
 end;
 
-{function TmnwApp.GetPath: string;
-begin
-  Result := '/' + IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Alias);
-end;}
-
 procedure TmnwApp.SchemaCreated(Schema: TmnwSchema);
 begin
   Schema.FApp := Self;
@@ -3010,11 +3003,6 @@ end;
 function TmnwApp.GetHostURL: string;
 begin
   Result := IncludeURLDelimiter(ComposeHttpURL(IsSSL, Domain, Port));
-end;
-
-function TmnwApp.GetHomeURL: string;
-begin
-  Result := GetHostURL + IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Alias);
 end;
 
 { TmnwHTMLWriterHelper }
