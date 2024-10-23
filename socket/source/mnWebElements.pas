@@ -547,8 +547,7 @@ type
 
   TmnwSchamaCapability = (
     schemaSession,
-    schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
-    schemaSessions
+    schemaDynamic  //* dynamic, do not add it to the list, not cached, becareful
   );
 
   TmnwSchemaCapabilities = set of TmnwSchamaCapability;
@@ -2686,7 +2685,7 @@ begin
   Result := nil;
   for i := 0 to Count - 1 do
   begin
-    if SameText(Items[i].Name, aSchemaName) and (aSessionID = Items[i].SessionID) then
+    if SameText(Items[i].Name, aSchemaName) and (not (schemaSession in Items[i].GetCapabilities) or (aSessionID = Items[i].SessionID)) then
       Result := Items[i];
     if Result <> nil then
       break;
@@ -2746,9 +2745,22 @@ begin
       Lock.Enter;
       try
         Schema := FindBy(aSchemaName, AContext.SessionID);
+			finally
+        Lock.Leave;
+      end;
 
-        if Schema = nil then
-          Schema := CreateSchema(aSchemaName);
+      if Schema = nil then
+      begin
+        Schema := CreateSchema(aSchemaName);
+        if (Schema <> nil) and (schemaSession in Schema.GetCapabilities) then
+          Schema.SessionID := AContext.SessionID;
+      end;
+
+      if Schema = nil then
+        Schema := First; //* fallback //taskeej
+
+      Lock.Enter;
+      try
         if Schema <> nil then
           Inc(Schema.Usage);
 			finally
@@ -2758,21 +2770,8 @@ begin
     else
       Schema := nil;
 
-    if Schema = nil then
-      Schema := First; //* fallback
-
     if (Schema <> nil) then
     begin
-      if schemaSession in Schema.GetCapabilities then
-      begin
-        Schema.Lock.Enter;
-        try
-          Schema.SessionID := AContext.SessionID;
-        finally
-          Schema.Lock.Leave;
-        end;
-      end;
-
       if Schema.Accept then
       begin
         if not (estComposed in Schema.State) then
