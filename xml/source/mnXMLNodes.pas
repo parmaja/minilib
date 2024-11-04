@@ -173,8 +173,30 @@ type
   end;
 
 procedure XMLNodeSaveToStream(ANodes: TmnXMLNodes; AStream: TStream; WriterClass: TmnCustomXMLWriterClass);
+function FormatXML(const vXML: string): string;
 
 implementation
+
+function FormatXML(const vXML: string): string;
+var
+  n: TmnXMLNodes;
+  m: TMemoryStream;
+  t: UTF8String;
+begin
+  n := TmnXMLNodes.Create;
+  m := TMemoryStream.Create;
+  try
+    t := UTF8Encode(vXML);
+    //n.Options := [xnoCDATA, xnoText, xnoNameSpace, xnoComment, xnoTrimValue];
+    n.Options := [xnoNameSpace, xnoTrimValue];
+    n.LoadFromString(t);
+    n.SaveToStream(m); //save as utf8
+    Result := TEncoding.UTF8.GetString(m.Memory, m.Size);
+  finally
+    n.Free;
+    m.Free;
+  end;
+end;
 
 procedure XMLNodeSaveToStream(ANodes: TmnXMLNodes; AStream: TStream; WriterClass: TmnCustomXMLWriterClass);
 var
@@ -516,7 +538,7 @@ var
   AWrapperStream: TmnWrapperStream;
   Reader: TmnXMLNodeReader;
 begin
-  AWrapperStream := TmnWrapperStream.Create(AStream);
+  AWrapperStream := TmnWrapperStream.Create(AStream, False);
   try
     Reader := TmnXMLNodeReader.Create(AWrapperStream, False);
     try

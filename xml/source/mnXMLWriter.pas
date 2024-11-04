@@ -94,6 +94,7 @@ type
     //Add closed tage
     procedure AddTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>; vCallback: TProc = nil); overload;
     procedure AddTag(NameSpace, Name: string; AttName, AttValue: string; vCallback: TProc = nil); overload;
+    procedure AddTag(NameSpace, Name: string; xNameSpace, xName, xText: string; xAttNames: TArray<string> = []; xAttValues: TArray<string> = []); overload;
     procedure AddTag(NameSpace, Name: string; vCallback: TProc = nil); overload;
     procedure AddTag(Name: string; vCallback: TProc = nil); overload;
     //Add Closed tag with text
@@ -452,6 +453,14 @@ end;
 procedure TmnCustomXMLWriter.AddTag(Name: string; vCallback: TProc);
 begin
   AddTag('', Name, [], [], vCallback);
+end;
+
+procedure TmnCustomXMLWriter.AddTag(NameSpace, Name, xNameSpace, xName, xText: string; xAttNames: TArray<string> = []; xAttValues: TArray<string> = []);
+begin
+  AddTag(NameSpace, Name, procedure
+  begin
+    AddText(xNameSpace, xName, xText, xAttNames, xAttValues);
+  end);
 end;
 
 procedure TmnCustomXMLWriter.AddTag(NameSpace, Name: string; vCallback: TProc);

@@ -466,7 +466,7 @@ end;
 
 procedure TmnXMLScanner.ssOnNone(const Text: string; Line: Integer; var Column: Integer);
 begin
-  if MidStr(Text, 1, Length(sXMLAnsiOpen)) = sXMLAnsiOpen then
+  if MidStr(Text, Column, Length(sXMLAnsiOpen)) = sXMLAnsiOpen then
   begin
     //There is a header and it is a Ansi document
     FStarted := True;
