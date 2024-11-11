@@ -597,7 +597,7 @@ type
     function Step: Boolean; //Execute and Next for while loop() without using next at end of loop block //TODO not yet
     procedure Close;
     procedure Clear; virtual;
-    procedure Reset; virtual; //Reset and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
+    //procedure Reset; virtual; //Reset and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     property Done: Boolean read FDone; //EOF :)
     property Ready: Boolean read FReady; //BOF :)
     procedure HitDone; overload;   //Make it FDone True
@@ -883,7 +883,6 @@ begin
   if FParams <> nil then
     FParams.Clear;
   FBinds.Clear;
-  //Reset;
 end;
 
 destructor TmncCommand.Destroy;
@@ -937,7 +936,8 @@ function TmncCommand.InternalExecute(vNext: Boolean): Boolean;
 begin
   if not FPrepared then
     Prepare;
-  Reset;
+  FReady := True;
+  FDone := False;
   DoExecute;
   if vNext and not Done then //TODO Check it do we need not Done
   begin
@@ -1017,12 +1017,6 @@ procedure TmncCommand.DoUnprepare;
 begin
 end;
 
-procedure TmncCommand.Reset;
-begin
-  FReady := True;
-  FDone := False;
-end;
-
 function TmncCommand.Next: Boolean;
 begin
   DoNext;
@@ -1093,7 +1087,9 @@ begin
 
   if Prepared then
     DoUnprepare;
-  Reset; //Maybe not
+
+  FReady := False;
+  FDone := False;
   DoClose;
   FPrepared := False;
 end;

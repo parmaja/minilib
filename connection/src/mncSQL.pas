@@ -650,8 +650,6 @@ begin
   FProcessSQL := True;
   FFetchBlob := False;
   FParamPrefix := '?';
-
-  Reset;
 end;
 
 function TmncSQLCommand.CreateProcessedSQL: TmncProcessedSQL;

@@ -1212,7 +1212,7 @@ begin
         if FCursor <> '' then
           CheckErr(FBLib.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PByte(FCursor), 0), StatusVector, True);
         FActive := True;
-        HitUnready;
+        HitUnready; { TODO : check if needed }
       end;
       SQLExecProcedure:
       begin
