@@ -930,6 +930,8 @@ begin
   FParams := CreateParams;
   FBinds := CreateBinds;
   FNextOnExecute := True;
+  FReady := True;
+  FDone := True;
 end;
 
 function TmncCommand.InternalExecute(vNext: Boolean): Boolean;
