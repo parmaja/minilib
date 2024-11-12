@@ -1090,8 +1090,8 @@ begin
   if Prepared then
     DoUnprepare;
 
-  FReady := False;
-  FDone := False;
+  FReady := True;
+  FDone := True;
   DoClose;
   FPrepared := False;
 end;
