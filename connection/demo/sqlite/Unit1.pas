@@ -57,7 +57,8 @@ begin
         Cmd.Param['id'].Clear;
         Cmd.Param['name'].AsString := 'زاهر';
         Cmd.Param['nationality'].AsInteger := 22;
-        Cmd.Execute;
+        if Cmd.Execute then
+          ListBox1.Items.Add('Executed');
 
 {        Cmd.Params['id'] := Null;
         Cmd.Params['name'] := 'Hamed2';
@@ -98,7 +99,6 @@ var
   Conn: TmncSQLiteConnection;
   Transaction: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
-  c: Currency;
 begin
   ListBox1.Clear;
   Conn := TmncSQLiteConnection.Create;
@@ -108,23 +108,49 @@ begin
     Transaction := TmncSQliteTransaction.Create(Conn);
     Transaction.Start;
     try
+      ListBox1.Items.Add('## not Done ##');
+
       Cmd := Transaction.CreateCommand as TmncSQLiteCommand;
-      Cmd.SQL.Text := 'select * from companies';
-      //Cmd.SQL.Add('where  = ?name');
-         Cmd.Prepare;
-      //Cmd.Param['name'].AsString := 'Ferrari';
-      if Cmd.Execute then
-      begin
-        while not Cmd.Done do
+      try
+        Cmd.SQL.Text := 'select * from companies';
+        //Cmd.SQL.Add('where  = ?name');
+           Cmd.Prepare;
+        //Cmd.Param['name'].AsString := 'Ferrari';
+        if Cmd.Execute then
         begin
-          ListBox1.Items.Add(Cmd.Field['name'].AsString);
-          Cmd.Next;
+          while not Cmd.Done do
+          begin
+            ListBox1.Items.Add(Cmd.Field['name'].AsString);
+            Cmd.Next;
+          end;
         end;
+        Cmd.Close;
+      finally
+        FreeAndNil(Cmd);
       end;
-      Cmd.Close;
+
+      ListBox1.Items.Add('## Steps ##');
+
+      Cmd := Transaction.CreateCommand as TmncSQLiteCommand;
+      try
+        Cmd.SQL.Text := 'select * from companies';
+        //Cmd.SQL.Add('where  = ?name');
+           Cmd.Prepare;
+        //Cmd.Param['name'].AsString := 'Ferrari';
+        if Cmd.Execute then
+        begin
+          while Cmd.Step do
+          begin
+            ListBox1.Items.Add(Cmd.Field['name'].AsString);
+          end;
+        end;
+        Cmd.Close;
+      finally
+          FreeAndNil(Cmd);
+      end;
     finally
-      Transaction.Free;
     end;
+
     Conn.Disconnect;
   finally
     Conn.Free;
@@ -137,7 +163,6 @@ var
   Transaction1: TmncSQliteTransaction;
   Transaction2: TmncSQliteTransaction;
   Cmd1, Cmd2: TmncSQLiteCommand;
-  c: Currency;
 begin
   ListBox1.Clear;
   Conn := TmncSQLiteConnection.Create;

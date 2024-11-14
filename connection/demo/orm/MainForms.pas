@@ -8,6 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
   IniFiles, Variants,
   SynEdit, SynHighlighterSQL,
+  mnMsgBox, GUIMsgBox, ntvPanels, ntvBoard,
   mncDB, mncConnections, mncSQL, ParamsForms,
   mncSQLite, mncPostgre, mncMySQL, mncFirebird,
   mncORM, mncMySQLORM, mncSQLiteORM, mncPGORM, mncFBORM,
@@ -38,16 +39,19 @@ type
   public
   end;
 
+  TUseSteps = (stepNo, stepNormal, stepShort);
+
   { TMainForm }
 
   TMainForm = class(TForm)
     AddRecordBtn: TButton;
     AddRecordBtn1: TButton;
-    TestThreadBtn: TButton;
     Button2: TButton;
     Button3: TButton;
-    ConnectBtn: TButton;
     ConnectBtn1: TButton;
+    LogEdit: TSynEdit;
+    ntvPanel1: TntvPanel;
+    ConnectBtn: TButton;
     CreateDB1Btn: TButton;
     EnginesCbo: TComboBox;
     HostEdit: TEdit;
@@ -56,14 +60,15 @@ type
     Label3: TLabel;
     Label4: TLabel;
     Label5: TLabel;
+    ntvPanel2: TntvPanel;
     Panel1: TPanel;
     Label1: TLabel;
     Panel2: TPanel;
     Panel3: TPanel;
     PasswordEdit: TEdit;
     SynEdit: TSynEdit;
-    LogEdit: TSynEdit;
     SynSQLSyn: TSynSQLSyn;
+    TestThreadBtn: TButton;
     UserEdit: TEdit;
     procedure ReadRecordBtn1Click(Sender: TObject);
     procedure AddRecordBtnClick(Sender: TObject);
@@ -76,7 +81,9 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure TestThreadBtnClick(Sender: TObject);
   private
+    procedure Log(const s: string);
     procedure Connect(CreateIt: Boolean);
+    procedure ReadRecords(UseSteps: TUseSteps);
   public
     Engine: TEngine;
     TestThread: TTestThread;
@@ -185,18 +192,18 @@ begin
     begin
       if (ccDrop in Engine.Connection.Capabilities) then
       begin
-        LogEdit.Lines.Add(Engine.Connection.Resource + ' Droping');
+        Log(Engine.Connection.Resource + ' Droping');
         Engine.Connection.DropDatabase(True);
       end;
       if (ccCreate in Engine.Connection.Capabilities) then
       begin
-        LogEdit.Lines.Add(Engine.Connection.Resource + ' Creating');
+        Log(Engine.Connection.Resource + ' Creating');
         Engine.Connection.CreateDatabase;
-        LogEdit.Lines.Add(Engine.Connection.Resource + ' is Created');
+        Log(Engine.Connection.Resource + ' is Created');
       end;
     end;
     Engine.Connection.Connect;
-    LogEdit.Lines.Add(Engine.Connection.Resource + ' is Connected');
+    Log(Engine.Connection.Resource + ' is Connected');
     Engine.Transaction := Engine.Connection.CreateTransaction;
     Engine.Transaction.Start;
     if CreateIt then
@@ -205,7 +212,7 @@ begin
   except
     on E: EXception do
     begin
-      LogEdit.Lines.Add(E.Message);
+      Log(E.Message);
       raise;
     end;
   end;
@@ -216,16 +223,17 @@ var
   CMD: TmncSQLCommand;
 begin
   if Engine = nil then
+  begin
+    log('Not connected');
     exit;
+  end;
   CMD := Engine.Transaction.CreateCommand;
   try
     CMD.Options := CMD.Options + [cmoTruncate];
-    CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Address)';
+    CMD.SQL.Text := 'insert into Companies(Name, Address) values(?Name, ?Address)';
 
     CMD.Prepare;
-    CMD.Param['ID'].Value := 10;
-    //CMD.Param['Name'].AsString := 'Test' + DateTimeToStr(Now);
-    CMD.Param['Name'].AsString := 'PARMAJA';
+    CMD.Param['Name'].AsString := 'Test' + DateTimeToStr(Now);
     CMD.Param['Address'].AsString := 'On the Earth';
     CMD.Execute;
   finally
@@ -236,18 +244,26 @@ end;
 procedure TMainForm.Button2Click(Sender: TObject);
 var
   CMD: TmncSQLCommand;
+  n: String;
 begin
   if Engine = nil then
+  begin
+    log('Not connected');
     exit;
-  CMD := Engine.Transaction.CreateCommand;
-  try
-    CMD.SQL.Text := 'delete from Companies where ID=?ID';
-    CMD.Prepare;
-    CMD.Param['ID'].Value := 10;
-    if CMD.Execute then
-      LogEdit.Lines.Add('Deleted');
-  finally
-    CMD.Free;
+  end;
+
+  if MsgBox.Input(n, 'Enter ID to delete') then
+  begin
+    CMD := Engine.Transaction.CreateCommand;
+    try
+      CMD.SQL.Text := 'delete from Companies where ID=?ID';
+      CMD.Prepare;
+      CMD.Param['ID'].Value := n.ToInteger;
+      if CMD.Execute then
+        Log('Deleted');
+    finally
+      CMD.Free;
+    end;
   end;
 end;
 
@@ -258,7 +274,10 @@ var
   i: Integer;
 begin
   if Engine = nil then
+  begin
+    log('Not connected');
     exit;
+  end;
   CMD := Engine.Transaction.CreateCommand;
   try
     CMD.SQL.Text := SynEdit.Text;
@@ -273,7 +292,7 @@ begin
             s := s + #9;
           s := s + CMD.Columns[i].Name;
         end;
-        LogEdit.Lines.Add(s);
+        Log(s);
 
         while not CMD.Done do
         begin
@@ -284,25 +303,73 @@ begin
               s := s + #9;
             s := s + VarToStr(CMD.Fields.Items[i].Value);
           end;
-          LogEdit.Lines.Add(s);
+          Log(s);
           CMD.Next;
         end;
       end
       else
-        LogEdit.Lines.Add('Nothing to read');
+        Log('Nothing to read');
   finally
     CMD.Free;
   end;
 end;
 
 procedure TMainForm.ReadRecordBtn1Click(Sender: TObject);
-var
-  CMD: TmncSQLCommand;
-  i: Integer;
-  s: string;
 begin
   if Engine = nil then
+  begin
+    log('Not connected');
     exit;
+  end;
+  Log('## no Steps');
+  ReadRecords(stepNo);
+  Log('## Step Normal');
+  ReadRecords(stepNormal);
+  Log('## Very Short steps');
+  ReadRecords(stepShort);
+end;
+
+procedure TMainForm.ReadRecords(UseSteps: TUseSteps);
+var
+  CMD: TmncSQLCommand;
+  procedure PrintHeader;
+  var
+    s: string;
+    i: Integer;
+  begin
+    s := '';
+    for i := 0 to CMD.Columns.Count - 1 do
+    begin
+      if s <> '' then
+        s := s + #9;
+      s := s + CMD.Columns[i].Name;
+    end;
+    Log(s);
+  end;
+
+  procedure PrintRecord;
+  var
+    s: string;
+    i: Integer;
+  begin
+    s := '';
+    for i := 0 to CMD.Columns.Count - 1 do
+    begin
+      if s <> '' then
+        s := s + #9;
+      s := s + VarToStr(CMD.Fields.Items[i].Value);
+    end;
+    Log(s);
+  end;
+
+var
+  f: Boolean;
+begin
+  if Engine = nil then
+  begin
+    log('Not connected');
+    exit;
+  end;
   CMD := Engine.Transaction.CreateCommand;
   try
     CMD.SQL.Text := 'select * from Companies';
@@ -310,33 +377,45 @@ begin
     //CMD.Param['ID'].Value := 10;
 
     //Cmd.SQL.Add('select ID, Name, Name from Companies');
-    Cmd.Prepare;
-    if CMD.Execute then
+    if UseSteps = stepShort then
     begin
-      s := '';
-      for i := 0 to CMD.Columns.Count - 1 do
+      f := True;
+      while not CMD.Step do
       begin
-        if s <> '' then
-          s := s + #9;
-        s := s + CMD.Columns[i].Name;
-      end;
-      LogEdit.Lines.Add(s);
-
-      while not CMD.Done do
-      begin
-        s := '';
-        for i := 0 to CMD.Columns.Count - 1 do
+        if f then
         begin
-          if s <> '' then
-            s := s + #9;
-          s := s + VarToStr(CMD.Fields.Items[i].Value);
+          PrintHeader;
+          f := False;
         end;
-        LogEdit.Lines.Add(s);
-        CMD.Next;
+        PrintRecord;
       end;
     end
     else
-      LogEdit.Lines.Add('Nothing to read');
+    begin
+      Cmd.Prepare;
+      Log('-----------------------------------------');
+      if CMD.Execute then
+      begin
+        PrintHeader;
+        if UseSteps = stepNormal then
+        begin
+          while not CMD.Step do
+          begin
+            PrintRecord;
+          end;
+        end
+        else
+        begin
+          while not CMD.Done do
+          begin
+            PrintRecord;
+            CMD.Next;
+          end;
+        end;
+      end
+      else
+        Log('Nothing to read');
+    end;
 
   finally
     CMD.Free;
@@ -409,6 +488,12 @@ begin
     TestThread.Engine := Engine;
     TestThread.Start;
   end;
+end;
+
+procedure TMainForm.Log(const s: string);
+begin
+  LogEdit.Lines.Add(s);
+  LogEdit.CaretY := LogEdit.Lines.Count;
 end;
 
 end.

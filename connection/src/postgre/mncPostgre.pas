@@ -133,7 +133,7 @@ type
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); overload; override;
     procedure RenameDatabase(const vName, vToName: string); overload;
     function IsDatabaseExists(const vName: string): Boolean; override;
-    function EnumDatabases: TStrings;
+    function EnumDatabases: TStrings; override;
     procedure TerminateConnections(const vResource: string);
     function GetParamChar: string; override;
 

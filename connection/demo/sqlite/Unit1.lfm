@@ -10,8 +10,8 @@ object Form1: TForm1
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
+  LCLVersion = '3.99.0.0'
   OnCreate = FormCreate
-  LCLVersion = '2.1.0.0'
   object Image1: TImage
     Left = 8
     Height = 166
@@ -24,8 +24,8 @@ object Form1: TForm1
     Top = 4
     Width = 75
     Caption = 'Select'
-    OnClick = SelectBtnClick
     TabOrder = 0
+    OnClick = SelectBtnClick
   end
   object Button2: TButton
     Left = 394
@@ -33,8 +33,8 @@ object Form1: TForm1
     Top = 8
     Width = 75
     Caption = 'Read'
-    OnClick = Button2Click
     TabOrder = 1
+    OnClick = Button2Click
   end
   object ListBox1: TListBox
     Left = 232
@@ -50,8 +50,8 @@ object Form1: TForm1
     Top = 4
     Width = 75
     Caption = 'Write'
-    OnClick = Button1Click
     TabOrder = 3
+    OnClick = Button1Click
   end
   object SelectDSBtn: TButton
     Left = 160
@@ -60,7 +60,7 @@ object Form1: TForm1
     Top = 4
     Width = 75
     Caption = 'Select DS'
-    OnClick = SelectDSBtnClick
     TabOrder = 4
+    OnClick = SelectDSBtnClick
   end
 end
