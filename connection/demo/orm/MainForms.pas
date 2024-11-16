@@ -380,7 +380,7 @@ begin
     if UseSteps = stepShort then
     begin
       f := True;
-      while not CMD.Step do
+      while CMD.Step do
       begin
         if f then
         begin
@@ -399,14 +399,14 @@ begin
         PrintHeader;
         if UseSteps = stepNormal then
         begin
-          while not CMD.Step do
+          while CMD.Step do
           begin
             PrintRecord;
           end;
         end
         else
         begin
-          while not CMD.Done do
+          while not CMD.Done do //Done=EOF
           begin
             PrintRecord;
             CMD.Next;

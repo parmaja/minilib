@@ -550,6 +550,8 @@ type
     FID: Int64;
     FDone: Boolean;
     FReady: Boolean;
+    FExecuted: Boolean;
+    FSteped: Boolean;
     function GetValues(const Index: string): Variant;
     procedure SetRequest(const Value: TStrings);
     procedure SetColumns(const Value: TmncColumns);
@@ -932,6 +934,8 @@ begin
   FNextOnExecute := True;
   FReady := True;
   FDone := True;
+  FExecuted := False;
+  FSteped := False;
 end;
 
 function TmncCommand.InternalExecute(vNext: Boolean): Boolean;
@@ -955,15 +959,35 @@ end;
 
 function TmncCommand.Step: Boolean;
 begin
-  if Ready then
-    Result := InternalExecute(True)
+  if FExecuted then
+  begin
+    if FSteped or Ready then
+      Result := Next
+    else
+      Result := not Done;
+
+    FSteped := True;
+  end
   else
-    Result := Next;
+  begin
+    if Ready then
+      Result := InternalExecute(True)
+    else
+      Result := Next;
+  end;
+
+  {if not FExecuted then
+    Result := InternalExecute(True)
+  else if not Ready then
+    Result := Next
+  else
+    Result := not Done;}
 end;
 
 function TmncCommand.Execute: Boolean;
 begin
   Result := InternalExecute(FNextOnExecute);
+  FExecuted := True;
 end;
 
 function TmncCommand.GetField(const Index: string): TmncField;
@@ -1092,6 +1116,8 @@ begin
 
   FReady := True;
   FDone := True;
+  FExecuted := False;
+  FSteped := False;
   DoClose;
   FPrepared := False;
 end;
