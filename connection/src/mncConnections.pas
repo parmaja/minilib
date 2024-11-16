@@ -594,7 +594,8 @@ type
     function Execute: Boolean; overload;
     function Execute(vNext: Boolean): Boolean; overload;
     function Next: Boolean;
-    function Step: Boolean; //Execute and Next for while loop() without using next at end of loop block //TODO not yet
+    function Step: Boolean; deprecated;
+    function Fetch: Boolean; //Execute and Next for while loop
     procedure Close;
     procedure Clear; virtual;
     //procedure Reset; virtual; //Reset and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
@@ -955,30 +956,7 @@ end;
 
 function TmncCommand.Step: Boolean;
 begin
-  {if FExecuted then
-  begin
-    if FSteped or Ready then
-      Result := Next
-    else
-      Result := not Done;
-
-    FSteped := True;
-  end
-  else
-  begin
-    if Ready then
-      Result := InternalExecute(True)
-    else
-      Result := Next;
-  end;}
-
-
-  if not FExecuted then
-    Result := InternalExecute(True)
-  else if not Ready then
-    Result := Next
-  else
-    Result := not Done;
+  Result := Fetch;
 end;
 
 function TmncCommand.Execute: Boolean;
@@ -1042,6 +1020,32 @@ end;
 function TmncCommand.Execute(vNext: Boolean): Boolean;
 begin
   Result := InternalExecute(vNext);
+end;
+
+function TmncCommand.Fetch: Boolean;
+begin
+  {if FExecuted then in case we need skip first next after execute
+  begin
+    if FSteped or Ready then
+      Result := Next
+    else
+      Result := not Done;
+
+    FSteped := True;
+  end
+  else
+  begin
+    if Ready then
+      Result := InternalExecute(True)
+    else
+      Result := Next;
+  end;}
+
+
+  if not FExecuted then
+    Result := InternalExecute(True)
+  else
+    Result := Next
 end;
 
 function TmncCommand.Next: Boolean;

@@ -39,7 +39,7 @@ type
   public
   end;
 
-  TUseSteps = (stepNo, stepNormal, stepShort);
+  TUseSteps = (stepNo, stepNoNext, stepNormal, stepShort);
 
   { TMainForm }
 
@@ -322,6 +322,11 @@ begin
     exit;
   end;
   Log('## no Steps');
+  ReadRecords(stepNoNext);
+  exit;
+
+
+  Log('## no Steps');
   ReadRecords(stepNo);
   Log('## Step Normal');
   ReadRecords(stepNormal);
@@ -377,7 +382,21 @@ begin
     //CMD.Param['ID'].Value := 10;
 
     //Cmd.SQL.Add('select ID, Name, Name from Companies');
-    if UseSteps = stepShort then
+    if UseSteps = stepNoNext then
+    begin
+      f := True;
+      CMD.Execute(True);
+      while CMD.Step do
+      begin
+        if f then
+        begin
+          PrintHeader;
+          f := False;
+        end;
+        PrintRecord;
+      end;
+    end
+    else if UseSteps = stepShort then
     begin
       f := True;
       while CMD.Step do
