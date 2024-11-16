@@ -367,12 +367,15 @@ type
     property SingleRowMode: Boolean read FSingleRowMode write FSingleRowMode;
   end;
 
+  { TmncPGDDLCommand }
+
   TmncPGDDLCommand = class(TmncPGCommand)
   protected
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure ClearStatement; override;
     procedure DoParse; override;
+    procedure DoNext; override;
   end;
 
   TmncPGCursorCommand = class(TmncCustomPGCommand)
@@ -1530,7 +1533,12 @@ end;
 procedure TmncPGDDLCommand.DoPrepare;
 begin
   //no need prepare
-  NextOnExecute := False;
+  //NextOnExecute := False;
+end;
+
+procedure TmncPGDDLCommand.DoNext;
+begin
+  //
 end;
 
 { TPGListenThread }

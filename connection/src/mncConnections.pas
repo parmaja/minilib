@@ -545,13 +545,11 @@ type
     FBinds: TmncBinds;
     FParsed: Boolean;
     FPrepared: Boolean;
-    FNextOnExecute: Boolean;
     FIndex: Int64;
     FID: Int64;
     FDone: Boolean;
     FReady: Boolean;
     FExecuted: Boolean;
-    FSteped: Boolean;
     function GetValues(const Index: string): Variant;
     procedure SetRequest(const Value: TStrings);
     procedure SetColumns(const Value: TmncColumns);
@@ -579,7 +577,6 @@ type
     function CreateBinds: TmncBinds; virtual;
     property Request: TStrings read FRequest write SetRequest;
     function InternalExecute(vNext: Boolean): Boolean; virtual;
-
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -594,7 +591,8 @@ type
       Prepare: call the sql engine api, it call parse automaticly if it not called
     }
     procedure Prepare;
-    function Execute: Boolean;
+    function Execute: Boolean; overload;
+    function Execute(vNext: Boolean): Boolean; overload;
     function Next: Boolean;
     function Step: Boolean; //Execute and Next for while loop() without using next at end of loop block //TODO not yet
     procedure Close;
@@ -606,7 +604,6 @@ type
     procedure HitDone(vCondition: Boolean); overload;
     procedure HitUnready; //Make it FReady False
 
-    property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
     property Parsed: Boolean read FParsed;
     property Prepared: Boolean read FPrepared;
     property Columns: TmncColumns read FColumns write SetColumns;
@@ -931,11 +928,9 @@ begin
   FColumns := CreateColumns;
   FParams := CreateParams;
   FBinds := CreateBinds;
-  FNextOnExecute := True;
   FReady := True;
   FDone := True;
   FExecuted := False;
-  FSteped := False;
 end;
 
 function TmncCommand.InternalExecute(vNext: Boolean): Boolean;
@@ -944,6 +939,7 @@ begin
     Prepare;
   FReady := True;
   FDone := False;
+  FExecuted := True;
   DoExecute;
   if vNext and not Done then //TODO Check it do we need not Done
   begin
@@ -959,7 +955,7 @@ end;
 
 function TmncCommand.Step: Boolean;
 begin
-  if FExecuted then
+  {if FExecuted then
   begin
     if FSteped or Ready then
       Result := Next
@@ -974,20 +970,20 @@ begin
       Result := InternalExecute(True)
     else
       Result := Next;
-  end;
+  end;}
 
-  {if not FExecuted then
+
+  if not FExecuted then
     Result := InternalExecute(True)
   else if not Ready then
     Result := Next
   else
-    Result := not Done;}
+    Result := not Done;
 end;
 
 function TmncCommand.Execute: Boolean;
 begin
-  Result := InternalExecute(FNextOnExecute);
-  FExecuted := True;
+  Result := Execute(True);
 end;
 
 function TmncCommand.GetField(const Index: string): TmncField;
@@ -1041,6 +1037,11 @@ end;
 
 procedure TmncCommand.DoUnprepare;
 begin
+end;
+
+function TmncCommand.Execute(vNext: Boolean): Boolean;
+begin
+  Result := InternalExecute(vNext);
 end;
 
 function TmncCommand.Next: Boolean;
@@ -1117,7 +1118,6 @@ begin
   FReady := True;
   FDone := True;
   FExecuted := False;
-  FSteped := False;
   DoClose;
   FPrepared := False;
 end;
