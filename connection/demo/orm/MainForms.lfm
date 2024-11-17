@@ -1,46 +1,45 @@
 object MainForm: TMainForm
   Left = 344
-  Height = 589
+  Height = 471
   Top = 162
-  Width = 960
+  Width = 768
   BorderWidth = 3
   Caption = 'MainForm'
   ChildSizing.LeftRightSpacing = 3
   ChildSizing.TopBottomSpacing = 3
   ChildSizing.HorizontalSpacing = 3
   ChildSizing.VerticalSpacing = 3
-  ClientHeight = 589
-  ClientWidth = 960
-  DesignTimePPI = 120
+  ClientHeight = 471
+  ClientWidth = 768
   Position = poDefault
-  LCLVersion = '4.99.0.0'
+  LCLVersion = '3.99.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   object Label1: TLabel
-    Left = 18
+    Left = 14
     Height = 1
-    Top = 51
+    Top = 41
     Width = 1
     ParentColor = False
   end
   object Panel1: TPanel
     Left = 6
-    Height = 35
+    Height = 25
     Top = 6
-    Width = 948
+    Width = 756
     Align = alTop
     AutoSize = True
     BevelOuter = bvNone
     ChildSizing.HorizontalSpacing = 3
     ChildSizing.VerticalSpacing = 3
-    ClientHeight = 35
-    ClientWidth = 948
+    ClientHeight = 25
+    ClientWidth = 756
     TabOrder = 0
     object CreateDB1Btn: TButton
-      Left = 532
-      Height = 35
+      Left = 412
+      Height = 25
       Top = 0
-      Width = 128
+      Width = 97
       Align = alLeft
       AutoSize = True
       Caption = 'Generate SQL'
@@ -49,20 +48,20 @@ object MainForm: TMainForm
     end
     object EnginesCbo: TComboBox
       Left = 0
-      Height = 33
+      Height = 23
       Top = 0
-      Width = 248
+      Width = 198
       Align = alLeft
       AutoSize = False
-      ItemHeight = 25
+      ItemHeight = 15
       Style = csDropDownList
       TabOrder = 1
     end
     object ConnectBtn: TButton
-      Left = 663
-      Height = 35
+      Left = 512
+      Height = 25
       Top = 0
-      Width = 174
+      Width = 131
       Align = alLeft
       AutoSize = True
       Caption = 'Connect and Create'
@@ -70,94 +69,94 @@ object MainForm: TMainForm
       OnClick = ConnectBtnClick
     end
     object DataEdit: TEdit
-      Left = 381
-      Height = 35
+      Left = 291
+      Height = 25
       Top = 0
-      Width = 148
+      Width = 118
       Align = alLeft
       TabOrder = 3
       Text = 'employees'
     end
     object Label5: TLabel
-      Left = 254
-      Height = 35
+      Left = 203
+      Height = 25
       Top = 0
-      Width = 121
+      Width = 83
       Align = alLeft
-      BorderSpacing.Left = 6
-      BorderSpacing.Right = 6
+      BorderSpacing.Left = 5
+      BorderSpacing.Right = 5
       Caption = 'Database Name'
       Layout = tlCenter
       ParentColor = False
     end
   end
   object Panel2: TPanel
-    Left = 9
-    Height = 33
-    Top = 47
-    Width = 942
+    Left = 8
+    Height = 23
+    Top = 36
+    Width = 752
     Align = alTop
     AutoSize = True
-    BorderSpacing.Around = 6
+    BorderSpacing.Around = 5
     BevelOuter = bvNone
     ChildSizing.HorizontalSpacing = 3
     ChildSizing.VerticalSpacing = 3
-    ClientHeight = 33
-    ClientWidth = 942
+    ClientHeight = 23
+    ClientWidth = 752
     TabOrder = 1
     object Label2: TLabel
       Left = 0
-      Height = 33
+      Height = 23
       Top = 0
-      Width = 34
+      Width = 25
       Align = alLeft
       Caption = 'Host'
       Layout = tlCenter
       ParentColor = False
     end
     object HostEdit: TEdit
-      Left = 37
-      Height = 33
+      Left = 28
+      Height = 23
       Top = 0
-      Width = 148
+      Width = 118
       Align = alLeft
       TabOrder = 0
       Text = 'localhost'
     end
     object UserEdit: TEdit
-      Left = 224
-      Height = 33
+      Left = 175
+      Height = 23
       Top = 0
-      Width = 148
+      Width = 118
       Align = alLeft
       TabOrder = 1
       Text = 'root'
     end
     object PasswordEdit: TEdit
-      Left = 449
-      Height = 33
+      Left = 349
+      Height = 23
       Top = 0
-      Width = 148
+      Width = 118
       Align = alLeft
       EchoMode = emPassword
       PasswordChar = '*'
       TabOrder = 2
     end
     object Label3: TLabel
-      Left = 188
-      Height = 33
+      Left = 149
+      Height = 23
       Top = 0
-      Width = 33
+      Width = 23
       Align = alLeft
       Caption = 'User'
       Layout = tlCenter
       ParentColor = False
     end
     object Label4: TLabel
-      Left = 375
-      Height = 33
+      Left = 296
+      Height = 23
       Top = 0
-      Width = 71
+      Width = 50
       Align = alLeft
       Caption = 'Password'
       Layout = tlCenter
@@ -166,26 +165,26 @@ object MainForm: TMainForm
   end
   object ntvPanel1: TntvPanel
     Left = 6
-    Height = 112
-    Top = 471
-    Width = 948
+    Height = 90
+    Top = 375
+    Width = 756
     Align = alBottom
     ResizeStyle = nrsUpdate
     inline LogEdit: TSynEdit
       Left = 0
-      Height = 104
+      Height = 82
       Top = 8
-      Width = 948
+      Width = 756
       Align = alClient
       Font.CharSet = ANSI_CHARSET
-      Font.Height = -19
+      Font.Height = -15
       Font.Name = 'Courier New'
       Font.Pitch = fpFixed
       Font.Quality = fqDraft
       ParentColor = False
       ParentFont = False
       TabOrder = 0
-      Gutter.Width = 77
+      Gutter.Width = 62
       Gutter.MouseActions = <>
       RightGutter.Width = 0
       RightGutter.MouseActions = <>
@@ -634,13 +633,13 @@ object MainForm: TMainForm
       LineHighlightColor.Foreground = clNone
       inline SynLeftGutterPartList1: TSynGutterPartList
         object SynGutterMarks1: TSynGutterMarks
-          Width = 30
+          Width = 24
           MouseActions = <>
           MaxExtraMarksColums = 0
           Options = [sgmoDeDuplicateMarksOnOverflow]
         end
         object SynGutterLineNumber1: TSynGutterLineNumber
-          Width = 23
+          Width = 19
           MouseActions = <>
           MarkupInfo.Background = clBtnFace
           MarkupInfo.Foreground = clNone
@@ -650,20 +649,20 @@ object MainForm: TMainForm
           LeadingZeros = False
         end
         object SynGutterChanges1: TSynGutterChanges
-          Width = 5
+          Width = 4
           MouseActions = <>
           ModifiedColor = 59900
           SavedColor = clGreen
         end
         object SynGutterSeparator1: TSynGutterSeparator
-          Width = 3
+          Width = 2
           MouseActions = <>
           MarkupInfo.Background = clWhite
           MarkupInfo.Foreground = clGray
         end
         object SynGutterCodeFolding1: TSynGutterCodeFolding
           AutoSize = False
-          Width = 16
+          Width = 13
           MouseActions = <>
           MarkupInfo.Background = clNone
           MarkupInfo.Foreground = clGray
@@ -675,26 +674,26 @@ object MainForm: TMainForm
   end
   object ntvPanel2: TntvPanel
     Left = 6
-    Height = 382
-    Top = 86
-    Width = 948
+    Height = 308
+    Top = 64
+    Width = 756
     Align = alClient
     object Panel3: TPanel
-      Left = 790
-      Height = 374
-      Top = 4
-      Width = 154
+      Left = 630
+      Height = 302
+      Top = 3
+      Width = 123
       Align = alRight
-      BorderSpacing.Around = 4
+      BorderSpacing.Around = 3
       BevelOuter = bvNone
-      ClientHeight = 374
-      ClientWidth = 154
+      ClientHeight = 302
+      ClientWidth = 123
       TabOrder = 0
       object AddRecordBtn: TButton
         Left = 0
-        Height = 45
-        Top = 89
-        Width = 154
+        Height = 36
+        Top = 71
+        Width = 123
         Align = alTop
         Caption = 'Add Record'
         TabOrder = 0
@@ -702,9 +701,9 @@ object MainForm: TMainForm
       end
       object Button2: TButton
         Left = 0
-        Height = 45
-        Top = 179
-        Width = 154
+        Height = 36
+        Top = 143
+        Width = 123
         Align = alTop
         Caption = 'Delete Record'
         TabOrder = 1
@@ -712,9 +711,9 @@ object MainForm: TMainForm
       end
       object AddRecordBtn1: TButton
         Left = 0
-        Height = 45
-        Top = 134
-        Width = 154
+        Height = 36
+        Top = 107
+        Width = 123
         Align = alTop
         Caption = 'Read Records'
         TabOrder = 2
@@ -722,9 +721,9 @@ object MainForm: TMainForm
       end
       object Button3: TButton
         Left = 0
-        Height = 45
-        Top = 44
-        Width = 154
+        Height = 36
+        Top = 35
+        Width = 123
         Align = alTop
         Caption = 'Execute'
         TabOrder = 3
@@ -732,9 +731,9 @@ object MainForm: TMainForm
       end
       object ConnectBtn1: TButton
         Left = 0
-        Height = 44
+        Height = 35
         Top = 0
-        Width = 154
+        Width = 123
         Align = alTop
         Caption = 'Connect'
         TabOrder = 4
@@ -742,9 +741,9 @@ object MainForm: TMainForm
       end
       object TestThreadBtn: TButton
         Left = 0
-        Height = 51
-        Top = 224
-        Width = 154
+        Height = 41
+        Top = 179
+        Width = 123
         Align = alTop
         Caption = 'Test Thread'
         TabOrder = 5
@@ -753,19 +752,19 @@ object MainForm: TMainForm
     end
     inline SynEdit: TSynEdit
       Left = 0
-      Height = 382
+      Height = 308
       Top = 0
-      Width = 786
+      Width = 627
       Align = alClient
       Font.CharSet = ANSI_CHARSET
-      Font.Height = -19
+      Font.Height = -15
       Font.Name = 'Courier New'
       Font.Pitch = fpFixed
       Font.Quality = fqDraft
       ParentColor = False
       ParentFont = False
       TabOrder = 1
-      Gutter.Width = 77
+      Gutter.Width = 62
       Gutter.MouseActions = <>
       RightGutter.Width = 0
       RightGutter.MouseActions = <>
@@ -1215,13 +1214,13 @@ object MainForm: TMainForm
       LineHighlightColor.Foreground = clNone
       inline SynLeftGutterPartList1: TSynGutterPartList
         object SynGutterMarks1: TSynGutterMarks
-          Width = 30
+          Width = 24
           MouseActions = <>
           MaxExtraMarksColums = 0
           Options = [sgmoDeDuplicateMarksOnOverflow]
         end
         object SynGutterLineNumber1: TSynGutterLineNumber
-          Width = 23
+          Width = 19
           MouseActions = <>
           MarkupInfo.Background = clBtnFace
           MarkupInfo.Foreground = clNone
@@ -1231,20 +1230,20 @@ object MainForm: TMainForm
           LeadingZeros = False
         end
         object SynGutterChanges1: TSynGutterChanges
-          Width = 5
+          Width = 4
           MouseActions = <>
           ModifiedColor = 59900
           SavedColor = clGreen
         end
         object SynGutterSeparator1: TSynGutterSeparator
-          Width = 3
+          Width = 2
           MouseActions = <>
           MarkupInfo.Background = clWhite
           MarkupInfo.Foreground = clGray
         end
         object SynGutterCodeFolding1: TSynGutterCodeFolding
           AutoSize = False
-          Width = 16
+          Width = 13
           MouseActions = <>
           MarkupInfo.Background = clNone
           MarkupInfo.Foreground = clGray
@@ -1259,7 +1258,7 @@ object MainForm: TMainForm
     Enabled = False
     KeyAttri.Foreground = 13265205
     SQLDialect = sqlSQLite
-    Left = 315
-    Top = 145
+    Left = 252
+    Top = 116
   end
 end

@@ -559,6 +559,21 @@ type
     function GetParam(const Index: string): TmncParam;
     function GetIndex: Int64;
   protected
+    type
+
+      { TmncCommandEnumerator }
+
+      TmncCommandEnumerator = class(TObject)
+      private
+        FCommand: TmncCommand;
+      public
+        constructor Create(ACommand: TmncCommand);
+        function GetCurrent: TmncFields; inline;
+        function MoveNext: Boolean; inline;
+        property Current: TmncFields read GetCurrent;
+      end;
+
+  protected
     FRequest: TStrings;
     procedure SetActive(const Value: Boolean); override;
     procedure CheckActive;
@@ -590,17 +605,20 @@ type
     {
       Prepare: call the sql engine api, it call parse automaticly if it not called
     }
-    procedure Prepare;
+    procedure Prepare; overload;
     function Execute: Boolean; overload;
     function Execute(vNext: Boolean): Boolean; overload;
     function Next: Boolean;
-    function Step: Boolean; deprecated;
+    function Step: Boolean; deprecated 'Use Fetch';
     function Fetch: Boolean; //Execute and Next for while loop
     procedure Close;
     procedure Clear; virtual;
     //procedure Reset; virtual; //Reset and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     property Done: Boolean read FDone; //EOF :)
     property Ready: Boolean read FReady; //BOF :)
+
+    function GetEnumerator: TmncCommandEnumerator; inline;
+
     procedure HitDone; overload;   //Make it FDone True
     procedure HitDone(vCondition: Boolean); overload;
     procedure HitUnready; //Make it FReady False
@@ -885,6 +903,11 @@ begin
   FBinds.Clear;
 end;
 
+function TmncCommand.GetEnumerator: TmncCommandEnumerator;
+begin
+  Result := TmncCommandEnumerator.Create(Self);
+end;
+
 destructor TmncCommand.Destroy;
 begin
   Active := False;
@@ -1150,6 +1173,26 @@ end;
 procedure TmncCommand.HitUnready;
 begin
   FReady := False;
+end;
+
+{ TmncCommand.TmncCommandEnumerator }
+
+constructor TmncCommand.TmncCommandEnumerator.Create(ACommand: TmncCommand);
+begin
+  FCommand := ACommand;
+  //FCommand.Execute(False);
+end;
+
+function TmncCommand.TmncCommandEnumerator.GetCurrent: TmncFields;
+begin
+  Result := FCommand.Fields;
+end;
+
+function TmncCommand.TmncCommandEnumerator.MoveNext: Boolean;
+begin
+  Result := FCommand.Fetch;
+  if not Result then
+    FCommand.Close;
 end;
 
 { TmncLinkTransaction }

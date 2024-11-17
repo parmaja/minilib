@@ -251,6 +251,7 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
+    function Prepare(vSQL: string): TmncCommand; overload;
     function GetLastRowID: Int64; virtual;
     function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
@@ -661,6 +662,13 @@ destructor TmncSQLCommand.Destroy;
 begin
   FreeAndNil(FProcessedSQL); //if you moved it after inherited say WHY
   inherited;
+end;
+
+function TmncSQLCommand.Prepare(vSQL: string): TmncCommand;
+begin
+  SQL.Text:= vSQL;
+  Prepare();
+  Result := Self;
 end;
 
 function TmncSQLCommand.GetLastRowID: Int64;

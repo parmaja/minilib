@@ -39,7 +39,7 @@ type
   public
   end;
 
-  TUseSteps = (stepNo, stepNoNext, stepNormal, stepShort);
+  TUseFetchs = (fetchNo, fetchNoNext, fetchNormal, fetchShort);
 
   { TMainForm }
 
@@ -83,7 +83,7 @@ type
   private
     procedure Log(const s: string);
     procedure Connect(CreateIt: Boolean);
-    procedure ReadRecords(UseSteps: TUseSteps);
+    procedure ReadRecords(UseFetchs: TUseFetchs);
   public
     Engine: TEngine;
     TestThread: TTestThread;
@@ -321,20 +321,16 @@ begin
     log('Not connected');
     exit;
   end;
-  Log('## no Steps');
-  ReadRecords(stepNoNext);
+
+  ReadRecords(fetchNoNext);
   exit;
 
-
-  Log('## no Steps');
-  ReadRecords(stepNo);
-  Log('## Step Normal');
-  ReadRecords(stepNormal);
-  Log('## Very Short steps');
-  ReadRecords(stepShort);
+  ReadRecords(fetchNo);
+  ReadRecords(fetchNormal);
+  ReadRecords(fetchShort);
 end;
 
-procedure TMainForm.ReadRecords(UseSteps: TUseSteps);
+procedure TMainForm.ReadRecords(UseFetchs: TUseFetchs);
 var
   CMD: TmncSQLCommand;
   procedure PrintHeader;
@@ -369,6 +365,8 @@ var
 
 var
   f: Boolean;
+  s: string;
+  Fields: TmncFields;
 begin
   if Engine = nil then
   begin
@@ -382,11 +380,34 @@ begin
     //CMD.Param['ID'].Value := 10;
 
     //Cmd.SQL.Add('select ID, Name, Name from Companies');
-    if UseSteps = stepNoNext then
+
+    f := True;
+    s := '';
+    Log('## Using For in Quick');
+    //CMD.Execute(False);
+    for Fields in CMD.Prepare('select * from Companies') do
     begin
-      f := True;
-      CMD.Execute(True);
-      while CMD.Step do
+        s := VarToStr(Fields['ID'].Value);
+        s := s + #9 + VarToStr(Fields['Name'].Value);
+        Log(s);
+    end;
+
+    Log('## Using For in 2');
+    for Fields in CMD do
+    begin
+        s := VarToStr(Fields['ID'].Value);
+        s := s + #9 + VarToStr(Fields['Name'].Value);
+        Log(s);
+    end;
+
+    Log('');
+
+
+    if UseFetchs = fetchNoNext then
+    begin
+      Log('## fetchNoNext');
+      CMD.Execute(False);
+      while CMD.Fetch do
       begin
         if f then
         begin
@@ -396,10 +417,10 @@ begin
         PrintRecord;
       end;
     end
-    else if UseSteps = stepShort then
+    else if UseFetchs = fetchShort then
     begin
-      f := True;
-      while CMD.Step do
+      Log('## fetchShort');
+      while CMD.Fetch do
       begin
         if f then
         begin
@@ -412,19 +433,20 @@ begin
     else
     begin
       Cmd.Prepare;
-      Log('-----------------------------------------');
       if CMD.Execute then
       begin
+        Log('## fetchNormal');
         PrintHeader;
-        if UseSteps = stepNormal then
+        if UseFetchs = fetchNormal then
         begin
-          while CMD.Step do
+          while CMD.Fetch do
           begin
             PrintRecord;
           end;
         end
         else
         begin
+          Log('## While not Done');
           while not CMD.Done do //Done=EOF
           begin
             PrintRecord;
