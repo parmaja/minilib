@@ -414,7 +414,32 @@ var
   Sign: Integer;
   aDaysInMonth: Integer;
 begin
-  if NumberOfMonths >= 0 then
+  if NumberOfMonths=0 then Exit;
+
+  Year := Year + (NumberOfMonths div 12);
+  NumberOfMonths := NumberOfMonths mod 12;
+
+  if NumberOfMonths>0 then
+  begin
+    Inc(Month, NumberOfMonths);
+    if Month>12 then
+    begin
+      Inc(Year, 1);
+      Inc(Month, -12);
+    end;
+  end
+  else
+  begin
+    Dec(Month, NumberOfMonths);
+    if Month<=0 then
+    begin
+      Dec(Year);
+      Inc(Month, 12);
+    end;
+  end;
+
+
+  {if NumberOfMonths >= 0 then
     Sign := 1
   else
     Sign := -1;
@@ -425,7 +450,8 @@ begin
   begin
     Inc(Year, Sign);
     Inc(Month, -12 * Sign);
-  end;
+  end;}
+
   aDaysInMonth := udtDaysInMonth(Year, Month);
   if Day > aDaysInMonth then
     Day := aDaysInMonth;
