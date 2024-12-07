@@ -770,10 +770,10 @@ begin
   else
     aResource := Resource;
 
-  if UserName = '' then
-    aUser := 'postgres'
-  else
-    aUser := UserName;
+  {if UserName = '' then
+    aUser := 'postgres' maybe windows authentication
+  else}
+  aUser := UserName;
 
   aPassword := Password;
   if UseSSL then
@@ -793,7 +793,10 @@ begin
     vHandle := PQsetdbLogin(PByte(aHost), PByte(aPort), nil, nil, PByte(aResource), PByte(aUser), PByte(aPassword))
   else
   begin
-    aUrl := Format('user=%s password=''%s'' host=%s port=%s dbname=''%s'' sslmode=%s sslcompression=%s application_name=''%s''', [aUser, aPassword, aHost, aPort, aResource, aSsl, aSslComp, AppName]);
+    if (aUser='') and (aPassword='') then
+      aUrl := Format('host=%s port=%s dbname=''%s'' sslmode=%s sslcompression=%s application_name=''%s''', [aHost, aPort, aResource, aSsl, aSslComp, AppName])
+    else
+      aUrl := Format('user=%s password=''%s'' host=%s port=%s dbname=''%s'' sslmode=%s sslcompression=%s application_name=''%s''', [aUser, aPassword, aHost, aPort, aResource, aSsl, aSslComp, AppName]);
     //aUrl := Format('postgresql://%s:%s@%s:%s/%s?sslmode=%s&sslcompression=%s&application_name=%s', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
     vHandle := PQconnectdb(PByte(aUrl));
   end;
