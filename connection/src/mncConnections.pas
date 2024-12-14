@@ -609,7 +609,7 @@ type
     function Execute: Boolean; overload;
     function Execute(vNext: Boolean): Boolean; overload;
     function Next: Boolean;
-    function Step: Boolean; deprecated 'Use Fetch';
+    //function Step: Boolean; deprecated 'Use Fetch';
     function Fetch: Boolean; //Execute and Next for while loop
     procedure Close;
     procedure Clear; virtual;
@@ -977,10 +977,10 @@ begin
   end;
 end;
 
-function TmncCommand.Step: Boolean;
+{function TmncCommand.Step: Boolean;
 begin
   Result := Fetch;
-end;
+end;}
 
 function TmncCommand.Execute: Boolean;
 begin

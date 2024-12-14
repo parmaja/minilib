@@ -137,12 +137,9 @@ begin
         //Cmd.SQL.Add('where  = ?name');
            Cmd.Prepare;
         //Cmd.Param['name'].AsString := 'Ferrari';
-        if Cmd.Execute then
+        while Cmd.Fetch do
         begin
-          while Cmd.Step do
-          begin
-            ListBox1.Items.Add(Cmd.Field['name'].AsString);
-          end;
+          ListBox1.Items.Add(Cmd.Field['name'].AsString);
         end;
         Cmd.Close;
       finally
