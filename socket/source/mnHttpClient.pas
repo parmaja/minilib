@@ -69,20 +69,20 @@ type
     function Open(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
 
     function Post(vData: PByte; vCount: Integer): Boolean; overload;
-    function Post(vData: UTF8String): Boolean; overload;
+    function Post(const vData: UTF8String): Boolean; overload;
     function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
-    function Post(const vURL: UTF8String; vData: UTF8String): Boolean; overload;
+    function Post(const vURL: UTF8String; const vData: UTF8String): Boolean; overload;
 
     function Patch(vData: PByte; vCount: Integer): Boolean; overload;
     function Patch(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
-    function Patch(const vURL: UTF8String; vData: UTF8String): Boolean; overload;
+    function Patch(const vURL: UTF8String; const vData: UTF8String): Boolean; overload;
 
     function Get: Boolean; overload;
     function Get(const vURL: UTF8String): Boolean; overload;
 
     function ReadStream(AStream: TStream): TFileSize; overload;
     function ReadStream(AStream: TStream; Count: Integer): TFileSize; overload;
-    function ReadToFile(OutFileName: UTF8String; Count: Integer = -1): TFileSize; overload;
+    function ReadToFile(const OutFileName: UTF8String; Count: Integer = -1): TFileSize; overload;
 
     procedure ReceiveStream(AStream: TStream); overload;
     procedure ReceiveMemoryStream(AStream: TStream);
@@ -478,7 +478,7 @@ begin
     Receive;
 end;
 
-function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
+function TmnCustomHttpClient.Post(const vURL, vData: UTF8String): Boolean;
 begin
   Result := Post(vURL, PByte(vData), Length(vData));
 end;
@@ -502,12 +502,12 @@ begin
   Patch(vData, vCount);
 end;
 
-function TmnCustomHttpClient.Patch(const vURL: UTF8String; vData: UTF8String): Boolean;
+function TmnCustomHttpClient.Patch(const vURL: UTF8String; const vData: UTF8String): Boolean;
 begin
   Result := Patch(vURL, PByte(vData), Length(vData));
 end;
 
-function TmnCustomHttpClient.Post(vData: UTF8String): Boolean;
+function TmnCustomHttpClient.Post(const vData: UTF8String): Boolean;
 begin
   Result := Post(PByte(vData), Length(vData));
 end;
@@ -522,7 +522,7 @@ begin
   Result := FStream.ReadStream(AStream, Count);
 end;
 
-function TmnCustomHttpClient.ReadToFile(OutFileName: UTF8String; Count: Integer): TFileSize;
+function TmnCustomHttpClient.ReadToFile(const OutFileName: UTF8String; Count: Integer): TFileSize;
 var
   f: TFileStream;
 begin
