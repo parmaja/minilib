@@ -499,7 +499,7 @@ end;
 function TmnCustomHttpClient.Patch(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 begin
   Connect(vUrl);
-  Patch(vData, vCount);
+  Result := Patch(vData, vCount);
 end;
 
 function TmnCustomHttpClient.Patch(const vURL: UTF8String; const vData: UTF8String): Boolean;

@@ -402,7 +402,7 @@ end;
 
 function TmnCustomSocket.Peek(var Buffer; var Count: Longint): TmnError;
 begin
-  DoPeek(Buffer, Count);
+  Result := DoPeek(Buffer, Count);
 end;
 
 function TmnCustomSocket.Pending: Boolean;
