@@ -115,20 +115,21 @@ type
     function Find(const AName: string): TConfSection; overload;
     function Require(const AName: string): TConfSection;
     //FallbackSection, //Only with coInherite, if not section not found in self or parent, use self
-    function FindSection(ASectionName: string; AOptions: TConfOptions; FallbackSection: Boolean = False): TConfSection; overload;
-    function FindSection(ASections: TArray<string>; FieldName: string; AOptions: TConfOptions; FallbackSection: Boolean = False): TConfSection; overload;
+    function FindSection(const ASectionName: string; AOptions: TConfOptions; FallbackSection: Boolean = False): TConfSection; overload;
+    function FindSection(const ASections: TArray<string>; const FieldName: string; AOptions: TConfOptions; FallbackSection: Boolean = False): TConfSection; overload;
 
     function NewSection(const AName, ASectionType: string; AAttributes: string): TConfSection;
 
     function IndexOf(const AName: string): Integer;
+    function Exists(const ASectionName, AName:string): Boolean;
     function ReadString(ASections: TArray<string>; AName:string; Def: String = ''; AOptions: TConfOptions = sDefaultOptions): String; overload;
-    function ReadString(ASectionName, AName:string; Def: String = ''; AOptions: TConfOptions = sDefaultOptions): String; overload;
-    function ReadInteger(ASectionName, AName: string; Def: Integer = 0; AOptions: TConfOptions = sDefaultOptions): Integer;
-    function ReadInt64(ASectionName, AName: string; Def: Int64 = 0; AOptions: TConfOptions = sDefaultOptions): Int64; overload;
+    function ReadString(const ASectionName, AName:string; Def: String = ''; AOptions: TConfOptions = sDefaultOptions): String; overload;
+    function ReadInteger(const ASectionName, AName: string; Def: Integer = 0; AOptions: TConfOptions = sDefaultOptions): Integer;
+    function ReadInt64(const ASectionName, AName: string; Def: Int64 = 0; AOptions: TConfOptions = sDefaultOptions): Int64; overload;
     function ReadInt64(ASections: TArray<string>; AName:string; Def: Int64 = 0; AOptions: TConfOptions = sDefaultOptions): Int64; overload;
-    function ReadBool(ASectionName, AName: string; Def: Boolean = False; AOptions: TConfOptions = sDefaultOptions): Boolean;
-    function ReadSwitch(ASectionName, AName: string; Def: Boolean = False; AOptions: TConfOptions = sDefaultOptions): Boolean;
-    function ReadAttribute(ASectionName, AAttributeName: string): Boolean; overload;
+    function ReadBool(const ASectionName, AName: string; Def: Boolean = False; AOptions: TConfOptions = sDefaultOptions): Boolean;
+    function ReadSwitch(const ASectionName, AName: string; Def: Boolean = False; AOptions: TConfOptions = sDefaultOptions): Boolean;
+    function ReadAttribute(const ASectionName, AAttributeName: string): Boolean; overload;
     procedure ReadStrings(ToStrings: TStrings; SectionName: string; ValuesOnly: Boolean = True; AllowDuplicate: Boolean = False); overload;
     function ReadStrings(FromSection: string; ValuesOnly: Boolean = True; AllowDuplicate: Boolean = False): TStringList; overload;
     procedure ReadSection(ToSection: TConfSection; SectionName: string); overload;
@@ -190,7 +191,7 @@ type
     function AddComment(S: string): TConfField; overload;
     function Find(const vName: string): TConfField; virtual; //no exception
     function Exists(const vName: string): Boolean;
-    function EnumSectionList(ASectionName: string; AllowDuplicate:Boolean; AList: TStringList): Boolean; overload;
+    function EnumSectionList(const ASectionName: string; AllowDuplicate:Boolean; AList: TStringList): Boolean; overload;
     function EnumSectionList(ASection: TConfSection; AllowDuplicate:Boolean; AList: TStringList): Boolean; overload;
     //function FindSection(vInSection, vSectionName: string; vOptions: TConfOptions = []): TConfSection; overload; deprecated;
     function IndexOfName(const vName: string): Integer;
@@ -253,10 +254,10 @@ type
   public
     constructor Create(AParent: TConfSection = nil); override;
     destructor Destroy; override;
-    procedure WriteString(ASectionName, AName: string; Value: String; DeleteIfEmpty: Boolean = False; Overwrite: Boolean = True); overload;
-    procedure WriteInteger(ASectionName, AName: string; Value: Integer); overload;
-    procedure WriteInt64(ASectionName, AName: string; Value: Int64); overload;
-    procedure WriteBool(ASectionName, AName: string; Value: Boolean); overload;
+    procedure WriteString(const ASectionName, AName, Value: String; DeleteIfEmpty: Boolean = False; Overwrite: Boolean = True); overload;
+    procedure WriteInteger(const ASectionName, AName: string; Value: Integer); overload;
+    procedure WriteInt64(const ASectionName, AName: string; Value: Int64); overload;
+    procedure WriteBool(const ASectionName, AName: string; Value: Boolean); overload;
   end;
 
 function ConnectStr(const S1, Sep: string; S2: string = ''): string;
@@ -377,12 +378,12 @@ end;
 
 { TConfSections }
 
-function TConfSections.FindSection(ASectionName: string; AOptions: TConfOptions; FallbackSection: Boolean): TConfSection;
+function TConfSections.FindSection(const ASectionName: string; AOptions: TConfOptions; FallbackSection: Boolean): TConfSection;
 begin
   Result := FindSection([ASectionName], '', AOptions, FallbackSection);
 end;
 
-function TConfSections.FindSection(ASections: TArray<string>; FieldName: string; AOptions: TConfOptions; FallbackSection: Boolean): TConfSection;
+function TConfSections.FindSection(const ASections: TArray<string>; const FieldName: string; AOptions: TConfOptions; FallbackSection: Boolean): TConfSection;
   function FindNow(ASection: TConfSection): TConfSection;
   var
     ASectionName: string;
@@ -482,7 +483,7 @@ begin
   ReadSection(AToSection, FromSection);
 end;
 
-function TConfSections.ReadString(ASectionName, AName: string; Def: String; AOptions: TConfOptions): String;
+function TConfSections.ReadString(const ASectionName, AName: string; Def: String; AOptions: TConfOptions): String;
 var
   ASection: TConfSection;
 begin
@@ -503,7 +504,7 @@ begin
   ReadStrings(Result, FromSection, ValuesOnly, AllowDuplicate);
 end;
 
-function TConfSections.ReadBool(ASectionName, AName: string; Def: Boolean; AOptions: TConfOptions): Boolean;
+function TConfSections.ReadBool(const ASectionName, AName: string; Def: Boolean; AOptions: TConfOptions): Boolean;
 var
   ASection: TConfSection;
 begin
@@ -515,7 +516,7 @@ begin
     Result := Def;
 end;
 
-function TConfSections.ReadAttribute(ASectionName, AAttributeName: string): Boolean;
+function TConfSections.ReadAttribute(const ASectionName, AAttributeName: string): Boolean;
 var
   ASection: TConfSection;
 begin
@@ -527,7 +528,7 @@ begin
     Result := False;
 end;
 
-function TConfSections.ReadInteger(ASectionName, AName: string; Def: Integer; AOptions: TConfOptions): Integer;
+function TConfSections.ReadInteger(const ASectionName, AName: string; Def: Integer; AOptions: TConfOptions): Integer;
 var
   ASection: TConfSection;
 begin
@@ -539,7 +540,7 @@ begin
     Result := Def;
 end;
 
-function TConfSections.ReadInt64(ASectionName, AName: string; Def: Int64; AOptions: TConfOptions): Int64;
+function TConfSections.ReadInt64(const ASectionName, AName: string; Def: Int64; AOptions: TConfOptions): Int64;
 var
   ASection: TConfSection;
 begin
@@ -563,7 +564,7 @@ begin
     Result := Def;
 end;
 
-function TConfSections.ReadSwitch(ASectionName, AName: string; Def: Boolean; AOptions: TConfOptions): Boolean;
+function TConfSections.ReadSwitch(const ASectionName, AName: string; Def: Boolean; AOptions: TConfOptions): Boolean;
 var
   ASection: TConfSection;
 begin
@@ -607,6 +608,17 @@ begin
   i := IndexOf(SectionName);
   if i >=0 then
     Delete(i);
+end;
+
+function TConfSections.Exists(const ASectionName, AName: string): Boolean;
+var
+  ASection: TConfSection;
+begin
+  ASection := FindSection(ASectionName, [], True);
+  if (ASection <> nil) then
+    Result := ASection.Exists(AName)
+  else
+    Result := False;
 end;
 
 constructor TConfSections.Create(AOwner: TConfSection);
@@ -1039,7 +1051,7 @@ begin
   Result := AList.Count > 0;
 end;
 
-function TConfSection.EnumSectionList(ASectionName: string; AllowDuplicate: Boolean; AList: TStringList): Boolean;
+function TConfSection.EnumSectionList(const ASectionName: string; AllowDuplicate: Boolean; AList: TStringList): Boolean;
 var
   ASection: TConfSection;
 begin
@@ -1177,22 +1189,22 @@ begin
   inherited;
 end;
 
-procedure TConfFile.WriteBool(ASectionName, AName: string; Value: Boolean);
+procedure TConfFile.WriteBool(const ASectionName, AName: string; Value: Boolean);
 begin
   Sections.Require(ASectionName).WriteBool(AName, Value);
 end;
 
-procedure TConfFile.WriteInt64(ASectionName, AName: string; Value: Int64);
+procedure TConfFile.WriteInt64(const ASectionName, AName: string; Value: Int64);
 begin
   Sections.Require(ASectionName).WriteInt64(AName, Value);
 end;
 
-procedure TConfFile.WriteInteger(ASectionName, AName: string; Value: Integer);
+procedure TConfFile.WriteInteger(const ASectionName, AName: string; Value: Integer);
 begin
   Sections.Require(ASectionName).WriteInteger(AName, Value);
 end;
 
-procedure TConfFile.WriteString(ASectionName, AName, Value: String; DeleteIfEmpty, Overwrite: Boolean);
+procedure TConfFile.WriteString(const ASectionName, AName, Value: String; DeleteIfEmpty, Overwrite: Boolean);
 begin
   Sections.Require(ASectionName).WriteString(AName, Value, DeleteIfEmpty, Overwrite);
 end;
