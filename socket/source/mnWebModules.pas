@@ -561,7 +561,7 @@ var
   i: Integer;
   aFile: string;
 begin
-  //TODO baaad you need to luck before access
+  //TODO baaad you need to lock before access
   vRoot := IncludePathDelimiter(vRoot);
   for i := 0 to Module.DefaultDocument.Count - 1 do
   begin

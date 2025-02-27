@@ -161,7 +161,11 @@ begin
   inherited;
   t:= Trim(Text);
   if t <> '' then
+  begin
+    if Stack.Current = nil then
+      raise Exception.Create('Stack.Current is nil');
     Stack.Current.ReadValue(t);
+  end;
 end;
 
 procedure TmnXMLRttiReader.ReadRoot(Instance: TObject);

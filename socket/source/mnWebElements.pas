@@ -567,17 +567,21 @@ type
   private
     FAttached: Boolean;
     FAttachments: TmnwAttachments;
+    FDefaultDocument: TStringList;
     FLock: TCriticalSection;
     FApp: TmnwApp;
     FPhase: TmnwSchemaPhase;
     FNamingLastNumber: THandle;
     function GetReleased: Boolean;
+    procedure SetDefaultDocument(AValue: TStringList);
   protected
     Usage: Integer;
     procedure UpdateAttached;
+    function GetDefaultDocument(vRoot: string): string; virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAccept(var Resume: Boolean); virtual;
     procedure ProcessMessage(const s: string);
+    property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   public
     LastAccess: TDateTime;
     IsManual: Boolean;
@@ -3793,6 +3797,11 @@ end;
 constructor TmnwSchema.Create(AName: string; ARoute: string);
 begin
   inherited Create(nil);
+  FDefaultDocument := TStringList.Create;
+  FDefaultDocument.Add('index.html');
+  FDefaultDocument.Add('index.htm');
+  FDefaultDocument.Add('default.html');
+  FDefaultDocument.Add('default.htm');
   FName := AName;
   if ARoute = '' then
     FRoute := FName
@@ -3814,6 +3823,7 @@ begin
   FAttachments.Clear;
   FreeAndNil(FAttachments);
   FreeAndNil(FLock);
+  FreeAndNil(FDefaultDocument);
   inherited;
 end;
 
@@ -3852,7 +3862,7 @@ begin
     begin
       if WebExpandFile(aHomePath, AContext.Route, aFileName) then
       begin
-        if EndsDelimiter(aFileName) and AllowIndex then
+        if AllowIndex and EndsDelimiter(aFileName) then
         begin
           AResponse.ContentType := DocumentToContentType('html');
           files := TStringList.Create;
@@ -3900,18 +3910,24 @@ begin
             files.Free;
           end;
         end
-        else if FileExists(aFileName) and not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots
-        begin
-          AResponse.ContentType := DocumentToContentType(aFileName);
-          fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
-          try
-            AContext.Writer.WriteStream(fs, 0);
-          finally
-            fs.Free;
-          end;
-        end
         else
-          AResponse.HttpResult := hrNotFound;
+        begin
+          if EndsDelimiter(aFileName) then
+            aFileName := GetDefaultDocument(aFileName);
+
+          if FileExists(aFileName) and not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots
+          begin
+            AResponse.ContentType := DocumentToContentType(aFileName);
+            fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
+            try
+              AContext.Writer.WriteStream(fs, 0);
+            finally
+              fs.Free;
+            end;
+          end
+          else
+            AResponse.HttpResult := hrNotFound;
+        end;
       end
       else
         AResponse.HttpResult := hrUnauthorized;
@@ -4008,6 +4024,11 @@ begin
   Result := (FPhase = scmpReleased) or (schemaDynamic in GetCapabilities);
 end;
 
+procedure TmnwSchema.SetDefaultDocument(AValue: TStringList);
+begin
+  FDefaultDocument.Assign(AValue);
+end;
+
 function TmnwSchema.NewHandle: THandle;
 begin
   AtomicIncrement(FNamingLastNumber);
@@ -4022,6 +4043,29 @@ begin
   finally
     Attachments.Lock.Leave;
   end;
+end;
+
+function TmnwSchema.GetDefaultDocument(vRoot: string): string;
+var
+  i: Integer;
+  aFile: string;
+begin
+  //TODO baaad you need to lock before access
+  vRoot := IncludePathDelimiter(vRoot);
+  for i := 0 to DefaultDocument.Count - 1 do
+  begin
+    aFile := vRoot + DefaultDocument[i];
+    if FileExists(aFile) then
+    begin
+      Result := aFile;
+      Exit;
+    end;
+  end;
+
+  if DefaultDocument.Count<>0 then
+    Result := vRoot + DefaultDocument[0]
+  else
+    Result := vRoot;
 end;
 
 { TmnwSchema.TElement }
