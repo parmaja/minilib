@@ -592,7 +592,7 @@ type
     AllowIndex: Boolean;
     SessionID: string;
     Interactive: Boolean;
-    constructor Create(AName:string; ARoute: string = ''); reintroduce;
+    constructor Create(AApp: TmnwApp; AName:string; ARoute: string = ''); reintroduce;
     destructor Destroy; override;
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
@@ -2703,7 +2703,7 @@ begin
 	SchemaItem := Registered.Find(aSchemaName);
   if SchemaItem <> nil then
   begin
-    Result := SchemaItem.SchemaClass.Create(SchemaItem.Name, SchemaItem.Name);
+    Result := SchemaItem.SchemaClass.Create(Self, SchemaItem.Name, SchemaItem.Name);
     SchemaCreated(Result);
     //Add(SchemaObject); no, when compose it we add it
   end
@@ -2982,7 +2982,6 @@ end;
 
 procedure TmnwApp.SchemaCreated(Schema: TmnwSchema);
 begin
-  Schema.FApp := Self;
   if Schema.HomePath = '' then
     Schema.HomePath := HomePath;
 end;
@@ -3794,9 +3793,10 @@ end;
 
 { TmnwSchema }
 
-constructor TmnwSchema.Create(AName: string; ARoute: string);
+constructor TmnwSchema.Create(AApp: TmnwApp; AName: string; ARoute: string);
 begin
   inherited Create(nil);
+  FApp := AApp;
   FDefaultDocument := TStringList.Create;
   FDefaultDocument.Add('index.html');
   FDefaultDocument.Add('index.htm');

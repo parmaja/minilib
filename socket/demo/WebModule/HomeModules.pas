@@ -76,6 +76,17 @@ type
   public
   end;
 
+  { TFilesSchema }
+
+  TFilesSchema = class(THTML)
+  private
+  public
+  protected
+    procedure Created; override;
+    procedure DoCompose; override;
+  public
+  end;
+
   TWSEchoGetHomeCommand = class(TmodHttpCommand)
   protected
   public
@@ -752,6 +763,20 @@ begin
   inherited;
 end;
 
+{ TFilesSchema }
+
+procedure TFilesSchema.Created;
+begin
+  inherited;
+end;
+
+procedure TFilesSchema.DoCompose;
+begin
+  inherited DoCompose;
+  ServeFiles := True;
+  HomePath := IncludePathDelimiter(App.HomePath) + 'files';
+end;
+
 { TWSShema }
 
 procedure TWSShema.DoCompose;
@@ -786,6 +811,7 @@ begin
   WebApp.RegisterSchema('login', TLoginSchema);
   WebApp.RegisterSchema('demo', TDemoSchema);
   WebApp.RegisterSchema('simple', TSimpleSchema);
+  WebApp.RegisterSchema('files', TFilesSchema);
   WebApp.RegisterSchema('ws', TWSShema);
   RegisterCommand('.ws', TWSEchoGetHomeCommand, False);
 end;

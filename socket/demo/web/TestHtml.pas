@@ -42,8 +42,9 @@ type
   public
     type
       TMyTagHTML = class(TmnwElementRenderer)
-      public
-        procedure DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext); override;
+      protected
+        procedure DoEnterOuterRender(Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveOuterRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
   protected
@@ -64,12 +65,19 @@ end;
 
 { TmyHome.TMyTagHTML }
 
-procedure TmyHomeRenderer.TMyTagHTML.DoRender(AElement: TmnwElement; Attributes: TmnwAttributes; Context: TmnwContext);
+procedure TmyHomeRenderer.TMyTagHTML.DoEnterOuterRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
-  Context.Output.Write('html', '<'+AElement.Name+'>', [woOpenTag, woEndLine]);
+  Context.Writer.OpenTag('html', '<'+Scope.Element.Name+'>');
   inherited;
-  Context.Output.Write('html', '</'+AElement.Name+'>', [woCloseTag, woEndLine]);
+
 end;
+
+procedure TmyHomeRenderer.TMyTagHTML.DoLeaveOuterRender(Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
+  Context.Writer.CloseTag('html');
+end;
+
 
 { TmyHome }
 
@@ -79,7 +87,7 @@ begin
   with This.Add<TDocument>('html') do
   begin
     Title := 'MyHome';
-    Direction := dirLTR;
+    Direction := dirLeftToRight;
     with This.Add<TMyTag>('MyTag1') do
     begin
     end;
@@ -100,9 +108,9 @@ var
 begin
   Strings := TStringList.Create;
   try
-    HTML:= TmyHome.Create;
+    HTML:= TmyHome.Create('Home');
     HTML.Compose;
-    Renderer := TmyHomeRenderer.Create;
+    Renderer := TmyHomeRenderer.Create(nil, False);
     HTML.Render(Renderer, Strings);
     for s in Strings do
       WriteLn(s);
