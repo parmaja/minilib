@@ -38,7 +38,7 @@ begin
     Transaction := TmncSQliteTransaction.Create(Conn);
     try
       Transaction.Start;
-      Cmd :=  TmncSQLiteCommand.Create;
+      Cmd :=  TmncSQLiteCommand.CreateBy(Transaction);
       try
         
         Cmd.SQL.Text := 'insert into companies';
@@ -60,16 +60,12 @@ begin
         Cmd.SQL.Add('where name = ?name');
         Cmd.Prepare;
         Cmd.Param['name'].AsString := 'zaher';}
-        if Cmd.Execute then
-          ShowMessage(Cmd.Field['name'].AsString)
-        else
-          ShowMessage('not found');
-
+        Cmd.Execute;
       finally
-//        Cmd.Free;
+        Cmd.Free;
       end;
     finally
-//      Transaction.Free;
+      Transaction.Free;
     end;
   //  Conn.Disconnect;
   finally
@@ -86,6 +82,7 @@ var
   s: TStringStream;
   im: string;
 begin
+  ListBox1.Items.Clear;
   Conn := TmncSQLiteConnection.Create;
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\data\cars.sqlite');
@@ -100,7 +97,7 @@ begin
 //      Cmd.Param['name'].AsString := 'Ferrari';
       if Cmd.Execute then
       begin
-        while not Cmd.EOF do
+        while not Cmd.Done do
         begin
           ListBox1.Items.Add(Cmd.Field['id'].AsString + ' - ' + Cmd.Field['name'].AsString);
           im := Cmd.Field['image'].AsString;

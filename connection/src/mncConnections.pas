@@ -606,6 +606,7 @@ type
       Prepare: call the sql engine api, it call parse automaticly if it not called
     }
     procedure Prepare; overload;
+    //* Return true of there is data to read
     function Execute: Boolean; overload;
     function Execute(vNext: Boolean): Boolean; overload;
     function Next: Boolean;
@@ -1084,10 +1085,10 @@ procedure TmncCommand.Prepare;
 begin
   if FPrepared then
     raise EmncException.Create('Command is already prepared!');
+  CheckTransaction;
   if not FParsed then
     Parse;
   { TODO : Clear Columns and Fields }
-  CheckTransaction;
   DoPrepare;
   FPrepared := True;
   if Params <> nil then
