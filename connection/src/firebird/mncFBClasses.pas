@@ -2028,12 +2028,11 @@ begin
   Result := False;
   if not IsNull then
     case SqlDef of
-      SQL_INT64, SQL_INT128:
-        Result := PInt64(SqlData)^ <> ISC_FALSE;
-      SQL_LONG:
-        Result := PLong(SqlData)^ <> ISC_FALSE;
-      SQL_SHORT, SQL_BOOLEAN:
-        Result := PSmallInt(SqlData)^ <> ISC_FALSE
+      SQL_INT64,
+      SQL_INT128:  Result := PInt64(SqlData)^ <> ISC_FALSE;
+      SQL_LONG:    Result := PLong(SqlData)^ <> ISC_FALSE;
+      SQL_SHORT:   Result := PSmallInt(SqlData)^ <> ISC_FALSE;
+      SQL_BOOLEAN: Result := PSmallInt(SqlData)^ > ISC_FALSE; //sometimes -1
     else
       FBRaiseError(fbceInvalidDataConversion, [nil]);
     end;

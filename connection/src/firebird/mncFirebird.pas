@@ -1264,15 +1264,15 @@ begin
 
   if not Done and (FSQLType <> SQLExecProcedure) then
   begin
-      fetch_res := CheckErr(FBLib.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
+    fetch_res := CheckErr(FBLib.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
 
-      if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
-      begin
-        HitDone;
-        Fields.Clean;
-      end
-      else if (fetch_res > 0) then
-        FBRaiseError(StatusVector)
+    if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
+    begin
+      HitDone;
+      Fields.Clean;
+    end
+    else if (fetch_res > 0) then
+      FBRaiseError(StatusVector)
   end;
 end;
 
