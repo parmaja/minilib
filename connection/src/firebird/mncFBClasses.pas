@@ -1287,7 +1287,7 @@ begin
       SQL_INT64, SQL_INT128: Result := FBScaleInt64(PInt64(SqlData)^, SqlScale);
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT: Result := Trunc(AsDouble);
       SQL_BOOLEAN:
-        case PSmallInt(SqlData)^ of
+        case PByte(SqlData)^ of
           ISC_TRUE:
             Result := 1;
           ISC_FALSE:
@@ -1390,7 +1390,7 @@ begin
       SQL_DOUBLE, SQL_D_FLOAT:
         Result := PDouble(SqlData)^;
       SQL_BOOLEAN:
-        case PSmallInt(SqlData)^ of
+        case PByte(SqlData)^ of
           ISC_TRUE:
             Result := 1;
           ISC_FALSE:
@@ -1430,7 +1430,7 @@ begin
           end;
         end;
       SQL_SHORT:
-        Result := Trunc(FBScaleDouble(Int64(PSmallInt(SqlData)^), SqlScale));
+        Result := Trunc(FBScaleDouble(Int64(PSmallInt(SqlData)^), SqlScale)); { TODO : need review }
       SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_LONG:
         Result := Trunc(FBScaleDouble(Int64(PLong(SqlData)^), SqlScale));
       SQL_INT64, SQL_INT128:
@@ -1438,7 +1438,7 @@ begin
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT:
         Result := Trunc(AsDouble);
       SQL_BOOLEAN:
-        case PSmallInt(SqlData)^ of
+        case PByte(SqlData)^ of
           ISC_TRUE:
             Result := 1;
           ISC_FALSE:
@@ -2032,7 +2032,7 @@ begin
       SQL_INT128:  Result := PInt64(SqlData)^ <> ISC_FALSE;
       SQL_LONG:    Result := PLong(SqlData)^ <> ISC_FALSE;
       SQL_SHORT:   Result := PSmallInt(SqlData)^ <> ISC_FALSE;
-      SQL_BOOLEAN: Result := PSmallInt(SqlData)^ > ISC_FALSE; //sometimes -1
+      SQL_BOOLEAN: Result := PByte(SqlData)^ <> ISC_FALSE;
     else
       FBRaiseError(fbceInvalidDataConversion, [nil]);
     end;
@@ -2043,9 +2043,9 @@ begin
   if IsNullable then
     IsNull := False;
   if AValue then
-    PSmallInt(SqlData)^ := ISC_TRUE
+    PByte(SqlData)^ := ISC_TRUE
   else
-    PSmallInt(SqlData)^ := ISC_FALSE;
+    PByte(SqlData)^ := ISC_FALSE;
 end;
 
 procedure TmncSQLVAR.CopySQLVAR(const AValue: TmncSQLVAR);
