@@ -200,7 +200,7 @@ type
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
     function GetAsDouble: Double; override;
-    function GetAsInteger: Longint; override;
+    function GetAsInteger: Integer; override;
     function GetAsString: string; override;
     function GetValue: Variant; override;
 
@@ -208,7 +208,7 @@ type
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
     procedure SetAsDouble(const Value: Double); override;
-    procedure SetAsInteger(const Value: Longint); override;
+    procedure SetAsInteger(const Value: Integer); override;
     procedure SetAsString(const Value: string); override;
     procedure SetValue(const Value: Variant); override;
   public
@@ -243,7 +243,7 @@ type
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
     function GetAsDouble: Double; override;
-    function GetAsInteger: Longint; override;
+    function GetAsInteger: Integer; override;
     function GetAsString: string; override;
     function GetValue: Variant; override;
 
@@ -251,7 +251,7 @@ type
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
     procedure SetAsDouble(const Value: Double); override;
-    procedure SetAsInteger(const Value: Longint); override;
+    procedure SetAsInteger(const Value: Integer); override;
     procedure SetAsString(const Value: string); override;
     procedure SetValue(const Value: Variant); override;
   public
@@ -272,7 +272,7 @@ type
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
     function GetAsDouble: Double; override;
-    function GetAsInteger: Longint; override;
+    function GetAsInteger: Integer; override;
     function GetAsString: string; override;
 
     procedure SetValue(const Value: Variant); override;
@@ -281,7 +281,7 @@ type
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
     procedure SetAsDouble(const Value: Double); override;
-    procedure SetAsInteger(const Value: Longint); override;
+    procedure SetAsInteger(const Value: Integer); override;
     procedure SetAsString(const Value: string); override;
   public
     constructor Create(AParent: TDON_Parent; AValue: Boolean); overload;
@@ -604,7 +604,7 @@ begin
   Result := FValue;
 end;
 
-function TDON_Number_Value.GetAsInteger: Longint;
+function TDON_Number_Value.GetAsInteger: Integer;
 begin
   Result := Trunc(FValue);
 end;
@@ -640,7 +640,7 @@ begin
 
 end;
 
-procedure TDON_Number_Value.SetAsInteger(const Value: Longint);
+procedure TDON_Number_Value.SetAsInteger(const Value: Integer);
 begin
   FValue := Trunc(Value);
 end;
@@ -1084,7 +1084,7 @@ begin
   Result := Ord(AsBoolean);
 end;
 
-function TDON_Boolean_Value.GetAsInteger: Longint;
+function TDON_Boolean_Value.GetAsInteger: Integer;
 begin
   Result := Ord(AsBoolean);
 end;
@@ -1120,7 +1120,7 @@ begin
   FValue := Value <> 0;
 end;
 
-procedure TDON_Boolean_Value.SetAsInteger(const Value: Longint);
+procedure TDON_Boolean_Value.SetAsInteger(const Value: Integer);
 begin
   FValue := Value <> 0;
 end;
@@ -1163,7 +1163,7 @@ begin
   Result := StrToFloatDef(AsString, 0);
 end;
 
-function TDON_Custom_String_Value.GetAsInteger: Longint;
+function TDON_Custom_String_Value.GetAsInteger: Integer;
 begin
   Result := StrToIntDef(AsString, 0);
 end;
@@ -1198,7 +1198,7 @@ begin
   FValue := FloatToStr(Value);
 end;
 
-procedure TDON_Custom_String_Value.SetAsInteger(const Value: Longint);
+procedure TDON_Custom_String_Value.SetAsInteger(const Value: Integer);
 begin
   FValue := IntToStr(Value);
 

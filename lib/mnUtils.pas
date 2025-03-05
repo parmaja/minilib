@@ -248,9 +248,6 @@ function IncludeURLDelimiter(const S: string): string;
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
 
-//Rect functions
-procedure CenterRect(var R1: TRect; R2: TRect);
-
 function GetFormatSettings: TFormatSettings;
 
 //Ported from UniDates
@@ -318,6 +315,9 @@ function SwapBytes(const Source: Word): Word; overload;
 function SwapBytes(const Source: SmallInt): SmallInt; overload;
 function SwapBytes(const Source: Cardinal): Cardinal; overload;
 function SwapBytes(const Source: Int64): Int64; overload;
+
+//Rect functions
+procedure CenterRect(var R1: TRect; R2: TRect);
 
 var
   SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
