@@ -1061,11 +1061,14 @@ initialization
   OpenSSLLib := TmnOpenSSLLib.Create('libssl.1.1');
   CryptoLib := TmnCryptoLib.Create('libcrypto.1.1');
   {$else}
-  //OpenSSLLib := TmnOpenSSLLib.Create('libssl.so.1.1');
-  //CryptoLib := TmnCryptoLib.Create('libcrypto.so.1.1');
-  CryptoLib := TmnCryptoLib.Create('libcrypto_1_1.so');
-  OpenSSLLib := TmnOpenSSLLib.Create('libssl_1_1.so');
+  {$ifdef linux}
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl.so.1.1');
+  CryptoLib := TmnCryptoLib.Create('libcrypto.so.1.1');
+  {$else}
+  CryptoLib := TmnCryptoLib.Create('libcrypto_1_1.so'); //android
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl_1_1.so');  //android
   //https://github.com/KDAB/android_openssl
+  {$endif}
   {$endif}
   {$endif}
 finalization

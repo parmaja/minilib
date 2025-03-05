@@ -547,6 +547,7 @@ type
 
   TmnwSchamaCapability = (
     schemaSession,
+    schemaPermanent, //not deleted when restart server
     schemaDynamic  //* dynamic, do not add it to the list, not cached, becareful
   );
 
@@ -785,6 +786,7 @@ type
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
+    procedure ClearSchemas;
   public
     IsSSL: Boolean;
     Domain: string; //localhost
@@ -1808,8 +1810,12 @@ type
     procedure DoPrepare; override;
     procedure DoCompose; override;
     procedure Created; override;
+
   public
+    destructor Destroy; override;
+    class function GetCapabilities: TmnwSchemaCapabilities; override;
     property Logo: THTML.TMemory read FLogo;
+
   end;
 
   { TUIWebModule }
@@ -2663,13 +2669,14 @@ end;
 
 procedure TmnwApp.Start;
 begin
+
   FAssets.Prepare;
 end;
 
 procedure TmnwApp.Stop;
 begin
   FShutdown := True;
-  Clear;
+  ClearSchemas;
 end;
 
 procedure TmnwApp.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass);
@@ -2990,9 +2997,23 @@ procedure TmnwApp.Created;
 begin
   inherited;
   RegisterSchema('assets', TAssetsSchema);
+
   FAssets := CreateSchema('assets') as TAssetsSchema;
   FAssets.FPhase := scmpNormal;
   Add(FAssets);
+end;
+
+procedure TmnwApp.ClearSchemas;
+var
+  i: Integer;
+begin
+  i := Count-1;
+  while i>=0 do
+  begin
+    if not (schemaPermanent in Items[i].GetCapabilities) then
+      Delete(i);
+    Dec(i);
+  end;
 end;
 
 constructor TmnwApp.Create;
@@ -5907,6 +5928,18 @@ begin
     TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
     TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
   end;
+end;
+
+class function TAssetsSchema.GetCapabilities: TmnwSchemaCapabilities;
+begin
+  Result := inherited;
+  Result := Result + [schemaPermanent];
+end;
+
+destructor TAssetsSchema.Destroy;
+begin
+
+  inherited;
 end;
 
 procedure TAssetsSchema.DoCompose;

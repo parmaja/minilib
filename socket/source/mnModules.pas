@@ -605,9 +605,9 @@ type
     procedure DoStop; override;
     procedure DoIdle; override;
     function Module<T: class>: T;
+    procedure Created; override;
 
   public
-    constructor Create; virtual;
     destructor Destroy; override;
     property Modules: TmodModules read FModules;
   end;
@@ -1104,11 +1104,13 @@ end;
 
 { TmodModuleListener }
 
-constructor TmodModuleServer.Create;
+
+procedure TmodModuleServer.Created;
 begin
   inherited;
   FModules := CreateModules;
   Port := '81';
+
 end;
 
 function TmodModuleServer.CreateModules: TmodModules;

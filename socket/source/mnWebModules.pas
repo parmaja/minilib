@@ -225,16 +225,15 @@ type
 
   TmodWebServer = class(TmodCustomWebServer)
   protected
-  public
-    constructor Create; override;
+    procedure Created; override;
   end;
 
   { TmodAcmeChallengeServer }
 
   TmodAcmeChallengeServer = class(TmodCustomWebServer)
   protected
-  public
-    constructor Create; override;
+    procedure Created; override;
+
   end;
 
   {$ifndef FPC}
@@ -795,18 +794,19 @@ end;
 
 { TmodWebServer }
 
-constructor TmodWebServer.Create;
+procedure TmodWebServer.Created;
 begin
   inherited;
   TmodWebFileModule.Create('web', 'doc', ['http/1.1'], Modules);
   Port := '80';
+
 end;
 
 { TmodAcmeChallengeServer }
 
-constructor TmodAcmeChallengeServer.Create;
+procedure TmodAcmeChallengeServer.Created;
 begin
-  inherited Create;
+  inherited;
   AddAcmeChallenge;
 end;
 

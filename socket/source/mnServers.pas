@@ -19,7 +19,7 @@ interface
 
 uses
   Classes, SysUtils,
-  mnUtils, mnOpenSSL, syncobjs,
+  mnUtils, mnOpenSSL, syncobjs, mnClasses,
   mnSockets, mnStreams, mnConnections;
 
 const
@@ -66,6 +66,8 @@ type
 
   TmnServer = class;
   TmnListener = class;
+  TmnEventServer = class;
+  TmnEventServerClass = class of TmnEventServer;
 
   { TmnServerConnection }
 
@@ -163,7 +165,7 @@ type
   *}
   { TmnServer }
 
-  TmnServer = class(TObject)
+  TmnServer = class(TmnObject)
   private
     FActive: Boolean;
     FPort: string;
