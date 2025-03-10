@@ -140,6 +140,7 @@
   SSL_OP_NO_TLSv1                               = $04000000;
   SSL_OP_NO_TLSv1_2                             = $08000000;
   SSL_OP_NO_TLSv1_1                             = $10000000;
+  SSL_OP_NO_TLSv1_3                             = $20000000;
   SSL_OP_NETSCAPE_CA_DN_BUG                     = $20000000;
   SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG        = $40000000;
   SSL_OP_CRYPTOPRO_TLSEXT_BUG                   = $80000000;

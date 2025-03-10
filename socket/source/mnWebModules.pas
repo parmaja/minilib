@@ -640,6 +640,11 @@ begin
   '/web/dashbord/index.html' file
 
 *)
+  if (Request.Path='')and(Request.URI='/favicon.ico') then
+  begin
+    RespondDocument('favicon.ico', Result);
+    Exit;
+  end;
 
   aHomePath := ExcludePathDelimiter(Respond.HomePath);
 

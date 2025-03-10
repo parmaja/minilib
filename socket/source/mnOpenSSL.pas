@@ -758,9 +758,16 @@ begin
 end;
 
 procedure TSSL.SetSocket(ASocket: Integer);
+var
+  ret, err: Integer;
 begin
   FSocket := ASocket;
-  SSL_set_fd(Handle, FSocket);
+  ret := SSL_set_fd(Handle, FSocket);
+  if ret <= 0  then
+  begin
+    err := SSL_get_error(Handle, ret);
+    Log.WriteLn(lglDebug, 'ServerHandshake: ' + ERR_error_string(err, nil));
+  end
 end;
 
 function TSSL.ClientHandshake: Boolean;

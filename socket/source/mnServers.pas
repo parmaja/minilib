@@ -639,6 +639,7 @@ procedure TmnListener.Execute;
 var
   aSocket: TmnCustomSocket;
   aConnection: TmnServerConnection;
+  s: string;
 begin
 
   try
@@ -648,7 +649,9 @@ begin
     begin
       Changed;
       Started;
-      Log('Server started at port: ' + FPort);
+      s := 'Server started at port: ';
+      if soSSL in Options then s := s + 'SSL:';
+      Log(s + FPort);
     end;
     Event.SetEvent;
     while Connected and not Terminated do
@@ -661,7 +664,7 @@ begin
           begin
             UpdateChanged;
             aSocket.Context := Context;
-          end
+          end;
         end
         else
         begin
@@ -940,7 +943,7 @@ begin
         FListener.FPort := FPort;
         FListener.FAddress := FAddress;
         if UseSSL then
-          FListener.FOptions := FListener.FOptions + [soSSL];
+          FListener.FOptions := FListener.FOptions + [soSSL, soWaitBeforeRead];
         FListener.CertificateFile := CertificateFile;
         FListener.CertPassword := CertPassword;
         FListener.PrivateKeyFile := PrivateKeyFile;
