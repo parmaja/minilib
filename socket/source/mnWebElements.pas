@@ -3938,6 +3938,7 @@ begin
 
           if FileExists(aFileName) and not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots
           begin
+            AResponse.ContentLength := GetSizeOfFile(aFileName);
             AResponse.ContentType := DocumentToContentType(aFileName);
             fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
             try
@@ -4912,6 +4913,7 @@ begin
     begin
       if FileExists(aFileName) then
       begin
+        AResponse.ContentLength := GetSizeOfFile(aFileName);
         fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
         try
           AContext.Writer.WriteStream(fs, 0);
