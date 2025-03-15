@@ -174,6 +174,7 @@ type
     function GetValues(Index: string): string;
     procedure SetAsString(const Value: string);
     procedure SetValues(Index: string; AValue: string);
+    function GetSection(Index: string): TConfSection;
   protected
     function SetValue(const Index: string; const AValue: Variant): TConfField;
     function CreateField: TConfField; virtual;
@@ -243,7 +244,8 @@ type
     property Sections: TConfSections read FSections;
     property Attributes: TStringList read FAttributes;
     function NewSection(const AName, ASectionType: string; AAttributes: string): TConfSection;
-    property Values[Index: string]: string read GetValues write SetValues; default;
+    property Value[Index: string]: string read GetValues write SetValues; default;
+    property Section[Index: string]: TConfSection read GetSection;
   end;
 
   { TConfFile }
@@ -259,6 +261,12 @@ type
     procedure WriteInt64(const ASectionName, AName: string; Value: Int64); overload;
     procedure WriteBool(const ASectionName, AName: string; Value: Boolean); overload;
   end;
+
+  TConfig = class(TConfFile)
+  public
+    property Section; default;
+  end;
+
 
 function ConnectStr(const S1, Sep: string; S2: string = ''): string;
 
@@ -640,6 +648,11 @@ begin
       Result := Result + Delimiter;
     Result := Result + Item.Name + Seperator + ' ' + Item.Value;
   end;
+end;
+
+function TConfSection.GetSection(Index: string): TConfSection;
+begin
+  Result := Sections[Index];
 end;
 
 function TConfSection.GetValues(Index: string): string;
