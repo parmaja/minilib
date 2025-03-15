@@ -163,6 +163,7 @@ type
     mnServer in the future can manage more than listener
     So put shared info into the Server
   *}
+
   { TmnServer }
 
   TmnServer = class(TmnObject)
@@ -234,6 +235,7 @@ type
 {--------------------------------------------------------------------------------------------------
         Simple Server
 }
+
   TmnServerExecuteProc = procedure(Stream: TmnConnectionStream);
 
   { TmnSimpleServerConnection }

@@ -5887,7 +5887,7 @@ end;
 procedure TAssetsSchema.Created;
 begin
   inherited;
-  Kind := Kind + [elFallback];
+//  Kind := Kind + [elFallback];
   FLogo := THTML.TMemory.Create(This);
   FLogo.Name := 'logo';
   FLogo.Route := 'logo';

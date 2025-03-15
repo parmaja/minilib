@@ -175,6 +175,8 @@
 
   OPENSSL_INIT_SSL_DEFAULT           = (OPENSSL_INIT_LOAD_SSL_STRINGS or OPENSSL_INIT_LOAD_CRYPTO_STRINGS);
 
+  SSL_FATAL_ERROR                = -1;
+
   SSL_ERROR_NONE                 = 0;
   SSL_ERROR_SSL                  = 1;
   SSL_ERROR_WANT_READ            = 2;
