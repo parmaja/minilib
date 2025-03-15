@@ -75,6 +75,7 @@ type
     procedure UpdateStatus;
     procedure ChallengeServerBeforeOpen(Sender: TObject);
     procedure HttpServerBeforeOpen(Sender: TObject);
+    procedure HttpServerAfterOpen(Sender: TObject);
     procedure HttpServerAfterClose(Sender: TObject);
     procedure HttpServerChanged(Listener: TmnListener);
     procedure ServerLog(const S: String);
@@ -152,9 +153,6 @@ var
   aDocModule: TmodWebModule;
   aHomeModule: THomeModule;
 begin
-  StartBtn.Enabled := False;
-  StopBtn.Enabled := True;
-
   HttpServer.Port := PortEdit.Text;
   if UseSSLChk.Checked then
   begin
@@ -202,6 +200,12 @@ begin
     aDocModule.HomePath := aHomePath;
   end;
 
+end;
+
+procedure TMain.HttpServerAfterOpen(Sender: TObject);
+begin
+  StartBtn.Enabled := False;
+  StopBtn.Enabled := True;
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;
@@ -264,6 +268,7 @@ begin
 
   HttpServer := TmodWebServer.Create;
   HttpServer.OnBeforeOpen := HttpServerBeforeOpen;
+  HttpServer.OnAfterOpen :=  HttpServerAfterOpen;
   HttpServer.OnAfterClose := HttpServerAfterClose;
   HttpServer.OnChanged :=  HttpServerChanged;
   HttpServer.OnLog := ServerLog;

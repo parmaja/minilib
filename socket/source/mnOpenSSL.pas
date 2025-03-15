@@ -975,12 +975,17 @@ end;
 
 procedure TContext.LoadCertFile(FileName: utf8string);
 begin
+  if not FileExists(FileName) then
+    raise EmnOpenSSLException.CreateLastError('Certificate file not exist:' + FileName);
   if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.CreateLastError('fail to load certificate');
 end;
 
 procedure TContext.LoadFullChainFile(FileName: utf8string);
 begin
+  if not FileExists(FileName) then
+    raise EmnOpenSSLException.CreateLastError('Full chain certificate file not exist:' + FileName);
+
   if SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName)) <= 0 then
     raise EmnOpenSSLException.CreateLastError('fail to load full chain certificate');
 end;
@@ -996,6 +1001,8 @@ var
   chain: PSLLObject;
   c, i: Integer;
 begin
+  if not FileExists(FileName) then
+    raise EmnOpenSSLException.CreateLastError('PFX file not exist:' + FileName);
   bio := BIO_new_file(PUTF8Char(FileName), PUTF8Char('rb'));
   if (bio = nil) then
     raise EmnOpenSSLException.CreateLastError('Error reading file by BIO_new_file');
@@ -1040,6 +1047,8 @@ end;
 
 procedure TContext.LoadPrivateKeyFile(FileName: utf8string);
 begin
+  if not FileExists(FileName) then
+    raise EmnOpenSSLException.CreateLastError('Private key file not exist:' + FileName);
   if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.Create('fail to load private key');
 end;

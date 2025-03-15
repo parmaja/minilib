@@ -97,9 +97,6 @@ var
   aDocModule: TmodWebModule;
   aHomeModule: THomeModule;
 begin
-  StartBtn.Enabled := False;
-  StopBtn.Enabled := True;
-
   HttpServer.Port := PortEdit.Text;
   HttpServer.UseSSL := UseSSLChk.Checked;
   if HttpServer.UseSSL then
@@ -362,6 +359,8 @@ end;
 
 procedure TMain.HttpServerAfterOpen(Sender: TObject);
 begin
+  StartBtn.Enabled := False;
+  StopBtn.Enabled := True;
   if AutoOpenChk.Checked then
     OpenURL;
 end;
