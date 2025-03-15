@@ -2669,7 +2669,7 @@ end;
 
 procedure TmnwApp.Start;
 begin
-
+  FShutdown := False;
   FAssets.Prepare;
 end;
 
