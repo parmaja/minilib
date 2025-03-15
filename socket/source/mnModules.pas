@@ -303,8 +303,10 @@ type
   private
     function GetAsBoolean: Boolean;
     procedure SetAsBoolean(const Value: Boolean);
+    function GetAsString: String;
   public
     property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
+    property AsString: string read GetAsString;
   end;
 
   {
@@ -2290,6 +2292,15 @@ end;
 function TmodOptionValueHelper.GetAsBoolean: Boolean;
 begin
   Result := Self <> ovNo;
+end;
+
+function TmodOptionValueHelper.GetAsString: String;
+begin
+  case Self of
+    ovYes: Result := 'Yes';
+    ovNo: Result := 'No';
+    ovUndefined: Result := 'Undefined';
+  end;
 end;
 
 procedure TmodOptionValueHelper.SetAsBoolean(const Value: Boolean);
