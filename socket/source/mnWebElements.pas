@@ -803,7 +803,7 @@ type
     property Registered: TRegisteredSchemas read FRegistered;
 
     function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
-    function CreateSchema(const aSchemaName: string): TmnwSchema;
+    function CreateSchema(const aSchemaName: string; Fallback: Boolean =  False): TmnwSchema;
     function ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
     function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 
@@ -2703,7 +2703,7 @@ begin
   end;
 end;
 
-function TmnwApp.CreateSchema(const aSchemaName: string): TmnwSchema;
+function TmnwApp.CreateSchema(const aSchemaName: string; Fallback: Boolean =  False): TmnwSchema;
 var
   SchemaItem: TmnwSchemaItem;
 begin
@@ -2749,37 +2749,55 @@ begin
   try
     StrToStrings(AContext.Route, Routes, ['/']);
     if (Routes.Count > 0) then
-    begin
-      aSchemaName := Routes[0];
-      Routes.Delete(0);
-      AContext.Route := DeleteSubPath(aSchemaName, AContext.Route);
-      Lock.Enter;
-      try
-        Schema := FindBy(aSchemaName, AContext.SessionID);
-			finally
-        Lock.Leave;
-      end;
+      aSchemaName := Routes[0]
+    else
+      aSchemaName := '';
 
+    Lock.Enter;
+    try
+      Schema := FindBy(aSchemaName, AContext.SessionID);
+      if Schema = nil then //* Fallback
+      begin
+        Schema := FindBy('', AContext.SessionID);
+        if Schema <> nil then
+          aSchemaName := '';
+      end;
+    finally
+      Lock.Leave;
+    end;
+
+    if Schema = nil then // Not cached, create it.
+    begin
+      Schema := CreateSchema(aSchemaName);
       if Schema = nil then
       begin
-        Schema := CreateSchema(aSchemaName);
-        if (Schema <> nil) and (schemaSession in Schema.GetCapabilities) then
-          Schema.SessionID := AContext.SessionID;
-      end;
-
-      if Schema = nil then
-        Schema := First; //* fallback //taskeej
-
-      Lock.Enter;
-      try
+        Schema := CreateSchema('');
         if Schema <> nil then
-          Inc(Schema.Usage);
-			finally
-        Lock.Leave;
+          aSchemaName := '';
       end;
-    end
-    else
-      Schema := nil;
+
+      if (Schema <> nil) and (schemaSession in Schema.GetCapabilities) then
+        Schema.SessionID := AContext.SessionID;
+    end;
+
+{
+    if Schema = nil then
+      Schema := First; //* fallback //taskeej
+}
+    if aSchemaName <> '' then
+      if (Routes.Count > 0) then
+      begin
+        Routes.Delete(0);
+        AContext.Route := DeleteSubPath(aSchemaName, AContext.Route);
+      end;
+
+    Lock.Enter;
+    try
+      if Schema <> nil then
+        Inc(Schema.Usage);
+    finally
+      Lock.Leave;
+    end;
 
     if (Schema <> nil) then
     begin
