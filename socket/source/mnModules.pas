@@ -1358,6 +1358,7 @@ end;
 function TwebCommand.Execute: TmodRespondResult;
 begin
   Result.Status := []; //default to be not keep alive, not sure, TODO
+  Result.Timout := Request.Use.KeepAliveTimeOut; //not sure, TODO
   Prepare(Result);
   try
     RespondResult(Result);
@@ -1555,7 +1556,7 @@ var
   aCommand: TmodCommand;
   aHandled: Boolean;
 begin
-  Result.Status := [mrSuccess];
+  //Result.Status := [mrSuccess];
 
   ARequest.Use.KeepAliveTimeOut := KeepAliveTimeOut;
   ARequest.Use.KeepAlive        := UseKeepAlive;
@@ -1881,6 +1882,7 @@ begin
   InitProtocol;
   if WithHead then
 	  ReceiveHead;
+  Header.Clear;
   Header.ReadHeader(Stream);
   DoHeaderReceived;
 end;

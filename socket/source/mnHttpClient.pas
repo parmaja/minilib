@@ -374,7 +374,7 @@ end;
 
 function TmnCustomHttpClient.Connected: Boolean;
 begin
-  Result := FStream.Connected;
+  Result := (FStream<>nil) and FStream.Connected;
 end;
 
 procedure TmnCustomHttpClient.Clear;
@@ -388,8 +388,10 @@ var
   aHost: UTF8String;
 begin
   if FStream = nil then
+  begin
     FStream := CreateStream(vURL, FProtocol, aHost, FPort, FPath);
-  Request.Host := aHost;
+    Request.Host := aHost;
+  end;
   Stream.Connect;
 end;
 
