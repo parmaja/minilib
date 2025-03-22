@@ -288,7 +288,7 @@ begin
         if ZStream.avail_in = 0 then
         begin
           {Refill the buffer.}
-          Over.Read(ZBuffer^, BufSize, HaveRead, RealCount);
+          Over.Read(ZBuffer^, BufSize, HaveRead, RealCount); //BufSize or count ???
           ZStream.next_in := Pointer(ZBuffer);
           ZStream.avail_in := HaveRead;
           if HaveRead=0 then //timeout or disconnected

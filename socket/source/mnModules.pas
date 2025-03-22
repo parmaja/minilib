@@ -1188,7 +1188,10 @@ begin
           if Stream.Connected then
           begin
             if (mrKeepAlive in Result.Status) then
-              Stream.ReadTimeout := Result.Timout
+            begin
+              Stream.ReadTimeout := Result.Timout;
+              //Stream.Close([cloWrite]); need flush ???
+            end
             else
               Stream.Disconnect;
           end;
@@ -1981,6 +1984,14 @@ begin
     s := item.GetNameValue(': ');
     Stream.WriteUTF8Line(s);
   end;
+
+  {s := '';
+  for item in Header do
+  begin
+    if s<>'' then s := s + Stream.EndOfLine;
+    s := s + item.GetNameValue(': ');
+  end;
+  Stream.WriteUTF8Line(s);}
 
   DoWriteCookies;
 
