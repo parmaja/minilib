@@ -24,6 +24,9 @@ type
   { TmnThread }
 
   TmnThread = class(TThread)
+  protected
+    procedure Execute; override;
+
   public
     constructor Create;
   end;
@@ -106,6 +109,8 @@ type
 
 procedure mnCheckError(Value: Integer);
 
+//function SetThreadDescription(hThread: THandle; lpThreadDescription: PWideChar): HRESULT; stdcall; external 'kernel32.dll';
+
 implementation
 
 var
@@ -165,6 +170,7 @@ end;
 
 procedure TmnConnection.Execute;
 begin
+  inherited;
   {$ifdef FPC}
   ID := InterlockedIncrement(FCount);
   {$else}
@@ -268,6 +274,16 @@ constructor TmnThread.Create;
 begin
   inherited Create(True);
   FreeOnTerminate := False;
+
+end;
+
+procedure TmnThread.Execute;
+begin
+  //inherited;
+
+  //TThread.NameThreadForDebugging('DelphiCreated_' + ClassName, Self.ThreadID);
+  //i := SetThreadDescription(Self.ThreadID, PChar('DelphiCreated_' + ClassName));
+  //LogWriteln('Thread[%d]: %s', [Self.ThreadID, ClassName]);
 end;
 
 end.

@@ -646,7 +646,7 @@ var
   aConnection: TmnServerConnection;
   s: string;
 begin
-
+  inherited;
   try
     Connect;
 //    Log('Server starting at port: ' + FPort);
