@@ -546,8 +546,9 @@ type
   end;
 
   TmnwSchamaCapability = (
+    schemaStartup, //* Create it when registered
     schemaSession,
-    schemaPermanent, //not deleted when restart server
+    schemaPermanent, //* Not deleted when restart server
     schemaDynamic  //* dynamic, do not add it to the list, not cached, becareful
   );
 
@@ -579,6 +580,7 @@ type
     Usage: Integer;
     procedure UpdateAttached;
     function GetDefaultDocument(vRoot: string): string; virtual;
+    class procedure Registered; virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAccept(var Resume: Boolean); virtual;
     procedure ProcessMessage(const s: string);
@@ -799,11 +801,12 @@ type
     procedure Start;
     procedure Stop;
 
-    procedure RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass);
+    function RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass): TmnwSchema;
     property Registered: TRegisteredSchemas read FRegistered;
 
     function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
-    function CreateSchema(const aSchemaName: string; Fallback: Boolean =  False): TmnwSchema;
+    function CreateSchema(const aSchemaName: string; Fallback: Boolean =  False): TmnwSchema; overload;
+    function CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string; Fallback: Boolean =  False): TmnwSchema; overload;
     function ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
     function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 
@@ -2679,7 +2682,7 @@ begin
   ClearSchemas;
 end;
 
-procedure TmnwApp.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass);
+function TmnwApp.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass): TmnwSchema;
 var
   aSchemaItem: TmnwSchemaItem;
 begin
@@ -2687,6 +2690,15 @@ begin
   aSchemaItem.Name := AName;
   aSchemaItem.SchemaClass := SchemaClass;
   Registered.Add(aSchemaItem);
+  aSchemaItem.SchemaClass.Registered;
+  if schemaStartup in aSchemaItem.SchemaClass.GetCapabilities then
+  begin
+    Result := CreateSchema(SchemaClass, AName);
+    Result.FPhase := scmpNormal;
+    Add(Result);
+  end
+  else
+    Result := nil;
 end;
 
 function TmnwApp.FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
@@ -2710,7 +2722,7 @@ begin
 	SchemaItem := Registered.Find(aSchemaName);
   if SchemaItem <> nil then
   begin
-    Result := SchemaItem.SchemaClass.Create(Self, SchemaItem.Name, SchemaItem.Name);
+    Result := CreateSchema(SchemaItem.SchemaClass, SchemaItem.Name, Fallback);
     SchemaCreated(Result);
     //Add(SchemaObject); no, when compose it we add it
   end
@@ -3014,11 +3026,12 @@ end;
 procedure TmnwApp.Created;
 begin
   inherited;
-  RegisterSchema('assets', TAssetsSchema);
+  FAssets := RegisterSchema('assets', TAssetsSchema) as TAssetsSchema;
+end;
 
-  FAssets := CreateSchema('assets') as TAssetsSchema;
-  FAssets.FPhase := scmpNormal;
-  Add(FAssets);
+function TmnwApp.CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string; Fallback: Boolean): TmnwSchema;
+begin
+  Result := SchemaClass.Create(Self, AName, AName);
 end;
 
 procedure TmnwApp.ClearSchemas;
@@ -4009,6 +4022,10 @@ begin
       Json.Free;
     end;
   end
+end;
+
+class procedure TmnwSchema.Registered;
+begin
 end;
 
 procedure UpdateElement(Element: TmnwElement);
@@ -5911,6 +5928,7 @@ begin
   FLogo := THTML.TMemory.Create(This);
   FLogo.Name := 'logo';
   FLogo.Route := 'logo';
+  FPhase := scmpNormal;
   ServeFiles := True;
 end;
 
@@ -5953,7 +5971,7 @@ end;
 class function TAssetsSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
   Result := inherited;
-  Result := Result + [schemaPermanent];
+  Result := Result + [schemaStartup, schemaPermanent];
 end;
 
 destructor TAssetsSchema.Destroy;

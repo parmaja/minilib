@@ -557,7 +557,7 @@ begin
       Socket.Listen;
     end
     else
-      raise EmnStreamException.CreateFmt('Bind fail [%d]', [aErr]);
+      raise EmnStreamException.CreateFmt('Bind fail [%d] on port %s address %s', [aErr, FPort, FAddress]);
   end;
 end;
 

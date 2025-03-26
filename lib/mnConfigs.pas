@@ -227,7 +227,7 @@ type
 
     procedure WriteTo(Writer: TConfWriter; Level: Integer); virtual;
 
-    //it will merge into it, You need to clear before load it
+    //it will merge into it, You need to `clear` before load it
     procedure LoadFromStream(Stream: TStream; IgnoreComments: Boolean = False);
     procedure LoadFromFile(const FileName: string; IgnoreComments: Boolean = False);
     procedure SaveToStream(Stream: TStream);
