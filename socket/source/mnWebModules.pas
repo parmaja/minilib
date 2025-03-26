@@ -162,7 +162,7 @@ type
     FHomePath: string;
     FWorkPath: string;
 
-    FSmartURL: Boolean;
+    //FSmartURL: Boolean;
     procedure SetHomePath(AValue: string);
   protected
     procedure Created; override;
@@ -173,7 +173,7 @@ type
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
   public
     destructor Destroy; override;
-    property SmartURL: Boolean read FSmartURL write FSmartURL;
+    //property SmartURL: Boolean read FSmartURL write FSmartURL;
   public
     //protocol://domain:port/alias/directory
     //--------HOST URL------/alias/directory
@@ -690,7 +690,7 @@ begin
   end
   else
   begin
-    if Module.SmartURL then
+    {if Module.SmartURL then //* Endless loop
     begin
 
       repeat
@@ -714,7 +714,7 @@ begin
         aDocument := GetDefaultDocument(aPath);
 
       until (aPath='') or SameText(aPath, aHomePath);
-    end;
+    end;}
 
     RespondDocument(aDocument, Result);
   end;
