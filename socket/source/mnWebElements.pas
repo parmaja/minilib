@@ -3969,11 +3969,12 @@ begin
 
           if FileExists(aFileName) and not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots
           begin
-            AResponse.ContentLength := GetSizeOfFile(aFileName);
-            AResponse.ContentType := DocumentToContentType(aFileName);
             fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
             try
-              AContext.Writer.WriteStream(fs, 0);
+              AResponse.ContentLength := GetSizeOfFile(aFileName); //conseder use fs.Size
+              AResponse.ContentType := DocumentToContentType(aFileName);
+              //AContext.Writer.WriteStream(fs, 0);
+              AResponse.SendData(fs, AResponse.ContentLength);
             finally
               fs.Free;
             end;
