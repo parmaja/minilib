@@ -272,6 +272,14 @@ type
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy write FProtcolProxy;
   end;
 
+  TStreamPersistWrapper = class(TmnRefInterfacedPersistent, ImnStreamPersist)
+  protected
+    FStream: TStream;
+    procedure SaveToStream(Stream: TStream; Count: Int64);
+  public
+    class function CreateInterface(vStream: TStream): ImnStreamPersist;
+  end;
+
   { TmodRespond }
 
   TmodRespond = class(TmodCommunicate)
@@ -286,8 +294,8 @@ type
     function WriteLine(const s: string): Boolean;
     function SendData(const s: UTF8String): Boolean; overload;
     function SendData(const s: string): Boolean; overload;
-    function SendData(s: IStreamPersist): Boolean; overload;
-    function SendData(s: TStream; Count: Cardinal): Boolean; overload;
+    function SendData(s: TStream; Count: Int64): Boolean; overload;
+    function SendData(s: ImnStreamPersist; Count: Int64): Boolean; overload;
     property Request: TmodRequest read FRequest;
   end;
 
@@ -969,142 +977,84 @@ begin
   inherited;
 end;
 
-function TmodRespond.SendData(s: TStream; Count: Cardinal): Boolean;
-const
-  GzWindowBits               = 15;
-  GzipWindowBits             = GzWindowBits + 16;
-  GzipBits: array[Boolean] of integer = (GzWindowBits, GzipWindowBits);
-
+function TmodRespond.SendData(s: TStream; Count: Int64): Boolean;
 var
-  mStream: TMemoryStream;
-  aCompress: Boolean;
+  aInt: ImnStreamPersist;
 begin
-  mStream := TMemoryStream.Create;
-  try
-    aCompress := Request.Mode.RespondCompress; //IsGzip
-
-    if aCompress then  //best efficient for speed and memory
-    begin
-      var zStream := TZCompressionStream.Create(mStream, zcDefault, GzipBits[True]);
-      try
-        zStream.CopyFrom(s, Count);
-      finally
-        zStream.Free;
-      end;
-    end
-    else
-      mStream.LoadFromStream(s);
-
-    if not (resHeaderSent in  Header.States) then
-    begin
-      AddHeader('Content-Length', mStream.Size.ToString);
-      //Respond.AddHeader('Content-Length', Length(aData).ToString);
-      SendHeader;
-    end;
-
-    if aCompress then
-      Request.CompressProxy.Disable; //already compressed
-    try
-      Result := Stream.Write(mStream.Memory^, mStream.Size)<>0;
-    finally
-      if aCompress then
-        Request.CompressProxy.Enable;
-    end;
-
-  finally
-    mStream.Free;
-  end;
+  aInt := TStreamPersistWrapper.CreateInterface(s);
+  Result := SendData(aInt, Count);
 end;
 
-function TmodRespond.SendData(s: IStreamPersist): Boolean;
+function TmodRespond.SendData(s: ImnStreamPersist; Count: Int64): Boolean;
 const
-  GzWindowBits               = 15;
-  GzipWindowBits             = GzWindowBits + 16;
+  GzWindowBits                        = 15;
+  GzipWindowBits                      = GzWindowBits + 16;
   GzipBits: array[Boolean] of integer = (GzWindowBits, GzipWindowBits);
 
-var
-  mStream: TMemoryStream;
-  aCompress: Boolean;
-begin
-  mStream := TMemoryStream.Create;
-  try
-    aCompress := Request.Mode.RespondCompress; //IsGzip
-
-    if aCompress then  //best efficient for speed and memory
-    begin
-      var zStream := TZCompressionStream.Create(mStream, zcDefault, GzipBits[True]);
-      try
-        s.SaveToStream(zStream);
-      finally
-        zStream.Free;
-      end;
-    end
-    else
-      s.SaveToStream(mStream);
-
+  procedure _SendHeader(ACount: Int64);
+  begin
     if not (resHeaderSent in  Header.States) then
     begin
-      AddHeader('Content-Length', mStream.Size.ToString);
+      AddHeader('Content-Length', ACount.ToString);
       //Respond.AddHeader('Content-Length', Length(aData).ToString);
       SendHeader;
     end;
+  end;
 
-    if aCompress then Request.CompressProxy.Disable; //already compressed
-    try
-      Result := Stream.Write(mStream.Memory^, mStream.Size)<>0;
-    finally
-      if aCompress then Request.CompressProxy.Enable;
+var
+  mStream: TMemoryStream;
+  zStream: TZCompressionStream;
+  aCompress: Boolean;
+begin
+  Result := Count<>0;
+
+  if Count=0 then
+    _SendHeader(0)
+  else
+  begin
+    aCompress := Request.Mode.RespondCompress; //IsGzip
+    if aCompress then
+    begin
+      mStream := TMemoryStream.Create;
+      try
+
+        zStream := TZCompressionStream.Create(mStream, zcDefault, GzipBits[True]);
+        try
+          s.SaveToStream(zStream, Count);
+        finally
+          zStream.Free;
+        end;
+
+        _SendHeader(mStream.Size);
+
+        Request.CompressProxy.Disable; //make unreasonable response when before _SendHeader
+        try
+          Stream.Write(mStream.Memory^, mStream.Size);
+        finally
+          Request.CompressProxy.Enable;
+        end;
+
+      finally
+        mStream.Free;
+      end;
+    end
+    else
+    begin
+      _SendHeader(Count);
+      s.SaveToStream(Self.Stream, Count);
     end;
-
-  finally
-    mStream.Free;
   end;
 end;
 
 function TmodRespond.SendData(const s: UTF8String): Boolean;
-const
-  GzWindowBits               = 15;
-  GzipWindowBits             = GzWindowBits + 16;
-  GzipBits: array[Boolean] of integer = (GzWindowBits, GzipWindowBits);
-
 var
-  mStream: TMemoryStream;
-  aCompress: Boolean;
+  aStream: TPointerStream;
 begin
-  Result := s<>'';
-
-  mStream := TMemoryStream.Create;
+  aStream := TPointerStream.Create(PByte(s), Length(s), True);
   try
-    aCompress := Request.Mode.RespondCompress; //IsGzip
-
-    if aCompress then  //best efficient for speed and memory
-    begin
-      var zStream := TZCompressionStream.Create(mStream, zcDefault, GzipBits[True]);
-      try
-        //RespondData.SaveToStream(zStream, True);
-        zStream.WriteUTF8String(s);
-      finally
-        zStream.Free;
-      end;
-    end
-    else
-      mStream.WriteUTF8String(s);
-
-    if not (resHeaderSent in  Header.States) then
-    begin
-      AddHeader('Content-Length', mStream.Size.ToString);
-      //Respond.AddHeader('Content-Length', Length(aData).ToString);
-      SendHeader;
-    end;
-
-    if aCompress then Request.CompressProxy.Disable; //already compressed
-    try
-      Stream.Write(mStream.Memory^, mStream.Size);
-    finally
-      if aCompress then Request.CompressProxy.Enable;
-    end;
+    Result := SendData(aStream, Length(s));
   finally
-    mStream.Free;
+    aStream.Free;
   end;
 end;
 
@@ -2748,6 +2698,22 @@ begin
   end;
 
   FWaitEvent.WaitFor;
+end;
+
+{ TStreamPersistWrapper }
+
+class function TStreamPersistWrapper.CreateInterface(vStream: TStream): ImnStreamPersist;
+var
+  aObj: TStreamPersistWrapper;
+begin
+  aObj := TStreamPersistWrapper.Create;
+  aObj.FStream := vStream;
+  Result := aObj;
+end;
+
+procedure TStreamPersistWrapper.SaveToStream(Stream: TStream; Count: Int64);
+begin
+  Stream.CopyFrom(FStream, Count);
 end;
 
 initialization

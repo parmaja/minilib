@@ -30,6 +30,11 @@ type
   TProc<T1,T2,T3,T4> = reference to procedure (Arg1: T1; Arg2: T2; Arg3: T3; Arg4: T4);
   {$endif}
 
+  ImnStreamPersist = interface
+    ['{035D58C8-8F87-49F1-A459-9975B0030E6A}']
+    procedure SaveToStream(Stream: TStream; Count: Int64);
+  end;
+
   { TmnObject }
 
   TmnObject = class(TObject)
@@ -37,6 +42,25 @@ type
     procedure Created; virtual;
   public
     procedure AfterConstruction; override;
+  end;
+
+  TmnInterfacedPersistent = class(TInterfacedPersistent)
+  protected
+    procedure Created; virtual;
+  public
+    procedure AfterConstruction; override;
+  end;
+
+  TmnRefInterfacedPersistent = class(TmnInterfacedPersistent)
+  protected
+    FRefCount: Integer;
+
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+  public
+    procedure AfterConstruction; override;
+    procedure BeforeDestruction; override;
   end;
 
   { TmnObjectList }
@@ -642,6 +666,58 @@ begin
 end;
 
 {$endif}
+
+{ TmnRefInterfacedPersistent }
+
+procedure TmnRefInterfacedPersistent.AfterConstruction;
+begin
+  inherited;
+  AtomicDecrement(FRefCount);
+end;
+
+procedure TmnRefInterfacedPersistent.BeforeDestruction;
+begin
+  inherited;
+  if FRefCount <> 0 then
+  begin
+    //MessageBox(0, PChar('not Free'+ClassName), PChar('TMiscParams'), 0);
+    System.Error(reInvalidPtr);
+  end;
+end;
+
+function TmnRefInterfacedPersistent.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := S_OK
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TmnRefInterfacedPersistent._AddRef: Integer;
+begin
+  Result := AtomicIncrement(FRefCount);
+end;
+
+function TmnRefInterfacedPersistent._Release: Integer;
+begin
+  Result := AtomicDecrement(FRefCount);
+
+  if Result = 0 then
+    Destroy;
+end;
+
+{ TmnInterfacedPersistent }
+
+procedure TmnInterfacedPersistent.AfterConstruction;
+begin
+  inherited;
+  Created;
+end;
+
+procedure TmnInterfacedPersistent.Created;
+begin
+
+end;
 
 end.
 
