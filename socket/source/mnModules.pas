@@ -1027,7 +1027,7 @@ begin
 
         _SendHeader(mStream.Size);
 
-        Request.CompressProxy.Disable; //make unreasonable response when before _SendHeader
+        Request.CompressProxy.Disable; //must be after _SendHeader-> enable proxy after sent
         try
           Stream.Write(mStream.Memory^, mStream.Size);
         finally

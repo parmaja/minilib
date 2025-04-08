@@ -85,6 +85,11 @@ const
 type
   TFileSize = Longint;
 
+  ImnStreamPersist = interface
+    ['{035D58C8-8F87-49F1-A459-9975B0030E6A}']
+    procedure SaveToStream(Stream: TStream; Count: Int64);
+  end;
+
   TStreamHelper = class helper for TStream
   public
     function WriteBytes(const vData: TBytes): TFileSize;

@@ -30,11 +30,6 @@ type
   TProc<T1,T2,T3,T4> = reference to procedure (Arg1: T1; Arg2: T2; Arg3: T3; Arg4: T4);
   {$endif}
 
-  ImnStreamPersist = interface
-    ['{035D58C8-8F87-49F1-A459-9975B0030E6A}']
-    procedure SaveToStream(Stream: TStream; Count: Int64);
-  end;
-
   { TmnObject }
 
   TmnObject = class(TObject)
