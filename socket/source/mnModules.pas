@@ -2353,7 +2353,10 @@ begin
   inherited;
 
   if Request.CompressProxy<>nil then
+  begin
     Request.CompressProxy.Enabled := smRespondCompress in Request.Mode;
+    Request.CompressProxy.Limit := 0;
+  end;
 end;
 
 procedure TwebRespond.DoHeaderReceived;
@@ -2377,7 +2380,7 @@ begin
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
 
   aCompressClass := nil;
-  if Request.Use.Compressing = ovYes then
+  if Request.Use.AcceptCompressing = ovYes then
   begin
     if Header.Field['Content-Encoding'].Have('gzip', [',']) then
       aCompressClass := TmnGzipStreamProxy
@@ -2386,6 +2389,9 @@ begin
   end;
 
   Request.InitProxies(aChunked, aCompressClass);
+
+  if aCompressClass<>nil then
+    Request.CompressProxy.Limit := ContentLength;
 end;
 
 procedure TwebRespond.DoPrepareHeader;

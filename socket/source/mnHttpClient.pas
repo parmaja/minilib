@@ -537,7 +537,10 @@ begin
     Result := FStream.ReadStream(AStream, -1)
   else if (Respond.ContentLength > 0) and Respond.KeepAlive then //Respond.KeepAlive because we cant use compressed with keeplive or contentlength >0
   begin
-    Result := FStream.ReadStream(AStream, Respond.ContentLength);
+    if (Request.CompressProxy<>nil) and (Request.CompressProxy.Limit <> 0) then
+      Result := FStream.ReadStream(AStream, -1)
+    else
+      Result := FStream.ReadStream(AStream, Respond.ContentLength);
   end
   else
     Result := FStream.ReadStream(AStream, -1); //read complete stream

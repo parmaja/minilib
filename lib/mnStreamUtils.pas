@@ -43,9 +43,12 @@ type
   TmnStreamCompress = set of (cprsRead, cprsWrite);
 
   TmnCompressStreamProxy = class abstract(TmnStreamOverProxy)
+  private
+    FLimit: Cardinal;
   public
     constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel = 9); virtual;
     class function GetCompressName: string; virtual; abstract;
+    property Limit: Cardinal read FLimit write FLimit;
   end;
 
   TmnCompressStreamProxyClass = class of TmnCompressStreamProxy;
@@ -67,6 +70,7 @@ type
     DeflateInfo: TInflateInfo;
     InflateInfo: TInflateInfo;
     FBufSize: Cardinal;
+    FLimitRead: Cardinal;
 
   const
     DEF_MEM_LEVEL = 8;
@@ -353,6 +357,7 @@ function TmnDeflateStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCoun
 var
   err: Smallint;
   HaveRead: Longint;
+  aSize: Longint;
 begin
   if cprsRead in FCompress then
   begin
@@ -370,11 +375,26 @@ begin
         if ZStream.avail_in = 0 then
         begin
           {Refill the buffer.}
-          Over.Read(ZBuffer^, BufSize, HaveRead, RealCount); //BufSize or count ???
+          if Limit<>0 then
+          begin
+            aSize := FLimit-FLimitRead;
+            if aSize<=0 then Break;
+            if aSize>BufSize then
+              aSize := BufSize;
+          end
+          else
+            aSize := BufSize;
+
+          Over.Read(ZBuffer^, aSize, HaveRead, RealCount); //BufSize or count ???
           ZStream.next_in := Pointer(ZBuffer);
           ZStream.avail_in := HaveRead;
           if HaveRead=0 then //timeout or disconnected
             break;
+
+          if Limit<>0 then
+          begin
+            Inc(FLimitRead, HaveRead);
+          end;
         end
         else
           RealCount := 0;
@@ -394,6 +414,13 @@ begin
         end;
       end;
       ResultCount := Count - Integer(ZStream.avail_out);
+
+      if FLimit<>0 then
+      begin
+        if FLimitRead>=FLimit then
+          CloseFragment;
+      end;
+
     end;
     Result := True;
   end
