@@ -514,11 +514,6 @@ begin
   Result := Post(PByte(vData), Length(vData));
 end;
 
-procedure TmnCustomHttpClient.ReceiveStream(AStream: TStream);
-begin
-  ReadStream(AStream);
-end;
-
 function TmnCustomHttpClient.ReadStream(AStream: TStream; Count: Integer): TFileSize;
 begin
   Result := FStream.ReadStream(AStream, Count);
@@ -557,6 +552,19 @@ procedure TmnCustomHttpClient.ReceiveMemoryStream(AStream: TStream);
 begin
   ReceiveStream(AStream);
   AStream.Seek(0, soFromBeginning);
+end;
+
+procedure TmnCustomHttpClient.ReceiveStream(AStream: TStream);
+begin
+  if (Request.ChunkedProxy<>nil) and (Respond.ContentLength = 0) then
+    FStream.ReadStream(AStream, -1)
+  else if (Respond.ContentLength > 0) then
+  begin
+    //Result := FStream.ReadStream(AStream, Respond.ContentLength);
+    Respond.ReceiveData(AStream, Respond.ContentLength);
+  end
+  else
+    FStream.ReadStream(AStream, -1); //read complete stream
 end;
 
 procedure TmnCustomHttpClient.Disconnect;

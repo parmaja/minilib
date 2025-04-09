@@ -18,8 +18,14 @@ unit mnStreamUtils;
 interface
 
 uses
-  Classes, SysUtils, zlib,
+  Classes, SysUtils, zlib, Math,
   mnUtils, mnStreams;
+
+const
+  GzWindowBits                        = 15;
+  GzipWindowBits                      = GzWindowBits + 16;
+  GzipBits: array[Boolean] of integer = (GzWindowBits, GzipWindowBits);
+
 
 type
   { TmnPlainStreamProxy }
@@ -216,7 +222,83 @@ type
     class function GetProtocolName: string; override;
   end;
 
+function gzipDecompressStream(inStream, outStream: TStream; Count: Int64): Int64;
+
 implementation
+
+function ZDecompressCheck(code: Integer): Integer; overload;
+begin
+  Result := code;
+  if code < 0 then
+    raise EZDecompressionError.Create(string(_z_errmsg[2 - code])) at ReturnAddress;
+end;
+
+function gzipDecompressStream(inStream, outStream: TStream; Count: Int64): Int64;
+const
+  bufferSize = 32768;
+var
+  zstream: TZStreamRec;
+  zresult: Integer;
+  inBuffer: array[0..bufferSize - 1] of Byte;
+  outBuffer: array[0..bufferSize - 1] of Byte;
+  inSize: Integer;
+  outSize: Integer;
+  remaining: Int64;
+begin
+  Result := 0;
+  FillChar(zstream, SizeOf(TZStreamRec), 0);
+
+  remaining := Count;
+
+  // Initialize decompression
+  ZDecompressCheck(inflateInit2(zstream, GzipBits[True]));
+
+  try
+    // Process data in chunks
+    while (remaining > 0) do
+    begin
+      // Determine how much to read (don't exceed remaining or buffer size)
+      inSize := inStream.Read(inBuffer, Min(bufferSize, remaining));
+      if inSize <= 0 then
+        Break;
+
+      Dec(remaining, inSize);
+
+      zstream.next_in := @inBuffer[0];
+      zstream.avail_in := inSize;
+
+      // Decompress available input
+      repeat
+        zstream.next_out := @outBuffer[0];
+        zstream.avail_out := bufferSize;
+
+        ZDecompressCheck(inflate(zstream, Z_NO_FLUSH));
+
+        outSize := bufferSize - zstream.avail_out;
+        if outSize > 0 then
+          outStream.Write(outBuffer, outSize);
+        Inc(Result, outSize);
+      until (zstream.avail_in = 0) or (zstream.avail_out > 0);
+    end;
+
+    // Finalize decompression
+    repeat
+      zstream.next_out := @outBuffer[0];
+      zstream.avail_out := bufferSize;
+
+      zresult := inflate(zstream, Z_FINISH);
+      if (zresult <> Z_STREAM_END) and (zresult <> Z_OK) then
+        ZDecompressCheck(zresult);
+
+      outSize := bufferSize - zstream.avail_out;
+      if outSize > 0 then
+        outStream.Write(outBuffer, outSize);
+      Inc(Result, outSize);
+    until (zresult = Z_STREAM_END) or (zstream.avail_out > 0);
+  finally
+    inflateEnd(zstream);
+  end;
+end;
 
 { TmnDeflateWriteStreamProxy }
 

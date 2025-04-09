@@ -88,6 +88,7 @@ type
   ImnStreamPersist = interface
     ['{035D58C8-8F87-49F1-A459-9975B0030E6A}']
     procedure SaveToStream(Stream: TStream; Count: Int64);
+    procedure LoadFromStream(Stream: TStream; Count: Int64);
   end;
 
   TStreamHelper = class helper for TStream
@@ -258,6 +259,20 @@ type
   end;
 
   { TmnBufferStream }
+
+  TmnLimitStream = class(TStream)
+  protected
+    FSource: TStream;
+    FCount: Longint;
+    FPosition: Longint;
+    //function GetSize: Int64; override;
+  public
+    constructor Create(ASource: TStream; ACount: Int64);
+
+    function Read(var Buffer; Count: Longint): Longint; override;
+    function Write(const Buffer; Count: Longint): Longint; override;
+    function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
+  end;
 
   TmnBufferStream = class abstract(TmnCustomStream)
   protected
@@ -2150,6 +2165,47 @@ begin
   inherited;
   if (FStream <> nil) and (FStream.Control = Self) then
     FStream.FControl := nil;
+end;
+
+{ TmnLimitStream }
+
+constructor TmnLimitStream.Create(ASource: TStream; ACount: Int64);
+begin
+  inherited Create;
+  FSource := ASource;
+  FCount  := ACount;
+end;
+
+function TmnLimitStream.Read(var Buffer; Count: Longint): Longint;
+begin
+  if (FPosition >= 0) and (Count >= 0) then
+  begin
+    if FCount - FPosition> 0 then
+    begin
+      if FCount > Count + FPosition then Result := Count
+      else Result := FCount - FPosition;
+      Result := FSource.Read(Buffer, Result);
+      Inc(FPosition, Result);
+      Exit;
+    end;
+  end;
+  Result := 0;
+end;
+
+function TmnLimitStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
+begin
+  case Origin of
+    soBeginning: FPosition := Offset;
+    soCurrent: Inc(FPosition, Offset);
+    soEnd: FPosition := FCount + Offset;
+  end;
+  Result := FPosition;
+end;
+
+function TmnLimitStream.Write(const Buffer; Count: Longint): Longint;
+begin
+  Result := 0;
+  { TODO : implement on need }
 end;
 
 end.

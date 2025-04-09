@@ -79,6 +79,7 @@ type
     procedure ExampleHttpPost;
     procedure ExampleHttpChunked;
     procedure ExampleHttpGz;
+    procedure ExampleHttpGzManual;
     procedure ExampleSocketOpenStreet;
     procedure ExampleHttpEcho;
     procedure ExampleBIOHttpEcho;
@@ -1083,7 +1084,7 @@ begin
 //    c.UserAgent := 'curl/7.83.1';
     c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
     c.Request.Use.AcceptCompressing := ovYes;
-    c.Request.Use.KeepAlive := ovNo;
+    c.Request.Use.KeepAlive := ovYes;
 
     c.GetString('http://httpbin.org/gzip', s);
 //    c.GetFile('http://httpbin.org/gzip', Location+'test\file.gz');
@@ -1104,6 +1105,46 @@ begin
 
   finally
     c.Free;
+  end;
+end;
+
+procedure TTestStream.ExampleHttpGzManual;
+var
+  c: TmyHttpClient;
+  s: string;
+  h: TmnField;
+  i: Integer;
+  f: TFileStream;
+begin
+  //https://httpbin.org/get
+  c := TmyHttpClient.Create;
+  f := TFileStream.Create(Location + 'gzip.json', fmCreate or fmOpenWrite);
+  try
+//    c.UserAgent := 'curl/7.83.1';
+    c.Request.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0';
+    c.Request.Use.AcceptCompressing := ovUndefined;
+    c.Request.Use.KeepAlive := ovNo;
+
+    c.Open('http://httpbin.org/gzip');
+    c.ReceiveStream(f);
+//    c.GetFile('http://httpbin.org/gzip', Location+'test\file.gz');
+    //c.ReadStream(m);
+
+//    Writeln('Result' + c.Respond.StatusCode.ToString);
+    h := nil;
+
+    for h in c.Request.Header do
+      Writeln('<'+h.GetNameValue);
+
+    Writeln('');
+    for h in c.Respond.Header do
+      Writeln('>'+h.GetNameValue);
+
+    Writeln('');
+
+  finally
+    c.Free;
+    f.Free;
   end;
 end;
 
@@ -1612,6 +1653,7 @@ begin
       AddProc('[httpclient] Example Http Post', ExampleHttpPost);
       AddProc('[httpclient] Example Http Chunked', ExampleHttpChunked);
       AddProc('[httpclient] Example Http Gz', ExampleHttpGz);
+      AddProc('[httpclient] Example Http Gz Manual', ExampleHttpGzManual);
       AddProc('[httpclient] HTTP Echo', ExampleHttpEcho);
       AddProc('[httpclient] BIO HTTP Echo', ExampleBIOHttpEcho);
       AddProc('[httpclient] Download Cloud Flare', ExampleCloudFlare);
