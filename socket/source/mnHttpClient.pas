@@ -561,7 +561,7 @@ procedure TmnCustomHttpClient.ReceiveStream(AStream: TStream);
 begin
   if (Request.ChunkedProxy<>nil) and (Respond.ContentLength = 0) then
     FStream.ReadStream(AStream, -1)
-  else if (Respond.ContentLength > 0) then
+  else if (Respond.ContentLength > 0) and Respond.KeepAlive then
   begin
     //Result := FStream.ReadStream(AStream, Respond.ContentLength);
     Respond.ReceiveData(AStream, Respond.ContentLength);

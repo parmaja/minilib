@@ -357,7 +357,7 @@ function TmnDeflateStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCoun
 var
   err: Smallint;
   HaveRead: Longint;
-  aSize: Longint;
+  aSize: Cardinal;
 begin
   if cprsRead in FCompress then
   begin
@@ -529,6 +529,7 @@ begin
 
       ZStream.next_in := Pointer(ZBuffer);
       ZStream.avail_in := 0;
+      FLimitRead := 0;
 
       if FGZip then
         WindowBits := MAX_WBITS + 16

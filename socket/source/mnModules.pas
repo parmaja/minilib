@@ -2390,7 +2390,7 @@ begin
 
   Request.InitProxies(aChunked, aCompressClass);
 
-  if aCompressClass<>nil then
+  if (aCompressClass<>nil)and KeepAlive then
     Request.CompressProxy.Limit := ContentLength;
 end;
 
