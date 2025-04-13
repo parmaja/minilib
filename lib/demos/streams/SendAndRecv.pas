@@ -104,6 +104,7 @@ type
     procedure ExampleInflateImage; //Inflate image
     procedure ExampleGZImage; //GZ image
     procedure ExampleGZText; //GZ image
+    procedure ExampleGZTextLimit; //GZ image
     procedure ExampleGZTextWithHeader;
     procedure ExampleUnGZImage; //Unzip GZ image
 
@@ -1519,6 +1520,68 @@ begin
   end;
 end;
 
+procedure TTestStream.ExampleGZTextLimit;
+var
+  cFile: string;
+  aTextFile: TFileStream;
+  aFileStream: TFileStream;
+  Stream: TmnBufferStream;
+  HexProxy: TmnHexStreamProxy;
+  CompressProxy: TmnDeflateStreamProxy;
+  aSize: TFileSize;
+begin
+  cFile := Location + 'test\formdata1.gz';
+  //image.gz is a compressed file of hex file of image
+  WriteLn('Read text to compressed file');
+  aTextFile := TFileStream.Create(Location + 'test\formdata.txt', fmOpenRead);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmCreate or fmOpenWrite));
+  CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9);
+  Stream.AddProxy(CompressProxy);
+
+  try
+    WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aTextFile)));
+  finally
+    Stream.Free;
+    FreeAndNil(aTextFile);
+  end;
+  aSize := GetSizeOfFile(cFile);
+
+
+  aTextFile := TFileStream.Create(Location + 'test\formdata.txt', fmOpenRead);
+  aFileStream := TFileStream.Create(cFile, fmOpenWrite);
+  aFileStream.Seek(0, soFromEnd);
+  Stream := TmnWrapperStream.Create(aFileStream);
+
+  CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9);
+  Stream.AddProxy(CompressProxy);
+
+  try
+    WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aTextFile)));
+  finally
+    Stream.Free;
+    FreeAndNil(aTextFile);
+  end;
+
+
+//---------------------------------------------------------
+
+  WriteLn('Read compressed file to image');
+  aTextFile := TFileStream.Create(Location + 'test\formdata1_copy.txt', fmCreate or fmOpenWrite);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmOpenRead));
+  CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9);
+  Stream.AddProxy(CompressProxy);
+
+  try
+    CompressProxy.Limit := aSize;
+    WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aTextFile, -1)));
+    CompressProxy.Limit := aSize;
+    WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aTextFile, -1)));
+  finally
+    FreeAndNil(Stream);
+    FreeAndNil(aTextFile);
+  end;
+end;
+
 procedure TTestStream.ExampleGzTextWithHeader;
 var
   aTextFile: TFileStream;
@@ -1681,6 +1744,8 @@ begin
       AddProc('CopyFile Write', CopyFileWrite);
       AddProc('CopyFile Read', CopyFileRead);
       AddProc('GZText: GZ Text', ExampleGZText);
+      AddProc('GZText: GZ Text with limit', ExampleGZTextLimit);
+
       AddProc('GZText: Headered Text', ExampleGzTextWithHeader);
 
       AddProc('[Chunked] Write Chunked lines', ExampleChunkedWrite);

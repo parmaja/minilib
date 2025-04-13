@@ -84,6 +84,8 @@ type
     procedure CloseRead; override;
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
     function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+    procedure CloseFragment; override;
+
   public
     constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel = 9); override;
     destructor Destroy; override;
@@ -359,6 +361,7 @@ var
   HaveRead: Longint;
   aSize: Cardinal;
 begin
+  ResultCount := 0;
   if cprsRead in FCompress then
   begin
     //Example https://jigsaw.w3.org/HTTP/ChunkedScript
@@ -378,22 +381,26 @@ begin
           if Limit<>0 then
           begin
             aSize := FLimit-FLimitRead;
-            if aSize<=0 then Break;
+            //if aSize<=0 then Break;
             if aSize>BufSize then
               aSize := BufSize;
           end
           else
             aSize := BufSize;
 
-          Over.Read(ZBuffer^, aSize, HaveRead, RealCount); //BufSize or count ???
-          ZStream.next_in := Pointer(ZBuffer);
-          ZStream.avail_in := HaveRead;
-          if HaveRead=0 then //timeout or disconnected
-            break;
-
-          if Limit<>0 then
+          if aSize<>0 then
           begin
-            Inc(FLimitRead, HaveRead);
+
+            Over.Read(ZBuffer^, aSize, HaveRead, RealCount); //BufSize or count ???
+            ZStream.next_in := Pointer(ZBuffer);
+            ZStream.avail_in := HaveRead;
+            if HaveRead=0 then //timeout or disconnected
+              break;
+
+            if Limit<>0 then
+            begin
+              Inc(FLimitRead, HaveRead);
+            end;
           end;
         end
         else
@@ -415,10 +422,15 @@ begin
       end;
       ResultCount := Count - Integer(ZStream.avail_out);
 
-      if FLimit<>0 then
+      if (FLimit<>0) and (ZStream.avail_in=0) then
       begin
         if FLimitRead>=FLimit then
+        begin
+          ZEnd := True;
           CloseFragment;
+          FLimitRead := 0;
+          FLimit := 0;
+        end;
       end;
 
     end;
@@ -475,6 +487,12 @@ begin
       ZBuffer := nil;
     end;
   end;
+end;
+
+procedure TmnDeflateStreamProxy.CloseFragment;
+begin
+  inherited;
+
 end;
 
 procedure TmnDeflateStreamProxy.CloseInflate;
@@ -546,7 +564,8 @@ end;
 constructor TmnDeflateStreamProxy.Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel);
 begin
   inherited Create(ACompress, Level);
-  FBufSize := 16384;
+  //FBufSize := 16384;
+  FBufSize := 4096;
   FLevel := Level;
   FCompress := ACompress;
   FGZip := False;

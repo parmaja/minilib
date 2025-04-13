@@ -299,8 +299,8 @@ type
     function SendData(s: TStream; Count: Int64): Boolean; overload;
     function SendData(s: ImnStreamPersist; Count: Int64): Boolean; overload;
 
-    function ReceiveData(s: TStream; Count: Int64): Boolean; overload;
-    function ReceiveData(s: ImnStreamPersist; Count: Int64): Boolean; overload;
+    function ReceiveData(s: TStream): Int64; overload;
+    function ReceiveData(s: ImnStreamPersist; Count: Int64): Int64; overload;
 
     property Request: TmodRequest read FRequest;
   end;
@@ -983,32 +983,51 @@ begin
   inherited;
 end;
 
-function TmodRespond.ReceiveData(s: ImnStreamPersist; Count: Int64): Boolean;
+function TmodRespond.ReceiveData(s: ImnStreamPersist; Count: Int64): Int64;
 var
   aDecompress: Boolean;
-  lStream: TmnLimitStream;
+  mStream: TMemoryStream;
   zStream: TZDecompressionStream;
 begin
-  Result := True;
   aDecompress := (Request.Use.AcceptCompressing in [ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
   if aDecompress then
   begin
-
+    mStream := TMemoryStream.Create;//duplicate memory avoid this :(
+    try
+      Result := gzipDecompressStream(Stream, mStream, Count);
+      s.LoadFromStream(mStream, Result);
+    finally
+      mStream.Free;
+    end;
   end
   else
+  begin
     s.LoadFromStream(Stream, Count);
+    Result := Count;
+  end;
 end;
 
-function TmodRespond.ReceiveData(s: TStream; Count: Int64): Boolean;
+function TmodRespond.ReceiveData(s: TStream): Int64;
 var
   aDecompress: Boolean;
 begin
-  Result := True;
-  aDecompress := (Request.Use.AcceptCompressing in [ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
-  if aDecompress then
-    gzipDecompressStream(Stream, s, Count)
+  if (Request.ChunkedProxy<>nil) and (ContentLength = 0) then
+    Result := Stream.ReadStream(s, -1)
+  else if (ContentLength > 0) and KeepAlive then //Respond.KeepAlive because we cant use compressed with keeplive or contentlength >0
+  begin
+    if (Request.CompressProxy<>nil) and (Request.CompressProxy.Limit <> 0) then
+      Result := Stream.ReadStream(s, -1)
+    else
+    begin
+      aDecompress := (Request.Use.AcceptCompressing in [ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
+      if aDecompress then
+        Result := gzipDecompressStream(Stream, s, ContentLength)
+      else
+        Result := Stream.ReadStream(s, ContentLength);
+    end;
+  end
   else
-    s.CopyFrom(Stream, Count);
+    Result := Stream.ReadStream(s, -1); //read complete stream
 end;
 
 function TmodRespond.SendData(s: TStream; Count: Int64): Boolean;

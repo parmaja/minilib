@@ -84,7 +84,7 @@ type
     function ReadStream(AStream: TStream; Count: Integer): TFileSize; overload;
     function ReadToFile(const OutFileName: UTF8String; Count: Integer = -1): TFileSize; overload;
 
-    procedure ReceiveStream(AStream: TStream); overload;
+    function ReceiveStream(AStream: TStream): TFileSize; overload;
     procedure ReceiveMemoryStream(AStream: TStream);
     procedure Disconnect;
 
@@ -531,6 +531,11 @@ begin
   end;
 end;
 
+function TmnCustomHttpClient.ReceiveStream(AStream: TStream): TFileSize;
+begin
+  Result := Respond.ReceiveData(AStream);
+end;
+
 function TmnCustomHttpClient.ReadStream(AStream: TStream): TFileSize;
 begin
   if (Request.ChunkedProxy<>nil) and (Respond.ContentLength = 0) then
@@ -555,19 +560,6 @@ procedure TmnCustomHttpClient.ReceiveMemoryStream(AStream: TStream);
 begin
   ReceiveStream(AStream);
   AStream.Seek(0, soFromBeginning);
-end;
-
-procedure TmnCustomHttpClient.ReceiveStream(AStream: TStream);
-begin
-  if (Request.ChunkedProxy<>nil) and (Respond.ContentLength = 0) then
-    FStream.ReadStream(AStream, -1)
-  else if (Respond.ContentLength > 0) and Respond.KeepAlive then
-  begin
-    //Result := FStream.ReadStream(AStream, Respond.ContentLength);
-    Respond.ReceiveData(AStream, Respond.ContentLength);
-  end
-  else
-    FStream.ReadStream(AStream, -1); //read complete stream
 end;
 
 procedure TmnCustomHttpClient.Disconnect;
