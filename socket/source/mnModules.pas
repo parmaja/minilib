@@ -186,10 +186,10 @@ type
     WebSocket: Boolean;
   end;
 
-  TStreamMode = set of (smRequestCompress, smRespondCompress, smAllowCompress);
+  TStreamMode = set of (smRequestCompress, smRespondCompressing, smAllowCompress);
   TStreamModeHelper = record helper for TStreamMode
     function RequestCompress: Boolean;
-    function RespondCompress: Boolean;
+    function RespondCompressing: Boolean;
     function AllowCompress: Boolean;
   end;
 
@@ -2295,13 +2295,21 @@ begin
   end;
   InitProxies(aChunked, aCompressClass);}
 
+  FMode := [];
+
   if Header.Field['Content-Encoding'].Have('gzip', [',']) then
     FMode := FMode + [smRequestCompress];
 
   if (Header.Field['Accept-Encoding'].Have('gzip', [','])) then
   begin
     case Use.Compressing of
-      ovYes: FMode := FMode + [smRespondCompress];
+      ovYes:
+      begin
+        if KeepAlive then  //when keep alive we need content length
+          FMode := FMode + [smAllowCompress]
+        else
+          FMode := FMode + [smRespondCompressing];
+      end;
       ovUndefined: FMode := FMode + [smAllowCompress];
       else
       begin
@@ -2310,7 +2318,7 @@ begin
     end;
   end;
 
-  if (smRequestCompress in Mode) or (smRespondCompress in Mode) then
+  if (smRequestCompress in Mode) or (smRespondCompressing in Mode) then
   begin
     InitProxies(aChunked, TmnGzipStreamProxy);
     if not (smRequestCompress in Mode) then
@@ -2373,7 +2381,7 @@ begin
 
   if Request.CompressProxy<>nil then
   begin
-    Request.CompressProxy.Enabled := smRespondCompress in Request.Mode;
+    Request.CompressProxy.Enabled := smRespondCompressing in Request.Mode;
     Request.CompressProxy.Limit := 0;
   end;
 end;
@@ -2424,7 +2432,7 @@ begin
   if (ETag <> '') then
     PutHeader('ETag', ETag);
 
-  if smRespondCompress in Request.Mode then
+  if smRespondCompressing in Request.Mode then
       PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
 end;
 
@@ -2519,9 +2527,9 @@ begin
   Result := smRequestCompress in Self;
 end;
 
-function TStreamModeHelper.RespondCompress: Boolean;
+function TStreamModeHelper.RespondCompressing: Boolean;
 begin
-  Result := smRespondCompress in Self;
+  Result := smRespondCompressing in Self;
 end;
 
 { Pool }
