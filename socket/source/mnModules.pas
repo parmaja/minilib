@@ -34,7 +34,7 @@
 interface
 
 uses
-  SysUtils, Classes, StrUtils, Types, DateUtils, ZLib, 
+  SysUtils, Classes, StrUtils, Types, DateUtils, ZLib, {$ifdef FPC}ZStream,{$endif}
   Generics.Defaults, mnStreamUtils, SyncObjs,
   mnClasses, mnStreams, mnFields, mnParams,
   mnSockets, mnConnections, mnServers;
@@ -276,8 +276,8 @@ type
   TStreamPersistWrapper = class(TmnRefInterfacedPersistent, ImnStreamPersist)
   protected
     FStream: TStream;
-    procedure SaveToStream(Stream: TStream; Count: Int64);
-    procedure LoadFromStream(Stream: TStream; Count: Int64);
+    procedure SaveToStream(Stream: TStream; Count: Int64); overload;
+    procedure LoadFromStream(Stream: TStream; Count: Int64); overload;
   public
     class function CreateInterface(vStream: TStream): ImnStreamPersist;
   end;
@@ -731,6 +731,13 @@ implementation
 uses
   mnUtils;
 
+{$ifndef FPC}
+type
+  TCompressionStream = TZCompressionStream;
+  TDecompressionStream = TZDecompressionStream;
+{$endif}
+
+
 function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 begin
   if UseSSL then
@@ -987,7 +994,7 @@ function TmodRespond.ReceiveData(s: ImnStreamPersist; Count: Int64): Int64;
 var
   aDecompress: Boolean;
   mStream: TMemoryStream;
-  zStream: TZDecompressionStream;
+  zStream: TDecompressionStream;
 begin
   aDecompress := (Request.Use.AcceptCompressing in [ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
   if aDecompress then
@@ -1054,7 +1061,7 @@ function TmodRespond.SendData(s: ImnStreamPersist; Count: Int64): Boolean;
 
 var
   mStream: TMemoryStream;
-  zStream: TZCompressionStream;
+  zStream: TCompressionStream;
   aCompress: Boolean;
 begin
   Result := Count<>0;
@@ -1069,8 +1076,11 @@ begin
     begin
       mStream := TMemoryStream.Create;
       try
-
-        zStream := TZCompressionStream.Create(mStream, zcDefault, GzipBits[True]);
+        {$ifdef FPC}
+        zStream := TCompressionStream.Create(clDefault, mStream, True);
+        {$else}
+        zStream := TCompressionStream.Create(mStream, zcDefault, GzipBits[True]);
+        {$endif}
         try
           s.SaveToStream(zStream, Count);
         finally
@@ -1095,9 +1105,9 @@ end;
 
 function TmodRespond.SendData(const s: UTF8String): Boolean;
 var
-  aStream: TPointerStream;
+  aStream: TmnPointerStream;
 begin
-  aStream := TPointerStream.Create(PByte(s), Length(s), True);
+  aStream := TmnPointerStream.Create(PByte(s), ByteLength(s));
   try
     Result := SendData(aStream, Length(s));
   finally

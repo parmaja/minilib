@@ -50,9 +50,9 @@ type
   protected
     FRefCount: Integer;
 
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+    function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+    function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
   public
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
@@ -680,7 +680,7 @@ begin
   end;
 end;
 
-function TmnRefInterfacedPersistent.QueryInterface(const IID: TGUID; out Obj): HResult;
+function TmnRefInterfacedPersistent.QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   if GetInterface(IID, Obj) then
     Result := S_OK
@@ -688,12 +688,12 @@ begin
     Result := E_NOINTERFACE;
 end;
 
-function TmnRefInterfacedPersistent._AddRef: Integer;
+function TmnRefInterfacedPersistent._AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   Result := AtomicIncrement(FRefCount);
 end;
 
-function TmnRefInterfacedPersistent._Release: Integer;
+function TmnRefInterfacedPersistent._Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   Result := AtomicDecrement(FRefCount);
 

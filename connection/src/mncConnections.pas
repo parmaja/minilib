@@ -1660,7 +1660,7 @@ end;
 
 procedure TmncColumn.SetIsNull(const AValue: Boolean);
 begin
-  raise EmncException.Create('Field have no value, You must not use it, try use Fields!') {$ifdef fpc}at get_caller_addr(get_frame){$endif};
+  raise EmncException.Create('Field have no value, You must not use it, try use Fields!') {$ifdef fpc}at get_caller_addr(get_frame){$else}at ReturnAddress{$endif};
 end;
 
 function TmncColumn.GetIsNull: Boolean;

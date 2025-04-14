@@ -96,7 +96,7 @@ type
     function WriteBytes(const vData: TBytes): TFileSize;
     function WriteString(const vData: string): TFileSize; overload;
     function WriteString(const vData: string; vUTF8: Boolean): TFileSize; overload;
-    function WriteUtf8(const vData: UTF8String): TFileSize; deprecated;
+    //function WriteUtf8(const vData: UTF8String): TFileSize; deprecated;
     function WriteUTF8String(const vData: UTF8String): TFileSize; inline;
   end;
 
@@ -354,7 +354,7 @@ type
 
     function WriteRawByte(const s: UTF8String): TFileSize; overload;
     function WriteUTF8Line(const s: UTF8String): TFileSize; overload;
-    function WriteLineUTF8(const s: UTF8String): TFileSize; overload; deprecated;
+    //function WriteLineUTF8(const s: UTF8String): TFileSize; overload; deprecated;
     function WriteLineUTF8(const UTF8Bytes: TBytes): TFileSize; overload; //bytes encoded utf8  //* what the hell that <---
     {$ifndef FPC}
     function WriteLineUTF8(const s: string): TFileSize; overload; deprecated;
@@ -463,18 +463,24 @@ type
     Method: TmnMethodProxyEncode;
   end;
 
+  { TmnPointerStream }
+
+  TmnPointerStream = Class(TCustomMemoryStream)
+    Constructor Create(aBytes : PByte; aSize : Integer);
+  end;
+
 var
   ReadWriteBufferSize: Integer = 1024;
 
 implementation
 
-function TStreamHelper.WriteUtf8(const vData: UTF8String): TFileSize;
+{function TStreamHelper.WriteUtf8(const vData: UTF8String): TFileSize;
 begin
   if vData<>'' then
     Result := Write(PByte(vData)^, Length(vData))
   else
     Result := 0;
-end;
+end;}
 
 function TStreamHelper.WriteUTF8String(const vData: UTF8String): TFileSize;
 begin
@@ -1113,10 +1119,10 @@ begin
   end;
 end;
 
-function TmnBufferStream.WriteLineUTF8(const s: UTF8String): TFileSize;
+{function TmnBufferStream.WriteLineUTF8(const s: UTF8String): TFileSize;
 begin
   Result := WriteUTF8Line(s);
-end;
+end;}
 
 {$ifndef FPC}
 function TmnBufferStream.WriteLineUTF8(const s: string): TFileSize;
@@ -1979,6 +1985,17 @@ function TmnHexStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount
 begin
   HexEncode(Buffer, Count, ResultCount, RealCount);
   Result := True;
+end;
+
+{ TmnPointerStream }
+
+constructor TmnPointerStream.Create(aBytes: PByte; aSize: Integer);
+begin
+  SetPointer(aBytes,aSize);
+  {$ifdef FPC}
+  SizeBoundsSeek:=True;
+  {$endif}
+  //Seek(0,soFromBeginning);
 end;
 
 { TmnReadWriteBuffer }

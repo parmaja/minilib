@@ -236,7 +236,11 @@ function ZDecompressCheck(code: Integer): Integer; overload;
 begin
   Result := code;
   if code < 0 then
+  {$ifdef FPC}
+    raise Exception.Create('Error:' + Code.ToString) at get_caller_addr(get_frame);
+  {$else}
     raise EZDecompressionError.Create(string(_z_errmsg[2 - code])) at ReturnAddress;
+  {$endif}
 end;
 
 function gzipDecompressStream(inStream, outStream: TStream; Count: Int64): Int64;

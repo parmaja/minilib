@@ -633,12 +633,12 @@ end;
 
 procedure TmnCustomXMLWriter.StreamWriteLine(const vStr: string);
 begin
-  Stream.WriteLineUTF8(UTF8Encode(vStr));
+  Stream.WriteUTF8Line(UTF8Encode(vStr));
 end;
 
 procedure TmnCustomXMLWriter.StreamWriteString(const vStr: string);
 begin
-  Stream.WriteUTF8(UTF8Encode(vStr));
+  Stream.WriteUTF8String(UTF8Encode(vStr));
 end;
 
 procedure TmnCustomXMLWriter.OpenTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>; CloseIt: Boolean);

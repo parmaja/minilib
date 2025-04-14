@@ -2066,7 +2066,7 @@ procedure TmnIRCConnection.SendRaw(S: string);
 begin
   if StreamConnected then
   begin
-    FStream.WriteLineUTF8(S);
+    FStream.WriteUTF8Line(S);
     Log('>'+S); //it is in main thread
   end;
 end;
