@@ -22,8 +22,8 @@ object Main: TMain
   OnHide = FormHide
   object Memo: TMemo
     Left = 5
-    Height = 232
-    Top = 129
+    Height = 204
+    Top = 157
     Width = 526
     Align = alClient
     Anchors = [akLeft, akBottom]
@@ -41,18 +41,18 @@ object Main: TMain
   end
   object Panel1: TPanel
     Left = 0
-    Height = 124
+    Height = 152
     Top = 0
     Width = 536
     Align = alTop
     BevelOuter = bvNone
-    ClientHeight = 124
+    ClientHeight = 152
     ClientWidth = 536
     TabOrder = 0
     object Panel2: TPanel
       Left = 0
       Height = 39
-      Top = 85
+      Top = 113
       Width = 536
       Align = alBottom
       BevelOuter = bvNone
@@ -160,7 +160,7 @@ object Main: TMain
     object Panel3: TPanel
       Left = 0
       Height = 26
-      Top = 59
+      Top = 87
       Width = 536
       Align = alBottom
       BevelOuter = bvNone
@@ -289,17 +289,17 @@ object Main: TMain
       TabOrder = 4
     end
     object AliasNameEdit: TEdit
-      Left = 384
+      Left = 47
       Height = 21
-      Top = 34
+      Top = 56
       Width = 78
       TabOrder = 5
       Text = 'doc'
     end
     object Label5: TLabel
-      Left = 357
+      Left = 15
       Height = 13
-      Top = 36
+      Top = 59
       Width = 22
       Caption = 'Alias'
     end
@@ -320,6 +320,22 @@ object Main: TMain
       Caption = 'Challenge Server on 80'
       TabOrder = 7
     end
+  end
+  object CompressChk: TCheckBox
+    Left = 138
+    Height = 17
+    Top = 58
+    Width = 65
+    Caption = 'Compress'
+    TabOrder = 2
+  end
+  object KeepAliveChk: TCheckBox
+    Left = 219
+    Height = 17
+    Top = 58
+    Width = 68
+    Caption = 'Keep Alive'
+    TabOrder = 3
   end
   object MainMenu: TMainMenu
     Left = 441
