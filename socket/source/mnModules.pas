@@ -1047,13 +1047,16 @@ end;
 
 function TmodRespond.SendData(s: ImnStreamPersist; Count: Int64): Boolean;
 
-  procedure _SendHeader(ACount: Int64);
+  procedure _SendHeader(ACount: Int64; ACompress: Boolean);
   begin
     if not (resHeaderSent in  Header.States) then
     begin
-      PutHeader('Content-Length', ACount.ToString);
-      PutHeader('Content-Encoding', 'gzip');
-
+      if ACount>0 then
+      begin
+        PutHeader('Content-Length', ACount.ToString);
+        if ACompress then
+          PutHeader('Content-Encoding', 'gzip');
+      end;
       //Respond.AddHeader('Content-Length', Length(aData).ToString);
       SendHeader;
     end;
@@ -1067,7 +1070,7 @@ begin
   Result := Count<>0;
 
   if Count=0 then
-    _SendHeader(0)
+    _SendHeader(0, False)
   else
   begin
     aCompress := Request.Mode.AllowCompress;
@@ -1076,7 +1079,8 @@ begin
     begin
       mStream := TMemoryStream.Create;
       try
-        {$ifdef FPC}
+
+       {$ifdef FPC}
         zStream := TCompressionStream.Create(clDefault, mStream, True);
         {$else}
         zStream := TCompressionStream.Create(mStream, zcDefault, GzipBits[True]);
@@ -1087,7 +1091,7 @@ begin
           zStream.Free;
         end;
 
-        _SendHeader(mStream.Size);
+        _SendHeader(mStream.Size, True);
 
         Stream.Write(mStream.Memory^, mStream.Size);
 
@@ -1097,7 +1101,7 @@ begin
     end
     else
     begin
-      _SendHeader(Count);
+      _SendHeader(Count, False);
       s.SaveToStream(Self.Stream, Count);
     end;
   end;
