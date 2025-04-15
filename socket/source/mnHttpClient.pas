@@ -533,7 +533,7 @@ end;
 
 function TmnCustomHttpClient.ReceiveStream(AStream: TStream): TFileSize;
 begin
-  Result := Respond.ReceiveData(AStream);
+  Result := Respond.ReceiveStream(AStream);
 end;
 
 function TmnCustomHttpClient.ReadStream(AStream: TStream): TFileSize;
