@@ -1078,7 +1078,7 @@ end;
 
 var
   mStream: TMemoryStream;
-  zStream: {$ifdef FPC}TGZipCompressionStream;{$else}TZCompressionStream{$endif}
+  zStream: {$ifdef FPC}TGZipCompressionStream;{$else}TZCompressionStream{$endif};
 begin
   Result := Count<>0;
 
@@ -1092,7 +1092,7 @@ begin
     begin
       mStream := TMemoryStream.Create;
       try
-        zStream := {$ifdef FPC}TGZipCompressionStream.Create(clDefault, mStream);{$else}zStream := TZCompressionStream.Create(mStream, zcDefault, GzipBits[True]);{$endif}
+        zStream := {$ifdef FPC}TGZipCompressionStream.Create(clDefault, mStream);{$else}TZCompressionStream.Create(mStream, zcDefault, GzipBits[True]);{$endif}
         try
           s.SaveToStream(zStream, Count);
         finally
