@@ -323,14 +323,15 @@ type
     constructor Create(ARequest: TmodRequest); //need trigger event
     function WriteString(const s: string): Boolean;
     function WriteLine(const s: string): Boolean;
-    function SendData(const s: UTF8String): Boolean; overload;
-    function SendData(const s: string): Boolean; overload;
-    function SendData(s: TStream; Count: Int64): Boolean; overload;
-    function SendData(s: ImnStreamPersist; Count: Int64): Boolean; overload;
+
+    function SendUTF8String(const s: UTF8String): Boolean; overload;
+    function SendString(const s: string): Boolean; overload;
+    function SendStream(s: TStream; Count: Int64): Boolean; overload;
+    function SendStream(s: ImnStreamPersist; Count: Int64): Boolean; overload;
     function SendFile(AFileName: string; const Stamp: string): Boolean;
 
-    function ReceiveData(s: TStream): Int64; overload;
-    function ReceiveData(s: ImnStreamPersist; Count: Int64): Int64; overload;
+    function ReceiveStream(s: TStream): Int64; overload;
+    function ReceiveStream(s: ImnStreamPersist; Count: Int64): Int64; overload;
 
     property Request: TmodRequest read FRequest;
     property ContentType: string read FContentType write FContentType;
@@ -1002,7 +1003,7 @@ begin
   inherited;
 end;
 
-function TmodRespond.ReceiveData(s: ImnStreamPersist; Count: Int64): Int64;
+function TmodRespond.ReceiveStream(s: ImnStreamPersist; Count: Int64): Int64;
 var
   aDecompress: Boolean;
   mStream: TMemoryStream;
@@ -1026,7 +1027,7 @@ begin
   end;
 end;
 
-function TmodRespond.ReceiveData(s: TStream): Int64;
+function TmodRespond.ReceiveStream(s: TStream): Int64;
 var
   aDecompress: Boolean;
 begin
@@ -1049,19 +1050,19 @@ begin
     Result := Stream.ReadStream(s, -1); //read complete stream
 end;
 
-function TmodRespond.SendData(s: TStream; Count: Int64): Boolean;
+function TmodRespond.SendStream(s: TStream; Count: Int64): Boolean;
 var
   stream: TInterfacedStreamtWrapper;
 begin
   stream := TInterfacedStreamtWrapper.Create(s);
   try
-    Result := SendData(stream, Count);
+    Result := SendStream(stream, Count);
   finally
     FreeAndNil(stream);
 end;
 end;
 
-function TmodRespond.SendData(s: ImnStreamPersist; Count: Int64): Boolean;
+function TmodRespond.SendStream(s: ImnStreamPersist; Count: Int64): Boolean;
 var
   aCompress: Boolean;
 
@@ -1078,7 +1079,7 @@ end;
 
 var
   mStream: TMemoryStream;
-  zStream: {$ifdef FPC}TGZipCompressionStream;{$else}TZCompressionStream{$endif};
+  zStream: {$ifdef FPC}TGZipCompressionStream{$else}TZCompressionStream{$endif};
 begin
   Result := Count<>0;
 
@@ -1141,31 +1142,35 @@ begin
     ContentLength := aDocSize;
     ContentType := DocumentToContentType(AFileName);
 
-    SendData(aStream, ContentLength);
+    SendStream(aStream, ContentLength);
     Result := True;
   finally
     aStream.Free;
   end;
 end;
 
-function TmodRespond.SendData(const s: UTF8String): Boolean;
+function TmodRespond.SendUTF8String(const s: UTF8String): Boolean;
 var
   aStream: TmnPointerStream;
 begin
   aStream := TmnPointerStream.Create(PByte(s), ByteLength(s));
   try
-    Result := SendData(aStream, Length(s));
+    Result := SendStream(aStream, Length(s));
   finally
     aStream.Free;
   end;
 end;
 
-function TmodRespond.SendData(const s: string): Boolean;
+function TmodRespond.SendString(const s: string): Boolean;
 var
   t: UTF8String;
 begin
+  {$ifdef FPC}
   t := UTF8Encode(s);
-  Result := SendData(t);
+  Result := SendString(t);
+  {$else}
+  Result := SendUTF8String(t);
+  {$endif}
 end;
 
 function TmodRespond.GetStream: TmnBufferStream;
