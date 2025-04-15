@@ -934,8 +934,9 @@ begin
   end
   else
   begin
-{    if not Respond.Header.Exists['Content-Length'] then //TODO see it
-      Respond.KeepAlive := False;}
+    // If no content length that mean we cant continue as keep alive, content length is recomended to keep the stream
+    if not Respond.Header.Exists['Content-Length'] then //TODO see it Zaher,Belal
+      Respond.KeepAlive := False;
 
     if Respond.KeepAlive then
     begin
