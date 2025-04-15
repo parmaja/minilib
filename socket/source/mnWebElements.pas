@@ -3472,7 +3472,8 @@ begin
   Context.Writer.OpenTag('html', Scope.ToString);
   Context.Writer.OpenTag('head');
   Context.Writer.AddTag('title', '', e.Title);
-  Context.Writer.AddShortTag('link', 'rel="shortcut icon" href="#"');
+  //Context.Writer.AddShortTag('link', 'rel="shortcut icon" href="#"');
+  Context.Writer.AddShortTag('link', 'rel="icon" href="data:,"');
   Context.Writer.AddShortTag('meta', 'charset="UTF-8"');
   Context.Writer.AddShortTag('meta', 'name="viewport" content="width=device-width, initial-scale=1"');
   if e.Parent <> nil then // Only root have head
