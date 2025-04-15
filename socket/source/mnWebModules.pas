@@ -934,8 +934,8 @@ begin
   end
   else
   begin
-    if not Respond.Header.Exists['Content-Length'] then
-      Respond.KeepAlive := False;
+{    if not Respond.Header.Exists['Content-Length'] then //TODO see it
+      Respond.KeepAlive := False;}
 
     if Respond.KeepAlive then
     begin
@@ -1012,7 +1012,7 @@ begin
         end;
 
         if Respond.KeepAlive then
-          Respond.AddHeader('Content-Length', IntToStr(aDocSize));
+          Respond.ContentLength := aDocSize;
       end;
 
       Respond.SendHeader;

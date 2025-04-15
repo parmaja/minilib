@@ -3969,15 +3969,7 @@ begin
 
           if FileExists(aFileName) and not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots
           begin
-            fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
-            try
-              AResponse.ContentLength := GetSizeOfFile(aFileName); //conseder use fs.Size
-              AResponse.ContentType := DocumentToContentType(aFileName);
-              //AContext.Writer.WriteStream(fs, 0);
-              AResponse.SendData(fs, AResponse.ContentLength);
-            finally
-              fs.Free;
-            end;
+            AResponse.SendFile(aFileName, AContext.Stamp);
           end
           else
             AResponse.HttpResult := hrNotFound;
@@ -4820,9 +4812,6 @@ end;
 procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   aStream: TStream;
-  aDocSize: Int64;
-  aDate: TDateTime;
-  aEtag, aFTag: string;
 begin
   inherited;
   if ftResource in Options then
@@ -4848,29 +4837,9 @@ begin
     end
     else
     begin
-      FileAge(FileName, aDate);
-      aFtag := DateTimeToUnix(aDate).ToString;
-      aEtag := AContext.Stamp;
-      if (aEtag<>'') and (aEtag = aFtag) then
-      begin
+      if AResponse.SendFile(FileName, AContext.Stamp) then
+      else
         AResponse.HttpResult := hrNotModified;
-        AResponse.Resume := False;
-        exit;
-      end;
-
-      aStream := TFileStream.Create(FileName, fmShareDenyNone or fmOpenRead);
-      try
-        aDocSize := aStream.Size;
-
-        AResponse.ETag := aFTag;
-        AResponse.Header['Cache-Control']  := 'max-age=600';
-        AResponse.Header['Last-Modified']  := FormatHTTPDate(aDate);
-        AResponse.Header['Content-Length'] := IntToStr(aDocSize);
-
-        AContext.Writer.WriteStream(aStream, 0);
-      finally
-        aStream.Free;
-      end;
     end;
   end;
 end;
@@ -4896,8 +4865,8 @@ procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; AResponse: T
 begin
   if FileDate <> 0 then
     AResponse.Header['Last-Modified']  := FormatHTTPDate(FileDate);
-  AResponse.Header['Content-Length'] := IntToStr(Data.Size);
   AResponse.Header['Cache-Control']  := 'public, max-age=3600';
+  AResponse.ContentLength := Data.Size;
   Data.Seek(0, soBeginning);
   AContext.Writer.WriteStream(Data, 0);
 end;
@@ -4947,16 +4916,7 @@ begin
   begin
     if WebExpandFile(HomePath, AContext.Route, aFileName) then
     begin
-      if FileExists(aFileName) then
-      begin
-        AResponse.ContentLength := GetSizeOfFile(aFileName);
-        fs := TFileStream.Create(aFileName, fmShareDenyWrite or fmOpenRead);
-        try
-          AContext.Writer.WriteStream(fs, 0);
-        finally
-          fs.Free;
-        end;
-      end;
+      AResponse.SendFile(aFileName, AContext.Stamp);
     end;
   end;
 end;

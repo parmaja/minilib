@@ -1,6 +1,12 @@
 ﻿unit mnModules;
-{$M+}{$H+}
-{$IFDEF FPC}{$MODE delphi}{$ENDIF}
+{$IFDEF FPC}
+{$mode delphi}
+{$modeswitch prefixedattributes}
+{$modeswitch arrayoperators}
+{$modeswitch arraytodynarray}
+{$modeswitch functionreferences}{$modeswitch anonymousfunctions}
+{$ENDIF}
+{$H+}{$M+}
 {**
  *  This file is part of the "Mini Library"
  *
@@ -36,7 +42,7 @@ interface
 uses
   SysUtils, Classes, StrUtils, Types, DateUtils, ZLib, {$ifdef FPC}ZStream,{$endif}
   Generics.Defaults, mnStreamUtils, SyncObjs,
-  mnClasses, mnStreams, mnFields, mnParams,
+  mnClasses, mnStreams, mnFields, mnParams, mnMIME,
   mnSockets, mnConnections, mnServers;
 
 const
@@ -176,6 +182,23 @@ type
 
   TmodOptionValue = (ovUndefined, ovNo, ovYes);
 
+  //  class operator = (const Source: Boolean): TmodOptionValue;
+
+  { TmodOptionValueHelper }
+
+  TmodOptionValueHelper = record helper for TmodOptionValue
+  private
+    function GetAsBoolean: Boolean;
+    procedure SetAsBoolean(const Value: Boolean);
+    function GetAsString: String;
+  public
+    {class operator Explicit(const Source: Boolean): TmodOptionValue;
+    class operator Implicit(Source : Boolean) : TmodOptionValue;
+    class operator Implicit(Source : TmodOptionValue): Boolean;}
+    property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
+    property AsString: string read GetAsString;
+  end;
+
   { TmodRequest }
 
   TmodCommunicateUsing = record
@@ -186,7 +209,11 @@ type
     WebSocket: Boolean;
   end;
 
-  TStreamMode = set of (smRequestCompress, smRespondCompressing, smAllowCompress);
+  TStreamMode = set of (
+    smRequestCompress,
+    smAllowCompress,
+    smRespondCompressing // using proxies
+  );
   TStreamModeHelper = record helper for TStreamMode
     function RequestCompress: Boolean;
     function RespondCompressing: Boolean;
@@ -273,19 +300,21 @@ type
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy write FProtcolProxy;
   end;
 
-  TStreamPersistWrapper = class(TmnRefInterfacedPersistent, ImnStreamPersist)
+  TInterfacedStreamtWrapper = class(TInterfacedPersistent, ImnStreamPersist)
   protected
     FStream: TStream;
     procedure SaveToStream(Stream: TStream; Count: Int64); overload;
     procedure LoadFromStream(Stream: TStream; Count: Int64); overload;
   public
-    class function CreateInterface(vStream: TStream): ImnStreamPersist;
+    constructor Create(vStream: TStream);
   end;
 
   { TmodRespond }
 
   TmodRespond = class(TmodCommunicate)
   private
+    FContentType: String;
+    FETag: string;
   protected
     FRequest: TmodRequest;
     function GetStream: TmnBufferStream; override;
@@ -298,11 +327,15 @@ type
     function SendData(const s: string): Boolean; overload;
     function SendData(s: TStream; Count: Int64): Boolean; overload;
     function SendData(s: ImnStreamPersist; Count: Int64): Boolean; overload;
+    function SendFile(AFileName: string; const Stamp: string): Boolean;
 
     function ReceiveData(s: TStream): Int64; overload;
     function ReceiveData(s: ImnStreamPersist; Count: Int64): Int64; overload;
 
     property Request: TmodRequest read FRequest;
+    property ContentType: string read FContentType write FContentType;
+    property ETag: string read FETag write FETag;
+
   end;
 
   TmodeResult = (
@@ -315,16 +348,6 @@ type
   TmodRespondResult = record
     Status: TmodeResults;
     Timout: Integer;
-  end;
-
-  TmodOptionValueHelper = record helper for TmodOptionValue
-  private
-    function GetAsBoolean: Boolean;
-    procedure SetAsBoolean(const Value: Boolean);
-    function GetAsString: String;
-  public
-    property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
-    property AsString: string read GetAsString;
   end;
 
   {
@@ -396,8 +419,6 @@ type
 
   TwebRespond = class(TmodRespond)
   private
-    FContentType: String;
-    FETag: string;
     function GetRequest: TwebRequest;
   protected
     procedure DoPrepareHeader; override; //Called by Server
@@ -409,8 +430,6 @@ type
     function StatusResult: string;
     function StatusVersion: string;
     property Request: TwebRequest read GetRequest;
-    property ContentType: string read FContentType write FContentType;
-    property ETag: string read FETag write FETag;
   end;
 
   TwebCommand = class(TmnCustomServerCommand)
@@ -731,13 +750,6 @@ implementation
 uses
   mnUtils;
 
-{$ifndef FPC}
-type
-  TCompressionStream = TZCompressionStream;
-  TDecompressionStream = TZDecompressionStream;
-{$endif}
-
-
 function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 begin
   if UseSSL then
@@ -994,7 +1006,7 @@ function TmodRespond.ReceiveData(s: ImnStreamPersist; Count: Int64): Int64;
 var
   aDecompress: Boolean;
   mStream: TMemoryStream;
-  zStream: TDecompressionStream;
+//  zStream: {$ifdef FPC}TGZipDecompressionStream;{$else}TDecompressionStream{$endif}
 begin
   aDecompress := (Request.Use.AcceptCompressing in [ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
   if aDecompress then
@@ -1039,33 +1051,34 @@ end;
 
 function TmodRespond.SendData(s: TStream; Count: Int64): Boolean;
 var
-  aInt: ImnStreamPersist;
+  stream: TInterfacedStreamtWrapper;
 begin
-  aInt := TStreamPersistWrapper.CreateInterface(s);
-  Result := SendData(aInt, Count);
+  stream := TInterfacedStreamtWrapper.Create(s);
+  try
+    Result := SendData(stream, Count);
+  finally
+    FreeAndNil(stream);
+end;
 end;
 
 function TmodRespond.SendData(s: ImnStreamPersist; Count: Int64): Boolean;
+var
+  aCompress: Boolean;
 
   procedure _SendHeader(ACount: Int64; ACompress: Boolean);
   begin
     if not (resHeaderSent in  Header.States) then
     begin
-      if ACount>0 then
-      begin
-        PutHeader('Content-Length', ACount.ToString);
-        if ACompress then
-          PutHeader('Content-Encoding', 'gzip');
-      end;
-      //Respond.AddHeader('Content-Length', Length(aData).ToString);
+      ContentLength := ACount;
+      if ACompress then
+        PutHeader('Content-Encoding', 'gzip');
       SendHeader;
     end;
-  end;
+end;
 
 var
   mStream: TMemoryStream;
-  zStream: TCompressionStream;
-  aCompress: Boolean;
+  zStream: {$ifdef FPC}TGZipCompressionStream;{$else}TZCompressionStream{$endif}
 begin
   Result := Count<>0;
 
@@ -1079,12 +1092,7 @@ begin
     begin
       mStream := TMemoryStream.Create;
       try
-
-       {$ifdef FPC}
-        zStream := TCompressionStream.Create(clDefault, mStream, True);
-        {$else}
-        zStream := TCompressionStream.Create(mStream, zcDefault, GzipBits[True]);
-        {$endif}
+        zStream := {$ifdef FPC}TGZipCompressionStream.Create(clDefault, mStream);{$else}zStream := TZCompressionStream.Create(mStream, zcDefault, GzipBits[True]);{$endif}
         try
           s.SaveToStream(zStream, Count);
         finally
@@ -1104,6 +1112,39 @@ begin
       _SendHeader(Count, False);
       s.SaveToStream(Self.Stream, Count);
     end;
+  end;
+end;
+
+function TmodRespond.SendFile(AFileName: string; const Stamp: string): Boolean;
+var
+  aStream: TStream;
+  aDocSize: Int64;
+  aDate: TDateTime;
+  aEtag, aFTag: string;
+begin
+  FileAge(AFileName, aDate);
+  aFtag := DateTimeToUnix(aDate).ToString;
+  aEtag := Stamp;
+  if (aEtag<>'') and (aEtag = aFtag) then
+  begin
+    Result := False;
+    exit;
+  end;
+
+  aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
+  try
+    aDocSize := aStream.Size;
+
+    ETag := aFTag;
+    Header['Cache-Control']  := 'max-age=600';
+    Header['Last-Modified']  := FormatHTTPDate(aDate);
+    ContentLength := aDocSize;
+    ContentType := DocumentToContentType(AFileName);
+
+    SendData(aStream, ContentLength);
+    Result := True;
+  finally
+    aStream.Free;
   end;
 end;
 
@@ -2178,7 +2219,7 @@ end;
 procedure TmodCommunicate.AddHeader(const AName, AValue: String);
 begin
   if resHeaderSent in Header.States then
-    raise TmodModuleException.Create('Header is already sent');
+    raise TmodModuleException.Create('Header is already sent: '+ Head);
 
   Header.Add(AName, AValue);
 end;
@@ -2438,8 +2479,9 @@ end;
 procedure TwebRespond.DoPrepareHeader;
 begin
   inherited;
-  if (ContentLength > 0) then
+  if (ContentLength > 0) {and (smRespondCompressing in Mode)} then //if we use proxies we cant send content length
     PutHeader('Content-Length', IntToStr(ContentLength));
+
   if (ContentType <> '') then
     PutHeader('Content-Type', ContentType);
 
@@ -2500,6 +2542,21 @@ begin
     ovUndefined: Result := 'Undefined';
   end;
 end;
+
+{class operator TmodOptionValueHelper.Explicit(const Source: Boolean): TmodOptionValue;
+begin
+  Result.AsBoolean := Source;
+end;
+
+class operator TmodOptionValueHelper.Implicit(Source: Boolean): TmodOptionValue;
+begin
+  Result.AsBoolean := Source;
+end;
+
+class operator TmodOptionValueHelper.Implicit(Source: TmodOptionValue): Boolean;
+begin
+  Result := Source.AsBoolean;
+end;}
 
 procedure TmodOptionValueHelper.SetAsBoolean(const Value: Boolean);
 begin
@@ -2789,23 +2846,20 @@ begin
   FWaitEvent.WaitFor;
 end;
 
-{ TStreamPersistWrapper }
+{ TInterfacedStreamtWrapper }
 
-class function TStreamPersistWrapper.CreateInterface(vStream: TStream): ImnStreamPersist;
-var
-  aObj: TStreamPersistWrapper;
+constructor TInterfacedStreamtWrapper.Create(vStream: TStream);
 begin
-  aObj := TStreamPersistWrapper.Create;
-  aObj.FStream := vStream;
-  Result := aObj;
+  inherited Create;
+  FStream := vStream;
 end;
 
-procedure TStreamPersistWrapper.LoadFromStream(Stream: TStream; Count: Int64);
+procedure TInterfacedStreamtWrapper.LoadFromStream(Stream: TStream; Count: Int64);
 begin
   FStream.CopyFrom(Stream,Count);
 end;
 
-procedure TStreamPersistWrapper.SaveToStream(Stream: TStream; Count: Int64);
+procedure TInterfacedStreamtWrapper.SaveToStream(Stream: TStream; Count: Int64);
 begin
   Stream.CopyFrom(FStream, Count);
 end;

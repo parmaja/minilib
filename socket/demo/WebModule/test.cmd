@@ -1,0 +1,2 @@
+curl --compressed -H "Connection: Keep-Alive" -v http://localhost:8080/home/assets/files/test.html http://localhost:8080/home/assets/files/test.html
+rem curl --compressed -H "Connection: Keep-Alive" -v http://localhost:8080/home/assets/bootstrap.min.css
