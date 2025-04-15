@@ -1059,7 +1059,7 @@ begin
     Result := SendStream(stream, Count);
   finally
     FreeAndNil(stream);
-end;
+  end;
 end;
 
 function TmodRespond.SendStream(s: ImnStreamPersist; Count: Int64): Boolean;
@@ -1121,12 +1121,11 @@ var
   aStream: TStream;
   aDocSize: Int64;
   aDate: TDateTime;
-  aEtag, aFTag: string;
+  aTag: string;
 begin
   FileAge(AFileName, aDate);
-  aFtag := DateTimeToUnix(aDate).ToString;
-  aEtag := Stamp;
-  if (aEtag<>'') and (aEtag = aFtag) then
+  aTag := DateTimeToUnix(aDate).ToString;
+  if (Stamp <> '') and (Stamp = aTag) then
   begin
     Result := False;
     exit;
@@ -1136,13 +1135,13 @@ begin
   try
     aDocSize := aStream.Size;
 
-    ETag := aFTag;
+    ETag := aTag;
     Header['Cache-Control']  := 'max-age=600';
     Header['Last-Modified']  := FormatHTTPDate(aDate);
-    ContentLength := aDocSize;
+
     ContentType := DocumentToContentType(AFileName);
 
-    SendStream(aStream, ContentLength);
+    SendStream(aStream, GetSizeOfFile(AFileName));
     Result := True;
   finally
     aStream.Free;

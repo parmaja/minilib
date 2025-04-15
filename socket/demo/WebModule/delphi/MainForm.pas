@@ -105,6 +105,24 @@ begin
     HttpServer.PrivateKeyFile := 'HttpServer.private.key';
   end;
 
+  aDocModule := HttpServer.Modules.Find<TmodWebModule>;
+
+  if aDocModule <> nil then
+  begin
+    aDocModule.HomePath := aHomePath;
+    aDocModule.AliasName := AliasNameEdit.Text;
+
+    if KeepAliveChk.Checked then
+      aDocModule.UseKeepAlive := ovYes
+    else
+      aDocModule.UseKeepAlive := ovNo;
+
+    if CompressChk.Checked then
+      aDocModule.UseCompressing := ovUndefined
+    else
+      aDocModule.UseCompressing := ovNo;
+  end;
+
   aHomePath := HomePathEdit.Text;
   if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
     aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
@@ -124,22 +142,18 @@ begin
     aHomeModule.HomePath := IncludePathDelimiter(aHomePath);
     aHomeModule.WorkPath := aHomeModule.WebApp.AppPath;
     aHomeModule.WebApp.CompactMode := False;
-    aHomeModule.UseCompressing.AsBoolean := False;
     ForceDirectories(aHomeModule.WorkPath + 'cache');
     ForceDirectories(aHomeModule.WorkPath + 'temp');
-  end;
 
-  aDocModule := HttpServer.Modules.Find<TmodWebModule>;
-
-  if aDocModule <> nil then
-  begin
-    aDocModule.HomePath := aHomePath;
-    aDocModule.AliasName := AliasNameEdit.Text;
     if KeepAliveChk.Checked then
-      aDocModule.UseKeepAlive := ovYes
+      aHomeModule.UseKeepAlive := ovYes
     else
-      aDocModule.UseKeepAlive := ovNo;
-    aDocModule.UseCompressing.AsBoolean := CompressChk.Checked;
+      aHomeModule.UseKeepAlive := ovNo;
+
+    if CompressChk.Checked then
+      aHomeModule.UseCompressing := ovUndefined
+    else
+      aHomeModule.UseCompressing := ovNo;
   end;
 end;
 
