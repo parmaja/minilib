@@ -2922,7 +2922,7 @@ begin
         else if AResponse.HttpResult = hrNotFound then
         begin
           AResponse.ContentType := 'text/html';
-          AContext.Writer.WriteLn('404 Not Found');
+          AResponse.SendUTF8String('404 Not Found');
         end;
 
         if not (AResponse.IsHeaderSent) and (AResponse.HttpResult > hrNone) then
@@ -2935,7 +2935,7 @@ begin
       begin
         AResponse.HttpResult := hrNotFound;
         AResponse.ContentType := 'text/html';
-        AContext.Writer.WriteLn('404 Not Found');
+        AResponse.SendUTF8String('404 Not Found');
       end;
     end;
 
@@ -2968,7 +2968,7 @@ begin
         AResponse.HttpResult := hrError;
         AResponse.ContentType := 'text/html';
       end;
-      AContext.Writer.WriteLn('Server Error: ' + E.Message);
+      AResponse.SendUTF8String('Server Error: ' + E.Message);
     end;
     {$else}
       raise;
