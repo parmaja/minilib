@@ -76,36 +76,15 @@ type
     procedure DoPrepareHeader; override;
   end;
 
-  THttpResult = (
-    hrNone,
-    hrOK,
-    hrNoContent,
-    hrUnauthorized,
-    hrError,
-    hrRedirect, //302
-    hrNotModified,
-    hrMovedTemporarily, //307
-    hrNotFound,
-    hrSwitchingProtocols,
-    hrServiceUnavailable
-  );
-
-  THttpResultHelper = record helper for THttpResult
-    function ToString: string;
-  end;
-
   { TmodHttpRespond }
 
   TmodHttpRespond = class(TwebRespond)
   private
     FHomePath: string; //Document root folder
     FHostURL: string;
-    FHttpResult: THttpResult;
-    procedure SetHttpResult(const Value: THttpResult);
   protected
     procedure Created; override;
   public
-    property HttpResult: THttpResult read FHttpResult write SetHttpResult;
     //Document root folder
     property HomePath: string read FHomePath;
     property HostURL: string read FHostURL;
@@ -419,16 +398,8 @@ end;
 procedure TmodHttpRespond.Created;
 begin
   inherited;
-  FHttpResult := hrNone;
 end;
 
-procedure TmodHttpRespond.SetHttpResult(const Value: THttpResult);
-begin
-  if resHeaderSent in Header.States then
-    raise TmodModuleException.Create('Header is already sent');
-  FHttpResult := Value;
-  Head := HttpResult.ToString;
-end;
 
 { TmodHttpPostCommand }
 
@@ -671,7 +642,7 @@ begin
 
   if not StartsStr(aHomePath, aDocument) then //check if out of root :)
   begin
-    Respond.HttpResult := hrError;
+    Respond.Answer := hrError;
   end
   else if ((Request.Path = '') and not FileExists(aDocument)) or (not EndsDelimiter(aDocument) and DirectoryExists(aDocument)) then
   begin
@@ -683,7 +654,7 @@ begin
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
     Request.Address := IncludeURLDelimiter(Request.Address);
     //Respond.SendHead('HTTP/1.1 301 Moved Permanently');
-    Respond.HttpResult := hrRedirect;
+    Respond.Answer := hrRedirect;
     //Respond.SendHead('HTTP/1.1 307 Temporary Redirect');
     Respond.AddHeader('Location', IncludeURLDelimiter(Request.Address));
     Respond.SendHeader;
@@ -726,7 +697,7 @@ end;
 procedure TmodServerInfoCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.HttpResult := hrOK;
+  Respond.Answer := hrOK;
   Respond.SendHeader;
   //Respond.Stream.WriteLine('Server is running on port: ' + Module.Server.Port);
   Respond.Stream.WriteLine(Utf8String('the server is: "' + ParamStr(0) + '"'));
@@ -862,7 +833,7 @@ begin
         SendHostHeader := Request.Header.ReadBool('X-Send-Server-Hostname', True);
 
         WSKey := HashWebSocketKey(WSHash);
-        Respond.HttpResult := hrSwitchingProtocols;
+        Respond.Answer := hrSwitchingProtocols;
         //Respond.AddHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         Respond.AddHeader('Connection', 'Upgrade');
         Respond.AddHeader('upgrade', 'websocket');
@@ -982,7 +953,7 @@ begin
     aEtag := Request.Header['If-None-Match'];
     if (aEtag<>'') and (aEtag = aFtag) then
     begin
-      Respond.HttpResult := hrNotModified;
+      Respond.Answer := hrNotModified;
       Respond.SendHeader;
       //Log(vFile+': not modified');
       Exit;
@@ -995,7 +966,7 @@ begin
       else}
         aDocSize := aDocStream.Size;
 
-      Respond.HttpResult := hrOK;
+      Respond.Answer := hrOK;
 
       //Respond.AddHeader('Cache-Control', 'max-age=600');
       Respond.AddHeader('Cache-Control', 'max-age=600');
@@ -1034,7 +1005,7 @@ procedure TmodHttpCommand.RespondNotActive;
 var
   Body: string;
 begin
-  Respond.HttpResult := hrOK; //hrError
+  Respond.Answer := hrOK; //hrError
   Respond.AddHeader('Content-Type', 'text/plain');
   Respond.Stream.WriteUTF8String('404 Not Active');
   Respond.KeepAlive := False;
@@ -1044,7 +1015,7 @@ procedure TmodHttpCommand.RespondNotFound;
 var
   Body: string;
 begin
-  Respond.HttpResult := hrNotFound; //hrError
+  Respond.Answer := hrNotFound; //hrError
   Respond.AddHeader('Content-Type', 'text/plain');
   Respond.Stream.WriteUTF8String('404 Not Found');
   Respond.KeepAlive := False;
@@ -1068,26 +1039,6 @@ begin
   inherited;
   //ARequest.ParsePath(ARequest.URI); duplicate in parse head :)
   ARequest.Command := ARequest.Method;
-end;
-
-{ THttpResultHelper }
-
-function THttpResultHelper.ToString: string;
-begin
-  Result := 'HTTP/1.1 ';
-  case Self of
-    hrNone: Result := '';
-    hrOK: Result := Result + '200 OK';
-    hrNoContent: Result := Result + '204 No Content';
-    hrError: Result := Result + '500 Internal Server Error';
-    hrUnauthorized: Result := Result + '401 Unauthorized';
-    hrNotFound: Result := Result + '404 NotFound';
-    hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
-    hrRedirect: Result := Result + '302 Found';
-    hrNotModified: Result := Result + '304 Not Modified';
-    hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
-    hrServiceUnavailable: Result := Result + '503 Service Unavailable';
-  end;
 end;
 
 {$ifndef FPC}
@@ -1128,7 +1079,7 @@ end;
 procedure TmodHttpOptionCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.HttpResult := hrOK;
+  Respond.Answer := hrOK;
   Respond.PutHeader('Allow', 'OPTIONS, GET, HEAD, POST');
   //PutHeader('Access-Control-Allow-Origin', 'origin');
 //  PutHeader('Access-Control-Allow-Headers', 'Origin, Accept, Accept-  Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Response-Time, X-PINGOTHER, X-CSRF-Token,Authorization');

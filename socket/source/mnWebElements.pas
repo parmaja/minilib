@@ -2914,18 +2914,18 @@ begin
 
       if not (AResponse.IsHeaderSent) then
       begin
-        if (AResponse.HttpResult = hrOK) and (AResponse.Resume = False) then
+        if (AResponse.Answer =hrOK) and (AResponse.Resume = False) then
         begin
-          AResponse.HttpResult := hrNoContent;
+          AResponse.Answer := hrNoContent;
           AResponse.ContentLength := 0;
         end
-        else if AResponse.HttpResult = hrNotFound then
+        else if AResponse.Answer = hrNotFound then
         begin
           AResponse.ContentType := 'text/html';
           AResponse.SendUTF8String('404 Not Found');
         end;
 
-        if not (AResponse.IsHeaderSent) and (AResponse.HttpResult > hrNone) then
+        if not (AResponse.IsHeaderSent) and (AResponse.Answer > hrNone) then
           AResponse.SendHeader;
       end;
     end
@@ -2933,7 +2933,7 @@ begin
     begin
       if not (AResponse.IsHeaderSent) then
       begin
-        AResponse.HttpResult := hrNotFound;
+        AResponse.Answer := hrNotFound;
         AResponse.ContentType := 'text/html';
         AResponse.SendUTF8String('404 Not Found');
       end;
@@ -2965,7 +2965,7 @@ begin
     begin
       if not (AResponse.IsHeaderSent) then
       begin
-        AResponse.HttpResult := hrError;
+        AResponse.RespondResult := hrError;
         AResponse.ContentType := 'text/html';
       end;
       AResponse.SendUTF8String('Server Error: ' + E.Message);
@@ -3973,11 +3973,11 @@ begin
             AResponse.SendFile(aFileName, AContext.Stamp);
           end
           else
-            AResponse.HttpResult := hrNotFound;
+            AResponse.Answer := hrNotFound;
         end;
       end
       else
-        AResponse.HttpResult := hrUnauthorized;
+        AResponse.Answer := hrUnauthorized;
     end
     else
       Render(AContext, AResponse);
@@ -4832,7 +4832,7 @@ begin
   begin
     if not FileExists(FileName) then
     begin
-      AResponse.HttpResult := hrNotFound;
+      AResponse.Answer := hrNotFound;
       AResponse.Resume := False;
       exit;
     end
@@ -4840,7 +4840,7 @@ begin
     begin
       if AResponse.SendFile(FileName, AContext.Stamp) then
       else
-        AResponse.HttpResult := hrNotModified;
+        AResponse.Answer := hrNotModified;
     end;
   end;
 end;
@@ -4909,7 +4909,6 @@ end;
 
 procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
-  fs: TFileStream;
   aFileName: string;
 begin
   inherited;
@@ -5495,9 +5494,9 @@ end;
 procedure THTML.TForm.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
-  if (RedirectTo <> '') and (AResponse.HttpResult = hrNone) then
+  if (RedirectTo <> '') and (AResponse.Answer = hrNone) then
   begin
-    AResponse.HttpResult := hrRedirect;
+    AResponse.Answer := hrRedirect;
     AResponse.Location := RedirectTo;
   end;
 end;
@@ -5858,7 +5857,7 @@ begin
       aContext.Data.Read(Request.Stream);
     end;
     Respond.PutHeader('Content-Type', DocumentToContentType('html'));
-    Respond.HttpResult := hrOK;
+    Respond.Answer := hrOK;
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
     aContext.Writer := TmnwWriter.Create('html', Respond.Stream);
@@ -5867,7 +5866,7 @@ begin
       aContext.Stamp := Request.Header['If-None-Match'];
 
       Respond.SessionID := Request.GetCookie('', 'session');
-      Respond.HttpResult := hrOK;
+      Respond.Answer := hrOK;
       Respond.Location := '';
 
       (Module as TUIWebModule).WebApp.Respond(aContext, Respond);

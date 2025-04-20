@@ -70,6 +70,24 @@ type
 
   TmodHeaderStates = set of TmodHeaderState;
 
+  TmodAnswer = (
+    hrNone,
+    hrOK,
+    hrNoContent,
+    hrUnauthorized,
+    hrError,
+    hrRedirect, //302
+    hrNotModified,
+    hrMovedTemporarily, //307
+    hrNotFound,
+    hrSwitchingProtocols,
+    hrServiceUnavailable
+  );
+
+  TmodAnswerHelper = record helper for TmodAnswer
+    function ToString: string; //HTTP
+  end;
+
   TmodHeader = class(TmnHeader)
   private
     FStates: TmodHeaderStates;
@@ -313,8 +331,10 @@ type
 
   TmodRespond = class(TmodCommunicate)
   private
+    FAnswer: TmodAnswer;
     FContentType: String;
     FETag: string;
+    procedure SetAnswer(const Value: TmodAnswer);
   protected
     FRequest: TmodRequest;
     function GetStream: TmnBufferStream; override;
@@ -336,6 +356,7 @@ type
     property Request: TmodRequest read FRequest;
     property ContentType: string read FContentType write FContentType;
     property ETag: string read FETag write FETag;
+    property Answer: TmodAnswer read FAnswer write SetAnswer;
 
   end;
 
@@ -1127,6 +1148,7 @@ begin
   aTag := DateTimeToUnix(aDate).ToString;
   if (Stamp <> '') and (Stamp = aTag) then
   begin
+    Answer := hrNotFound;
     Result := False;
     exit;
   end;
@@ -1184,7 +1206,7 @@ end;
 
 function TmodRespond.WriteString(const s: string): Boolean;
 begin
-  Result := Stream.WriteUTF8String(S) > 0;
+  Result := Stream.WriteUTF8String(UTF8Encode(S)) > 0;
 end;
 
 { TmodRequest }
@@ -2277,6 +2299,26 @@ begin
     Result := '';
 end;
 
+{ THttpResultHelper }
+
+function TmodAnswerHelper.ToString: string;
+begin
+  Result := 'HTTP/1.1 ';
+  case Self of
+    hrNone: Result := '';
+    hrOK: Result := Result + '200 OK';
+    hrNoContent: Result := Result + '204 No Content';
+    hrError: Result := Result + '500 Internal Server Error';
+    hrUnauthorized: Result := Result + '401 Unauthorized';
+    hrNotFound: Result := Result + '404 NotFound';
+    hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
+    hrRedirect: Result := Result + '302 Found';
+    hrNotModified: Result := Result + '304 Not Modified';
+    hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
+    hrServiceUnavailable: Result := Result + '503 Service Unavailable';
+  end;
+end;
+
 { TmodHeader }
 
 procedure TmodHeader.Clear;
@@ -2506,6 +2548,14 @@ begin
     for s in Cookies do
       Stream.WriteUTF8Line('Set-Cookie: ' + s);
   end;
+end;
+
+procedure TmodRespond.SetAnswer(const Value: TmodAnswer);
+begin
+  if resHeaderSent in Header.States then
+    raise TmodModuleException.Create('Header is already sent');
+  FAnswer := Value;
+  Head := Answer.ToString;
 end;
 
 function TwebRespond.StatusCode: Integer;
