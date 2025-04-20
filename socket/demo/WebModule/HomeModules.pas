@@ -381,7 +381,7 @@ begin
       aPassword := AContext.Data.Values['password'];
       AResponse.SessionID := aUsername +'/'+ aPassword;
       AResponse.Resume := False;
-      AResponse.HttpResult := hrRedirect;
+      AResponse.Answer := hrRedirect;
       AResponse.Location := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
     end;
   end;
@@ -515,7 +515,7 @@ begin
       aPassword := AContext.Data.Values['password'];
       AResponse.SessionID := aUsername +'/'+ aPassword;
       AResponse.Resume := False;
-      AResponse.HttpResult := hrRedirect;
+      AResponse.Answer := hrRedirect;
       AResponse.Location := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
     end;
   end;

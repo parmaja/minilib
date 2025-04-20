@@ -2965,7 +2965,7 @@ begin
     begin
       if not (AResponse.IsHeaderSent) then
       begin
-        AResponse.RespondResult := hrError;
+        AResponse.Answer := hrError;
         AResponse.ContentType := 'text/html';
       end;
       AResponse.SendUTF8String('Server Error: ' + E.Message);
