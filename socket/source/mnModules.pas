@@ -75,6 +75,7 @@ type
     hrOK,
     hrNoContent,
     hrUnauthorized,
+    hrForbidden, //403
     hrError,
     hrRedirect, //302
     hrNotModified,
@@ -1144,13 +1145,18 @@ var
   aDate: TDateTime;
   aTag: string;
 begin
+  if not FileExists(aFileName) then
+  begin
+    Answer := hrNotFound;
+    exit(False);
+  end;
+
   FileAge(AFileName, aDate);
   aTag := DateTimeToUnix(aDate).ToString;
   if (Stamp <> '') and (Stamp = aTag) then
   begin
-    Answer := hrNotFound;
-    Result := False;
-    exit;
+    Answer := hrNotModified;
+    exit(False);
   end;
 
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
@@ -2310,6 +2316,7 @@ begin
     hrNoContent: Result := Result + '204 No Content';
     hrError: Result := Result + '500 Internal Server Error';
     hrUnauthorized: Result := Result + '401 Unauthorized';
+    hrForbidden : Result := Result + '403 Forbidden';
     hrNotFound: Result := Result + '404 NotFound';
     hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
     hrRedirect: Result := Result + '302 Found';

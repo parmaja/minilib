@@ -3968,12 +3968,10 @@ begin
           if EndsDelimiter(aFileName) then
             aFileName := GetDefaultDocument(aFileName);
 
-          if FileExists(aFileName) and not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots
-          begin
-            AResponse.SendFile(aFileName, AContext.Stamp);
-          end
+          if not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots
+            AResponse.SendFile(aFileName, AContext.Stamp)
           else
-            AResponse.Answer := hrNotFound;
+            AResponse.Answer := hrForbidden;
         end;
       end
       else
@@ -4837,11 +4835,7 @@ begin
       exit;
     end
     else
-    begin
-      if AResponse.SendFile(FileName, AContext.Stamp) then
-      else
-        AResponse.Answer := hrNotModified;
-    end;
+      AResponse.SendFile(FileName, AContext.Stamp);
   end;
 end;
 
@@ -4915,9 +4909,7 @@ begin
   if HomePath <> '' then
   begin
     if WebExpandFile(HomePath, AContext.Route, aFileName) then
-    begin
       AResponse.SendFile(aFileName, AContext.Stamp);
-    end;
   end;
 end;
 
