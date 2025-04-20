@@ -793,7 +793,7 @@ begin
   if Self = nil then
     raise Exception.Create('Section is nil, you can read from it');
   Field := FindField(AName, AOptions);
-  if (Field <> nil) and (Field.AsString <> '') then
+  if (Field <> nil) {and (Field.AsString <> '')} then //* nope, Empty balue is a value
     Result := Field.AsString
   else
     Result := Def;
