@@ -5,6 +5,7 @@
 {$modeswitch arrayoperators}
 {$modeswitch arraytodynarray}
 {$modeswitch functionreferences}{$modeswitch anonymousfunctions}
+{$WARN 5024 off : Parameter "$1" not used}
 {$ENDIF}
 {$H+}{$M+}
 {**
@@ -71,7 +72,6 @@ GET https://john.doe@www.example.com:123/username/forum/questions/qst1/?tag=netw
 Good example:
   https://bootstrapmade.com/demo/templates/NiceAdmin/index.html
 }
-
 interface
 
 uses
@@ -582,7 +582,7 @@ type
     function GetDefaultDocument(vRoot: string): string; virtual;
     class procedure Registered; virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
-    procedure DoAccept(var Resume: Boolean); virtual;
+    procedure DoAccept(const AContext: TmnwContext; var Resume: Boolean); virtual;
     procedure ProcessMessage(const s: string);
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   public
@@ -604,7 +604,7 @@ type
     //* Attaching cap
     //function Interactive: Boolean;
 
-    function Accept: Boolean;
+    function Accept(const AContext: TmnwContext): Boolean;
     procedure Compose; override;
 
     // Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
@@ -878,7 +878,7 @@ type
 
       { THTMLElement }
 
-      THTMLElement = class abstract(TmnwElement)
+      THTMLElement = class(TmnwElement)
       protected
       public
       end;
@@ -2731,16 +2731,14 @@ begin
 end;
 
 function TmnwApp.ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
-var
-  aSchema: TmnwSchema;
 begin
   Lock.Enter;
   try
-    aSchema := FindBy(aSchemaName, aSessionID);
-    if aSchema <> nil then
+    Result := FindBy(aSchemaName, aSessionID);
+    if Result <> nil then
     begin
-      Extract(aSchema);
-      aSchema.FPhase := scmpReleased;
+      Extract(Result);
+      Result.FPhase := scmpReleased;
     end;
   finally
     Lock.Leave
@@ -2813,7 +2811,7 @@ begin
 
     if (Schema <> nil) then
     begin
-      if Schema.Accept then
+      if Schema.Accept(AContext) then
       begin
         if not (estComposed in Schema.State) then
         begin
@@ -2873,7 +2871,7 @@ procedure TmnwApp.Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
   function SessionCookies(const vData: string): string;
   var
     aDate: TDateTime;
-    aPath, aDomain: string;
+    aPath: string;
   begin
     aDate := IncSecond(Now, SessionTimeout);
     aPath := '';
@@ -3431,6 +3429,7 @@ begin
   case e.Shadow of
     shadowLight: Scope.Classes.Add('shadow-sm');
     ShadowHeavy: Scope.Classes.Add('shadow-thin');
+    else ;
   end;
   inherited;
 end;
@@ -3984,7 +3983,7 @@ begin
     Render(AContext, AResponse);
 end;
 
-procedure TmnwSchema.DoAccept(var Resume: Boolean);
+procedure TmnwSchema.DoAccept(const AContext: TmnwContext; var Resume: Boolean);
 begin
 end;
 
@@ -4049,10 +4048,10 @@ begin
   Result := [];
 end;
 
-function TmnwSchema.Accept: Boolean;
+function TmnwSchema.Accept(const AContext: TmnwContext): Boolean;
 begin
   Result := True;
-  DoAccept(Result);
+  DoAccept(AContext, Result);
 end;
 
 {function TmnwSchema.Interactive: Boolean;
