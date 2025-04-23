@@ -17,9 +17,11 @@ uses
   mnUtils, mnClasses;
 
 type
-  TMIMEFeatures =
+  TMIMEFeatures = set of
   (
     Text,
+    Binary,
+    Hidden,
     Executable
   );
 
@@ -38,11 +40,12 @@ type
   protected
     procedure Created; override;
   public
-    function Add(Extension, ContentType: string; Description: string = ''): TmnMIMEItem;
+    function Add(Extension, ContentType: string; Description: string = ''; AFeatures: TMIMEFeatures = []): TmnMIMEItem;
   end;
 
 //* You can call txt or .txt filename.txt or c:\temp\filename.txt
 function DocumentToContentType(const Extension: string): string;
+function DocumentToMIME(const Extension: string): TmnMIMEItem;
 
 function MIME: TmnMIME;
 
@@ -61,7 +64,7 @@ begin
   Result := FMIME;
 end;
 
-function DocumentToContentType(const Extension: string): string;
+function DocumentToMIME(const Extension: string): TmnMIMEItem;
 var
   Ext: string;
   item: TmnMIMEItem;
@@ -74,7 +77,14 @@ begin
     if Length(Ext) > 1 then
       Ext := Copy(Ext, 2, Length(Ext));
   end;
-  item := MIME.Find(Ext);
+  Result := MIME.Find(Ext);
+end;
+
+function DocumentToContentType(const Extension: string): string;
+var
+  item: TmnMIMEItem;
+begin
+  item := DocumentToMIME(Extension);
   if item = nil then
     Result := ''
   else
@@ -83,12 +93,13 @@ end;
 
 { TmnMIME }
 
-function TmnMIME.Add(Extension, ContentType: string; Description: string): TmnMIMEItem;
+function TmnMIME.Add(Extension, ContentType: string; Description: string; AFeatures: TMIMEFeatures): TmnMIMEItem;
 begin
   Result := TmnMIMEItem.Create;
   Result.Name := Extension;
   Result.ContentType := ContentType;
   Result.Description := Description;
+  Result.Features := AFeatures;
   inherited Add(Result);
 end;
 
@@ -99,7 +110,7 @@ end;
 
 procedure TmnMIME.Register;
 begin
-  Add('', 'application/binary');
+  Add('', 'application/binary', 'Unkown', [Binary]);
   Add('aac', 'audio/aac', 'AAC audio file');
   Add('apng', 'image/apng', 'Animated Portable Network Graphics (APNG) image');
   Add('arc', 'application/octet-stream', 'Archive document (multiple files embedded)');
@@ -124,7 +135,7 @@ begin
   Add('jar', 'application/java-archive', 'Java Archive (JAR)');
   Add('jpeg', 'image/jpeg', 'JPEG images');
   Add('jpg', 'image/jpeg', 'JPEG images');
-  Add('js', 'text/javascript', 'JavaScript (ECMAScript)');
+  Add('js', 'text/javascript', 'JavaScript (ECMAScript)', [Executable]);
   Add('json', 'application/json', 'JSON format');
   Add('jsonld', 'application/ld+json', 'JSON-LD format');
   Add('mid', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');
@@ -143,7 +154,7 @@ begin
   Add('png', 'image/png', 'Portable Network Graphics');
   Add('pdf', 'application/pdf', 'Adobe Portable Document Format (PDF)');
   Add('ppt', 'application/vnd.ms-powerpoint', 'Microsoft PowerPoint');
-  Add('rar', 'application/x-rar-compressed', 'RAR archive');
+  Add('rar', 'application/x-rar-compressed', 'RAR archive', [Binary]);
   Add('rtf', 'application/rtf', 'Rich Text Format (RTF)');
   Add('sh', 'application/x-sh', 'Bourne shell script');
   Add('svg', 'image/svg+xml', 'Scalable Vector Graphics (SVG)');
@@ -165,10 +176,11 @@ begin
   Add('xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Microsoft Excel (OpenXML)');
   Add('xml', 'application/xml', 'XML');
   Add('xul', 'application/vnd.mozilla.xul+xml', 'XUL');
-  Add('zip', 'application/zip', 'ZIP archive');
+  Add('zip', 'application/zip', 'ZIP archive', [Binary]);
   Add('3gp', 'video/3gpp', '3GPP audio/video container');
   Add('3g2', 'video/3gpp2', '3GPP2 audio/video container');
-  Add('7z', 'application/x-7z-compressed', '7-zip archive');
+  Add('7z', 'application/x-7z-compressed', '7-zip archive', [Binary]);
+  Add('php', 'application/x-httpd-php', 'PHP Script file', [Binary]);
 end;
 
 initialization

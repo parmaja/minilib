@@ -120,20 +120,25 @@ type
     FPath: string;
     FAge: Integer;
     FChanged: Boolean;
+    FDeleting: Boolean;
     procedure SetAge(const AValue: Integer);
     procedure SetDomain(const AValue: string);
     procedure SetPath(const AValue: string);
   protected
     procedure SetValue(const AValue: string); override;
+    procedure Created; override;
   public
+    Stricted: Boolean; //SameSite
+    Secured: Boolean; //HTTPS only
+    function GetText: string;
+    function GenerateValue: string;
+    procedure Delete;
     procedure SetChanged;
     procedure ResetChanged;
     property Path: string read FPath write SetPath;
     property Domain: string read FDomain write SetDomain;
     property Age: Integer read FAge write SetAge;
     property Changed: Boolean read FChanged;
-    function GetText: string;
-    function GenerateValue: string;
   end;
 
   { TmnwCookies }
@@ -1204,6 +1209,7 @@ var
   aStream: TStream;
   aDate: TDateTime;
   aTag: string;
+  aMIMEItem: TmnMIMEItem;
 begin
   if not FileExists(aFileName) then
   begin
@@ -1226,8 +1232,14 @@ begin
     Header['Cache-Control']  := 'max-age=600';
     Header['Last-Modified']  := FormatHTTPDate(aDate);
 
-    ContentType := DocumentToContentType(AFileName);
-    if ContentType = '' then
+    aMIMEItem := DocumentToMIME(AFileName);
+    if aMIMEItem <> nil then
+    begin
+      ContentType := aMIMEItem.ContentType;
+      if Binary in aMIMEItem.Features then
+        Header['Content-Disposition']  := 'attachment; filename="'+ExtractFileName(AFileName)+'"';
+    end
+    else
     begin
       ContentType := 'application/octet-stream';
       Header['Content-Disposition']  := 'attachment; filename="'+ExtractFileName(AFileName)+'"';
@@ -2140,13 +2152,26 @@ begin
   FChanged := True;
 end;
 
+procedure TmnwCookie.Created;
+begin
+  inherited;
+  FAge := -1; //Forever
+  Secured := False; //over HTTP and HTTPS
+end;
+
+procedure TmnwCookie.Delete;
+begin
+  FDeleting := True;
+  SetChanged;
+end;
+
 function TmnwCookie.GenerateValue: string;
 var
   aDate: TDateTime;
 begin
   aDate := IncSecond(Now, Age);
   Result := Value;
-  if Result = '' then //Delete it
+  if FDeleting or (Result = '') then //Delete it
   begin
     Result := Result + '; max-age=0';
   end
@@ -2157,6 +2182,14 @@ begin
       //Result := Result + '; Expires=' + FormatHTTPDate(aDate);
   end;
 
+  if Secured then
+    Result := Result + '; Secure';
+
+  if Stricted then
+    Result := Result + '; SameSite=Strict'
+  else
+    Result := Result + '; SameSite=None';
+
   if Domain <> '' then
     Result := Result + '; Domain=' + Domain.ToLower;
 
@@ -2165,7 +2198,6 @@ begin
   else
     Result := Result + '; Path=/';
 
-  Result := Result + '; SameSite=None; Secure';
 end;
 
 procedure TmnwCookie.ResetChanged;

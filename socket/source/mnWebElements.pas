@@ -6277,7 +6277,8 @@ procedure TmnwResponse.Created;
 begin
   inherited;
   FSession := TmnwCookie.Create('session');
-  FSession.Age := -1;
+  FSession.Stricted := True;
+  FSession.Secured := False;
   FSession.ResetChanged;
 end;
 
@@ -6296,7 +6297,7 @@ procedure TmnwResponse.DoWriteCookies;
 var
   s: string;
 begin
-  if Session.Changed then
+  if Session.Changed then //If Value = '' that mean we will delete it
   begin
     s := Session.GetText;
     Stream.WriteUTF8Line('Set-Cookie: ' + s);
