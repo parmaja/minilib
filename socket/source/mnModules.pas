@@ -112,6 +112,38 @@ type
     property Communicate: TmodCommunicate read FCommunicate;
   end;
 
+  { TmnwCookie }
+
+  TmnwCookie = class(TmnNameValueObject)
+  private
+    FDomain: string;
+    FPath: string;
+    FAge: Integer;
+    FChanged: Boolean;
+    procedure SetAge(const AValue: Integer);
+    procedure SetDomain(const AValue: string);
+    procedure SetPath(const AValue: string);
+  protected
+    procedure SetValue(const AValue: string); override;
+  public
+    procedure SetChanged;
+    procedure ResetChanged;
+    property Path: string read FPath write SetPath;
+    property Domain: string read FDomain write SetDomain;
+    property Age: Integer read FAge write SetAge;
+    property Changed: Boolean read FChanged;
+    function GetText: string;
+    function GenerateValue: string;
+  end;
+
+  { TmnwCookies }
+
+  TmnwCookies = class(TmnNameValueObjectList<TmnwCookie>)
+  public
+    procedure SetRequestText(S: string);
+    function GetRequestText: string;
+  end;
+
   TmnCustomCommand = class;
 
   TmodCommunicate = class abstract(TmnObject)
@@ -119,7 +151,7 @@ type
     FHead: string;
     FHeader: TmodHeader;
     FKeepAlive: Boolean;
-    FCookies: TStrings;
+    FCookies: TmnwCookies;
     FWritingStarted: Boolean;
     FContentLength: Int64;
     FParent: TmnCustomCommand;
@@ -148,7 +180,7 @@ type
     procedure SetTrigger(TriggerHeader: Boolean); virtual;
     property Stream: TmnBufferStream read GetStream;
     property Header: TmodHeader read FHeader;
-    property Cookies: TStrings read FCookies;
+    property Cookies: TmnwCookies read FCookies;
     procedure SetCookie(const vNameSpace, vName, Value: string); overload;
     procedure SetCookie(const vName, Value: string); overload;
     function GetCookie(const vNameSpace, vName: string): string;
@@ -1195,6 +1227,11 @@ begin
     Header['Last-Modified']  := FormatHTTPDate(aDate);
 
     ContentType := DocumentToContentType(AFileName);
+    if ContentType = '' then
+    begin
+      ContentType := 'application/octet-stream';
+      Header['Content-Disposition']  := 'attachment; filename="'+ExtractFileName(AFileName)+'"';
+    end;
 
     SendStream(aStream, GetSizeOfFile(AFileName));
     Result := True;
@@ -2096,6 +2133,137 @@ begin
   end;
 end;
 
+{ TmnwCookie }
+
+procedure TmnwCookie.SetChanged;
+begin
+  FChanged := True;
+end;
+
+function TmnwCookie.GenerateValue: string;
+var
+  aDate: TDateTime;
+begin
+  aDate := IncSecond(Now, Age);
+  Result := Value;
+  if Result = '' then //Delete it
+  begin
+    Result := Result + '; max-age=0';
+  end
+  else
+  begin
+    if Age >= 0 then
+      Result := Result + '; max-age=' + Age.ToString;
+      //Result := Result + '; Expires=' + FormatHTTPDate(aDate);
+  end;
+
+  if Domain <> '' then
+    Result := Result + '; Domain=' + Domain.ToLower;
+
+  if Path <> '' then
+    Result := Result + '; Path=' + Path.ToLower
+  else
+    Result := Result + '; Path=/';
+
+  Result := Result + '; SameSite=None; Secure';
+end;
+
+procedure TmnwCookie.ResetChanged;
+begin
+  FChanged := False;
+end;
+
+function TmnwCookie.GetText: string;
+begin
+  Result := Name + '=' + GenerateValue;;
+end;
+
+procedure TmnwCookie.SetAge(const AValue: Integer);
+begin
+  if FAge <> AValue then
+  begin
+    FAge := AValue;
+    SetChanged;
+  end;
+end;
+
+procedure TmnwCookie.SetDomain(const AValue: string);
+begin
+  if not SameText(FDomain, AValue) then
+  begin
+    FDomain := AValue;
+    SetChanged;
+  end;
+end;
+
+procedure TmnwCookie.SetPath(const AValue: string);
+begin
+  if not SameText(FPath, AValue) then
+  begin
+    FPath := AValue;
+    SetChanged;
+  end;
+end;
+
+procedure TmnwCookie.SetValue(const AValue: string);
+begin
+  if not SameText(Value, AValue) then
+  begin
+    inherited SetValue(AValue);
+    SetChanged;
+  end;
+end;
+
+{ TmnwCookies }
+
+procedure CookiesStrToStringsDeqouteCallbackProc(Sender: Pointer; Index, CharIndex, NextIndex: Integer; S: string; var Resume: Boolean);
+var
+  Name, Value: string;
+  p: Integer;
+  Cookie: TmnwCookie;
+begin
+  if s <> '' then
+  begin
+    s := Trim(s);
+    if s <> '' then
+    begin
+      p := pos('=', s);
+      if p >= 0 then
+      begin
+        Name := Copy(s, 1, p - 1);
+        Value := DequoteStr(Copy(s, p + 1, MaxInt));
+      end
+      else
+      begin
+        Name := S;
+        Value := '';
+      end;
+      Cookie := (TObject(Sender) as TmnwCookies).Add(Name, Value);
+    end;
+  end;
+end;
+
+procedure TmnwCookies.SetRequestText(S: string);
+var
+  MatchCount: Integer;
+begin
+  Clear;
+  StrToStringsExCallback(S, 0, Self, [';'], MatchCount, CookiesStrToStringsDeqouteCallbackProc, [' ', #0, #13, #10]);
+end;
+
+function TmnwCookies.GetRequestText: string;
+var
+  Cookie: TmnwCookie;
+begin
+  Result := '';
+  for Cookie in Self do
+  begin
+    if Result <> '' then
+      Result := Result + '; ';
+    Result := cookie.Name + '=' + Cookie.Value;
+  end;
+end;
+
 { TmodCommunicate }
 
 procedure TmodCommunicate.Clear;
@@ -2113,8 +2281,8 @@ begin
   inherited Create;
   FParent := ACommand;
   FHeader := TmodHeader.Create;
-  FCookies := TStringList.Create;
-  FCookies.Delimiter := ';';
+  FCookies := TmnwCookies.Create;
+  //FCookies.Delimiter := ';';
   FStreamControl := TmodCommunicateStreamControl.Create;
   FStreamControl.FCommunicate := Self;
 end;
@@ -2417,7 +2585,7 @@ begin
   if (Header.Field['Content-Length'].IsExists) then
     ContentLength := Header.Field['Content-Length'].AsInt64;
 
-  Cookies.DelimitedText := Header['Cookie'];
+  Cookies.SetRequestText(Header['Cookie']);
 
   FAccept := Header.ReadString('Connection');
   KeepAlive := (Use.KeepAlive = ovUndefined) and SameText(Header.ReadString('Connection'), 'Keep-Alive');
@@ -2508,7 +2676,7 @@ var
   s: UTF8String;
 begin
   inherited;
-  s := UTF8Encode(Cookies.DelimitedText);
+  s := UTF8Encode(Cookies.GetRequestText);
   if s <> '' then
     Stream.WriteUTF8Line('Cookie: ' + s);
 end;
@@ -2579,13 +2747,13 @@ end;
 
 procedure TwebRespond.DoSendHeader;
 var
-  s: string;
+  Cookie: TmnwCookie;
 begin
   inherited;
   if Cookies.Count > 0 then
   begin
-    for s in Cookies do
-      Stream.WriteUTF8Line('Set-Cookie: ' + s);
+    for Cookie in Cookies do
+      Stream.WriteUTF8Line('Set-Cookie: ' + Cookie.GetText);
   end;
 end;
 

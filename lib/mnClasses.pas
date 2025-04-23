@@ -170,11 +170,13 @@ type
     TmnNameValueObject = class(TmnNamedObject)
     private
       FValue: string;
+    protected
+      procedure SetValue(const AValue: string); virtual;
     public
       procedure Assign(FromObject: TObject); virtual;
       constructor Create(const vName: string; const AValue: string = ''); virtual; //must be virtual for generic function
       constructor CreateFrom(FromObject: TmnNameValueObject);
-      property Value: string read FValue write FValue;
+      property Value: string read FValue write SetValue;
     end;
 
     //USAGE: TMyNameValueObjectList = class(TmnNameValueObjectList<TMyNameValueObject>)
@@ -593,6 +595,11 @@ end;
 
 { TmnNameValueObject }
 
+procedure TmnNameValueObject.SetValue(const AValue: string);
+begin
+  FValue := AValue;
+end;
+
 procedure TmnNameValueObject.Assign(FromObject: TObject);
 begin
   if FromObject is TmnNameValueObject then
@@ -604,7 +611,8 @@ begin
     raise Exception.Create('Invalide assign class')
 end;
 
-constructor TmnNameValueObject.Create(const vName, AValue: string);
+constructor TmnNameValueObject.Create(const vName: string; const AValue: string
+  );
 begin
   inherited Create;
   Name := vName;

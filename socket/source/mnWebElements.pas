@@ -245,27 +245,6 @@ type
     procedure Init(classes: string = '');
   end;
 
-  TmnwSession = record
-  private
-    FID: string;
-    FDomain: string;
-    FPath: string;
-    FAge: Integer;
-    FChanged: Boolean;
-    procedure SetID(const Value: string);
-    procedure SetAge(const Value: Integer);
-    procedure SetDomain(const Value: string);
-    procedure SetPath(const Value: string);
-    procedure SetChanged;
-    procedure ResetChanged;
-  public
-    property ID: string read FID write SetID;
-    property Path: string read FPath write SetPath;
-    property Domain: string read FDomain write SetDomain;
-    property Age: Integer read FAge write SetAge;
-    property Changed: Boolean read FChanged;
-  end;
-
   { TmnwScope }
 
   TmnwScope = record
@@ -1803,15 +1782,16 @@ type
   TmnwResponse = class(TmodHttpRespond)
   private
     FResume: Boolean;
+    FSession: TmnwCookie;
   protected
     procedure DoPrepareHeader; override; //Called by Server
     procedure DoWriteCookies; override;
     procedure Created; override;
   public
-    Session: TmnwSession;
-    Location: string; //* New location to forward
+    Location: string;
+    destructor Destroy; override;//* New location to forward
+    property Session: TmnwCookie read FSession;
     property Resume: Boolean read FResume write FResume;
-
   end;
 
   { TUIWebCommand }
@@ -2891,34 +2871,6 @@ begin
   end;
 end;
 
-function CookieValue(const Value: string; Age: Integer; const Path: string = ''; Domain: string = ''): string;
-var
-  aDate: TDateTime;
-begin
-  aDate := IncSecond(Now, Age);
-  Result := Value;
-  if Value = '' then //Delete it
-  begin
-    Result := Result + '; max-age=0';
-  end
-  else
-  begin
-    if Age >= 0 then
-      Result := Result + '; max-age=' + Age.ToString;
-      //Result := Result + '; Expires=' + FormatHTTPDate(aDate);
-  end;
-
-  if Domain <> '' then
-    Result := Result + '; Domain=' + Domain.ToLower;
-
-  if Path <> '' then
-    Result := Result + '; Path=/' + Path.ToLower
-  else
-    Result := Result + '; Path=/';
-
-  Result := Result + '; SameSite=None; Secure';
-end;
-
 procedure TmnwApp.Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
 var
   aSchema: TmnwSchema;
@@ -2934,10 +2886,10 @@ begin
       aContext.Schema := aSchema;
       aContext.Element := aElement;
 
-      AResponse.Session.FID := AResponse.Request.GetCookie('', 'session');
-      AResponse.Session.FAge := DefaultAge;
-      AResponse.Session.FDomain := Domain;
-      AResponse.Session.FPath:= AddStartURLDelimiter(Alias, True);
+      AResponse.Session.Value := AResponse.Request.GetCookie('', 'session');
+      AResponse.Session.Age := DefaultAge;
+      AResponse.Session.Domain := Domain;
+      AResponse.Session.Path:= AddStartURLDelimiter(Alias, True);
       AResponse.Session.ResetChanged;
       AResponse.Answer := hrOK;
       AResponse.Location := '';
@@ -6324,7 +6276,15 @@ end;
 procedure TmnwResponse.Created;
 begin
   inherited;
-  Session.FAge := -1;
+  FSession := TmnwCookie.Create('session');
+  FSession.Age := -1;
+  FSession.ResetChanged;
+end;
+
+destructor TmnwResponse.Destroy;
+begin
+  FreeAndNil(FSession);
+  inherited;
 end;
 
 procedure TmnwResponse.DoPrepareHeader;
@@ -6338,58 +6298,10 @@ var
 begin
   if Session.Changed then
   begin
-    s := 'session=' + CookieValue(Session.ID, Session.Age);
+    s := Session.GetText;
     Stream.WriteUTF8Line('Set-Cookie: ' + s);
   end;
   inherited;
-end;
-
-{ TmnwSession }
-
-procedure TmnwSession.SetChanged;
-begin
-  FChanged := True;
-end;
-
-procedure TmnwSession.ResetChanged;
-begin
-  FChanged := False;
-end;
-
-procedure TmnwSession.SetAge(const Value: Integer);
-begin
-  if FAge <> Value then
-  begin
-    FAge := Value;
-    SetChanged;
-  end;
-end;
-
-procedure TmnwSession.SetDomain(const Value: string);
-begin
-  if not SameText(FDomain, Value) then
-  begin
-    FDomain := Value;
-    SetChanged;
-  end;
-end;
-
-procedure TmnwSession.SetID(const Value: string);
-begin
-  if not SameText(FID, Value) then
-  begin
-    FID := Value;
-    SetChanged;
-  end;
-end;
-
-procedure TmnwSession.SetPath(const Value: string);
-begin
-  if not SameText(FPath, Value) then
-  begin
-    FPath := Value;
-    SetChanged;
-  end;
 end;
 
 initialization

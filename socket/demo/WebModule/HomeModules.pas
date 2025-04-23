@@ -380,7 +380,7 @@ begin
     begin
       aUsername := AContext.Data.Values['username'];
       aPassword := AContext.Data.Values['password'];
-      AResponse.SessionID := aUsername +'/'+ aPassword;
+      AResponse.Session.Value := aUsername +'/'+ aPassword;
       AResponse.Resume := False;
       AResponse.Answer := hrRedirect;
       AResponse.Location := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
@@ -514,7 +514,7 @@ begin
     begin
       aUsername := AContext.Data.Values['username'];
       aPassword := AContext.Data.Values['password'];
-      AResponse.SessionID := aUsername +'/'+ aPassword;
+      AResponse.Session.Value := aUsername +'/'+ aPassword;
       AResponse.Resume := False;
       AResponse.Answer := hrRedirect;
       AResponse.Location := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
