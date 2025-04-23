@@ -643,7 +643,7 @@ begin
   //fpc not auto convert because string type it same with ansistring
   SetAsString(Utf8Encode(AValue));
   {$else}
-  SetAsString(AnsiToUtf8(AValue));
+  SetAsString(Utf8Encode(AValue));
   {$endif}
 end;
 

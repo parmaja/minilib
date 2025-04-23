@@ -479,7 +479,7 @@ end;
 
 function JsonParseFilePair(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
 begin
-  Result := JsonParseStringPair(LoadFileString(FileName), Error, Options)
+  Result := JsonParseStringPair(Utf8Encode(LoadFileString(FileName)), Error, Options)
 end;
 
 function JsonParseFileValue(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Value;

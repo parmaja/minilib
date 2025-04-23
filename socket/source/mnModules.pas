@@ -40,7 +40,7 @@
 interface
 
 uses
-  SysUtils, Classes, StrUtils, Types, DateUtils, ZLib, {$ifdef FPC}ZStream,{$endif}
+  SysUtils, Classes, StrUtils, Types, DateUtils, {$ifdef FPC}ZStream,{$else}ZLib,{$endif}
   Generics.Defaults, mnStreamUtils, SyncObjs,
   mnClasses, mnStreams, mnFields, mnParams, mnMIME,
   mnSockets, mnConnections, mnServers;
@@ -149,7 +149,8 @@ type
     property Stream: TmnBufferStream read GetStream;
     property Header: TmodHeader read FHeader;
     property Cookies: TStrings read FCookies;
-    procedure SetCookie(const vNameSpace, vName, Value: string);
+    procedure SetCookie(const vNameSpace, vName, Value: string); overload;
+    procedure SetCookie(const vName, Value: string); overload;
     function GetCookie(const vNameSpace, vName: string): string;
 
     procedure Reset;
@@ -256,7 +257,7 @@ type
     FRoute: TmnRoute;
     FPath: String;
     FConnectionType: TConnectionType;
-    FChunked: Boolean;
+    //FChunked: Boolean;
     FProtcolClass: TmnProtcolStreamProxyClass;
     FCompressProxy: TmnCompressStreamProxy;
     FProtcolProxy: TmnProtcolStreamProxy;
@@ -760,6 +761,8 @@ function ExtractDomain(const URI: string): string;
 function GetSubPath(const Path: string): string;
 function DeleteSubPath(const SubKey, Path: string): string;
 function StartsSubPath(const SubKey, Path: string): Boolean;
+function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
+function AddEndURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 
 function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
@@ -995,6 +998,32 @@ begin
     Result := StartsStr(Path, SubKey);
 end;
 
+function AddStartURLDelimiter(const Path: string; Force: Boolean): string;
+begin
+  if Force or (Path <> '') then
+  begin
+    if (Path = '') or not StartsStr(URLPathDelim, Path) then
+      Result := URLPathDelim + Path
+    else
+      Result := Path
+  end
+  else
+    Result := Path
+end;
+
+function AddEndURLDelimiter(const Path: string; Force: Boolean): string;
+begin
+  if Force or (Path <> '') then
+  begin
+    if (Path = '') or not EndsStr(URLPathDelim, Path) then
+      Result := Path + URLPathDelim
+    else
+      Result := Path
+  end
+  else
+    Result := Path
+end;
+
 { TmodRespond }
 
 procedure TmodCommunicate.AddHeader(const AName: string; Values: TStringDynArray);
@@ -1141,7 +1170,6 @@ end;
 function TmodRespond.SendFile(AFileName: string; const Stamp: string): Boolean;
 var
   aStream: TStream;
-  aDocSize: Int64;
   aDate: TDateTime;
   aTag: string;
 begin
@@ -1161,7 +1189,6 @@ begin
 
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
   try
-    aDocSize := aStream.Size;
 
     ETag := aTag;
     Header['Cache-Control']  := 'max-age=600';
@@ -1180,7 +1207,7 @@ function TmodRespond.SendUTF8String(const s: UTF8String): Boolean;
 var
   aStream: TmnPointerStream;
 begin
-  aStream := TmnPointerStream.Create(PByte(s), ByteLength(s));
+  aStream := TmnPointerStream.Create(PByte(s), Length(s));
   try
     Result := SendStream(aStream, Length(s));
   finally
@@ -2173,6 +2200,11 @@ begin
     Cookies.Values[vName] := Value;
 end;
 
+procedure TmodCommunicate.SetCookie(const vName, Value: string);
+begin
+  SetCookie('', vName, Value);
+end;
+
 procedure TmodCommunicate.SetHead(const Value: string);
 begin
   FHead := Value;
@@ -2378,7 +2410,7 @@ end;
 procedure TwebRequest.DoHeaderReceived;
 var
   aChunked: Boolean;
-  aCompressClass: TmnCompressStreamProxyClass;
+  //aCompressClass: TmnCompressStreamProxyClass;
 begin
   inherited;
 
@@ -2550,7 +2582,7 @@ var
   s: string;
 begin
   inherited;
-  if Cookies.Count <> 0 then
+  if Cookies.Count > 0 then
   begin
     for s in Cookies do
       Stream.WriteUTF8Line('Set-Cookie: ' + s);
@@ -2747,7 +2779,6 @@ end;
 
 procedure TmnPoolThread.Execute;
 begin
-  inherited;
   FPool.TerminateSet;
 end;
 

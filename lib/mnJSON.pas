@@ -583,7 +583,7 @@ end;
 procedure JsonLintString(const S: string; out Error: string; Options: TJSONParseOptions);
 begin
   try
-    JsonParseCallback(s, Error, nil, JsonLintAcquireCallback, Options);
+    JsonParseCallback(Utf8Encode(s), Error, nil, JsonLintAcquireCallback, Options);
   except
     on E: Exception do
     begin

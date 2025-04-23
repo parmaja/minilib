@@ -50,7 +50,6 @@ type
   protected
     FRefCount: Integer;
 
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
   public
@@ -98,7 +97,6 @@ type
     //override this function of u want to check the item or create it before returning it
     {$H-}procedure Removing(Item: _Object_); virtual;{$H+}
     {$H-}procedure Added(Item: _Object_); virtual;{$H+}
-
 
     //* Belal: If both Left and Right is eaual the orignal sort swap it, we do not want to swapt it
     //* Thanks to Belal
@@ -379,7 +377,9 @@ end;
 
 function TmnObjectList<_Object_>.Compare(Left, Right: _Object_): Integer;
 begin
+  {$ifdef FPC} // just for hints
   Result := 0;
+  {$endif}
   raise ENotImplemented.Create(ClassName + '.Compare');
 end;
 
@@ -587,7 +587,7 @@ end;
 
 procedure TmnObject.AfterConstruction;
 begin
-  inherited AfterConstruction;
+  inherited;
   Created;
 end;
 
@@ -680,14 +680,6 @@ begin
   end;
 end;
 
-function TmnRefInterfacedPersistent.QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
-begin
-  if GetInterface(IID, Obj) then
-    Result := S_OK
-  else
-    Result := E_NOINTERFACE;
-end;
-
 function TmnRefInterfacedPersistent._AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   Result := AtomicIncrement(FRefCount);
@@ -715,5 +707,3 @@ begin
 end;
 
 end.
-
-

@@ -12,6 +12,7 @@
 {$H+}
 {$IFDEF FPC}
 {$MODE delphi}
+{$WARN 5024 off : Parameter "$1" not used}
 {$ENDIF}
 
 {
@@ -51,7 +52,6 @@ Notes:
 {**
   Ref: https://www.ntu.edu.sg/home/ehchua/programming/webprogramming/HTTP_Basics.html
 *}
-
 interface
 
 uses
@@ -597,7 +597,7 @@ end;
 procedure TmodHttpGetCommand.RespondResult(var Result: TmodRespondResult);
 var
   aDocument, aHomePath: string;
-  aPath, aFile: string;
+  {aPath, aFile: string;}
   aDefault: Boolean;
 begin
 

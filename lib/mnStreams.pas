@@ -300,7 +300,7 @@ type
   protected
     FProxy: TmnStreamProxy;
 
-    procedure ReadError; virtual;
+    procedure ReadError; {$ifndef FPC}override;{$endif}
     //Override it but do not use it in your code, use ProxyRead or ProxyWrite
     function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
     function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
@@ -332,7 +332,7 @@ type
 
     function ReadLine(out s: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLine(out s: unicodestring; ExcludeEOL: Boolean = True): Boolean; overload;
-    function ReadLine(ExcludeEOL: Boolean = True): string; overload; deprecated;
+    function ReadLine(ExcludeEOL: Boolean = True): string; overload;
     function ReadUTF8Line(out s: UTF8String; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadUTF8Line(out s: string; ExcludeEOL: Boolean = True): Boolean; overload;
     //TODO ReadLineUTF8 to ReadUTF8Line
