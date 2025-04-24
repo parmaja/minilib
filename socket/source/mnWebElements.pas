@@ -2800,11 +2800,13 @@ begin
       Schema := First; //* fallback //taskeej
 }
     if aSchemaName <> '' then
+    begin
       if (Routes.Count > 0) then
       begin
         Routes.Delete(0);
         AContext.Route := DeleteSubPath(aSchemaName, AContext.Route);
       end;
+    end;
 
     Lock.Enter;
     try
@@ -2892,11 +2894,20 @@ begin
       AResponse.Session.Path:= AddStartURLDelimiter(Alias, True);
       AResponse.Session.ResetChanged;
       AResponse.Answer := hrOK;
+      AResponse.Resume := True;
       AResponse.Location := '';
 
-      AResponse.ContentType := aElement.GetContentType(AContext.Route);
+      if AContext.Route = '' then
+      begin
+        AResponse.Location := IncludeURLDelimiter(AContext.GetPath(aSchema), True);
+        AResponse.Resume := False;
+        AResponse.Answer := hrRedirect;
+      end
+      else
+        AResponse.ContentType := aElement.GetContentType(AContext.Route);
 
-      aElement.Action(AContext, AResponse);
+      if AResponse.Resume then
+        aElement.Action(AContext, AResponse);
 
       if AResponse.Location <> '' then
         AResponse.Header['Location'] := AResponse.Location;
@@ -3963,7 +3974,7 @@ begin
           if EndsDelimiter(aFileName) then
             aFileName := GetDefaultDocument(aFileName);
 
-          if not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots
+          if not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots, TODO no folders in path
             AResponse.SendFile(aFileName, AContext.Stamp)
           else
             AResponse.Answer := hrForbidden;
@@ -4669,7 +4680,6 @@ procedure TmnwElement.Action(const AContext: TmnwContext; AResponse: TmnwRespons
 begin
   AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
   DoRespondHeader(AContext);
-  AResponse.Resume := True;
   DoAction(AContext, AResponse);
   if AResponse.Resume and Assigned(FOnAction) then
     FOnAction(AContext, AResponse);

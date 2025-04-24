@@ -67,7 +67,6 @@ end;
 function DocumentToMIME(const Extension: string): TmnMIMEItem;
 var
   Ext: string;
-  item: TmnMIMEItem;
 begin
   if Pos('.', Extension) = 0 then
     Ext := Extension

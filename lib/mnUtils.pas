@@ -241,9 +241,9 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
 //function DescapeStringPas(const S: string): string;
 
 //IncludePathDelimiter add the Delimiter when S not = ''
-function IncludePathDelimiter(const S: string): string;
+function IncludePathDelimiter(const S: string; Force: Boolean = False): string;
 function ExcludePathDelimiter(Path: string): string;
-function IncludeURLDelimiter(const S: string): string;
+function IncludeURLDelimiter(const S: string; Force: Boolean = False): string;
 
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
@@ -1761,17 +1761,17 @@ begin
   end;
 end;
 
-function IncludePathDelimiter(const S: string): string;
+function IncludePathDelimiter(const S: string; Force: Boolean = False): string;
 begin
-  if (s <> '') and not EndsStr(PathDelim, s) then
+  if (Force or (s <> '')) and not EndsStr(PathDelim, s) then
     Result := s + PathDelim
   else
     Result := s;
 end;
 
-function IncludeURLDelimiter(const S: string): string;
+function IncludeURLDelimiter(const S: string; Force: Boolean): string;
 begin
-  if (s <> '') and not EndsStr('/', S) then
+  if (Force or (s <> '')) and not EndsStr('/', S) then
     Result := S + '/'
   else
     Result := S;
