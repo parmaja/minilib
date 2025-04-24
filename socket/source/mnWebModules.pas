@@ -84,7 +84,9 @@ type
     FHostURL: string;
   protected
     procedure Created; override;
+    procedure DoPrepareHeader; override;
   public
+    Location: string;
     //Document root folder
     property HomePath: string read FHomePath;
     property HostURL: string read FHostURL;
@@ -400,6 +402,13 @@ begin
   inherited;
 end;
 
+
+procedure TmodHttpRespond.DoPrepareHeader;
+begin
+  inherited;
+  if Location <> '' then
+    PutHeader('Location', Location)
+end;
 
 { TmodHttpPostCommand }
 

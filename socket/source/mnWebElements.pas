@@ -1788,8 +1788,7 @@ type
     procedure DoWriteCookies; override;
     procedure Created; override;
   public
-    Location: string;
-    destructor Destroy; override;//* New location to forward
+    destructor Destroy; override;
     property Session: TmnwCookie read FSession;
     property Resume: Boolean read FResume write FResume;
   end;
@@ -2897,7 +2896,7 @@ begin
       AResponse.Resume := True;
       AResponse.Location := '';
 
-      if AContext.Route = '' then
+      if (aElement = aSchema) and (AContext.Route = '') then
       begin
         AResponse.Location := IncludeURLDelimiter(AContext.GetPath(aSchema), True);
         AResponse.Resume := False;
@@ -2908,9 +2907,6 @@ begin
 
       if AResponse.Resume then
         aElement.Action(AContext, AResponse);
-
-      if AResponse.Location <> '' then
-        AResponse.Header['Location'] := AResponse.Location;
 
       //* We will render it now
       if AResponse.Resume then
