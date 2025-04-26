@@ -284,9 +284,10 @@ function StringOfUTF8(const Value: PByte; Size: Integer): string;
 //TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
 procedure BinToHex(Buffer: PByte; Text: PByte; BufSize: longint); overload;
-function String2Hex(const vData: string): string; overload;
-function String2Hex(const vData: PByte; vCount: Integer): string; overload;
-function Hex2String(const vData: string): string; overload;
+function StringToHex(const vData: string): string; overload;
+function StringToHex(const vData: PByte; vCount: Integer): string; overload;
+function HexToString(const vData: string): string; overload;
+function UUIDToStr(Guid: TGuid; Separator: string = '-'): string;
 
 function ByteToBinStr(Value: Byte): string;
 function DataToBinStr(var Data; Size: Integer; Separator: string = ''): string;
@@ -442,6 +443,14 @@ begin
   end
   else
     Result := '';
+end;
+
+function UUIDToStr(Guid: TGuid; Separator: string): string;
+begin
+{  Result := IntToHex(Longint(GUID.D1), 8) + Separator+ IntToHex(GUID.D2, 4) + Separator+ IntToHex(GUID.D3, 4)
+            + Separator + IntToHex(GUID.D4[0], 2) + Separator + IntToHex(GUID.D4[1], 2) + Separator + IntToHex(GUID.D4[2], 2) + Separator + IntToHex(GUID.D4[3], 2)
+            + Separator + IntToHex(GUID.D4[4], 2) + Separator + IntToHex(GUID.D4[5], 2) + Separator + IntToHex(GUID.D4[6], 2) + Separator + IntToHex(GUID.D4[7], 2)}
+  Result := LowerCase(RemoveEncloseStr(GUIDToString(Guid), '{', '}'));
 end;
 
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions; vChar: Char): string;
@@ -1999,7 +2008,7 @@ begin
   {$endif}
 end;
 
-function Hex2String(const vData: string): string; overload;
+function HexToString(const vData: string): string; overload;
 var
   b, r: TBytes;
 begin
@@ -2015,15 +2024,15 @@ begin
     Result := '';
 end;
 
-function String2Hex(const vData: string): string; overload;
+function StringToHex(const vData: string): string; overload;
 begin
   if vData<>'' then
-    Result := String2Hex(PByte(vData), ByteLength(vData))
+    Result := StringToHex(PByte(vData), ByteLength(vData))
   else
     Result := '';
 end;
 
-function String2Hex(const vData: PByte; vCount: Integer): string;
+function StringToHex(const vData: PByte; vCount: Integer): string;
 begin
   SetLength(Result, 2*vCount);
   BinToHex(vData, PByte(Result), vCount);

@@ -789,6 +789,7 @@ type
     procedure Created; override;
     procedure ClearSchemas;
   public
+    InstanceUID: TGUID;
     IsSSL: Boolean;
     Domain: string; //localhost
     Port: string;
@@ -3049,6 +3050,7 @@ end;
 
 constructor TmnwApp.Create;
 begin
+  InstanceUID := TGUID.NewGuid;
   FLock := TCriticalSection.Create;
   FRegistered := TRegisteredSchemas.Create;
   DefaultAge := -1; //Forever

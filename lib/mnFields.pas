@@ -546,7 +546,7 @@ end;
 
 function TmnCustomField.ReadAsHex: string;
 begin
-  Result := String2Hex(AsString);
+  Result := StringToHex(AsString);
 end;
 
 procedure TmnCustomField.WriteIsNull(const AValue: Boolean);
@@ -562,7 +562,7 @@ end;
 
 procedure TmnCustomField.WriteAsHex(const AValue: string);
 begin
-  AsString := Hex2String(AValue);
+  AsString := HexToString(AValue);
 end;
 
 procedure TmnCustomField.SetAsBoolean(const AValue: Boolean);
