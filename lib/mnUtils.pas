@@ -287,7 +287,7 @@ procedure BinToHex(Buffer: PByte; Text: PByte; BufSize: longint); overload;
 function StringToHex(const vData: string): string; overload;
 function StringToHex(const vData: PByte; vCount: Integer): string; overload;
 function HexToString(const vData: string): string; overload;
-function UUIDToStr(Guid: TGuid; Separator: string = '-'): string;
+function UUIDToString(Guid: TGuid; Hyphen: string = '-'): string;
 
 function ByteToBinStr(Value: Byte): string;
 function DataToBinStr(var Data; Size: Integer; Separator: string = ''): string;
@@ -445,12 +445,14 @@ begin
     Result := '';
 end;
 
-function UUIDToStr(Guid: TGuid; Separator: string): string;
+function UUIDToString(Guid: TGuid; Hyphen: string): string;
 begin
-{  Result := IntToHex(Longint(GUID.D1), 8) + Separator+ IntToHex(GUID.D2, 4) + Separator+ IntToHex(GUID.D3, 4)
-            + Separator + IntToHex(GUID.D4[0], 2) + Separator + IntToHex(GUID.D4[1], 2) + Separator + IntToHex(GUID.D4[2], 2) + Separator + IntToHex(GUID.D4[3], 2)
-            + Separator + IntToHex(GUID.D4[4], 2) + Separator + IntToHex(GUID.D4[5], 2) + Separator + IntToHex(GUID.D4[6], 2) + Separator + IntToHex(GUID.D4[7], 2)}
-  Result := LowerCase(RemoveEncloseStr(GUIDToString(Guid), '{', '}'));
+  Result := LowerCase(
+            IntToHex(Longint(GUID.D1), 8) + Hyphen + IntToHex(GUID.D2, 4) + Hyphen + IntToHex(GUID.D3, 4)
+            + Hyphen + IntToHex(GUID.D4[0], 2) + Hyphen + IntToHex(GUID.D4[1], 2) + Hyphen + IntToHex(GUID.D4[2], 2) + Hyphen + IntToHex(GUID.D4[3], 2)
+            + Hyphen + IntToHex(GUID.D4[4], 2) + Hyphen + IntToHex(GUID.D4[5], 2) + Hyphen + IntToHex(GUID.D4[6], 2) + Hyphen + IntToHex(GUID.D4[7], 2)
+            )
+//  Result := LowerCase(RemoveEncloseStr(GUIDToString(Guid), '{', '}'));
 end;
 
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions; vChar: Char): string;
