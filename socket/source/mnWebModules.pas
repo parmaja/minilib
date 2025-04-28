@@ -866,7 +866,7 @@ begin
     end;
   end;
 
-  if Request.KeepAlive then
+  if not Respond.IsHeaderSent and Request.KeepAlive then //not WebSocket
   begin
     Respond.KeepAlive := True;
     Respond.AddHeader('Connection', 'Keep-Alive');

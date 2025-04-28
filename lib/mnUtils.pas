@@ -33,6 +33,8 @@ const
   JulianEpoch = TDateTime(-2415018.5);  //check EpochAsJulianDate
   {$endif}
 
+  URLPathDelim  = '/';
+
 procedure Nothing;
 {
   StrHave: test the string if it have Separators
@@ -243,7 +245,10 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
 //IncludePathDelimiter add the Delimiter when S not = ''
 function IncludePathDelimiter(const S: string; Force: Boolean = False): string;
 function ExcludePathDelimiter(Path: string): string;
-function IncludeURLDelimiter(const S: string; Force: Boolean = False): string;
+
+function IncludeURLDelimiter(const S: string; Force: Boolean = False): string; deprecated 'AddEndURLDelimiter';
+function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
+function AddEndURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
@@ -1794,6 +1799,32 @@ begin
     Result := ''
   else
     Result := ExcludeTrailingPathDelimiter(Path);
+end;
+
+function AddStartURLDelimiter(const Path: string; Force: Boolean): string;
+begin
+  if Force or (Path <> '') then
+  begin
+    if (Path = '') or not StartsStr(URLPathDelim, Path) then
+      Result := URLPathDelim + Path
+    else
+      Result := Path
+  end
+  else
+    Result := Path
+end;
+
+function AddEndURLDelimiter(const Path: string; Force: Boolean): string;
+begin
+  if Force or (Path <> '') then
+  begin
+    if (Path = '') or not EndsStr(URLPathDelim, Path) then
+      Result := Path + URLPathDelim
+    else
+      Result := Path
+  end
+  else
+    Result := Path
 end;
 
 procedure CenterRect(var R1: TRect; R2: TRect);

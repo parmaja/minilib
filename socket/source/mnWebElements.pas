@@ -2762,7 +2762,7 @@ begin
   Result := False;
   Routes := TStringList.Create;
   try
-    StrToStrings(AContext.Route, Routes, ['/']);
+    StrToStrings(AContext.Route, Routes, [URLPathDelim]);
     if (Routes.Count > 0) then
       aSchemaName := Routes[0]
     else
@@ -2991,7 +2991,7 @@ begin
   Routes := TStringList.Create;
   try
     i := 0;
-    StrToStrings(AContext.Route, Routes, ['/']);
+    StrToStrings(AContext.Route, Routes, [URLPathDelim]);
     if (i<Routes.Count) then
     begin
       aRoute := Routes[i];
@@ -3660,7 +3660,7 @@ begin
   else if e.PostTo.Where = toElement then
     aPostTo := Context.GetPath(e)
   else if e.PostTo.Where = toHome then
-    aPostTo := '/';
+    aPostTo := URLPathDelim;
   Context.Writer.OpenTag('form', 'method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText);
   inherited;
   if e.RedirectTo <> '' then
@@ -3912,7 +3912,7 @@ var
   s: string;
 begin
   inherited;
-  if ServeFiles and (AContext.Route <> '') then
+  if ServeFiles then
   begin
     aHomePath := When(HomePath, App.FHomePath);
     if aHomePath <> '' then
@@ -3971,11 +3971,20 @@ begin
         begin
           if EndsDelimiter(aFileName) then
             aFileName := GetDefaultDocument(aFileName);
-
-          if not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots, TODO no folders in path
-            AResponse.SendFile(aFileName, AContext.Stamp)
+          if FileExists(aFileName) then
+          begin
+            if not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots, TODO no folders in path
+              AResponse.SendFile(aFileName, AContext.Stamp)
+            else
+              AResponse.Answer := hrForbidden;
+          end
           else
-            AResponse.Answer := hrForbidden;
+          begin
+            if (AContext.Route = '') or (AContext.Route = URLPathDelim) then
+              Render(AContext, AResponse)
+            else
+              AResponse.Answer := hrNotFound;
+          end;
         end;
       end
       else
@@ -6271,7 +6280,7 @@ end;
 
 function TmnwContext.GetPath: string;
 begin
-  Result := '/' + IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Schema.App.Alias);
+  Result := AddStartURLDelimiter(IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Schema.App.Alias));
 end;
 
 function TmnwContext.GetPath(e: TmnwElement): string;

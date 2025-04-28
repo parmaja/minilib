@@ -47,7 +47,6 @@ uses
 
 const
   cDefaultKeepAliveTimeOut = 50000; //TODO move module
-  URLPathDelim  = '/';
 
 type
   TmodModuleException = class(Exception);
@@ -798,8 +797,6 @@ function ExtractDomain(const URI: string): string;
 function GetSubPath(const Path: string): string;
 function DeleteSubPath(const SubKey, Path: string): string;
 function StartsSubPath(const SubKey, Path: string): Boolean;
-function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
-function AddEndURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 
 function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
@@ -1033,32 +1030,6 @@ begin
     Result := StartsStr(Path, URLPathDelim + SubKey)
   else
     Result := StartsStr(Path, SubKey);
-end;
-
-function AddStartURLDelimiter(const Path: string; Force: Boolean): string;
-begin
-  if Force or (Path <> '') then
-  begin
-    if (Path = '') or not StartsStr(URLPathDelim, Path) then
-      Result := URLPathDelim + Path
-    else
-      Result := Path
-  end
-  else
-    Result := Path
-end;
-
-function AddEndURLDelimiter(const Path: string; Force: Boolean): string;
-begin
-  if Force or (Path <> '') then
-  begin
-    if (Path = '') or not EndsStr(URLPathDelim, Path) then
-      Result := Path + URLPathDelim
-    else
-      Result := Path
-  end
-  else
-    Result := Path
 end;
 
 { TmodRespond }
