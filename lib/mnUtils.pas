@@ -246,7 +246,9 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
 function IncludePathDelimiter(const S: string; Force: Boolean = False): string;
 function ExcludePathDelimiter(Path: string): string;
 
-function IncludeURLDelimiter(const S: string; Force: Boolean = False): string; deprecated 'AddEndURLDelimiter';
+function IncludeURLDelimiter(const S: string): string; //deprecated 'AddEndURLDelimiter';
+
+//If empty do not add
 function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 function AddEndURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 
@@ -1785,9 +1787,9 @@ begin
     Result := s;
 end;
 
-function IncludeURLDelimiter(const S: string; Force: Boolean): string;
+function IncludeURLDelimiter(const S: string): string;
 begin
-  if (Force or (s <> '')) and not EndsStr('/', S) then
+  if not EndsStr('/', S) then
     Result := S + '/'
   else
     Result := S;

@@ -138,7 +138,6 @@ begin
 //    aHomeModule.Port := HttpServer.Port;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.WebApp.HomePath := IncludePathDelimiter(aHomePath);
-    aHomeModule.WebApp.Assets.AllowIndex := True;
     aHomeModule.HomePath := IncludePathDelimiter(aHomePath);
     aHomeModule.WorkPath := aHomeModule.WebApp.AppPath;
     aHomeModule.WebApp.CompactMode := False;

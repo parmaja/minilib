@@ -774,7 +774,7 @@ end;
 procedure TFilesSchema.DoCompose;
 begin
   inherited DoCompose;
-  ServeFiles := True;
+  ServeFiles := [serveAllow, serveDefault, serveIndex];
   HomePath := IncludePathDelimiter(App.HomePath) + 'files';
 end;
 
@@ -808,7 +808,6 @@ procedure THomeModule.CreateItems;
 begin
   inherited;
   WebApp.RegisterSchema('welcome', TWelcomeSchema);
-  WebApp.RegisterSchema('assets', TAssetsSchema);
   WebApp.RegisterSchema('login', TLoginSchema);
   WebApp.RegisterSchema('demo', TDemoSchema);
   WebApp.RegisterSchema('simple', TSimpleSchema);

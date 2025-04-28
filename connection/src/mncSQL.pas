@@ -721,7 +721,7 @@ begin
       raise EmncException.Create('Empty SQL to parse!');
     if CMD.ProcessSQL then
     begin
-      //TODO stored procedures and trigger must not check param in budy procedure
+      //TODO stored procedures and trigger must not check param in body procedure
       Clear;
       sParamName := '';
       try

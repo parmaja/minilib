@@ -353,6 +353,8 @@ type
 
   TActionProc = reference to procedure (const AContext: TmnwContext; AResponse: TmnwResponse);
 
+  TmnwServeFiles = set of (serveAllow, serveIndex, serveDefault, serveRender);
+
   { TmnwElement }
 
   TmnwElement = class(TmnObjectList<TmnwElement>)
@@ -385,6 +387,8 @@ type
     procedure Added(Item: TmnwElement); override;
     procedure Check; virtual;
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
+
+    procedure ServeFile(HomePath: string; Options: TmnwServeFiles; DefaultDocuments: TStringList; const AContext: TmnwContext; AResponse: TmnwResponse);
 
     procedure DoPrepare; virtual;
     procedure DoCompose; virtual;
@@ -569,30 +573,28 @@ type
   private
     FAttached: Boolean;
     FAttachments: TmnwAttachments;
-    FDefaultDocument: TStringList;
+    FDefaultDocuments: TStringList;
     FLock: TCriticalSection;
     FApp: TmnwApp;
     FPhase: TmnwSchemaPhase;
     FNamingLastNumber: THandle;
     function GetReleased: Boolean;
-    procedure SetDefaultDocument(AValue: TStringList);
+    procedure SetDefaultDocuments(AValue: TStringList);
   protected
     Usage: Integer;
     procedure UpdateAttached;
-    function GetDefaultDocument(vRoot: string): string; virtual;
     class procedure Registered; virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAccept(const AContext: TmnwContext; var Resume: Boolean); virtual;
     procedure ProcessMessage(const s: string);
-    property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
+    property DefaultDocuments: TStringList read FDefaultDocuments write SetDefaultDocuments;
   public
     LastAccess: TDateTime;
     IsManual: Boolean;
     Direction: TDirection;
     RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
     HomePath: string;
-    ServeFiles: Boolean;
-    AllowIndex: Boolean;
+    ServeFiles: TmnwServeFiles;
     SessionID: string;
     Interactive: Boolean;
     constructor Create(AApp: TmnwApp; AName:string; ARoute: string = ''); reintroduce;
@@ -942,6 +944,7 @@ type
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public
         HomePath: string;
+        AllowIndex: Boolean;
         function GetContentType(Route: string): string; override;
       end;
 
@@ -2899,7 +2902,7 @@ begin
 
       if (aElement = aSchema) and (AContext.Route = '') then
       begin
-        AResponse.Location := IncludeURLDelimiter(AContext.GetPath(aSchema), True);
+        AResponse.Location := IncludeURLDelimiter(AContext.GetPath(aSchema));
         AResponse.Resume := False;
         AResponse.Answer := hrRedirect;
       end
@@ -3854,11 +3857,11 @@ constructor TmnwSchema.Create(AApp: TmnwApp; AName: string; ARoute: string);
 begin
   inherited Create(nil);
   FApp := AApp;
-  FDefaultDocument := TStringList.Create;
-  FDefaultDocument.Add('index.html');
-  FDefaultDocument.Add('index.htm');
-  FDefaultDocument.Add('default.html');
-  FDefaultDocument.Add('default.htm');
+  FDefaultDocuments := TStringList.Create;
+  FDefaultDocuments.Add('index.html');
+  FDefaultDocuments.Add('index.htm');
+  FDefaultDocuments.Add('default.html');
+  FDefaultDocuments.Add('default.htm');
   FName := AName;
   if ARoute = '' then
     FRoute := FName
@@ -3880,7 +3883,7 @@ begin
   FAttachments.Clear;
   FreeAndNil(FAttachments);
   FreeAndNil(FLock);
-  FreeAndNil(FDefaultDocument);
+  FreeAndNil(FDefaultDocuments);
   inherited;
 end;
 
@@ -3903,96 +3906,124 @@ begin
   end;
 end;
 
-procedure TmnwSchema.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.ServeFile(HomePath: string; Options: TmnwServeFiles; DefaultDocuments: TStringList; const AContext: TmnwContext; AResponse: TmnwResponse);
+
+  function GetDefaultDocument(vRoot: string): string;
+  var
+    i: Integer;
+    aFile: string;
+  begin
+    if DefaultDocuments= nil then
+      exit(vRoot);
+    //TODO baaad you need to lock before access
+    vRoot := IncludePathDelimiter(vRoot);
+    for i := 0 to DefaultDocuments.Count - 1 do
+    begin
+      aFile := vRoot + DefaultDocuments[i];
+      if FileExists(aFile) then
+      begin
+        Result := aFile;
+        Exit;
+      end;
+    end;
+
+    if DefaultDocuments.Count <> 0 then
+      Result := vRoot + DefaultDocuments[0]
+    else
+      Result := vRoot;
+  end;
+
 var
   fs: TFileStream;
   aFileName: string;
-  aHomePath: string;
   files: TStringList;
   s: string;
+
 begin
-  inherited;
-  if ServeFiles then
+  if HomePath <> '' then
   begin
-    aHomePath := When(HomePath, App.FHomePath);
-    if aHomePath <> '' then
+    if WebExpandFile(HomePath, AContext.Route, aFileName) then
     begin
-      if WebExpandFile(aHomePath, AContext.Route, aFileName) then
+      if (serveIndex in Options) and EndsDelimiter(aFileName) then
       begin
-        if AllowIndex and EndsDelimiter(aFileName) then
-        begin
-          AResponse.ContentType := DocumentToContentType('html');
-          files := TStringList.Create;
-          try
-            AContext.Writer.WriteLn('<!DOCTYPE html>');
-            AContext.Writer.OpenTag('html');
-            AContext.Writer.OpenTag('head');
-            AContext.Writer.AddTag('title', '', 'Index of ' + aFileName);
-            AContext.Writer.AddTag('style', '', 'body { font-family: monospace; }');
-            AContext.Writer.CloseTag('head');
-            AContext.Writer.OpenTag('body');
-            EnumFiles(files, aFileName, '*.*', [efDirectory]);
-            AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.Route);
-            AContext.Writer.AddTag('h2', '', 'Folders');
-            AContext.Writer.OpenTag('ul', '', '');
-            for s in files do
-            begin
-              if not StartsText('.', s) then
-              begin
-                AContext.Writer.OpenInlineTag('ui');
-                AContext.Writer.AddInlineTag('a', 'href="' + s + '\"', s);
-                AContext.Writer.AddInlineShortTag('br');
-                AContext.Writer.CloseTag('ui');
-              end;
-            end;
-            AContext.Writer.CloseTag('ul');
-            AContext.Writer.AddTag('h2', '', 'Files');
-            files.Clear;
-            EnumFiles(files, aFileName, '*.*', [efFile]);
-            AContext.Writer.OpenTag('ul', '', '');
-            for s in files do
-            begin
-              if not StartsText('.', s) then
-              begin
-                AContext.Writer.OpenInlineTag('ui');
-                AContext.Writer.AddInlineTag('a', 'href="' + s + '"', s);
-                AContext.Writer.AddInlineShortTag('br');
-                AContext.Writer.CloseTag('ui');
-              end;
-            end;
-            AContext.Writer.CloseTag('ul');
-            AContext.Writer.CloseTag('body');
-            AContext.Writer.CloseTag('html');
-          finally
-            files.Free;
-          end;
-        end
-        else
-        begin
-          if EndsDelimiter(aFileName) then
-            aFileName := GetDefaultDocument(aFileName);
-          if FileExists(aFileName) then
+        AResponse.ContentType := DocumentToContentType('html');
+        files := TStringList.Create;
+        try
+          AContext.Writer.WriteLn('<!DOCTYPE html>');
+          AContext.Writer.OpenTag('html');
+          AContext.Writer.OpenTag('head');
+          AContext.Writer.AddTag('title', '', 'Index of ' + aFileName);
+          AContext.Writer.AddTag('style', '', 'body { font-family: monospace; }');
+          AContext.Writer.CloseTag('head');
+          AContext.Writer.OpenTag('body');
+          EnumFiles(files, aFileName, '*.*', [efDirectory]);
+          AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.Route);
+          AContext.Writer.AddTag('h2', '', 'Folders');
+          AContext.Writer.OpenTag('ul', '', '');
+          for s in files do
           begin
-            if not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots, TODO no folders in path
-              AResponse.SendFile(aFileName, AContext.Stamp)
-            else
-              AResponse.Answer := hrForbidden;
-          end
-          else
-          begin
-            if (AContext.Route = '') or (AContext.Route = URLPathDelim) then
-              Render(AContext, AResponse)
-            else
-              AResponse.Answer := hrNotFound;
+            if not StartsText('.', s) then
+            begin
+              AContext.Writer.OpenInlineTag('ui');
+              AContext.Writer.AddInlineTag('a', 'href="' + s + '\"', s);
+              AContext.Writer.AddInlineShortTag('br');
+              AContext.Writer.CloseTag('ui');
+            end;
           end;
+          AContext.Writer.CloseTag('ul');
+          AContext.Writer.AddTag('h2', '', 'Files');
+          files.Clear;
+          EnumFiles(files, aFileName, '*.*', [efFile]);
+          AContext.Writer.OpenTag('ul', '', '');
+          for s in files do
+          begin
+            if not StartsText('.', s) then
+            begin
+              AContext.Writer.OpenInlineTag('ui');
+              AContext.Writer.AddInlineTag('a', 'href="' + s + '"', s);
+              AContext.Writer.AddInlineShortTag('br');
+              AContext.Writer.CloseTag('ui');
+            end;
+          end;
+          AContext.Writer.CloseTag('ul');
+          AContext.Writer.CloseTag('body');
+          AContext.Writer.CloseTag('html');
+        finally
+          files.Free;
         end;
       end
       else
-        AResponse.Answer := hrUnauthorized;
+      begin
+        if EndsDelimiter(aFileName) and (serveDefault in Options) then
+          aFileName := GetDefaultDocument(aFileName);
+
+        if FileExists(aFileName) then
+        begin
+          if not StartsText('.', ExtractFileName(aFileName)) then //no files starts with dots, TODO no folders in path
+            AResponse.SendFile(aFileName, AContext.Stamp)
+          else
+            AResponse.Answer := hrForbidden;
+        end
+        else
+        begin
+          if (AContext.Route = '') or (AContext.Route = URLPathDelim) then
+            Render(AContext, AResponse)
+          else
+            AResponse.Answer := hrNotFound;
+        end;
+      end;
     end
     else
-      Render(AContext, AResponse);
+      AResponse.Answer := hrUnauthorized;
   end
+  else
+    Render(AContext, AResponse);
+end;
+
+procedure TmnwSchema.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+begin
+  if serveAllow in ServeFiles then
+    ServeFile(When(HomePath, App.FHomePath), ServeFiles, DefaultDocuments, AContext, AResponse)
   else
     Render(AContext, AResponse);
 end;
@@ -4086,9 +4117,9 @@ begin
   Result := (FPhase = scmpReleased) or (schemaDynamic in GetCapabilities);
 end;
 
-procedure TmnwSchema.SetDefaultDocument(AValue: TStringList);
+procedure TmnwSchema.SetDefaultDocuments(AValue: TStringList);
 begin
-  FDefaultDocument.Assign(AValue);
+  FDefaultDocuments.Assign(AValue);
 end;
 
 function TmnwSchema.NewHandle: THandle;
@@ -4107,7 +4138,7 @@ begin
   end;
 end;
 
-function TmnwSchema.GetDefaultDocument(vRoot: string): string;
+{function TmnwSchema.GetDefaultDocument(vRoot: string): string;
 var
   i: Integer;
   aFile: string;
@@ -4128,7 +4159,7 @@ begin
     Result := vRoot + DefaultDocument[0]
   else
     Result := vRoot;
-end;
+end;}
 
 { TmnwSchema.TElement }
 
@@ -4313,7 +4344,7 @@ begin
   else
     Result := Route;
 
-  Result := IncludeURLDelimiter(Result);
+//  Result := IncludeURLDelimiter(Result);
 end;
 
 procedure TmnwElement.SetState(const AValue: TmnwElementState);
@@ -4914,15 +4945,9 @@ end;
 { THTML.TAssets }
 
 procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
-var
-  aFileName: string;
 begin
   inherited;
-  if HomePath <> '' then
-  begin
-    if WebExpandFile(HomePath, AContext.Route, aFileName) then
-      AResponse.SendFile(aFileName, AContext.Stamp);
-  end;
+  ServeFile(HomePath, [serveDefault], nil, AContext, AResponse);
 end;
 
 function THTML.TAssets.GetContentType(Route: string): string;
@@ -5046,7 +5071,7 @@ end;
 
 procedure TJQuery_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + Context.GetPath(Context.Schema.App.Assets) + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { TWebElements_Library }
@@ -5890,7 +5915,7 @@ begin
   FLogo.Name := 'logo';
   FLogo.Route := 'logo';
   FPhase := scmpNormal;
-  ServeFiles := True;
+  ServeFiles := [serveAllow, serveDefault];
 end;
 
 procedure TAssetsSchema.DoPrepare;
@@ -6273,19 +6298,19 @@ end;
 
 { TmnwContext }
 
-function TmnwContext.GetAssetsURL: string;
-begin
-  Result := GetPath(Schema.App.Assets);
-end;
-
 function TmnwContext.GetPath: string;
 begin
-  Result := AddStartURLDelimiter(IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Schema.App.Alias));
+  Result := IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Schema.App.Alias);
 end;
 
 function TmnwContext.GetPath(e: TmnwElement): string;
 begin
   Result := IncludeURLDelimiter(GetPath) + e.GetPath
+end;
+
+function TmnwContext.GetAssetsURL: string;
+begin
+  Result := IncludeURLDelimiter(GetPath(Schema.App.Assets));
 end;
 
 { TmnwResponse }
