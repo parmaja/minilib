@@ -173,7 +173,7 @@ begin
   if WithEnclose then
     EMail := EncloseStr(EMail, '<', '>')
   else
-    EMail := RemoveEncloseStr(EMail, '<', '>');
+    EMail := UncloseStr(EMail, '<', '>');
 end;
 
 function SMTPMail(vHost, vUsername, vPassword: string; vFrom, vTo, vSubject: string; vBody: TStringList; UseSSL: Boolean = False): Boolean;

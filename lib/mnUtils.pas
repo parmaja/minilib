@@ -157,9 +157,6 @@ function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 //Used by GetTickCount, return minuts,secons,miliseconds
 function TicksToString(vTicks: Int64): string;
 function DequoteStr(const Str: string; const QuoteChar: string = #0): string;
-function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): string;
-function RemoveEncloseStr(const S, Left, Right: string): string;
-function EncloseStr(const S, Left, Right: string): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
 
@@ -195,9 +192,6 @@ type
 
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions = [alsLeft]; vChar: Char = ' '): string; overload;
 
-function StartsDelimiter(const vFileName: string): Boolean;
-function EndsDelimiter(const vFileName: string): Boolean;
-
 {
   EscapeString: Example
     EscapeString(Text, '\', [#13, #10, #9 , #8, '"'], ['r', 'n', 't', 'b', '"']);
@@ -223,7 +217,7 @@ function DescapeString(const S: string; const Esc: string; Chars: array of Char;
 function EscapeStringC(const S: string): string;
 function DescapeStringC(const S: string): string;
 function ToUnixPathDelimiter(const S: string): string;
-function CorrectPath(const Path: string): string;
+
 function ExpandFile(const Name: string): string;
 
 {
@@ -242,6 +236,8 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
 //function EscapeStringPas(const S: string): string;
 //function DescapeStringPas(const S: string): string;
 
+function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): string;
+
 //IncludePathDelimiter add the Delimiter when S not = ''
 function IncludePathDelimiter(const S: string; Force: Boolean = False): string;
 function ExcludePathDelimiter(Path: string): string;
@@ -251,6 +247,14 @@ function IncludeURLDelimiter(const S: string): string; //deprecated 'AddEndURLDe
 //If empty do not add
 function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 function AddEndURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
+
+function StartsDelimiter(const vFileName: string): Boolean;
+function EndsDelimiter(const vFileName: string): Boolean;
+
+function EncloseStr(const S, Left, Right: string): string;
+function UncloseStr(const S, Left, Right: string): string;
+
+function CorrectPath(const Path: string): string;
 
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
@@ -420,7 +424,7 @@ begin
     Result := Str;
 end;
 
-function RemoveEncloseStr(const S, Left, Right: string): string;
+function UncloseStr(const S, Left, Right: string): string;
 var
   start, count: Integer;
 begin
