@@ -202,7 +202,6 @@ begin
     aHomeModule.WebApp.AppPath := Application.Location;
     //aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs-v2.png');
     aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs.svg');
-    aHomeModule.WebApp.Assets.AllowIndex := True;
 
     ForceDirectories(aHomeModule.WorkPath + 'cache');
     ForceDirectories(aHomeModule.WorkPath + 'temp');

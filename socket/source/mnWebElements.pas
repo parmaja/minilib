@@ -429,7 +429,11 @@ type
     property Schema: TmnwSchema read FSchema;
     property Parent: TmnwElement read FParent;
 
+    //GetPath get path to the schema, not to domain/host
+    //Use Contex.GetPath(e) to get path to the module/alias name
     function GetPath: string;
+    //TODO
+    function GetRelativePath: string;
 
     function CreateRender(const Context: TmnwContext): TmnwElementRenderer;
     procedure Compose; virtual;
@@ -1981,8 +1985,6 @@ begin
     styleDanger: Result := Prefix + 'danger';
     styleWarning: Result := Prefix + 'warning';
     styleInfo: Result := Prefix + 'info';
-  else
-    Result := '';
   end;
 end;
 
@@ -4347,6 +4349,22 @@ begin
 //  Result := IncludeURLDelimiter(Result);
 end;
 
+function TmnwElement.GetRelativePath: string;
+begin
+  if Self = nil then
+    exit('');
+
+  if (Parent <> nil) then
+  begin
+    if Route <> '' then
+      Result := AddStartURLDelimiter(Parent.GetRelativePath) + Route
+    else
+      Result := Parent.GetRelativePath;
+  end
+  else
+    Result := '';
+end;
+
 procedure TmnwElement.SetState(const AValue: TmnwElementState);
 begin
   if FState =AValue then Exit;
@@ -4629,7 +4647,8 @@ begin
 end;
 
 //in FPC if you got error, change <O: TmnwElement> to <O>
-function TmnwElement.Add<O>(const AID: String; const AName: String): O;
+function TmnwElement.Add<O>(const AID: String; const AName: String
+  ): O;
 begin
   Result := O.Create(Self);
   Result.FID := AID;
@@ -5976,10 +5995,15 @@ end;
 procedure TUIWebModule.DoPrepareRequest(ARequest: TmodRequest);
 begin
   inherited;
-  if StartsStr('.', ARequest.Route[ARequest.Route.Count - 1]) then
-    ARequest.Command := ARequest.Route[ARequest.Route.Count - 1]
+  if (ARequest.Route.Count > 0) then
+  begin
+    if StartsStr('.', ARequest.Route[ARequest.Route.Count - 1]) then
+      ARequest.Command := ARequest.Route[ARequest.Route.Count - 1]
+    else
+      ARequest.Command := ARequest.Route[1];
+  end
   else
-    ARequest.Command := ARequest.Route[1];
+    ARequest.Command := '';
   //ARequest.Path := DeleteSubPath(ARequest.Command, ARequest.Path);
 end;
 
