@@ -271,6 +271,7 @@ type
     Data: TmnMultipartData;
     function GetPath: string; overload;
     function GetPath(e: TmnwElement): string; overload;
+    function GetSchemaURL: string;
     function GetAssetsURL: string;
   end;
 
@@ -6330,6 +6331,11 @@ end;
 function TmnwContext.GetPath(e: TmnwElement): string;
 begin
   Result := IncludeURLDelimiter(GetPath) + e.GetPath
+end;
+
+function TmnwContext.GetSchemaURL: string;
+begin
+  Result := IncludeURLDelimiter(GetPath(Schema));
 end;
 
 function TmnwContext.GetAssetsURL: string;
