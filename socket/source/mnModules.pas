@@ -805,6 +805,9 @@ const
   ProtocolVersion = 'HTTP/1.1'; //* Capital letter
   sUserAgent = 'miniWebModule/1.1';
 
+var
+  DevelopperMode:Boolean = False;
+
 implementation
 
 uses
@@ -1190,7 +1193,7 @@ begin
 
   FileAge(AFileName, aDate);
   aTag := DateTimeToUnix(aDate).ToString;
-  if (Stamp <> '') and (Stamp = aTag) then
+  if not DevelopperMode and (Stamp <> '') and (Stamp = aTag) then
   begin
     Answer := hrNotModified;
     exit(False);

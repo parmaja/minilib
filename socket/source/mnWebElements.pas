@@ -433,8 +433,9 @@ type
     //GetPath get path to the schema, not to domain/host
     //Use Contex.GetPath(e) to get path to the module/alias name
     function GetPath: string;
-    //TODO
-    function GetRelativePath: string;
+
+    function GetRelativePath: string; overload;
+    function GetRelativePath(ToElement: TmnwElement): string; overload;
 
     function CreateRender(const Context: TmnwContext): TmnwElementRenderer;
     procedure Compose; virtual;
@@ -4348,6 +4349,22 @@ begin
     Result := Route;
 
 //  Result := IncludeURLDelimiter(Result);
+end;
+
+function TmnwElement.GetRelativePath(ToElement: TmnwElement): string;
+begin
+  if (Self = nil) or (Self <> ToElement) then
+    exit('');
+
+  if (Parent <> nil) then
+  begin
+    if Route <> '' then
+      Result := AddStartURLDelimiter(Parent.GetRelativePath) + Route
+    else
+      Result := Parent.GetRelativePath;
+  end
+  else
+    Result := '';
 end;
 
 function TmnwElement.GetRelativePath: string;
