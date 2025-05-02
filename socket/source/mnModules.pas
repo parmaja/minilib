@@ -1,4 +1,4 @@
-﻿unit mnModules;
+﻿  unit mnModules;
 {$IFDEF FPC}
 {$mode delphi}
 {$modeswitch prefixedattributes}
@@ -384,7 +384,8 @@ type
 
     function SendUTF8String(const s: UTF8String): Boolean; overload;
     function SendString(const s: string): Boolean; overload;
-    function SendStream(s: TStream; Count: Int64): Boolean; overload;
+    function SendStream(s: TStream; ASize: Int64; AName: string; AFileDate: TDateTime; const Stamp: string = ''): Boolean; overload;
+    function SendStream(s: TStream; ASize: Int64): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64): Boolean; overload;
     function SendFile(AFileName: string; const Stamp: string): Boolean;
 
@@ -1112,13 +1113,13 @@ begin
     Result := Stream.ReadStream(s, -1); //read complete stream
 end;
 
-function TmodRespond.SendStream(s: TStream; Count: Int64): Boolean;
+function TmodRespond.SendStream(s: TStream; ASize: Int64): Boolean;
 var
   stream: TInterfacedStreamtWrapper;
 begin
   stream := TInterfacedStreamtWrapper.Create(s);
   try
-    Result := SendStream(stream, Count);
+    Result := SendStream(stream, ASize);
   finally
     FreeAndNil(stream);
   end;
@@ -1178,12 +1179,18 @@ begin
   end;
 end;
 
+function FileStamp(aFileDate: TDateTime; Size: Int64 = 0): string; inline;
+begin
+  Result := DateTimeToUnix(aFileDate).ToString;
+  if Size <> 0 then
+    Result := Result + '-' + Size.ToString;
+end;
+
 function TmodRespond.SendFile(AFileName: string; const Stamp: string): Boolean;
 var
   aStream: TStream;
-  aDate: TDateTime;
-  aTag: string;
-  aMIMEItem: TmnMIMEItem;
+  aSize: Int64;
+  aFileDate: TDateTime;
 begin
   if not FileExists(aFileName) then
   begin
@@ -1191,9 +1198,10 @@ begin
     exit(False);
   end;
 
-  FileAge(AFileName, aDate);
-  aTag := DateTimeToUnix(aDate).ToString;
-  if not DevelopperMode and (Stamp <> '') and (Stamp = aTag) then
+  FileAge(AFileName, aFileDate);
+  aSize := GetSizeOfFile(AFileName);
+
+  if not DevelopperMode and (Stamp <> '') and (Stamp = FileStamp(aFileDate, aSize)) then
   begin
     Answer := hrNotModified;
     exit(False);
@@ -1201,26 +1209,7 @@ begin
 
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
   try
-
-    ETag := aTag;
-    Header['Cache-Control']  := 'max-age=600';
-    Header['Last-Modified']  := FormatHTTPDate(aDate);
-
-    aMIMEItem := DocumentToMIME(AFileName);
-    if aMIMEItem <> nil then
-    begin
-      ContentType := aMIMEItem.ContentType;
-      if Binary in aMIMEItem.Features then
-        Header['Content-Disposition']  := 'attachment; filename="'+ExtractFileName(AFileName)+'"';
-    end
-    else
-    begin
-      ContentType := 'application/octet-stream';
-      Header['Content-Disposition']  := 'attachment; filename="'+ExtractFileName(AFileName)+'"';
-    end;
-
-    SendStream(aStream, GetSizeOfFile(AFileName));
-    Result := True;
+    Result := SendStream(aStream, aSize, AFileName, aFileDate);
   finally
     aStream.Free;
   end;
@@ -1248,6 +1237,44 @@ begin
   {$else}
   Result := SendUTF8String(t);
   {$endif}
+end;
+
+function TmodRespond.SendStream(s: TStream; ASize: Int64; AName: string;
+  AFileDate: TDateTime; const Stamp: string): Boolean;
+var
+  aMIMEItem: TmnMIMEItem;
+  aStamp: string;
+begin
+  aStamp := FileStamp(AFileDate, ASize);
+
+  if not DevelopperMode and (Stamp <> '') and (Stamp = aStamp) then
+  begin
+    Answer := hrNotModified;
+    exit(False);
+  end;
+
+  ETag := aStamp;
+
+  Header['Cache-Control']  := 'public, max-age=600';
+  if AFileDate > 0 then
+    Header['Last-Modified']  := FormatHTTPDate(AFileDate);
+
+  aMIMEItem := DocumentToMIME(AName);
+  if aMIMEItem <> nil then
+  begin
+    ContentType := aMIMEItem.ContentType;
+    if Binary in aMIMEItem.Features then
+      if AName <> '' then
+        Header['Content-Disposition']  := 'attachment; filename="' + ExtractFileName(AName)+'"';
+  end
+  else
+  begin
+    ContentType := 'application/octet-stream';
+    if AName <> '' then
+      Header['Content-Disposition']  := 'attachment; filename="' + ExtractFileName(AName)+'"';
+  end;
+
+  Result := SendStream(s, ASize);
 end;
 
 function TmodRespond.GetStream: TmnBufferStream;

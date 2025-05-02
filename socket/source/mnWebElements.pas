@@ -269,9 +269,13 @@ type
     ParentRenderer: TmnwElementRenderer;
     Writer: TmnwWriter;
     Data: TmnMultipartData;
+    //this get path with host/directory/
     function GetPath: string; overload;
+    //this get absolute path with host/directory/alias/schema/element
     function GetPath(e: TmnwElement): string; overload;
+    //this get absolute path with host/directory/alias/schema/
     function GetSchemaURL: string;
+    //this get absolute path with host/directory/alias/assets/
     function GetAssetsURL: string;
   end;
 
@@ -432,9 +436,11 @@ type
 
     //GetPath get path to the schema, not to domain/host
     //Use Contex.GetPath(e) to get path to the module/alias name
+    //this get path with schema/element/element/element
     function GetPath: string;
-
+    //this get path without schema name, element/element/element
     function GetRelativePath: string; overload;
+    //this get path without schema and parent element name, element/element
     function GetRelativePath(ToElement: TmnwElement): string; overload;
 
     function CreateRender(const Context: TmnwContext): TmnwElementRenderer;
@@ -798,6 +804,7 @@ type
     procedure ClearSchemas;
   public
     InstanceUID: TGUID;
+    InstanceDate: TDateTime;
     IsSSL: Boolean;
     Domain: string; //localhost
     Port: string;
@@ -3058,6 +3065,7 @@ end;
 constructor TmnwApp.Create;
 begin
   InstanceUID := TGUID.NewGuid;
+  FileAge(ParamStr(0), InstanceDate);
   FLock := TCriticalSection.Create;
   FRegistered := TRegisteredSchemas.Create;
   DefaultAge := -1; //Forever
@@ -4310,7 +4318,7 @@ end;
 procedure THTML.TMemoryImage.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
-  AContext.Writer.WriteStream(Data, 0);
+  AResponse.SendStream(Data, Data.Size, FileName, AContext.Schema.App.InstanceDate);
 end;
 
 procedure THTML.TMemoryImage.LoadFromFile(const AFileName: string);
@@ -4890,7 +4898,8 @@ end;
 
 procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
-  aStream: TStream;
+  aStream: TResourceStream;
+  aDate: TDateTime;
 begin
   inherited;
   if ftResource in Options then
@@ -4901,22 +4910,13 @@ begin
     aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA); //* remove extension
     {$endif}
     try
-      AContext.Writer.WriteStream(aStream, 0);
+      AResponse.SendStream(aStream, aStream.Size, FileName, AContext.Schema.App.InstanceDate, AContext.Stamp);
     finally
       aStream.Free;
     end;
   end
   else
-  begin
-    if not FileExists(FileName) then
-    begin
-      AResponse.Answer := hrNotFound;
-      AResponse.Resume := False;
-      exit;
-    end
-    else
-      AResponse.SendFile(FileName, AContext.Stamp);
-  end;
+    AResponse.SendFile(FileName, AContext.Stamp);
 end;
 
 constructor TmnwSchema.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string; ARoute: string );
@@ -4938,12 +4938,8 @@ end;
 
 procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
-  if FileDate <> 0 then
-    AResponse.Header['Last-Modified']  := FormatHTTPDate(FileDate);
-  AResponse.Header['Cache-Control']  := 'public, max-age=3600';
-  AResponse.ContentLength := Data.Size;
   Data.Seek(0, soBeginning);
-  AContext.Writer.WriteStream(Data, 0);
+  AResponse.SendStream(Data, Data.Size, FileName, FileDate, AContext.Stamp);
 end;
 
 procedure TmnwSchema.TMemory.Created;
@@ -4975,6 +4971,7 @@ procedure TmnwSchema.TMemory.LoadFromStream(AStream: TStream; AContentType: stri
 begin
   Data.LoadFromStream(AStream);
   ContentType := AContentType;
+  FileDate := 0;
   FileName := '';
   FilePath := '';
 end;
