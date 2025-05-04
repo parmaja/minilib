@@ -50,8 +50,8 @@ type
   protected
     FRefCount: Integer;
 
-    function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
-    function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+    function _AddRef: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function _Release: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   public
     procedure AfterConstruction; override;
     procedure BeforeDestruction; override;
@@ -688,12 +688,12 @@ begin
   end;
 end;
 
-function TmnRefInterfacedPersistent._AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+function TmnRefInterfacedPersistent._AddRef: Integer;
 begin
   Result := AtomicIncrement(FRefCount);
 end;
 
-function TmnRefInterfacedPersistent._Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+function TmnRefInterfacedPersistent._Release: Integer;
 begin
   Result := AtomicDecrement(FRefCount);
 
