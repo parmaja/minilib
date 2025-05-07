@@ -43,6 +43,7 @@ const
 type
   TConfOption = (
     coUseSubnames,
+    coEmptyIsValue, //Empty string is a value (do not return default)
     coInherite, //If field not exists get the value from parent
     coReturnFirst //return first item in section if item name is empty
   );
@@ -188,7 +189,7 @@ type
     function FindValue(AValue: String; AOptions: TConfOptions = []): TConfField; overload;
     function RequireField(const vName: string): TConfField; //find it if not exists create it
     function Add(AName, AValue: string): TConfField; overload;
-    function AddItem(S: string; Seperator: string; TrimIt: Boolean = False): TConfField; overload;
+    function AddItem(S: string; Seperator: string; TrimIt: Boolean = False; MergeIt: Boolean = False): TConfField; overload;
     function AddComment(S: string): TConfField; overload;
     function Find(const vName: string): TConfField; virtual; //no exception
     function Exists(const vName: string): Boolean;
@@ -228,8 +229,8 @@ type
     procedure WriteTo(Writer: TConfWriter; Level: Integer); virtual;
 
     //it will merge into it, You need to `clear` before load it
-    procedure LoadFromStream(Stream: TStream; IgnoreComments: Boolean = False);
-    procedure LoadFromFile(const FileName: string; IgnoreComments: Boolean = False);
+    procedure LoadFromStream(Stream: TStream; IgnoreComments: Boolean = False; MergeIt: Boolean = False);
+    procedure LoadFromFile(const FileName: string; IgnoreComments: Boolean = False; MergeIt: Boolean = False);
     procedure SaveToStream(Stream: TStream);
     procedure SaveToFile(const FileName: string);
 
@@ -793,10 +794,10 @@ begin
   if Self = nil then
     raise Exception.Create('Section is nil, you can read from it');
   Field := FindField(AName, AOptions);
-  if (Field <> nil) {and (Field.AsString <> '')} then //* nope, Empty balue is a value
-    Result := Field.AsString
+  if (Field = nil) or ((Field.AsString = '') and (coEmptyIsValue in AOptions)) then //* nope, Empty value is a value
+    Result := Def
   else
-    Result := Def;
+    Result := Field.AsString
 end;
 
 procedure TConfSection.ReadStrings(AStrings: TStrings; AName: string; ValuesOnly: Boolean; AllowDuplicate: Boolean);
@@ -991,7 +992,7 @@ begin
   Add(Result);
 end;
 
-function TConfSection.AddItem(S: string; Seperator: string; TrimIt: Boolean): TConfField;
+function TConfSection.AddItem(S: string; Seperator: string; TrimIt, MergeIt: Boolean): TConfField;
 var
   p: Integer;
   aName: string;
@@ -1019,7 +1020,11 @@ begin
   end;
   if TrimIt then
     aValue := Trim(aValue);
-  Result := Add(aName, aValue);
+  Result := FindField(aName);
+  if Result = nil then
+    Result := Add(aName, aValue)
+  else
+    Result.Value := aValue;
 end;
 
 function TConfSection.AddComment(S: string): TConfField;
@@ -1227,13 +1232,13 @@ begin
   Result := S;//as it
 end;
 
-procedure TConfSection.LoadFromFile(const FileName: string; IgnoreComments: Boolean);
+procedure TConfSection.LoadFromFile(const FileName: string; IgnoreComments: Boolean; MergeIt: Boolean);
 var
   Stream: TStream;
 begin
   Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
   try
-    LoadFromStream(Stream, IgnoreComments);
+    LoadFromStream(Stream, IgnoreComments, MergeIt);
   finally
     Stream.Free;
   end;
@@ -1264,7 +1269,7 @@ begin
   end;
 end;
 
-procedure TConfSection.LoadFromStream(Stream: TStream; IgnoreComments: Boolean);
+procedure TConfSection.LoadFromStream(Stream: TStream; IgnoreComments: Boolean; MergeIt: Boolean);
 var
   aReader: TStreamReader;
   aValueSection: TConfSection;
@@ -1338,7 +1343,7 @@ begin
         if CharInArray(l, cCommentChars) then
         begin
           if not IgnoreComments then
-            aValueSection.AddItem(Line, aCurrentSection.Seperator, True);
+            aValueSection.AddItem(Line, aCurrentSection.Seperator, True, MergeIt);
         end
         else
         begin
@@ -1373,7 +1378,7 @@ begin
           else
           begin
             Line := ReplaceVariable(Line);
-            aValueSection.AddItem(Line, aCurrentSection.Seperator, True);
+            aValueSection.AddItem(Line, aCurrentSection.Seperator, True, MergeIt);
           end
         end;
       end;
