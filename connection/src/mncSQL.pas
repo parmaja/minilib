@@ -22,7 +22,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, StrUtils,
-  mnClasses, mnUtils,
+  mnClasses, mnUtils, mnStreams,
   mncConnections, mncCommons;
 
 type
@@ -163,8 +163,6 @@ type
     }
     function GetParamChar: string; virtual;
     function GetExtension: string; virtual;
-    //ScriptSeperator
-    function ScriptSeperator: string; virtual;
 
     {$ifndef FPC}
     function TestConnected: Boolean; virtual;
@@ -188,7 +186,8 @@ type
     function DoCreateCommand: TmncSQLCommand; virtual; abstract;
   public
     function CreateCommand(ASQL: string = ''): TmncSQLCommand;
-    procedure ExecuteScript(AStrings: TStrings; AutoCommit: Boolean = False);
+    procedure ExecuteScript(AStrings: TStrings; AutoCommit: Boolean = False; ATerminator: string = '^');
+    procedure ExecuteFile(AFile: string; AutoCommit: Boolean = False; ATerminator: string = '^');  //* TODO merge with ExecuteScript
     procedure Execute(const vSQL: string); overload; virtual;
     procedure Execute(const vSQL: string; vArgs: array of const); overload;
     property Connection: TmncSQLConnection read GetConnection write SetConnection;
@@ -252,6 +251,8 @@ type
     constructor Create; override;
     destructor Destroy; override;
     function Prepare(vSQL: string): TmncCommand; overload;
+    procedure ExecuteScript(AStrings: TStrings; ATerminator: string = '^');
+
     function GetLastRowID: Int64; virtual;
     function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
@@ -391,11 +392,10 @@ begin
   Execute(Format(vSQL, vArgs));
 end;
 
-procedure TmncSQLTransaction.ExecuteScript(AStrings: TStrings; AutoCommit: Boolean);
+procedure TmncSQLTransaction.ExecuteFile(AFile: string; AutoCommit: Boolean; ATerminator: string);
 var
   CMD: TmncSQLCommand;
   c, i: Integer;
-  ScriptSeperator: string;
   procedure ExecuteNow;
   begin
     if CMD.SQL.Count > 0 then
@@ -417,18 +417,90 @@ var
         Raise;
     end;
   end;
+var
+  aLine: string;
+  aStream: TmnWrapperStream;
 begin
-  ScriptSeperator := Connection.ScriptSeperator;
+  aStream := TmnWrapperStream.Create(TFileStream.Create(AFile, fmOpenRead));
+  try
+    CMD := CreateCommand;
+    try
+      c := 1;
+      CMD.ProcessSQL := False;
+      while not (cloRead in aStream.State) do
+      begin
+        aStream.ReadUTF8Line(aLine);
+        aLine := Trim(aLine);
+        if aLine<>'' then
+        begin
+          if SameText(RightStr(aLine, Length(ATerminator)), ATerminator) then
+          begin
+            aLine := Trim(LeftStr(aLine, Length(aLine) - Length(ATerminator)));
+            if aLine <>'' then
+              CMD.SQL.Add(aLine);
+            ExecuteNow;
+          end
+          else
+            CMD.SQL.Add(aLine);
+        end;
+      end;
+      if CMD.SQL.Count > 0 then
+        ExecuteNow;
+    finally
+      CMD.Free;
+    end;
+  finally
+    aStream.Free;
+  end;
+end;
+
+procedure TmncSQLTransaction.ExecuteScript(AStrings: TStrings; AutoCommit: Boolean; ATerminator: string);
+var
+  CMD: TmncSQLCommand;
+  c, i: Integer;
+  procedure ExecuteNow;
+  begin
+    if CMD.SQL.Count > 0 then
+    try
+      CMD.Execute;
+      Inc(c);
+      if CMD.Active then
+        CMD.Close;
+      CMD.SQL.Clear;
+      if AutoCommit then
+        CommitRetaining;
+    except
+      on E: Exception do
+      begin
+        E.Message := E.Message + #13 + ' on script number ' + IntToStr(c);
+        raise;
+      end
+      else
+        Raise;
+    end;
+  end;
+var
+  aLine: string;
+begin
   CMD := CreateCommand;
   try
     c := 1;
     CMD.ProcessSQL := False;
     for i := 0 to AStrings.Count -1 do
     begin
-      if SameText(LeftStr(AStrings[i], Length(ScriptSeperator)), ScriptSeperator) then
-        ExecuteNow
-      else
-        CMD.SQL.Add(AStrings[i]);
+      aLine := Trim(AStrings[i]);
+      if aLine<>'' then
+      begin
+        if SameText(RightStr(aLine, Length(ATerminator)), ATerminator) then
+        begin
+          aLine := Trim(LeftStr(aLine, Length(aLine) - Length(ATerminator)));
+          if aLine <>'' then
+            CMD.SQL.Add(aLine);
+          ExecuteNow;
+        end
+        else
+          CMD.SQL.Add(aLine);
+      end;
     end;
     if CMD.SQL.Count > 0 then
       ExecuteNow;
@@ -505,11 +577,6 @@ end;
 function TmncSQLConnection.GetExtension: string;
 begin
   Result := '';
-end;
-
-function TmncSQLConnection.ScriptSeperator: string;
-begin
-  Result := '^';
 end;
 
 function TmncSQLConnection.UniqueDBName(const vBase: string): string;
@@ -621,6 +688,49 @@ begin
   if ProcessedSQL <> nil then { TODO : need discuss }
     ProcessedSQL.Clear;
 
+end;
+
+procedure TmncSQLCommand.ExecuteScript(AStrings: TStrings; ATerminator: string);
+var
+  c, i: Integer;
+  procedure ExecuteNow;
+  begin
+    if SQL.Count > 0 then
+    try
+      Execute;
+      Inc(c);
+      if Active then
+        Close;
+      SQL.Clear;
+    except
+      on E: Exception do
+      begin
+        E.Message := E.Message + #13 + ' on script number ' + IntToStr(c);
+        raise;
+      end
+      else
+        Raise;
+    end;
+  end;
+var
+  aLine: string;
+begin
+  c := 1;
+  for i := 0 to AStrings.Count -1 do
+  begin
+    aLine := AStrings[i];
+    if SameText(RightStr(aLine, Length(ATerminator)), ATerminator) then
+    begin
+      aLine := Trim(LeftStr(aLine, Length(aLine) - Length(ATerminator)));
+      if aLine <>'' then
+        SQL.Add(aLine);
+      ExecuteNow;
+    end
+    else
+      SQL.Add(aLine);
+  end;
+  if SQL.Count > 0 then
+    ExecuteNow;
 end;
 
 procedure TmncSQLCommand.ParseSQL(SQLOptions: TmncParseSQLOptions);
