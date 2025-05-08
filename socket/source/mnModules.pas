@@ -301,6 +301,7 @@ type
     FStream: TmnBufferStream;
     FMode: TStreamMode;
     FDirectory: String;
+    FStamp: string;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetCompressProxy(const Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -354,6 +355,8 @@ type
     //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy write FProtcolProxy;
+    //need disccuss
+    property Stamp: string read FStamp write FStamp;
   end;
 
   TInterfacedStreamtWrapper = class(TInterfacedPersistent, ImnStreamPersist)
@@ -387,7 +390,7 @@ type
     function SendStream(s: TStream; ASize: Int64; AName: string; AFileDate: TDateTime; const Stamp: string = ''): Boolean; overload;
     function SendStream(s: TStream; ASize: Int64): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64): Boolean; overload;
-    function SendFile(AFileName: string; const Stamp: string): Boolean;
+    function SendFile(AFileName: string; const Stamp: string; Alias: string = ''): Boolean;
 
     function ReceiveStream(s: TStream): Int64; overload;
     function ReceiveStream(s: ImnStreamPersist; Count: Int64): Int64; overload;
@@ -1186,7 +1189,7 @@ begin
     Result := Result + '-' + Size.ToString;
 end;
 
-function TmodRespond.SendFile(AFileName: string; const Stamp: string): Boolean;
+function TmodRespond.SendFile(AFileName: string; const Stamp: string; Alias: string): Boolean;
 var
   aStream: TStream;
   aSize: Int64;
@@ -1207,9 +1210,12 @@ begin
     exit(False);
   end;
 
+  if Alias='' then
+    Alias := ExtractFileName(AFileName);
+
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
   try
-    Result := SendStream(aStream, aSize, AFileName, aFileDate);
+    Result := SendStream(aStream, aSize, Alias, aFileDate);
   finally
     aStream.Free;
   end;
@@ -2625,6 +2631,8 @@ begin
   KeepAlive := KeepAlive or ((Use.KeepAlive = ovYes) and not SameText(Header.ReadString('Connection'), 'close'));
 
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
+
+  Stamp  := Header.Field['If-None-Match'].AsString;
 
   {aCompressClass := nil;
   if (Header.Field['Content-Encoding'].IsExists) then
