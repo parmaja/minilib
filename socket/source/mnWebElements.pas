@@ -5888,15 +5888,15 @@ begin
   else
     SpliteStr(Request.Header['Host'], ':', aDomain, aPort);
 
-  Module.WebApp.Lock.Enter; //smart huh, first connection will setup the domain name, i don't like it
-  try
-    if Module.WebApp.Domain = '' then
-    begin
+  if Module.WebApp.Domain = '' then
+  begin
+    Module.WebApp.Lock.Enter; //smart huh, first connection will setup the domain name, i don't like it
+    try
       Module.WebApp.Domain := aDomain;
       Module.WebApp.Port := aPort;
+    finally
+      Module.WebApp.Lock.Leave;
     end;
-  finally
-    Module.WebApp.Lock.Leave;
   end;
 
   if aDomain='' then

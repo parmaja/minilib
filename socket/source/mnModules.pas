@@ -160,6 +160,8 @@ type
     FContentLength: Int64;
     FParent: TmnCustomCommand;
     FStreamControl: TmodCommunicateStreamControl;
+
+    FStamp: string;
     //function GetLatch: Boolean;
     //procedure SetLatch(const AValue: Boolean);
     procedure SetHead(const Value: string);
@@ -209,6 +211,8 @@ type
     property ContentLength: Int64 read FContentLength write FContentLength;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     //property Latch: Boolean read GetLatch write SetLatch;
+    //need disccuss
+    property Stamp: string read FStamp write FStamp;
   end;
 
   TmodRequestInfo = record
@@ -301,7 +305,6 @@ type
     FStream: TmnBufferStream;
     FMode: TStreamMode;
     FDirectory: String;
-    FStamp: string;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetCompressProxy(const Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -355,8 +358,6 @@ type
     //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy write FProtcolProxy;
-    //need disccuss
-    property Stamp: string read FStamp write FStamp;
   end;
 
   TInterfacedStreamtWrapper = class(TInterfacedPersistent, ImnStreamPersist)
@@ -368,13 +369,15 @@ type
     constructor Create(vStream: TStream);
   end;
 
+  TmodFileDisposition = (fdNoStamp, fdAttachment, fdInline);
+  TmodFileDispositions = set of TmodFileDisposition;
+
   { TmodRespond }
 
   TmodRespond = class(TmodCommunicate)
   private
     FAnswer: TmodAnswer;
     FContentType: String;
-    FETag: string;
     procedure SetAnswer(const Value: TmodAnswer);
   protected
     FRequest: TmodRequest;
@@ -387,19 +390,17 @@ type
 
     function SendUTF8String(const s: UTF8String): Boolean; overload;
     function SendString(const s: string): Boolean; overload;
-    function SendStream(s: TStream; ASize: Int64; AName: string; AFileDate: TDateTime; const Stamp: string = ''): Boolean; overload;
+    function SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; const AFileStamp: string = ''; FileDispositions: TmodFileDispositions = []): Boolean; overload;
     function SendStream(s: TStream; ASize: Int64): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64): Boolean; overload;
-    function SendFile(AFileName: string; const Stamp: string; Alias: string = ''): Boolean;
+    function SendFile(AFileName: string; const AFileStamp: string; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean;
 
     function ReceiveStream(s: TStream): Int64; overload;
     function ReceiveStream(s: ImnStreamPersist; Count: Int64): Int64; overload;
 
     property Request: TmodRequest read FRequest;
     property ContentType: string read FContentType write FContentType;
-    property ETag: string read FETag write FETag;
     property Answer: TmodAnswer read FAnswer write SetAnswer;
-
   end;
 
   TmodeResult = (
@@ -1189,7 +1190,7 @@ begin
     Result := Result + '-' + Size.ToString;
 end;
 
-function TmodRespond.SendFile(AFileName: string; const Stamp: string; Alias: string): Boolean;
+function TmodRespond.SendFile(AFileName: string; const AFileStamp: string; Alias: string; FileDispositions: TmodFileDispositions): Boolean;
 var
   aStream: TStream;
   aSize: Int64;
@@ -1204,7 +1205,7 @@ begin
   FileAge(AFileName, aFileDate);
   aSize := GetSizeOfFile(AFileName);
 
-  if not DevelopperMode and (Stamp <> '') and (Stamp = FileStamp(aFileDate, aSize)) then
+  if not DevelopperMode and not (fdNoStamp in FileDispositions) and (AFileStamp <> '') and (AFileStamp = FileStamp(aFileDate, aSize)) then
   begin
     Answer := hrNotModified;
     exit(False);
@@ -1215,7 +1216,7 @@ begin
 
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
   try
-    Result := SendStream(aStream, aSize, Alias, aFileDate);
+    Result := SendStream(aStream, aSize, Alias, aFileDate, '', FileDispositions);
   finally
     aStream.Free;
   end;
@@ -1245,40 +1246,55 @@ begin
   {$endif}
 end;
 
-function TmodRespond.SendStream(s: TStream; ASize: Int64; AName: string;
-  AFileDate: TDateTime; const Stamp: string): Boolean;
+function TmodRespond.SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; const AFileStamp: string; FileDispositions: TmodFileDispositions): Boolean;
 var
   aMIMEItem: TmnMIMEItem;
-  aStamp: string;
+  aDisposition, aStamp: string;
 begin
   aStamp := FileStamp(AFileDate, ASize);
 
-  if not DevelopperMode and (Stamp <> '') and (Stamp = aStamp) then
+  if not DevelopperMode and (AFileStamp <> '') and (AFileStamp = aStamp) then
   begin
     Answer := hrNotModified;
     exit(False);
   end;
 
-  ETag := aStamp;
+  Stamp := aStamp;
 
   Header['Cache-Control']  := 'public, max-age=600';
   if AFileDate > 0 then
     Header['Last-Modified']  := FormatHTTPDate(AFileDate);
 
-  aMIMEItem := DocumentToMIME(AName);
+  if fdInline in FileDispositions then
+    aDisposition := 'inline'
+  else if fdAttachment in FileDispositions then
+    aDisposition := 'attachment'
+  else
+    aDisposition := '';
+
+  aMIMEItem := DocumentToMIME(AAlias);
   if aMIMEItem <> nil then
   begin
     ContentType := aMIMEItem.ContentType;
     if Binary in aMIMEItem.Features then
-      if AName <> '' then
-        Header['Content-Disposition']  := 'attachment; filename="' + ExtractFileName(AName)+'"';
+    begin
+      if aDisposition = '' then
+        aDisposition := 'attachment';
+      if AAlias <> '' then
+        aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"')
+    end;
   end
   else
   begin
     ContentType := 'application/octet-stream';
-    if AName <> '' then
-      Header['Content-Disposition']  := 'attachment; filename="' + ExtractFileName(AName)+'"';
+    if aDisposition = '' then
+      aDisposition := 'attachment';
+    if (AAlias <> '') then
+        aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"')
   end;
+
+  if aDisposition <> '' then
+    Header['Content-Disposition'] := aDisposition;
 
   Result := SendStream(s, ASize);
 end;
@@ -2748,7 +2764,7 @@ begin
     ContentType  := Header.Field['Content-Type'].AsString;
 
   if (Header.Field['ETag'].IsExists) then
-    ETag  := Header.Field['ETag'].AsString; //* or maybe 'If-None-Match'
+    Stamp  := Header.Field['ETag'].AsString; //* or maybe 'If-None-Match'
 
   if (Header.Field['Connection'].IsExists) then
     KeepAlive := SameText(Header['Connection'], 'Keep-Alive');
@@ -2779,8 +2795,8 @@ begin
   if (ContentType <> '') then
     PutHeader('Content-Type', ContentType);
 
-  if (ETag <> '') then
-    PutHeader('ETag', ETag);
+  if (Stamp <> '') then
+    PutHeader('ETag', Stamp);
 
   if smRespondCompressing in Request.Mode then
       PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);

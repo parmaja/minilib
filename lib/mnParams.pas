@@ -59,17 +59,17 @@ type
     property Field; default;
   end;
 
-  TmnSection = class(TmnParams)
+  TmnSection = class(TmnParams) //deprecated
   public
     Name: string;
-  end;
+  end deprecated;
 
-  TmnConfig = class(TmnObjectList<TmnSection>)
+  TmnConfig = class(TmnObjectList<TmnSection>) //deprecated
   private
     FDefault: TmnSection;
     function GetParams(Index: string): TmnSection;
   public
-    constructor Create;
+    constructor Create; deprecated;
     destructor Destroy; override;
 
 
@@ -90,7 +90,7 @@ type
 
     property Params[Index: string]: TmnSection read GetParams; default;
     property Default: TmnSection read FDefault;
-  end;
+  end; //deprecated 'use unit TmnConfFile';
 
   { TmnHeaderField }
 
