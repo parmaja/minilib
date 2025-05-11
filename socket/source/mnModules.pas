@@ -369,7 +369,11 @@ type
     constructor Create(vStream: TStream);
   end;
 
-  TmodFileDisposition = (fdNoStamp, fdAttachment, fdInline);
+  TmodFileDisposition = (
+    fdResend, //Force send it even match stamp
+    fdAttachment,
+    fdInline //Over Attachment
+  );
   TmodFileDispositions = set of TmodFileDisposition;
 
   { TmodRespond }
@@ -1205,7 +1209,7 @@ begin
   FileAge(AFileName, aFileDate);
   aSize := GetSizeOfFile(AFileName);
 
-  if not DevelopperMode and not (fdNoStamp in FileDispositions) and (AFileStamp <> '') and (AFileStamp = FileStamp(aFileDate, aSize)) then
+  if not DevelopperMode and not (fdResend in FileDispositions) and (AFileStamp <> '') and (AFileStamp = FileStamp(aFileDate, aSize)) then
   begin
     Answer := hrNotModified;
     exit(False);
@@ -1253,7 +1257,7 @@ var
 begin
   aStamp := FileStamp(AFileDate, ASize);
 
-  if not DevelopperMode and (AFileStamp <> '') and (AFileStamp = aStamp) then
+  if not DevelopperMode and not (fdResend in FileDispositions) and (AFileStamp <> '') and (AFileStamp = aStamp) then
   begin
     Answer := hrNotModified;
     exit(False);

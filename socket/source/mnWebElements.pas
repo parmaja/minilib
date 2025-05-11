@@ -4324,7 +4324,7 @@ end;
 procedure THTML.TMemoryImage.LoadFromFile(const AFileName: string);
 begin
   Data.LoadFromFile(AFileName);
-  FileName := ExtractFilePath(ExtractFileName(AFileName));
+  FileName := ExtractFileName(AFileName);
 end;
 
 procedure THTML.TMemoryImage.LoadFromStream(AStream: TStream);

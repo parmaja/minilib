@@ -324,7 +324,7 @@ begin
             Route := 'clock';
             OnCompose := procedure(Inner: TmnwElement; AResponse: TmnwResponse)
             begin
-              AResponse.ETag := TimeToStr(Now);
+              AResponse.Stamp:= TimeToStr(Now);
               TParagraph.Create(Inner, TimeToStr(Now));
               {with TImage.Create(Inner) do
               begin
@@ -773,7 +773,7 @@ end;
 
 procedure TFilesSchema.DoCompose;
 begin
-  inherited DoCompose;
+  inherited;
   ServeFiles := [serveAllow, serveDefault, serveIndex];
   HomePath := IncludePathDelimiter(App.HomePath) + 'files';
 end;

@@ -130,6 +130,7 @@ type
     procedure Disconnect;
     function Accept: TmnCustomSocket;
     procedure UpdateChanged;
+    procedure DropConnections; virtual;
   protected
     procedure PostLogs; //run in main thread by queue
     procedure PostChanged; //run in main thread by queue
@@ -140,7 +141,6 @@ type
     procedure Prepare; virtual;
     procedure Execute; override;
     procedure Unprepare; virtual;
-    procedure DropConnections; virtual;
     procedure TerminatedSet; override;
     property Event: TEvent read FEvent;
   public
@@ -447,7 +447,7 @@ end;
 procedure TmnServerConnection.Prepare;
 begin
   FStream.Prepare;
-  inherited Prepare;
+  inherited;
 end;
 
 procedure TmnServerConnection.TerminatedSet;
