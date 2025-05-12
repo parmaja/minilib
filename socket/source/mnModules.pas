@@ -312,6 +312,7 @@ type
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetCompressProxy(const Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
+    function GetConnected: Boolean;
   protected
     Info: TmodRequestInfo;
     procedure Created; override;
@@ -362,6 +363,8 @@ type
     //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy write FProtcolProxy;
+
+    property Connected: Boolean read GetConnected;
   end;
 
   TInterfacedStreamtWrapper = class(TInterfacedPersistent, ImnStreamPersist)
@@ -1410,6 +1413,11 @@ procedure TmodRequest.InitProtocol;
 begin
   ResetProxies;
   inherited;
+end;
+
+function TmodRequest.GetConnected: Boolean;
+begin
+  Result := (Stream <> nil) and Stream.Connected;
 end;
 
 function TmodRequest.GetStream: TmnBufferStream;

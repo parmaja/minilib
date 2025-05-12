@@ -835,7 +835,7 @@ end;
 
 function TWebsocketPayloadHeader.GetInteralSize: Byte;
 begin
-  Result := Byte((Byte2 and not $80));
+  Result := Byte((Byte2 and (not $80)));
 end;
 
 procedure TWebsocketPayloadHeader.SetInteralSize(const Value: Byte);

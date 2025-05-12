@@ -407,7 +407,10 @@ type
     procedure DoChanged; virtual;
     procedure Changed;
     procedure Prepare;
-    procedure SendMessage(AMessage: string); overload;
+
+    procedure SendMessage(AttachmentName:string; AMessage: string); overload;
+    procedure SendInteractive(AMessage: string); overload;
+
     procedure SendMessage(JSON: TDON_Pair); overload; virtual;
     procedure ReceiveMessage(JSON: TDON_Pair); virtual;
     function GenHandle: Integer;
@@ -530,8 +533,9 @@ type
 
   { TmnwAttachment }
 
-  TmnwAttachment = class(TObject)
+  TmnwAttachment = class(TmnNamedObject)
   private
+    FInteractive: Boolean;
     FTerminated: Boolean;
     procedure SendMessage(const Message: string);
   protected
@@ -542,11 +546,12 @@ type
     Stream: TmnBufferStream;
     destructor Destroy; override;
     property Terminated: Boolean read FTerminated;
+    property Interactive: Boolean read FInteractive;
   end;
 
   { TmnwAttachments }
 
-  TmnwAttachments = class(TmnObjectList<TmnwAttachment>)
+  TmnwAttachments = class(TmnNamedObjectList<TmnwAttachment>)
   private
     FLock: TCriticalSection;
   protected
@@ -555,7 +560,8 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Terminate;
-    procedure SendMessage(const Message: string);
+    procedure SendMessage(const Message: string); overload;
+    procedure SendMessage(const AttachmentName: string; const Message: string); overload;
     procedure Add(AAttachment: TmnwAttachment);
     procedure Remove(AAttachment: TmnwAttachment);
     property Lock: TCriticalSection read FLock;
@@ -599,6 +605,7 @@ type
     class procedure Registered; virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAccept(const AContext: TmnwContext; var Resume: Boolean); virtual;
+    procedure AttachedMessage(const s: string); virtual; //from websocket
     procedure InteractiveMessage(const s: string);
     property DefaultDocuments: TStringList read FDefaultDocuments write SetDefaultDocuments;
   public
@@ -2231,6 +2238,28 @@ end;
 procedure TmnwAttachment.Loop;
 var
   s: string;
+  lCmd, lValue, eol: string;
+  procedure DetectEOL;
+  begin
+    if RightStr(s, 2) = sWinEndOfLine then
+      eol := sWinEndOfLine
+    else if RightStr(s, 1) = sUnixEndOfLine then
+      eol := sUnixEndOfLine
+    else if RightStr(s, 1) = sMacEndOfLine then
+      eol := sMacEndOfLine
+    else
+      eol := '';
+    lCmd := SubStr(s, 1, -eol.Length);
+    SpliteStr(lCmd, ' ', lCmd, lValue);
+  end;
+
+  procedure MessageIt;
+  begin
+    if Interactive then
+      Schema.InteractiveMessage(s)
+    else
+      Schema.AttachedMessage(s)
+  end;
 begin
   while not Terminated and Stream.Connected and not (cloTransmission in Stream.State) do
   begin
@@ -2242,12 +2271,41 @@ begin
       finally
         Schema.Attachments.Lock.Leave;
       end;}
-      if s.StartsWith('{') then
+      if Interactive then // It is json
         Schema.InteractiveMessage(s)
-      else if s = 'attach' then
-        Stream.WriteUTF8Line('attached')
       else
-        Schema.InteractiveMessage(s);
+      begin
+        if s.StartsWith('{') then
+          Schema.AttachedMessage(s)
+        else
+        begin
+          if CompareLeftStr(s,'echo') then
+          begin
+            DetectEOL;
+            Stream.WriteUTF8String(lValue + eol); //testing propuse
+          end
+          else if Schema.Interactive then
+          begin
+            DetectEOL;
+            if (lCmd = 'attach') then
+            begin
+              Stream.WriteUTF8String('attached'+eol);
+              Name := lValue;
+              FInteractive := True;
+            end
+            else if (lCmd = 'interactive') then
+            begin
+              Stream.WriteUTF8String('attached'+eol);
+              Name := ''; // no name
+              FInteractive := True;
+            end
+            else
+              Schema.AttachedMessage(s);
+          end
+          else
+            Schema.AttachedMessage(s);
+        end;
+      end;
     end;
   end;
 end;
@@ -2300,18 +2358,8 @@ begin
 end;
 
 procedure TmnwAttachments.SendMessage(const Message: string);
-var
-  Attachment: TmnwAttachment;
 begin
-  Lock.Enter;
-  try
-    for Attachment in Self do
-    begin
-      Attachment.SendMessage(Message);
-    end;
-  finally
-    Lock.Leave;
-  end;
+  SendMessage('', Message);
 end;
 
 procedure TmnwAttachments.Add(AAttachment: TmnwAttachment);
@@ -2329,6 +2377,22 @@ begin
   Lock.Enter;
   try
     inherited Remove(AAttachment);
+  finally
+    Lock.Leave;
+  end;
+end;
+
+procedure TmnwAttachments.SendMessage(const AttachmentName, Message: string);
+var
+  Attachment: TmnwAttachment;
+begin
+  Lock.Enter;
+  try
+    for Attachment in Self do
+    begin
+      if (Attachment.Name = '') or SameText(AttachmentName, Attachment.Name) then
+        Attachment.SendMessage(Message);
+    end;
   finally
     Lock.Leave;
   end;
@@ -3922,6 +3986,16 @@ begin
   end;
 end;
 
+procedure TmnwSchema.AttachedMessage(const s: string);
+begin
+end;
+
+procedure TmnwElement.SendMessage(AttachmentName, AMessage: string);
+begin
+  if Schema <> nil then
+    Schema.Attachments.SendMessage('', AMessage);
+end;
+
 procedure TmnwElement.ServeFile(HomePath: string; Options: TmnwServeFiles; DefaultDocuments: TStringList; const AContext: TmnwContext; AResponse: TmnwResponse);
 
   function GetDefaultDocument(vRoot: string): string;
@@ -4055,28 +4129,25 @@ var
   elementID: string;
   Error: string;
 begin
-  if Interactive then
+  if s.StartsWith('{') then
   begin
-    if s.StartsWith('{') then
-    begin
-      Json := JsonParseStringPair(s, Error, [jsoSafe]);
-      try
-        elementID := Json['element'].AsString;
-        element := FindByID(elementID);
-        if element <> nil then
-        begin
-          Lock.Enter;
-          try
-            element.ReceiveMessage(Json);
-          finally
-            Lock.Leave;
-          end;
+    Json := JsonParseStringPair(s, Error, [jsoSafe]);
+    try
+      elementID := Json['element'].AsString;
+      element := FindByID(elementID);
+      if element <> nil then
+      begin
+        Lock.Enter;
+        try
+          element.ReceiveMessage(Json);
+        finally
+          Lock.Leave;
         end;
-      finally
-        Json.Free;
       end;
-    end
-  end;
+    finally
+      Json.Free;
+    end;
+  end
 end;
 
 class procedure TmnwSchema.Registered;
@@ -4269,7 +4340,7 @@ begin
   if FValue =AValue then Exit;
   FValue :=AValue;
   if (estComposed in State) and (Schema <> nil) and Schema.Attached then
-    SendMessage('"command": "change", "content": ' + DQ(Value));
+    SendInteractive('"command": "change", "content": ' + DQ(Value));
 end;
 
 procedure THTML.TInput.SetCaption(const AValue: string);
@@ -4582,10 +4653,9 @@ begin
   end;
 end;
 
-procedure TmnwElement.SendMessage(AMessage: string);
+procedure TmnwElement.SendInteractive(AMessage: string);
 begin
-  if Schema <> nil then
-    Schema.Attachments.SendMessage('{"element": ' + DQ(ID) + ', ' + AMessage + '}');
+  SendMessage('', '{"element": ' + DQ(ID) + ', ' + AMessage + '}');
 end;
 
 procedure TmnwElement.SendMessage(JSON: TDON_Pair);
@@ -5615,7 +5685,7 @@ begin
   if FCaption =AValue then Exit;
   FCaption :=AValue;
   if (estComposed in State) and (Schema <> nil) and Schema.Attached then
-    SendMessage('"command": "change", "content": ' + DQ(Caption));
+    SendInteractive('"command": "change", "content": ' + DQ(Caption));
 end;
 
 { THTML.TClickable }
@@ -5906,13 +5976,14 @@ begin
     end;
   end;
 
-  if aDomain='' then
+  if (aDomain='') and Request.Connected then
     raise Exception.Create('Domain is not defined');
 
   if Request.ConnectionType = ctWebSocket then
   begin
-    (Module as TUIWebModule).WebApp.Attach(aContext, Self, Respond.Stream); //Serve the websocket
-    //Result.Status := Result.Status - [mrKeepAlive]; // Disconnect
+    //Serve the websocket
+    if (Module as TUIWebModule).WebApp.Attach(aContext, Self, Respond.Stream) = nil then
+      Result.Status := []; // Disconnect
   end
   else
   begin
@@ -5997,8 +6068,7 @@ end;
 
 class function TAssetsSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
-  Result := inherited;
-  Result := Result + [schemaStartup, schemaPermanent];
+  Result := inherited + [schemaStartup, schemaPermanent];
 end;
 
 destructor TAssetsSchema.Destroy;
