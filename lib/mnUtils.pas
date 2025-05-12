@@ -143,7 +143,9 @@ function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integ
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 
 function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
-procedure SpliteStr(const S, Separator: string; out Name, Value: string);
+
+//if S is same Name variabled passed, it empty it both, so i will use `var` not `out`
+procedure SpliteStr(S, Separator: string; var Name:string; var Value: string); inline;
 
 function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
@@ -1632,7 +1634,7 @@ begin
     Result := SubStr(Str, vSeperator, vIndex, vIndex);
 end;
 
-procedure SpliteStr(const S, Separator: string; out Name, Value: string);
+procedure SpliteStr(S, Separator: string; var Name:string; var Value: string);
 var
   p: integer;
 begin
