@@ -732,7 +732,7 @@ begin
     DropConnections;
     Enter;
     try
-      Disconnect;
+      Disconnect; //It is alrady disconnected, but want to sure
     finally
       Leave;
     end;
@@ -760,7 +760,6 @@ const
   sChangeInterval = 10 * 6000; //60s
 var
   aDate: TDateTime;
-
 begin
   if (GetTickCount64-FLastCheck)>sChangeInterval then
   begin
@@ -843,7 +842,7 @@ begin
   try
     for i := 0 to List.Count - 1 do
     begin
-      List[i].FreeOnTerminate := False; //I will kill you
+      List[i].FreeOnTerminate := False; //I will kill you :D
     end;
   finally
     Leave;

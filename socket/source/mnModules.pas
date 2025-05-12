@@ -32,9 +32,12 @@
   https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 
   REST tools
-  https://resttesttest.com
-  https://httpbin.org
-  http://dummy.restapiexample.com/
+    https://resttesttest.com
+    https://httpbin.org
+    http://dummy.restapiexample.com/
+
+  echo
+    ws://ws.vi-server.org/mirror
 }
 
 interface

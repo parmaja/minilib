@@ -564,6 +564,7 @@ type
   TmnwSchamaCapability = (
     schemaStartup, //* Create it when registered
     schemaSession,
+    schemaAttach, //Allow websocket connections, Interactive also allow websocket
     schemaPermanent, //* Not deleted when restart server
     schemaDynamic  //* dynamic, do not add it to the list, not cached, becareful
   );
@@ -598,7 +599,7 @@ type
     class procedure Registered; virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAccept(const AContext: TmnwContext; var Resume: Boolean); virtual;
-    procedure ProcessMessage(const s: string);
+    procedure InteractiveMessage(const s: string);
     property DefaultDocuments: TStringList read FDefaultDocuments write SetDefaultDocuments;
   public
     LastAccess: TDateTime;
@@ -2242,11 +2243,11 @@ begin
         Schema.Attachments.Lock.Leave;
       end;}
       if s.StartsWith('{') then
-        Schema.ProcessMessage(s)
+        Schema.InteractiveMessage(s)
       else if s = 'attach' then
         Stream.WriteUTF8Line('attached')
       else
-        Schema.ProcessMessage(s);
+        Schema.InteractiveMessage(s);
     end;
   end;
 end;
@@ -3016,9 +3017,12 @@ begin
     if aSchema = nil then
       aSchema := First; //* fallback
 
-    if aSchema <> nil then
+    if (aSchema <> nil) then
     begin
-      DeleteSubPath(aRoute, AContext.Route);
+      if aSchema.Interactive or (schemaAttach in aSchema.GetCapabilities) then
+        DeleteSubPath(aRoute, AContext.Route)
+      else
+        exit(nil);
     end;
   finally
     Routes.Free;
@@ -4044,32 +4048,35 @@ procedure TmnwSchema.DoAccept(const AContext: TmnwContext; var Resume: Boolean);
 begin
 end;
 
-procedure TmnwSchema.ProcessMessage(const s: string);
+procedure TmnwSchema.InteractiveMessage(const s: string);
 var
   Json: TDON_Pair;
   element: TmnwElement;
   elementID: string;
   Error: string;
 begin
-  if s.StartsWith('{') then
+  if Interactive then
   begin
-    Json := JsonParseStringPair(s, Error, [jsoSafe]);
-    try
-      elementID := Json['element'].AsString;
-      element := FindByID(elementID);
-      if element <> nil then
-      begin
-        Lock.Enter;
-        try
-          element.ReceiveMessage(Json);
-        finally
-          Lock.Leave;
+    if s.StartsWith('{') then
+    begin
+      Json := JsonParseStringPair(s, Error, [jsoSafe]);
+      try
+        elementID := Json['element'].AsString;
+        element := FindByID(elementID);
+        if element <> nil then
+        begin
+          Lock.Enter;
+          try
+            element.ReceiveMessage(Json);
+          finally
+            Lock.Leave;
+          end;
         end;
+      finally
+        Json.Free;
       end;
-    finally
-      Json.Free;
-    end;
-  end
+    end
+  end;
 end;
 
 class procedure TmnwSchema.Registered;
