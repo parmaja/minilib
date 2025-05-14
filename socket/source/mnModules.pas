@@ -97,6 +97,7 @@ type
   public
     function Domain: string;
     function Origin: string;
+    function Host: string;
     property States: TmodHeaderStates read FStates;
     procedure Clear; override;
   end;
@@ -2605,6 +2606,13 @@ begin
     Result := ExtractDomain(s)
   else
     Result := '';
+end;
+
+function TmodHeader.Host: string;
+begin
+  Result := Self['Host'];
+  if Result = '' then
+    Result := 'localhost';
 end;
 
 function TmodHeader.Origin: string;
