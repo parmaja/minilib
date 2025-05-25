@@ -1000,6 +1000,7 @@ var
   cert: PX509;
   chain: PSLLObject;
   c, i: Integer;
+  pPassword: Pointer;
 begin
   if not FileExists(FileName) then
     raise EmnOpenSSLException.CreateLastError('PFX file not exist:' + FileName);
@@ -1017,7 +1018,11 @@ begin
 
       chain := OPENSSL_sk_new_null;
       try
-        if PKCS12_parse(p12, PUTF8Char(Password), FPrivateKey, FCertificate, chain) <=0 then
+        if Password = '' then
+          pPassword := nil
+        else
+          pPassword := PUTF8Char(Password);
+        if PKCS12_parse(p12, pPassword, FPrivateKey, FCertificate, chain) <=0 then
           raise EmnOpenSSLException.CreateLastError('Error PKCS12_parse');
 
         if SSL_CTX_use_PrivateKey(Handle, FPrivateKey) <= 0 then
