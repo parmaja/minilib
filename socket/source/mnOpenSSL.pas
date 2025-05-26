@@ -26,6 +26,9 @@ interface
 
 uses
   Classes, SysUtils,
+  {$ifdef MSWINDOWS}{$ifdef FPC}
+  JwaWinCrypt, JwaWinType,
+  {$endif}{$endif}
   mnLogs, mnLibraries,
   mnOpenSSLAPI;
 
@@ -91,6 +94,7 @@ type
   { TContext }
 
   TContext = class(TOpenSSLObject)
+  private
   protected
     Handle: PSSL_CTX;
     FMethod: TSSLMethod;
@@ -103,11 +107,17 @@ type
     destructor Destroy; override;
     procedure SetVerifyLocation(Location: utf8string);
     procedure SetVerifyFile(AFileName: utf8string);
+
     procedure LoadCertFile(FileName: utf8string);
-    procedure LoadFullChainFile(FileName: utf8string);
-    procedure LoadPFXFile(FileName, Password: utf8string);
+    procedure LoadFullChainFile(CertificateFile, PrivateKeyFile: utf8string);
+    //procedure LoadPrivateKeyFile(PrivateFile: utf8string);
     //procedure LoadFullCertFile(FileName: utf8string);
-    procedure LoadPrivateKeyFile(FileName: utf8string);
+
+    procedure LoadPFXFromBio(bio: PBIO; Password: utf8string);
+    procedure LoadPFXFile(FileName, Password: utf8string);
+    procedure LoadPFXMemory(Data: PByte; Size: Integer; Password: utf8string);
+    procedure LoadSysStore(Name: utf8string);
+
     procedure CheckPrivateKey;
     procedure SetVerifyNone;
     procedure SetVerifyPeer;
@@ -895,6 +905,53 @@ end;
 
 { TContext }
 
+procedure TContext.LoadPFXFromBio(bio: PBIO; Password: utf8string);
+var
+  p12: PKCS12;
+  cert: PX509;
+  chain: PSLLObject;
+  c, i: Integer;
+  pPassword: Pointer;
+begin
+  p12 := d2i_PKCS12_bio(bio, nil);
+  if p12 = nil then
+    raise EmnOpenSSLException.CreateLastError('Fail to load pfx certificate');
+  try
+    EVP_PKEY_free(FPrivateKey);
+    X509_free(FCertificate);
+
+    chain := OPENSSL_sk_new_null;
+    try
+      if Password = '' then
+        pPassword := nil
+      else
+        pPassword := PUTF8Char(Password);
+      if PKCS12_parse(p12, pPassword, FPrivateKey, FCertificate, chain) <=0 then
+        raise EmnOpenSSLException.CreateLastError('Error PKCS12_parse, maybe the pfx password');
+
+      if SSL_CTX_use_PrivateKey(Handle, FPrivateKey) <= 0 then
+        raise EmnOpenSSLException.Create('fail to load private key');
+
+      if (SSL_CTX_use_certificate(Handle, FCertificate) <= 0) then
+         raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
+
+      c := sk_X509_num(chain);
+      for  i := 0 to c-1 do
+      begin
+          cert := sk_X509_value(chain, i);
+          if SSL_CTX_add_extra_chain_cert(Handle, cert) <=0 then
+            raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_add_extra_chain_cert');
+      end;
+
+    finally
+      OPENSSL_sk_free(chain);
+    end;
+  finally
+		PKCS12_free(p12);
+  end;
+  CheckPrivateKey;
+end;
+
 constructor TContext.Create(AMethod: TSSLMethod; Options: TContextOptions);
 var
   o: Cardinal;
@@ -981,82 +1038,138 @@ begin
     raise EmnOpenSSLException.CreateLastError('fail to load certificate');
 end;
 
-procedure TContext.LoadFullChainFile(FileName: utf8string);
+procedure TContext.LoadFullChainFile(CertificateFile, PrivateKeyFile: utf8string
+  );
 begin
-  if not FileExists(FileName) then
-    raise EmnOpenSSLException.CreateLastError('Full chain certificate file not exist:' + FileName);
+  //LoadSysStore('MY');
+  if not FileExists(CertificateFile) then
+    raise EmnOpenSSLException.CreateLastError('Full chain certificate file not exist:' + CertificateFile);
 
-  if SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(FileName)) <= 0 then
+  if SSL_CTX_use_certificate_chain_file(Handle, PUTF8Char(CertificateFile)) <= 0 then
     raise EmnOpenSSLException.CreateLastError('fail to load full chain certificate');
+
+  if not FileExists(PrivateKeyFile) then
+    raise EmnOpenSSLException.CreateLastError('Private key file not exist:' + PrivateKeyFile);
+  if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(PrivateKeyFile), SSL_FILETYPE_PEM) <= 0 then
+    raise EmnOpenSSLException.Create('fail to load private key');
+
+  CheckPrivateKey;
 end;
 
 //https://stackoverflow.com/questions/6371775/how-to-load-a-pkcs12-file-in-openssl-programmatically
 // https://stackoverflow.com/questions/43119053/does-ssl-ctx-use-certificate-copy-used-certificate-bytes
+{  Or maybe use
+
+  SSL_CTX_use_certificate_file(ctx, "cert.pfx", SSL_FILETYPE_PEM);
+  SSL_CTX_use_PrivateKey_file(ctx, "cert.pfx", SSL_FILETYPE_PEM, NULL);
+
+}
 
 procedure TContext.LoadPFXFile(FileName, Password: utf8string);
 var
   bio: PBIO;
-  p12: PKCS12;
-  cert: PX509;
-  chain: PSLLObject;
-  c, i: Integer;
-  pPassword: Pointer;
 begin
   if not FileExists(FileName) then
     raise EmnOpenSSLException.CreateLastError('PFX file not exist:' + FileName);
   bio := BIO_new_file(PUTF8Char(FileName), PUTF8Char('rb'));
   if (bio = nil) then
     raise EmnOpenSSLException.CreateLastError('Error reading file by BIO_new_file');
-
   try
-    p12 := d2i_PKCS12_bio(bio, nil);
-    if p12 = nil then
-      raise EmnOpenSSLException.CreateLastError('fail to load d2i_PKCS12_bio certificate');
-    try
-      EVP_PKEY_free(FPrivateKey);
-      X509_free(FCertificate);
-
-      chain := OPENSSL_sk_new_null;
-      try
-        if Password = '' then
-          pPassword := nil
-        else
-          pPassword := PUTF8Char(Password);
-        if PKCS12_parse(p12, pPassword, FPrivateKey, FCertificate, chain) <=0 then
-          raise EmnOpenSSLException.CreateLastError('Error PKCS12_parse');
-
-        if SSL_CTX_use_PrivateKey(Handle, FPrivateKey) <= 0 then
-          raise EmnOpenSSLException.Create('fail to load private key');
-
-        if (SSL_CTX_use_certificate(Handle, FCertificate) <= 0) then
-           raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
-
-        c := sk_X509_num(chain);
-        for  i := 0 to c-1 do
-        begin
-            cert := sk_X509_value(chain, i);
-            if SSL_CTX_add_extra_chain_cert(Handle, cert) <=0 then
-              raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_add_extra_chain_cert');
-        end;
-
-      finally
-        OPENSSL_sk_free(chain);
-      end;
-    finally
-		  PKCS12_free(p12);
-    end;
+    LoadPFXFromBio(bio, Password);
   finally
     BIO_free(bio);
   end;
 end;
 
-procedure TContext.LoadPrivateKeyFile(FileName: utf8string);
+procedure TContext.LoadPFXMemory(Data: PByte; Size: Integer; Password: utf8string);
+var
+  bio: PBIO;
 begin
-  if not FileExists(FileName) then
-    raise EmnOpenSSLException.CreateLastError('Private key file not exist:' + FileName);
-  if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
-    raise EmnOpenSSLException.Create('fail to load private key');
+  bio := BIO_new_mem_buf(Data, Size);
+  if (bio = nil) then
+    raise EmnOpenSSLException.CreateLastError('Error reading file by BIO_new_mem_buf');
+  try
+    LoadPFXFromBio(Bio, Password);
+  finally
+    BIO_free(bio);
+  end;
 end;
+
+procedure TContext.LoadSysStore(Name: utf8string);
+{$ifdef MSWINDOWS}{$ifdef FPC}
+  function GetCertName(CertContext: PCCERT_CONTEXT): string;
+  var
+    NameLen: DWORD;
+  begin
+    NameLen := CertGetNameString(CertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, nil, nil, 0);
+    SetLength(Result, NameLen);
+    CertGetNameString(CertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, nil, PChar(Result), NameLen);
+    Result := TrimRight(Result);
+  end;
+var
+  hStore: HCERTSTORE;
+  pCertContext: PCCERT_CONTEXT;
+  CertName: string;
+  CertStream: TMemoryStream;
+  x: PX509;
+  hProvOrKey: HCRYPTPROV = 0;
+  dwKeySpec: DWORD;
+  fCallerFreeProv: BOOL;
+begin
+  hStore := CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0, CERT_STORE_READONLY_FLAG or CERT_STORE_MAXIMUM_ALLOWED_FLAG or CERT_SYSTEM_STORE_LOCAL_MACHINE, PWideChar('MY'));
+  if hStore = nil then
+    RaiseLastOSError;
+
+  try
+    pCertContext := nil;
+    while True do
+    begin
+      pCertContext := CertEnumCertificatesInStore(hStore, pCertContext);
+      if not Assigned(pCertContext) then
+        break;
+
+      CertName := GetCertName(pCertContext);
+      if SameText(Name, CertName) then
+      begin
+        CertStream := TMemoryStream.Create;
+        try
+          x := d2i_X509(nil, @pCertContext.pbCertEncoded, pCertContext.cbCertEncoded);
+
+          if (SSL_CTX_use_certificate(Handle, x) <= 0) then
+             raise EmnOpenSSLException.CreateLastError('Error SSL_CTX_use_certificate');
+
+          {if not CryptAcquireCertificatePrivateKey(pCertContext, CRYPT_ACQUIRE_COMPARE_KEY_FLAG, nil, hProvOrKey, @dwKeySpec, @fCallerFreeProv) then
+            raise EmnOpenSSLException.CreateLastError('Error CryptAcquireCertificatePrivateKey');
+            }
+
+          // Copy raw DER cert data into string stream
+          //CertStream.SetSize(pCertContext.cbCertEncoded);
+          //Move(pCertContext.pbCertEncoded^, CertStream.Memory^, pCertContext.cbCertEncoded);
+          //LoadPFXMemory(pCertContext^.pbCertEncoded, pCertContext.cbCertEncoded, '');
+        finally
+          CertStream.Free;
+        end;
+        break;
+      end;
+      Log.writeln(Format('Subject: %s', [CertName]));
+    end;
+  finally
+    CertCloseStore(hStore, 0);
+  end;
+end;
+{$else}
+begin
+  raise EmnOpenSSLException.CreateLastError('Not implemented yet');
+end;
+{$endif}{$endif}
+
+{procedure TContext.LoadPrivateKeyFile(PrivateFile: utf8string);
+begin
+  if not FileExists(PrivateFile) then
+    raise EmnOpenSSLException.CreateLastError('Private key file not exist:' + PrivateFile);
+  if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(PrivateFile), SSL_FILETYPE_PEM) <= 0 then
+    raise EmnOpenSSLException.Create('fail to load private key');
+end;}
 
 procedure TContext.CheckPrivateKey;
 begin

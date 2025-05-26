@@ -83,6 +83,7 @@ type
   PPASN1_VALUE = ^PASN1_VALUE;
 
   PX509 = type PSLLObject;
+  PPX509 = ^PX509;
   PX509_STORE_CTX = PSLLObject;
   PX509_REQ = type PSLLObject;
   PX509_CRL = PSLLObject;
@@ -603,7 +604,8 @@ var
   ECDSA_size: function(eckey: PEC_KEY): Integer; cdecl;
   ECDSA_sign: function(&type: Integer; dgst: PByte; dgstlen: Integer; sig: PByte; siglen: PCardinal; eckey: PEC_KEY): Integer; cdecl;
 
-  d2i_PKCS12_bio: function(bp: PBIO; a: Pointer): PKCS12; cdecl; //return PKCS12
+  d2i_X509: function(px: PPX509; data: PPointer; size: Integer): PX509; cdecl;
+  d2i_PKCS12_bio: function(bp: PBIO; p: Pointer): PKCS12; cdecl; //return PKCS12
 
   PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; out pkey: PEVP_PKEY; out cert: PX509; var ca: PSLLObject): Integer; cdecl;
   PKCS12_free: procedure(a: PKCS12); cdecl;
@@ -1037,6 +1039,7 @@ begin
   ECDSA_size := GetAddress('ECDSA_size');
   ECDSA_sign := GetAddress('ECDSA_sign');
 
+  d2i_X509 := GetAddress('d2i_X509');
   d2i_PKCS12_bio := GetAddress('d2i_PKCS12_bio');
   PKCS12_parse := GetAddress('PKCS12_parse');
   PKCS12_free := GetAddress('PKCS12_free');
