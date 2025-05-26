@@ -39,8 +39,8 @@ type
     FProtocol: UTF8String;
 
     FStream: TmnConnectionStream;
-    function GetRequest: TmodHttpRequest;
-    function GetRespond: TmodHttpRespond;
+    function GetRequest: TwebRequest;
+    function GetRespond: TwebRespond;
   protected
     function DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream; virtual; abstract;
 
@@ -103,8 +103,8 @@ type
     property Port: UTF8String read FPort write FPort;
     property Path: UTF8String read FPath write FPath;
     property Stream: TmnConnectionStream read FStream;
-    property Request: TmodHttpRequest read GetRequest;
-    property Respond: TmodHttpRespond read GetRespond;
+    property Request: TwebRequest read GetRequest;
+    property Respond: TwebRespond read GetRespond;
   end;
 
   { TmnCustomHttpStream }
@@ -433,13 +433,13 @@ end;
 
 function TmnCustomHttpClient.CreateRequest(AStream: TmnConnectionStream): TmodRequest;
 begin
-  Result := TmodhttpRequest.Create(Self, AStream);
+  Result := TwebRequest.Create(Self, AStream);
   Result.Use.AcceptCompressing := ovYes;
 end;
 
 function TmnCustomHttpClient.CreateRespond: TmodRespond;
 begin
-  Result := TmodHttpRespond.Create(Request);
+  Result := TwebRespond.Create(Request);
 end;
 
 destructor TmnCustomHttpClient.Destroy;
@@ -646,14 +646,14 @@ begin
   OutStream.Seek(0, soFromBeginning);
 end;
 
-function TmnCustomHttpClient.GetRequest: TmodHttpRequest;
+function TmnCustomHttpClient.GetRequest: TwebRequest;
 begin
-  Result := inherited Request as TmodHttpRequest;
+  Result := inherited Request as TwebRequest;
 end;
 
-function TmnCustomHttpClient.GetRespond: TmodHttpRespond;
+function TmnCustomHttpClient.GetRespond: TwebRespond;
 begin
-  Result := inherited Respond as TmodHttpRespond;
+  Result := inherited Respond as TwebRespond;
 end;
 
 procedure TmnCustomHttpClient.SendFile(const vURL: UTF8String; AFileName: UTF8String);

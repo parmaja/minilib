@@ -1872,7 +1872,7 @@ begin
     try
       SendRaws;
       if FStream.Connected then
-        FStream.ReadLineUTF8(S, True);
+        FStream.ReadUTF8Line(S, True);
       {$ifdef FPC}
       aLine := Trim(S);
       {$else}
@@ -1897,7 +1897,7 @@ begin
 
         if Active and FStream.Connected and not Terminated then
         begin
-          FStream.ReadLineUTF8(S, True);
+          FStream.ReadUTF8Line(S, True);
           {$ifdef FPC}
           aLine := Trim(S);
           {$else}

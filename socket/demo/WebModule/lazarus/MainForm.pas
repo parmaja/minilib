@@ -70,16 +70,20 @@ type
     CertPassword: string;
     CertFile: string;
     PrivateKeyFile: string;
-    ChallengeServer: TmodAcmeChallengeServer;
+    ChallengeServer: TmodWebServer;
     HttpServer: TmodWebServer;
     FMax:Integer;
+    WebServers: TWebServers;
     procedure Start;
     procedure UpdateStatus;
+
     procedure ChallengeServerBeforeOpen(Sender: TObject);
+
     procedure HttpServerBeforeOpen(Sender: TObject);
     procedure HttpServerAfterOpen(Sender: TObject);
     procedure HttpServerAfterClose(Sender: TObject);
     procedure HttpServerChanged(Listener: TmnListener);
+
     procedure ServerLog(const S: String);
   public
   end;
@@ -102,10 +106,8 @@ begin
     ServerLog('use https://localhost:' + PortEdit.Text + '/doc/')
   else
     ServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
-  if ChallengeSSLChk.Checked then
-    ChallengeServer.Start;
-  HttpServer.Start(True);
-  ServerLog('Start Clicked');
+  ChallengeServer.Enabled := ChallengeSSLChk.Checked;
+  WebServers.Start;
 end;
 
 procedure TMain.FormHide(Sender: TObject);
@@ -142,8 +144,7 @@ end;
 
 procedure TMain.StopBtnClick(Sender: TObject);
 begin
-  HttpServer.Stop;
-  ChallengeServer.Stop;
+  WebServers.Stop;
   StartBtn.Enabled:=true;
   MaxOfThreadsLabel.Caption := '0';
   LastIDLabel.Caption := '0';
@@ -256,7 +257,7 @@ var
       Result := aIni.ReadString('options', AName, ADefault);
   end;
 
-  function GetOption(AName: string; ADefault: Boolean): Boolean; overload;
+  function GetOption(AName: string; ADefault: Boolean = False): Boolean; overload;
   begin
     Result := aIni.ReadBool('options', AName, ADefault);
   end;
@@ -273,10 +274,16 @@ var
   end;
 
 begin
+  WebServers := TWebServers.Create;
   InstallEventLog(ServerLog);
-  ChallengeServer := TmodAcmeChallengeServer.Create;
+
+  ChallengeServer := TmodWebServer.Create;
+  ChallengeServer.AddAcmeChallenge(ExtractFilePath(ParamStr(0))+'acme\.well-known\');
+
   ChallengeServer.OnLog := ServerLog;
+  ChallengeServer.Logging := GetOption('log');
   ChallengeServer.OnBeforeOpen := ChallengeServerBeforeOpen;
+  WebServers.AddServer('ChallengeServer', ChallengeServer);
 
   HttpServer := TmodWebServer.Create;
   HttpServer.OnBeforeOpen := HttpServerBeforeOpen;
@@ -284,7 +291,9 @@ begin
   HttpServer.OnAfterClose := HttpServerAfterClose;
   HttpServer.OnChanged :=  HttpServerChanged;
   HttpServer.OnLog := ServerLog;
-  HttpServer.Logging := True;
+  HttpServer.Logging := GetOption('log');
+
+  WebServers.AddServer('HttpServer', HttpServer);
 
   HttpServer.Modules.Add(THomeModule.Create('home', 'home', ['http/1.1']));
 
@@ -328,8 +337,7 @@ begin
   finally
     aIni.Free;
   end;
-  FreeAndNil(HttpServer);
-  FreeAndNil(ChallengeServer);
+  FreeAndNil(WebServers);
   UninstallEventLog(ServerLog);
 end;
 

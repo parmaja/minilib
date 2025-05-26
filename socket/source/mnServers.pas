@@ -18,7 +18,7 @@ unit mnServers;
 interface
 
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, StrUtils,
   mnUtils, mnOpenSSL, syncobjs, mnClasses,
   mnSockets, mnStreams, mnConnections;
 
@@ -207,7 +207,7 @@ type
     CertificateFile: string;
     PrivateKeyFile: string;
 
-    constructor Create;
+    constructor Create; virtual;
     procedure BeforeDestruction; override;
     destructor Destroy; override;
     //Server.Log This called from outside of any threads, i mean you should be in the main thread to call it, if not use Listener.Log
@@ -229,7 +229,7 @@ type
 
     property Active: boolean read FActive write SetActive default False;
     property Started: boolean read FActive write SetActive default False;
-    property Logging: Boolean read FLogging write FLogging default false;
+    property Logging: Boolean read FLogging write FLogging default False;
     property Connected: Boolean read GetConnected;
     property IdleInterval: Int64 read FIdleInterval write FIdleInterval default cIdleInterval;
   end;
@@ -263,7 +263,7 @@ type
     ExecuteProc: TmnServerExecuteProc;
     function DoCreateListener: TmnListener; override;
   public
-    constructor Create(AutoStart: Boolean; AAddress: string; APort: String; AReadTimeOut: Integer = -1);
+    constructor Create(AutoStart: Boolean; AAddress: string; APort: String; AReadTimeOut: Integer = -1); reintroduce;
     destructor Destroy; override;
   end;
 
@@ -812,16 +812,14 @@ begin
   if soSSL in Options then
   begin
     FileAge(CertificateFile, CertificateFileDate, True);
-    if SameText(ExtractFileExt(CertificateFile), '.pfx') then
+    if StartsText('system:', CertificateFile) then
     begin
-      Context.LoadPFXFile(UTF8Encode(CertificateFile), CertPassword);
+      Context.LoadSysStore(SubStr(CertificateFile, ':', 1));
     end
+    else if StartsText('pfx:', CertificateFile)  or SameText(ExtractFileExt(CertificateFile), '.pfx') then
+      Context.LoadPFXFile(UTF8Encode(CertificateFile), CertPassword)
     else
-    begin
-      Context.LoadFullChainFile(UTF8Encode(CertificateFile));
-      Context.LoadPrivateKeyFile(UTF8Encode(PrivateKeyFile));
-    end;
-    Context.CheckPrivateKey; //do not use this
+      Context.LoadFullChainFile(UTF8Encode(CertificateFile), UTF8Encode(PrivateKeyFile));
     //Context.SetVerifyNone;
   end;
 end;
@@ -1128,9 +1126,7 @@ begin
   if soSSL in Options then
   begin
     FContext := TContext.Create(TTLS_SSLServerMethod, [coServer, coNoCompressing]);
-    FContext.LoadFullChainFile(CertificateFile);
-    FContext.LoadPrivateKeyFile(PrivateKeyFile);
-    FContext.CheckPrivateKey; //do not use this
+    FContext.LoadFullChainFile(CertificateFile, PrivateKeyFile);
     //Context.SetVerifyNone;
   end;
 

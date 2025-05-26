@@ -139,7 +139,7 @@ type
     function DoCreateListener: TmnListener; override;
     function CreateListener: TmnListener; override;
   public
-    constructor Create;
+    constructor Create; override;
     destructor Destroy; override;
     property Config: TConfigInfo read FConfig write FConfig;
   published

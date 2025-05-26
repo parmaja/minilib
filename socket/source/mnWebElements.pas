@@ -19,14 +19,14 @@
  *}
 
 {
-            Userinfo       Host      Port
-            ┌──┴───┐ ┌──────┴────────┬┴┐
+   Protocol UserInfo       Host      Port
+    ┌─┴─┐   ┌──┴───┐ ┌──────┴────────┬┴┐
 GET https://john.doe@www.example.com:123/username/forum/questions/qst1/?tag=networking&order=newest#top
-                     └──────┬──────┘    └───────────────┬────────┘└───────────┬─────────────┘ └┬─┘
-                       DomainName                      Path(Full)           Query             Fragment
-                                        └───┬───┘└──┬──┘└──┬─────┘──┬─┘         ┬
-                                        Directory Alias   Schema  Path      Params
-    └────────────────────────┬─────────┘─ ─ ┘    Module Name
+└┬┘                  └──────┬──────┘    └───────────────┬─────────────┘└────────────┬─────────────┘└─┬─┘
+Method                  DomainName                    Path(Full)                  Query           Fragment
+                                        └───┬───┘└──┬──┘└───┬────┴──┬─┘             ┬
+                                        Directory Alias   Schema   Path            Params
+    └────────────────────────┬─────────┘─ ─ ┘     /Module
                           HomeURL
 }
 
@@ -67,11 +67,14 @@ GET https://john.doe@www.example.com:123/username/forum/questions/qst1/?tag=netw
   https://github.com/mdbootstrap/mdb-ui-kit
 
   Testing
+
     https://pagespeed.web.dev/analysis/http-dirkey-ddns-net-home-demo/zourq3i3sg?form_factor=mobile
 
-Good example:
-  https://bootstrapmade.com/demo/templates/NiceAdmin/index.html
+  Good example:
+
+    https://bootstrapmade.com/demo/templates/NiceAdmin/index.html
 }
+
 interface
 
 uses
@@ -1804,7 +1807,7 @@ type
     function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
   end;
 
-  TmnwResponse = class(TmodHttpRespond)
+  TmnwResponse = class(TwebRespond)
   private
     FResume: Boolean;
     FSession: TmnwCookie;

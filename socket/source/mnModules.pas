@@ -404,6 +404,7 @@ type
     function SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; const AFileStamp: string = ''; FileDispositions: TmodFileDispositions = []): Boolean; overload;
     function SendStream(s: TStream; ASize: Int64): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64): Boolean; overload;
+
     function SendFile(AFileName: string; const AFileStamp: string; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean;
 
     function ReceiveStream(s: TStream): Int64; overload;
@@ -495,6 +496,8 @@ type
 
   TwebRespond = class(TmodRespond)
   private
+    FHomePath: string; //Document root folder
+    FHostURL: string;
     function GetRequest: TwebRequest;
   protected
     procedure DoPrepareHeader; override; //Called by Server
@@ -502,9 +505,15 @@ type
     procedure DoHeaderSent; override;
     procedure DoHeaderReceived; override; //Called by Client
   public
+    Location: string; //Relocation it to another url
+
     function StatusCode: Integer;
     function StatusResult: string;
     function StatusVersion: string;
+    //Document root folder
+    property HomePath: string read FHomePath write FHomePath;
+    property HostURL: string read FHostURL write FHostURL;
+
     property Request: TwebRequest read GetRequest;
   end;
 
@@ -602,6 +611,7 @@ type
     function RequestCommand(ARequest: TmodRequest): TmodCommand; virtual;
     procedure Log(S: String); virtual;
     procedure Start; virtual;
+    procedure Started; virtual;
     procedure Stop; virtual;
     procedure Reload; virtual;
     procedure Init; virtual;
@@ -652,9 +662,10 @@ type
     function CheckRequest(const ARequest: string): Boolean; virtual;
     function GetActive: Boolean; virtual;
     procedure Created; override;
-    procedure Start;
+    procedure Start; //When server start, init values here
+    procedure Started; //after all modules started
     procedure Stop;
-    procedure Init;
+    procedure Init; //Init called from the first connection
     procedure Idle;
     function Compare(Left: TmodModule; Right: TmodModule): Integer; override;
     property Server: TmodModuleServer read FServer;
@@ -668,6 +679,7 @@ type
     function ServerUseSSL: Boolean;
     function Find<T: Class>: T; overload;
     function Find<T: Class>(const AName: string): T; overload;
+    function Find(const AName: string): TmodModule; overload;
     function Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
 
     function Add(const Name, AliasName: String; AModule: TmodModule): Integer; overload;
@@ -709,7 +721,9 @@ type
 
   TmodModuleServer = class(TmnEventServer)
   private
+    FEnabled: Boolean;
     FModules: TmodModules;
+    procedure SetEnabled(AValue: Boolean);
   protected
     function DoCreateListener: TmnListener; override;
     procedure StreamCreated(AStream: TmnBufferStream); virtual;
@@ -721,10 +735,11 @@ type
     procedure DoIdle; override;
     function Module<T: class>: T;
     procedure Created; override;
-
   public
+    constructor Create; override;
     destructor Destroy; override;
     property Modules: TmodModules read FModules;
+    property Enabled: Boolean read FEnabled write SetEnabled;
   end;
 
 { Pool }
@@ -1461,8 +1476,13 @@ procedure TmodModuleServer.Created;
 begin
   inherited;
   FModules := CreateModules;
-  Port := '81';
+end;
 
+constructor TmodModuleServer.Create;
+begin
+  inherited;
+  FEnabled := True;
+  Port := '80';
 end;
 
 function TmodModuleServer.CreateModules: TmodModules;
@@ -1552,6 +1572,13 @@ begin
   end;
 end;
 
+procedure TmodModuleServer.SetEnabled(AValue: Boolean);
+begin
+  if FEnabled = AValue then
+    Exit;
+  FEnabled := AValue;
+end;
+
 function TmodModuleServer.DoCreateListener: TmnListener;
 begin
   Result := TmodModuleListener.Create;
@@ -1570,6 +1597,7 @@ procedure TmodModuleServer.DoStart;
 begin
   inherited;
   Modules.Start;
+  Modules.Started;
 end;
 
 procedure TmodModuleServer.DoStop;
@@ -1838,9 +1866,12 @@ begin
 
 end;
 
+procedure TmodModule.Started;
+begin
+end;
+
 procedure TmodModule.Stop;
 begin
-
 end;
 
 function TmodModule.RequestCommand(ARequest: TmodRequest): TmodCommand;
@@ -1993,6 +2024,21 @@ begin
     Result := False;
 end;
 
+function TmodModules.Find(const AName: string): TmodModule;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Items[i].Name, AName) then
+    begin
+      Result := Items[i];
+      break;
+    end;
+  end;
+end;
+
 procedure TmodModules.SetEndOfLine(AValue: String);
 begin
   if FEndOfLine = AValue then
@@ -2010,6 +2056,14 @@ begin
   for aModule in Self do
     aModule.Start;
   FActive := True;
+end;
+
+procedure TmodModules.Started;
+var
+  aModule: TmodModule;
+begin
+  for aModule in Self do
+    aModule.Started;
 end;
 
 procedure TmodModules.Stop;
@@ -2062,7 +2116,7 @@ begin
   Result := True;
 end;
 
-function TmodModules.Compare(Left, Right: TmodModule): Integer;
+function TmodModules.Compare(Left: TmodModule; Right: TmodModule): Integer;
 begin
   Result := Left.Level - Right.Level;
 end;
@@ -2651,6 +2705,8 @@ end;
 procedure TwebRequest.Created;
 begin
   inherited;
+  Accept := '*/*';
+  UserAgent := sUserAgent;
 end;
 
 procedure TwebRequest.DoHeaderReceived;
@@ -2749,6 +2805,8 @@ begin
 
   if (Use.Compressing = ovYes) then //to send data by request (post)
     PutHeader('Content-Encoding', 'gzip');
+
+  PutHeader('User-Agent', UserAgent);
 end;
 
 procedure TwebRequest.DoSendHeader;
@@ -2823,6 +2881,9 @@ begin
 
   if smRespondCompressing in Request.Mode then
       PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
+
+  if Location <> '' then
+    PutHeader('Location', Location)
 end;
 
 procedure TwebRespond.DoSendHeader;
