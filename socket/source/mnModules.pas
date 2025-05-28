@@ -1,4 +1,4 @@
-﻿  unit mnModules;
+﻿unit mnModules;
 {$IFDEF FPC}
 {$mode delphi}
 {$modeswitch prefixedattributes}
@@ -78,10 +78,11 @@ type
     hrNoContent,
     hrUnauthorized,
     hrForbidden, //403
-    hrError,
+    hrError, //500 Internal Error
     hrRedirect, //302
     hrNotModified,
     hrMovedTemporarily, //307
+    hrMovedPermanently,
     hrNotFound,
     hrSwitchingProtocols,
     hrServiceUnavailable
@@ -340,6 +341,7 @@ type
     property Protocol: string read Info.Protocol write Info.Protocol;
     property Address: string read Info.Address write Info.Address;
     property Query: string read Info.Query write Info.Query;
+
     //for module
     property Command: String read Info.Command write Info.Command;
     property Client: String read Info.Client write Info.Client;
@@ -405,7 +407,7 @@ type
     function SendStream(s: TStream; ASize: Int64): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64): Boolean; overload;
 
-    function SendFile(AFileName: string; const AFileStamp: string; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean;
+    function SendFile(AFileName: string; const AFileStamp: string = ''; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean;
 
     function ReceiveStream(s: TStream): Int64; overload;
     function ReceiveStream(s: ImnStreamPersist; Count: Int64): Int64; overload;
@@ -494,10 +496,12 @@ type
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
   end;
 
+  { TwebRespond }
+
   TwebRespond = class(TmodRespond)
   private
+    FLocation: string;
     FHomePath: string; //Document root folder
-    FHostURL: string;
     function GetRequest: TwebRequest;
   protected
     procedure DoPrepareHeader; override; //Called by Server
@@ -505,16 +509,15 @@ type
     procedure DoHeaderSent; override;
     procedure DoHeaderReceived; override; //Called by Client
   public
-    Location: string; //Relocation it to another url
 
     function StatusCode: Integer;
     function StatusResult: string;
     function StatusVersion: string;
     //Document root folder
     property HomePath: string read FHomePath write FHomePath;
-    property HostURL: string read FHostURL write FHostURL;
 
     property Request: TwebRequest read GetRequest;
+    property Location: string read FLocation write FLocation; //Relocation it to another url
   end;
 
   TwebCommand = class(TmnCustomServerCommand)
@@ -633,6 +636,7 @@ type
     //* use lower case in Protocols
     property Protocols: TArray<String> read FProtocols;
     property AliasName: String read FAliasName write SetAliasName;
+    //All modules before used sorted by Level
     property Level: Integer read FLevel write FLevel;
 
     property Use: TmodCommunicateUsing read FUse write FUse;
@@ -723,6 +727,7 @@ type
   private
     FEnabled: Boolean;
     FModules: TmodModules;
+    FName: string;
     procedure SetEnabled(AValue: Boolean);
   protected
     function DoCreateListener: TmnListener; override;
@@ -740,6 +745,7 @@ type
     destructor Destroy; override;
     property Modules: TmodModules read FModules;
     property Enabled: Boolean read FEnabled write SetEnabled;
+    property Name: string read FName write FName;
   end;
 
 { Pool }
@@ -1239,6 +1245,8 @@ begin
 
   if Alias='' then
     Alias := ExtractFileName(AFileName);
+
+  Answer := hrOK;
 
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
   try
@@ -2453,7 +2461,7 @@ begin
     raise TmodModuleException.Create('Head is sent');
 
   if Head = '' then
-    raise TmodModuleException.Create('Head not set');
+    raise TmodModuleException.Create('Head is not set');
 
   Stream.WriteUTF8Line(Head);
   Header.FStates := Header.FStates + [resHeadSent];
@@ -2644,6 +2652,7 @@ begin
     hrForbidden : Result := Result + '403 Forbidden';
     hrNotFound: Result := Result + '404 NotFound';
     hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
+    hrMovedPermanently: Result := '301 Moved Permanently';
     hrRedirect: Result := Result + '302 Found';
     hrNotModified: Result := Result + '304 Not Modified';
     hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
@@ -2715,6 +2724,8 @@ var
   //aCompressClass: TmnCompressStreamProxyClass;
 begin
   inherited;
+
+  FHost  := Header.Field['Host'].AsString;
 
   if (Header.Field['Content-Length'].IsExists) then
     ContentLength := Header.Field['Content-Length'].AsInt64;
@@ -2985,7 +2996,6 @@ end;
 constructor TmnCustomClientCommand.Create;
 begin
   inherited Create;
-
 end;
 
 { TStreamModeHelper }

@@ -278,7 +278,8 @@ begin
   InstallEventLog(ServerLog);
 
   ChallengeServer := TmodWebServer.Create;
-  ChallengeServer.AddAcmeChallenge(ExtractFilePath(ParamStr(0))+'acme\.well-known\');
+  ChallengeServer.AddChallengeAcme(ExtractFilePath(ParamStr(0))+'acme\.well-known\');
+  ChallengeServer.AddRedirectHttps;
 
   ChallengeServer.OnLog := ServerLog;
   ChallengeServer.Logging := GetOption('log');

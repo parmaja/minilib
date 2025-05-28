@@ -628,6 +628,7 @@ end;
 
 destructor TmnListener.Destroy;
 begin
+  FreeAndNil(Context);
   FreeAndNil(FLogMessages);
   FreeAndNil(FEvent);
   inherited;

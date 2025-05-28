@@ -1823,7 +1823,7 @@ type
 
   { TUIWebCommand }
 
-  TUIWebCommand = class(TmodHttpCommand)
+  TUIWebCommand = class(TwebCommand)
   private
     function GetModule: TUIWebModule;
     function GetRespond: TmnwResponse;

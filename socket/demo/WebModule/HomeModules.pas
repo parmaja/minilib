@@ -87,7 +87,7 @@ type
   public
   end;
 
-  TWSEchoGetHomeCommand = class(TmodHttpCommand)
+  TWSEchoGetHomeCommand = class(TwebCommand)
   protected
   public
     procedure RespondResult(var Result: TmodRespondResult); override;

@@ -16,15 +16,15 @@
 {$ENDIF}
 
 {
-            Userinfo       Host      Port
-            ┌──┴───┐ ┌──────┴────────┌┴┐
+            Userinfo       Host      Port                       URI (always started / )
+            ┌──┴───┐ ┌──────┴────────┌┴┐┌────────────────────────┴───────────────────────────────┐
 GET https://john.doe@www.example.com:123/username/forum/questions/?tag=networking&order=newest#top
                      └──────┬──────┘    └───────────────┬────────┘└───────────┬─────────────┘ └┬─┘
-                       DomainName                      Path(Full)           Query             Fragment
+                       DomainName                    Address                Query           Fragment
                                         └───┬───┘└──┬──┘└──┬─────┘            ┬
                                         Directory Alias   Path              Params
     └────────────────────────┬─────────┘       Module Name
-                          HomeURL
+                           HomeURL
 }
 
 {**
@@ -69,11 +69,11 @@ type
 
   TmodWebModule = class;
 
-  { TmodHttpCommand }
+  { TwebCommand }
 
   TSendFileDisposition = (sdDefault, sdInline, sdAttachment);
 
-  TmodHttpCommand = class abstract(TmodCommand)
+  TwebCommand = class abstract(TmodCommand)
   private
     function GetRespond: TwebRespond;
   protected
@@ -84,10 +84,9 @@ type
     function CreateRespond: TmodRespond; override;
 
     procedure RespondNotFound; virtual;
-    procedure RespondNotActive; virtual;
 
-    procedure SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition = sdDefault); overload;
-    procedure SendFile(const vFile: string); overload;
+    //procedure SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition = sdDefault); overload;
+    //procedure SendFile(const vFile: string); overload;
 
   public
     destructor Destroy; override;
@@ -96,20 +95,7 @@ type
 
   TmodWebFileModule = class;
 
-  { TmodURICommand }
-
-  TmodURICommand = class(TmodHttpCommand)
-  private
-    function GetModule: TmodWebFileModule;
-  protected
-    function GetDefaultDocument(vRoot: string): string;
-    procedure RespondResult(var Result: TmodRespondResult); override;
-    procedure Prepare(var Result: TmodRespondResult); override;
-    procedure Created; override;
-  public
-    destructor Destroy; override;
-    property Module: TmodWebFileModule read GetModule;
-  end;
+  { TwebFileCommand }
 
   TmodWebServer = class;
 
@@ -145,7 +131,6 @@ type
     //Private Path
     property WorkPath: string read FWorkPath write FWorkPath;
   end;
-
   { TmodWebFileModule }
 
   TmodWebFileModule = class(TmodWebModule)
@@ -154,9 +139,31 @@ type
     procedure SetDefaultDocument(AValue: TStringList);
     procedure DoRegisterCommands; override;
     procedure Created; override;
+    procedure Started; override;
   public
     destructor Destroy; override;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
+  end;
+
+  TwebFileCommand = class(TwebCommand)
+  private
+    function GetModule: TmodWebFileModule;
+  protected
+    function GetDefaultDocument(vRoot: string): string;
+    procedure RespondResult(var Result: TmodRespondResult); override;
+    procedure Prepare(var Result: TmodRespondResult); override;
+    procedure Created; override;
+  public
+    destructor Destroy; override;
+    property Module: TmodWebFileModule read GetModule;
+  end;
+
+  { TmodForwardHttpsModule }
+
+  TmodForwardHttpsModule = class(TmodWebModule)
+  protected
+    procedure DoRegisterCommands; override;
+  public
   end;
 
   { TmodWebModules }
@@ -176,7 +183,8 @@ type
     function CreateModules: TmodModules; override;
   public
     constructor Create; override;
-    procedure AddAcmeChallenge(const AHomePath: string);
+    procedure AddChallengeAcme(const AHomePath: string);
+    procedure AddRedirectHttps;
   end;
 
   //*****************************************
@@ -206,40 +214,40 @@ type
 
   { TmodHttpEventCommand }
 
-  TmodHttpEventCommand = class(TmodURICommand)
+  TmodHttpEventCommand = class(TwebFileCommand)
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
   end;
 
   {$endif}
 
-  { TmodHttpGetCommand }
+  { TmodHttpGetPostCommand }
 
-  TmodHttpGetCommand = class(TmodURICommand)
+  TwebGetPostCommand = class(TwebFileCommand)
   protected
     procedure RespondDocument(const vDocument: string; var Result: TmodRespondResult); virtual;
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
   end;
 
-  { TmodHttpPostCommand }
+  //Handle cors :)
 
-  TmodHttpPostCommand = class(TmodHttpGetCommand)
+  TwebOptionCommand = class(TwebGetPostCommand)
+  public
+    procedure RespondResult(var Result: TmodRespondResult); override;
+  end;
+
+  { TwebPutCommand }
+
+  TwebPutCommand = class(TwebFileCommand)
   protected
-    Contents: TMemoryStream;
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
   end;
 
-  //handle cors :)
-  TmodHttpOptionCommand = class(TmodHttpGetCommand)
-  public
-    procedure RespondResult(var Result: TmodRespondResult); override;
-  end;
+  { TmodForwardHttpsCommand }
 
-  { TmodPutCommand }
-
-  TmodPutCommand = class(TmodURICommand)
+  TmodForwardHttpsCommand = class(TwebCommand)
   protected
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
@@ -247,7 +255,7 @@ type
 
   { TmodServerInfoCommand }
 
-  TmodServerInfoCommand = class(TmodURICommand)
+  TmodServerInfoCommand = class(TwebFileCommand)
   protected
     procedure RespondResult(var Result: TmodRespondResult); override;
   public
@@ -255,7 +263,7 @@ type
 
   { TmodDirCommand }
 
-  TmodDirCommand = class(TmodURICommand)
+  TmodDirCommand = class(TwebFileCommand)
   protected
     procedure RespondResult(var Result: TmodRespondResult); override;
   public
@@ -263,7 +271,7 @@ type
 
   { TmodDeleteFileCommand }
 
-  TmodDeleteFileCommand = class(TmodURICommand)
+  TmodDeleteFileCommand = class(TwebFileCommand)
   protected
     procedure RespondResult(var Result: TmodRespondResult); override;
   public
@@ -406,32 +414,6 @@ begin
 {$endif}
 end;
 
-{ TmodHttpPostCommand }
-
-procedure TmodHttpPostCommand.RespondResult(var Result: TmodRespondResult);
-begin
-  {if SameText(Request.Method, 'POST') then
-  begin
-    if (Request.Header.Field['Content-Type'].Have('application/json')) then
-    begin
-      Contents := TMemoryStream.Create;
-      if Request.Stream <> nil then
-        Request.Stream.ReadStream(Contents, Request.ContentLength);
-      Contents.Position := 0; //it is memory btw
-      //Contents.SaveToFile('d:\temp\json.json');
-    end
-    else
-    begin
-      Contents := TMemoryStream.Create;
-      if Request.Stream <> nil then
-        Request.Stream.ReadStream(Contents, Request.ContentLength);
-      Contents.Position := 0; //it is memory btw
-      Contents.SaveToFile('c:\temp\1.txt');
-    end;
-  end;}
-  inherited;
-end;
-
 { TmodWebModule }
 
 procedure TmodWebModule.SetHomePath(AValue: string);
@@ -453,8 +435,6 @@ end;
 procedure TmodWebModule.Started;
 begin
   inherited;
-  if HomePath = '' then
-    raise Exception.Create('Home path not set!');
 end;
 
 procedure TmodWebModule.DoPrepareRequest(ARequest: TmodRequest);
@@ -502,17 +482,9 @@ end;
 procedure TmodWebFileModule.DoRegisterCommands;
 begin
   inherited;
-  //use post and get as same command
-  RegisterCommand('GET', TmodHttpGetCommand, true);
-  //RegisterCommand('GET', TmodHttpPostCommand, true);
-  RegisterCommand('POST', TmodHttpPostCommand, true);
+  RegisterCommand('GET', TwebGetPostCommand, True);
+  RegisterCommand('POST', TwebGetPostCommand);
   RegisterCommand('INFO', TmodServerInfoCommand);
-  {
-  RegisterCommand('GET', TmodHttpGetCommand);
-  RegisterCommand('PUT', TmodPutCommand);
-  RegisterCommand('DIR', TmodDirCommand);
-  RegisterCommand('DEL', TmodDeleteFileCommand);
-  }
 end;
 
 procedure TmodWebFileModule.Created;
@@ -525,20 +497,35 @@ begin
   FDefaultDocument.Add('default.htm');
 end;
 
+procedure TmodWebFileModule.Started;
+begin
+  inherited;
+  if HomePath = '' then
+    raise Exception.Create('Home path not set!');
+end;
+
 destructor TmodWebFileModule.Destroy;
 begin
   FreeAndNil(FDefaultDocument);
   inherited;
 end;
 
-{ TmodURICommand }
+{ TmodForwardHttpsModule }
 
-function TmodURICommand.GetModule: TmodWebFileModule;
+procedure TmodForwardHttpsModule.DoRegisterCommands;
+begin
+  inherited;
+  RegisterCommand('', TmodForwardHttpsCommand, True);
+end;
+
+{ TwebFileCommand }
+
+function TwebFileCommand.GetModule: TmodWebFileModule;
 begin
   Result := (inherited Module) as TmodWebFileModule;
 end;
 
-function TmodURICommand.GetDefaultDocument(vRoot: string): string;
+function TwebFileCommand.GetDefaultDocument(vRoot: string): string;
 var
   i: Integer;
   aFile: string;
@@ -561,24 +548,23 @@ begin
     Result := vRoot;
 end;
 
-procedure TmodURICommand.RespondResult(var Result: TmodRespondResult);
+procedure TwebFileCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
 end;
 
-procedure TmodURICommand.Prepare(var Result: TmodRespondResult);
+procedure TwebFileCommand.Prepare(var Result: TmodRespondResult);
 begin
   inherited;
   Respond.HomePath := Module.HomePath;
-  Respond.HostURL := Request.Header.ReadString('Host');
 end;
 
-procedure TmodURICommand.Created;
+procedure TwebFileCommand.Created;
 begin
   inherited Created;
 end;
 
-{ TmodHttpGetCommand }
+{ TwebGetPostCommand }
 
 {function CompressSize(vData: PByte; vLen: Integer): TFileSize;
 var
@@ -596,17 +582,12 @@ begin
 end;}
 
 
-procedure TmodHttpGetCommand.RespondDocument(const vDocument: string; var Result: TmodRespondResult);
+procedure TwebGetPostCommand.RespondDocument(const vDocument: string; var Result: TmodRespondResult);
 begin
-  if FileExists(vDocument) then
-  begin
-    SendFile(vDocument);
-  end
-  else
-    RespondNotFound;
+  Respond.SendFile(vDocument);
 end;
 
-procedure TmodHttpGetCommand.RespondResult(var Result: TmodRespondResult);
+procedure TwebGetPostCommand.RespondResult(var Result: TmodRespondResult);
 var
   aDocument, aHomePath: string;
   {aPath, aFile: string;}
@@ -667,11 +648,11 @@ begin
     //http://127.0.0.1:81/test/web
 
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
-    Request.Address := IncludeURLDelimiter(Request.Address);
+    //Request.Address := IncludeURLDelimiter(Request.Address);
     //Respond.SendHead('HTTP/1.1 301 Moved Permanently');
     Respond.Answer := hrRedirect;
     //Respond.SendHead('HTTP/1.1 307 Temporary Redirect');
-    Respond.AddHeader('Location', IncludeURLDelimiter(Request.Address));
+    Respond.Location := IncludeURLDelimiter(Request.Address);
     Respond.SendHeader;
   end
   else
@@ -718,9 +699,9 @@ begin
   Respond.Stream.WriteLine(Utf8String('the server is: "' + ParamStr(0) + '"'));
 end;
 
-{ TmodPutCommand }
+{ TwebPutCommand }
 
-procedure TmodPutCommand.RespondResult(var Result: TmodRespondResult);
+procedure TwebPutCommand.RespondResult(var Result: TmodRespondResult);
 var
   aFile: TFileStream;
   aFileName: string;
@@ -734,6 +715,16 @@ begin
   finally
     aFile.Free;
   end;
+end;
+
+{ TmodForwardHttpsCommand }
+
+procedure TmodForwardHttpsCommand.RespondResult(var Result: TmodRespondResult);
+begin
+  inherited;
+  Respond.Answer := hrRedirect;
+  Respond.Location := 'https://'+Respond.Request.Host + Respond.Request.URI;
+  Respond.SendHeader;
 end;
 
 { TmodDirCommand }
@@ -849,9 +840,9 @@ begin
   FStarted := False;
 end;
 
-{ TmodURICommand }
+{ TwebFileCommand }
 
-destructor TmodURICommand.Destroy;
+destructor TwebFileCommand.Destroy;
 begin
   inherited;
 end;
@@ -880,33 +871,47 @@ end;
 const
   sAcmeNameFolder = 'well-known';
 
-procedure TmodCustomWebServer.AddAcmeChallenge(const AHomePath: string);
+procedure TmodCustomWebServer.AddChallengeAcme(const AHomePath: string);
 begin
   if Modules.Find(sAcmeNameFolder) = nil then
   begin
     //* http://localhost/.well-known/acme-challenge/index.html
-    with TmodWebFileModule.Create(sAcmeNameFolder, '.' + sAcmeNameFolder, ['http/1.1'], Modules) do
+    with TmodWebFileModule.Create(sAcmeNameFolder, '.' + sAcmeNameFolder, [], Modules) do
     begin
       Level := -1;
       HomePath := AHomePath;
     end;
-    //* use certbot folder to "Application.Location + 'cert'" because certbot will create folder .well-known
+    //* use certbot folder to "Application.Location + 'acme'" because certbot will create folder .well-known
   end;
 end;
 
-{ TmodHttpCommand }
+const
+  sForwardHttps = 'ForwardHttps';
 
-function TmodHttpCommand.GetRespond: TwebRespond;
+procedure TmodCustomWebServer.AddRedirectHttps;
+begin
+  if Modules.Find(sForwardHttps) = nil then
+  begin
+    with TmodForwardHttpsModule.Create(sForwardHttps, '', ['http/1.1'], Modules) do
+    begin
+        //Level := 0;
+    end;
+  end;
+end;
+
+{ TwebCommand }
+
+function TwebCommand.GetRespond: TwebRespond;
 begin
   Result := inherited Respond as TwebRespond;
 end;
 
-destructor TmodHttpCommand.Destroy;
+destructor TwebCommand.Destroy;
 begin
   inherited;
 end;
 
-procedure TmodHttpCommand.Prepare(var Result: TmodRespondResult);
+procedure TwebCommand.Prepare(var Result: TmodRespondResult);
 var
   aKeepAlive: Boolean;
   WSHash, WSKey: string;
@@ -986,7 +991,7 @@ begin
   end;
 end;
 
-procedure TmodHttpCommand.Unprepare(var Result: TmodRespondResult);
+procedure TwebCommand.Unprepare(var Result: TmodRespondResult);
 var
   aParams: TmnParams;
 begin
@@ -1025,12 +1030,12 @@ begin
   end;
 end;
 
-procedure TmodHttpCommand.RespondResult(var Result: TmodRespondResult);
+procedure TwebCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
 end;
-
-procedure TmodHttpCommand.SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition);
+(*
+procedure TwebCommand.SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition);
 var
   aDocSize: Int64;
   aDocStream: TFileStream;
@@ -1086,40 +1091,19 @@ begin
     finally
       aDocStream.Free;
     end;
-  end
-  else
-  begin
-    RespondNotActive;
   end;
 end;
+*)
 
-procedure TmodHttpCommand.RespondNotActive;
-var
-  Body: string;
-begin
-  Respond.Answer := hrOK; //hrError
-  Respond.AddHeader('Content-Type', 'text/plain');
-  Respond.Stream.WriteUTF8String('404 Not Active');
-  Respond.KeepAlive := False;
-end;
-
-procedure TmodHttpCommand.RespondNotFound;
-var
-  Body: string;
+procedure TwebCommand.RespondNotFound;
 begin
   Respond.Answer := hrNotFound; //hrError
-  Respond.AddHeader('Content-Type', 'text/plain');
+  Respond.ContentType := 'text/plain';
   Respond.Stream.WriteUTF8String('404 Not Found');
   Respond.KeepAlive := False;
 end;
 
-
-procedure TmodHttpCommand.SendFile(const vFile: string);
-begin
-  SendFile(vFile, ExtractFileName(vFile));
-end;
-
-function TmodHttpCommand.CreateRespond: TmodRespond;
+function TwebCommand.CreateRespond: TmodRespond;
 begin
   Result := TwebRespond.Create(Request);
 end;
@@ -1166,9 +1150,9 @@ begin
 end;
 {$endif FPC}
 
-{ TmodHttpOptionCommand }
+{ TwebOptionCommand }
 
-procedure TmodHttpOptionCommand.RespondResult(var Result: TmodRespondResult);
+procedure TwebOptionCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
   Respond.Answer := hrOK;
@@ -1180,7 +1164,6 @@ begin
   Respond.PutHeader('Access-Control-Allow-Origin', '*');
   Respond.PutHeader('Access-Control-Allow-Method', 'POST');
   Respond.PutHeader('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type');
-
 end;
 
 { ThttpModules }
