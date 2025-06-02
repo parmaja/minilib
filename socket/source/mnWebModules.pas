@@ -852,7 +852,7 @@ end;
 procedure TmodWebServer.Created;
 begin
   inherited;
-  TmodWebFileModule.Create('web', 'doc', ['http/1.1'], Modules);
+  //TmodWebFileModule.Create('web', 'doc', ['http/1.1'], Modules);
 end;
 
 { TmodAcmeChallengeServer }
