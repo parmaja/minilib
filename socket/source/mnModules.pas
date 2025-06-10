@@ -62,7 +62,7 @@ type
   TmodModuleConnection = class;
   TmodModuleConnectionClass = class of TmodModuleConnection;
 
-  TmodCommand = class;
+  TwebCommand = class;
 
   TmodModule = class;
 
@@ -527,9 +527,9 @@ type
     property Location: string read FLocation write FLocation; //Relocation it to another url
   end;
 
-  { TmodCommand }
+  { TwebCommand }
 
-  TmodCommand = class(TmnCustomServerCommand)
+  TwebCommand = class(TmnCustomServerCommand)
   private
     FModule: TmodModule;
     function GetActive: Boolean;
@@ -558,13 +558,13 @@ type
 
   //*
 
-  TmodCommandClass = class of TmodCommand;
+  TwebCommandClass = class of TwebCommand;
 
   TmodCommandClassItem = class(TmnNamedObject)
   private
-    FCommandClass: TmodCommandClass;
+    FCommandClass: TwebCommandClass;
   public
-    property CommandClass: TmodCommandClass read FCommandClass;
+    property CommandClass: TwebCommandClass read FCommandClass;
   end;
 
   { TmodCommandClasses }
@@ -572,7 +572,7 @@ type
   TmodCommandClasses = class(TmnNamedObjectList<TmodCommandClassItem>)
   private
   public
-    function Add(const Name: String; CommandClass: TmodCommandClass): Integer;
+    function Add(const Name: String; CommandClass: TwebCommandClass): Integer;
   end;
 
   {
@@ -594,10 +594,10 @@ type
     FUse: TmodCommunicateUsing;
     procedure SetAliasName(AValue: String);
   protected
-    FFallbackCommand: TmodCommandClass;
+    FFallbackCommand: TwebCommandClass;
     //Name here will corrected with registered item name for example Get -> GET
     function GetActive: Boolean; virtual;
-    function GetCommandClass(var CommandName: String): TmodCommandClass; virtual;
+    function GetCommandClass(var CommandName: String): TwebCommandClass; virtual;
     procedure Created; override;
     procedure DoRegisterCommands; virtual; //deprecated 'use RegisterItems';
     procedure RegisterCommands;
@@ -607,12 +607,12 @@ type
 
     function Match(const ARequest: TmodRequest): Boolean; virtual;
     procedure PrepareRequest(ARequest: TmodRequest);
-    function CreateCommand(CommandName: String; ARequest: TmodRequest): TmodCommand; overload;
+    function CreateCommand(CommandName: String; ARequest: TmodRequest): TwebCommand; overload;
 
     procedure DoReceiveHeader(ARequest: TmodRequest); virtual;
     procedure ReceiveHeader(ARequest: TmodRequest);
 
-    function RequestCommand(ARequest: TmodRequest): TmodCommand; virtual;
+    function RequestCommand(ARequest: TmodRequest): TwebCommand; virtual;
     procedure Log(S: String); virtual;
     procedure Start; virtual;
     procedure Started; virtual;
@@ -626,7 +626,7 @@ type
     //Protocols all should lowercase
     constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules = nil); virtual;
     destructor Destroy; override;
-    function RegisterCommand(vName: String; CommandClass: TmodCommandClass; AFallback: Boolean = False): Integer; overload;
+    function RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean = False): Integer; overload;
 
     //* Run in Connection Thread
     function Execute(ARequest: TmodRequest): TmodRespondResult;
@@ -1721,7 +1721,7 @@ procedure TmnCustomCommand.DoPrepareHeader(Sender: TmodCommunicate);
 begin
 end;
 
-function TmodCommandClasses.Add(const Name: String; CommandClass: TmodCommandClass): Integer;
+function TmodCommandClasses.Add(const Name: String; CommandClass: TwebCommandClass): Integer;
 var
   aItem: TmodCommandClassItem;
 begin
@@ -1731,24 +1731,24 @@ begin
   Result := inherited Add(aItem);
 end;
 
-{ TmodCommand }
+{ TwebCommand }
 
-procedure TmodCommand.Created;
+procedure TwebCommand.Created;
 begin
   inherited;
 end;
 
-function TmodCommand.CreateRespond: TmodRespond;
+function TwebCommand.CreateRespond: TmodRespond;
 begin
   Result := TwebRespond.Create(Request);
 end;
 
-procedure TmodCommand.DoPrepareHeader(Sender: TmodCommunicate);
+procedure TwebCommand.DoPrepareHeader(Sender: TmodCommunicate);
 begin
   inherited;
 end;
 
-function TmodCommand.Execute: TmodRespondResult;
+function TwebCommand.Execute: TmodRespondResult;
 begin
   Result.Status := []; //default to be not keep alive, not sure, TODO
   Result.Timout := Request.Use.KeepAliveTimeOut; //not sure, TODO
@@ -1803,7 +1803,7 @@ begin
 {$endif}
 end;
 
-procedure TmodCommand.Prepare(var Result: TmodRespondResult);
+procedure TwebCommand.Prepare(var Result: TmodRespondResult);
 var
   aKeepAlive: Boolean;
   WSHash, WSKey: string;
@@ -1881,11 +1881,11 @@ begin
   end;
 end;
 
-procedure TmodCommand.RespondResult(var Result: TmodRespondResult);
+procedure TwebCommand.RespondResult(var Result: TmodRespondResult);
 begin
 end;
 
-procedure TmodCommand.Unprepare(var Result: TmodRespondResult);
+procedure TwebCommand.Unprepare(var Result: TmodRespondResult);
 var
   aParams: TmnParams;
 begin
@@ -1924,34 +1924,34 @@ begin
   end;
 end;
 
-{ TmodCommand }
+{ TwebCommand }
 
-procedure TmodCommand.Log(S: String);
+procedure TwebCommand.Log(S: String);
 begin
   Module.Log(S);
 end;
 
-function TmodCommand.CreateRequest(AStream: TmnConnectionStream): TmodRequest;
+function TwebCommand.CreateRequest(AStream: TmnConnectionStream): TmodRequest;
 begin
   Result := TwebRequest.Create(Self, AStream);
 end;
 
-function TmodCommand.GetActive: Boolean;
+function TwebCommand.GetActive: Boolean;
 begin
   Result := (Module <> nil) and (Module.Active);
 end;
 
-function TmodCommand.GetRespond: TwebRespond;
+function TwebCommand.GetRespond: TwebRespond;
 begin
 
 end;
 
-procedure TmodCommand.SetModule(const Value: TmodModule);
+procedure TwebCommand.SetModule(const Value: TmodModule);
 begin
   FModule := Value;
 end;
 
-constructor TmodCommand.Create(AModule: TmodModule; ARequest: TmodRequest);
+constructor TwebCommand.Create(AModule: TmodModule; ARequest: TmodRequest);
 begin
   inherited Create(ARequest);
   FModule := AModule;
@@ -1959,10 +1959,10 @@ end;
 
 { TmodModule }
 
-function TmodModule.CreateCommand(CommandName: String; ARequest: TmodRequest): TmodCommand;
+function TmodModule.CreateCommand(CommandName: String; ARequest: TmodRequest): TwebCommand;
 var
   //  aName: string;
-  aClass: TmodCommandClass;
+  aClass: TwebCommandClass;
 begin
   //aName := GetCommandName(ARequest, ARequestStream);
 
@@ -1976,7 +1976,7 @@ begin
     Result := nil;
 end;
 
-function TmodModule.GetCommandClass(var CommandName: String): TmodCommandClass;
+function TmodModule.GetCommandClass(var CommandName: String): TwebCommandClass;
 var
   aItem: TmodCommandClassItem;
 begin
@@ -2038,7 +2038,7 @@ procedure TmodModule.Stop;
 begin
 end;
 
-function TmodModule.RequestCommand(ARequest: TmodRequest): TmodCommand;
+function TmodModule.RequestCommand(ARequest: TmodRequest): TwebCommand;
 begin
   Result := CreateCommand(ARequest.Command, ARequest);
 end;
@@ -2101,7 +2101,7 @@ end;
 
 function TmodModule.Execute(ARequest: TmodRequest): TmodRespondResult;
 var
-  aCommand: TmodCommand;
+  aCommand: TwebCommand;
   aHandled: Boolean;
 begin
   //Result.Status := [mrSuccess];
@@ -2155,7 +2155,7 @@ begin
   Result := Modules.Active; //todo
 end;
 
-function TmodModule.RegisterCommand(vName: String; CommandClass: TmodCommandClass; AFallback: Boolean): Integer;
+function TmodModule.RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean): Integer;
 begin
 {  if Active then
     raise TmodModuleException.Create('Server is Active');}

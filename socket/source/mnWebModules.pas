@@ -69,17 +69,7 @@ type
 
   TmodWebModule = class;
 
-  { TwebCommand }
-
   TSendFileDisposition = (sdDefault, sdInline, sdAttachment);
-
-  TwebCommand = class abstract(TmodCommand)
-  private
-  protected
-    procedure Prepare(var Result: TmodRespondResult); override;
-    procedure Unprepare(var Result: TmodRespondResult); override;
-  public
-  end;
 
   TmodWebFileModule = class;
 
@@ -844,19 +834,6 @@ begin
         //Level := 0;
     end;
   end;
-end;
-
-{ TwebCommand }
-
-procedure TwebCommand.Prepare(var Result: TmodRespondResult);
-begin
-  inherited;
-
-end;
-
-procedure TwebCommand.Unprepare(var Result: TmodRespondResult);
-begin
-  inherited;
 end;
 
 { TmodCustomWebModules }
