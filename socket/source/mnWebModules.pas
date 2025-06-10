@@ -606,9 +606,12 @@ begin
 *)
 
   {$ifdef DEBUG}
-  if (Request.Path='') and (Request.URI = '/favicon.ico') then
+  //if (Request.Path='') and (Request.URI = '/favicon.ico') then
+  if (Request.URI = '/favicon.ico') then
   begin
     RespondDocument('favicon.ico', Result);
+    if Respond.Answer<>hrOK then
+      Respond.SendHeader;
     Exit;
   end;
   {$endif}

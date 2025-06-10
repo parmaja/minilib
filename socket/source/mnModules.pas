@@ -1237,6 +1237,7 @@ begin
   FileAge(AFileName, aFileDate);
   aSize := GetSizeOfFile(AFileName);
 
+  //By default, web browsers and proxies do not cache content when accessed via an IP address
   if not DevelopperMode and not (fdResend in FileDispositions) and (AFileStamp <> '') and (AFileStamp = FileStamp(aFileDate, aSize)) then
   begin
     Answer := hrNotModified;
