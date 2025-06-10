@@ -22,6 +22,7 @@ type
     Text,
     Binary,
     Hidden,
+    NoCache,
     Executable
   );
 

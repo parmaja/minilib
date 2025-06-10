@@ -75,22 +75,10 @@ type
 
   TwebCommand = class abstract(TmodCommand)
   private
-    function GetRespond: TwebRespond;
   protected
     procedure Prepare(var Result: TmodRespondResult); override;
-    procedure RespondResult(var Result: TmodRespondResult); override;
     procedure Unprepare(var Result: TmodRespondResult); override;
-
-    function CreateRespond: TmodRespond; override;
-
-    procedure RespondNotFound; virtual;
-
-    //procedure SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition = sdDefault); overload;
-    //procedure SendFile(const vFile: string); overload;
-
   public
-    destructor Destroy; override;
-    property Respond: TwebRespond read GetRespond;
   end;
 
   TmodWebFileModule = class;
@@ -312,7 +300,6 @@ var
 
 function WebExpandFile(HomePath, Path: string; out Document: string): Boolean;
 function WebExpandToRoot(FileName: string; Root: string): string;
-function HashWebSocketKey(const key: string): string;
 
 function WebServers: TWebServers;
 
@@ -369,49 +356,6 @@ begin
   end
   else
     Result := '';
-end;
-
-//TODO slow function needs to improvements
-//https://stackoverflow.com/questions/1549213/whats-the-correct-encoding-of-http-get-request-strings
-
-{$ifdef FPC}
-function EncodeBase64(const Buffer; Count: Integer): Utf8String;
-var
-  Outstream : TStringStream;
-  Encoder   : TBase64EncodingStream;
-begin
-  if Count=0 then
-    Exit('');
-  Outstream:=TStringStream.Create('');
-  try
-    Encoder:=TBase64EncodingStream.create(outstream);
-    try
-      Encoder.Write(Buffer, Count);
-    finally
-      Encoder.Free;
-      end;
-    Result:=Outstream.DataString;
-  finally
-    Outstream.free;
-    end;
-end;
-{$endif}
-
-function HashWebSocketKey(const key: string): string;
-var
-{$ifdef FPC}
-  b: TSHA1Digest;
-{$else}
-  b: TBytes;
-{$endif}
-begin
-{$ifdef FPC}
-  b := SHA1String(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
-  Result := EncodeBase64(b, SizeOf(b));
-{$else}
-  b := THashSHA1.GetHashBytes(Utf8String(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'));
-  Result := TNetEncoding.Base64String.EncodeBytesToString(b);
-{$endif}
 end;
 
 { TmodWebModule }
@@ -904,211 +848,15 @@ end;
 
 { TwebCommand }
 
-function TwebCommand.GetRespond: TwebRespond;
-begin
-  Result := inherited Respond as TwebRespond;
-end;
-
-destructor TwebCommand.Destroy;
-begin
-  inherited;
-end;
-
 procedure TwebCommand.Prepare(var Result: TmodRespondResult);
-var
-  aKeepAlive: Boolean;
-  WSHash, WSKey: string;
-  SendHostHeader: Boolean;
 begin
   inherited;
 
-  if Request.Header.Field['Connection'].Have('Upgrade', [',']) then
-  begin
-    if Request.Use.WebSocket and Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
-    begin
-      if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
-      begin
-        WSHash := Request.Header['Sec-WebSocket-Key'];
-        SendHostHeader := Request.Header.ReadBool('X-Send-Server-Hostname', True);
-
-        WSKey := HashWebSocketKey(WSHash);
-        Respond.Answer := hrSwitchingProtocols;
-        //Respond.AddHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-        Respond.AddHeader('Connection', 'Upgrade');
-        Respond.AddHeader('upgrade', 'websocket');
-        Respond.AddHeader('date: ', FormatHTTPDate(Now));
-        Respond.AddHeader('Sec-Websocket-Accept', WSKey);
-        if Request.Header['Sec-WebSocket-Protocol'] = 'plain' then
-          Respond.AddHeader('Sec-WebSocket-Protocol', 'plain');
-        Respond.SendHeader;
-
-        Respond.KeepAlive := True;
-        Request.ProtcolClass := TmnWebSocket13StreamProxy;
-        Request.ProtcolProxy := Request.ProtcolClass.Create;
-        Request.ConnectionType := ctWebSocket;
-        Result.Status := Result.Status + [mrKeepAlive];
-        Request.Stream.AddProxy(Request.ProtcolProxy);
-
-        if SendHostHeader then
-          Respond.Stream.WriteUTF8String('Request served by miniWebModule');
-        //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
-      end;
-    end;
-  end;
-
-  if not Respond.IsHeaderSent and Request.KeepAlive then //not WebSocket
-  begin
-    Respond.KeepAlive := True;
-    Respond.AddHeader('Connection', 'Keep-Alive');
-    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Use.KeepAliveTimeOut div 1000) + ', max=100');
-  end;
-
-  if Request.ConnectionType = ctWebSocket then
-  begin
-    Request.CompressProxy.Disable;
-  end
-  else
-  begin
-    if Request.Header.Field['Content-type'].Have('multipart/form-data', [';']) then
-    begin
-      Request.ConnectionType := ctFormData;
-    end;
-    {if not Respond.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
-    begin
-      if Request.CompressProxy <> nil then
-        Respond.AddHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
-    end;}
-
-    //Compressing
-    {if not Respond.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then
-    begin
-      if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
-        CompressClass := TmnGzipStreamProxy
-      else if Request.Header.Field['Accept-Encoding'].Have('deflate', [',']) then
-        CompressClass := TmnDeflateStreamProxy
-      else
-        CompressClass := nil;
-      if CompressClass <> nil then
-        Respond.AddHeader('Content-Encoding', CompressClass.GetCompressName);
-    end;}
-  end;
 end;
 
 procedure TwebCommand.Unprepare(var Result: TmodRespondResult);
-var
-  aParams: TmnParams;
 begin
   inherited;
-  if Request.ConnectionType = ctWebSocket then
-  begin
-  end
-  else
-  begin
-    // If no content length that mean we cant continue as keep alive, content length is recomended to keep the stream
-    if not Respond.Header.Exists['Content-Length'] then //TODO see it Zaher,Belal
-      Respond.KeepAlive := False;
-
-    if Respond.KeepAlive then
-    begin
-      if Request.Header.IsExists('Keep-Alive') then //idk if really sent from client
-      begin
-        aParams := TmnParams.Create;
-        try
-          //Keep-Alive: timeout=5, max=1000
-          aParams.Separator := '=';
-          aParams.Delimiter := ',';
-          aParams.AsString := Request.Header['Keep-Alive'];
-          Result.Timout := aParams['timeout'].AsInteger;
-        finally
-          aParams.Free;
-        end;
-      end
-      else
-        Result.Timout := Request.Use.KeepAliveTimeOut;
-
-      Result.Status := Result.Status + [mrKeepAlive];
-    end;
-
-    Request.CompressProxy.Disable;
-  end;
-end;
-
-procedure TwebCommand.RespondResult(var Result: TmodRespondResult);
-begin
-  inherited;
-end;
-(*
-procedure TwebCommand.SendFile(const vFile, vName: string; vDisposition: TSendFileDisposition);
-var
-  aDocSize: Int64;
-  aDocStream: TFileStream;
-  aDate: TDateTime;
-  aEtag, aFtag: string;
-begin
-  //TODO use Respond.SendFile
-  if Respond.Stream.Connected then
-  begin
-    FileAge(vFile, aDate);
-    aFtag := DateTimeToUnix(aDate).ToString;
-    aEtag := Request.Header['If-None-Match'];
-    if (aEtag<>'') and (aEtag = aFtag) then
-    begin
-      Respond.Answer := hrNotModified;
-      Respond.SendHeader;
-      //Log(vFile+': not modified');
-      Exit;
-    end;
-
-    aDocStream := TFileStream.Create(vFile, fmOpenRead or fmShareDenyWrite);
-    try
-      {if Respond.KeepAlive then
-        aDocSize := CompressSize(PByte(aDocStream.Memory), aDocStream.Size)
-      else}
-        aDocSize := aDocStream.Size;
-
-      Respond.Answer := hrOK;
-
-      //Respond.AddHeader('Cache-Control', 'max-age=600');
-      Respond.AddHeader('Cache-Control', 'max-age=600');
-      //Respond.AddHeader('Cache-Control', 'public');
-      //Respond.AddHeader('Date', Now);
-      Respond.AddHeader('Last-Modified', FormatHTTPDate(aDate));
-      Respond.AddHeader('ETag', aFtag);
-      if Respond.Stream.Connected then
-      begin
-        Respond.PutHeader('Content-Type', DocumentToContentType(vName));
-        case vDisposition of
-          sdInline: Respond.PutHeader('Content-Disposition', Format('inline; filename="%s"', [vName]));
-          sdAttachment: Respond.PutHeader('Content-Disposition', Format('attachment; filename="%s"', [vName]));
-          else;
-        end;
-
-        if Respond.KeepAlive then
-          Respond.ContentLength := aDocSize;
-      end;
-
-      Respond.SendHeader;
-
-      if Respond.Stream.Connected then
-        Respond.Stream.WriteStream(aDocStream);
-    finally
-      aDocStream.Free;
-    end;
-  end;
-end;
-*)
-
-procedure TwebCommand.RespondNotFound;
-begin
-  Respond.Answer := hrNotFound; //hrError
-  Respond.ContentType := 'text/plain';
-  Respond.Stream.WriteUTF8String('404 Not Found');
-  Respond.KeepAlive := False;
-end;
-
-function TwebCommand.CreateRespond: TmodRespond;
-begin
-  Result := TwebRespond.Create(Request);
 end;
 
 { TmodCustomWebModules }

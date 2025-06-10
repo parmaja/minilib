@@ -46,6 +46,11 @@ uses
   SysUtils, Classes, StrUtils, Types, DateUtils, {$ifdef FPC}ZStream,{$else}ZLib,{$endif}
   Generics.Defaults, mnStreamUtils, SyncObjs,
   mnClasses, mnStreams, mnFields, mnParams, mnMIME,
+  {$ifdef FPC}
+  sha1, base64,
+  {$else}
+  NetEncoding, Hash,
+  {$endif}
   mnSockets, mnConnections, mnServers;
 
 const
@@ -58,6 +63,8 @@ type
   TmodModuleConnectionClass = class of TmodModuleConnection;
 
   TmodCommand = class;
+
+  TmodModule = class;
 
   TmodHeaderState = (
     resHeaderSending,
@@ -520,9 +527,15 @@ type
     property Location: string read FLocation write FLocation; //Relocation it to another url
   end;
 
-  TwebCommand = class(TmnCustomServerCommand)
+  { TmodCommand }
+
+  TmodCommand = class(TmnCustomServerCommand)
   private
+    FModule: TmodModule;
+    function GetActive: Boolean;
+    function GetRespond: TwebRespond;
   protected
+    function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
     function CreateRespond: TmodRespond; override;
 
     procedure DoPrepareHeader(Sender: TmodCommunicate); override;
@@ -531,31 +544,19 @@ type
     procedure RespondResult(var Result: TmodRespondResult); virtual;
     function Execute: TmodRespondResult;
     procedure Unprepare(var Result: TmodRespondResult); virtual;
-    procedure Created; override;
-  public
-  end;
-
-  //*
-
-  TmodModule = class;
-
-  TmodCommand = class(TwebCommand)
-  private
-    FModule: TmodModule;
-    function GetActive: Boolean;
-  protected
     procedure SetModule(const Value: TmodModule); virtual;
     procedure Log(S: String); virtual;
-
-    function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
-    function CreateRespond: TmodRespond; override;
+    procedure Created; override;
   public
     constructor Create(AModule: TmodModule; ARequest: TmodRequest); virtual;
     //GetCommandName: make name for command when register it, useful when log the name of it
     property Module: TmodModule read FModule write SetModule;
     property Active: Boolean read GetActive;
     //Lock the server listener when execute the command
+    property Respond: TwebRespond read GetRespond;
   end;
+
+  //*
 
   TmodCommandClass = class of TmodCommand;
 
@@ -837,6 +838,8 @@ function StartsSubPath(const SubKey, Path: string): Boolean;
 
 function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
+
+function HashWebSocketKey(const key: string): string;
 
 const
   ProtocolVersion = 'HTTP/1.1'; //* Capital letter
@@ -1728,24 +1731,24 @@ begin
   Result := inherited Add(aItem);
 end;
 
-{ TwebCommand }
+{ TmodCommand }
 
-procedure TwebCommand.Created;
+procedure TmodCommand.Created;
 begin
   inherited;
 end;
 
-function TwebCommand.CreateRespond: TmodRespond;
+function TmodCommand.CreateRespond: TmodRespond;
 begin
   Result := TwebRespond.Create(Request);
 end;
 
-procedure TwebCommand.DoPrepareHeader(Sender: TmodCommunicate);
+procedure TmodCommand.DoPrepareHeader(Sender: TmodCommunicate);
 begin
   inherited;
 end;
 
-function TwebCommand.Execute: TmodRespondResult;
+function TmodCommand.Execute: TmodRespondResult;
 begin
   Result.Status := []; //default to be not keep alive, not sure, TODO
   Result.Timout := Request.Use.KeepAliveTimeOut; //not sure, TODO
@@ -1757,16 +1760,168 @@ begin
   end;
 end;
 
-procedure TwebCommand.Prepare(var Result: TmodRespondResult);
+//TODO slow function needs to improvements
+//https://stackoverflow.com/questions/1549213/whats-the-correct-encoding-of-http-get-request-strings
+
+{$ifdef FPC}
+function EncodeBase64(const Buffer; Count: Integer): Utf8String;
+var
+  Outstream : TStringStream;
+  Encoder   : TBase64EncodingStream;
+begin
+  if Count=0 then
+    Exit('');
+  Outstream:=TStringStream.Create('');
+  try
+    Encoder:=TBase64EncodingStream.create(outstream);
+    try
+      Encoder.Write(Buffer, Count);
+    finally
+      Encoder.Free;
+      end;
+    Result:=Outstream.DataString;
+  finally
+    Outstream.free;
+    end;
+end;
+{$endif}
+
+function HashWebSocketKey(const key: string): string;
+var
+{$ifdef FPC}
+  b: TSHA1Digest;
+{$else}
+  b: TBytes;
+{$endif}
+begin
+{$ifdef FPC}
+  b := SHA1String(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
+  Result := EncodeBase64(b, SizeOf(b));
+{$else}
+  b := THashSHA1.GetHashBytes(Utf8String(Key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'));
+  Result := TNetEncoding.Base64String.EncodeBytesToString(b);
+{$endif}
+end;
+
+procedure TmodCommand.Prepare(var Result: TmodRespondResult);
+var
+  aKeepAlive: Boolean;
+  WSHash, WSKey: string;
+  SendHostHeader: Boolean;
+begin
+  if Request.Header.Field['Connection'].Have('Upgrade', [',']) then
+  begin
+    if Request.Use.WebSocket and Request.Header.Field['Upgrade'].Have('WebSocket', [',']) then
+    begin
+      if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
+      begin
+        WSHash := Request.Header['Sec-WebSocket-Key'];
+        SendHostHeader := Request.Header.ReadBool('X-Send-Server-Hostname', True);
+
+        WSKey := HashWebSocketKey(WSHash);
+        Respond.Answer := hrSwitchingProtocols;
+        //Respond.AddHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        Respond.AddHeader('Connection', 'Upgrade');
+        Respond.AddHeader('upgrade', 'websocket');
+        Respond.AddHeader('date: ', FormatHTTPDate(Now));
+        Respond.AddHeader('Sec-Websocket-Accept', WSKey);
+        if Request.Header['Sec-WebSocket-Protocol'] = 'plain' then
+          Respond.AddHeader('Sec-WebSocket-Protocol', 'plain');
+        Respond.SendHeader;
+
+        Respond.KeepAlive := True;
+        Request.ProtcolClass := TmnWebSocket13StreamProxy;
+        Request.ProtcolProxy := Request.ProtcolClass.Create;
+        Request.ConnectionType := ctWebSocket;
+        Result.Status := Result.Status + [mrKeepAlive];
+        Request.Stream.AddProxy(Request.ProtcolProxy);
+
+        if SendHostHeader then
+          Respond.Stream.WriteUTF8String('Request served by miniWebModule');
+        //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
+      end;
+    end;
+  end;
+
+  if not Respond.IsHeaderSent and Request.KeepAlive then //not WebSocket
+  begin
+    Respond.KeepAlive := True;
+    Respond.AddHeader('Connection', 'Keep-Alive');
+    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Use.KeepAliveTimeOut div 1000) + ', max=100');
+  end;
+
+  if Request.ConnectionType = ctWebSocket then
+  begin
+    Request.CompressProxy.Disable;
+  end
+  else
+  begin
+    if Request.Header.Field['Content-type'].Have('multipart/form-data', [';']) then
+    begin
+      Request.ConnectionType := ctFormData;
+    end;
+    {if not Respond.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
+    begin
+      if Request.CompressProxy <> nil then
+        Respond.AddHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
+    end;}
+
+    //Compressing
+    {if not Respond.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then
+    begin
+      if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
+        CompressClass := TmnGzipStreamProxy
+      else if Request.Header.Field['Accept-Encoding'].Have('deflate', [',']) then
+        CompressClass := TmnDeflateStreamProxy
+      else
+        CompressClass := nil;
+      if CompressClass <> nil then
+        Respond.AddHeader('Content-Encoding', CompressClass.GetCompressName);
+    end;}
+  end;
+end;
+
+procedure TmodCommand.RespondResult(var Result: TmodRespondResult);
 begin
 end;
 
-procedure TwebCommand.RespondResult(var Result: TmodRespondResult);
+procedure TmodCommand.Unprepare(var Result: TmodRespondResult);
+var
+  aParams: TmnParams;
 begin
-end;
+  inherited;
+  if Request.ConnectionType = ctWebSocket then
+  begin
+  end
+  else
+  begin
+    // If no content length that mean we cant continue as keep alive, content length is recomended to keep the stream
+    if not Respond.Header.Exists['Content-Length'] then //TODO see it Zaher,Belal
+      Respond.KeepAlive := False;
 
-procedure TwebCommand.Unprepare(var Result: TmodRespondResult);
-begin
+    if Respond.KeepAlive then
+    begin
+      if Request.Header.IsExists('Keep-Alive') then //idk if really sent from client
+      begin
+        aParams := TmnParams.Create;
+        try
+          //Keep-Alive: timeout=5, max=1000
+          aParams.Separator := '=';
+          aParams.Delimiter := ',';
+          aParams.AsString := Request.Header['Keep-Alive'];
+          Result.Timout := aParams['timeout'].AsInteger;
+        finally
+          aParams.Free;
+        end;
+      end
+      else
+        Result.Timout := Request.Use.KeepAliveTimeOut;
+
+      Result.Status := Result.Status + [mrKeepAlive];
+    end;
+
+    Request.CompressProxy.Disable;
+  end;
 end;
 
 { TmodCommand }
@@ -1781,14 +1936,14 @@ begin
   Result := TwebRequest.Create(Self, AStream);
 end;
 
-function TmodCommand.CreateRespond: TmodRespond;
-begin
-  Result := TwebRespond.Create(Request);
-end;
-
 function TmodCommand.GetActive: Boolean;
 begin
   Result := (Module <> nil) and (Module.Active);
+end;
+
+function TmodCommand.GetRespond: TwebRespond;
+begin
+
 end;
 
 procedure TmodCommand.SetModule(const Value: TmodModule);
