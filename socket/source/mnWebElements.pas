@@ -4987,7 +4987,7 @@ begin
     aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA); //* remove extension
     {$endif}
     try
-      AResponse.SendStream(aStream, aStream.Size, FileName, AContext.Schema.App.InstanceDate, AContext.Stamp);
+      AResponse.SendStream(aStream, aStream.Size, FileName, AContext.Schema.App.InstanceDate);
     finally
       aStream.Free;
     end;
@@ -5016,7 +5016,7 @@ end;
 procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
-  AResponse.SendStream(Data, Data.Size, FileName, FileDate, AContext.Stamp);
+  AResponse.SendStream(Data, Data.Size, FileName, FileDate);
 end;
 
 procedure TmnwSchema.TMemory.Created;

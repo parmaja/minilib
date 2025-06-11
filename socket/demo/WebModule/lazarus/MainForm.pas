@@ -74,6 +74,7 @@ type
     HttpServer: TmodWebServer;
     FMax:Integer;
     WebServers: TWebServers;
+    LogMessages: Boolean;
     procedure Start;
     procedure UpdateStatus;
 
@@ -282,7 +283,7 @@ begin
   ChallengeServer.AddRedirectHttps;
 
   ChallengeServer.OnLog := ServerLog;
-  ChallengeServer.Logging := GetOption('log');
+  ChallengeServer.Logging := LogMessages;
   ChallengeServer.OnBeforeOpen := ChallengeServerBeforeOpen;
   WebServers.AddServer('ChallengeServer', ChallengeServer);
 
@@ -292,7 +293,7 @@ begin
   HttpServer.OnAfterClose := HttpServerAfterClose;
   HttpServer.OnChanged :=  HttpServerChanged;
   HttpServer.OnLog := ServerLog;
-  HttpServer.Logging := GetOption('log');
+  HttpServer.Logging := LogMessages;
 
   WebServers.AddServer('HttpServer', HttpServer);
 
@@ -312,6 +313,7 @@ begin
     PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), Application.Location));
     AutoRunChk.Checked := StrToBoolDef(GetSwitch('autorun', ''), False);
     StayOnTopChk.Checked := StrToBoolDef(GetSwitch('ontop', ''), False);
+    LogMessages := GetOption('log');
   finally
     aIni.Free;
   end;
