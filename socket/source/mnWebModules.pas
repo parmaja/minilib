@@ -202,8 +202,6 @@ type
   { TmodHttpGetPostCommand }
 
   TwebGetPostCommand = class(TwebFileCommand)
-  protected
-    procedure RespondDocument(const vDocument: string; var Result: TmodRespondResult); virtual;
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
   end;
@@ -515,12 +513,6 @@ begin
     Result := 0;
 end;}
 
-
-procedure TwebGetPostCommand.RespondDocument(const vDocument: string; var Result: TmodRespondResult);
-begin
-  Respond.SendFile(vDocument);
-end;
-
 procedure TwebGetPostCommand.RespondResult(var Result: TmodRespondResult);
 var
   aDocument, aHomePath: string;
@@ -538,17 +530,6 @@ begin
   '/web/dashbord/index.html' file
 
 *)
-
-  {$ifdef DEBUG}
-  //if (Request.Path='') and (Request.URI = '/favicon.ico') then
-  if (Request.URI = '/favicon.ico') then
-  begin
-    RespondDocument('favicon.ico', Result);
-    if Respond.Answer<>hrOK then
-      Respond.SendHeader;
-    Exit;
-  end;
-  {$endif}
 
   aHomePath := ExcludePathDelimiter(Respond.HomePath);
 
@@ -620,7 +601,7 @@ begin
       until (aPath='') or SameText(aPath, aHomePath);
     end;}
 
-    RespondDocument(aDocument, Result);
+    Respond.SendFile(aDocument);
   end;
   inherited;
 end;

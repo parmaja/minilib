@@ -410,11 +410,11 @@ type
 
     function SendUTF8String(const s: UTF8String): Boolean; overload;
     function SendString(const s: string): Boolean; overload;
-    function SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; const AFileStamp: string = ''; FileDispositions: TmodFileDispositions = []): Boolean; overload;
+    function SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; FileDispositions: TmodFileDispositions = []): Boolean; overload;
     function SendStream(s: TStream; ASize: Int64): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64): Boolean; overload;
 
-    function SendFile(AFileName: string; const AFileStamp: string = ''; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean;
+    function SendFile(const AFileName: string; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean; overload;
 
     function ReceiveStream(s: TStream): Int64; overload;
     function ReceiveStream(s: ImnStreamPersist; Count: Int64): Int64; overload;
@@ -1225,7 +1225,7 @@ begin
     Result := Result + '-' + Size.ToString;
 end;
 
-function TmodRespond.SendFile(AFileName: string; const AFileStamp: string; Alias: string; FileDispositions: TmodFileDispositions): Boolean;
+function TmodRespond.SendFile(const AFileName: string; Alias: string; FileDispositions: TmodFileDispositions): Boolean;
 var
   aStream: TStream;
   aSize: Int64;
@@ -1240,8 +1240,9 @@ begin
   FileAge(AFileName, aFileDate);
   aSize := GetSizeOfFile(AFileName);
 
+
   //By default, web browsers and proxies do not cache content when accessed via an IP address
-  if not DevelopperMode and not (fdResend in FileDispositions) and (AFileStamp <> '') and (AFileStamp = FileStamp(aFileDate, aSize)) then
+  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = FileStamp(aFileDate, aSize)) then
   begin
     Answer := hrNotModified;
     exit(False);
@@ -1254,7 +1255,7 @@ begin
 
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
   try
-    Result := SendStream(aStream, aSize, Alias, aFileDate, '', FileDispositions);
+    Result := SendStream(aStream, aSize, Alias, aFileDate, FileDispositions);
   finally
     aStream.Free;
   end;
@@ -1284,14 +1285,14 @@ begin
   {$endif}
 end;
 
-function TmodRespond.SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; const AFileStamp: string; FileDispositions: TmodFileDispositions): Boolean;
+function TmodRespond.SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; FileDispositions: TmodFileDispositions): Boolean;
 var
   aMIMEItem: TmnMIMEItem;
   aDisposition, aStamp: string;
 begin
   aStamp := FileStamp(AFileDate, ASize);
 
-  if not DevelopperMode and not (fdResend in FileDispositions) and (AFileStamp <> '') and (AFileStamp = aStamp) then
+  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = aStamp) then
   begin
     Answer := hrNotModified;
     exit(False);
@@ -1299,7 +1300,7 @@ begin
 
   Stamp := aStamp;
 
-  Header['Cache-Control']  := 'public, max-age=600';
+  Header['Cache-Control']  := 'public, max-age=3600, must-revalidate'; //86400 = 24*60*60 = 1 day
   if AFileDate > 0 then
     Header['Last-Modified']  := FormatHTTPDate(AFileDate);
 
@@ -1755,6 +1756,9 @@ begin
   Prepare(Result);
   try
     RespondResult(Result);
+
+    if not Respond.IsHeaderSent and (Respond.Answer<>hrNone) then
+      Respond.SendHeader;
   finally
     Unprepare(Result);
   end;
@@ -1943,7 +1947,7 @@ end;
 
 function TwebCommand.GetRespond: TwebRespond;
 begin
-
+  Result := inherited Respond as TwebRespond;
 end;
 
 procedure TwebCommand.SetModule(const Value: TmodModule);

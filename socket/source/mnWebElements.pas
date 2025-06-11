@@ -3007,9 +3007,6 @@ begin
           AResponse.ContentType := 'text/html';
           AResponse.SendUTF8String('404 Not Found');
         end;
-
-        if not (AResponse.IsHeaderSent) and (AResponse.Answer > hrNone) then
-          AResponse.SendHeader;
       end;
     end
     else
@@ -3563,7 +3560,7 @@ begin
   Context.Writer.OpenTag('head');
   Context.Writer.AddTag('title', '', e.Title);
   //Context.Writer.AddShortTag('link', 'rel="shortcut icon" href="#"');
-  Context.Writer.AddShortTag('link', 'rel="icon" href="data:,"');
+  Context.Writer.AddShortTag('link', 'rel="icon" href="data:,"'); //disable call favicon.ico
   Context.Writer.AddShortTag('meta', 'charset="UTF-8"');
   Context.Writer.AddShortTag('meta', 'name="viewport" content="width=device-width, initial-scale=1"');
   if e.Parent <> nil then // Only root have head
