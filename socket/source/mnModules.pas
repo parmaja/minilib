@@ -844,6 +844,7 @@ function HashWebSocketKey(const key: string): string;
 const
   ProtocolVersion = 'HTTP/1.1'; //* Capital letter
   sUserAgent = 'miniWebModule/1.1';
+  sMiniLibServer = 'minilib.server/v1';
 
 var
   DevelopperMode:Boolean = False;
@@ -3041,6 +3042,8 @@ end;
 procedure TwebRespond.DoPrepareHeader;
 begin
   inherited;
+  PutHeader('server', sMiniLibServer);
+
   if (ContentLength > 0) {and (smRespondCompressing in Mode)} then //if we use proxies we cant send content length
     PutHeader('Content-Length', IntToStr(ContentLength));
 

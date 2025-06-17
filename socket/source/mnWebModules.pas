@@ -82,10 +82,12 @@ type
   TmodWebModule = class abstract(TmodModule)
   private
     FHomePath: string;
+    FOrigins: TStrings;
     FWorkPath: string;
 
     //FSmartURL: Boolean;
     procedure SetHomePath(AValue: string);
+    procedure SetOrigins(AValue: TStrings);
   protected
     procedure Created; override;
     procedure Started; override;
@@ -104,6 +106,7 @@ type
     Domain: string; //localhost
     Port: string;
 
+    property Origins: TStrings read FOrigins write SetOrigins;
     //Public Path
     property HomePath: string read FHomePath write SetHomePath;
     //Private Path
@@ -355,6 +358,12 @@ begin
   FHomePath := AValue;
 end;
 
+procedure TmodWebModule.SetOrigins(AValue: TStrings);
+begin
+  if FOrigins=AValue then Exit;
+  FOrigins.Assign(AValue);
+end;
+
 procedure TmodWebModule.Created;
 begin
   inherited;
@@ -362,6 +371,7 @@ begin
   UseCompressing := ovNo;
   UseWebSocket := True;
   FHomePath := '';
+  FOrigins := TStringList.Create;
 end;
 
 procedure TmodWebModule.Started;
@@ -395,7 +405,8 @@ end;
 
 destructor TmodWebModule.Destroy;
 begin
-  inherited Destroy;
+  FreeAndNil(FOrigins);
+  inherited;
 end;
 
 procedure TmodWebModule.Log(S: string);
@@ -864,15 +875,18 @@ end;
 procedure TwebOptionCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
+
   Respond.Answer := hrOK;
-  Respond.PutHeader('Allow', 'OPTIONS, GET, HEAD, POST');
-  //PutHeader('Access-Control-Allow-Origin', 'origin');
+  Respond.PutHeader('server', sMiniLibServer);
+  Respond.PutHeader('Allow', 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS');
 //  PutHeader('Access-Control-Allow-Headers', 'Origin, Accept, Accept-  Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Response-Time, X-PINGOTHER, X-CSRF-Token,Authorization');
 //  PutHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  Respond.PutHeader('server', 'cserp.web.service/v1');
-  Respond.PutHeader('Access-Control-Allow-Origin', '*');
-  Respond.PutHeader('Access-Control-Allow-Method', 'POST');
-  Respond.PutHeader('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type');
+  Respond.PutHeader('Access-Control-Allow-Method', 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS');
+  Respond.PutHeader('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type, Authorization, Accept, Origin');
+  if (Module.Origins.Count = 0) then
+    Respond.PutHeader('Access-Control-Allow-Origin', '*')
+  else
+    Respond.PutHeader('Access-Control-Allow-Origin', Module.Origins.CommaText);
 end;
 
 { ThttpModules }

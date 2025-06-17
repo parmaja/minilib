@@ -234,6 +234,8 @@ function ExpandFile(const Name: string): string;
 }
 function ExpandToPath(FileName: string; Path: string; Root: string = ''): string;
 
+function CorrectPath(const Path: string): string;
+
 //TODO pascal
 //function EscapeStringPas(const S: string): string;
 //function DescapeStringPas(const S: string): string;
@@ -255,8 +257,6 @@ function EndsDelimiter(const vFileName: string): Boolean;
 
 function EncloseStr(const S, Left, Right: string): string;
 function UncloseStr(const S, Left, Right: string): string;
-
-function CorrectPath(const Path: string): string;
 
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});

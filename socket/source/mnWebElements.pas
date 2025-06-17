@@ -409,7 +409,7 @@ type
     procedure Execute;
     procedure DoChanged; virtual;
     procedure Changed;
-    procedure Prepare;
+    procedure Prepare; virtual;
 
     procedure SendMessage(AttachmentName:string; AMessage: string); overload;
     procedure SendInteractive(AMessage: string); overload;
@@ -814,6 +814,7 @@ type
     procedure Created; override;
     procedure ClearSchemas;
   public
+    Started: Boolean;
     InstanceUID: TGUID;
     InstanceDate: TDateTime;
     IsSSL: Boolean;
@@ -1842,6 +1843,7 @@ type
   private
   protected
     FLogo: THTML.TMemory;
+
     procedure DoPrepare; override;
     procedure DoCompose; override;
     procedure Created; override;
@@ -1850,7 +1852,7 @@ type
     destructor Destroy; override;
     class function GetCapabilities: TmnwSchemaCapabilities; override;
     property Logo: THTML.TMemory read FLogo;
-
+    procedure Prepare; override;
   end;
 
   { TUIWebModule }
@@ -2758,15 +2760,22 @@ begin
 end;
 
 procedure TmnwApp.Start;
+var
+  item: TmnwSchema;
 begin
   FShutdown := False;
-  FAssets.Prepare;
+  for item in Self do
+  begin
+    item.Prepare;
+  end;
+  Started := True;
 end;
 
 procedure TmnwApp.Stop;
 begin
   FShutdown := True;
   ClearSchemas;
+  Started := False;
 end;
 
 function TmnwApp.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass): TmnwSchema;
@@ -2811,6 +2820,8 @@ begin
   begin
     Result := CreateSchema(SchemaItem.SchemaClass, SchemaItem.Name, Fallback);
     SchemaCreated(Result);
+    if Started then
+      Result.Prepare;
     //Add(SchemaObject); no, when compose it we add it
   end
   else
@@ -3102,8 +3113,6 @@ end;
 
 procedure TmnwApp.SchemaCreated(Schema: TmnwSchema);
 begin
-  if Schema.HomePath = '' then
-    Schema.HomePath := HomePath;
 end;
 
 procedure TmnwApp.Created;
@@ -6069,6 +6078,13 @@ end;
 class function TAssetsSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
   Result := inherited + [schemaStartup, schemaPermanent];
+end;
+
+procedure TAssetsSchema.Prepare;
+begin
+  inherited;
+  if HomePath = '' then
+    HomePath := App.HomePath;
 end;
 
 destructor TAssetsSchema.Destroy;
