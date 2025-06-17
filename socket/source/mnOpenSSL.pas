@@ -1096,7 +1096,8 @@ begin
 end;
 
 procedure TContext.LoadSysStore(Name: utf8string);
-{$ifdef MSWINDOWS}{$ifdef FPC}
+{$ifdef MSWINDOWS}
+{$ifdef FPC}
   function GetCertName(CertContext: PCCERT_CONTEXT): string;
   var
     NameLen: DWORD;
@@ -1161,7 +1162,12 @@ end;
 begin
   raise EmnOpenSSLException.CreateLastError('Not implemented yet');
 end;
-{$endif}{$endif}
+{$endif}
+{$else}
+begin
+  raise EmnOpenSSLException.CreateLastError('Not implemented yet');
+end;
+{$endif}
 
 {procedure TContext.LoadPrivateKeyFile(PrivateFile: utf8string);
 begin
