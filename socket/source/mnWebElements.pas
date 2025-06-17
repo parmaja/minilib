@@ -626,11 +626,13 @@ type
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
     function NewHandle: THandle;
 
+    function GetHomePath: string;
     //* Attaching cap
     //function Interactive: Boolean;
 
     function Accept(const AContext: TmnwContext): Boolean;
     procedure Compose; override;
+    procedure Prepare; override;
 
     // Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
     procedure Attach(Route: string; Sender: TObject; AStream: TmnBufferStream); // in connection thread
@@ -4122,7 +4124,7 @@ end;
 procedure TmnwSchema.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   if serveAllow in ServeFiles then
-    ServeFile(When(HomePath, App.FHomePath), ServeFiles, DefaultDocuments, AContext, AResponse)
+    ServeFile(GetHomePath, ServeFiles, DefaultDocuments, AContext, AResponse)
   else
     Render(AContext, AResponse);
 end;
@@ -4211,6 +4213,13 @@ begin
   AddState([estComposed]);
 end;
 
+procedure TmnwSchema.Prepare;
+begin
+  if (HomePath = '') then
+    HomePath := App.HomePath;
+  inherited;
+end;
+
 function TmnwSchema.GetReleased: Boolean;
 begin
   Result := (FPhase = scmpReleased) or (schemaDynamic in GetCapabilities);
@@ -4225,6 +4234,14 @@ function TmnwSchema.NewHandle: THandle;
 begin
   AtomicIncrement(FNamingLastNumber);
   Result := FNamingLastNumber;
+end;
+
+function TmnwSchema.GetHomePath: string;
+begin
+  if HomePath = '' then
+    Result := App.HomePath
+  else
+    Result := HomePath;
 end;
 
 procedure TmnwSchema.UpdateAttached;
@@ -5067,7 +5084,7 @@ end;
 procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
-  ServeFile(HomePath, [serveDefault], nil, AContext, AResponse);
+  ServeFile(Schema.GetHomePath, [serveDefault], nil, AContext, AResponse);
 end;
 
 function THTML.TAssets.GetContentType(Route: string): string;
@@ -6050,10 +6067,10 @@ begin
   minilib := GetEnvironmentVariable('minilib');
   if minilib = '' then
   begin
-    if FileExists(HomePath + 'mnWebElements.js') then
+    if FileExists(GetHomePath + 'mnWebElements.js') then
     begin
-      TFile.Create(This, [], HomePath + 'mnWebElements.js', 'WebElements.js');
-      TFile.Create(This, [], HomePath + 'mnWebElements.css', 'WebElements.css');
+      TFile.Create(This, [], GetHomePath + 'mnWebElements.js', 'WebElements.js');
+      TFile.Create(This, [], GetHomePath + 'mnWebElements.css', 'WebElements.css');
     end
     else
     begin
@@ -6083,8 +6100,6 @@ end;
 procedure TAssetsSchema.Prepare;
 begin
   inherited;
-  if HomePath = '' then
-    HomePath := App.HomePath;
 end;
 
 destructor TAssetsSchema.Destroy;
@@ -6130,7 +6145,7 @@ begin
   if WebApp.Alias = '' then
     WebApp.Alias := AliasName;
 
-  WebApp.Assets.HomePath := WebApp.HomePath;
+  //WebApp.Assets.HomePath := WebApp.HomePath;
 
   WebApp.Start;
 end;

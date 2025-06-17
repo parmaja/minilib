@@ -271,7 +271,7 @@ begin
           begin
             Name := 'logo';
             Route := 'logo';
-            LoadFromFile(IncludePathDelimiter(Schema.HomePath) + 'logo.png');
+            LoadFromFile(IncludePathDelimiter(Schema.GetHomePath) + 'logo.png');
           end;
 
 {          with TImage.Create(This) do
