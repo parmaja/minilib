@@ -135,7 +135,8 @@ end;
 
 procedure InstallFileLog(FileName: string; LogLevel: TLogLevel);
 begin
-  Log.Install(LogLevel, TFileLog.Create(FileName));
+  if FileName<>'' then
+    Log.Install(LogLevel, TFileLog.Create(FileName));
 end;
 
 procedure InstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel);
