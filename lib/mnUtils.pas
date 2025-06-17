@@ -118,6 +118,7 @@ procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> =
   -w=value
 }
 
+function GetArgumentCommand(Strings: TStrings; out CommandName: string): Boolean; overload;
 //SwitchName: Use switch char too, like `-demon`
 function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
 function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
@@ -1154,6 +1155,24 @@ begin
 
   if Name <> '' then
     CallBackProc(Sender, c, Name, Value, StartsText('-', Name), Resume)
+end;
+
+function GetArgumentCommand(Strings: TStrings; out CommandName: string): Boolean; overload;
+var
+  I, P: Integer;
+  S: string;
+begin
+  CommandName := '';
+  for I := 0 to Strings.Count - 1 do
+  begin
+    S := Strings[I];
+    if not StartsText('-', S) then
+    begin
+      CommandName := S;
+      Exit(True);
+    end;
+  end;
+  Result := False;
 end;
 
 procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string>);
