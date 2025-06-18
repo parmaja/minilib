@@ -226,10 +226,17 @@ function ExpandFile(const Name: string): string;
 {
   Useful to make your project path related (Portable)
   FileName:
+          myfile
+          mydir/myfile
           ./myfile
           ../myfile
+
           /myfile
           \myfile
+          \\...\myfile
+
+          c:\temp\myfile
+          /mydir/myfile
   Path:
   Root: is optional, added before Path
 }
@@ -1334,21 +1341,27 @@ end;
 
 function ExpandToPath(FileName: string; Path: string; Root: string): string;
 begin
-  if (FileName <> '') then
-  begin
-    if StartsStr('../', FileName) or StartsStr('..\', FileName) then
-      Result := ExpandFileName(IncludePathDelimiter(Root) + IncludePathDelimiter(Path) + FileName)
-    else if StartsStr('./', FileName) or StartsStr('.\', FileName) then
-      Result := IncludePathDelimiter(Root) + IncludePathDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
-{$ifdef MSWINDOWS}
-    else if StartsDelimiter(FileName) then
-      Result := ExtractFileDrive(Path) + FileName
-{$endif}
-    else
-      Result := FileName;
-  end
+  if (FileName = '') then
+    Exit('');
+
+  if StartsStr('../', FileName) or StartsStr('..\', FileName) then
+    Result := ExpandFileName(IncludePathDelimiter(Root) + IncludePathDelimiter(Path) + FileName)
+  else if StartsStr('./', FileName) or StartsStr('.\', FileName) then
+    Result := IncludePathDelimiter(Root) + IncludePathDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
+  else if StartsStr('\\', FileName) then //windows network
+    Result := FileName
+  else if StartsDelimiter(FileName) then
+    {$ifdef MSWINDOWS}
+    Result := ExtractFileDrive(Path) + FileName
+    {$else}
+    Result := FileName
+    {$endif}
+  {$ifdef MSWINDOWS}
+  else if (Length(FileName)>1) and (FileName[2] = ':') then
+    Result := FileName
+  {$endif}
   else
-    Result := '';
+    Result := ExpandFileName(IncludePathDelimiter(Root) + IncludePathDelimiter(Path) + FileName);
 end;
 
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer): Boolean;
