@@ -146,6 +146,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    function AcceptSocket(Socket: TmnCustomSocket): TmnServerConnection;
     procedure Add(Connection: TmnConnection); override;
     procedure Remove(Connection: TmnConnection); override;
     // Use this function when you are in a thread do not use Server.Log
@@ -527,6 +528,27 @@ end;
 
 { TmnListener }
 
+function TmnListener.AcceptSocket(Socket: TmnCustomSocket): TmnServerConnection;
+begin
+  //check to make this in new thread
+  Result := nil;
+
+  if Socket=nil then
+    raise EmnStreamException.CreateFmt('socket is null', []);
+
+  try
+    Result := CreateConnection(Socket) as TmnServerConnection;
+    Result.FRemoteIP := Socket.GetRemoteAddress;
+    Result.FIsSSL := soSSL in Socket.Options;
+  except
+    on E: Exception do
+    begin
+      Log(E.Message);
+      Result := nil;
+    end;
+  end;
+end;
+
 procedure TmnListener.Add(Connection: TmnConnection);
 begin
   inherited;
@@ -644,8 +666,8 @@ end;
 procedure TmnListener.Execute;
 var
   aSocket: TmnCustomSocket;
-  aConnection: TmnServerConnection;
   s: string;
+  aConnection: TmnServerConnection;
 begin
   inherited;
   try
@@ -705,20 +727,8 @@ begin
           end
           else
           begin
-            //check to make this in new thread
-            aConnection := nil;
-            try
-              aConnection := CreateConnection(aSocket) as TmnServerConnection;
-              aConnection.FRemoteIP := aSocket.GetRemoteAddress;
-              aConnection.FIsSSL := soSSL in aSocket.Options;
-            except
-              on E: Exception do
-              begin
-                Log(E.Message);
-                aConnection := nil;
-              end;
-            end;
-            if aConnection <> nil then
+            aConnection := AcceptSocket(aSocket);
+            if aConnection<>nil then
               aConnection.Start;
           end;
           {w.Stop;
