@@ -677,7 +677,7 @@ type
     procedure Added(Item: TmodModule); override;
   public
     constructor Create(AServer: TmodModuleServer);
-    procedure ParseHead(ARequest: TmodRequest; const RequestLine: String); virtual;
+    procedure ParseHead(ARequest: TmodRequest; const AHead: String); virtual;
     function Match(ARequest: TmodRequest): TmodModule; virtual;
     property DefaultProtocol: String read FDefaultProtocol write FDefaultProtocol;
 
@@ -1536,19 +1536,19 @@ end;
 
 procedure TmodModuleConnection.Process;
 var
-  aRequestLine: String;
+  aHead: String;
   aRequest: TmodRequest;
   aModule: TmodModule;
   Result: TmodRespondResult;
 begin
   inherited;
   //need support peek :( for check request
-  Stream.ReadUTF8Line(aRequestLine);
-  aRequestLine := TrimRight(aRequestLine); //* TODO do we need UTF8ToString?
-  if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
+  Stream.ReadUTF8Line(aHead);
+  aHead := TrimRight(aHead); //* TODO do we need UTF8ToString?
+  if Connected and (aHead <> '') then //aRequestLine empty when timeout but not disconnected
   begin
 
-    if not ModuleServer.Modules.CheckRequest(aRequestLine) then //check ssl connection on not ssl server need support peek :(
+    if not ModuleServer.Modules.CheckRequest(aHead) then //check ssl connection on not ssl server need support peek :(
     begin
       Stream.Disconnect;
       Exit;
@@ -1556,7 +1556,7 @@ begin
 
     aRequest := ModuleServer.Modules.CreateRequest(Stream);
     try
-      ModuleServer.Modules.ParseHead(aRequest, aRequestLine);
+      ModuleServer.Modules.ParseHead(aRequest, aHead);
       aModule := ModuleServer.Modules.Match(aRequest);
 
       if (aModule = nil) then
@@ -2307,11 +2307,11 @@ begin
   Result := TmodRequest.Create(nil, Astream);
 end;
 
-procedure TmodModules.ParseHead(ARequest: TmodRequest; const RequestLine: String);
+procedure TmodModules.ParseHead(ARequest: TmodRequest; const AHead: String);
 begin
   ARequest.Clear;
-  ARequest.Raw := RequestLine;
-  ParseRaw(RequestLine, ARequest.Info.Method, ARequest.Info.Protocol, ARequest.Info.URI);
+  ARequest.Raw := AHead;
+  ParseRaw(AHead, ARequest.Info.Method, ARequest.Info.Protocol, ARequest.Info.URI);
   ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Query);
 
   //zaher: @zaher,belal, I dont like it
@@ -2329,7 +2329,6 @@ begin
     else
       StrToStrings(ARequest.Address, ARequest.Route, ['/']);
   end;}
-
 end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;

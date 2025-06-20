@@ -118,14 +118,17 @@ procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> =
   -w=value
 }
 
+//Command is not have value not a switch, it not started with - and not ended with : or =
 function GetArgumentCommand(Strings: TStrings; out CommandName: string; out Index: Integer): Boolean; overload;
 //SwitchName: Use switch char too, like `-demon`
-function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
+//Switch started with - or -- notice -- with considered as - too
 function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
+//Value from name or switch both acceptable, --name:value or name:value
+function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
 
-//Get Param (non switch value by index)
+//Get Value from any thing have value by index `name1=value --name2=value`
 function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean; overload;
-
+//Get all values
 function GetArgument(Strings: TStrings; OutStrings: TStrings; AltSwitch: string = ''): Boolean; overload;
 function GetArgument(Strings: TStrings; out OutStrings: TArray<String>): Boolean; overload;
 
@@ -1192,7 +1195,7 @@ end;
 function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitchName: string = ''): Boolean;
 var
   I, P: Integer;
-  S: string;
+  S, Name: string;
 begin
   if StartsText('--', SwitchName) then
     SwitchName := Copy(SwitchName, 2, MaxInt);
@@ -1206,12 +1209,12 @@ begin
     P := Pos(Strings.NameValueSeparator, S);
     if (P <> 0) then
     begin
-      if (SameText(Copy(S, 1, P - 1), SwitchName))
-        or ((AltSwitchName <> '') and (SameText(Copy(S, 1, P - 1), AltSwitchName))) then
-        begin
-          Value := Copy(S, p + 1, MaxInt);
-          Exit(True);
-        end;
+      Name := Copy(S, 1, P - 1);
+      if (SameText(Name, SwitchName)) or ((AltSwitchName <> '') and (SameText(Name, AltSwitchName))) then
+      begin
+        Value := Copy(S, p + 1, MaxInt);
+        Exit(True);
+      end;
     end;
   end;
 end;
@@ -1243,7 +1246,7 @@ end;
 function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean;
 var
   I, P: Integer;
-  S: string;
+  S, Name: string;
 begin
   Result := False;
   Value := '';
@@ -1253,7 +1256,8 @@ begin
     P := Pos(Strings.NameValueSeparator, S);
     if (P <> 0) then
     begin
-      if (Copy(S, 1, P - 1) = '') then
+      Name := Copy(S, 1, P - 1);
+      if (Name = '') then
       begin
         if Index = 0 then
         begin

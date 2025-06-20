@@ -436,6 +436,7 @@ type
     function WaitToRead: Boolean; overload;
     function WaitToWrite: Boolean; overload;
     function Seek(Offset: Longint; Origin: Word): Longint; override;
+    function Peek(var Buffer; var Count: Longint): Boolean; virtual;
 
     property ReadTimeout: Integer read FReadTimeout write FReadTimeout;
     property WriteTimeout: Integer read FWriteTimeout write FWriteTimeout;
@@ -768,6 +769,12 @@ end;
 destructor TmnConnectionStream.Destroy;
 begin
   inherited;
+end;
+
+function TmnConnectionStream.Peek(var Buffer; var Count: Longint): Boolean;
+begin
+  Result := False;
+  Count := 0;
 end;
 
 procedure TmnConnectionStream.Prepare;

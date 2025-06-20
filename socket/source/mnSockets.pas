@@ -193,6 +193,8 @@ type
     procedure Disconnect; override;
     function WaitToRead(vTimeout: Longint): TmnConnectionError; override; //select
     function WaitToWrite(vTimeout: Longint): TmnConnectionError; override; //select
+    //This will peek raw data not OpenSSL data
+    function Peek(var Buffer; var Count: Longint): Boolean; override;
     property Socket: TmnCustomSocket read FSocket;
     property Options: TmnsoOptions read FOptions write FOptions;
   end;
@@ -497,10 +499,15 @@ begin
   end;
 end;
 
+function TmnSocketStream.Peek(var Buffer; var Count: Longint): Boolean;
+begin
+  Result := Socket.Peek(Buffer, Count) in [erSuccess, erTimeout];
+end;
+
 procedure TmnSocketStream.Prepare;
 begin
   Socket.Prepare;
-  inherited Prepare;
+  inherited;
 end;
 
 function TmnSocketStream.DoWrite(const Buffer; Count: Longint): Longint;
@@ -666,10 +673,7 @@ begin
   if Socket.SSL.Active then //testing
   begin
     if Socket.SSL.Pending then
-    begin
-      Result := cerSuccess;
-      exit;
-    end;
+      exit(cerSuccess);
   end;
 
   err := Socket.Select(vTimeout, slRead);
