@@ -664,7 +664,6 @@ type
     procedure SetEndOfLine(AValue: String);
   protected
     function CreateRequest(Astream: TmnBufferStream): TmodRequest; virtual;
-    function CheckRequest(const ARequest: string): Boolean; virtual;
     function GetActive: Boolean; virtual;
     procedure Created; override;
     procedure Start; //When server start, init values here
@@ -1543,30 +1542,25 @@ var
 begin
   inherited;
   //need support peek :( for check request
+  //Stream.Peek(BB, 1)
+  //Result := IsSSL or (BB[1]<>#$16);
+  //EXIT
+
   Stream.ReadUTF8Line(aHead);
   aHead := TrimRight(aHead); //* TODO do we need UTF8ToString?
   if Connected and (aHead <> '') then //aRequestLine empty when timeout but not disconnected
   begin
-
-    if not ModuleServer.Modules.CheckRequest(aHead) then //check ssl connection on not ssl server need support peek :(
-    begin
-      Stream.Disconnect;
-      Exit;
-    end;
-
     aRequest := ModuleServer.Modules.CreateRequest(Stream);
     try
       ModuleServer.Modules.ParseHead(aRequest, aHead);
       aModule := ModuleServer.Modules.Match(aRequest);
 
+      aRequest.Client := RemoteIP;
+      aRequest.IsSSL := IsSSL;
       if (aModule = nil) then
-      begin
-        Stream.Disconnect; //if failed
-      end
+        Stream.Disconnect //if failed, or no fallback module
       else
         try
-          aRequest.Client := RemoteIP;
-          aRequest.IsSSL := IsSSL;
           Result := aModule.Execute(aRequest);
         finally
           if Stream.Connected then
@@ -2278,11 +2272,6 @@ end;
 procedure TmodModules.Log(S: String);
 begin
   Server.Listener.Log(S);
-end;
-
-function TmodModules.CheckRequest(const ARequest: string): Boolean;
-begin
-  Result := True;
 end;
 
 function TmodModules.Compare(Left: TmodModule; Right: TmodModule): Integer;

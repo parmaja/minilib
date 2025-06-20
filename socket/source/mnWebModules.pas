@@ -152,7 +152,6 @@ type
   TmodWebModules = class(TmodModules)
   protected
     function CreateRequest(Astream: TmnBufferStream): TmodRequest; override;
-    function CheckRequest(const ARequest: string): Boolean; override;
   public
     procedure ParseHead(ARequest: TmodRequest; const RequestLine: string); override;
   end;
@@ -889,21 +888,10 @@ begin
     Respond.PutHeader('Access-Control-Allow-Origin', Module.Origins.CommaText);
 end;
 
-{ ThttpModules }
-
-function TmodWebModules.CheckRequest(const ARequest: string): Boolean;
-begin
-  Result := Server.UseSSL or (ARequest[1]<>#$16);
-end;
-
-{ TmodHttpRequest }
-
 function TmodWebModules.CreateRequest(Astream: TmnBufferStream): TmodRequest;
 begin
   Result := TwebRequest.Create(nil, Astream);
 end;
-
-{ TmodHttpRequest }
 
 initialization
   modLock := TCriticalSection.Create;
