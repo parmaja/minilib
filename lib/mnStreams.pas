@@ -436,6 +436,7 @@ type
     function WaitToRead: Boolean; overload;
     function WaitToWrite: Boolean; overload;
     function Seek(Offset: Longint; Origin: Word): Longint; override;
+    //Peek is not SSL data
     function Peek(var Buffer; var Count: Longint): Boolean; virtual;
 
     property ReadTimeout: Integer read FReadTimeout write FReadTimeout;

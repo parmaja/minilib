@@ -426,6 +426,7 @@ type
 
   TmodeResult = (
     mrSuccess,
+    mrError,
     mrKeepAlive //keep the stream connection alive, not the command
     );
 
@@ -621,6 +622,7 @@ type
     procedure Init; virtual;
     procedure Idle; virtual;
     procedure InternalError(ARequest: TmodRequest; var Handled: Boolean); virtual;
+    function InternalExecute(ARequest: TmodRequest): TmodRespondResult; virtual;
   public
     //Default fallback module should have no alias name
     //Protocols all should lowercase
@@ -629,7 +631,7 @@ type
     function RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean = False): Integer; overload;
 
     //* Run in Connection Thread
-    function Execute(ARequest: TmodRequest): TmodRespondResult;
+    function Execute(ARequest: TmodRequest): TmodRespondResult; virtual;
 
     property Commands: TmodCommandClasses read FCommands;
     property Active: Boolean read GetActive;
@@ -2001,7 +2003,11 @@ end;
 
 procedure TmodModule.InternalError(ARequest: TmodRequest; var Handled: Boolean);
 begin
+end;
 
+function TmodModule.InternalExecute(ARequest: TmodRequest): TmodRespondResult;
+begin
+  Result.Status := [mrError];
 end;
 
 procedure TmodModule.ReceiveHeader(ARequest: TmodRequest);
@@ -2125,11 +2131,15 @@ begin
   end
   else
   begin
-    aHandled := False;
-    InternalError(ARequest, aHandled);
+    Result := InternalExecute(ARequest);
+    if mrError in Result.Status then
+    begin
+      aHandled := False;
+      InternalError(ARequest, aHandled);
 
-    if not aHandled then
-      raise TmodModuleException.Create('Can not find command or fallback command: ' + ARequest.Command);
+      if not aHandled then
+        raise TmodModuleException.Create('Can not find command or fallback command: ' + ARequest.Command);
+    end;
   end;
 end;
 
@@ -2310,6 +2320,8 @@ begin
     ARequest.Path := ARequest.Address;
 
   StrToStrings(ARequest.Path, ARequest.Route, ['/']);
+
+  //ARequest.Command := ARequest.Method;
 
 {  if (ARequest.Address<>'') and (ARequest.Address<>'/') then
   begin
