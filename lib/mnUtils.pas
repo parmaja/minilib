@@ -153,8 +153,10 @@ procedure SpliteStr(S, Separator: string; var Name:string; var Value: string); i
 
 function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
-function StrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Boolean; overload;
-function StrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean = False): Boolean; overload;
+function StrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Integer; overload;
+function IsStrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Boolean; overload;
+function StrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean = False): Integer; overload;
+function IsStrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean = False): Boolean; overload;
 function CharInArray(const C: Char; const ArrayOfChar : array of Char; CaseInsensitive: Boolean = False) : Boolean;
 function CharArrayToSet(const ArrayOfChar : TArray<Char>) : TSysCharSet;
 
@@ -282,6 +284,9 @@ function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; TimeSeparator: Char = ':'; WithTime: Boolean = False): String; overload;
 function ISODateTimeToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '): String; overload;
 
+function RFC2822ToDateTime(data: string): TDateTime;
+function DateTimeToRFC2822(vDate: TDateTime): string;
+
 function DateTimeToRFC822(vDateTime: TDateTime): string;
 
 function IsAllLowerCase(S: string): Boolean;
@@ -346,6 +351,7 @@ procedure CenterRect(var R1: TRect; R2: TRect);
 
 var
   SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
+  DefFormatSettings : TFormatSettings;
 
 implementation
 
@@ -826,7 +832,7 @@ begin
           begin
             if CharInSet(Content[Cur], Quotes) then
               break
-            else if (StrInArray(Content, Cur, Separators, SepLength)) then
+            else if (IsStrInArray(Content, Cur, Separators, SepLength)) then
             begin
               Cur := Cur + SepLength - 1;
               Inc(MatchCount);
@@ -1137,7 +1143,7 @@ begin
         Name := Copy(Name, 1, Length(Name)-1);
         NextIsValue := True;
       end
-      else if StrInArray(Name, KeyValues) then
+      else if IsStrInArray(Name, KeyValues) then
         NextIsValue := True
       else
       begin
@@ -1715,27 +1721,37 @@ begin
   end;
 end;
 
-function StrInArray(const Str: String; const InArray: array of String; CaseInsensitive: Boolean): Boolean;
+function StrInArray(const Str: String; const InArray: array of String; CaseInsensitive: Boolean): Integer;
 var
  itm : String;
+ i: Integer;
 begin
+  i := 0;
   for itm in InArray do
   begin
     if CaseInsensitive then
     begin
       if SameText(Str, itm) then
-        exit(True);
+        exit(i);
     end
     else if Str = itm then
-       exit(true);
+       exit(i);
+    Inc(i);
   end;
-  Result := False;
+  Result := -1;
 end;
 
-function StrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean): Boolean;
+function IsStrInArray(const Str: String; const InArray: array of String; CaseInsensitive: Boolean): Boolean;
+begin
+  Result := (StrInArray(Str, InArray, CaseInsensitive) >= 0);
+end;
+
+function StrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean): Integer;
 var
  itm : String;
+ i: Integer;
 begin
+  i := 0;
   for itm in InArray do
   begin
     if CaseInsensitive then
@@ -1743,17 +1759,23 @@ begin
       if SameText(MidStr(Str, StartIndex, Length(Itm)), itm) then
       begin
         SepLength := Length(Itm);
-        exit(true);
+        exit(i);
       end;
     end
     else if MidStr(Str, StartIndex, Length(Itm)) = itm then
     begin
       SepLength := Length(Itm);
-      exit(true);
+      exit(i);
     end;
+    Inc(i)
   end;
   SepLength := 0;
-  Result := false;
+  Result := -1;
+end;
+
+function IsStrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean): Boolean;
+begin
+  Result := (StrInArray(Str, StartIndex, InArray, SepLength, CaseInsensitive) >= 0);
 end;
 
 function CharArrayToSet(const ArrayOfChar : TArray<Char>) : TSysCharSet;
@@ -1989,6 +2011,255 @@ var
 begin
   DecodeDate(vDateTime, aYear, aMonth, aDay);
   Result := DayNames[DayOfWeek(vDateTime)] +', ' + IntToStr(aDay) +' ' + MonthNames[aMonth] + ' ' + FormatDateTime('yyyy hh":"nn":"ss', vDateTime) +' ' + '+000';
+end;
+
+
+function RFC2822ToDateTime(data: string): TDateTime;
+  const
+    DayShortNames: array[0..6] of string = ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun');
+
+    MonthShortNames: array[0..11] of string = ('jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul',
+                 'aug', 'sep', 'oct', 'nov', 'dec');
+
+  type
+    TTimezoneEntry = record
+      Name: string;
+      Offset: Integer;
+    end;
+
+  const
+    TimeZones: array[0..13] of TTimezoneEntry = (
+      (Name: 'UT'; Offset: 0),
+      (Name: 'UTC'; Offset: 0),
+      (Name: 'GMT'; Offset: 0),
+      (Name: 'Z'; Offset: 0),
+      (Name: 'AST'; Offset: -400),
+      (Name: 'ADT'; Offset: -300),
+      (Name: 'EST'; Offset: -500),
+      (Name: 'EDT'; Offset: -400),
+      (Name: 'CST'; Offset: -600),
+      (Name: 'CDT'; Offset: -500),
+      (Name: 'MST'; Offset: -700),
+      (Name: 'MDT'; Offset: -600),
+      (Name: 'PST'; Offset: -800),
+      (Name: 'PDT'; Offset: -700)
+    );
+
+  function IndexOfTimeZone(const tzName: string): Integer;
+  var
+    i: Integer;
+  begin
+    for i := Low(TimeZones) to High(TimeZones) do
+      if SameText(tzName, TimeZones[i].Name) then
+        Exit(i);
+    Result := -1;
+  end;
+
+  function Split(const s: string; sep: char): TStringList;
+  begin
+    Result := TStringList.Create;
+    Result.Delimiter := sep;
+    Result.StrictDelimiter := True;
+    Result.DelimitedText := s;
+  end;
+
+var
+  parts: TStringList;
+  i: Integer;
+  dd, mm, yy, thh, tmm, tss: Integer;
+  timeStr, ddStr, mmStr, yyStr, tmpStr,
+  tm, tz, token: string;
+  tzOffset: Integer;
+  tzFound: Boolean;
+  monthIndex: Integer;
+begin
+  Result := 0;
+  data := Trim(data);
+  if data = '' then
+    Exit;
+
+  parts := Split(data, ' ');
+  try
+    if parts.Count = 0 then
+      Exit;
+
+    if (parts[0].EndsWith(',')) or (StrInArray(Copy(parts[0], 1, 3).ToLower, DayShortNames) >= 0) then
+      parts.Delete(0) // There's a dayname here. Skip it
+    else
+    begin
+      i := parts[0].LastIndexOf(',');
+      if i >= 0 then
+        parts[0] := Copy(parts[0], i + 2, MaxInt);
+    end;
+
+    if parts.Count < 3 then
+      exit
+    else if parts.Count = 3 then // RFC 850 date, deprecated
+    begin
+      var dateParts := Split(parts[0], '-');
+      if dateParts.Count = 3 then
+      begin
+        parts.Insert(1, dateParts[1]);
+        parts.Insert(1, dateParts[2]);
+        parts[0] := dateParts[0];
+      end;
+      exit;
+    end
+    else if parts.Count = 4 then
+    begin
+      timeStr := parts[3];
+      i := Pos('+', timeStr);
+      if i = 0 then
+        i := Pos('-', timeStr);
+      if i > 0 then
+      begin
+        parts[3] := Copy(timeStr, 1, i - 1);
+        parts.Add(Copy(timeStr, i, MaxInt));
+      end
+      else
+        parts.Add(''); // dummy tz
+      exit;
+    end;
+
+    ddStr := parts[0];
+    mmStr := Copy(parts[1], 1, 3).ToLower;
+    yyStr := parts[2];
+
+    tm := parts[3];
+    tz := parts[4];
+
+    if (ddStr = '') or (mmStr = '') or (yyStr = '') then
+      Exit;
+
+//    if not TryStrToInt(mmStr, monthIndex) then
+    monthIndex := StrInArray(mmStr, MonthShortNames);
+    if monthIndex < 0 then
+    begin
+      // Swap dd/mm
+      tmpStr := ddStr;
+      ddStr := mmStr;
+      mmStr := tmpStr.ToLower;
+      monthIndex := StrInArray(mmStr, MonthShortNames);
+      if monthIndex < 0 then
+        Exit;
+    end;
+
+    mm := monthIndex + 1;
+
+    if ddStr.EndsWith(',') then
+      Delete(ddStr, Length(ddStr), 1);
+
+    if not TryStrToInt(ddStr, dd) then
+      Exit;
+
+    if Pos(':', yyStr) > 0 then
+    begin
+      // swap yy/tm
+      tmpStr := tm;
+      tm := yyStr;
+      yyStr := tmpStr;
+    end;
+
+    if yyStr.EndsWith(',') then
+    begin
+      Delete(yyStr, Length(yyStr), 1);
+      if yyStr = '' then
+        Exit;
+    end;
+
+    if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not yyStr[1].IsDigit then
+    begin
+      tmpStr := tz;
+      tz := yyStr;
+      yyStr := tmpStr;
+    end;
+
+    if not TryStrToInt(yyStr, yy) then
+      Exit;
+
+    if yy < 100 then
+    begin
+      if yy > 68 then
+        yy := yy + 1900
+      else
+        yy := yy + 2000;
+    end;
+  finally
+    parts.Free;
+  end;
+
+  try
+    if tm.EndsWith(',') then
+      Delete(tm, Length(tm), 1);
+
+    parts := Split(tm, ':');
+    if parts.Count = 2 then
+    begin
+      thh := StrToIntDef(parts[0], -1);
+      tmm := StrToIntDef(parts[1], -1);
+      tss := 0;
+    end
+    else if parts.Count = 3 then
+    begin
+      thh := StrToIntDef(parts[0], -1);
+      tmm := StrToIntDef(parts[1], -1);
+      tss := StrToIntDef(parts[2], -1);
+    end
+    else
+      Exit;
+  finally
+    parts.Free;
+  end;
+
+  if (thh < 0) or (tmm < 0) or (tss < 0) then
+    Exit;
+
+  tzFound := False;
+  tzOffset := 0;
+  if tz <> '' then
+  begin
+    i := IndexOfTimeZone(tz.ToUpper);
+    if i >= 0 then
+    begin
+      tzOffset := TimeZones[i].Offset;
+      tzFound := True;
+    end
+    else if TryStrToInt(tz, tzOffset) then
+    begin
+      if (tzOffset = 0) and tz.StartsWith('-') then
+        tzOffset := 0
+      else
+        tzFound := True;
+    end;
+  end;
+
+  if tzFound then
+  begin
+    var sign := 1;
+    if tzOffset < 0 then
+    begin
+      sign := -1;
+      tzOffset := -tzOffset;
+    end;
+    tzOffset := sign * ((tzOffset div 100) * 3600 + (tzOffset mod 100) * 60);
+  end
+  else
+    tzOffset := 0;
+
+  Result := EncodeDate(yy, mm, dd) + EncodeTime(thh, tmm, tss, 0); //tzOffset
+  Result := IncHour(Result, tzOffset);
+end;
+
+function DateTimeToRFC2822(vDate: TDateTime): string;
+var
+  aDate: TDateTime;
+begin
+  {$ifdef FPC}
+  aDate := NowUTC;
+  {$else}
+  aDate := TTimeZone.Local.ToUniversalTime(vDate);
+  {$endif}
+  Result := FormatDateTime('ddd, dd mmm yyyy hh:nn:ss', aDate, DefFormatSettings) + ' GMT';
 end;
 
 //* thanks to https://stackoverflow.com/a/41726706/585304
@@ -2394,6 +2665,7 @@ begin
 end;
 
 initialization
+  DefFormatSettings := TFormatSettings.Invariant;
   {$ifdef windows}
   SystemAnsiCodePage := GetACP; //windows only
   {$else}
