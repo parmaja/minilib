@@ -92,7 +92,8 @@ type
     hrMovedPermanently,
     hrNotFound,
     hrSwitchingProtocols,
-    hrServiceUnavailable
+    hrServiceUnavailable,
+    hrCustom
   );
 
   TmodAnswerHelper = record helper for TmodAnswer
@@ -176,8 +177,8 @@ type
     FStamp: string;
     //function GetLatch: Boolean;
     //procedure SetLatch(const AValue: Boolean);
-    procedure SetHead(const Value: string);
   protected
+    procedure SetHead(const Value: string); virtual;
     procedure DoWriting(vCount: Longint);
     procedure DoReading(vCount: Longint);
 
@@ -401,6 +402,7 @@ type
     procedure SetAnswer(const Value: TmodAnswer);
   protected
     FRequest: TmodRequest;
+    procedure SetHead(const Value: string); override;
     function GetStream: TmnBufferStream; override;
     procedure InitProtocol; override;
   public
@@ -843,7 +845,7 @@ function ComposeHttpURL(const Protocol, DomainName: string; const Port: string =
 function HashWebSocketKey(const key: string): string;
 
 const
-  ProtocolVersion = 'HTTP/1.1'; //* Capital letter
+  sHTTPProtocol1 = 'HTTP/1.1'; //* Capital letter
   sUserAgent = 'miniWebModule/1.1';
   sMiniLibServer = 'minilib.server/v1';
 
@@ -1006,19 +1008,9 @@ begin
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
-var
-  DefFormatSettings : TFormatSettings;
-
 function FormatHTTPDate(vDate: TDateTime): string;
-var
-  aDate: TDateTime;
 begin
-  {$ifdef FPC}
-  aDate := NowUTC;
-  {$else}
-  aDate := TTimeZone.Local.ToUniversalTime(vDate);
-  {$endif}
-  Result := FormatDateTime('ddd, dd mmm yyyy hh:nn:ss', aDate, DefFormatSettings) + ' GMT';
+  Result := DateTimeToRFC2822(vDate);
 end;
 
 function ExtractDomain(const URI: string): string;
@@ -2094,7 +2086,7 @@ function TmodModule.Match(const ARequest: TmodRequest): Boolean;
 begin
   //Result := SameText(AliasName, ARequest.Module) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
   Result := False;
-  if ((Protocols = nil) or StrInArray(LowerCase(ARequest.Protocol), Protocols)) then
+  if ((Protocols = nil) or IsStrInArray(LowerCase(ARequest.Protocol), Protocols)) then
   begin
     DoMatch(ARequest, Result);
   end;
@@ -2793,7 +2785,7 @@ end;
 
 function TmnRoute.GetRoute(vIndex: Integer): string;
 begin
-  if vIndex<Count then
+  if vIndex < Count then
     Result := Strings[vIndex]
   else
     Result := '';
@@ -2818,6 +2810,7 @@ begin
     hrNotModified: Result := Result + '304 Not Modified';
     hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
     hrServiceUnavailable: Result := Result + '503 Service Unavailable';
+    hrCustom: Result := '';
   end;
 end;
 
@@ -3077,7 +3070,13 @@ begin
   if resHeaderSent in Header.States then
     raise TmodModuleException.Create('Header is already sent');
   FAnswer := Value;
-  Head := Answer.ToString;
+  FHead := Answer.ToString;
+end;
+
+procedure TmodRespond.SetHead(const Value: string);
+begin
+  inherited;
+  FAnswer := hrCustom;
 end;
 
 function TwebRespond.StatusCode: Integer;
@@ -3439,5 +3438,4 @@ begin
 end;
 
 initialization
-  DefFormatSettings := TFormatSettings.Invariant;
 end.
