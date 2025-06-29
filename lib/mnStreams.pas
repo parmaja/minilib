@@ -71,9 +71,13 @@ const
 
   sEndOfLine = #$0A;
 
-  sWinEndOfLine = #$0D#$0A;
-  sUnixEndOfLine = #$0A;
-  sMacEndOfLine = #$0D;
+  sCRLFEndOfLine = #$0D#$0A;
+  sCREndOfLine = #$0D;
+  sLFEndOfLine = #$0A;
+
+  sWinEndOfLine = sCRLFEndOfLine;
+  sUnixEndOfLine = sLFEndOfLine;
+  sMacEndOfLine = sCREndOfLine;
   sGSEndOfLine = #$1E;
 
   {$ifdef MSWINDOWS}

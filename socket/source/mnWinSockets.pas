@@ -84,7 +84,7 @@ var
   t: Longint;
 begin
   Result := 0;
-  if (soNoDelay in Options) and not (soNagle in Options) then
+  if {(soNoDelay in Options) and } not (soNagle in Options) then
   //if not (soNagle in Options) then //TODO
     Result := setsockopt(Handle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
   if soKeepAlive in Options then

@@ -1810,7 +1810,7 @@ function TmnIRCConnection.CreateStream: TIRCSocketStream;
 var
   Options: TmnsoOptions;
 begin
-  Options := [soNoDelay]; //To send messages immediately
+  Options := []; //To send messages immediately
   if Client.UseSSL then
     Options := Options + [soSSL, soWaitBeforeRead]; //soWaitBeforeRead to fix
 

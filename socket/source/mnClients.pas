@@ -39,9 +39,9 @@ type
   protected
     function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
   public
-    constructor Create(const vAddress: string = ''; vPort: string = ''; vOptions: TmnsoOptions = [soNoDelay]); overload;
+    constructor Create(const vAddress: string = ''; vPort: string = ''; vOptions: TmnsoOptions = []); overload;
     //Host can have port separated with :
-    constructor CreateBy(const vHost: string; vDefPort: string; vOptions: TmnsoOptions = [soNoDelay]); overload;
+    constructor CreateBy(const vHost: string; vDefPort: string; vOptions: TmnsoOptions = []); overload;
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
     property BindAddress: string read FBindAddress write SetBindAddress;

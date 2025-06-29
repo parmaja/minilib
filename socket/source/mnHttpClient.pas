@@ -679,7 +679,7 @@ begin
   aStream.Address := vHost;
   aStream.Port := vPort;
 
-  aStream.Options := aStream.Options + [soNoDelay];
+  aStream.Options := aStream.Options;
   if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
     aStream.Options := aStream.Options + [soSSL, soWaitBeforeRead]
   else

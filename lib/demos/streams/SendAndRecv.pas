@@ -127,7 +127,7 @@ type
     Address: UTF8String;
     EndOfLine: UTF8String;
     SocketOptionsStr: UTF8String;
-    NoDelay: Boolean;
+    Nagle: Boolean;
     CancelAfter: Boolean;
     KeepAlive: Boolean;
     WaitBeforeRead: Boolean;
@@ -158,8 +158,8 @@ begin
     Stream.CertificateFile := Application.Location + 'certificate.pem';
     Stream.PrivateKeyFile := Application.Location + 'privatekey.pem';
     Stream.Options := info.SocketOptions;
-    if info.NoDelay then
-      Stream.Options := Stream.Options + [soNoDelay];
+    if info.Nagle then
+      Stream.Options := Stream.Options + [soNagle];
     if info.WaitBeforeRead then
       Stream.Options := Stream.Options + [soWaitBeforeRead];
     if info.KeepAlive then
@@ -209,8 +209,8 @@ begin
     Stream := TmnClientSocket.Create(info.Address, sPort);
     Stream.ReadTimeout := info.TestTimeOut;
     Stream.Options := info.SocketOptions;
-    if info.NoDelay then
-      Stream.Options := Stream.Options + [soNoDelay];
+    if info.Nagle then
+      Stream.Options := Stream.Options + [soNagle];
     if info.WaitBeforeRead then
       Stream.Options := Stream.Options + [soWaitBeforeRead];
     if info.KeepAlive then
@@ -519,7 +519,7 @@ begin
 
   Info.SocketOptionsStr := ini.ReadString('Options', 'SocketOptions', Info.SocketOptionsStr);
   S := LowerCase(GetAnswer('w=WaitBeforeRead, n=NoDelay, k=KeepAlive, q=QuickAck s=SSL or c to clear', Info.SocketOptionsStr, 'c'));
-  Info.NoDelay := Pos('n', S) > 0;
+  Info.Nagle := Pos('n', S) > 0;
   Info.KeepAlive := Pos('k', S) > 0;
   Info.QuickAck := Pos('q', S) > 0;
   Info.WaitBeforeRead := Pos('w', S) > 0;
@@ -541,7 +541,7 @@ begin
 
   Info.Address := '127.0.0.1';
 
-  Info.NoDelay := True;
+  Info.Nagle := True;
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.WaitBeforeRead := True;
@@ -563,7 +563,7 @@ const
   sURL = 'https://c.tile.openstreetmap.de/17/65536/65536.png';
   //sURL = 'zaherdirkey.wordpress.com';
 begin
-  Info.NoDelay := True;
+  Info.Nagle := False;
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.UseSSL := False;
@@ -571,7 +571,7 @@ begin
     Stream := TmnClientSocket.Create('c.tile.openstreetmap.org', '443');
     Stream.ReadTimeout := Info.TestTimeOut;
     Stream.Options := Info.SocketOptions;
-    Stream.Options := Stream.Options + [soNoDelay];
+    Stream.Options := Stream.Options + [];
 //  Stream.Options := Stream.Options + [soKeepAlive];
 //    if QuickAck then
 //      Stream.Options := Stream.Options + [soQuickAck];
@@ -626,7 +626,7 @@ end;
 
 procedure TTestStream.ExampleSocketTestTimeout;
 begin
-  Info.NoDelay := False;
+  Info.Nagle := False;
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.UseSSL := False;
@@ -637,7 +637,7 @@ end;
 
 procedure TTestStream.ExampleSocketTestCancel;
 begin
-  Info.NoDelay := False;
+  Info.Nagle := False;
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.UseSSL := False;
@@ -677,7 +677,7 @@ var
   t: int64;
   Proxy: TmnWebSocket13StreamProxy;
 begin
-  Info.NoDelay := True;
+  Info.Nagle := False;
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.UseSSL := False;
@@ -686,7 +686,7 @@ begin
 //    Stream := TmnClientSocket.Create('localhost', '8080');
     Stream.ReadTimeout := Info.TestTimeOut;
     Stream.Options := Info.SocketOptions;
-    Stream.Options := Stream.Options + [soNoDelay];
+    Stream.Options := Stream.Options + [];
 //  Stream.Options := Stream.Options + [soKeepAlive];
 //    if QuickAck then
 //      Stream.Options := Stream.Options + [soQuickAck];
@@ -1446,7 +1446,7 @@ begin
   Info.Clear;
   Info.Address := '127.0.0.1';
 
-  Info.NoDelay := True;
+  Info.Nagle := True;
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.WaitBeforeRead := True;
@@ -1464,7 +1464,7 @@ begin
   Info.Clear;
   Info.Address := '127.0.0.1';
 
-  Info.NoDelay := True;
+  Info.Nagle := True;
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.WaitBeforeRead := True;

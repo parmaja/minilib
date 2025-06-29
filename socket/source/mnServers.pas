@@ -52,7 +52,7 @@ type
     CertPassword: string;
     CertificateFile: string;
     PrivateKeyFile: string;
-    constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = [soNoDelay]);
+    constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = []);
     destructor Destroy; override;
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;

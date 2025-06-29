@@ -284,6 +284,7 @@ function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; TimeSeparator: Char = ':'; WithTime: Boolean = False): String; overload;
 function ISODateTimeToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '): String; overload;
 
+//  DateToStr(RFC2822ToDateTime('Thu, 26 Jun 2025 11:08:12 GMT'))
 function RFC2822ToDateTime(data: string): TDateTime;
 function DateTimeToRFC2822(vDate: TDateTime): string;
 
