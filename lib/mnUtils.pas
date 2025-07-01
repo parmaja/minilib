@@ -80,7 +80,8 @@ function StrToStringsEx(const Content: string; Strings: TStrings; Separators: Ar
 procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
 procedure StrToStringsDequoteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 
-function StrScanTo(const Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex, MatchCount: Integer; const Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Boolean;
+function StrScanTo(const Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex, MatchCount: Integer; const Separators: array of string; const IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Boolean; overload;
+//function StrScanTo(const Content: string; FromIndex: Integer; out S: string; NextIndex, const Separators: array of string; const IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Boolean; overload;
 
 {
   examples:
@@ -911,7 +912,7 @@ begin
   TResultString(Sender^).NextIndex := NextIndex;
 end;
 
-function StrScanTo(const Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex, MatchCount: Integer; const Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Boolean;
+function StrScanTo(const Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex, MatchCount: Integer; const Separators: array of string; const IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Boolean;
 var
   r: TResultString;
 begin

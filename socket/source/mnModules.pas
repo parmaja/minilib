@@ -98,6 +98,7 @@ type
 
   TmodAnswerHelper = record helper for TmodAnswer
     function ToString: string; //HTTP
+    procedure FromNumber(Number: Integer); //HTTP
   end;
 
   TmodHeader = class(TmnHeader)
@@ -824,7 +825,11 @@ type
   end;
 
 function URIDecode(const S: UTF8String): utf8string;
-function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
+function ParseHttpHead(const Raw: String; out Method, Params, Protocol: string): Boolean; overload;
+function ParseHttpHead(const Raw: String; out Method, Params: string): Boolean; overload;
+//HTTP/1.1 200 OK
+function ParseAnswerHead(const Raw: String; out Number: Integer; out Protocol, Msg: string): Boolean; overload;
+function ParseAnswerHead(const Raw: String; out Answer: TmodAnswer; Msg: string): Boolean; overload;
 function ParseURI(const URI: String; out Address, Params: string): Boolean;
 procedure ParseQuery(const Query: String; mnParams: TmnFields);
 procedure ParseParamsEx(const Params: String; mnParams: TmnParams);
@@ -908,7 +913,7 @@ begin
   Result := R;
 end;
 
-function ParseRaw(const Raw: String; out Method, Protocol, URI: string): Boolean;
+function ParseHttpHead(const Raw: String; out Method, Params, Protocol: string): Boolean;
 var
   aRequests: TStringList;
 begin
@@ -918,13 +923,42 @@ begin
     if aRequests.Count > 0 then
       Method := aRequests[0];
     if aRequests.Count > 1 then
-      URI := URIDecode(aRequests[1]);
+      Params := URIDecode(aRequests[1]);
     if aRequests.Count > 2 then
       Protocol := aRequests[2];
   finally
     FreeAndNil(aRequests);
   end;
   Result := True;
+end;
+
+function ParseHttpHead(const Raw: String; out Method, Params: string): Boolean; overload;
+var
+  Protocol: string;
+begin
+  Result := ParseHttpHead(Raw, Method, Params, Protocol);
+end;
+
+function ParseAnswerHead(const Raw: String; out Number: Integer; out Protocol, Msg: string): Boolean;
+var
+  aRequests: TStringList;
+  Index, NextIndex, Count: Integer;
+  s: string;
+begin
+  StrScanTo(Raw, 1, Protocol, Index, NextIndex, Count, [' '], [], ['''', '"']);
+  StrScanTo(Raw, NextIndex, s, Index, NextIndex, Count, [' '], [], ['''', '"']);
+  Number := StrToIntDef(S, 0);
+  Msg := Copy(Raw, NextIndex, MaxInt);
+  Result := True;
+end;
+
+function ParseAnswerHead(const Raw: String; out Answer: TmodAnswer; Msg: string): Boolean; overload;
+var
+  Number: Integer;
+  Protocol: string;
+begin
+  Result := ParseAnswerHead(Raw, Number, Protocol, Msg);
+  Answer.FromNumber(Number);
 end;
 
 function ParseURI(const URI: String; out Address, Params: string): Boolean;
@@ -2302,7 +2336,7 @@ procedure TmodModules.ParseHead(ARequest: TmodRequest; const AHead: String);
 begin
   ARequest.Clear;
   ARequest.Raw := AHead;
-  ParseRaw(AHead, ARequest.Info.Method, ARequest.Info.Protocol, ARequest.Info.URI);
+  ParseHttpHead(AHead, ARequest.Info.Method, ARequest.Info.URI, ARequest.Info.Protocol);
   ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Query);
 
   //zaher: @zaher,belal, I dont like it
@@ -2793,22 +2827,43 @@ end;
 
 { THttpResultHelper }
 
+procedure TmodAnswerHelper.FromNumber(Number: Integer);
+begin
+  case Number of
+    0: Self := hrNone;
+    101: Self := hrSwitchingProtocols;
+    200: Self := hrOK;
+    204: Self := hrNoContent;
+    301: Self := hrMovedPermanently;
+    302: Self := hrRedirect;
+    304: Self := hrNotModified;
+    307: Self :=  hrMovedTemporarily;
+    401: Self := hrUnauthorized;
+    403: Self := hrForbidden;
+    404: Self := hrNotFound;
+    500: Self := hrError;
+    503: Self := hrServiceUnavailable;
+    else
+      Self := hrCustom;
+  end;
+end;
+
 function TmodAnswerHelper.ToString: string;
 begin
   Result := 'HTTP/1.1 ';
   case Self of
     hrNone: Result := '';
     hrOK: Result := Result + '200 OK';
+    hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
     hrNoContent: Result := Result + '204 No Content';
-    hrError: Result := Result + '500 Internal Server Error';
-    hrUnauthorized: Result := Result + '401 Unauthorized';
-    hrForbidden : Result := Result + '403 Forbidden';
-    hrNotFound: Result := Result + '404 NotFound';
-    hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
     hrMovedPermanently: Result := '301 Moved Permanently';
     hrRedirect: Result := Result + '302 Found';
     hrNotModified: Result := Result + '304 Not Modified';
-    hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
+    hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
+    hrUnauthorized: Result := Result + '401 Unauthorized';
+    hrForbidden : Result := Result + '403 Forbidden';
+    hrNotFound: Result := Result + '404 NotFound';
+    hrError: Result := Result + '500 Internal Server Error';
     hrServiceUnavailable: Result := Result + '503 Service Unavailable';
     hrCustom: Result := '';
   end;
