@@ -74,6 +74,8 @@ type
     //resBodySent,
     //resSuccess,
     //resKeepAlive,
+    resHeadReceived,
+    resHeaderReceived,
     resEnd
     );
 
@@ -624,7 +626,10 @@ type
     procedure Reload; virtual;
     procedure Init; virtual;
     procedure Idle; virtual;
+
+    //* Run in Connection Thread
     procedure InternalError(ARequest: TmodRequest; var Handled: Boolean); virtual;
+    //* Run in Connection Thread
     function InternalExecute(ARequest: TmodRequest): TmodRespondResult; virtual;
   public
     //Default fallback module should have no alias name
@@ -2142,13 +2147,13 @@ begin
   ARequest.Use.Compressing      := UseCompressing;
   ARequest.Use.WebSocket        := UseWebSocket;
 
-  ReceiveHeader(ARequest);
-
   aCommand := RequestCommand(ARequest);
 
   if aCommand <> nil then
   begin
     try
+      if not (resHeaderReceived in ARequest.Header.States) then
+        ReceiveHeader(ARequest);
       Result := aCommand.Execute;
       Result.Status := Result.Status + [mrSuccess];
     finally
@@ -2627,6 +2632,7 @@ end;
 procedure TmodCommunicate.ReceiveHead;
 begin
   Stream.ReadUTF8Line(FHead);
+  Header.FStates := Header.FStates + [resHeadReceived];
 end;
 
 procedure TmodCommunicate.ReceiveHeader(WithHead: Boolean);
@@ -2637,6 +2643,7 @@ begin
 	  ReceiveHead;
   Header.Clear;
   Header.ReadHeader(Stream);
+  Header.FStates := Header.FStates + [resHeaderReceived];
   DoHeaderReceived;
 end;
 

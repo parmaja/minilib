@@ -160,6 +160,7 @@ type
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
     //Connect used by clients
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); overload; virtual; abstract;
+    function Connect(const Address: string; const Port: string; const BindAddress: string; out vErr: Integer; Options: TmnsoOptions = []; ConnectTimeout: Integer = cConnectTimeout; ReadTimeout: Integer = cReadTimeout): TmnCustomSocket; overload;
     function ResolveIP(const Address: string): string; virtual;
   end;
 
@@ -233,6 +234,11 @@ begin
 end;
 
 { TmnCustomWallSocket }
+
+function TmnCustomWallSocket.Connect(const Address, Port, BindAddress: string; out vErr: Integer; Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer): TmnCustomSocket;
+begin
+  Connect(Options, ConnectTimeout, ReadTimeout, Port, Address, BindAddress, Result, vErr);
+end;
 
 constructor TmnCustomWallSocket.Create;
 begin

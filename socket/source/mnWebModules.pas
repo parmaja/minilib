@@ -164,6 +164,7 @@ type
   public
     constructor Create; override;
     procedure AddChallengeAcme(const AHomePath: string);
+    procedure AddFileModule(const Alias: string; const AHomePath: string);
     procedure AddRedirectHttps;
   end;
 
@@ -815,6 +816,18 @@ end;
 
 const
   sForwardHttps = 'ForwardHttps';
+
+procedure TmodCustomWebServer.AddFileModule(const Alias: string; const AHomePath: string);
+begin
+  if Modules.Find(Alias) = nil then
+  begin
+    with TmodWebFileModule.Create(Alias, Alias, [], Modules) do
+    begin
+      Level := -1;
+      HomePath := AHomePath;
+    end;
+  end;
+end;
 
 procedure TmodCustomWebServer.AddRedirectHttps;
 begin

@@ -171,14 +171,14 @@ type
   private
     FActive: Boolean;
     FPort: string;
-    FAddress: string;
+    FBind: string;
     FListener: TmnListener;
     FLogging: Boolean;
     FUseSSL: Boolean;
     FIdleTick: UInt64;
     FIdleInterval: Int64;
     procedure SetActive(const Value: Boolean);
-    procedure SetAddress(const Value: string);
+    procedure SetBind(const Value: string);
     procedure SetPort(const Value: string);
     function GetCount: Integer;
     function GetConnected: Boolean;
@@ -225,7 +225,8 @@ type
     property Count: Integer read GetCount;
 
     property Port: string read FPort write SetPort;
-    property Address: string read FAddress write SetAddress;
+    property Bind: string read FBind write SetBind;
+    property Address: string read FBind write SetBind;//Deprecated
     property UseSSL: Boolean read FUseSSL write FUseSSL;
 
     property Active: boolean read FActive write SetActive default False;
@@ -903,7 +904,7 @@ end;
 constructor TmnServer.Create;
 begin
   inherited Create;
-  FAddress := '0.0.0.0';
+  FBind := '0.0.0.0';
   //FAddress := '';
   CertificateFile := 'certificate.pem';
   PrivateKeyFile := 'privatekey.pem';
@@ -957,7 +958,7 @@ begin
       try
         FListener.FServer := Self;
         FListener.FPort := FPort;
-        FListener.FAddress := FAddress;
+        FListener.FAddress := FBind;
         if UseSSL then
           FListener.FOptions := FListener.FOptions + [soSSL, soWaitBeforeRead];
         FListener.CertificateFile := CertificateFile;
@@ -1046,11 +1047,11 @@ procedure TmnServer.DoLog(const S: string);
 begin
 end;
 
-procedure TmnServer.SetAddress(const Value: string);
+procedure TmnServer.SetBind(const Value: string);
 begin
   if Active then
     raise EmnException.Create('Can not change Address value when active');
-  FAddress := Value;
+  FBind := Value;
 end;
 
 procedure TmnServer.SetPort(const Value: string);

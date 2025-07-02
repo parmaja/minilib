@@ -8,9 +8,11 @@ unit mnClients;
  *}
 
 {$M+}{$H+}
-{$IFDEF FPC}
+{$ifdef fpc}
 {$mode delphi}
-{$ENDIF}
+{$else
+{$WARN DUPLICATE_CTOR_DTOR OFF}
+{$endif}
 
 interface
 
@@ -52,7 +54,7 @@ type
 
   { TmnClientConnection }
 
-  TmnClientConnection = class(TmnConnection) //this child object in Clients
+  TmnClientConnection = class(TmnConnection) //this child object in Clients/Server.Listener
   private
     function GetOwner: TmnClients;
   protected
