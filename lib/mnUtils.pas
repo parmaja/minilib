@@ -2074,6 +2074,8 @@ var
   tzOffset: Integer;
   tzFound: Boolean;
   monthIndex: Integer;
+  dateParts: TStringList;
+  sign: Integer;
 begin
   Result := 0;
   data := Trim(data);
@@ -2098,12 +2100,16 @@ begin
       exit
     else if parts.Count = 3 then // RFC 850 date, deprecated
     begin
-      var dateParts := Split(parts[0], '-');
-      if dateParts.Count = 3 then
-      begin
-        parts.Insert(1, dateParts[1]);
-        parts.Insert(1, dateParts[2]);
-        parts[0] := dateParts[0];
+      dateParts := Split(parts[0], '-');
+      try
+        if dateParts.Count = 3 then
+        begin
+          parts.Insert(1, dateParts[1]);
+          parts.Insert(1, dateParts[2]);
+          parts[0] := dateParts[0];
+        end;
+      finally
+        FreeAndNil(dateParts);
       end;
       exit;
     end
@@ -2169,7 +2175,7 @@ begin
         Exit;
     end;
 
-    if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not yyStr[1].IsDigit then
+    if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not IsDigit(yyStr[1]) then
     begin
       tmpStr := tz;
       tz := yyStr;
@@ -2237,7 +2243,7 @@ begin
 
   if tzFound then
   begin
-    var sign := 1;
+    sign := 1;
     if tzOffset < 0 then
     begin
       sign := -1;
