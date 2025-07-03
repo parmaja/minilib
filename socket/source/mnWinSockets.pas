@@ -82,6 +82,7 @@ const
 function InitSocketOptions(Handle: Integer; Options: TmnsoOptions; ReadTimeout: Integer): Integer;  //return error number
 var
   t: Longint;
+  //r: Integer;
 begin
   Result := 0;
   if {(soNoDelay in Options) and } not (soNagle in Options) then
@@ -102,6 +103,10 @@ begin
       Result := setsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, @t, SizeOf(t));
     end;
   end;
+
+  //t := 128 * 1024; //128K
+  //r := setsockopt(Handle, SOL_SOCKET, SO_SNDBUF, @t, SizeOf(t));
+  //r := setsockopt(Handle, SOL_SOCKET, SO_RCVBUF, @t, SizeOf(t));
 end;
 
 { TmnSocket }
