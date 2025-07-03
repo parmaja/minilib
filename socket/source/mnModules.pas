@@ -75,6 +75,7 @@ type
     //resSuccess,
     //resKeepAlive,
     resHeadReceived,
+    resSkipHeader,
     resHeaderReceived,
     resEnd
     );
@@ -208,7 +209,8 @@ type
     function GetCookie(const vNameSpace, vName: string): string;
 
     procedure Reset;
-    procedure ReceiveHeader(WithHead: Boolean); virtual;
+    //* WithHead: Is Head is already recieved elsewhere
+    procedure ReceiveHeader(WithHead: Boolean = False); virtual;
     procedure SendHeader(WithHead: Boolean = True); virtual;
 
     procedure  Clear; virtual;
@@ -541,6 +543,8 @@ type
     function GetActive: Boolean;
     function GetRespond: TwebRespond;
   protected
+    procedure ReceiveHeader; virtual; //For Request
+
     function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
     function CreateRespond: TmodRespond; override;
 
@@ -614,9 +618,6 @@ type
     function Match(const ARequest: TmodRequest): Boolean; virtual;
     procedure PrepareRequest(ARequest: TmodRequest);
     function CreateCommand(CommandName: String; ARequest: TmodRequest): TwebCommand; overload;
-
-    procedure DoReceiveHeader(ARequest: TmodRequest); virtual;
-    procedure ReceiveHeader(ARequest: TmodRequest);
 
     function RequestCommand(ARequest: TmodRequest): TwebCommand; virtual;
     procedure Log(S: String); virtual;
@@ -1781,6 +1782,10 @@ function TwebCommand.Execute: TmodRespondResult;
 begin
   Result.Status := []; //default to be not keep alive, not sure, TODO
   Result.Timout := Request.Use.KeepAliveTimeOut; //not sure, TODO
+
+  if not (resSkipHeader in Request.Header.States) and not (resHeaderReceived in Request.Header.States) then
+    ReceiveHeader;
+
   Prepare(Result);
   try
     RespondResult(Result);
@@ -1913,6 +1918,11 @@ begin
   end;
 end;
 
+procedure TwebCommand.ReceiveHeader;
+begin
+  Request.ReceiveHeader;
+end;
+
 procedure TwebCommand.RespondResult(var Result: TmodRespondResult);
 begin
 end;
@@ -2041,12 +2051,6 @@ begin
   Result.Status := [mrError];
 end;
 
-procedure TmodModule.ReceiveHeader(ARequest: TmodRequest);
-begin
-  ARequest.ReceiveHeader(False); //* Head is already recieved elsewhere
-  DoReceiveHeader(ARequest);
-end;
-
 procedure TmodModule.Created;
 begin
   inherited;
@@ -2112,10 +2116,6 @@ begin
     ARequest.Path := DeleteSubPath(ARequest.Route[0], ARequest.Path);
 end;
 
-procedure TmodModule.DoReceiveHeader(ARequest: TmodRequest);
-begin
-end;
-
 procedure TmodModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
 begin
   vMatch := (AliasName<>'') and (ARequest.Route[0] = AliasName);
@@ -2147,16 +2147,14 @@ begin
   ARequest.Use.Compressing      := UseCompressing;
   ARequest.Use.WebSocket        := UseWebSocket;
 
-  if not (resHeaderReceived in ARequest.Header.States) then
-    ReceiveHeader(ARequest);
+  if not (resSkipHeader in ARequest.Header.States) and not (resHeaderReceived in ARequest.Header.States) then
+    ARequest.ReceiveHeader;
 
   aCommand := RequestCommand(ARequest);
 
   if aCommand <> nil then
   begin
     try
-      if not (resHeaderReceived in ARequest.Header.States) then
-        ReceiveHeader(ARequest);
       Result := aCommand.Execute;
       Result.Status := Result.Status + [mrSuccess];
     finally
