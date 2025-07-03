@@ -2147,6 +2147,9 @@ begin
   ARequest.Use.Compressing      := UseCompressing;
   ARequest.Use.WebSocket        := UseWebSocket;
 
+  if not (resHeaderReceived in ARequest.Header.States) then
+    ReceiveHeader(ARequest);
+
   aCommand := RequestCommand(ARequest);
 
   if aCommand <> nil then

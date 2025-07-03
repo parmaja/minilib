@@ -111,6 +111,7 @@ procedure InstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel = lglDebug);
 procedure UninstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel = lglDebug);
 procedure InstallConsoleLog(LogLevel: TLogLevel = lglDebug);
 procedure InstallDebugOutputLog(LogLevel: TLogLevel = lglDebug);
+function IsLogInstalled(LogClass: TClass): Boolean;
 {$ifdef FPC}
 procedure InstallExceptLog(WithIO: Boolean = False);
 {$endif}
@@ -161,9 +162,24 @@ begin
   raise Exception.Create('There is no Event install for it');
 end;
 
+function IsLogInstalled(LogClass: TClass): Boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to log.Count -1 do
+  begin
+    if (Log[i] as TLogDispatcherItem).LogObject is LogClass then
+    begin
+      exit(True);
+    end;
+  end;
+  Result := False;
+end;
+
 procedure InstallConsoleLog(LogLevel: TLogLevel);
 begin
-  Log.Install(LogLevel, TConsoleLog.Create);
+  if not isloginstalled(TConsoleLog) then
+    Log.Install(LogLevel, TConsoleLog.Create);
 end;
 
 procedure InstallDebugOutputLog(LogLevel: TLogLevel);
