@@ -75,7 +75,6 @@ type
     //resSuccess,
     //resKeepAlive,
     resHeadReceived,
-    resSkipHeader,
     resHeaderReceived,
     resEnd
     );
@@ -468,6 +467,7 @@ type
     function CreateRequest(AStream: TmnConnectionStream): TmodRequest; virtual;
     function CreateRespond: TmodRespond; virtual;
     procedure Created; override;
+    function SkipHeader: Boolean; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -632,6 +632,9 @@ type
     procedure InternalError(ARequest: TmodRequest; var Handled: Boolean); virtual;
     //* Run in Connection Thread
     function InternalExecute(ARequest: TmodRequest): TmodRespondResult; virtual;
+    procedure DoReceiveHeader(ARequest: TmodRequest); virtual;
+    function SkipHeader: Boolean; virtual;
+
   public
     //Default fallback module should have no alias name
     //Protocols all should lowercase
@@ -1703,6 +1706,11 @@ begin
 end;
 
 
+function TmnCustomCommand.SkipHeader: Boolean;
+begin
+  Result := False;
+end;
+
 destructor TmnCustomCommand.Destroy;
 begin
   FreeAndNil(FRespond);
@@ -1782,9 +1790,6 @@ function TwebCommand.Execute: TmodRespondResult;
 begin
   Result.Status := []; //default to be not keep alive, not sure, TODO
   Result.Timout := Request.Use.KeepAliveTimeOut; //not sure, TODO
-
-  if not (resSkipHeader in Request.Header.States) and not (resHeaderReceived in Request.Header.States) then
-    ReceiveHeader;
 
   Prepare(Result);
   try
@@ -2106,6 +2111,11 @@ begin
   inherited;
 end;
 
+procedure TmodModule.DoReceiveHeader(ARequest: TmodRequest);
+begin
+
+end;
+
 procedure TmodModule.DoRegisterCommands;
 begin
 end;
@@ -2136,6 +2146,16 @@ begin
 end;
 
 function TmodModule.Execute(ARequest: TmodRequest): TmodRespondResult;
+
+  procedure _ReceiveHeader;
+  begin
+    if not (resHeaderReceived in ARequest.Header.States) then
+    begin
+      ARequest.ReceiveHeader;
+      DoReceiveHeader(ARequest);
+    end;
+  end;
+
 var
   aCommand: TwebCommand;
   aHandled: Boolean;
@@ -2147,14 +2167,17 @@ begin
   ARequest.Use.Compressing      := UseCompressing;
   ARequest.Use.WebSocket        := UseWebSocket;
 
-  if not (resSkipHeader in ARequest.Header.States) and not (resHeaderReceived in ARequest.Header.States) then
-    ARequest.ReceiveHeader;
+  if not SkipHeader then
+    _ReceiveHeader;
 
   aCommand := RequestCommand(ARequest);
 
   if aCommand <> nil then
   begin
     try
+      if not aCommand.SkipHeader then
+        _ReceiveHeader;
+
       Result := aCommand.Execute;
       Result.Status := Result.Status + [mrSuccess];
     finally
@@ -2189,6 +2212,11 @@ begin
   if FAliasName = AValue then
     Exit;
   FAliasName := AValue;
+end;
+
+function TmodModule.SkipHeader: Boolean;
+begin
+  Result := False;
 end;
 
 function TmodModule.GetActive: Boolean;
