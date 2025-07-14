@@ -543,7 +543,6 @@ type
     function GetActive: Boolean;
     function GetRespond: TwebRespond;
   protected
-    procedure ReceiveHeader; virtual; //For Request
 
     function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
     function CreateRespond: TmodRespond; override;
@@ -1921,11 +1920,6 @@ begin
         Respond.AddHeader('Content-Encoding', CompressClass.GetCompressName);
     end;}
   end;
-end;
-
-procedure TwebCommand.ReceiveHeader;
-begin
-  Request.ReceiveHeader;
 end;
 
 procedure TwebCommand.RespondResult(var Result: TmodRespondResult);
