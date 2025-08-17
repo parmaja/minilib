@@ -27,7 +27,7 @@ uses
   Classes, SysUtils, StrUtils, DateUtils, Types, Character;
 
 const
-  sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
+  sUTF8BOM: array[1..3] of AnsiChar = (#$EF, #$BB, #$BF);
   {$ifdef FPC}
   {$else}
   JulianEpoch = TDateTime(-2415018.5);  //check EpochAsJulianDate
@@ -1177,7 +1177,7 @@ end;
 
 function GetArgumentCommand(Strings: TStrings; out CommandName: string; out Index: Integer): Boolean; overload;
 var
-  I, P: Integer;
+  I: Integer;
   S: string;
 begin
   CommandName := '';
@@ -2070,7 +2070,7 @@ var
   i: Integer;
   dd, mm, yy, thh, tmm, tss: Integer;
   timeStr, ddStr, mmStr, yyStr, tmpStr,
-  tm, tz, token: string;
+  tm, tz: string;
   tzOffset: Integer;
   tzFound: Boolean;
   monthIndex: Integer;
@@ -2175,7 +2175,7 @@ begin
         Exit;
     end;
 
-    if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not IsDigit(yyStr[1]) then
+    if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not yyStr[1].IsDigit then
     begin
       tmpStr := tz;
       tz := yyStr;

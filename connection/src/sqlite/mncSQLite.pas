@@ -11,6 +11,8 @@ unit mncSQLite;
 {$H+}
 {$IFDEF FPC}
 {$mode delphi}
+{$codepage UTF8}
+{$else}
 {$ENDIF}
 
 interface

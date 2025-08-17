@@ -274,7 +274,7 @@ procedure X509SaveToFile(X509: PX509; const FileName: string);
 var
   bio: PBIO;
 begin
-  bio := BIO_new_file(PUTF8Char(FileName), PUTF8Char('wb'));
+  bio := BIO_new_file(PUTF8Char(UTF8Encode(FileName)), PUTF8Char('wb'));
   try
     PEM_write_bio_X509(bio, X509);
   finally

@@ -198,7 +198,7 @@ type
 
   TWebsocketPayload = record
   private
-    FSize: Int64;
+    //FSize: Int64;
     FMask: TWSMask;
     function GetSize: Int64;
     procedure SetSize(const Value: Int64);

@@ -395,7 +395,7 @@ end;
 procedure TmncSQLTransaction.ExecuteFile(AFile: string; AutoCommit: Boolean; ATerminator: string);
 var
   CMD: TmncSQLCommand;
-  c, i: Integer;
+  c: Integer;
   procedure ExecuteNow;
   begin
     if CMD.SQL.Count > 0 then

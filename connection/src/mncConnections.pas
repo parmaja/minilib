@@ -419,7 +419,7 @@ type
     function GetField(const Index: string): TmncField;
     function GetValues(const Index: string): Variant;
     procedure SetValues(const Index: string; const AValue: Variant);
-    function SetValue(const Index: string; const AValue: Variant): TmncField;
+    //function SetValue(const Index: string; const AValue: Variant): TmncField;
   protected
     function DoCreateField(vColumn: TmncColumn): TmncField; virtual; abstract;
   public
@@ -1496,11 +1496,11 @@ begin
   Result := Find(vName) <> nil;
 end;
 
-function TmncFields.SetValue(const Index: string; const AValue: Variant): TmncField;
+{function TmncFields.SetValue(const Index: string; const AValue: Variant): TmncField;
 begin
   Result := FieldByName(Index);
   Result.Value := AValue;
-end;
+end;}
 
 procedure TmncFields.SetValues(const Index: string; const AValue: Variant);
 var

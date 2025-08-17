@@ -3076,6 +3076,7 @@ var
   aRoute: string;
   aSchema: TmnwSchema;
 begin
+  Result := nil;
   if Shutdown then
     exit(nil);
 

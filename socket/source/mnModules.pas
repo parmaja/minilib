@@ -1846,7 +1846,7 @@ end;
 
 procedure TwebCommand.Prepare(var Result: TmodRespondResult);
 var
-  aKeepAlive: Boolean;
+  //aKeepAlive: Boolean;
   WSHash, WSKey: string;
   SendHostHeader: Boolean;
 begin
@@ -2482,10 +2482,8 @@ begin
 end;
 
 function TmnwCookie.GenerateValue: string;
-var
-  aDate: TDateTime;
 begin
-  aDate := IncSecond(Now, Age);
+  //aDate := IncSecond(Now, Age);
   Result := Value;
   if FDeleting or (Result = '') then //Delete it
   begin
@@ -2495,7 +2493,6 @@ begin
   begin
     if Age >= 0 then
       Result := Result + '; max-age=' + Age.ToString;
-      //Result := Result + '; Expires=' + FormatHTTPDate(aDate);
   end;
 
   if Secured then
@@ -2568,7 +2565,6 @@ procedure CookiesStrToStringsDeqouteCallbackProc(Sender: Pointer; Index, CharInd
 var
   Name, Value: string;
   p: Integer;
-  Cookie: TmnwCookie;
 begin
   if s <> '' then
   begin
@@ -2586,7 +2582,7 @@ begin
         Name := S;
         Value := '';
       end;
-      Cookie := (TObject(Sender) as TmnwCookies).Add(Name, Value);
+      (TObject(Sender) as TmnwCookies).Add(Name, Value);
     end;
   end;
 end;
