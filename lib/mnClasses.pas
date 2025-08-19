@@ -68,8 +68,8 @@ type
   TmnObjectList<_Object_: class> = class(TObjectList<_Object_>)
   {$endif}
   private
-    function GetItem(Index: Integer): _Object_;
-    procedure SetItem(Index: Integer; AObject: _Object_);
+    function GetItem(Index: NativeInt): _Object_;
+    procedure SetItem(Index: NativeInt; AObject: _Object_);
   protected
     type
 
@@ -120,9 +120,9 @@ type
 
     procedure QuickSort; virtual;
 
-    property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
     function Last: _Object_;
     function First: _Object_;
+    property Items[Index: NativeInt]: _Object_ read GetItem write SetItem; default;
     //procedure Clear; {$ifdef FPC} override; {$else} virtual; {TODO talk with belal} {$endif}
   end;
 
@@ -214,12 +214,12 @@ type
 
 implementation
 
-function TmnObjectList<_Object_>.GetItem(Index: Integer): _Object_;
+function TmnObjectList<_Object_>.GetItem(Index: NativeInt): _Object_;
 begin
   Result := _Object_(inherited Items[Index]);
 end;
 
-procedure TmnObjectList<_Object_>.SetItem(Index: Integer; AObject: _Object_);
+procedure TmnObjectList<_Object_>.SetItem(Index: NativeInt; AObject: _Object_);
 begin
   inherited Items[Index] := AObject;
 end;
