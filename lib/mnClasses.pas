@@ -101,7 +101,7 @@ type
     //* Belal: If both Left and Right is eaual the orignal sort swap it, we do not want to swapt it
     //* Thanks to Belal
     function Compare(Left, Right: _Object_): Integer; virtual;
-    procedure QuickSortItems(iLo, iHi: Integer);
+    procedure QuickSortItems(iLo, iHi: NativeInt);
 
     procedure Created; virtual;
     function RequireItem: _Object_; virtual;
@@ -110,9 +110,9 @@ type
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure AfterConstruction; override;
     function Add(Item: _Object_): Integer;
-    procedure Insert(Index: Integer; Item: _Object_);
+    procedure Insert(Index: NativeInt; Item: _Object_);
     function Extract(Item: _Object_): _Object_;
-    function IndexOfObject(Item: TObject): Integer;
+    function IndexOfObject(Item: TObject): NativeInt;
     {$ifdef FPC} //not now
     function Require(Index: Integer): _Object_;
     {$endif}
@@ -311,7 +311,7 @@ begin
   Result := inherited Add(Item);
 end;
 
-function TmnObjectList<_Object_>.IndexOfObject(Item: TObject): Integer;
+function TmnObjectList<_Object_>.IndexOfObject(Item: TObject): NativeInt;
 begin
   if Item is TClass(_Object_) then
     Result := IndexOf(_Object_(Item))
@@ -319,7 +319,7 @@ begin
     Result := -1;
 end;
 
-procedure TmnObjectList<_Object_>.Insert(Index: Integer; Item: _Object_);
+procedure TmnObjectList<_Object_>.Insert(Index: NativeInt; Item: _Object_);
 begin
   inherited Insert(Index, Item);
 end;
@@ -343,9 +343,9 @@ begin
     QuickSortItems(0, Count - 1);
 end;
 
-procedure TmnObjectList<_Object_>.QuickSortItems(iLo, iHi: Integer);
+procedure TmnObjectList<_Object_>.QuickSortItems(iLo, iHi: NativeInt);
 var
-  Lo, Hi, Md: integer;
+  Lo, Hi, Md: NativeInt;
   p: _Object_;
 begin
   Lo := iLo;
