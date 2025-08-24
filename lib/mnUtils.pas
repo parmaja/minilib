@@ -2175,7 +2175,8 @@ begin
         Exit;
     end;
 
-    if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not yyStr[1].IsDigit then
+    //if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not yyStr[1].IsDigit then
+    if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not IsDigit(yyStr[1]) then
     begin
       tmpStr := tz;
       tz := yyStr;
