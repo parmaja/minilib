@@ -215,6 +215,7 @@ type
     FOnDataRequest: TOnRequest;
     FData: Integer;
     FTitle: string;
+    FFormat: string;
     //FDesignerCell: TmnrDesignCell;
     function GetReport: TmnrCustomReport;
     function GetTag: Integer;
@@ -251,6 +252,7 @@ type
     property Number: Integer read GetNumber;
     property Tag: Integer read GetTag;
     property Title: string read FTitle write FTitle;
+    property Format: string read FFormat write FFormat;
     property Data: Integer read FData write FData;
     property Chain: string read FChain write FChain;
     property IncludeSections: TmnrSectionClassIDs read GetIncludeSections;
