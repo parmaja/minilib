@@ -23,6 +23,7 @@ type
     Binary,
     Hidden,
     NoCache,
+    NoCompress, //already compressed
     Executable
   );
 
@@ -118,30 +119,30 @@ begin
   Add('azw', 'application/vnd.amazon.ebook', 'Amazon Kindle eBook format');
   Add('bin', 'application/octet-stream', 'Any kind of binary data');
   Add('bmp', 'image/bmp', 'Windows OS/2 Bitmap Graphics');
-  Add('bz', 'application/x-bzip', 'BZip archive');
-  Add('bz2', 'application/x-bzip2', 'BZip2 archive');
+  Add('bz', 'application/x-bzip', 'BZip archive', [NoCompress]);
+  Add('bz2', 'application/x-bzip2', 'BZip2 archive', [NoCompress]);
   Add('css', 'text/css', 'Cascading Style Sheets (CSS)');
   Add('csv', 'text/csv', 'Comma-separated values (CSV)');
   Add('doc', 'application/msword', 'Microsoft Word');
-  Add('docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Microsoft Word (OpenXML)');
+  Add('docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Microsoft Word (OpenXML)', [NoCompress]);
   Add('epub', 'application/epub+zip', 'Electronic publication (EPUB)');
   Add('eot', 'application/vnd.ms-fontobject', 'MS Embedded OpenType fonts');
   Add('gif', 'image/gif', 'Graphics Interchange Format (GIF)');
-  Add('gz', 'application/gzip', 'GZip Compressed Archive');
+  Add('gz', 'application/gzip', 'GZip Compressed Archive', [NoCompress]);
   Add('htm',  'text/html', 'HyperText Markup Language (HTML)');
   Add('html', 'text/html', 'HyperText Markup Language (HTML)');
   Add('ico', 'image/x-icon', 'Icon format');
   Add('ics', 'text/calendar', 'iCalendar format');
-  Add('jar', 'application/java-archive', 'Java Archive (JAR)');
-  Add('jpeg', 'image/jpeg', 'JPEG images');
-  Add('jpg', 'image/jpeg', 'JPEG images');
+  Add('jar', 'application/java-archive', 'Java Archive (JAR)', [NoCompress]);
+  Add('jpeg', 'image/jpeg', 'JPEG images', [NoCompress]);
+  Add('jpg', 'image/jpeg', 'JPEG images', [NoCompress]);
   Add('js', 'text/javascript', 'JavaScript (ECMAScript)', [Executable]);
   Add('json', 'application/json', 'JSON format');
   Add('jsonld', 'application/ld+json', 'JSON-LD format');
   Add('mid', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');
   Add('midi', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');
-  Add('mp3', 'audio/mpeg', 'MP3 audio');
-  Add('mp4', 'video/mp4', 'MP4 video');
+  Add('mp3', 'audio/mpeg', 'MP3 audio', [NoCompress]);
+  Add('mp4', 'video/mp4', 'MP4 video', [NoCompress]);
   Add('mpeg', 'video/mpeg', 'MPEG Video');
   Add('mpkg', 'application/vnd.apple.installer+xml', 'Apple Installer Package');
   Add('odp', 'application/vnd.oasis.opendocument.presentation', 'OpenDocuemnt presentation document');
@@ -151,10 +152,10 @@ begin
   Add('ogv', 'video/ogg', 'OGG video');
   Add('ogx', 'application/ogg', 'OGG');
   Add('otf', 'font/otf','OpenType font');
-  Add('png', 'image/png', 'Portable Network Graphics');
+  Add('png', 'image/png', 'Portable Network Graphics', [NoCompress]);
   Add('pdf', 'application/pdf', 'Adobe Portable Document Format (PDF)');
   Add('ppt', 'application/vnd.ms-powerpoint', 'Microsoft PowerPoint');
-  Add('rar', 'application/x-rar-compressed', 'RAR archive', [Binary]);
+  Add('rar', 'application/x-rar-compressed', 'RAR archive', [Binary, NoCompress]);
   Add('rtf', 'application/rtf', 'Rich Text Format (RTF)');
   Add('sh', 'application/x-sh', 'Bourne shell script');
   Add('svg', 'image/svg+xml', 'Scalable Vector Graphics (SVG)');
@@ -166,20 +167,20 @@ begin
 	Add('txt', 'text/plain', 'Text');
   Add('vsd', 'application/vnd.visio', 'Microsft Visio');
   Add('wav', 'audio/x-wav', 'Waveform Audio Format');
-  Add('weba', 'audio/webm', 'WEBM audio');
-  Add('webm', 'video/webm', 'WEBM video');
-  Add('webp', 'image/webp', 'WEBP image');
-  Add('woff', 'font/woff', 'Web Open Font Format (WOFF)');
-  Add('woff2', 'font/woff2', 'Web Open Font Format (WOFF)');
+  Add('weba', 'audio/webm', 'WEBM audio', [NoCompress]);
+  Add('webm', 'video/webm', 'WEBM video', [NoCompress]);
+  Add('webp', 'image/webp', 'WEBP image', [NoCompress]);
+  Add('woff', 'font/woff', 'Web Open Font Format (WOFF)', [NoCompress]);
+  Add('woff2', 'font/woff2', 'Web Open Font Format (WOFF)', [NoCompress]);
   Add('xhtml', 'application/xhtml+xml', 'XHTML');
   Add('xls', 'application/vnd.ms-excel', 'Microsoft Excel');
-  Add('xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Microsoft Excel (OpenXML)');
+  Add('xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Microsoft Excel (OpenXML)', [NoCompress]);
   Add('xml', 'application/xml', 'XML');
   Add('xul', 'application/vnd.mozilla.xul+xml', 'XUL');
-  Add('zip', 'application/zip', 'ZIP archive', [Binary]);
+  Add('zip', 'application/zip', 'ZIP archive', [Binary, NoCompress]);
   Add('3gp', 'video/3gpp', '3GPP audio/video container');
   Add('3g2', 'video/3gpp2', '3GPP2 audio/video container');
-  Add('7z', 'application/x-7z-compressed', '7-zip archive', [Binary]);
+  Add('7z', 'application/x-7z-compressed', '7-zip archive', [Binary, NoCompress]);
   Add('php', 'application/x-httpd-php', 'PHP Script file', [Binary]);
 end;
 

@@ -291,6 +291,7 @@ type
     smAllowCompress,
     smRespondCompressing // using proxies
   );
+
   TStreamModeHelper = record helper for TStreamMode
     function RequestCompress: Boolean;
     function RespondCompressing: Boolean;
@@ -397,6 +398,12 @@ type
   );
   TmodFileDispositions = set of TmodFileDisposition;
 
+  TmodSendOption = (
+    sndoNoCompress
+  );
+
+  TmodSendOptions = set of TmodSendOption;
+
   { TmodRespond }
 
   TmodRespond = class(TmodCommunicate)
@@ -417,8 +424,8 @@ type
     function SendUTF8String(const s: UTF8String): Boolean; overload;
     function SendString(const s: string): Boolean; overload;
     function SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; FileDispositions: TmodFileDispositions = []): Boolean; overload;
-    function SendStream(s: TStream; ASize: Int64): Boolean; overload;
-    function SendStream(s: ImnStreamPersist; Count: Int64): Boolean; overload;
+    function SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
+    function SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
 
     function SendFile(const AFileName: string; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean; overload;
 
@@ -434,7 +441,7 @@ type
     mrSuccess,
     mrError,
     mrKeepAlive //keep the stream connection alive, not the command
-    );
+  );
 
   TmodeResults = set of TmodeResult;
 
@@ -1188,19 +1195,19 @@ begin
     Result := Stream.ReadStream(s, -1); //read complete stream
 end;
 
-function TmodRespond.SendStream(s: TStream; ASize: Int64): Boolean;
+function TmodRespond.SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions): Boolean;
 var
   stream: TInterfacedStreamtWrapper;
 begin
   stream := TInterfacedStreamtWrapper.Create(s);
   try
-    Result := SendStream(stream, ASize);
+    Result := SendStream(stream, ASize, AOptions);
   finally
     FreeAndNil(stream);
   end;
 end;
 
-function TmodRespond.SendStream(s: ImnStreamPersist; Count: Int64): Boolean;
+function TmodRespond.SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions): Boolean;
 var
   aCompress: Boolean;
 
@@ -1219,13 +1226,13 @@ var
   mStream: TMemoryStream;
   zStream: {$ifdef FPC}TGZipCompressionStream{$else}TZCompressionStream{$endif};
 begin
-  Result := Count<>0;
+  Result := Count <> 0;
 
-  if Count=0 then
+  if Count = 0 then
     _SendHeader(0, False)
   else
   begin
-    aCompress := Request.Mode.AllowCompress;
+    aCompress := Request.Mode.AllowCompress and not (sndoNoCompress in AOptions);
 
     if aCompress then
     begin
@@ -1325,6 +1332,7 @@ function TmodRespond.SendStream(s: TStream; ASize: Int64; AAlias: string; AFileD
 var
   aMIMEItem: TmnMIMEItem;
   aDisposition, aStamp: string;
+  SendOptions: TmodSendOptions;
 begin
   aStamp := FileStamp(AFileDate, ASize);
 
@@ -1333,6 +1341,8 @@ begin
     Answer := hrNotModified;
     exit(False);
   end;
+
+  SendOptions := [];
 
   Stamp := aStamp;
 
@@ -1358,6 +1368,11 @@ begin
       if AAlias <> '' then
         aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"')
     end;
+
+    if NoCompress in aMIMEItem.Features then
+    begin
+      SendOptions := SendOptions + [sndoNoCompress];
+    end;
   end
   else
   begin
@@ -1371,7 +1386,7 @@ begin
   if aDisposition <> '' then
     Header['Content-Disposition'] := aDisposition;
 
-  Result := SendStream(s, ASize);
+  Result := SendStream(s, ASize, SendOptions);
 end;
 
 function TmodRespond.GetStream: TmnBufferStream;
@@ -3050,7 +3065,7 @@ begin
     PutHeader('Accept-Encoding', 'gzip, deflate');
 
   if (Use.Compressing = ovYes) then //to send data by request (post)
-    PutHeader('Content-Encoding', 'gzip');
+    PutHeader('Content-Encoding', 'gzip'); //TODO nope
 
   PutHeader('User-Agent', UserAgent);
 end;
