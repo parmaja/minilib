@@ -216,6 +216,7 @@ type
     FData: Integer;
     FTitle: string;
     FFormat: string;
+    FGuid: string;
     //FDesignerCell: TmnrDesignCell;
     function GetReport: TmnrCustomReport;
     function GetTag: Integer;
@@ -254,6 +255,7 @@ type
     property Title: string read FTitle write FTitle;
     property Format: string read FFormat write FFormat;
     property Data: Integer read FData write FData;
+    property Guid: string read FGuid write FGuid;
     property Chain: string read FChain write FChain;
     property IncludeSections: TmnrSectionClassIDs read GetIncludeSections;
     property ExcludeSections: TmnrSectionClassIDs read GetExcludeSections;
@@ -274,7 +276,8 @@ type
   TmnrLayoutList = class(TmnObjectList<TmnrLayout>)
   public
     constructor Create;
-    function FindLayout(vNumber, vData: Integer): TmnrLayout;
+    function FindLayout(vNumber, vData: Integer): TmnrLayout; overload;
+    function FindLayout(vNumber: Integer; const vGuid: string): TmnrLayout; overload;
   end;
 
 
@@ -3732,6 +3735,15 @@ function TmnrLayoutList.FindLayout(vNumber, vData: Integer): TmnrLayout;
 begin
   for var itm in Self do
     if (itm.Number=vNumber)and(itm.Data=vData) then
+      Exit(itm);
+
+  Result := nil;
+end;
+
+function TmnrLayoutList.FindLayout(vNumber: Integer; const vGuid: string): TmnrLayout;
+begin
+  for var itm in Self do
+    if (itm.Number=vNumber)and(itm.Guid=vGuid) then
       Exit(itm);
 
   Result := nil;
