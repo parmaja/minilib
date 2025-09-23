@@ -72,6 +72,10 @@ type
     ID: Int64;
     Locked: Boolean;
     Data: TJSONObject;
+    procedure Step(var vPos: Int64); overload;
+    procedure Step(var vPos: Integer); overload;
+    function Step(var vPos: Int64; vMax: Int64): Boolean; overload;
+    function Step(var vPos: Integer; vMax: Integer): Boolean; overload;
 
     procedure Reset; //call in new fetch
     procedure Clear; //call in start loop
@@ -3763,6 +3767,42 @@ begin
   ID     := 0;
   Locked := False;
   Data   := nil;
+end;
+
+procedure TmnrFetch.Step(var vPos: Integer);
+begin
+  if FetchMode=fmFirst then
+    vPos := 0
+  else
+    Inc(vPos);
+end;
+
+procedure TmnrFetch.Step(var vPos: Int64);
+begin
+  if FetchMode=fmFirst then
+    vPos := 0
+  else
+    Inc(vPos);
+end;
+
+function TmnrFetch.Step(var vPos: Integer; vMax: Integer): Boolean;
+begin
+  Step(vPos);
+
+  Result := vPos<vMax;
+
+  if not Result then
+    AcceptMode := acmEof;
+end;
+
+function TmnrFetch.Step(var vPos: Int64; vMax: Int64): Boolean;
+begin
+  Step(vPos);
+
+  Result := vPos<vMax;
+
+  if not Result then
+    AcceptMode := acmEof;
 end;
 
 { TRowsData }
