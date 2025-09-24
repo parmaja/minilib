@@ -12,7 +12,7 @@ interface
 
 uses
   Classes, SysUtils, Variants, IniFiles,
-  mnUtils, mncConnections, mnStreams;
+  mnTypes, mnUtils, mncConnections, mnStreams;
 
 type
   {

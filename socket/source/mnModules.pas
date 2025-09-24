@@ -25,8 +25,8 @@
               ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
   GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top HTTP/1.1
   └┬┘    └─┬─┘   └───────────┬───────────┘└───────┬───────┘└───────────┬─────────────┘ └┬─┘ └─────┬┘
-  method scheme          authority               path                query             fragment   protocol
-  └┬┘                                     └─┬─┘ └─┬─┘
+  method scheme          authority              path                 query             fragment   protocol
+  └┬┘                                     └─┬──┘└─┬───────┘
   Command                                Module  Alias              Params
 
   https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
@@ -45,7 +45,7 @@ interface
 uses
   SysUtils, Classes, StrUtils, Types, DateUtils, {$ifdef FPC}ZStream,{$else}ZLib,{$endif}
   Generics.Defaults, mnStreamUtils, SyncObjs,
-  mnClasses, mnStreams, mnFields, mnParams, mnMIME,
+  mnClasses, mnStreams, mnFields, mnParams, mnMIME, mnTypes,
   {$ifdef FPC}
   sha1, base64,
   {$else}

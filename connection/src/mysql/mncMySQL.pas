@@ -18,7 +18,7 @@ interface
 uses
   Classes, SysUtils, Variants, DateUtils,
   {$ifndef FPC} Windows, {$endif}
-  mnLibraries,
+  mnTypes, mnLibraries,
   mncCommons, mncMySQLHeader,
   mncConnections, mncSQL;
 
@@ -153,7 +153,7 @@ type
   TmncMySQLColumn = class(TmncColumn)
   public
     FieldType: enum_field_types;
-    constructor Create(vName: string; vType: TmncDataType);
+    constructor Create(vName: string; vType: TmnDataType);
   end;
 
   { TmncMySQLColumns }
@@ -231,7 +231,7 @@ type
     function GetRowsChanged: Integer; override;
   end;
 
-function MySQLTypeToType(vType: enum_field_types): TmncDataType;
+function MySQLTypeToType(vType: enum_field_types): TmnDataType;
 function MySQLTypeToString(vType: enum_field_types): String;
 
 implementation
@@ -263,7 +263,7 @@ end;
 
 { TmncMySQLColumn }
 
-constructor TmncMySQLColumn.Create(vName: string; vType: TmncDataType);
+constructor TmncMySQLColumn.Create(vName: string; vType: TmnDataType);
 begin
   inherited Create;
   Name := vName;
@@ -326,7 +326,7 @@ begin
   inherited;
 end;
 
-function MySQLTypeToType(vType: enum_field_types): TmncDataType;
+function MySQLTypeToType(vType: enum_field_types): TmnDataType;
 begin
   case vType of
     MYSQL_TYPE_DECIMAL: Result := dtCurrency;

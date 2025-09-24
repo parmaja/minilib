@@ -42,7 +42,7 @@ interface
 uses
   Classes, SysUtils, DateUtils, Variants, Contnrs, SyncObjs, Types,
   Generics.Collections,
-  mnFields, mncCommons;
+  mnTypes, mnFields, mncCommons;
 
 type
   TmncTransaction = class;
@@ -246,10 +246,6 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
-  TmncDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig {bigint or int64}, dtUUID{, dtEnum, dtSet});
-  TmncSubType = (dstBinary, dstText, dstImage, dstXML, dstJSON);
-  TmncBlobType = (blobBinary, blobText);
-
 {
   TmncItem base class for Column and Field and Param
   TmnColumn have Name but have no Value
@@ -261,13 +257,13 @@ type
 
   TmncItem = class abstract(TmnCustomField)
   private
-    FDataType: TmncDataType;
-    FBlobType: TmncBlobType;
+    FDataType: TmnDataType;
+    FBlobType: TmnBlobType;
   protected
     function GetAsText: string; override;
     procedure SetAsText(const AValue: string); override;
-    property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
-    property DataType: TmncDataType read FDataType write FDataType default dtUnknown;
+    property BlobType: TmnBlobType read FBlobType write FBlobType default blobBinary;
+    property DataType: TmnDataType read FDataType write FDataType default dtUnknown;
     procedure Created; override;
   public
     function IsNumber: Boolean;
@@ -310,14 +306,14 @@ type
     FMetaType: string;
     FScale: SmallInt;
     FSize: Int64;
-    FSubType: TmncSubType;
+    FSubType: TmnSubType;
   protected
     procedure SetIsNull(const AValue: Boolean); override;
     function GetIsNull: Boolean; override;
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
     procedure SetSize(AValue: Int64); virtual;
-    procedure SetType(vType: TmncDataType);
+    procedure SetType(vType: TmnDataType);
     procedure SetDecimals(AValue: Integer);
    public
     function GetName: string; override;
@@ -333,7 +329,7 @@ type
     property Decimals: Integer read FDecimals write SetDecimals;
     property Options: TmnDataOptions read FOptions write FOptions default [];
     //property IsBlob;
-    property SubType: TmncSubType read FSubType write FSubType;
+    property SubType: TmnSubType read FSubType write FSubType;
     property MaxSize: Integer read FMaxSize write FMaxSize;
   end;
 
@@ -346,10 +342,10 @@ type
   protected
   public
     procedure Assign(Source: TmncColumns); virtual;
-    function Add(vIndex: Integer; vName: string; vType: TmncDataType; FieldClass: TmncColumnClass = nil): TmncColumn; overload;
-    function Add(vName: string; vType: TmncDataType): TmncColumn; overload;
+    function Add(vIndex: Integer; vName: string; vType: TmnDataType; FieldClass: TmncColumnClass = nil): TmncColumn; overload;
+    function Add(vName: string; vType: TmnDataType): TmncColumn; overload;
     function Add(vColumn: TmncColumn): Integer; overload;
-    procedure Clone(FromColumns: TmncColumns; AsDataType: TmncDataType); overload;
+    procedure Clone(FromColumns: TmncColumns; AsDataType: TmnDataType); overload;
     procedure Clone(FromColumns: TmncColumns); overload;
   end;
 
@@ -1513,7 +1509,7 @@ end;
 
 { TmncColumns }
 
-function TmncColumns.Add(vIndex: Integer; vName: string; vType: TmncDataType; FieldClass: TmncColumnClass): TmncColumn;
+function TmncColumns.Add(vIndex: Integer; vName: string; vType: TmnDataType; FieldClass: TmncColumnClass): TmncColumn;
 begin
   if FieldClass = nil then
     FieldClass := TmncColumn;
@@ -1525,7 +1521,7 @@ begin
   inherited Add(Result);
 end;
 
-function TmncColumns.Add(vName: string; vType: TmncDataType): TmncColumn;
+function TmncColumns.Add(vName: string; vType: TmnDataType): TmncColumn;
 begin
   Result := Add(Count, vName, vType);
 end;
@@ -1540,7 +1536,7 @@ begin
 
 end;
 
-procedure TmncColumns.Clone(FromColumns: TmncColumns; AsDataType: TmncDataType);
+procedure TmncColumns.Clone(FromColumns: TmncColumns; AsDataType: TmnDataType);
 var
   i: Integer;
 begin
@@ -1647,7 +1643,7 @@ begin
   FSize :=AValue;
 end;
 
-procedure TmncColumn.SetType(vType: TmncDataType);
+procedure TmncColumn.SetType(vType: TmnDataType);
 begin
   FDataType := vType;
 end;

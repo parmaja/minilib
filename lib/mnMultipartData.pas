@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams, mnClasses, mnParams,
+  mnUtils, mnStreams, mnClasses, mnFields, mnParams,
   mnStreamUtils;
 
 type

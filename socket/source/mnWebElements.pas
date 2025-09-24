@@ -83,7 +83,7 @@ uses
   resource, //* for RT_RCDATA
   {$endif}
   syncobjs, mnDON, mnJSON,
-  mnUtils, mnClasses, mnStreams, mnLogs, mnMIME, mnParams,
+  mnUtils, mnClasses, mnStreams, mnLogs, mnMIME, mnParams, mnTypes,
   mnMultipartData, mnModules, mnWebModules;
 
 {.$define rtti_objects}

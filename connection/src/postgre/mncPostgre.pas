@@ -26,7 +26,7 @@ interface
 
 uses
   Classes, SysUtils, Variants, StrUtils, Contnrs, SyncObjs, DateUtils,
-  mnUtils,
+  mnTypes, mnUtils,
   mncCommons, mncConnections, mncSQL, mnClasses, mncDB, mncPGHeader;
 
 const

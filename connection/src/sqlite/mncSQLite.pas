@@ -19,7 +19,7 @@ interface
 
 uses
   Classes, SysUtils, Variants, DateUtils,
-  mncSQLiteHeader, mncCommons,
+  mnTypes, mncSQLiteHeader, mncCommons,
   mnUtils, mncConnections, mncSQL;
 
 const
@@ -248,7 +248,7 @@ begin
 
 end;
 
-function SQLTypeToType(vType: Integer; const MetaType: string): TmncDataType;
+function SQLTypeToType(vType: Integer; const MetaType: string): TmnDataType;
 
   function isDate: Boolean;
   begin

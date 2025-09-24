@@ -24,16 +24,8 @@ interface
 
 uses
   {$ifdef windows}Windows,{$endif}
-  Classes, SysUtils, StrUtils, DateUtils, Types, Character;
-
-const
-  sUTF8BOM: array[1..3] of AnsiChar = (#$EF, #$BB, #$BF);
-  {$ifdef FPC}
-  {$else}
-  JulianEpoch = TDateTime(-2415018.5);  //check EpochAsJulianDate
-  {$endif}
-
-  URLPathDelim  = '/';
+  Classes, SysUtils, StrUtils, DateUtils, Types, Character,
+  mnTypes;
 
 procedure Nothing;
 {

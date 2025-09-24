@@ -18,7 +18,7 @@ interface
 
 uses
   Classes, SysUtils, Variants,
-  mncConnections, mncSQL,
+  mnTypes, mncConnections, mncSQL,
   mncFBHeader, mncFBClasses, mncFBUtils, mncDB;
 
 const
@@ -303,7 +303,7 @@ type
 
 implementation
 
-function SQLTypeToDataType(SQLType: Integer):TmncDataType;
+function SQLTypeToDataType(SQLType: Integer):TmnDataType;
 begin
   case FBSqlDef(SQLType) of
     SQL_TEXT: Result := dtString;
