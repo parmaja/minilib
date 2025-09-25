@@ -16,7 +16,8 @@ unit mnHttpServer;
 interface
 
 uses
-  SysUtils, Classes, mnSockets, mnServers, mnStreams, mnConnections;
+  SysUtils, Classes,
+  mnTypes, mnSockets, mnServers, mnStreams, mnConnections;
 
 type
   THttpConnection = class;
