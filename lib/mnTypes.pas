@@ -35,7 +35,7 @@ const
   URLPathDelim  = '/';
 
 type
-  TmnDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig {bigint or int64}, dtUUID{, dtEnum, dtSet});
+  TmnDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig, dtColor {bigint or int64}, dtUUID{, dtEnum, dtSet});
   TmnSubType = (dstBinary, dstText, dstImage, dstXML, dstJSON);
   TmnBlobType = (blobBinary, blobText);
 

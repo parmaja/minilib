@@ -22,13 +22,13 @@ uses
 
 type
 
-  TLogLevel = (lglError, lglWarning, lglInfo, lglDebug);
+  TLogLevel = (lglError, lglWarning, {lgHint, } lglInfo, lglDebug);
 
   { ILog }
 
   ILog = interface(IInterface)
     ['{ADAAE11A-FEED-450C-818F-04915E7730AA}']
-    procedure LogWrite(S: string);
+    procedure LogWrite(LogLevel: TLogLevel; S: string);
   end;
 
   TLogDispatcherItem = class(TObject)
@@ -72,7 +72,7 @@ type
     FFileName: string;
     procedure InternalWrite(const S: string);
     function OpenStream: TStream;
-    procedure LogWrite(S: string);
+    procedure LogWrite(LogLevel: TLogLevel; S: string);
   public
     constructor Create(const FileName: string);
     destructor Destroy; override;
@@ -85,7 +85,7 @@ type
   TEventLog = class(TInterfacedPersistent, ILog)
   private
     Event: TLogEvent;
-    procedure LogWrite(S: string);
+    procedure LogWrite(LogLevel: TLogLevel; S: string);
   public
     constructor Create(AEvent: TLogEvent);
   end;
@@ -94,7 +94,7 @@ type
 
   TConsoleLog = class(TInterfacedPersistent, ILog)
   private
-    procedure LogWrite(S: string);
+    procedure LogWrite(LogLevel: TLogLevel; S: string);
   public
   end;
 
@@ -102,7 +102,7 @@ type
 
   TDebugOutputLog = class(TInterfacedPersistent, ILog)
   private
-    procedure LogWrite(S: string);
+    procedure LogWrite(LogLevel: TLogLevel; S: string);
   public
   end;
 
@@ -178,7 +178,7 @@ end;
 
 procedure InstallConsoleLog(LogLevel: TLogLevel);
 begin
-  if not isloginstalled(TConsoleLog) then
+  if not IsLogInstalled(TConsoleLog) then
     Log.Install(LogLevel, TConsoleLog.Create);
 end;
 
@@ -236,7 +236,7 @@ end;
 
 { TEventLog }
 
-procedure TEventLog.LogWrite(S: string);
+procedure TEventLog.LogWrite(LogLevel: TLogLevel; S: string);
 begin
   if Assigned(Event) then
     Event(S);
@@ -250,7 +250,7 @@ end;
 
 { TConsoleLog }
 
-procedure TConsoleLog.LogWrite(S: string);
+procedure TConsoleLog.LogWrite(LogLevel: TLogLevel; S: string);
 begin
   if IsConsole then
   begin
@@ -260,7 +260,7 @@ end;
 
 { TDebugOutputLog }
 
-procedure TDebugOutputLog.LogWrite(S: string);
+procedure TDebugOutputLog.LogWrite(LogLevel: TLogLevel; S: string);
 begin
   {$ifdef MSWINDOWS}
     s := IntToStr(TThread.GetTickCount64) + ': ' +s;
@@ -325,7 +325,7 @@ begin
       item := Items[i] as TLogDispatcherItem;
       ALog := (item.LogObject as ILog);
       if item.LogLevel >= LogLevel then
-        ALog.LogWrite(S);
+        ALog.LogWrite(LogLevel, S);
     end;
   finally
     Lock.Leave;
@@ -422,7 +422,7 @@ begin
   end;
 end;
 
-procedure TFileLog.LogWrite(S: string);
+procedure TFileLog.LogWrite(LogLevel: TLogLevel; S: string);
 var
   a: string;
 begin
