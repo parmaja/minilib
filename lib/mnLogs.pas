@@ -22,7 +22,14 @@ uses
 
 type
 
-  TLogLevel = (lglError, lglWarning, {lgHint, } lglInfo, lglDebug);
+  TLogLevel = (
+    lglText, //Normal text always show it
+    lglError,
+    lglWarning,
+    {lgHint, }
+    lglInfo, //Normal text but show it if installed logger allow it, it is by default
+    lglDebug
+  );
 
   { ILog }
 
