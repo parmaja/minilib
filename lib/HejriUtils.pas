@@ -52,7 +52,7 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, StrUtils,
-  UniDates, HejriDates, mnStreams;//mnStreams need to load files;
+  mnTypes, UniDates, HejriDates, mnStreams;//mnStreams need to load files;
 
 type
   THejriDateRec = record
