@@ -29,9 +29,6 @@
         <CompilerMessages>
           <IgnoredMessages idx5024="True"/>
         </CompilerMessages>
-        <ConfigFile>
-          <WriteConfigFilePath Value="$(PkgOutDir)/fpclaz.cfg"/>
-        </ConfigFile>
       </Other>
     </CompilerOptions>
     <Description Value="MiniLib"/>
@@ -153,6 +150,10 @@
       <Item>
         <Filename Value="mnMIME.pas"/>
         <UnitName Value="mnMIME"/>
+      </Item>
+      <Item>
+        <Filename Value="mnTypes.pas"/>
+        <UnitName Value="mnTypes"/>
       </Item>
     </Files>
     <RequiredPkgs>

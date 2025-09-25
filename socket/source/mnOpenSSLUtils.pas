@@ -67,8 +67,6 @@ type
 
   TSSLStackArr = TArray<TSSLStackData>;
 
-
-
 function MakeX509(vConfig: TsslConfig): PX509;
 function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
 function MakeCertReq(vConfig: TsslConfig; px: PX509; pk: PEVP_PKEY): Boolean; overload;

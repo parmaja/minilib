@@ -39,6 +39,30 @@ type
   TmnSubType = (dstBinary, dstText, dstImage, dstXML, dstJSON);
   TmnBlobType = (blobBinary, blobText);
 
+{ C Types }
+  clong = NativeInt;
+  culong = NativeUInt;
+
+const
+  sEndOfLine = #$0A;
+
+  sCRLFEndOfLine = #$0D#$0A;
+  sCREndOfLine = #$0D;
+  sLFEndOfLine = #$0A;
+
+  sWinEndOfLine = sCRLFEndOfLine;
+  sUnixEndOfLine = sLFEndOfLine;
+  sMacEndOfLine = sCREndOfLine;
+  sGSEndOfLine = #$1E;
+
+  {$ifdef MSWINDOWS}
+  sNativeEndOfLine = sWinEndOfLine;
+  {$else}
+  sNativeEndOfLine = sUnixEndOfLine;
+  {$endif}
+
+
+
 implementation
 
 end.

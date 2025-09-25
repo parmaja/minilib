@@ -32,12 +32,9 @@ interface
 
 uses
   SysUtils,
-  mnLibraries; // take it from github/parmaja/minilib
+  mnTypes, mnLibraries; // take it from github/parmaja/minilib
 
 type
-  clong = NativeInt;
-  culong = NativeUInt;
-
   BN_ULONG = culong;
 
 {$MINENUMSIZE 4} //All enum must be sized as Integer

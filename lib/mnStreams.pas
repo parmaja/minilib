@@ -62,29 +62,13 @@ unit mnStreams;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils,
+  mnTypes;
 
 const
   cReadTimeout = 15000;
   cWriteTimeout = cReadTimeout div 8;
   cConnectTimeout = cReadTimeout div 4;
-
-  sEndOfLine = #$0A;
-
-  sCRLFEndOfLine = #$0D#$0A;
-  sCREndOfLine = #$0D;
-  sLFEndOfLine = #$0A;
-
-  sWinEndOfLine = sCRLFEndOfLine;
-  sUnixEndOfLine = sLFEndOfLine;
-  sMacEndOfLine = sCREndOfLine;
-  sGSEndOfLine = #$1E;
-
-  {$ifdef MSWINDOWS}
-  sNativeEndOfLine = sWinEndOfLine;
-  {$else}
-  sNativeEndOfLine = sUnixEndOfLine;
-  {$endif}
 
 type
   TFileSize = Longint;

@@ -12,7 +12,7 @@ uses
   mnLogs, mnParams, mnStreams, mnUtils, UniDates, mnRTTIUtils, mnConfigs, 
   mnStreamUtils, mnLibraries, mnMsgBox, mnJobs, mnJSON, mnDON, 
   mnMultipartData, mnHeaders, ucp864, ucp1250, ucp1252, ucp1256, ucputils, 
-  mnMIME;
+  mnMIME, mnTypes;
 
 implementation
 

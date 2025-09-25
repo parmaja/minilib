@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Classes, StrUtils, mnOpenSSL,
-  mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
+  mnTypes, mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
   mnWebModules, mnClients, mnStreams, mnStreamUtils;
 
 type
