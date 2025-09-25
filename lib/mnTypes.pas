@@ -23,8 +23,7 @@ unit mnTypes;
 interface
 
 uses
-  {$ifdef windows}Windows,{$endif}
-  Classes, SysUtils, StrUtils, DateUtils, Types, Character;
+  Types;
 
 const
   sUTF8BOM: array[1..3] of AnsiChar = (#$EF, #$BB, #$BF);

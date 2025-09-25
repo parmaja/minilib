@@ -48,6 +48,7 @@ contains
   UniDates in '..\UniDates.pas',
   mnStreams in '..\mnStreams.pas',
   mnStreamUtils in '..\mnStreamUtils.pas',
+  mnTypes in '..\mnTypes.pas',
   mnUtils in '..\mnUtils.pas',
   mnParams in '..\mnParams.pas',
   HejriUtils in '..\HejriUtils.pas',
