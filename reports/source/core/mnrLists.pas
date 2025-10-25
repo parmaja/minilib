@@ -136,7 +136,7 @@ type
     property AsInteger: Longint read GetAsInteger write SetAsInteger;
     property AsString: string read GetAsString write SetAsString;
     property AsVariant: Variant read GetAsVariant write SetAsVariant;
-    property AsData: Integer read GetAsData write SetAsData;
+    property AsData: Integer read GetAsData write SetAsData; { TODO : use int64 }
     property Value: Variant read GetAsVariant write SetAsVariant;
   end;
 
