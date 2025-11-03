@@ -975,6 +975,15 @@ type
         function GetContentType(Route: string): string; override;
       end;
 
+      TFolder = class(THTMLElement)
+      protected
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+      public
+        HomePath: string;
+        AllowIndex: Boolean;
+        function GetContentType(Route: string): string; override;
+      end;
+
       TComposeProc = reference to procedure(Inner: TmnwElement; AResponse: TmnwResponse);
 
       { TDynamicCompose }
@@ -5089,6 +5098,19 @@ begin
 end;
 
 function THTML.TAssets.GetContentType(Route: string): string;
+begin
+  Result := DocumentToContentType(Route);
+end;
+
+{ THTML.TFolder }
+
+procedure THTML.TFolder.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+begin
+  inherited;
+  ServeFile(Schema.GetHomePath, [serveDefault], nil, AContext, AResponse);
+end;
+
+function THTML.TFolder.GetContentType(Route: string): string;
 begin
   Result := DocumentToContentType(Route);
 end;
