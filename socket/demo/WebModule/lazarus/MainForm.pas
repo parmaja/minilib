@@ -297,7 +297,7 @@ begin
 
   WebServers.AddServer('HttpServer', HttpServer);
 
-  HttpServer.Modules.Add(THomeModule.Create('home', 'home', ['http/1.1']));
+  HttpServer.Modules.Add(THomeModule.Create('home', 'home', [sHTTPProtocol_100, sHTTPProtocol_101]));
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try

@@ -398,7 +398,7 @@ end;
 procedure TmodWebModule.InternalError(ARequest: TmodRequest; var Handled: Boolean);
 begin
   inherited;
-  ARequest.Stream.WriteUTF8Line('HTTP/1.1 500 Internal Server Error');
+  ARequest.Stream.WriteUTF8Line(sHTTPProtocol_101 + ' 500 Internal Server Error');
   ARequest.Stream.WriteUTF8Line('');
   Handled := True;
 end;
@@ -578,9 +578,9 @@ begin
 
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
     //Request.Address := IncludeURLDelimiter(Request.Address);
-    //Respond.SendHead('HTTP/1.1 301 Moved Permanently');
+    //Respond.SendHead(sHTTPProtocol1 + ' 301 Moved Permanently');
     Respond.Answer := hrRedirect;
-    //Respond.SendHead('HTTP/1.1 307 Temporary Redirect');
+    //Respond.SendHead(sHTTPProtocol1 + ' 307 Temporary Redirect');
     Respond.Location := IncludeURLDelimiter(Request.Address);
     Respond.SendHeader;
   end
@@ -781,7 +781,7 @@ end;
 procedure TmodWebServer.Created;
 begin
   inherited;
-  //TmodWebFileModule.Create('web', 'doc', ['http/1.1'], Modules);
+  //TmodWebFileModule.Create('web', 'doc', [sHTTPProtocol1], Modules);
 end;
 
 { TmodAcmeChallengeServer }
@@ -833,7 +833,7 @@ procedure TmodCustomWebServer.AddRedirectHttps;
 begin
   if Modules.Find(sForwardHttps) = nil then
   begin
-    with TmodForwardHttpsModule.Create(sForwardHttps, '', ['http/1.1'], Modules) do
+    with TmodForwardHttpsModule.Create(sForwardHttps, '', [sHTTPProtocol_100, sHTTPProtocol_101], Modules) do
     begin
         //Level := 0;
     end;
@@ -867,7 +867,7 @@ var
 begin
   inherited Create;
 
-  aModule := TmodWebEventModule.Create('web', 'doc', ['http/1.1'], Modules);
+  aModule := TmodWebEventModule.Create('web', 'doc', [sHTTPProtocol1], Modules);
   aModule.FProc := vProc;
 
   Port := vPort;

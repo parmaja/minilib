@@ -334,7 +334,7 @@ end;
 
 procedure TmnCustomHttpClient.SendCommand(Command: string; vData: PByte; vCount: Cardinal);
 begin
-  Request.Head := Command + ' ' + Path + ' ' + sHTTPProtocol1;
+  Request.Head := Command + ' ' + Path + ' ' + sHTTPProtocol_101;
 
   if Request.Use.Compressing<>ovYes then
     Request.ContentLength := vCount;

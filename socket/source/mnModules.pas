@@ -865,7 +865,8 @@ function ComposeHttpURL(const Protocol, DomainName: string; const Port: string =
 function HashWebSocketKey(const key: string): string;
 
 const
-  sHTTPProtocol1 = 'HTTP/1.1'; //* Capital letter
+  sHTTPProtocol_100 = 'HTTP/1.0'; //* Capital letter
+  sHTTPProtocol_101 = 'HTTP/1.1'; //* Capital letter
   sUserAgent = 'miniWebModule/1.1';
   sMiniLibServer = 'minilib.server/v1';
 
@@ -2144,7 +2145,7 @@ function TmodModule.Match(const ARequest: TmodRequest): Boolean;
 begin
   //Result := SameText(AliasName, ARequest.Module) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
   Result := False;
-  if ((Protocols = nil) or IsStrInArray(LowerCase(ARequest.Protocol), Protocols)) then
+  if ((Protocols = nil) or IsStrInArray(ARequest.Protocol, Protocols, False)) then
   begin
     DoMatch(ARequest, Result);
   end;
@@ -2891,7 +2892,7 @@ end;
 
 function TmodAnswerHelper.ToString: string;
 begin
-  Result := 'HTTP/1.1 ';
+  Result := sHTTPProtocol_101 + ' ';
   case Self of
     hrNone: Result := '';
     hrOK: Result := Result + '200 OK';

@@ -16,7 +16,7 @@ object Main: TMain
   Font.Name = 'Tahoma'
   Font.Pitch = fpVariable
   Menu = MainMenu
-  LCLVersion = '3.99.0.0'
+  LCLVersion = '4.99.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnHide = FormHide
