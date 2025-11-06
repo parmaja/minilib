@@ -535,6 +535,8 @@ type
     function StatusCode: Integer;
     function StatusResult: string;
     function StatusVersion: string;
+
+    procedure RedirectTo(S:string);
     //Document root folder
     property HomePath: string read FHomePath write FHomePath;
 
@@ -616,9 +618,7 @@ type
     function GetActive: Boolean; virtual;
     function GetCommandClass(var CommandName: String): TwebCommandClass; virtual;
     procedure Created; override;
-    procedure DoRegisterCommands; virtual; //deprecated 'use RegisterItems';
-    procedure RegisterCommands;
-    procedure CreateItems; virtual; //TODO rename it to Init
+    procedure InitItems; virtual; //TODO rename it to Init
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
     procedure DoPrepareRequest(ARequest: TmodRequest); virtual;
 
@@ -645,7 +645,8 @@ type
   public
     //Default fallback module should have no alias name
     //Protocols all should lowercase
-    constructor Create(const AName, AAliasName: String; AModules: TmodModules = nil); virtual;
+    constructor Create(AModules: TmodModules; const AName: string; const AAliasName: String = ''); overload; virtual;
+    constructor Create(const AName: string; const AAliasName: String = ''); overload; virtual;
     destructor Destroy; override;
     function RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean = False): Integer; overload;
 
@@ -680,6 +681,7 @@ type
     FActive: Boolean;
     FEndOfLine: String;
     FDefaultProtocol: String;
+    FDefaultModule: TmodModule;
     FInit: Boolean;
     FServer: TmodModuleServer;
     procedure SetEndOfLine(AValue: String);
@@ -706,6 +708,7 @@ type
     function Find<T: Class>(const AName: string): T; overload;
     function Find(const AName: string): TmodModule; overload;
     function Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
+    property DefaultModule: TmodModule read FDefaultModule write FDefaultModule;
 
     function Add(const Name, AliasName: String; AModule: TmodModule): Integer; overload;
     procedure Log(S: String); virtual;
@@ -2072,12 +2075,7 @@ begin
   inherited;
 end;
 
-procedure TmodModule.RegisterCommands;
-begin
-  DoRegisterCommands;
-end;
-
-procedure TmodModule.CreateItems;
+procedure TmodModule.InitItems;
 begin
 end;
 
@@ -2099,20 +2097,23 @@ begin
   Result := CreateCommand(ARequest.Command, ARequest);
 end;
 
-constructor TmodModule.Create(const AName, AAliasName: String; AModules: TmodModules);
+constructor TmodModule.Create(const AName: string; const AAliasName: String);
 begin
-  inherited Create;
+  Create(nil, AName, AAliasName);
+end;
+
+constructor TmodModule.Create(AModules: TmodModules; const AName: string; const AAliasName: String);
+begin
   Name := AName;
   FAliasName := AAliasName;
+  FCommands := TmodCommandClasses.Create(True);
+  FUse.KeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
   if AModules <> nil then
   begin
     FModules := AModules;//* nope, Add will assign it
     FModules.Add(Self);
   end;
-  FCommands := TmodCommandClasses.Create(True);
-  FUse.KeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
-  CreateItems;
-  RegisterCommands;
+  InitItems; //TODO rename to Init
 end;
 
 destructor TmodModule.Destroy;
@@ -2124,10 +2125,6 @@ end;
 procedure TmodModule.DoReceiveHeader(ARequest: TmodRequest);
 begin
 
-end;
-
-procedure TmodModule.DoRegisterCommands;
-begin
 end;
 
 procedure TmodModule.DoPrepareRequest(ARequest: TmodRequest);
@@ -2238,7 +2235,7 @@ end;
 
 function TmodModule.GetActive: Boolean;
 begin
-  Result := Modules.Active; //todo
+  Result := (Modules <> nil )and Modules.Active; //todo
 end;
 
 function TmodModule.RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean): Integer;
@@ -2426,6 +2423,9 @@ begin
     else if (item.AliasName = '') then //* find fallback module without aliasname
       aLast := item;
   end;
+
+  if aModule = nil then
+    aModule := DefaultModule;
 
   if aModule = nil then
     aModule := aLast;
@@ -3199,6 +3199,13 @@ end;
 function TwebRespond.StatusVersion: string;
 begin
   Result := SubStr(Head, ' ', 0);
+end;
+
+procedure TwebRespond.RedirectTo(S: string);
+begin
+  Answer := hrRedirect;
+  Location := S;
+  SendHeader;
 end;
 
 function TwebRespond.GetRequest: TwebRequest;

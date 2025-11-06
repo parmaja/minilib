@@ -99,7 +99,7 @@ type
   private
   protected
     function CreateRenderer: TmnwRenderer; override;
-    procedure CreateItems; override;
+    procedure InitItems; override;
     procedure Start; override;
   public
     destructor Destroy; override;
@@ -804,7 +804,7 @@ begin
   inherited;
 end;
 
-procedure THomeModule.CreateItems;
+procedure THomeModule.InitItems;
 begin
   inherited;
   WebApp.RegisterSchema('welcome', TWelcomeSchema);

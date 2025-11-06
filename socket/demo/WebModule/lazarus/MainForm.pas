@@ -28,12 +28,16 @@ type
   { TMain }
 
   TMain = class(TForm)
+    HomeAliasEdit: TEdit;
     ChallengeSSLChk: TCheckBox;
     KeepAliveChk: TCheckBox;
     Label5: TLabel;
+    HomeLbl: TLabel;
+    Label6: TLabel;
     MakeCertBtn: TButton;
-    AliasNameEdit: TEdit;
+    DocAliasEdit: TEdit;
     AutoRunChk: TCheckBox;
+    BindEdit: TEdit;
     UseSSLChk: TCheckBox;
     ExitBtn: TButton;
     Label1: TLabel;
@@ -105,7 +109,8 @@ begin
     ServerLog('use https://localhost:' + PortEdit.Text + '/doc/')
   else
     ServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
-  ChallengeServer.Enabled := ChallengeSSLChk.Checked;
+  ChallengeServer.Enabled := UseSSLChk.Checked and ChallengeSSLChk.Checked;
+
   WebServers.Start;
 end;
 
@@ -144,7 +149,7 @@ end;
 procedure TMain.StopBtnClick(Sender: TObject);
 begin
   WebServers.Stop;
-  StartBtn.Enabled:=true;
+  StartBtn.Enabled:= true;
   MaxOfThreadsLabel.Caption := '0';
   LastIDLabel.Caption := '0';
 end;
@@ -155,6 +160,7 @@ var
   aDocModule: TmodWebModule;
   aHomeModule: THomeModule;
 begin
+  HttpServer.Bind := BindEdit.Text;
   HttpServer.Port := PortEdit.Text;
   if UseSSLChk.Checked then
   begin
@@ -171,10 +177,10 @@ begin
   if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
     aHomePath := IncludePathDelimiter(ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt));
 
-  aDocModule := HttpServer.Modules.Find<TmodWebModule>;
+  aDocModule := HttpServer.Modules.Find<TmodWebFileModule>;
   if aDocModule <> nil then
   begin
-    aDocModule.AliasName := AliasNameEdit.Text;
+    aDocModule.AliasName := DocAliasEdit.Text;
     aDocModule.HomePath := aHomePath;
     //aDocModule.Use.AcceptCompressing := True;
     if CompressChk.Checked then
@@ -182,12 +188,14 @@ begin
     else
       aDocModule.UseCompressing := ovNo;
     aDocModule.UseKeepAlive.AsBoolean := KeepAliveChk.Checked;
+    HttpServer.SetRedirect('/'+aDocModule.AliasName+'/');
   end;
+
 
   aHomeModule := HttpServer.Modules.Find<THomeModule>;
   if aHomeModule <> nil then
   begin
-    aHomeModule.AliasName := 'home';
+    aHomeModule.AliasName := HomeAliasEdit.Text;
     aAppPath := ExtractFilePath(Application.ExeName);
 
     //aHomeModule.IsSSL := HttpServer.UseSSL;
@@ -279,6 +287,7 @@ begin
   ChallengeServer := TmodWebServer.Create;
   ChallengeServer.AddChallengeAcme(ExtractFilePath(ParamStr(0)) + 'acme\.well-known\');
   ChallengeServer.AddRedirectHttps;
+  ChallengeServer.Bind:= BindEdit.Text;
 
   ChallengeServer.OnLog := ServerLog;
   ChallengeServer.Logging := LogMessages;
@@ -294,13 +303,17 @@ begin
 
   WebServers.AddServer('HttpServer', HttpServer);
 
+  HttpServer.Modules.Add(TmodWebFileModule.Create('doc', 'doc'));
   HttpServer.Modules.Add(THomeModule.Create('home', 'home'));
+  HttpServer.SetRedirect('/doc/');
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
     HomePathEdit.Text := GetOption('homepath', '.\html');
     PortEdit.Text := GetOption('port', '81');
-    AliasNameEdit.Text := GetOption('alias', 'doc');
+    DocAliasEdit.Text := GetOption('doc.alias', 'doc');
+    HomeAliasEdit.Text := GetOption('home.alias', 'home');
+    BindEdit.Text := GetOption('bind', '0.0.0.0');
     UseSSLChk.Checked := GetOption('ssl', false);
     CompressChk.Checked := GetOption('compress', false);
     KeepAliveChk.Checked := GetOption('keep-alive', false);
@@ -323,10 +336,12 @@ procedure TMain.FormDestroy(Sender: TObject);
 var
   aIni:TIniFile;
 begin
-  aIni := TIniFile.Create(Application.Location+'config.ini');
+  aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
     aIni.WriteString('options', 'homepath', HomePathEdit.Text);
-    aIni.WriteString('options', 'alias', AliasNameEdit.Text);
+    aIni.WriteString('options', 'doc.alias', DocAliasEdit.Text);
+    aIni.WriteString('options', 'home.alias', HomeAliasEdit.Text);
+    aIni.WriteString('options', 'bind', BindEdit.Text);
     aIni.WriteString('options', 'port', PortEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'compress', CompressChk.Checked);

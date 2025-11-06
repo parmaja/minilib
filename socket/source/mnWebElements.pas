@@ -1873,14 +1873,14 @@ type
     FWebApp: TmnwApp;
   protected
     function CreateRenderer: TmnwRenderer; virtual;
-    procedure CreateItems; override;
+    procedure InitItems; override;
     procedure DoPrepareRequest(ARequest: TmodRequest); override;
     procedure Created; override;
     procedure Start; override;
     procedure Stop; override;
   public
     destructor Destroy; override;
-    constructor Create(const AName, AAliasName: String; AModules: TmodModules =nil); override;
+    constructor Create(AModules: TmodModules; const AName: string; const AAliasName: String); override;
     property WebApp: TmnwApp read FWebApp;
   end;
 
@@ -6179,7 +6179,7 @@ begin
   inherited;
 end;
 
-procedure TUIWebModule.CreateItems;
+procedure TUIWebModule.InitItems;
 begin
   inherited;
   RegisterCommand('', TUIWebCommand, true);
@@ -6201,7 +6201,8 @@ begin
   FreeAndNil(FWebApp); //keep behind inherited
 end;
 
-constructor TUIWebModule.Create(const AName, AAliasName: String; AModules: TmodModules);
+constructor TUIWebModule.Create(AModules: TmodModules; const AName: string;
+  const AAliasName: String);
 begin
   FWebApp := TmnwApp.Create;
   inherited;

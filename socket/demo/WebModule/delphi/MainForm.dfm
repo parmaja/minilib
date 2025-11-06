@@ -40,6 +40,13 @@ object Main: TMain
     Height = 13
     Caption = 'Alias'
   end
+  object Label6: TLabel
+    Left = 226
+    Top = 33
+    Width = 28
+    Height = 13
+    Caption = 'Home'
+  end
   object Memo: TMemo
     Left = 0
     Top = 176
@@ -145,7 +152,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 13
+      Height = 22
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -158,13 +165,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object Label3: TLabel
       AlignWithMargins = True
       Left = 101
       Top = 6
       Width = 20
-      Height = 13
+      Height = 22
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -177,6 +185,7 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object MaxOfThreadsLabel: TLabel
       AlignWithMargins = True
@@ -231,7 +240,7 @@ object Main: TMain
       Left = 3
       Top = 3
       Width = 29
-      Height = 13
+      Height = 28
       Align = alLeft
       Caption = 'Count'
       Color = clBtnFace
@@ -244,6 +253,7 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
   end
   object Button1: TButton
@@ -276,10 +286,10 @@ object Main: TMain
     TabOrder = 9
     OnClick = Button2Click
   end
-  object AliasNameEdit: TEdit
+  object DocAliasEdit: TEdit
     Left = 163
     Top = 30
-    Width = 193
+    Width = 54
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     BiDiMode = bdLeftToRight
@@ -350,5 +360,16 @@ object Main: TMain
     Caption = 'MakeCert'
     TabOrder = 17
     OnClick = Button4Click
+  end
+  object HomeAliasEdit: TEdit
+    Left = 265
+    Top = 30
+    Width = 65
+    Height = 21
+    Anchors = [akLeft, akTop, akRight]
+    BiDiMode = bdLeftToRight
+    ParentBiDiMode = False
+    TabOrder = 18
+    Text = 'home'
   end
 end

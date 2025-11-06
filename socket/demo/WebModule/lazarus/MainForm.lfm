@@ -22,8 +22,8 @@ object Main: TMain
   OnHide = FormHide
   object Memo: TMemo
     Left = 5
-    Height = 204
-    Top = 157
+    Height = 172
+    Top = 189
     Width = 526
     Align = alClient
     Anchors = [akLeft, akBottom]
@@ -41,18 +41,18 @@ object Main: TMain
   end
   object Panel1: TPanel
     Left = 0
-    Height = 152
+    Height = 184
     Top = 0
     Width = 536
     Align = alTop
     BevelOuter = bvNone
-    ClientHeight = 152
+    ClientHeight = 184
     ClientWidth = 536
     TabOrder = 0
     object Panel2: TPanel
       Left = 0
       Height = 39
-      Top = 113
+      Top = 145
       Width = 536
       Align = alBottom
       BevelOuter = bvNone
@@ -134,11 +134,11 @@ object Main: TMain
       ParentFont = False
     end
     object Label2: TLabel
-      Left = 18
+      Left = 17
       Height = 13
-      Top = 37
+      Top = 36
       Width = 20
-      Caption = 'Port'
+      Caption = 'Bind'
     end
     object HomePathEdit: TEdit
       Left = 47
@@ -150,9 +150,9 @@ object Main: TMain
       Text = '.\html'
     end
     object PortEdit: TEdit
-      Left = 47
+      Left = 176
       Height = 21
-      Top = 34
+      Top = 32
       Width = 78
       TabOrder = 3
       Text = '81'
@@ -160,7 +160,7 @@ object Main: TMain
     object Panel3: TPanel
       Left = 0
       Height = 26
-      Top = 87
+      Top = 119
       Width = 536
       Align = alBottom
       BevelOuter = bvNone
@@ -281,14 +281,14 @@ object Main: TMain
       end
     end
     object UseSSLChk: TCheckBox
-      Left = 138
+      Left = 17
       Height = 17
-      Top = 36
+      Top = 81
       Width = 56
       Caption = 'Use SSL'
       TabOrder = 4
     end
-    object AliasNameEdit: TEdit
+    object DocAliasEdit: TEdit
       Left = 47
       Height = 21
       Top = 56
@@ -304,42 +304,72 @@ object Main: TMain
       Caption = 'Alias'
     end
     object StayOnTopChk: TCheckBox
-      Left = 466
+      Left = 243
       Height = 17
-      Top = 36
+      Top = 81
       Width = 53
       Caption = 'On Top'
       TabOrder = 6
       OnChange = StayOnTopChkChange
     end
     object ChallengeSSLChk: TCheckBox
-      Left = 218
+      Left = 97
       Height = 17
-      Top = 36
+      Top = 81
       Width = 130
       Caption = 'Challenge Server on 80'
       TabOrder = 7
     end
+    object HomeAliasEdit: TEdit
+      Left = 176
+      Height = 21
+      Top = 56
+      Width = 78
+      TabOrder = 8
+      Text = 'home'
+    end
+    object HomeLbl: TLabel
+      Left = 136
+      Height = 13
+      Top = 59
+      Width = 27
+      Caption = 'Home'
+    end
+    object Label6: TLabel
+      Left = 136
+      Height = 13
+      Top = 35
+      Width = 31
+      Caption = 'Label6'
+    end
   end
   object CompressChk: TCheckBox
-    Left = 138
+    Left = 17
     Height = 17
-    Top = 58
+    Top = 103
     Width = 65
     Caption = 'Compress'
     TabOrder = 2
   end
   object KeepAliveChk: TCheckBox
-    Left = 219
+    Left = 98
     Height = 17
-    Top = 58
+    Top = 103
     Width = 68
     Caption = 'Keep Alive'
     TabOrder = 3
   end
+  object BindEdit: TEdit
+    Left = 48
+    Height = 21
+    Top = 32
+    Width = 78
+    TabOrder = 4
+    Text = '0.0.0.0'
+  end
   object MainMenu: TMainMenu
-    Left = 441
-    Top = 132
+    Left = 448
+    Top = 80
     object MenuItem1: TMenuItem
       Caption = 'Exit'
       OnClick = MenuItem1Click

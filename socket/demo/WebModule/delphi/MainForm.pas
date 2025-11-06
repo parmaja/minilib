@@ -35,7 +35,7 @@ type
     Button1: TButton;
     UseSSLChk: TCheckBox;
     Button2: TButton;
-    AliasNameEdit: TEdit;
+    DocAliasEdit: TEdit;
     Label5: TLabel;
     KeepAliveChk: TCheckBox;
     CompressChk: TCheckBox;
@@ -44,6 +44,8 @@ type
     OpenBtn: TButton;
     Button3: TButton;
     Button4: TButton;
+    HomeAliasEdit: TEdit;
+    Label6: TLabel;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
@@ -110,7 +112,7 @@ begin
   if aDocModule <> nil then
   begin
     aDocModule.HomePath := aHomePath;
-    aDocModule.AliasName := AliasNameEdit.Text;
+    aDocModule.AliasName := DocAliasEdit.Text;
 
     if KeepAliveChk.Checked then
       aDocModule.UseKeepAlive := ovYes
@@ -130,7 +132,7 @@ begin
   aHomeModule := HttpServer.Modules.Find<THomeModule>;
   if aHomeModule <> nil then
   begin
-    aHomeModule.AliasName := 'home';
+    aHomeModule.AliasName := HomeAliasEdit.Text;
     aHomeModule.WebApp.AppPath := ExtractFilePath(Application.ExeName);
 
 
@@ -306,6 +308,7 @@ begin
   Memo.Font.Name := 'Consolas';
   Memo.Font.Size := 10;
   InstallEventLog(HttpServerLog);
+
   HttpServer := TmodWebServer.Create;
   HttpServer.OnBeforeOpen := HttpServerBeforeOpen;
   HttpServer.OnAfterOpen := HttpServerAfterOpen;
@@ -314,12 +317,14 @@ begin
   HttpServer.OnLog := HttpServerLog;
   HttpServer.Logging := True;
 
+  HttpServer.Modules.Add(TmodWebFileModule.Create('doc', 'doc'));
   HttpServer.Modules.Add(THomeModule.Create('home', 'home'));
 
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
     HomePathEdit.Text := GetOption('homepath', '.\html');
-    AliasNameEdit.Text := GetOption('alias', 'doc');
+    DocAliasEdit.Text := GetOption('doc.alias', 'doc');
+    HomeAliasEdit.Text := GetOption('home.alias', 'home');
     PortEdit.Text := GetOption('port', '81');
     UseSSLChk.Checked := GetOption('ssl', false);
     StayOnTopChk.Checked := GetOption('on_top', false);
@@ -341,7 +346,8 @@ begin
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
     aIni.WriteString('options', 'homepath', HomePathEdit.Text);
-    aIni.WriteString('options', 'alias', AliasNameEdit.Text);
+    aIni.WriteString('options', 'doc.alias', DocAliasEdit.Text);
+    aIni.WriteString('options', 'home.alias', HomeAliasEdit.Text);
     aIni.WriteString('options', 'Port', PortEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'on_top', StayOnTopChk.Checked);
@@ -400,9 +406,9 @@ end;
 procedure TMain.OpenURL;
 begin
   if UseSSLChk.Checked then
-    ShellExecute(Handle, 'Open', PWideChar('https://localhost:'+PortEdit.Text+'/'+AliasNameEdit.Text), nil, nil, 0)
+    ShellExecute(Handle, 'Open', PWideChar('https://localhost:'+PortEdit.Text+'/'+DocAliasEdit.Text), nil, nil, 0)
   else
-    ShellExecute(Handle, 'Open', PWideChar('http://localhost:'+PortEdit.Text+'/'+AliasNameEdit.Text), nil, nil, 0);
+    ShellExecute(Handle, 'Open', PWideChar('http://localhost:'+PortEdit.Text+'/'+DocAliasEdit.Text), nil, nil, 0);
 end;
 
 end.

@@ -91,7 +91,7 @@ type
   protected
     procedure Created; override;
     procedure Started; override;
-    procedure CreateItems; override;
+    procedure InitItems; override;
 
     procedure Log(S: string); override;
     procedure InternalError(ARequest: TmodRequest; var Handled: Boolean); override;
@@ -119,7 +119,7 @@ type
   protected
     FDefaultDocument: TStringList;
     procedure SetDefaultDocument(AValue: TStringList);
-    procedure DoRegisterCommands; override;
+    procedure InitItems; override;
     procedure Created; override;
     procedure Started; override;
   public
@@ -140,11 +140,20 @@ type
     property Module: TmodWebFileModule read GetModule;
   end;
 
+  { TmodRedirectModule }
+
+  TmodRedirectModule = class(TmodWebModule)
+  protected
+    procedure InitItems; override;
+  public
+    RedirectTo: string;
+  end;
+
   { TmodForwardHttpsModule }
 
   TmodForwardHttpsModule = class(TmodWebModule)
   protected
-    procedure DoRegisterCommands; override;
+    procedure InitItems; override;
   public
   end;
 
@@ -167,6 +176,7 @@ type
     procedure AddChallengeAcme(const AHomePath: string);
     procedure AddFileModule(const Alias: string; const AHomePath: string);
     procedure AddRedirectHttps;
+    procedure SetRedirect(ToLocation: string);
   end;
 
   //*****************************************
@@ -182,7 +192,7 @@ type
   TmodWebEventModule = class(TmodWebModule)
   protected
     FProc: TmodWebEventProc; //need discuss
-    procedure DoRegisterCommands; override;
+    procedure InitItems; override;
   end;
 
   TmodWebEventServer = class(TmodCustomWebServer)
@@ -220,6 +230,14 @@ type
   { TwebPutCommand }
 
   TwebPutCommand = class(TwebFileCommand)
+  protected
+  public
+    procedure RespondResult(var Result: TmodRespondResult); override;
+  end;
+
+  { TmodRedirectCommand }
+
+  TmodRedirectCommand = class(TwebCommand)
   protected
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
@@ -380,7 +398,7 @@ begin
   inherited;
 end;
 
-procedure TmodWebModule.CreateItems;
+procedure TmodWebModule.InitItems;
 begin
   inherited;
   Protocols := [sHTTPProtocol_100, sHTTPProtocol_101];
@@ -429,7 +447,7 @@ begin
   FDefaultDocument.Assign(AValue);
 end;
 
-procedure TmodWebFileModule.DoRegisterCommands;
+procedure TmodWebFileModule.InitItems;
 begin
   inherited;
   RegisterCommand('GET', TwebGetPostCommand, True);
@@ -462,7 +480,7 @@ end;
 
 { TmodForwardHttpsModule }
 
-procedure TmodForwardHttpsModule.DoRegisterCommands;
+procedure TmodForwardHttpsModule.InitItems;
 begin
   inherited;
   RegisterCommand('', TmodForwardHttpsCommand, True);
@@ -653,14 +671,20 @@ begin
   end;
 end;
 
+{ TmodRedirectCommand }
+
+procedure TmodRedirectCommand.RespondResult(var Result: TmodRespondResult);
+begin
+  inherited;
+  Respond.RedirectTo((Module as TmodRedirectModule).RedirectTo);
+end;
+
 { TmodForwardHttpsCommand }
 
 procedure TmodForwardHttpsCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.Answer := hrRedirect;
-  Respond.Location := 'https://'+Respond.Request.Host + Respond.Request.URI;
-  Respond.SendHeader;
+  Respond.RedirectTo('https://'+Respond.Request.Host + Respond.Request.URI);
 end;
 
 { TmodDirCommand }
@@ -734,7 +758,7 @@ procedure TWebServerItem.Stop;
 begin
   if Server <> nil then
   begin
-    Server.Start;
+    Server.Stop;
   end;
 end;
 
@@ -783,12 +807,19 @@ begin
   inherited;
 end;
 
+{ TmodRedirectModule }
+
+procedure TmodRedirectModule.InitItems;
+begin
+  inherited;
+  RegisterCommand('', TmodRedirectCommand, True);
+end;
+
 { TmodWebServer }
 
 procedure TmodWebServer.Created;
 begin
   inherited;
-  //TmodWebFileModule.Create('web', 'doc', [sHTTPProtocol1], Modules);
 end;
 
 { TmodAcmeChallengeServer }
@@ -812,7 +843,7 @@ begin
   if Modules.Find(sAcmeNameFolder) = nil then
   begin
     //* http://localhost/.well-known/acme-challenge/index.html
-    with TmodWebFileModule.Create(sAcmeNameFolder, '.' + sAcmeNameFolder, Modules) do
+    with TmodWebFileModule.Create(Modules, sAcmeNameFolder, '.' + sAcmeNameFolder) do
     begin
       Level := -1;
       HomePath := AHomePath;
@@ -828,7 +859,7 @@ procedure TmodCustomWebServer.AddFileModule(const Alias: string; const AHomePath
 begin
   if Modules.Find(Alias) = nil then
   begin
-    with TmodWebFileModule.Create(Alias, Alias, Modules) do
+    with TmodWebFileModule.Create(Modules, Alias, Alias) do
     begin
       Level := -1;
       HomePath := AHomePath;
@@ -840,11 +871,21 @@ procedure TmodCustomWebServer.AddRedirectHttps;
 begin
   if Modules.Find(sForwardHttps) = nil then
   begin
-    with TmodForwardHttpsModule.Create(sForwardHttps, '', Modules) do
+    with TmodForwardHttpsModule.Create(Modules, sForwardHttps) do
     begin
         //Level := 0;
     end;
   end;
+end;
+
+procedure TmodCustomWebServer.SetRedirect(ToLocation: string);
+var
+  aModule: TmodRedirectModule;
+begin
+  aModule := Modules.Find<TmodRedirectModule>;
+  if aModule = nil then
+    aModule := TmodRedirectModule.Create(Modules, 'redirect');
+  aModule.RedirectTo := ToLocation;
 end;
 
 { TmodCustomWebModules }
@@ -874,7 +915,7 @@ var
 begin
   inherited Create;
 
-  aModule := TmodWebEventModule.Create('web', 'doc', Modules);
+  aModule := TmodWebEventModule.Create(Modules, 'web', 'doc');
   aModule.FProc := vProc;
 
   Port := vPort;
@@ -882,7 +923,7 @@ end;
 
 { TmodWebEventModule }
 
-procedure TmodWebEventModule.DoRegisterCommands;
+procedure TmodWebEventModule.InitItems;
 begin
   // inherited;
   RegisterCommand('Event', TmodHttpEventCommand, true);
