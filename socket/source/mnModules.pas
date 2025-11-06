@@ -57,7 +57,7 @@ const
   cDefaultKeepAliveTimeOut = 50000; //TODO move module
 
 type
-  TmodModuleException = class(Exception);
+  EmodModuleException = class(Exception);
 
   TmodModuleConnection = class;
   TmodModuleConnectionClass = class of TmodModuleConnection;
@@ -609,6 +609,7 @@ type
     FProtocols: TArray<String>;
     FUse: TmodCommunicateUsing;
     procedure SetAliasName(AValue: String);
+    procedure SetProtocols(AValue: TArray<String>);
   protected
     FFallbackCommand: TwebCommandClass;
     //Name here will corrected with registered item name for example Get -> GET
@@ -617,7 +618,7 @@ type
     procedure Created; override;
     procedure DoRegisterCommands; virtual; //deprecated 'use RegisterItems';
     procedure RegisterCommands;
-    procedure CreateItems; virtual;
+    procedure CreateItems; virtual; //TODO rename it to Init
     procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
     procedure DoPrepareRequest(ARequest: TmodRequest); virtual;
 
@@ -631,7 +632,7 @@ type
     procedure Started; virtual;
     procedure Stop; virtual;
     procedure Reload; virtual;
-    procedure Init; virtual;
+    procedure Prepare; virtual;
     procedure Idle; virtual;
 
     //* Run in Connection Thread
@@ -644,7 +645,7 @@ type
   public
     //Default fallback module should have no alias name
     //Protocols all should lowercase
-    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules = nil); virtual;
+    constructor Create(const AName, AAliasName: String; AModules: TmodModules = nil); virtual;
     destructor Destroy; override;
     function RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean = False): Integer; overload;
 
@@ -655,7 +656,7 @@ type
     property Active: Boolean read GetActive;
     property Modules: TmodModules read FModules;
     //* use lower case in Protocols
-    property Protocols: TArray<String> read FProtocols;
+    property Protocols: TArray<String> read FProtocols write SetProtocols;
     property AliasName: String read FAliasName write SetAliasName;
     //All modules before used sorted by Level
     property Level: Integer read FLevel write FLevel;
@@ -689,7 +690,7 @@ type
     procedure Start; //When server start, init values here
     procedure Started; //after all modules started
     procedure Stop;
-    procedure Init; //Init called from the first connection
+    procedure Prepare; //Init called from the first connection
     procedure Idle;
     function Compare(Left: TmodModule; Right: TmodModule): Integer; override;
     property Server: TmodModuleServer read FServer;
@@ -1457,14 +1458,14 @@ end;
 procedure TmodRequest.SetChunkedProxy(const Value: TmnChunkStreamProxy);
 begin
   if (Value <> nil) and (FChunkedProxy <> nil) then
-    raise TmodModuleException.Create('Chunked class is already set!');
+    raise EmodModuleException.Create('Chunked class is already set!');
   FChunkedProxy := Value;
 end;
 
 procedure TmodRequest.SetCompressProxy(const Value: TmnCompressStreamProxy);
 begin
   if (Value <> nil) and (FCompressProxy <> nil) then
-    raise TmodModuleException.Create('Compress proxy is already set!');
+    raise EmodModuleException.Create('Compress proxy is already set!');
   FCompressProxy := Value;
 end;
 
@@ -1582,7 +1583,7 @@ end;
 procedure TmodModuleConnection.Prepare;
 begin
   inherited;
-  (Listener.Server as TmodModuleServer).Modules.Init;
+  (Listener.Server as TmodModuleServer).Modules.Prepare;
 end;
 
 procedure TmodModuleConnection.Process;
@@ -2052,7 +2053,7 @@ begin
 
 end;
 
-procedure TmodModule.Init;
+procedure TmodModule.Prepare;
 begin
 
 end;
@@ -2098,12 +2099,11 @@ begin
   Result := CreateCommand(ARequest.Command, ARequest);
 end;
 
-constructor TmodModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules);
+constructor TmodModule.Create(const AName, AAliasName: String; AModules: TmodModules);
 begin
   inherited Create;
   Name := AName;
   FAliasName := AAliasName;
-  FProtocols := AProtocols;
   if AModules <> nil then
   begin
     FModules := AModules;//* nope, Add will assign it
@@ -2203,7 +2203,7 @@ begin
       InternalError(ARequest, aHandled);
 
       if not aHandled then
-        raise TmodModuleException.Create('Can not find command or fallback command: ' + ARequest.Command);
+        raise EmodModuleException.Create('Can not find command or fallback command: ' + ARequest.Command);
     end;
   end;
 end;
@@ -2224,6 +2224,13 @@ begin
   FAliasName := AValue;
 end;
 
+procedure TmodModule.SetProtocols(AValue: TArray<String>);
+begin
+  if Active then
+    raise EmodModuleException.Create('You can change protocol while module is active');
+  FProtocols := AValue;
+end;
+
 function TmodModule.SkipHeader: Boolean;
 begin
   Result := False;
@@ -2237,9 +2244,9 @@ end;
 function TmodModule.RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean): Integer;
 begin
 {  if Active then
-    raise TmodModuleException.Create('Server is Active');}
+    raise EmodModuleException.Create('Server is Active');}
   if FCommands.Find(vName) <> nil then
-    raise TmodModuleException.Create('Command already exists: ' + vName);
+    raise EmodModuleException.Create('Command already exists: ' + vName);
   Result := FCommands.Add(vName, CommandClass);
   if AFallback then
     FFallbackCommand := CommandClass;
@@ -2287,7 +2294,7 @@ begin
   if FEndOfLine = AValue then
     Exit;
 {  if Active then
-    raise TmodModuleException.Create('You can''t change EOL while server is active');}
+    raise EmodModuleException.Create('You can''t change EOL while server is active');}
   FEndOfLine := AValue;
 end;
 
@@ -2337,7 +2344,7 @@ begin
   Item.FModules := Self;
 end;
 
-procedure TmodModules.Init;
+procedure TmodModules.Prepare;
 var
   aModule: TmodModule;
 begin
@@ -2345,7 +2352,7 @@ begin
   begin
     FInit := True;
     for aModule in Self do
-      aModule.Init;
+      aModule.Prepare;
   end;
 end;
 
@@ -2687,10 +2694,10 @@ begin
   InitProtocol;
 
   if resHeadSent in Header.States then
-    raise TmodModuleException.Create('Head is sent');
+    raise EmodModuleException.Create('Head is sent');
 
   if Head = '' then
-    raise TmodModuleException.Create('Head is not set');
+    raise EmodModuleException.Create('Head is not set');
 
   Stream.WriteUTF8Line(Head);
   Header.FStates := Header.FStates + [resHeadSent];
@@ -2766,7 +2773,7 @@ var
   s: String;
 begin
   if resHeaderSent in Header.States then
-    raise TmodModuleException.Create('Header is sent');
+    raise EmodModuleException.Create('Header is sent');
 
   Header.FStates := Header.FStates + [resHeaderSending];
 
@@ -2813,7 +2820,7 @@ end;
 procedure TmodCommunicate.AddHeader(const AName, AValue: String);
 begin
   if resHeaderSent in Header.States then
-    raise TmodModuleException.Create('Header is already sent: '+ Head);
+    raise EmodModuleException.Create('Header is already sent: '+ Head);
 
   Header.Add(AName, AValue);
 end;
@@ -2821,7 +2828,7 @@ end;
 procedure TmodCommunicate.PutHeader(AName, AValue: String);
 begin
   if resHeaderSent in Header.States then
-    raise TmodModuleException.Create('Header is sent');
+    raise EmodModuleException.Create('Header is sent');
 
   Header.Put(AName, AValue);
 end;
@@ -2833,7 +2840,7 @@ begin
     FWritingStarted := True;
     try
       {if resLatch in Header.States then
-        raise TmodModuleException.Create('You can''t send data at this phase'); //maybe before sending header}
+        raise EmodModuleException.Create('You can''t send data at this phase'); //maybe before sending header}
       if not (resHeaderSending in Header.States) and not (resHeaderSent in Header.States) then
         SendHeader(True);
     finally
@@ -3165,7 +3172,7 @@ end;
 procedure TmodRespond.SetAnswer(const Value: TmodAnswer);
 begin
   if resHeaderSent in Header.States then
-    raise TmodModuleException.Create('Header is already sent');
+    raise EmodModuleException.Create('Header is already sent');
   FAnswer := Value;
   FHead := Answer.ToString;
 end;

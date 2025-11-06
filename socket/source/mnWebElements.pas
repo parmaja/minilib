@@ -1880,7 +1880,7 @@ type
     procedure Stop; override;
   public
     destructor Destroy; override;
-    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules =nil); override;
+    constructor Create(const AName, AAliasName: String; AModules: TmodModules =nil); override;
     property WebApp: TmnwApp read FWebApp;
   end;
 
@@ -6201,7 +6201,7 @@ begin
   FreeAndNil(FWebApp); //keep behind inherited
 end;
 
-constructor TUIWebModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules);
+constructor TUIWebModule.Create(const AName, AAliasName: String; AModules: TmodModules);
 begin
   FWebApp := TmnwApp.Create;
   inherited;

@@ -78,8 +78,6 @@ type
     procedure Start;
     procedure UpdateStatus;
 
-    procedure ChallengeServerBeforeOpen(Sender: TObject);
-
     procedure HttpServerBeforeOpen(Sender: TObject);
     procedure HttpServerAfterOpen(Sender: TObject);
     procedure HttpServerAfterClose(Sender: TObject);
@@ -279,12 +277,11 @@ begin
   InstallEventLog(ServerLog);
 
   ChallengeServer := TmodWebServer.Create;
-  ChallengeServer.AddChallengeAcme(ExtractFilePath(ParamStr(0))+'acme\.well-known\');
+  ChallengeServer.AddChallengeAcme(ExtractFilePath(ParamStr(0)) + 'acme\.well-known\');
   ChallengeServer.AddRedirectHttps;
 
   ChallengeServer.OnLog := ServerLog;
   ChallengeServer.Logging := LogMessages;
-  ChallengeServer.OnBeforeOpen := ChallengeServerBeforeOpen;
   WebServers.AddServer('ChallengeServer', ChallengeServer);
 
   HttpServer := TmodWebServer.Create;
@@ -297,7 +294,7 @@ begin
 
   WebServers.AddServer('HttpServer', HttpServer);
 
-  HttpServer.Modules.Add(THomeModule.Create('home', 'home', [sHTTPProtocol_100, sHTTPProtocol_101]));
+  HttpServer.Modules.Add(THomeModule.Create('home', 'home'));
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
@@ -348,20 +345,6 @@ procedure TMain.UpdateStatus;
 begin
   NumberOfThreads.Caption := IntToStr(HttpServer.Listener.Count);
   LastIDLabel.Caption := IntToStr(HttpServer.Listener.LastID);
-end;
-
-procedure TMain.ChallengeServerBeforeOpen(Sender: TObject);
-var
-  aDocModule: TmodWebModule;
-begin
-  aDocModule := ChallengeServer.Modules.Find<TmodWebModule>;
-  if aDocModule <> nil then
-  begin
-    //.well-known/acme-challenge/
-    //aDocModule.AliasName := '.well-known';
-    aDocModule.HomePath := Application.Location + 'cert/.well-known/';
-    //* use certbot folder to "Application.Location + cert" because certbot will create folder .well-known
-  end;
 end;
 
 procedure TMain.HttpServerAfterClose(Sender: TObject);

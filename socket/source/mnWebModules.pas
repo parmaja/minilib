@@ -91,6 +91,7 @@ type
   protected
     procedure Created; override;
     procedure Started; override;
+    procedure CreateItems; override;
 
     procedure Log(S: string); override;
     procedure InternalError(ARequest: TmodRequest; var Handled: Boolean); override;
@@ -377,6 +378,12 @@ end;
 procedure TmodWebModule.Started;
 begin
   inherited;
+end;
+
+procedure TmodWebModule.CreateItems;
+begin
+  inherited;
+  Protocols := [sHTTPProtocol_100, sHTTPProtocol_101];
 end;
 
 procedure TmodWebModule.DoPrepareRequest(ARequest: TmodRequest);
@@ -805,7 +812,7 @@ begin
   if Modules.Find(sAcmeNameFolder) = nil then
   begin
     //* http://localhost/.well-known/acme-challenge/index.html
-    with TmodWebFileModule.Create(sAcmeNameFolder, '.' + sAcmeNameFolder, [], Modules) do
+    with TmodWebFileModule.Create(sAcmeNameFolder, '.' + sAcmeNameFolder, Modules) do
     begin
       Level := -1;
       HomePath := AHomePath;
@@ -821,7 +828,7 @@ procedure TmodCustomWebServer.AddFileModule(const Alias: string; const AHomePath
 begin
   if Modules.Find(Alias) = nil then
   begin
-    with TmodWebFileModule.Create(Alias, Alias, [], Modules) do
+    with TmodWebFileModule.Create(Alias, Alias, Modules) do
     begin
       Level := -1;
       HomePath := AHomePath;
@@ -833,7 +840,7 @@ procedure TmodCustomWebServer.AddRedirectHttps;
 begin
   if Modules.Find(sForwardHttps) = nil then
   begin
-    with TmodForwardHttpsModule.Create(sForwardHttps, '', [sHTTPProtocol_100, sHTTPProtocol_101], Modules) do
+    with TmodForwardHttpsModule.Create(sForwardHttps, '', Modules) do
     begin
         //Level := 0;
     end;
@@ -867,7 +874,7 @@ var
 begin
   inherited Create;
 
-  aModule := TmodWebEventModule.Create('web', 'doc', [sHTTPProtocol_101], Modules);
+  aModule := TmodWebEventModule.Create('web', 'doc', Modules);
   aModule.FProc := vProc;
 
   Port := vPort;

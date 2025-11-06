@@ -314,7 +314,7 @@ begin
   HttpServer.OnLog := HttpServerLog;
   HttpServer.Logging := True;
 
-  HttpServer.Modules.Add(THomeModule.Create('home', 'home', ['http/1.1']));
+  HttpServer.Modules.Add(THomeModule.Create('home', 'home'));
 
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
