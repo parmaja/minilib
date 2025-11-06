@@ -867,7 +867,7 @@ var
 begin
   inherited Create;
 
-  aModule := TmodWebEventModule.Create('web', 'doc', [sHTTPProtocol1], Modules);
+  aModule := TmodWebEventModule.Create('web', 'doc', [sHTTPProtocol_101], Modules);
   aModule.FProc := vProc;
 
   Port := vPort;
