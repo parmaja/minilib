@@ -2875,12 +2875,12 @@ begin
     Lock.Enter;
     try
       Schema := FindBy(aSchemaName, AContext.SessionID);
-      {if Schema = nil then //* Fallback
+      if Schema = nil then //* Fallback
       begin
         Schema := FindBy('', AContext.SessionID);
         if Schema <> nil then
           aSchemaName := '';
-      end;}
+      end;
     finally
       Lock.Leave;
     end;
@@ -2888,12 +2888,12 @@ begin
     if Schema = nil then // Not cached, create it.
     begin
       Schema := CreateSchema(aSchemaName);
-      {if Schema = nil then  //* Fallback
+      if Schema = nil then  //* Fallback
       begin
         Schema := CreateSchema('');
         if Schema <> nil then
           aSchemaName := '';
-      end;}
+      end;
 
       if (Schema <> nil) and (schemaSession in Schema.GetCapabilities) then
         Schema.SessionID := AContext.SessionID;
@@ -4464,7 +4464,7 @@ begin
   if (Parent <> nil) then
   begin
     if Route <> '' then
-      Result := IncludeURLDelimiter(Parent.GetPath) + Route
+      Result := AddEndURLDelimiter(Parent.GetPath) + Route
     else
       Result := Parent.GetPath;
   end
