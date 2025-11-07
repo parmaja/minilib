@@ -807,7 +807,7 @@ end;
 procedure THomeModule.InitItems;
 begin
   inherited;
-  WebApp.RegisterSchema('welcome', TWelcomeSchema);
+  WebApp.RegisterSchema('', TWelcomeSchema);
   WebApp.RegisterSchema('login', TLoginSchema);
   WebApp.RegisterSchema('demo', TDemoSchema);
   WebApp.RegisterSchema('simple', TSimpleSchema);

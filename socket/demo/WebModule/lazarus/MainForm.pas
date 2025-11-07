@@ -279,7 +279,8 @@ var
     else
       Result := aIni.ReadString('options',AName, ADefault);
   end;
-
+var
+  aBounds: TRect;
 begin
   WebServers := TWebServers.Create;
   InstallEventLog(ServerLog);
@@ -322,6 +323,11 @@ begin
     CertFile := CorrectPath(ExpandToPath(GetOption('certificate', './certificate.pem'), Application.Location));
     PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), Application.Location));
     AutoRunChk.Checked := StrToBoolDef(GetSwitch('autorun', ''), False);
+    aBounds.Left := aIni.ReadInteger('window', 'left', Left);
+    aBounds.Top := aIni.ReadInteger('window', 'top', Top);
+    aBounds.Width := aIni.ReadInteger('window', 'width', Width);
+    aBounds.Height := aIni.ReadInteger('window', 'height', Height);
+    BoundsRect := aBounds;
     StayOnTopChk.Checked := StrToBoolDef(GetSwitch('ontop', ''), False);
     LogMessages := GetOption('log');
   finally
@@ -338,6 +344,12 @@ var
 begin
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
+    aIni.WriteInteger('window', 'top', Top);
+    aIni.WriteInteger('window', 'left', Left);
+    aIni.WriteInteger('window', 'width', Width);
+    aIni.WriteInteger('window', 'Height', Height);
+    aIni.WriteBool('window', 'ontop', StayOnTopChk.Checked);
+
     aIni.WriteString('options', 'homepath', HomePathEdit.Text);
     aIni.WriteString('options', 'doc.alias', DocAliasEdit.Text);
     aIni.WriteString('options', 'home.alias', HomeAliasEdit.Text);
@@ -348,7 +360,6 @@ begin
     aIni.WriteBool('options', 'keep-alive', KeepAliveChk.Checked);
     aIni.WriteBool('options', 'challenge', ChallengeSSLChk.Checked);
     aIni.WriteBool('options', 'autorun', AutoRunChk.Checked);
-    aIni.WriteBool('options', 'ontop', StayOnTopChk.Checked);
   finally
     aIni.Free;
   end;

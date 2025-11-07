@@ -807,10 +807,10 @@ type
     FRegistered: TRegisteredSchemas;
     FHomePath: string;
     FAppPath: string;
+    FWorkPath: string;
     FAssets: TAssetsSchema;
     FLock: TCriticalSection;
     FShutdown: Boolean;
-    FWorkPath: string;
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
@@ -2875,12 +2875,12 @@ begin
     Lock.Enter;
     try
       Schema := FindBy(aSchemaName, AContext.SessionID);
-      if Schema = nil then //* Fallback
+      {if Schema = nil then //* Fallback
       begin
         Schema := FindBy('', AContext.SessionID);
         if Schema <> nil then
           aSchemaName := '';
-      end;
+      end;}
     finally
       Lock.Leave;
     end;
@@ -2888,12 +2888,12 @@ begin
     if Schema = nil then // Not cached, create it.
     begin
       Schema := CreateSchema(aSchemaName);
-      if Schema = nil then
+      {if Schema = nil then  //* Fallback
       begin
         Schema := CreateSchema('');
         if Schema <> nil then
           aSchemaName := '';
-      end;
+      end;}
 
       if (Schema <> nil) and (schemaSession in Schema.GetCapabilities) then
         Schema.SessionID := AContext.SessionID;
@@ -2901,7 +2901,7 @@ begin
 
 {
     if Schema = nil then
-      Schema := First; //* fallback //taskeej
+      Schema := First; //* Fallback //taskeej
 }
     if aSchemaName <> '' then
     begin
@@ -3001,7 +3001,8 @@ begin
       AResponse.Resume := True;
       AResponse.Location := '';
 
-      if (aElement = aSchema) and (AContext.Route = '') then
+      //* If you call schema name without ending by /
+      if (aElement = aSchema) and (aSchema.Name <> '') and (AContext.Route = '') then
       begin
         AResponse.Location := IncludeURLDelimiter(AContext.GetPath(aSchema));
         AResponse.Resume := False;
@@ -5993,12 +5994,18 @@ begin
   Result := inherited Respond as TmnwResponse;
 end;
 
+//* Main
 procedure TUIWebCommand.RespondResult(var Result: TmodRespondResult);
 var
   aContext: TmnwContext;
   aDomain, aPort: string;
 begin
   inherited;
+  if (Request.Path = '') and (Request.URI <> '') then
+  begin
+    Respond.RedirectTo(IncludeURLDelimiter(Request.URI));
+    exit;
+  end;
   AtomicIncrement(RendererID);
   InitMemory(aContext, SizeOf(aContext));
 
