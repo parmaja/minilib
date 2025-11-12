@@ -922,7 +922,7 @@ begin
     if C = '%' then
     begin
       D := copy(S, i + 1, 2);
-      R := R + AnsiChar(StrToInt('$'+D));
+      R := R + AnsiChar(StrToIntDef('$'+D, 0));
       inc(i, 2);
     end
     else
@@ -1261,7 +1261,7 @@ begin
     else
     begin
       _SendHeader(Count, False);
-      s.SaveToStream(Self.Stream, Count);
+      s.SaveToStream(Self.Stream, Count); //Buggy
     end;
   end;
 end;
@@ -1589,6 +1589,7 @@ begin
   (Listener.Server as TmodModuleServer).Modules.Prepare;
 end;
 
+//Main
 procedure TmodModuleConnection.Process;
 var
   aHead: String;

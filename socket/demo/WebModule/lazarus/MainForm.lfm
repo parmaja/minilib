@@ -329,7 +329,7 @@ object Main: TMain
       Text = 'home'
     end
     object HomeLbl: TLabel
-      Left = 136
+      Left = 141
       Height = 13
       Top = 59
       Width = 27

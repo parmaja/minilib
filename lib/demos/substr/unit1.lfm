@@ -6,15 +6,15 @@ object Form1: TForm1
   Caption = 'Strings'
   ClientHeight = 317
   ClientWidth = 320
-  LCLVersion = '2.3.0.0'
+  LCLVersion = '4.99.0.0'
   object Button1: TButton
-    Left = 87
+    Left = 64
     Height = 25
     Top = 34
     Width = 75
     Caption = 'SubStr'
-    OnClick = Button1Click
     TabOrder = 0
+    OnClick = Button1Click
   end
   object Edit1: TEdit
     Left = 8
@@ -23,7 +23,7 @@ object Form1: TForm1
     Width = 304
     Anchors = [akTop, akLeft, akRight]
     TabOrder = 1
-    Text = 'str1,str2,str3'
+    Text = 'c:\temp\dir1\dir2\11.txt'
   end
   object Edit2: TEdit
     Left = 226
@@ -39,7 +39,7 @@ object Form1: TForm1
     Top = 36
     Width = 50
     TabOrder = 3
-    Text = '0'
+    Text = '2'
   end
   object Button2: TButton
     Left = 8
@@ -47,8 +47,8 @@ object Form1: TForm1
     Top = 200
     Width = 75
     Caption = 'StrToStrings'
-    OnClick = Button2Click
     TabOrder = 4
+    OnClick = Button2Click
   end
   object ListBox1: TListBox
     Left = 8
@@ -65,8 +65,8 @@ object Form1: TForm1
     Top = 200
     Width = 75
     Caption = 'StrToStrings'
-    OnClick = Button3Click
     TabOrder = 6
+    OnClick = Button3Click
   end
   object Button4: TButton
     Left = 8
@@ -74,8 +74,8 @@ object Form1: TForm1
     Top = 165
     Width = 128
     Caption = 'StrToStringsEx'
-    OnClick = Button4Click
     TabOrder = 7
+    OnClick = Button4Click
   end
   object Memo1: TMemo
     Left = 8
@@ -94,8 +94,8 @@ object Form1: TForm1
     Top = 200
     Width = 75
     Caption = 'ScanTo'
-    OnClick = Button5Click
     TabOrder = 9
+    OnClick = Button5Click
   end
   object Button6: TButton
     Left = 242
@@ -103,7 +103,16 @@ object Form1: TForm1
     Top = 200
     Width = 71
     Caption = 'Clear'
-    OnClick = Button6Click
     TabOrder = 10
+    OnClick = Button6Click
+  end
+  object Button7: TButton
+    Left = 144
+    Height = 25
+    Top = 34
+    Width = 75
+    Caption = 'SplitPath'
+    TabOrder = 11
+    OnClick = Button7Click
   end
 end

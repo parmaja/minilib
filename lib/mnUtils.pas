@@ -243,9 +243,11 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
 
 function CorrectPath(const Path: string): string;
 
-//TODO pascal
-//function EscapeStringPas(const S: string): string;
-//function DescapeStringPas(const S: string): string;
+//* Split at level depth of folders/directory, ignoring first \ or last one
+function SplitPath(Path: string; out Right: string; Index: Integer): string; overload;
+function SplitPath(Path: string; Index: Integer): string; overload;
+
+function TruncPath(Path: string; Index: Integer): string; overload;
 
 function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): string;
 
@@ -253,6 +255,7 @@ function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): st
 function IncludePathDelimiter(const S: string; Force: Boolean = False): string;
 function ExcludePathDelimiter(Path: string): string;
 
+//This not check if S = ''
 function IncludeURLDelimiter(const S: string): string; //deprecated 'AddEndURLDelimiter';
 
 //If empty do not add
@@ -427,6 +430,56 @@ begin
     end
     else
       Result := Str;
+  end;
+end;
+
+function TruncPath(Path: string; Index: Integer): string;
+var
+  l, i, e: Integer;
+  c: Char;
+begin
+  if Path = '' then
+    Result := ''
+  else if Index = 0 then
+    Result := Path
+  else
+  begin
+    i := 0;
+    l := Length(Path);
+    if Index > 0 then
+    begin
+      e := 1;
+      if Path[1] in ['\', '/'] then
+      begin
+        dec(l);
+        inc(e);
+      end;
+    end
+    else
+    begin
+      e := l;
+      if Path[l] in ['\', '/'] then
+      begin
+        dec(l);
+        dec(e);
+      end;
+    end;
+
+    while l > 0 do
+    begin
+      C := Path[e];
+      if C in ['\', '/'] then
+        Inc(i);
+      if (i = Abs(Index)) then
+        Break;
+
+      if Index > 0 then
+        Inc(e)
+      else
+        Dec(e);
+      Dec(l);
+    end;
+    Result := Copy(Path, 1, e);
   end;
 end;
 
@@ -1831,6 +1884,70 @@ begin
   {$else}
   Result := StringReplace(Path, '\', PathDelim, [rfReplaceAll]);//correct it for linux
   {$endif MSWINDOWS}
+end;
+
+function SplitPath(Path: string; out Right: string; Index: Integer): string; overload;
+var
+  l, i, e: Integer;
+  c: Char;
+begin
+  if Path = '' then
+  begin
+    Result := '';
+    Right := '';
+  end
+  else if Index = 0 then
+  begin
+    Result := Path;
+    Right := '';
+  end
+  else
+  begin
+    i := 0;
+    l := Length(Path);
+    if Index > 0 then
+    begin
+      e := 1;
+      if Path[1] in ['\', '/'] then
+      begin
+        dec(l);
+        inc(e);
+      end;
+    end
+    else
+    begin
+      e := l;
+      if Path[l] in ['\', '/'] then
+      begin
+        dec(l);
+        dec(e);
+      end;
+    end;
+
+    while l > 0 do
+    begin
+      C := Path[e];
+      if C in ['\', '/'] then
+        Inc(i);
+      if (i = Abs(Index)) then
+        Break;
+
+      if Index > 0 then
+        Inc(e)
+      else
+        Dec(e);
+      Dec(l);
+    end;
+    Result := Copy(Path, 1, e);
+    Right := Copy(Path, e + 1, MaxInt);
+  end;
+end;
+
+function SplitPath(Path: string; Index: Integer): string; overload;
+var
+  t: string;
+begin
+  Result := SplitPath(Path, t, Index);
 end;
 
 function ExpandFile(const Name: string): string;

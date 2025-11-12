@@ -18,6 +18,7 @@ type
     Button4: TButton;
     Button5: TButton;
     Button6: TButton;
+    Button7: TButton;
     Edit1: TEdit;
     Edit2: TEdit;
     Edit3: TEdit;
@@ -29,6 +30,7 @@ type
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
   private
   public
   end;
@@ -47,7 +49,7 @@ uses
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
-  edit2.Text := SubStr(Edit1.Text, ',', StrToIntDef(Edit3.Text, 0));
+  Edit2.Text := SubStr(Edit1.Text, ',', StrToIntDef(Edit3.Text, 0));
 end;
 
 procedure AddOutput(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
@@ -89,9 +91,11 @@ begin
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
+var
+  C: Integer;
 begin
   ListBox1.Items.Clear;
-  StrToStringsExCallback(Memo1.Text, 1, self, @AddOutputEx, ['::', ';', #13#10, #13, #10, #0]);
+  StrToStringsExCallback(Memo1.Text, 1, self, ['::', ';', #13#10, #13, #10, #0], C, @AddOutputEx);
 end;
 
 var
@@ -100,15 +104,26 @@ var
 procedure TForm1.Button5Click(Sender: TObject);
 var
   s: string;
-  Start: Integer;
+  C, Start: Integer;
 begin
-  StrScanTo(Memo1.Text, CharIndex, S, Start, CharIndex, ['::', ';', #13#10, #13, #10, #0]);
+  StrScanTo(Memo1.Text, CharIndex, S, Start, CharIndex, C, ['::', ';', #13#10, #13, #10, #0]);
   ListBox1.Items.Add(S + ' at ' + IntToStr(CharIndex));
 end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
   ListBox1.Clear;
+end;
+
+procedure TForm1.Button7Click(Sender: TObject);
+var
+  l, r: string;
+begin
+  l := SplitPath(Edit1.Text, r, StrToIntDef(Edit3.Text, 0));
+  Memo1.Clear;;
+  edit2.Text := l;
+  Memo1.Lines.Add(l);
+  Memo1.Lines.Add(r);
 end;
 
 end.

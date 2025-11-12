@@ -774,8 +774,14 @@ end;
 procedure TFilesSchema.DoCompose;
 begin
   inherited;
-  ServeFiles := [serveAllow, serveDefault, serveIndex];
+  ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
   HomePath := IncludePathDelimiter(App.HomePath) + 'files';
+  with TFolder.Create(This) do
+  begin
+    ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
+    Route := 'folder';
+    HomePath := ExpandFileName(App.HomePath + 'smilies');
+  end;
 end;
 
 { TWSShema }

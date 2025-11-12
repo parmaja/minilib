@@ -19,8 +19,8 @@ interface
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
   mnLogs, mnUtils, rtti,
-  StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSL, mnBootstraps,
-  HomeModules, mnModules, mnWebElements,
+  StdCtrls, ExtCtrls, mnSockets, mnServers, mnOpenSSL, mnBootstraps,
+  mnModules, mnWebModules, mnWebElements, HomeModules,
   LResources, Buttons, Menus;
 
 type
@@ -160,6 +160,10 @@ var
   aDocModule: TmodWebModule;
   aHomeModule: THomeModule;
 begin
+  aHomePath := IncludePathDelimiter(HomePathEdit.Text);
+  if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2) = './') then
+    aHomePath := IncludePathDelimiter(ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt));
+
   HttpServer.Bind := BindEdit.Text;
   HttpServer.Port := PortEdit.Text;
   if UseSSLChk.Checked then
@@ -173,15 +177,12 @@ begin
   end;
   //Server.Address := '127.0.0.1';
 
-  aHomePath := IncludePathDelimiter(HomePathEdit.Text);
-  if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
-    aHomePath := IncludePathDelimiter(ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt));
-
   aDocModule := HttpServer.Modules.Find<TmodWebFileModule>;
   if aDocModule <> nil then
   begin
     aDocModule.AliasName := DocAliasEdit.Text;
     aDocModule.HomePath := aHomePath;
+    (aDocModule as TmodWebFileModule).ServeFiles:= [serveEnabled, serveIndex, serveDefault, serveSmart];
     //aDocModule.Use.AcceptCompressing := True;
     if CompressChk.Checked then
       aDocModule.UseCompressing := ovUndefined
@@ -190,7 +191,6 @@ begin
     aDocModule.UseKeepAlive.AsBoolean := KeepAliveChk.Checked;
     HttpServer.SetRedirect('/'+aDocModule.AliasName+'/');
   end;
-
 
   aHomeModule := HttpServer.Modules.Find<THomeModule>;
   if aHomeModule <> nil then
@@ -322,13 +322,13 @@ begin
     CertPassword := GetOption('cert_password', '');
     CertFile := CorrectPath(ExpandToPath(GetOption('certificate', './certificate.pem'), Application.Location));
     PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), Application.Location));
-    AutoRunChk.Checked := StrToBoolDef(GetSwitch('autorun', ''), False);
     aBounds.Left := aIni.ReadInteger('window', 'left', Left);
     aBounds.Top := aIni.ReadInteger('window', 'top', Top);
     aBounds.Width := aIni.ReadInteger('window', 'width', Width);
     aBounds.Height := aIni.ReadInteger('window', 'height', Height);
     BoundsRect := aBounds;
-    StayOnTopChk.Checked := StrToBoolDef(GetSwitch('ontop', ''), False);
+    StayOnTopChk.Checked := aIni.ReadBool('window', 'ontop', StayOnTopChk.Checked);
+    AutoRunChk.Checked := aIni.ReadBool('window', 'autorun', AutoRunChk.Checked);
     LogMessages := GetOption('log');
   finally
     aIni.Free;
@@ -349,6 +349,7 @@ begin
     aIni.WriteInteger('window', 'width', Width);
     aIni.WriteInteger('window', 'Height', Height);
     aIni.WriteBool('window', 'ontop', StayOnTopChk.Checked);
+    aIni.WriteBool('window', 'autorun', AutoRunChk.Checked);
 
     aIni.WriteString('options', 'homepath', HomePathEdit.Text);
     aIni.WriteString('options', 'doc.alias', DocAliasEdit.Text);
@@ -359,7 +360,6 @@ begin
     aIni.WriteBool('options', 'compress', CompressChk.Checked);
     aIni.WriteBool('options', 'keep-alive', KeepAliveChk.Checked);
     aIni.WriteBool('options', 'challenge', ChallengeSSLChk.Checked);
-    aIni.WriteBool('options', 'autorun', AutoRunChk.Checked);
   finally
     aIni.Free;
   end;
