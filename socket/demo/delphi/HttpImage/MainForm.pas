@@ -10,16 +10,14 @@ type
   TForm4 = class(TForm)
     Button2: TButton;
     HostEdit: TEdit;
-    Button1: TButton;
-    Button3: TButton;
-    Image1: TImage;
+    Panel1: TPanel;
     LogEdit: TMemo;
+    Image1: TImage;
+    Splitter1: TSplitter;
     procedure Button2Click(Sender: TObject);
   private
-    { Private declarations }
   public
-    { Public declarations }
-    HttpStream: TmnCustomHttpStream;
+    HttpStream: TmnHttpClient;
   end;
 
 var
@@ -31,39 +29,50 @@ uses mnClients;
 
 {$R *.dfm}
 
-
 procedure TForm4.Button2Click(Sender: TObject);
-const
+//const
   //sURL = 'https://picsum.photos/id/237/200/300';
   //sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
   //sURL = 'https://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
   //sURL = 'http://placehold.it/120x120&text=image1';
-  sUrl = 'https://a.tile.openstreetmap.org/18/157418/105125.png';
+  //sUrl = 'https://a.tile.openstreetmap.org/18/157418/105125.png';
 var
   HttpClient: TmnHttpClient;
   MemoryStream: TMemoryStream;
+  url: string;
+  aFileName: string;
 begin
-  LogEdit.Lines.Add('Getting from URL');
+  url := HostEdit.Text;
+  LogEdit.Lines.Add('Downloading ' + url);
   HttpClient := TmnHttpClient.Create;
-  HttpClient.Request.UserAgent := 'Embarcadero URI Client/1.0';
+  HttpClient.Request.UserAgent := 'miniLib http Client/1.0';
   MemoryStream := TMemoryStream.Create;
   try
-    HttpClient.GetMemoryStream(sURL, MemoryStream);
-    LogEdit.Lines.Add(HttpClient.Response.ContentType);
-    if SameText(HttpClient.Response.ContentType, 'image/jpeg') then
-    begin
-      MemoryStream.SaveToFile('c:\temp\' + 'file.jpeg');
-      Image1.Picture.LoadFromStream(MemoryStream);
-    end
-    else
-    if SameText(HttpClient.Response.ContentType, 'image/png') then
-    begin
-      MemoryStream.SaveToFile('c:\temp\'  + 'file.png');
-      Image1.Picture.LoadFromStream(MemoryStream);
-    end
-    else
-    begin
-      MemoryStream.SaveToFile('c:\temp\' + 'file.tmp');
+    try
+      HttpClient.GetMemoryStream(url, MemoryStream);
+      LogEdit.Lines.Add(HttpClient.Response.ContentType);
+      aFileName := HttpClient.Response.DispositionFile;
+      LogEdit.Lines.Add('FileName: ' + aFileName);
+      if SameText(HttpClient.Response.ContentType, 'image/jpeg') then
+      begin
+        MemoryStream.SaveToFile('c:\temp\' + aFileName);
+        Image1.Picture.LoadFromStream(MemoryStream);
+      end
+      else
+      if SameText(HttpClient.Response.ContentType, 'image/png') then
+      begin
+        MemoryStream.SaveToFile('c:\temp\'  + aFileName);
+        Image1.Picture.LoadFromStream(MemoryStream);
+      end
+      else
+      begin
+        MemoryStream.SaveToFile('c:\temp\' + 'file.tmp');
+      end;
+    except
+      on E: Exception do
+      begin
+        LogEdit.Lines.Add(E.Message);
+      end;
     end;
   finally
     HttpClient.Free;

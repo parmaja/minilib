@@ -1819,7 +1819,7 @@ type
     function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
   end;
 
-  TmnwResponse = class(TwebRespond)
+  TmnwResponse = class(TwebResponse)
   private
     FResume: Boolean;
     FSession: TmnwCookie;
@@ -1858,7 +1858,7 @@ type
     function GetModule: TUIWebModule;
     function GetRespond: TmnwResponse;
   protected
-    function CreateRespond: TmodRespond; override;
+    function CreateResponse: TmodResponse; override;
   public
     RendererID: Integer;
     procedure RespondResult(var Result: TmodRespondResult); override;
@@ -5969,7 +5969,7 @@ end;
 
 { TbsHttpGetHomeCommand }
 
-function TUIWebCommand.CreateRespond: TmodRespond;
+function TUIWebCommand.CreateResponse: TmodResponse;
 begin
   Result := TmnwResponse.Create(Request);
 end;

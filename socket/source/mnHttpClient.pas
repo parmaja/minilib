@@ -40,7 +40,7 @@ type
 
     FStream: TmnConnectionStream;
     function GetRequest: TwebRequest;
-    function GetRespond: TwebRespond;
+    function GetResponse: TwebResponse;
   protected
     function DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream; virtual; abstract;
 
@@ -56,7 +56,7 @@ type
     procedure SendHead;
 
     function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
-    function CreateRespond: TmodRespond; override;
+    function CreateResponse: TmodResponse; override;
     procedure Created; override;
   public
     constructor Create;
@@ -104,7 +104,7 @@ type
     property Path: UTF8String read FPath write FPath;
     property Stream: TmnConnectionStream read FStream;
     property Request: TwebRequest read GetRequest;
-    property Respond: TwebRespond read GetRespond;
+    property Response: TwebResponse read GetResponse;
   end;
 
   { TmnCustomHttpStream }
@@ -423,7 +423,7 @@ constructor TmnCustomHttpClient.Create;
 begin
   inherited Create;
   FRequest := CreateRequest(nil);
-  FRespond := CreateRespond;
+  FRespond := CreateResponse;
 end;
 
 procedure TmnCustomHttpClient.Created;
@@ -437,9 +437,9 @@ begin
   Result.Use.AcceptCompressing := ovYes;
 end;
 
-function TmnCustomHttpClient.CreateRespond: TmodRespond;
+function TmnCustomHttpClient.CreateResponse: TmodResponse;
 begin
-  Result := TwebRespond.Create(Request);
+  Result := TwebResponse.Create(Request);
 end;
 
 destructor TmnCustomHttpClient.Destroy;
@@ -457,6 +457,7 @@ begin
   if SendAndReceive then
   begin
     SendGet;
+    //Stream.Disconnect;///////////////////
     if Stream.Connected then
       Receive;
   end;
@@ -651,9 +652,9 @@ begin
   Result := inherited Request as TwebRequest;
 end;
 
-function TmnCustomHttpClient.GetRespond: TwebRespond;
+function TmnCustomHttpClient.GetResponse: TwebResponse;
 begin
-  Result := inherited Respond as TwebRespond;
+  Result := inherited Respond as TwebResponse;
 end;
 
 procedure TmnCustomHttpClient.SendFile(const vURL: UTF8String; AFileName: UTF8String);

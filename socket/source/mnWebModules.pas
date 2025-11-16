@@ -203,7 +203,7 @@ type
   end;
 
   {$ifndef FPC}
-  TmodWebEventProc = reference to procedure(vRequest: TmodRequest; vRespond: TwebRespond; var vResult: TmodRespondResult);
+  TmodWebEventProc = reference to procedure(vRequest: TmodRequest; vRespond: TwebResponse; var vResult: TmodRespondResult);
 
   TmodWebEventModule = class(TmodWebModule)
   protected
@@ -334,8 +334,8 @@ function WebFindDocument(const HomePath, Path: string; out Document:string; Smar
 function WebExpandFile(HomePath, Path: string; out Document: string; Smart: Boolean): Boolean;
 function WebExpandToRoot(FileName: string; Root: string): string;
 function FindDefaultDocument(Root: string; DefaultDocuments: TStringList): string;
-procedure WebServeFolder(Title, Path: string; Response: TwebRespond; Request: TmodRequest);
-procedure WebServeFile(Response: TwebRespond; Request: TmodRequest; DefaultDocuments: TStringList; Options: TmodServeFiles);
+procedure WebServeFolder(Title, Path: string; Response: TwebResponse; Request: TmodRequest);
+procedure WebServeFile(Response: TwebResponse; Request: TmodRequest; DefaultDocuments: TStringList; Options: TmodServeFiles);
 
 function WebServers: TWebServers;
 
@@ -575,7 +575,7 @@ begin
     Result := 0;
 end;}
 
-procedure WebServeFolder(Title, Path: string; Response: TwebRespond; Request: TmodRequest);
+procedure WebServeFolder(Title, Path: string; Response: TwebResponse; Request: TmodRequest);
 var
   Files: TStringList;
   s: string;
@@ -627,7 +627,7 @@ begin
   end;
 end;
 
-procedure WebServeFile(Response: TwebRespond; Request: TmodRequest; DefaultDocuments: TStringList; Options: TmodServeFiles);
+procedure WebServeFile(Response: TwebResponse; Request: TmodRequest; DefaultDocuments: TStringList; Options: TmodServeFiles);
 var
   aDocument, aFile, aHomePath: string;
 

@@ -404,12 +404,13 @@ type
 
   TmodSendOptions = set of TmodSendOption;
 
-  { TmodRespond }
+  { TmodResponse }
 
-  TmodRespond = class(TmodCommunicate)
+  TmodResponse = class(TmodCommunicate)
   private
     FAnswer: TmodAnswer;
     FContentType: String;
+    FDispositionFile: string;
     procedure SetAnswer(const Value: TmodAnswer);
   protected
     FRequest: TmodRequest;
@@ -434,6 +435,7 @@ type
 
     property Request: TmodRequest read FRequest;
     property ContentType: string read FContentType write FContentType;
+    property DispositionFile: string read FDispositionFile write FDispositionFile;
     property Answer: TmodAnswer read FAnswer write SetAnswer;
   end;
 
@@ -464,7 +466,7 @@ type
   private
     FRaiseExceptions: Boolean;
   protected
-    FRespond: TmodRespond; //need discuss like http client
+    FRespond: TmodResponse; //need discuss like http client
     FRequest: TmodRequest;
 
     procedure DoPrepareHeader(Sender: TmodCommunicate); virtual;
@@ -472,7 +474,7 @@ type
     procedure DoHeaderSent(Sender: TmodCommunicate); virtual;
 
     function CreateRequest(AStream: TmnConnectionStream): TmodRequest; virtual;
-    function CreateRespond: TmodRespond; virtual;
+    function CreateResponse: TmodResponse; virtual;
     procedure Created; override;
     function SkipHeader: Boolean; virtual;
   public
@@ -482,7 +484,7 @@ type
     //Prepare called after created in lucking mode
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     property Request: TmodRequest read FRequest;
-    property Respond: TmodRespond read FRespond;
+    property Respond: TmodResponse read FRespond;
   end;
 
   TmnCustomCommandClass = class of TmnCustomCommand;
@@ -518,9 +520,9 @@ type
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
   end;
 
-  { TwebRespond }
+  { TwebResponse }
 
-  TwebRespond = class(TmodRespond)
+  TwebResponse = class(TmodResponse)
   private
     FLocation: string;
     FHomePath: string; //Document root folder
@@ -550,11 +552,11 @@ type
   private
     FModule: TmodModule;
     function GetActive: Boolean;
-    function GetRespond: TwebRespond;
+    function GetRespond: TwebResponse;
   protected
 
     function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
-    function CreateRespond: TmodRespond; override;
+    function CreateResponse: TmodResponse; override;
 
     procedure DoPrepareHeader(Sender: TmodCommunicate); override;
 
@@ -571,7 +573,7 @@ type
     property Module: TmodModule read FModule write SetModule;
     property Active: Boolean read GetActive;
     //Lock the server listener when execute the command
-    property Respond: TwebRespond read GetRespond;
+    property Respond: TwebResponse read GetRespond;
   end;
 
   //*
@@ -1123,7 +1125,7 @@ begin
     Result := StartsStr(Path, SubKey);
 end;
 
-{ TmodRespond }
+{ TmodResponse }
 
 procedure TmodCommunicate.AddHeader(const AName: string; Values: TStringDynArray);
 var
@@ -1140,20 +1142,20 @@ begin
   AddHeader(AName, t);
 end;
 
-{ TmodRespond }
+{ TmodResponse }
 
-constructor TmodRespond.Create(ARequest: TmodRequest);
+constructor TmodResponse.Create(ARequest: TmodRequest);
 begin
   inherited Create(ARequest.Parent);
   FRequest := ARequest;
 end;
 
-procedure TmodRespond.InitProtocol;
+procedure TmodResponse.InitProtocol;
 begin
   inherited;
 end;
 
-function TmodRespond.ReceiveStream(s: ImnStreamPersist; Count: Int64): Int64;
+function TmodResponse.ReceiveStream(s: ImnStreamPersist; Count: Int64): Int64;
 var
   aDecompress: Boolean;
   mStream: TMemoryStream;
@@ -1177,7 +1179,7 @@ begin
   end;
 end;
 
-function TmodRespond.ReceiveStream(s: TStream): Int64;
+function TmodResponse.ReceiveStream(s: TStream): Int64;
 var
   aDecompress: Boolean;
 begin
@@ -1200,7 +1202,7 @@ begin
     Result := Stream.ReadStream(s, -1); //read complete stream
 end;
 
-function TmodRespond.SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions): Boolean;
+function TmodResponse.SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions): Boolean;
 var
   stream: TInterfacedStreamtWrapper;
 begin
@@ -1212,7 +1214,7 @@ begin
   end;
 end;
 
-function TmodRespond.SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions): Boolean;
+function TmodResponse.SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions): Boolean;
 var
   aCompress: Boolean;
 
@@ -1273,7 +1275,7 @@ begin
     Result := Result + '-' + Size.ToString;
 end;
 
-function TmodRespond.SendFile(const AFileName: string; Alias: string; FileDispositions: TmodFileDispositions): Boolean;
+function TmodResponse.SendFile(const AFileName: string; Alias: string; FileDispositions: TmodFileDispositions): Boolean;
 var
   aStream: TStream;
   aSize: Int64;
@@ -1309,7 +1311,7 @@ begin
   end;
 end;
 
-function TmodRespond.SendUTF8String(const s: UTF8String): Boolean;
+function TmodResponse.SendUTF8String(const s: UTF8String): Boolean;
 var
   aStream: TmnPointerStream;
 begin
@@ -1321,7 +1323,7 @@ begin
   end;
 end;
 
-function TmodRespond.SendString(const s: string): Boolean;
+function TmodResponse.SendString(const s: string): Boolean;
 var
   t: UTF8String;
 begin
@@ -1333,7 +1335,7 @@ begin
   {$endif}
 end;
 
-function TmodRespond.SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; FileDispositions: TmodFileDispositions): Boolean;
+function TmodResponse.SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; FileDispositions: TmodFileDispositions): Boolean;
 var
   aMIMEItem: TmnMIMEItem;
   aDisposition, aStamp: string;
@@ -1370,9 +1372,9 @@ begin
     begin
       if aDisposition = '' then
         aDisposition := 'attachment';
-      if AAlias <> '' then
-        aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"')
     end;
+    if AAlias <> '' then
+      aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"');
 
     if NoCompress in aMIMEItem.Features then
     begin
@@ -1394,17 +1396,17 @@ begin
   Result := SendStream(s, ASize, SendOptions);
 end;
 
-function TmodRespond.GetStream: TmnBufferStream;
+function TmodResponse.GetStream: TmnBufferStream;
 begin
   Result := FRequest.Stream;
 end;
 
-function TmodRespond.WriteLine(const s: string): Boolean;
+function TmodResponse.WriteLine(const s: string): Boolean;
 begin
   Result := Stream.WriteUTF8Line(S) > 0;
 end;
 
-function TmodRespond.WriteString(const s: string): Boolean;
+function TmodResponse.WriteString(const s: string): Boolean;
 begin
   Result := Stream.WriteUTF8String(UTF8Encode(S)) > 0;
 end;
@@ -1766,9 +1768,9 @@ begin
   Result := TmodRequest.Create(Self, AStream);
 end;
 
-function TmnCustomCommand.CreateRespond: TmodRespond;
+function TmnCustomCommand.CreateResponse: TmodResponse;
 begin
-  Result := TmodRespond.Create(Request);
+  Result := TmodResponse.Create(Request);
 end;
 
 procedure TmnCustomCommand.DoHeaderSent(Sender: TmodCommunicate);
@@ -1796,9 +1798,9 @@ begin
   inherited;
 end;
 
-function TwebCommand.CreateRespond: TmodRespond;
+function TwebCommand.CreateResponse: TmodResponse;
 begin
-  Result := TwebRespond.Create(Request);
+  Result := TwebResponse.Create(Request);
 end;
 
 procedure TwebCommand.DoPrepareHeader(Sender: TmodCommunicate);
@@ -2003,9 +2005,9 @@ begin
   Result := (Module <> nil) and (Module.Active);
 end;
 
-function TwebCommand.GetRespond: TwebRespond;
+function TwebCommand.GetRespond: TwebResponse;
 begin
-  Result := inherited Respond as TwebRespond;
+  Result := inherited Respond as TwebResponse;
 end;
 
 procedure TwebCommand.SetModule(const Value: TmodModule);
@@ -3089,9 +3091,9 @@ begin
     Stream.WriteUTF8Line('Cookie: ' + s);
 end;
 
-{ TwebRespond }
+{ TwebResponse }
 
-procedure TwebRespond.DoHeaderSent;
+procedure TwebResponse.DoHeaderSent;
 begin
   inherited;
 
@@ -3102,7 +3104,7 @@ begin
   end;
 end;
 
-procedure TwebRespond.DoHeaderReceived;
+procedure TwebResponse.DoHeaderReceived;
 var
   aCompressClass: TmnCompressStreamProxyClass;
   aChunked: Boolean;
@@ -3113,6 +3115,11 @@ begin
 
   if (Header.Field['Content-Type'].IsExists) then
     ContentType  := Header.Field['Content-Type'].AsString;
+
+  if (Header.Field['Content-Disposition'].IsExists) then
+  begin
+    DispositionFile  := Header.Field['Content-Disposition'].SubValue('filename');
+  end;
 
   if (Header.Field['ETag'].IsExists) then
     Stamp  := Header.Field['ETag'].AsString; //* or maybe 'If-None-Match'
@@ -3137,7 +3144,7 @@ begin
     Request.CompressProxy.Limit := ContentLength;
 end;
 
-procedure TwebRespond.DoPrepareHeader;
+procedure TwebResponse.DoPrepareHeader;
 begin
   inherited;
   PutHeader('server', sMiniLibServer);
@@ -3158,7 +3165,7 @@ begin
     PutHeader('Location', Location)
 end;
 
-procedure TwebRespond.DoSendHeader;
+procedure TwebResponse.DoSendHeader;
 var
   Cookie: TmnwCookie;
 begin
@@ -3170,7 +3177,7 @@ begin
   end;
 end;
 
-procedure TmodRespond.SetAnswer(const Value: TmodAnswer);
+procedure TmodResponse.SetAnswer(const Value: TmodAnswer);
 begin
   if resHeaderSent in Header.States then
     raise EmodModuleException.Create('Header is already sent');
@@ -3178,13 +3185,13 @@ begin
   FHead := Answer.ToString;
 end;
 
-procedure TmodRespond.SetHead(const Value: string);
+procedure TmodResponse.SetHead(const Value: string);
 begin
   inherited;
   FAnswer := hrCustom;
 end;
 
-function TwebRespond.StatusCode: Integer;
+function TwebResponse.StatusCode: Integer;
 var
   s: string;
 begin
@@ -3192,24 +3199,24 @@ begin
   Result := StrToIntDef(s, 0);
 end;
 
-function TwebRespond.StatusResult: string;
+function TwebResponse.StatusResult: string;
 begin
   Result := SubStr(Head, ' ', 2); { TODO : to correct use remain text :) }
 end;
 
-function TwebRespond.StatusVersion: string;
+function TwebResponse.StatusVersion: string;
 begin
   Result := SubStr(Head, ' ', 0);
 end;
 
-procedure TwebRespond.RedirectTo(S: string);
+procedure TwebResponse.RedirectTo(S: string);
 begin
   Answer := hrRedirect;
   Location := S;
   SendHeader;
 end;
 
-function TwebRespond.GetRequest: TwebRequest;
+function TwebResponse.GetRequest: TwebRequest;
 begin
   Result := inherited Request as TwebRequest;
 end;
@@ -3261,7 +3268,7 @@ begin
   FRequest := ARequest; //do not free
   FRequest.FParent := Self;
 
-  FRespond := CreateRespond;
+  FRespond := CreateResponse;
   FRespond.SetTrigger(True);
 end;
 
