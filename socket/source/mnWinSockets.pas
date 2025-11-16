@@ -59,7 +59,7 @@ type
     function LookupPort(Port: string): Word;
   protected
     procedure FreeSocket(var vHandle: TSocketHandle);
-    function Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck): TmnError;
+    function Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck; out vErr: Integer): TmnError;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -117,8 +117,10 @@ begin
 end;
 
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
+var
+  aErr: Integer;
 begin
-  Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
+  Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check, aErr);
 end;
 
 function TmnSocket.DoClose: TmnError;
@@ -406,13 +408,12 @@ begin
   end;
 end;
 
-function TmnWallSocket.Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck): TmnError;
+function TmnWallSocket.Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck; out vErr: Integer): TmnError;
 var
   FSet: TFDSet;
   PSetRead, PSetWrite: PFDSet;
   TimeVal: TTimeVal;
   TimeValPtr: PTimeVal;
-  c: Integer;
 begin
   //CheckActive; no need select will return error for it, as i tho
   if vHandle = INVALID_SOCKET then
@@ -447,10 +448,10 @@ begin
       TimeValPtr := @TimeVal;
     end;
 
-    c := WinSock2.select(0, PSetRead, PSetWrite, nil, TimeValPtr);
-    if (c = SOCKET_ERROR) then
+    vErr := WinSock2.select(0, PSetRead, PSetWrite, nil, TimeValPtr);
+    if (vErr = SOCKET_ERROR) then
       Result := erInvalid
-    else if (c = 0) then
+    else if (vErr = 0) then
       Result := erTimeout
     else
       Result := erSuccess;
@@ -626,6 +627,7 @@ begin
           vErr := WSAGetLastError;
           if (ConnectTimeout <> -1) and ((vErr = WSAEWOULDBLOCK) or (vErr = WSAEINPROGRESS)) then
           begin
+            vErr := 0;
             aMode := 0;
             ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
             if ret = Longint(SOCKET_ERROR) then
@@ -633,9 +635,10 @@ begin
               vErr := WSAGetLastError;
               FreeSocket(aHandle)
             end
-            else if Select(aHandle, ConnectTimeout, slWrite) <> erSuccess then
+            else if Select(aHandle, ConnectTimeout, slWrite, vErr) <> erSuccess then
             begin
-              vErr := WSAGetLastError;
+              if vErr = 0 then
+                vErr := WSAGetLastError;
               FreeSocket(aHandle);
             end;
           end

@@ -203,7 +203,7 @@ type
   end;
 
   {$ifndef FPC}
-  TmodWebEventProc = reference to procedure(vRequest: TmodRequest; vRespond: TwebResponse; var vResult: TmodRespondResult);
+  TmodWebEventProc = reference to procedure(vRequest: TmodRequest; vResponse: TwebResponse; var vResult: TmodRespondResult);
 
   TmodWebEventModule = class(TmodWebModule)
   protected
@@ -550,7 +550,7 @@ end;
 procedure TwebFileCommand.Prepare(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.HomePath := Module.HomePath;
+  Response.HomePath := Module.HomePath;
 end;
 
 procedure TwebFileCommand.Created;
@@ -707,7 +707,7 @@ end;
 
 procedure TwebGetPostCommand.RespondResult(var Result: TmodRespondResult);
 begin
-  WebServeFile(Respond, Request, Module.DefaultDocuments, Module.ServeFiles);
+  WebServeFile(Response, Request, Module.DefaultDocuments, Module.ServeFiles);
   inherited;
 end;
 
@@ -716,10 +716,10 @@ end;
 procedure TmodServerInfoCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.Answer := hrOK;
-  Respond.SendHeader;
-  //Respond.Stream.WriteLine('Server is running on port: ' + Module.Server.Port);
-  Respond.Stream.WriteLine(Utf8String('the server is: "' + ParamStr(0) + '"'));
+  Response.Answer := hrOK;
+  Response.SendHeader;
+  //Response.Stream.WriteLine('Server is running on port: ' + Module.Server.Port);
+  Response.Stream.WriteLine(Utf8String('the server is: "' + ParamStr(0) + '"'));
 end;
 
 { TwebPutCommand }
@@ -730,11 +730,11 @@ var
   aFileName: string;
 begin
   inherited;
-  Respond.Stream.WriteCommand('OK');
+  Response.Stream.WriteCommand('OK');
   aFileName := Request.Params.Values['FileName'];
-  aFile := TFileStream.Create(Respond.HomePath + aFileName, fmCreate);
+  aFile := TFileStream.Create(Response.HomePath + aFileName, fmCreate);
   try
-    Respond.Stream.ReadStream(aFile, Request.ContentLength);
+    Response.Stream.ReadStream(aFile, Request.ContentLength);
   finally
     aFile.Free;
   end;
@@ -745,7 +745,7 @@ end;
 procedure TmodRedirectCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.RedirectTo((Module as TmodRedirectModule).RedirectTo);
+  Response.RedirectTo((Module as TmodRedirectModule).RedirectTo);
 end;
 
 { TmodForwardHttpsCommand }
@@ -753,7 +753,7 @@ end;
 procedure TmodForwardHttpsCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Respond.RedirectTo('https://'+Respond.Request.Host + Respond.Request.URI);
+  Response.RedirectTo('https://'+Response.Request.Host + Response.Request.URI);
 end;
 
 { TmodDirCommand }
@@ -766,7 +766,7 @@ var
   aFilter: string;
 begin
   inherited;
-  Respond.Stream.WriteCommand('OK');
+  Response.Stream.WriteCommand('OK');
   aFilter := Request.Params.Values['Filter'];
   //aPath := IncludeTrailingPathDelimiter(Root);
   if aFilter = '' then
@@ -776,7 +776,7 @@ begin
     //EnumFileList(aPath + aFilter, aStrings);
     for i := 0 to aStrings.Count - 1 do
     begin
-      Respond.Stream.WriteLine(IntToStr(i) + ': ' + aStrings[i]);
+      Response.Stream.WriteLine(IntToStr(i) + ': ' + aStrings[i]);
     end;
   finally
     aStrings.Free;
@@ -790,10 +790,10 @@ var
   aFileName: string;
 begin
   inherited;
-  aFileName := IncludeTrailingPathDelimiter(Respond.HomePath) + Request.Path;
+  aFileName := IncludeTrailingPathDelimiter(Response.HomePath) + Request.Path;
   if FileExists(aFileName) then
     DeleteFile(aFileName);
-  Respond.Stream.WriteCommand('OK');
+  Response.Stream.WriteCommand('OK');
 end;
 
 { TWebServerItem }
@@ -982,7 +982,7 @@ end;
 procedure TmodHttpEventCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  TmodWebEventModule(Module).FProc(Request, Respond, Result);
+  TmodWebEventModule(Module).FProc(Request, Response, Result);
 end;
 
 { TmodWebEventServer }
@@ -1014,17 +1014,17 @@ procedure TwebOptionCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
 
-  Respond.Answer := hrOK;
-  Respond.PutHeader('server', sMiniLibServer);
-  Respond.PutHeader('Allow', 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS');
+  Response.Answer := hrOK;
+  Response.PutHeader('server', sMiniLibServer);
+  Response.PutHeader('Allow', 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS');
 //  PutHeader('Access-Control-Allow-Headers', 'Origin, Accept, Accept-  Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Response-Time, X-PINGOTHER, X-CSRF-Token,Authorization');
 //  PutHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  Respond.PutHeader('Access-Control-Allow-Method', 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS');
-  Respond.PutHeader('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type, Authorization, Accept, Origin');
+  Response.PutHeader('Access-Control-Allow-Method', 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS');
+  Response.PutHeader('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type, Authorization, Accept, Origin');
   if (Module.Origins.Count = 0) then
-    Respond.PutHeader('Access-Control-Allow-Origin', '*')
+    Response.PutHeader('Access-Control-Allow-Origin', '*')
   else
-    Respond.PutHeader('Access-Control-Allow-Origin', Module.Origins.CommaText);
+    Response.PutHeader('Access-Control-Allow-Origin', Module.Origins.CommaText);
 end;
 
 function TmodWebModules.CreateRequest(Astream: TmnBufferStream): TmodRequest;
@@ -1036,9 +1036,9 @@ end;
 
 procedure Tmod404Command.RespondResult(var Result: TmodRespondResult);
 begin
-  Respond.Answer := hrNotFound;
-  Respond.ContentType := 'text/html';
-  Respond.SendUTF8String('404 Not Found');
+  Response.Answer := hrNotFound;
+  Response.ContentType := 'text/html';
+  Response.SendUTF8String('404 Not Found');
 end;
 
 { TmodNotFoundModule }

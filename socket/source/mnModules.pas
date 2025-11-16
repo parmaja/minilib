@@ -466,7 +466,7 @@ type
   private
     FRaiseExceptions: Boolean;
   protected
-    FRespond: TmodResponse; //need discuss like http client
+    FResponse: TmodResponse; //need discuss like http client
     FRequest: TmodRequest;
 
     procedure DoPrepareHeader(Sender: TmodCommunicate); virtual;
@@ -484,7 +484,7 @@ type
     //Prepare called after created in lucking mode
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     property Request: TmodRequest read FRequest;
-    property Respond: TmodResponse read FRespond;
+    property Response: TmodResponse read FResponse;
   end;
 
   TmnCustomCommandClass = class of TmnCustomCommand;
@@ -552,7 +552,7 @@ type
   private
     FModule: TmodModule;
     function GetActive: Boolean;
-    function GetRespond: TwebResponse;
+    function GetResponse: TwebResponse;
   protected
 
     function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
@@ -573,7 +573,7 @@ type
     property Module: TmodModule read FModule write SetModule;
     property Active: Boolean read GetActive;
     //Lock the server listener when execute the command
-    property Respond: TwebResponse read GetRespond;
+    property Response: TwebResponse read GetResponse;
   end;
 
   //*
@@ -1185,7 +1185,7 @@ var
 begin
   if (Request.ChunkedProxy<>nil) and (ContentLength = 0) then
     Result := Stream.ReadStream(s, -1)
-  else if (ContentLength > 0) and KeepAlive then //Respond.KeepAlive because we cant use compressed with keeplive or contentlength >0
+  else if (ContentLength > 0) and KeepAlive then //Response.KeepAlive because we cant use compressed with keeplive or contentlength >0
   begin
     if (Request.CompressProxy<>nil) and (Request.CompressProxy.Limit <> 0) then
       Result := Stream.ReadStream(s, -1)
@@ -1735,7 +1735,7 @@ end;
 
 destructor TmnCustomCommand.Destroy;
 begin
-  FreeAndNil(FRespond);
+  FreeAndNil(FResponse);
   //FreeAndNil(FRequest); in server command free request is outside but http client command free it
   inherited;
 end;
@@ -1817,8 +1817,8 @@ begin
   try
     RespondResult(Result);
 
-    if not Respond.IsHeaderSent and (Respond.Answer<>hrNone) then
-      Respond.SendHeader;
+    if not Response.IsHeaderSent and (Response.Answer<>hrNone) then
+      Response.SendHeader;
   finally
     Unprepare(Result);
   end;
@@ -1883,17 +1883,17 @@ begin
         SendHostHeader := Request.Header.ReadBool('X-Send-Server-Hostname', True);
 
         WSKey := HashWebSocketKey(WSHash);
-        Respond.Answer := hrSwitchingProtocols;
-        //Respond.AddHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-        Respond.AddHeader('Connection', 'Upgrade');
-        Respond.AddHeader('upgrade', 'websocket');
-        Respond.AddHeader('date: ', FormatHTTPDate(Now));
-        Respond.AddHeader('Sec-Websocket-Accept', WSKey);
+        Response.Answer := hrSwitchingProtocols;
+        //Response.AddHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        Response.AddHeader('Connection', 'Upgrade');
+        Response.AddHeader('upgrade', 'websocket');
+        Response.AddHeader('date: ', FormatHTTPDate(Now));
+        Response.AddHeader('Sec-Websocket-Accept', WSKey);
         if Request.Header['Sec-WebSocket-Protocol'] = 'plain' then
-          Respond.AddHeader('Sec-WebSocket-Protocol', 'plain');
-        Respond.SendHeader;
+          Response.AddHeader('Sec-WebSocket-Protocol', 'plain');
+        Response.SendHeader;
 
-        Respond.KeepAlive := True;
+        Response.KeepAlive := True;
         Request.ProtcolClass := TmnWebSocket13StreamProxy;
         Request.ProtcolProxy := Request.ProtcolClass.Create;
         Request.ConnectionType := ctWebSocket;
@@ -1901,17 +1901,17 @@ begin
         Request.Stream.AddProxy(Request.ProtcolProxy);
 
         if SendHostHeader then
-          Respond.Stream.WriteUTF8String('Request served by miniWebModule');
+          Response.Stream.WriteUTF8String('Request served by miniWebModule');
         //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
       end;
     end;
   end;
 
-  if not Respond.IsHeaderSent and Request.KeepAlive then //not WebSocket
+  if not Response.IsHeaderSent and Request.KeepAlive then //not WebSocket
   begin
-    Respond.KeepAlive := True;
-    Respond.AddHeader('Connection', 'Keep-Alive');
-    Respond.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Use.KeepAliveTimeOut div 1000) + ', max=100');
+    Response.KeepAlive := True;
+    Response.AddHeader('Connection', 'Keep-Alive');
+    Response.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Use.KeepAliveTimeOut div 1000) + ', max=100');
   end;
 
   if Request.ConnectionType = ctWebSocket then
@@ -1924,14 +1924,14 @@ begin
     begin
       Request.ConnectionType := ctFormData;
     end;
-    {if not Respond.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
+    {if not Response.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
     begin
       if Request.CompressProxy <> nil then
-        Respond.AddHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
+        Response.AddHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
     end;}
 
     //Compressing
-    {if not Respond.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then
+    {if not Response.KeepAlive and (UseCompressing in [ovUndefined, ovYes]) then
     begin
       if Request.Header.Field['Accept-Encoding'].Have('gzip', [',']) then
         CompressClass := TmnGzipStreamProxy
@@ -1940,7 +1940,7 @@ begin
       else
         CompressClass := nil;
       if CompressClass <> nil then
-        Respond.AddHeader('Content-Encoding', CompressClass.GetCompressName);
+        Response.AddHeader('Content-Encoding', CompressClass.GetCompressName);
     end;}
   end;
 end;
@@ -1960,10 +1960,10 @@ begin
   else
   begin
     // If no content length that mean we cant continue as keep alive, content length is recomended to keep the stream
-    if not Respond.Header.Exists['Content-Length'] then //TODO see it Zaher,Belal
-      Respond.KeepAlive := False;
+    if not Response.Header.Exists['Content-Length'] then //TODO see it Zaher,Belal
+      Response.KeepAlive := False;
 
-    if Respond.KeepAlive then
+    if Response.KeepAlive then
     begin
       if Request.Header.IsExists('Keep-Alive') then //idk if really sent from client
       begin
@@ -2005,9 +2005,9 @@ begin
   Result := (Module <> nil) and (Module.Active);
 end;
 
-function TwebCommand.GetRespond: TwebResponse;
+function TwebCommand.GetResponse: TwebResponse;
 begin
-  Result := inherited Respond as TwebResponse;
+  Result := inherited Response as TwebResponse;
 end;
 
 procedure TwebCommand.SetModule(const Value: TmodModule);
@@ -3268,8 +3268,8 @@ begin
   FRequest := ARequest; //do not free
   FRequest.FParent := Self;
 
-  FRespond := CreateResponse;
-  FRespond.SetTrigger(True);
+  FResponse := CreateResponse;
+  FResponse.SetTrigger(True);
 end;
 
 { TmnCustomClientCommand }

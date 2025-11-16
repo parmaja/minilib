@@ -356,11 +356,11 @@ begin
   if Request.ConnectionType = ctWebSocket then
   begin
     //Request.Path := DeleteSubPath(Name, Request.Path);
-    while Respond.Stream.Connected do
+    while Response.Stream.Connected do
     begin
-      if Respond.Stream.ReadUTF8Line(s) then
+      if Response.Stream.ReadUTF8Line(s) then
       begin
-        Respond.Stream.WriteUTF8Line(s);
+        Response.Stream.WriteUTF8Line(s);
         log(s);
       end;
     end;

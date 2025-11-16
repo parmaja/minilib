@@ -1856,14 +1856,14 @@ type
   TUIWebCommand = class(TwebCommand)
   private
     function GetModule: TUIWebModule;
-    function GetRespond: TmnwResponse;
+    function GetResponse: TmnwResponse;
   protected
     function CreateResponse: TmodResponse; override;
   public
     RendererID: Integer;
     procedure RespondResult(var Result: TmodRespondResult); override;
     property Module: TUIWebModule read GetModule;
-    property Respond: TmnwResponse read GetRespond;
+    property Response: TmnwResponse read GetResponse;
   end;
 
   { TUIWebModule }
@@ -5979,9 +5979,9 @@ begin
   Result := (inherited Module) as TUIWebModule;
 end;
 
-function TUIWebCommand.GetRespond: TmnwResponse;
+function TUIWebCommand.GetResponse: TmnwResponse;
 begin
-  Result := inherited Respond as TmnwResponse;
+  Result := inherited Response as TmnwResponse;
 end;
 
 //Main
@@ -5993,7 +5993,7 @@ begin
   inherited;
   if (Request.Path = '') and (Request.URI <> '') then
   begin
-    Respond.RedirectTo(IncludeURLDelimiter(Request.URI));
+    Response.RedirectTo(IncludeURLDelimiter(Request.URI));
     exit;
   end;
   AtomicIncrement(RendererID);
@@ -6028,7 +6028,7 @@ begin
   if Request.ConnectionType = ctWebSocket then
   begin
     //Serve the websocket
-    if (Module as TUIWebModule).WebApp.Attach(aContext, Self, Respond.Stream) = nil then
+    if (Module as TUIWebModule).WebApp.Attach(aContext, Self, Response.Stream) = nil then
       Result.Status := []; // Disconnect
   end
   else
@@ -6043,16 +6043,16 @@ begin
       aContext.Data.TempPath := (Module as TUIWebModule).WorkPath + 'temp';
       aContext.Data.Read(Request.Stream);
     end;
-    Respond.PutHeader('Content-Type', DocumentToContentType('html'));
-    Respond.Answer := hrOK;
+    Response.PutHeader('Content-Type', DocumentToContentType('html'));
+    Response.Answer := hrOK;
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
-    aContext.Writer := TmnwWriter.Create('html', Respond.Stream);
+    aContext.Writer := TmnwWriter.Create('html', Response.Stream);
     aContext.Writer.Compact := Module.WebApp.CompactMode;
     try
       aContext.Stamp := Request.Header['If-None-Match'];
 
-      (Module as TUIWebModule).WebApp.Respond(aContext, Respond);
+      (Module as TUIWebModule).WebApp.Respond(aContext, Response);
 
       //SessionID
     finally
