@@ -268,20 +268,40 @@ type
     property Section; default;
   end;
 
-
-function ConnectStr(const S1, Sep: string; S2: string = ''): string;
+procedure MergeArguments(Section: TConfSection; KeyValues: TArray<string> = []); overload;
+procedure MergeArguments(Section: TConfSection; SectionName: string; KeyValues: TArray<string> = []); overload;
 
 implementation
 
 const
   cCommentChars: array of char = ['#', ';'];
 
-function ConnectStr(const S1, Sep: string; S2: string): string;
+procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
 begin
-  Result := S1;
-  if (Result <> '') and (S2 <> '') then
-    Result := Result + Sep;
-  Result := Result + S2;
+  if Index > 0 then //ignore first param (exe file)
+    begin
+      if IsSwitch or ((Name <> '') and (Value <> '')) then
+        (TConfSection(Sender) as TConfSection).Add(Name, Value)
+      else
+        (TConfSection(Sender) as TConfSection).Add('', Name);
+    end;
+end;
+
+procedure MergeArguments(Section: TConfSection; KeyValues: TArray<string> = []);
+begin
+  ParseCommandArguments(@ArgumentsCallbackProc, Section, KeyValues);
+end;
+
+procedure MergeArguments(Section: TConfSection; SectionName: string; KeyValues: TArray<string> = []); overload;
+var
+  aSection: TConfSection;
+begin
+  aSection := Section.Section[SectionName];
+  if aSection = nil then
+    aSection := Section.Sections.Require(SectionName);
+{  if aSection = nil then
+    raise Exception.Create('No section found' + SectioName);}
+  MergeArguments(aSection, KeyValues);
 end;
 
 { TConfWriter }
@@ -969,7 +989,7 @@ begin
     for i := 0 to Count-1 do
     begin
       if Items[i].Name = '' then
-        Result := ConnectStr(Result, Seperator, Items[i].Value)
+        Result := ConcatString(Result, Seperator, Items[i].Value)
     end;
 end;
 
