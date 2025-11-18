@@ -382,7 +382,7 @@ type
     property Connected: Boolean read GetConnected;
   end;
 
-  TInterfacedStreamtWrapper = class(TInterfacedPersistent, ImnStreamPersist)
+  TInterfacedStreamWrapper = class(TInterfacedPersistent, ImnStreamPersist)
   protected
     FStream: TStream;
     procedure SaveToStream(Stream: TStream; Count: Int64); overload;
@@ -1204,9 +1204,9 @@ end;
 
 function TmodResponse.SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions): Boolean;
 var
-  stream: TInterfacedStreamtWrapper;
+  stream: TInterfacedStreamWrapper;
 begin
-  stream := TInterfacedStreamtWrapper.Create(s);
+  stream := TInterfacedStreamWrapper.Create(s);
   try
     Result := SendStream(stream, ASize, AOptions);
   finally
@@ -1227,7 +1227,7 @@ var
         PutHeader('Content-Encoding', 'gzip');
       SendHeader;
     end;
-end;
+  end;
 
 var
   mStream: TMemoryStream;
@@ -3538,20 +3538,20 @@ begin
   FWaitEvent.WaitFor;
 end;
 
-{ TInterfacedStreamtWrapper }
+{ TInterfacedStreamWrapper }
 
-constructor TInterfacedStreamtWrapper.Create(vStream: TStream);
+constructor TInterfacedStreamWrapper.Create(vStream: TStream);
 begin
   inherited Create;
   FStream := vStream;
 end;
 
-procedure TInterfacedStreamtWrapper.LoadFromStream(Stream: TStream; Count: Int64);
+procedure TInterfacedStreamWrapper.LoadFromStream(Stream: TStream; Count: Int64);
 begin
   FStream.CopyFrom(Stream,Count);
 end;
 
-procedure TInterfacedStreamtWrapper.SaveToStream(Stream: TStream; Count: Int64);
+procedure TInterfacedStreamWrapper.SaveToStream(Stream: TStream; Count: Int64);
 begin
   Stream.CopyFrom(FStream, Count);
 end;

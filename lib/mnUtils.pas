@@ -99,6 +99,7 @@ function GetSubValue(const Content, Name: string; out Value: string; Terminals: 
 
 
 //Parse ParamStr to Strings
+//Always use KeyValues with one - not --
 procedure ParseCommandArguments(CallBackProc: TArgumentsCallbackProc; Sender: Pointer; KeyValues: TArray<string> = []); overload;
 procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> = []); overload;
 
@@ -112,15 +113,15 @@ procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> =
 }
 
 //Command is not have value not a switch, it not started with - and not ended with : or =
-function GetArgumentCommand(Strings: TStrings; out CommandName: string; out Index: Integer): Boolean; overload;
-//SwitchName: Use switch char too, like `-demon`
+function GetArgumentCommand(Strings: TStrings; out CommandName: string; out Index: Integer): Boolean; overload; // not deprecated 'use GetArgumentSwitch with no Value';
+//SwitchName: Use switch char too, like `-demon` `-service`
 //Switch started with - or -- notice -- with considered as - too
-function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
+function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitchName: string = ''; NoValue: Boolean = False): Boolean; overload;
 //Value from name or switch both acceptable, --name:value or name:value
 //Return True if name exists even if no value provided
 function GetArgumentValue(Strings: TStrings; out Value: String; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
 
-//Get Value from any thing have value by index `name1=value --name2=value`
+//Get Value from any thing have value by index `name1=value1 --name2=value2`
 function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean; overload;
 //Get all values
 function GetArgument(Strings: TStrings; OutStrings: TStrings; AltSwitch: string = ''): Boolean; overload;
@@ -1280,10 +1281,10 @@ begin
   end;
 end;
 
-function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitchName: string = ''): Boolean; overload;
+function GetArgumentSwitch(Strings: TStrings; SwitchName: string; AltSwitchName: string = ''; NoValue: Boolean = False): Boolean; overload;
 var
   I, P: Integer;
-  S: string;
+  S, V: string;
 begin
   Result := False;
   if StartsText('--', SwitchName) then
@@ -1295,11 +1296,19 @@ begin
     S := Strings[I];
     P := Pos(Strings.NameValueSeparator, S);
     if (P <> 0) then
+    begin
+      V := Copy(S, P + 1, MaxInt);
       S := Copy(S, 1, P - 1)
+    end
     else
+    begin
+      V := '';
       S := Copy(S, 1, MaxInt);
+    end;
 
-    if SameText(S, SwitchName) or ((AltSwitchName <> '') and (SameText(S, AltSwitchName))) then
+    if NoValue and (V <> '') then
+      Continue
+    else if SameText(S, SwitchName) or ((AltSwitchName <> '') and (SameText(S, AltSwitchName))) then
       Exit(True);
   end;
 end;

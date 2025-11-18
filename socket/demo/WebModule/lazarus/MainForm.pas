@@ -189,7 +189,8 @@ begin
     else
       aDocModule.UseCompressing := ovNo;
     aDocModule.UseKeepAlive.AsBoolean := KeepAliveChk.Checked;
-    HttpServer.SetRedirect('/'+aDocModule.AliasName+'/');
+    //HttpServer.SetFallbackRedirect('/'+aDocModule.AliasName+'/');
+    HttpServer.SetNotfound;
   end;
 
   aHomeModule := HttpServer.Modules.Find<THomeModule>;
@@ -306,7 +307,8 @@ begin
 
   HttpServer.Modules.Add(TmodWebFileModule.Create('doc', 'doc'));
   HttpServer.Modules.Add(THomeModule.Create('home', 'home'));
-  HttpServer.SetRedirect('/doc/');
+  //HttpServer.SetFallbackRedirect('/doc/');
+  HttpServer.SetNotfound;
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try

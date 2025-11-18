@@ -1,5 +1,4 @@
 unit mnStreamUtils;
-
 {**
  *  This file is part of the "Mini Library"
  *
@@ -25,7 +24,6 @@ const
   GzWindowBits                        = 15;
   GzipWindowBits                      = GzWindowBits + 16;
   GzipBits: array[Boolean] of integer = (GzWindowBits, GzipWindowBits);
-
 
 type
   { TmnPlainStreamProxy }
