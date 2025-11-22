@@ -963,7 +963,6 @@ end;
 
 function ParseAnswerHead(const Raw: String; out Number: Integer; out Protocol, Msg: string): Boolean;
 var
-  aRequests: TStringList;
   Index, NextIndex, Count: Integer;
   s: string;
 begin
@@ -1373,25 +1372,24 @@ begin
       if aDisposition = '' then
         aDisposition := 'attachment';
     end;
-    if AAlias <> '' then
-      aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"');
 
-    if NoCompress in aMIMEItem.Features then
-    begin
+    if Compressed in aMIMEItem.Features then
       SendOptions := SendOptions + [sndoNoCompress];
-    end;
   end
   else
   begin
     ContentType := 'application/octet-stream';
     if aDisposition = '' then
       aDisposition := 'attachment';
-    if (AAlias <> '') then
-        aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"')
   end;
 
+
   if aDisposition <> '' then
+  begin
+    if AAlias <> '' then
+      aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"');
     Header['Content-Disposition'] := aDisposition;
+  end;
 
   Result := SendStream(s, ASize, SendOptions);
 end;
