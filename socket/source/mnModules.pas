@@ -1338,6 +1338,7 @@ function TmodResponse.SendStream(s: TStream; ASize: Int64; AAlias: string; AFile
 var
   aMIMEItem: TmnMIMEItem;
   aDisposition, aStamp: string;
+  aCacheControl: string;
   SendOptions: TmodSendOptions;
 begin
   aStamp := FileStamp(AFileDate, ASize);
@@ -1352,7 +1353,7 @@ begin
 
   Stamp := aStamp;
 
-  Header['Cache-Control']  := 'public, max-age=3600, must-revalidate'; //86400 = 24*60*60 = 1 day
+  aCacheControl := 'public, max-age=3600'; //86400 = 24*60*60 = 1 day
   if AFileDate > 0 then
     Header['Last-Modified']  := FormatHTTPDate(AFileDate);
 
@@ -1389,6 +1390,13 @@ begin
     if AAlias <> '' then
       aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"');
     Header['Content-Disposition'] := aDisposition;
+  end;
+
+  if aCacheControl <> '' then
+  begin
+    if NoCache in aMIMEItem.Features then
+      aCacheControl := ConcatString(aCacheControl, ',', 'must-revalidate');
+    Header['Cache-Control'] := aCacheControl;
   end;
 
   Result := SendStream(s, ASize, SendOptions);

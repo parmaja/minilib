@@ -21,9 +21,12 @@ type
   (
     Text,
     Binary,
+    Document,
+    Embed,
     Hidden,
     NoCache,
     Compressed, //already compressed
+    Image,
     Executable
   );
 
@@ -113,38 +116,39 @@ procedure TmnMIME.Register;
 begin
   Add('', 'application/binary', 'Unkown', [Binary]);
   Add('aac', 'audio/aac', 'AAC audio file');
-  Add('apng', 'image/apng', 'Animated Portable Network Graphics (APNG) image');
+  Add('apng', 'image/apng', 'Animated Portable Network Graphics (APNG) image', [Image]);
   Add('arc', 'application/octet-stream', 'Archive document (multiple files embedded)');
   Add('avi', 'video/x-msvideo', 'AVI: Audio Video Interleave');
   Add('azw', 'application/vnd.amazon.ebook', 'Amazon Kindle eBook format');
   Add('bin', 'application/octet-stream', 'Any kind of binary data');
-  Add('bmp', 'image/bmp', 'Windows OS/2 Bitmap Graphics');
+  Add('bmp', 'image/bmp', 'Windows OS/2 Bitmap Graphics', [Image]);
   Add('bz', 'application/x-bzip', 'BZip archive', [Compressed]);
   Add('bz2', 'application/x-bzip2', 'BZip2 archive', [Compressed]);
-  Add('css', 'text/css', 'Cascading Style Sheets (CSS)');
-  Add('csv', 'text/csv', 'Comma-separated values (CSV)');
+  Add('css', 'text/css', 'Cascading Style Sheets (CSS)', [TEXT]);
+  Add('csv', 'text/csv', 'Comma-separated values (CSV)', [TEXT]);
   Add('doc', 'application/msword', 'Microsoft Word');
   Add('docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Microsoft Word (OpenXML)', [Compressed]);
   Add('epub', 'application/epub+zip', 'Electronic publication (EPUB)');
   Add('eot', 'application/vnd.ms-fontobject', 'MS Embedded OpenType fonts');
-  Add('gif', 'image/gif', 'Graphics Interchange Format (GIF)');
+  Add('gif', 'image/gif', 'Graphics Interchange Format (GIF)', [Image]);
   Add('gz', 'application/gzip', 'GZip Compressed Archive', [Compressed]);
-  Add('htm',  'text/html', 'HyperText Markup Language (HTML)');
-  Add('html', 'text/html', 'HyperText Markup Language (HTML)');
-  Add('ico', 'image/x-icon', 'Icon format');
+  Add('htm',  'text/html', 'HyperText Markup Language (HTML)', [TEXT]);
+  Add('html', 'text/html', 'HyperText Markup Language (HTML)', [TEXT]);
+  Add('ico', 'image/x-icon', 'Icon format', [Image]);
   Add('ics', 'text/calendar', 'iCalendar format');
   Add('jar', 'application/java-archive', 'Java Archive (JAR)', [Compressed]);
-  Add('jpeg', 'image/jpeg', 'JPEG images', [Compressed]);
-  Add('jpg', 'image/jpeg', 'JPEG images', [Compressed]);
-  Add('js', 'text/javascript', 'JavaScript (ECMAScript)', [Executable]);
-  Add('json', 'application/json', 'JSON format');
+  Add('jpeg', 'image/jpeg', 'JPEG images', [Compressed, Image]);
+  Add('jpg', 'image/jpeg', 'JPEG images', [Compressed, Image]);
+  Add('js', 'text/javascript', 'JavaScript (ECMAScript)', [Executable, TEXT]);
+  Add('json', 'application/json', 'JSON format', [TEXT]);
   Add('jsonld', 'application/ld+json', 'JSON-LD format');
+  Add('lua', 'application/x-httpd-lua', 'LUA Script file', [Executable]);
   Add('mid', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');
   Add('midi', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');
   Add('mp3', 'audio/mpeg', 'MP3 audio', [Compressed]);
   Add('mp4', 'video/mp4', 'MP4 video', [Compressed]);
-  Add('mpeg', 'video/mpeg', 'MPEG Video');
-  Add('mpkg', 'application/vnd.apple.installer+xml', 'Apple Installer Package');
+  Add('mpeg', 'video/mpeg', 'MPEG Video', [Compressed]);
+  Add('mpkg', 'application/vnd.apple.installer+xml', 'Apple Installer Package', [Compressed]);
   Add('odp', 'application/vnd.oasis.opendocument.presentation', 'OpenDocuemnt presentation document');
   Add('ods', 'application/vnd.oasis.opendocument.spreadsheet', 'OpenDocuemnt spreadsheet document');
   Add('odt', 'application/vnd.oasis.opendocument.text', 'OpenDocument text document');
@@ -152,19 +156,19 @@ begin
   Add('ogv', 'video/ogg', 'OGG video');
   Add('ogx', 'application/ogg', 'OGG');
   Add('otf', 'font/otf','OpenType font');
-  Add('png', 'image/png', 'Portable Network Graphics', [Compressed]);
-  Add('pdf', 'application/pdf', 'Adobe Portable Document Format (PDF)');
+  Add('png', 'image/png', 'Portable Network Graphics', [Compressed, Image]);
+  Add('pdf', 'application/pdf', 'Adobe Portable Document Format (PDF)', [Document, Embed]);
   Add('ppt', 'application/vnd.ms-powerpoint', 'Microsoft PowerPoint');
   Add('rar', 'application/x-rar-compressed', 'RAR archive', [Binary, Compressed]);
   Add('rtf', 'application/rtf', 'Rich Text Format (RTF)');
-  Add('sh', 'application/x-sh', 'Bourne shell script');
+  Add('sh', 'application/x-sh', 'Bourne shell script', [Executable]);
   Add('svg', 'image/svg+xml', 'Scalable Vector Graphics (SVG)');
   Add('swf', 'application/x-shockwave-flash', 'Small web format (SWF) or Adobe Flash document');
-  Add('tar', 'application/x-tar', 'Tape Archive (TAR)');
-  Add('tif', 'image/tiff', 'Tagged Image File Format (TIFF)');
-  Add('tiff', 'image/tiff', 'Tagged Image File Format (TIFF)');
+  Add('tar', 'application/x-tar', 'Tape Archive (TAR)', [Compressed]);
+  Add('tif', 'image/tiff', 'Tagged Image File Format (TIFF)', [Image]);
+  Add('tiff', 'image/tiff', 'Tagged Image File Format (TIFF)', [Image]);
   Add('ttf', 'font/ttf', 'TrueType Font');
-	Add('txt', 'text/plain', 'Text');
+	Add('txt', 'text/plain', 'Text', [TEXT]);
   Add('vsd', 'application/vnd.visio', 'Microsft Visio');
   Add('wav', 'audio/x-wav', 'Waveform Audio Format');
   Add('weba', 'audio/webm', 'WEBM audio', [Compressed]);
@@ -175,13 +179,13 @@ begin
   Add('xhtml', 'application/xhtml+xml', 'XHTML');
   Add('xls', 'application/vnd.ms-excel', 'Microsoft Excel');
   Add('xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Microsoft Excel (OpenXML)', [Compressed]);
-  Add('xml', 'application/xml', 'XML');
+  Add('xml', 'application/xml', 'XML', [Text]);
   Add('xul', 'application/vnd.mozilla.xul+xml', 'XUL');
   Add('zip', 'application/zip', 'ZIP archive', [Binary, Compressed]);
   Add('3gp', 'video/3gpp', '3GPP audio/video container');
   Add('3g2', 'video/3gpp2', '3GPP2 audio/video container');
   Add('7z', 'application/x-7z-compressed', '7-zip archive', [Binary, Compressed]);
-  Add('php', 'application/x-httpd-php', 'PHP Script file', [Binary]);
+  Add('php', 'application/x-httpd-php', 'PHP Script file', [Executable]);
 end;
 
 initialization
