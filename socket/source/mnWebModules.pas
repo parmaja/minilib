@@ -745,7 +745,10 @@ end;
 procedure TmodRedirectCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Response.RedirectTo((Module as TmodRedirectModule).RedirectTo);
+  if (Request.Path = '') or (Request.Path = '/') then
+    Response.RespondRedirectTo((Module as TmodRedirectModule).RedirectTo)
+  else
+    Response.RespondNotFound;
 end;
 
 { TmodForwardHttpsCommand }
@@ -753,7 +756,7 @@ end;
 procedure TmodForwardHttpsCommand.RespondResult(var Result: TmodRespondResult);
 begin
   inherited;
-  Response.RedirectTo('https://'+Response.Request.Host + Response.Request.URI);
+  Response.RespondRedirectTo('https://'+Response.Request.Host + Response.Request.URI);
 end;
 
 { TmodDirCommand }
@@ -1037,7 +1040,7 @@ end;
 procedure Tmod404Command.RespondResult(var Result: TmodRespondResult);
 begin
   Response.Answer := hrNotFound;
-  Response.ContentType := 'text/html';
+  Response.ContentType := 'text/plain';
   Response.SendUTF8String('404 Not Found');
 end;
 

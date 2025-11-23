@@ -130,8 +130,8 @@ begin
     else
       aDocModule.UseCompressing := ovNo;
 
-    //HttpServer.SetFallbackRedirect('/'+aDocModule.AliasName+'/');
-    HttpServer.SetNotfound;
+    HttpServer.SetFallbackRedirect('/'+aDocModule.AliasName+'/');
+    //HttpServer.SetNotfound;
   end;
 
   aHomeModule := HttpServer.Modules.Find<THomeModule>;

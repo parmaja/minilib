@@ -248,6 +248,8 @@ function CorrectPath(const Path: string): string;
 function SplitPath(Path: string; out Right: string; Index: Integer): string; overload;
 function SplitPath(Path: string; Index: Integer): string; overload;
 
+//Remove last subdirectory
+//if lasted by path delimiator remove it
 function TruncPath(Path: string; Index: Integer): string; overload;
 
 function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): string;

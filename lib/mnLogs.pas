@@ -26,7 +26,7 @@ type
     lglText, //Normal text always show it
     lglError,
     lglWarning,
-    {lgHint, }
+    lgHint,
     lglInfo, //Normal text but show it if installed logger allow it, it is by default
     lglDebug
   );
@@ -113,9 +113,10 @@ type
   public
   end;
 
+//No We can't uninstall it
 procedure InstallFileLog(FileName: string; LogLevel: TLogLevel = lglDebug);
 procedure InstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel = lglDebug);
-procedure UninstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel = lglDebug);
+//procedure UninstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel = lglDebug);
 procedure InstallConsoleLog(LogLevel: TLogLevel = lglDebug);
 procedure InstallDebugOutputLog(LogLevel: TLogLevel = lglDebug);
 function IsLogInstalled(LogClass: TClass): Boolean;
@@ -151,7 +152,7 @@ begin
   Log.Install(LogLevel, TEventLog.Create(AEvent));
 end;
 
-procedure UninstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel);
+{procedure UninstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel);
 var
   i: Integer;
 begin
@@ -167,7 +168,7 @@ begin
     end;
   end;
   raise Exception.Create('There is no Event install for it');
-end;
+end;}
 
 function IsLogInstalled(LogClass: TClass): Boolean;
 var
@@ -325,7 +326,7 @@ var
 begin
   if not Enabled then
     exit;
-  Lock.Enter;
+//  Lock.Enter;
   try
     for i := 0 to Count -1 do
     begin
@@ -335,7 +336,7 @@ begin
         ALog.LogWrite(LogLevel, S);
     end;
   finally
-    Lock.Leave;
+//    Lock.Leave;
   end;
 end;
 

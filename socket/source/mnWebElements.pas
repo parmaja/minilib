@@ -3029,8 +3029,7 @@ begin
         end
         else if AResponse.Answer = hrNotFound then
         begin
-          AResponse.ContentType := 'text/html';
-          AResponse.SendUTF8String('404 Not Found');
+          AResponse.RespondNotFound;
         end;
       end;
     end
@@ -3038,9 +3037,7 @@ begin
     begin
       if not (AResponse.IsHeaderSent) then
       begin
-        AResponse.Answer := hrNotFound;
-        AResponse.ContentType := 'text/html';
-        AResponse.SendUTF8String('404 Not Found');
+        AResponse.RespondNotFound;
       end;
     end;
 
@@ -5993,7 +5990,7 @@ begin
   inherited;
   if (Request.Path = '') and (Request.URI <> '') then
   begin
-    Response.RedirectTo(IncludeURLDelimiter(Request.URI));
+    Response.RespondRedirectTo(IncludeURLDelimiter(Request.URI));
     exit;
   end;
   AtomicIncrement(RendererID);

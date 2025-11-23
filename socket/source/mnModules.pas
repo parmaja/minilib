@@ -538,12 +538,14 @@ type
     function StatusResult: string;
     function StatusVersion: string;
 
-    procedure RedirectTo(S:string);
     //Document root folder
     property HomePath: string read FHomePath write FHomePath;
 
     property Request: TwebRequest read GetRequest;
     property Location: string read FLocation write FLocation; //Relocation it to another url
+  public
+    procedure RespondNotFound;
+    procedure RespondRedirectTo(S: string);
   end;
 
   { TwebCommand }
@@ -1823,7 +1825,7 @@ begin
   try
     RespondResult(Result);
 
-    if not Response.IsHeaderSent and (Response.Answer<>hrNone) then
+    if not Response.IsHeaderSent and (Response.Answer <> hrNone) then
       Response.SendHeader;
   finally
     Unprepare(Result);
@@ -3215,11 +3217,18 @@ begin
   Result := SubStr(Head, ' ', 0);
 end;
 
-procedure TwebResponse.RedirectTo(S: string);
+procedure TwebResponse.RespondRedirectTo(S: string);
 begin
   Answer := hrRedirect;
   Location := S;
   SendHeader;
+end;
+
+procedure TwebResponse.RespondNotFound;
+begin
+  Answer := hrNotFound;
+  ContentType := 'text/plain';
+  SendUTF8String('404 Not Found');
 end;
 
 function TwebResponse.GetRequest: TwebRequest;
