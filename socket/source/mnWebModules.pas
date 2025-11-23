@@ -578,6 +578,14 @@ end;}
 procedure WebServeFolder(Title, Path: string; Response: TwebResponse; Request: TmodRequest);
 var
   Files: TStringList;
+  procedure AddLink(s: string);
+  begin
+    Response.Stream.WriteUTF8Line('<ui>');
+    Response.Stream.WriteUTF8Line('<a href="' + s + '\">' + s + '</a>');
+    Response.Stream.WriteUTF8Line('<br/>');
+    Response.Stream.WriteUTF8Line('</ui>');
+  end;
+var
   s: string;
 begin
   Response.ContentType := DocumentToContentType('html');
@@ -587,37 +595,33 @@ begin
     Response.Stream.WriteUTF8Line('<html>');
     Response.Stream.WriteUTF8Line('<head>');
     Response.Stream.WriteUTF8Line('<title> Index of ' + Title + '</title>');
+    Response.Stream.WriteUTF8Line('<link rel="icon" href="data:," />'); //disable call favicon.ico
+    Response.Stream.WriteUTF8Line('<meta charset="UTF-8" />');
+
     Response.Stream.WriteUTF8Line('<style> body { font-family: monospace; } </style>');
     Response.Stream.WriteUTF8Line('</head>');
     Response.Stream.WriteUTF8Line('<body>');
     EnumFiles(Files, Path, '*.*', [efDirectory]);
-    Response.Stream.WriteUTF8Line('<h1> Index of ' + Title + '</h1>');
-    Response.Stream.WriteUTF8Line('<h2>Folders</h2>');
+    Response.Stream.WriteUTF8Line('<h3>Index of ' + Title + '</h3>');
+    Response.Stream.WriteUTF8Line('<h4>Folders</h4>');
     Response.Stream.WriteUTF8Line('<ul>');
+
+    AddLink('..');
+
     for s in Files do
     begin
       if not StartsText('.', s) then
-      begin
-        Response.Stream.WriteUTF8Line('<ui>');
-        Response.Stream.WriteUTF8Line('<a href="' + s + '\">' + s + '</a>');
-        Response.Stream.WriteUTF8Line('<br/>');
-        Response.Stream.WriteUTF8Line('</ui>');
-      end;
+        AddLink(s);
     end;
     Response.Stream.WriteUTF8Line('</ul>');
-    Response.Stream.WriteUTF8Line('<h2>Files</h2>');
+    Response.Stream.WriteUTF8Line('<h4>Files</h4>');
     Files.Clear;
     EnumFiles(Files, Path, '*.*', [efFile]);
     Response.Stream.WriteUTF8Line('<ul>');
     for s in Files do
     begin
       if not StartsText('.', s) then
-      begin
-        Response.Stream.WriteUTF8Line('<ui>');
-        Response.Stream.WriteUTF8Line('<a href="' + s + '">'+ s + '</a>');
-        Response.Stream.WriteUTF8Line('<br/>');
-        Response.Stream.WriteUTF8Line('</ui>');
-      end;
+        AddLink(s);
     end;
     Response.Stream.WriteUTF8Line('</ul>');
     Response.Stream.WriteUTF8Line('</body>');

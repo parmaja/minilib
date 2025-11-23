@@ -4070,6 +4070,14 @@ end;
 procedure TmnwElement.ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   Files: TStringList;
+  procedure AddLink(s: string);
+  begin
+    AContext.Writer.OpenInlineTag('ui');
+    AContext.Writer.AddInlineTag('a', 'href="' + s + '\"', s);
+    AContext.Writer.AddInlineShortTag('br');
+    AContext.Writer.CloseTag('ui');
+  end;
+var
   s: string;
 begin
   AResponse.ContentType := DocumentToContentType('html');
@@ -4079,6 +4087,9 @@ begin
     AContext.Writer.OpenTag('html');
     AContext.Writer.OpenTag('head');
     AContext.Writer.AddTag('title', '', 'Index of ' + APath);
+    AContext.Writer.AddShortTag('link', 'rel="icon" href="data:,"'); //disable call favicon.ico
+    AContext.Writer.AddShortTag('meta', 'charset="UTF-8"');
+    AContext.Writer.AddShortTag('meta', 'name="viewport" content="width=device-width, initial-scale=1"');
     AContext.Writer.AddTag('style', '', 'body { font-family: monospace; }');
     AContext.Writer.CloseTag('head');
     AContext.Writer.OpenTag('body');
@@ -4086,15 +4097,13 @@ begin
     AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.Route);
     AContext.Writer.AddTag('h2', '', 'Folders');
     AContext.Writer.OpenTag('ul', '', '');
+
+    AddLink('..');
+
     for s in Files do
     begin
       if not StartsText('.', s) then
-      begin
-        AContext.Writer.OpenInlineTag('ui');
-        AContext.Writer.AddInlineTag('a', 'href="' + s + '\"', s);
-        AContext.Writer.AddInlineShortTag('br');
-        AContext.Writer.CloseTag('ui');
-      end;
+        AddLink(s);
     end;
     AContext.Writer.CloseTag('ul');
     AContext.Writer.AddTag('h2', '', 'Files');
@@ -4104,12 +4113,7 @@ begin
     for s in Files do
     begin
       if not StartsText('.', s) then
-      begin
-        AContext.Writer.OpenInlineTag('ui');
-        AContext.Writer.AddInlineTag('a', 'href="' + s + '"', s);
-        AContext.Writer.AddInlineShortTag('br');
-        AContext.Writer.CloseTag('ui');
-      end;
+        AddLink(s);
     end;
     AContext.Writer.CloseTag('ul');
     AContext.Writer.CloseTag('body');
