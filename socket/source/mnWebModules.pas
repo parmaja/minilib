@@ -363,7 +363,7 @@ begin
   Document := ExpandFile(Document + Path);
 
   Result := FileExists(Document) or DirectoryExists(Document);
-  if Smart and not Result then
+  if Smart and not Result and (Path <> '') then
     Result := WebFindDocument(HomePath, TruncPath(Path, -1), Document, Smart);
 end;
 
