@@ -355,6 +355,8 @@ begin
 end;
 
 function WebFindDocument(const HomePath, Path: string; out Document:string; Smart: Boolean = False): Boolean;
+var
+  aTruncPath: string;
 begin
   Document := HomePath;
   // path = '' or '/' or './' or '../'
@@ -364,7 +366,16 @@ begin
 
   Result := FileExists(Document) or DirectoryExists(Document);
   if Smart and not Result and (Path <> '') then
-    Result := WebFindDocument(HomePath, TruncPath(Path, -1), Document, Smart);
+  begin
+    aTruncPath := TruncPath(Path, -1);
+    if aTruncPath='' then
+    begin
+      Document := IncludePathDelimiter(HomePath);
+      Result := DirectoryExists(Document);
+    end
+    else
+      Result := WebFindDocument(HomePath, aTruncPath, Document, Smart);
+  end;
 end;
 
 function WebExpandFile(HomePath, Path: string; out Document: string; Smart: Boolean): Boolean;
@@ -633,7 +644,7 @@ end;
 
 procedure WebServeFile(Response: TwebResponse; Request: TmodRequest; DefaultDocuments: TStringList; Options: TmodServeFiles);
 var
-  aDocument, aFile, aHomePath: string;
+  aDocument, aRequestDocument, aFile, aHomePath: string;
 
   {function FindDocument(Path: string; Smart: Boolean = False): Boolean;
   begin
@@ -664,9 +675,11 @@ begin
 *)
   aHomePath := ExpandFile(CorrectPath(ExcludePathDelimiter(Response.HomePath)));
 
+  WebExpandFile(aHomePath, Request.Path, aRequestDocument, False);
+
   if not WebExpandFile(aHomePath, Request.Path, aDocument, serveSmart in Options) then
     Response.Answer := hrUnauthorized
-  else if ((Request.Path = '') and not FileExists(aDocument)) or (not EndsDelimiter(aDocument) and DirectoryExists(aDocument)) then
+  else if ((Request.Path = '') and not FileExists(aDocument)) or (not EndsDelimiter(aRequestDocument) and DirectoryExists(aRequestDocument)) then
   //                                                                  http://127.0.0.1:81/web  to   http://127.0.0.1:81/web/
   begin
     //http://127.0.0.1:81

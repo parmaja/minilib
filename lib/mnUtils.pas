@@ -250,7 +250,7 @@ function SplitPath(Path: string; Index: Integer): string; overload;
 
 //Remove last subdirectory
 //if lasted by path delimiator remove it
-function TruncPath(Path: string; Index: Integer): string; overload;
+function TruncPath(const Path: string; Index: Integer): string; overload;
 
 function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): string;
 
@@ -436,7 +436,7 @@ begin
   end;
 end;
 
-function TruncPath(Path: string; Index: Integer): string;
+function TruncPath(const Path: string; Index: Integer): string;
 var
   l, i, e: Integer;
   c: Char;
