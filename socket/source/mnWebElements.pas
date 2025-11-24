@@ -4020,7 +4020,7 @@ end;
 procedure TmnwElement.ServeFile(HomePath: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   fs: TFileStream;
-  aDocument, aFile: string;
+  aDocument, aRequestDocument, aFile: string;
   Files: TStringList;
   s: string;
 begin
@@ -4029,9 +4029,11 @@ begin
     {if (AContext.Route = '') or (AContext.Route = URLPathDelim) then
       Render(AContext, AResponse)
     else }
+    WebExpandFile(HomePath, AContext.Route, aRequestDocument);
+
     if not WebExpandFile(HomePath, AContext.Route, aDocument, serveSmart in Options) then
       AResponse.Answer := hrUnauthorized
-    else if ((AContext.Route = '') and not FileExists(aDocument)) or (not EndsDelimiter(aDocument) and DirectoryExists(aDocument)) then
+    else if ((AContext.Route = '') and not FileExists(aDocument)) or (not EndsDelimiter(aRequestDocument) and DirectoryExists(aRequestDocument)) then
     begin
       AResponse.Answer := hrRedirect;
       AResponse.Location := IncludeURLDelimiter(AResponse.Request.Address);

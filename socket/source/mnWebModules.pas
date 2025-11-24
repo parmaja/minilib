@@ -331,7 +331,7 @@ var
   modLock: TCriticalSection = nil;
 
 function WebFindDocument(const HomePath, Path: string; out Document:string; Smart: Boolean = False): Boolean;
-function WebExpandFile(HomePath, Path: string; out Document: string; Smart: Boolean): Boolean;
+function WebExpandFile(HomePath, Path: string; out Document: string; Smart: Boolean = False): Boolean;
 function WebExpandToRoot(FileName: string; Root: string): string;
 function FindDefaultDocument(Root: string; DefaultDocuments: TStringList): string;
 procedure WebServeFolder(Title, Path: string; Response: TwebResponse; Request: TmodRequest);
