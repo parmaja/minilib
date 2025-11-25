@@ -2955,18 +2955,26 @@ begin
             while i < Routes.Count do
             begin
               aRoute := Routes[i];
-              aElement := aElement.FindByRoute(aRoute);
-              if aElement = nil then
+              if aRoute = '' then
               begin
-                //if elFallback in Element.Kind then
-                Result := False;
+                Result := True;
                 break;
               end
               else
               begin
-                AContext.Route := DeleteSubPath(aRoute, AContext.Route);
-                Element := aElement;
-                Result := True;
+                aElement := aElement.FindByRoute(aRoute);
+                if aElement = nil then
+                begin
+                  //if elFallback in Element.Kind then
+                  Result := False;
+                  break;
+                end
+                else
+                begin
+                  AContext.Route := DeleteSubPath(aRoute, AContext.Route);
+                  Element := aElement;
+                  Result := True;
+                end;
               end;
               inc(i);
             end;
@@ -4055,6 +4063,8 @@ begin
           AResponse.Answer := hrForbidden
         else if FileExists(aDocument) then
           AResponse.SendFile(aDocument, AContext.Stamp)
+        else if IsStrInArray(AContext.Route, ['', '/', '\']) then
+          Render(AContext, AResponse)
         else
           AResponse.Answer := hrNotFound;
       end;

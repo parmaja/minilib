@@ -260,6 +260,7 @@ function ExcludePathDelimiter(Path: string): string;
 
 //This not check if S = ''
 function IncludeURLDelimiter(const S: string): string; //deprecated 'AddEndURLDelimiter';
+function IsURLDelimiter(const S: string): Boolean;
 
 //If empty do not add
 function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
@@ -1989,6 +1990,11 @@ begin
     Result := S + '/'
   else
     Result := S;
+end;
+
+function IsURLDelimiter(const S: string): Boolean;
+begin
+  Result := IsStrInArray(S, ['/', '\']);
 end;
 
 function ExcludePathDelimiter(Path: string): string;
