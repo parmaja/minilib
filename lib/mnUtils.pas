@@ -28,9 +28,7 @@ uses
   mnTypes;
 
 procedure Nothing;
-{
-  StrHave: test the string if it have Separators
-}
+
 function QuoteStr(Str: string; const QuoteChar: string = '"'): string;
 
 {**
@@ -141,7 +139,11 @@ function SubStr(const AText: String; AFromIndex, AToIndex: Integer): String; ove
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 
+{
+  StrHave: test the string if it have Separators
+}
 function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
+function IndexOfChar(S: string; Separators: TSysCharSet): Integer;
 
 //if S is same Name variabled passed, it empty it both, so i will use `var` not `out`
 procedure SpliteStr(S, Separator: string; var Name:string; var Value: string); inline;
@@ -379,7 +381,22 @@ begin
      if CharInSet(S[i], Separators) then
      begin
        Result := True;
-       Break; 
+       Break;
+     end;
+  end;
+end;
+
+function IndexOfChar(S: string; Separators: TSysCharSet): Integer;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 1 to Length(S) do
+  begin
+     if CharInSet(S[i], Separators) then
+     begin
+       Result := i;
+       Break;
      end;
   end;
 end;
@@ -1199,8 +1216,8 @@ begin
         NextIsValue := True
       else
       begin
-        idx := Pos('=', Name);
-        if idx<>0 then
+        idx := IndexOfChar(Name, ['=', ':']);
+        if idx > 0 then
         begin
           Value := Copy(Name, idx+1, MaxInt);
           Name := Copy(Name, 1, idx-1);
@@ -1235,7 +1252,7 @@ begin
   for I := 0 to Strings.Count - 1 do
   begin
     S := Strings[I];
-    if not StartsText('-', S) and not EndsText('=', S) and not EndsText(':', S) then
+    if not StartsText('-', S) and not StrHave(S, ['=', ':']) then
     begin
       CommandName := S;
       Index := I;
@@ -1265,7 +1282,7 @@ begin
   begin
     S := Strings[I];
     P := Pos(Strings.NameValueSeparator, S);
-    if (P <> 0) then
+    if (P > 0) then
     begin
       N := Copy(S, 1, P - 1);
       V := Copy(S, p + 1, MaxInt);
@@ -1298,7 +1315,7 @@ begin
   begin
     S := Strings[I];
     P := Pos(Strings.NameValueSeparator, S);
-    if (P <> 0) then
+    if (P > 0) then
     begin
       V := Copy(S, P + 1, MaxInt);
       S := Copy(S, 1, P - 1)
@@ -1327,7 +1344,7 @@ begin
   begin
     S := Strings[I];
     P := Pos(Strings.NameValueSeparator, S);
-    if (P <> 0) then
+    if (P > 0) then
     begin
       Name := Copy(S, 1, P - 1);
       if (Name = '') then
@@ -1363,7 +1380,7 @@ begin
   begin
     S := Strings[I];
     P := Pos(Strings.NameValueSeparator, S);
-    if (P <> 0) then
+    if (P > 0) then
     begin
       if (Copy(S, 1, P - 1) = '') then
       begin
@@ -1394,7 +1411,7 @@ begin
   begin
     S := Strings[I];
     P := Pos(Strings.NameValueSeparator, S);
-    if (P <> 0) then
+    if (P > 0) then
     begin
       if (Copy(S, 1, P - 1) = '') then
       begin
@@ -1750,7 +1767,7 @@ var
   p: integer;
 begin
   p := Pos(Separator, S);
-  if P <> 0 then
+  if P > 0 then
   begin
     Name := Copy(s, 1, p - 1);
     Value := Copy(s, p + 1, MaxInt);
