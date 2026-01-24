@@ -90,6 +90,7 @@ type
   end;
 
 procedure FieldsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+procedure ParseArgumentsToParams(Arguments: TmnParams; KeyValues: TArray<string> = []); overload;
 
 implementation
 
@@ -173,6 +174,22 @@ begin
     Value := '';
   end;
   (TObject(Sender) as TmnFields).Add(Name, Value); //params inherite fields
+end;
+
+procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; AName, AValue: string; IsSwitch: Boolean; var Resume: Boolean);
+begin
+  with TObject(Sender) as TmnParams do
+  begin
+    if AValue <> '' then
+      Add(AName, AValue)
+    else
+      Add(AName, '');
+  end;
+end;
+
+procedure ParseArgumentsToParams(Arguments: TmnParams; KeyValues: TArray<string> = []); overload;
+begin
+  ParseCommandArguments(ArgumentsCallbackProc, Arguments, KeyValues);
 end;
 
 procedure TmnParams.SetAsString(const Value: string);
