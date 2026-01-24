@@ -1396,7 +1396,7 @@ begin
 
   if aCacheControl <> '' then
   begin
-    if NoCache in aMIMEItem.Features then
+    if (aMIMEItem <> nil) and (NoCache in aMIMEItem.Features) then
       aCacheControl := ConcatString(aCacheControl, ',', 'must-revalidate');
     Header['Cache-Control'] := aCacheControl;
   end;

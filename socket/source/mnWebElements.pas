@@ -850,8 +850,11 @@ type
 
     property Lock: TCriticalSection read FLock;
     property Assets: TAssetsSchema read FAssets;
+    //Public Web Files
     property HomePath: string read FHomePath write FHomePath;
+    //Private Files
     property WorkPath: string read FWorkPath write FWorkPath;
+    //Exe path
     property AppPath: string read FAppPath write FAppPath;
     property Shutdown: Boolean read FShutdown;
   end;
