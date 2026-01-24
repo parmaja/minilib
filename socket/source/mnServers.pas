@@ -996,6 +996,8 @@ begin
 end;
 
 procedure TmnServer.Stop;
+var
+  aPort: string;
 begin
   if (FListener <> nil) then
   begin
@@ -1006,7 +1008,7 @@ begin
       DoStopping;
       FListener.Terminate;
       FListener.WaitFor;
-      Log('Server stopping at port: '+ FListener.Port);
+      aPort := FListener.Port;
 
       //to process all queues
       //in case of service ThreadID<>MainThreadID :)
@@ -1016,7 +1018,7 @@ begin
       FActive := False;
       DoAfterClose;
       IsStopping := False;
-      Log('Server stopped');
+      Log('Server stopped at port: '+ aPort);
     end;
   end;
   DoStop;
@@ -1075,7 +1077,6 @@ end;
 
 procedure TmnServer.DoStarted(vListener: TmnListener);
 begin
-
 end;
 
 procedure TmnServer.DoStarting;
