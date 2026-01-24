@@ -5036,7 +5036,7 @@ begin
     end;
   end
   else
-    AResponse.SendFile(FileName, AContext.Stamp);
+    AResponse.SendFile(FileName);
 end;
 
 constructor TmnwSchema.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string; ARoute: string );

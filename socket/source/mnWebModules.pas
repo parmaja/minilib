@@ -715,7 +715,7 @@ begin
       if StartsText('.', ExtractFileName(aDocument)) then //no files starts with dots, TODO no folders in path
         Response.Answer := hrForbidden
       else if FileExists(aDocument) then
-        Response.SendFile(aDocument, Request.Header['If-None-Match'])
+        Response.SendFile(aDocument)
       else
         Response.Answer := hrNotFound;
     end;

@@ -1291,7 +1291,6 @@ begin
   FileAge(AFileName, aFileDate);
   aSize := GetSizeOfFile(AFileName);
 
-
   //By default, web browsers and proxies do not cache content when accessed via an IP address
   if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = FileStamp(aFileDate, aSize)) then
   begin
@@ -1299,7 +1298,7 @@ begin
     exit(False);
   end;
 
-  if Alias='' then
+  if Alias = '' then
     Alias := ExtractFileName(AFileName);
 
   Answer := hrOK;
@@ -2222,6 +2221,7 @@ begin
   ParseQuery(ARequest.Query, ARequest.Params);
 
   ARequest.Params['Module'] := AliasName;
+  ARequest.Params['ModuleName'] := Name;
   DoPrepareRequest(ARequest);
 end;
 
@@ -2419,11 +2419,11 @@ end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;
 var
-  item, aModule, aLast: TmodModule;
+  item, aModule, aDefault: TmodModule;
 begin
   Result := nil;
   aModule := nil;
-  aLast := nil;
+  aDefault := nil;
   for item in Self do
   begin
     if (item.AliasName <> '') and item.Match(ARequest) then
@@ -2432,14 +2432,14 @@ begin
       break;
     end
     else if (item.AliasName = '') then //* find fallback module without aliasname
-      aLast := item;
+      aDefault := item;
   end;
 
   if aModule = nil then
     aModule := DefaultModule;
 
   if aModule = nil then
-    aModule := aLast;
+    aModule := aDefault;
 
   if aModule <> nil then
   begin
