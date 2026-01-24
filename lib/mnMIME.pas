@@ -82,6 +82,8 @@ begin
       Ext := Copy(Ext, 2, Length(Ext));
   end;
   Result := MIME.Find(Ext);
+  if Result = nil then
+    Result := MIME[0];
 end;
 
 function DocumentToContentType(const Extension: string): string;
@@ -114,7 +116,7 @@ end;
 
 procedure TmnMIME.Register;
 begin
-  Add('', 'application/binary', 'Unkown', [Binary]);
+  Add('', 'application/octet-stream', '', [Binary]);
   Add('aac', 'audio/aac', 'AAC audio file');
   Add('apng', 'image/apng', 'Animated Portable Network Graphics (APNG) image', [Image]);
   Add('arc', 'application/octet-stream', 'Archive document (multiple files embedded)');
