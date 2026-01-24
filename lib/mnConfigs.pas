@@ -209,6 +209,9 @@ type
     //Load it into strings without clear it
     procedure ReadStrings(AStrings: TStrings; ValuesOnly: Boolean = True; AllowDuplicate: Boolean = False); overload;
 
+    //Utils
+    function ReadPath(AName: string; RelativeTo: string; Def: String = ''; AOptions: TConfOptions = sDefaultOptions): String; overload;
+
     //Do we need to clear AStrings?
     procedure ReadStrings(AStrings: TStrings; AName: string; ValuesOnly: Boolean = True; AllowDuplicate: Boolean = False); overload;
 
@@ -798,6 +801,15 @@ begin
     Result := StrToIntDef(Field.Value, Def)
   else
     Result := Def;
+end;
+
+function TConfSection.ReadPath(AName, RelativeTo, Def: String; AOptions: TConfOptions): String;
+begin
+  Result := Self.ReadString(AName, Def, AOptions + [coInherite, coEmptyIsValue]);
+  if (Result = '.') then
+    Result := RelativeTo
+  else if (LeftStr(Result, 2) = '.\') or (LeftStr(Result, 2) = './') then
+    Result := RelativeTo + Copy(Result, 3, MaxInt);
 end;
 
 function TConfSection.ReadInt64(AName: string; Def: Int64; AOptions: TConfOptions): Int64;
