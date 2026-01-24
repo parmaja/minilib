@@ -189,6 +189,7 @@ type
     function FindValue(AValue: String; AOptions: TConfOptions = []): TConfField; overload;
     function RequireField(const vName: string): TConfField; //find it if not exists create it
     function Add(AName, AValue: string): TConfField; overload;
+    function Replace(AName, AValue: string): TConfField; overload;
     function AddItem(S: string; Seperator: string; TrimIt: Boolean = False; MergeIt: Boolean = False): TConfField; overload;
     function AddComment(S: string): TConfField; overload;
     function Find(const vName: string): TConfField; virtual; //no exception
@@ -281,20 +282,20 @@ implementation
 const
   cCommentChars: array of char = ['#', ';'];
 
-procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
+procedure ConfigArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
 begin
   if Index > 0 then //ignore first param (exe file)
     begin
       if IsSwitch or ((Name <> '') and (Value <> '')) then
-        (TConfSection(Sender) as TConfSection).Add(Name, Value)
+        (TConfSection(Sender) as TConfSection).Replace(Name, Value)
       else
-        (TConfSection(Sender) as TConfSection).Add('', Name);
+        (TConfSection(Sender) as TConfSection).Replace('', Name);
     end;
 end;
 
 procedure MergeArguments(Section: TConfSection; KeyValues: TArray<string> = []);
 begin
-  ParseCommandArguments(@ArgumentsCallbackProc, Section, KeyValues);
+  ParseCommandArguments(@ConfigArgumentsCallbackProc, Section, KeyValues);
 end;
 
 procedure MergeArguments(Section: TConfSection; SectionName: string; KeyValues: TArray<string> = []); overload;
@@ -1285,6 +1286,15 @@ begin
   Sections.Require(ASectionName).WriteString(AName, Value, DeleteIfEmpty, Overwrite);
 end;
 
+function TConfSection.Replace(AName, AValue: string): TConfField;
+begin
+  Result := FindField(AName, []);
+  if (Result = nil) then
+    Result := Add(AName, AValue)
+  else
+    Result.AsString := AValue;
+end;
+
 function TConfSection.ReplaceVariable(S: string): string;
 begin
   Result := S;//as it
@@ -1371,6 +1381,9 @@ var
     if vName = '' then
       raise Exception.Create('Can not add empty section!');
     SpliteParams(vName, aType, aParams);
+{    if SameText(ToSection.Name, vName) then //Maybe
+      aValueSection := ToSection
+    else}
     aValueSection := ToSection.Sections.Find(vName);
     if aValueSection = nil then
       aValueSection := ToSection.NewSection(vName, aType, aParams);
