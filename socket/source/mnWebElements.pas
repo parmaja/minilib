@@ -4065,7 +4065,7 @@ begin
         if StartsText('.', ExtractFileName(aDocument)) then //no files starts with dots, TODO no folders in path
           AResponse.Answer := hrForbidden
         else if FileExists(aDocument) then
-          AResponse.SendFile(aDocument, AContext.Stamp)
+          AResponse.SendFile(aDocument)
         else if IsStrInArray(AContext.Route, ['', '/', '\']) then
           Render(AContext, AResponse)
         else
@@ -6214,8 +6214,7 @@ begin
   FreeAndNil(FWebApp); //keep behind inherited
 end;
 
-constructor TUIWebModule.Create(AModules: TmodModules; const AName: string;
-  const AAliasName: String);
+constructor TUIWebModule.Create(AModules: TmodModules; const AName: string; const AAliasName: String);
 begin
   FWebApp := TmnwApp.Create;
   inherited;
