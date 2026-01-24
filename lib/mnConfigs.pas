@@ -208,6 +208,8 @@ type
     function ReadSwitch(AName: string; Def: Boolean = False; AOptions: TConfOptions = sDefaultOptions): Boolean; overload;
     //Load it into strings without clear it
     procedure ReadStrings(AStrings: TStrings; ValuesOnly: Boolean = True; AllowDuplicate: Boolean = False); overload;
+
+    //Do we need to clear AStrings?
     procedure ReadStrings(AStrings: TStrings; AName: string; ValuesOnly: Boolean = True; AllowDuplicate: Boolean = False); overload;
 
     procedure ReadSection(ToSection: TConfSection); overload;
@@ -786,7 +788,11 @@ var
   Field: TConfField;
 begin
   if Self = nil then
-    raise Exception.Create('Section is nil, you can read from it');
+  begin
+    Result := Def;
+    exit;
+    //raise Exception.Create('Section is nil, you can read from it');
+  end;
   Field := FindField(AName, AOptions);
   if Field <> nil then
     Result := StrToIntDef(Field.Value, Def)
@@ -799,7 +805,11 @@ var
   Field: TConfField;
 begin
   if Self = nil then
-    raise Exception.Create('Section is nil, you can read from it');
+  begin
+    Result := Def;
+    exit;
+    //raise Exception.Create('Section is nil, you can read from it');
+  end;
   Field := FindField(AName, AOptions);
   if Field <> nil then
     Result := StrToInt64Def(Field.Value, Def)
@@ -812,7 +822,11 @@ var
   Field: TConfField;
 begin
   if Self = nil then
-    raise Exception.Create('Section is nil, you can read from it');
+  begin
+    Result := Def;
+    exit;
+    //raise Exception.Create('Section is nil, you can read from it');
+  end;
   Field := FindField(AName, AOptions);
   if (Field = nil) or ((Field.AsString = '') and (coEmptyIsValue in AOptions)) then //* nope, Empty value is a value
     Result := Def
@@ -826,7 +840,8 @@ var
   S: string;
 begin
   if Self = nil then
-    raise Exception.Create('Section is nil, you can read from it');
+    exit;
+    //raise Exception.Create('Section is nil, you can read from it');
 
   if ValuesOnly then
   begin
@@ -926,7 +941,11 @@ var
   Field: TConfField;
 begin
   if Self = nil then
-    raise Exception.Create('Section is nil, you can read from it');
+  begin
+    Result := Def;
+    exit;
+    //raise Exception.Create('Section is nil, you can read from it');
+  end;
   Field := FindField(AName, AOptions);
   if Field <> nil then
     Result :=  StrToBoolDef(Field.Value, Def)
@@ -939,7 +958,14 @@ var
   Field: TConfField;
 begin
   if Self = nil then
-    raise Exception.Create('Section is nil, you can read from it');
+  begin
+    if (coEmptyIsValue in AOptions) then
+      Result := False
+    else
+      Result := Def;
+    exit;
+    //raise Exception.Create('Section is nil, you can read from it');
+  end;
   Field := FindField(AName, AOptions);
   if (Field <> nil) then
   begin
