@@ -142,7 +142,7 @@ function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): Strin
 {
   StrHave: test the string if it have Separators
 }
-function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
+function HaveChar(S: string; Separators: TSysCharSet): Boolean;
 function IndexOfChar(S: string; Separators: TSysCharSet): Integer;
 
 //if S is same Name variabled passed, it empty it both, so i will use `var` not `out`
@@ -371,7 +371,7 @@ procedure Nothing;
 begin
 end;
 
-function StrHave(S: string; Separators: TSysCharSet): Boolean;
+function HaveChar(S: string; Separators: TSysCharSet): Boolean;
 var
   i: Integer;
 begin
@@ -1252,7 +1252,7 @@ begin
   for I := 0 to Strings.Count - 1 do
   begin
     S := Strings[I];
-    if not StartsText('-', S) and not StrHave(S, ['=', ':']) then
+    if not StartsText('-', S) and not HaveChar(S, ['=', ':']) then
     begin
       CommandName := S;
       Index := I;
@@ -1425,14 +1425,14 @@ begin
   end;
 end;
 
-function EndsDelimiter(const vFileName: string): Boolean;
-begin
-  Result := EndsStr('/', vFileName) or EndsStr('\', vFileName);
-end;
-
 function StartsDelimiter(const vFileName: string): Boolean;
 begin
   Result := StartsStr('/', vFileName) or StartsStr('\', vFileName);
+end;
+
+function EndsDelimiter(const vFileName: string): Boolean;
+begin
+  Result := EndsStr('/', vFileName) or EndsStr('\', vFileName);
 end;
 
 function ExpandToPath(FileName: string; Path: string; Root: string): string;

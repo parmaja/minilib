@@ -50,6 +50,7 @@ type
 
 //* You can call txt or .txt filename.txt or c:\temp\filename.txt
 function DocumentToContentType(const Extension: string): string;
+//* Always return MIME , default is first one
 function DocumentToMIME(const Extension: string): TmnMIMEItem;
 
 function MIME: TmnMIME;

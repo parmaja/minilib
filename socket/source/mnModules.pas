@@ -27,7 +27,7 @@
   └┬┘    └─┬─┘   └───────────┬───────────┘└───────┬───────┘└───────────┬─────────────┘ └┬─┘ └─────┬┘
   method scheme          authority              path                 query             fragment   protocol
   └┬┘                                     └─┬──┘└─┬───────┘
-  Command                                Module  Alias              Params
+  Command                                Module  Alias              Arguments/Params
 
   https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 
@@ -311,7 +311,7 @@ type
 
   TmodRequest = class(TmodCommunicate)
   private
-    FParams: TmodParams;
+    FArguments: TmodParams;
     FRoute: TmnRoute;
     FPath: String;
     FConnectionType: TConnectionType;
@@ -363,7 +363,8 @@ type
 
     property Directory: String read FDirectory write FDirectory;
     property Route: TmnRoute read FRoute write FRoute;
-    property Params: TmodParams read FParams;
+    property Params: TmodParams read FArguments; //deprecated 'use Arguments';
+    property Arguments: TmodParams read FArguments; //alias
 
     function CollectURI: string;
 
@@ -442,7 +443,7 @@ type
   TmodeResult = (
     mrSuccess,
     mrError,
-    mrKeepAlive //keep the stream connection alive, not the command
+    mrStayConnected //keep the stream connection alive, not the command
   );
 
   TmodeResults = set of TmodeResult;
@@ -1366,25 +1367,16 @@ begin
     aDisposition := '';
 
   aMIMEItem := DocumentToMIME(AAlias);
-  if aMIMEItem <> nil then
-  begin
-    ContentType := aMIMEItem.ContentType;
-    if Binary in aMIMEItem.Features then
-    begin
-      if aDisposition = '' then
-        aDisposition := 'attachment';
-    end;
 
-    if Compressed in aMIMEItem.Features then
-      SendOptions := SendOptions + [sndoNoCompress];
-  end
-  else
+  ContentType := aMIMEItem.ContentType;
+  if Binary in aMIMEItem.Features then
   begin
-    ContentType := 'application/octet-stream';
     if aDisposition = '' then
       aDisposition := 'attachment';
   end;
 
+  if Compressed in aMIMEItem.Features then
+    SendOptions := SendOptions + [sndoNoCompress];
 
   if aDisposition <> '' then
   begin
@@ -1440,13 +1432,13 @@ procedure TmodRequest.Created;
 begin
   inherited;
   FRoute := TmnRoute.Create;
-  FParams := TmodParams.Create;
+  FArguments := TmodParams.Create;
 end;
 
 destructor TmodRequest.Destroy;
 begin
   FreeAndNil(FRoute);
-  FreeAndNil(FParams);
+  FreeAndNil(FArguments);
   inherited Destroy;
 end;
 
@@ -1631,7 +1623,7 @@ begin
         finally
           if Stream.Connected then
           begin
-            if (mrKeepAlive in Result.Status) then
+            if (mrStayConnected in Result.Status) then
             begin
               Stream.ReadTimeout := Result.Timout;
               //Stream.Close([cloWrite]); need flush ???
@@ -1904,7 +1896,7 @@ begin
         Request.ProtcolClass := TmnWebSocket13StreamProxy;
         Request.ProtcolProxy := Request.ProtcolClass.Create;
         Request.ConnectionType := ctWebSocket;
-        Result.Status := Result.Status + [mrKeepAlive];
+        Result.Status := Result.Status + [mrStayConnected];
         Request.Stream.AddProxy(Request.ProtcolProxy);
 
         if SendHostHeader then
@@ -1988,7 +1980,7 @@ begin
       else
         Result.Timout := Request.Use.KeepAliveTimeOut;
 
-      Result.Status := Result.Status + [mrKeepAlive];
+      Result.Status := Result.Status + [mrStayConnected];
     end;
 
     Request.CompressProxy.Disable;
@@ -3130,7 +3122,7 @@ begin
   end;
 
   if (Header.Field['ETag'].IsExists) then
-    Stamp  := Header.Field['ETag'].AsString; //* or maybe 'If-None-Match'
+    Stamp  := DequoteStr(Header.Field['ETag'].AsString); //* or maybe 'If-None-Match'
 
   if (Header.Field['Connection'].IsExists) then
     KeepAlive := SameText(Header['Connection'], 'Keep-Alive');
@@ -3148,7 +3140,7 @@ begin
 
   Request.InitProxies(aChunked, aCompressClass);
 
-  if (aCompressClass<>nil)and KeepAlive then
+  if (aCompressClass <> nil)and KeepAlive then
     Request.CompressProxy.Limit := ContentLength;
 end;
 
@@ -3164,9 +3156,9 @@ begin
     PutHeader('Content-Type', ContentType);
 
   if (Stamp <> '') then
-    PutHeader('ETag', Stamp);
+    PutHeader('ETag', QuoteStr(Stamp));
 
-  if smRespondCompressing in Request.Mode then
+  if (smRespondCompressing in Request.Mode) then
       PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
 
   if Location <> '' then
