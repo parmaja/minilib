@@ -413,7 +413,6 @@ begin
   begin
     Request.ProtcolProxy := nil;
     Request.ChunkedProxy := nil;
-    Request.CompressProxy := nil;
   end;
 
   FreeAndNil(FStream); //stream will free proxies
@@ -543,10 +542,7 @@ begin
     Result := FStream.ReadStream(AStream, -1)
   else if (Response.ContentLength > 0) and Response.KeepAlive then //Response.KeepAlive because we cant use compressed with keeplive or contentlength >0
   begin
-    if (Request.CompressProxy<>nil) and (Request.CompressProxy.Limit <> 0) then
-      Result := FStream.ReadStream(AStream, -1)
-    else
-      Result := FStream.ReadStream(AStream, Response.ContentLength);
+    Result := FStream.ReadStream(AStream, Response.ContentLength);
   end
   else
     Result := FStream.ReadStream(AStream, -1); //read complete stream

@@ -288,13 +288,11 @@ type
 
   TStreamMode = set of (
     smRequestCompress,
-    smAllowCompress,
-    smRespondCompressing // using proxies
+    smAllowCompress
   );
 
   TStreamModeHelper = record helper for TStreamMode
     function RequestCompress: Boolean;
-    function RespondCompressing: Boolean;
     function AllowCompress: Boolean;
   end;
 
@@ -317,14 +315,12 @@ type
     FConnectionType: TConnectionType;
     //FChunked: Boolean;
     FProtcolClass: TmnProtcolStreamProxyClass;
-    FCompressProxy: TmnCompressStreamProxy;
     FProtcolProxy: TmnProtcolStreamProxy;
     FChunkedProxy: TmnChunkStreamProxy;
     FStream: TmnBufferStream;
     FMode: TStreamMode;
     FDirectory: String;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
-    procedure SetCompressProxy(const Value: TmnCompressStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
     function GetConnected: Boolean;
   protected
@@ -334,7 +330,7 @@ type
     procedure InitProtocol; override;
 
     function GetStream: TmnBufferStream; override;
-    procedure InitProxies(vChunked: Boolean; vCompressClass: TmnCompressStreamProxyClass);
+    procedure InitProxies(vChunked: Boolean);
     procedure ResetProxies; virtual;
   public
     Use: TmodCommunicateUsing;
@@ -373,7 +369,6 @@ type
 
     //Compress on the fly, now we use deflate
     property Mode: TStreamMode read FMode;// write FMode;
-    property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetCompressProxy;
 
     property ConnectionType: TConnectionType read FConnectionType write FConnectionType;
     //WebSocket
@@ -400,7 +395,7 @@ type
   TmodFileDispositions = set of TmodFileDisposition;
 
   TmodSendOption = (
-    sndoNoCompress
+    sndoAlreadyCompressed
   );
 
   TmodSendOptions = set of TmodSendOption;
@@ -527,6 +522,7 @@ type
   private
     FLocation: string;
     FHomePath: string; //Document root folder
+    //FCompressed: Boolean;
     function GetRequest: TwebRequest;
   protected
     procedure DoPrepareHeader; override; //Called by Server
@@ -544,6 +540,7 @@ type
 
     property Request: TwebRequest read GetRequest;
     property Location: string read FLocation write FLocation; //Relocation it to another url
+    //property Compressed: Boolean read FCompressed write FCompressed;
   public
     procedure RespondNotFound;
     procedure RespondRedirectTo(S: string);
@@ -1189,16 +1186,11 @@ begin
     Result := Stream.ReadStream(s, -1)
   else if (ContentLength > 0) and KeepAlive then //Response.KeepAlive because we cant use compressed with keeplive or contentlength >0
   begin
-    if (Request.CompressProxy<>nil) and (Request.CompressProxy.Limit <> 0) then
-      Result := Stream.ReadStream(s, -1)
+    aDecompress := (Request.Use.AcceptCompressing in [ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
+    if aDecompress then
+      Result := gzipDecompressStream(Stream, s, ContentLength)
     else
-    begin
-      aDecompress := (Request.Use.AcceptCompressing in [ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
-      if aDecompress then
-        Result := gzipDecompressStream(Stream, s, ContentLength)
-      else
-        Result := Stream.ReadStream(s, ContentLength);
-    end;
+      Result := Stream.ReadStream(s, ContentLength);
   end
   else
     Result := Stream.ReadStream(s, -1); //read complete stream
@@ -1241,7 +1233,7 @@ begin
     _SendHeader(0, False)
   else
   begin
-    aCompress := Request.Mode.AllowCompress and not (sndoNoCompress in AOptions);
+    aCompress := Request.Mode.AllowCompress and not (sndoAlreadyCompressed in AOptions);
 
     if aCompress then
     begin
@@ -1376,7 +1368,7 @@ begin
   end;
 
   if Compressed in aMIMEItem.Features then
-    SendOptions := SendOptions + [sndoNoCompress];
+    SendOptions := SendOptions + [sndoAlreadyCompressed];
 
   if aDisposition <> '' then
   begin
@@ -1454,7 +1446,6 @@ end;
 
 procedure TmodRequest.ResetProxies;
 begin
-  CompressProxy.Disable;
   ChunkedProxy.Disable;
   ProtcolProxy.Disable;
 end;
@@ -1464,13 +1455,6 @@ begin
   if (Value <> nil) and (FChunkedProxy <> nil) then
     raise EmodModuleException.Create('Chunked class is already set!');
   FChunkedProxy := Value;
-end;
-
-procedure TmodRequest.SetCompressProxy(const Value: TmnCompressStreamProxy);
-begin
-  if (Value <> nil) and (FCompressProxy <> nil) then
-    raise EmodModuleException.Create('Compress proxy is already set!');
-  FCompressProxy := Value;
 end;
 
 procedure TmodRequest.SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -1510,7 +1494,7 @@ begin
   Result := FStream;
 end;
 
-procedure TmodRequest.InitProxies(vChunked: Boolean; vCompressClass: TmnCompressStreamProxyClass);
+procedure TmodRequest.InitProxies(vChunked: Boolean);
 begin
   if vChunked then
   begin
@@ -1524,19 +1508,6 @@ begin
   end
   else
     ChunkedProxy.Disable;
-
-  if vCompressClass <> nil then
-  begin
-    if CompressProxy <> nil then
-      CompressProxy.Enable
-    else
-    begin
-      CompressProxy := vCompressClass.Create([cprsRead, cprsWrite], 9);
-      Stream.AddProxy(CompressProxy);
-    end;
-  end
-  else
-    CompressProxy.Disable;
 end;
 
 { TmodModuleListener }
@@ -1915,7 +1886,6 @@ begin
 
   if Request.ConnectionType = ctWebSocket then
   begin
-    Request.CompressProxy.Disable;
   end
   else
   begin
@@ -1983,7 +1953,6 @@ begin
       Result.Status := Result.Status + [mrStayConnected];
     end;
 
-    Request.CompressProxy.Disable;
   end;
 end;
 
@@ -3019,14 +2988,10 @@ begin
   if (Header.Field['Accept-Encoding'].Have('gzip', [','])) then
   begin
     case Use.Compressing of
+      ovUndefined:
+        FMode := FMode + [smAllowCompress];
       ovYes:
-      begin
-        if KeepAlive then  //when keep alive we need content length
-          FMode := FMode + [smAllowCompress]
-        else
-          FMode := FMode + [smRespondCompressing];
-      end;
-      ovUndefined: FMode := FMode + [smAllowCompress];
+        FMode := FMode + [smAllowCompress];
       else
       begin
         //nothing
@@ -3034,22 +2999,13 @@ begin
     end;
   end;
 
-  if (smRequestCompress in Mode) or (smRespondCompressing in Mode) then
-  begin
-    InitProxies(aChunked, TmnGzipStreamProxy);
-    if not (smRequestCompress in Mode) then
-      CompressProxy.Disable;
-  end
-  else
-    InitProxies(aChunked, nil);
+  InitProxies(aChunked);
 end;
 
 procedure TwebRequest.DoHeaderSent;
 begin
   inherited;
   //We are here the client
-  if (Use.Compressing = ovYes) then
-    InitProxies(False, TmnGzipStreamProxy);
 end;
 
 procedure TwebRequest.DoPrepareHeader;
@@ -3075,8 +3031,8 @@ begin
   if Use.AcceptCompressing in [ovUndefined, ovYes] then
     PutHeader('Accept-Encoding', 'gzip, deflate');
 
-  if (Use.Compressing = ovYes) then //to send data by request (post)
-    PutHeader('Content-Encoding', 'gzip'); //TODO nope
+//  if (Use.Compressing = ovYes) then //to send data by request (post)
+//    PutHeader('Content-Encoding', 'gzip'); //TODO nope
 
   PutHeader('User-Agent', UserAgent);
 end;
@@ -3096,12 +3052,6 @@ end;
 procedure TwebResponse.DoHeaderSent;
 begin
   inherited;
-
-  if Request.CompressProxy<>nil then
-  begin
-    Request.CompressProxy.Enabled := smRespondCompressing in Request.Mode;
-    Request.CompressProxy.Limit := 0;
-  end;
 end;
 
 procedure TwebResponse.DoHeaderReceived;
@@ -3138,10 +3088,7 @@ begin
       aCompressClass := TmnDeflateStreamProxy;
   end;
 
-  Request.InitProxies(aChunked, aCompressClass);
-
-  if (aCompressClass <> nil)and KeepAlive then
-    Request.CompressProxy.Limit := ContentLength;
+  Request.InitProxies(aChunked);
 end;
 
 procedure TwebResponse.DoPrepareHeader;
@@ -3158,8 +3105,8 @@ begin
   if (Stamp <> '') then
     PutHeader('ETag', QuoteStr(Stamp));
 
-  if (smRespondCompressing in Request.Mode) then
-      PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
+//    if Compressed then
+//      PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
 
   if Location <> '' then
     PutHeader('Location', Location)
@@ -3296,11 +3243,6 @@ end;
 function TStreamModeHelper.RequestCompress: Boolean;
 begin
   Result := smRequestCompress in Self;
-end;
-
-function TStreamModeHelper.RespondCompressing: Boolean;
-begin
-  Result := smRespondCompressing in Self;
 end;
 
 { Pool }
