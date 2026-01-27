@@ -2280,7 +2280,7 @@ begin
             if (aParams.FetchMode = fmFirst) then
             begin
               //if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
-              if aParams.AcceptMode <> acmSkipAll then
+              if not (aParams.AcceptMode in [acmSkipAll, acmEof]) then
               begin
                 r := s.NewReference;
                 s.DoBeginFill(r);
