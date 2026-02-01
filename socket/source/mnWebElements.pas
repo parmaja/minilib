@@ -3423,7 +3423,7 @@ end;
 
 function THTML.GetContentType(Route: string): string;
 begin
-  if Route = '' then
+  if (Route = '') or (Route = URLPathDelim) then
     Result := inherited GetContentType(Route)
   else
     Result := DocumentToContentType(Route);
@@ -6059,7 +6059,8 @@ begin
       aContext.Data.TempPath := (Module as TUIWebModule).WorkPath + 'temp';
       aContext.Data.Read(Request.Stream);
     end;
-    Response.PutHeader('Content-Type', DocumentToContentType('html'));
+    Response.ContentType := DocumentToContentType('html');
+//    Response.PutHeader('Content-Type', DocumentToContentType('html'));
     Response.Answer := hrOK;
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
