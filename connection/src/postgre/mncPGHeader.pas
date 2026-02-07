@@ -1,10 +1,10 @@
 unit mncPGHeader;
-{ postgresql 17.x }
+{ postgresql 18.x }
 {$IFDEF FPC}
 {$MODE delphi}
 {$PACKRECORDS C}
 {$ENDIF}
-
+{.$define pg18}
 {$M+}{$H+}
 
 //{$MINENUMSIZE 4} //same as {$Z4} All enum must be sized as Integer
@@ -151,7 +151,9 @@ type
   	CONNECTION_GSS_STARTUP,		{ Negotiating GSSAPI. }
   	CONNECTION_CHECK_TARGET,		{ * Internal state: checking target server properties. }
     CONNECTION_CHECK_STANDBY,	{ Checking if server is in standby mode. }
-  	CONNECTION_ALLOCATED		{ Waiting for connection attempt to be started. }
+  	CONNECTION_ALLOCATED,		{ Waiting for connection attempt to be started. }
+    CONNECTION_AUTHENTICATING 	{ Authentication is in progress with some
+    								 * external system. }
     );
 
   TPostgresPollingStatusType = (
@@ -223,6 +225,12 @@ type
   	PQ_PIPELINE_OFF,
   	PQ_PIPELINE_ON,
   	PQ_PIPELINE_ABORTED
+  );
+
+  TPGauthData = (
+  	PQAUTHDATA_PROMPT_OAUTH_DEVICE, { user must visit a device-authorization
+  									 * URL }
+  	PQAUTHDATA_OAUTH_BEARER_TOKEN	{ server requests an OAuth Bearer token }
   );
 
 {
@@ -530,6 +538,7 @@ type
   TPQtransactionStatus = function(conn: PPGconn): TPGTransactionStatusType; cdecl;
   TPQparameterStatus = function(conn: PPGconn; paramName: PByte): PByte; cdecl; //or maybe PPAnsiChar
   TPQprotocolVersion = function(conn: PPGconn): Integer; cdecl;
+  TPQfullProtocolVersion = function(conn: PPGconn): Integer; cdecl;
   TPQserverVersion = function(conn: PPGconn): Integer; cdecl;
   TPQerrorMessage = function(conn: PPGconn): PByte; cdecl;
   TPQsocket = function(conn: PPGconn): Integer; cdecl;
@@ -791,9 +800,83 @@ type
   { Get encoding id from environment variable PGCLIENTENCODING }
   TPQenv2encoding = function(): Integer; cdecl;
 
+  TPGpromptOAuthDevice = record
+  	verification_uri: PText;	{ verification URI to visit }
+  	user_code: PText;		{ user code to enter }
+  	verification_uri_complete: PText;	{ optional combination of URI and
+  											 * code, or NULL }
+  	expires_in: integer;	{ seconds until user code expires }
+  end;
+
+  SOCKTYPE = Integer;               { Platform-specific socket type - adjust as needed }
+  PSOCKTYPE = ^SOCKTYPE;
+
+  { for PGoauthBearerRequest.async() }
+
+  PPGoauthBearerRequest = ^TPGoauthBearerRequest;
+  TPGoauthBearerRequest = record
+  type
+      TAsyncCallback = function(conn: TPGconn; request: PPGoauthBearerRequest; altsock: PSOCKTYPE): TPostgresPollingStatusType; cdecl;
+      TCleanupCallback = procedure(conn: TPGconn; request: PPGoauthBearerRequest); cdecl;
+  public
+ 	  { Hook inputs (constant across all calls) }
+  	openid_configuration: PText;	{ OIDC discovery URI }
+  	scope: PText;			{ required scope(s), or NULL }
+
+  	{ Hook outputs }
+
+  	{*---------
+  	 * Callback implementing a custom asynchronous OAuth flow.
+  	 *
+  	 * The callback may return
+  	 * - PGRES_POLLING_READING/WRITING, to indicate that a socket descriptor
+  	 *   has been stored in *altsock and libpq should wait until it is
+  	 *   readable or writable before calling back;
+  	 * - PGRES_POLLING_OK, to indicate that the flow is complete and
+  	 *   request->token has been set; or
+  	 * - PGRES_POLLING_FAILED, to indicate that token retrieval has failed.
+  	 *
+  	 * This callback is optional. If the token can be obtained without
+  	 * blocking during the original call to the PQAUTHDATA_OAUTH_BEARER_TOKEN
+  	 * hook, it may be returned directly, but one of request->async or
+  	 * request->token must be set by the hook.
+  	 *}
+    async: TAsyncCallback;
+
+  	{*
+  	 * Callback to clean up custom allocations. A hook implementation may use
+  	 * this to free request->token and any resources in request->user.
+  	 *
+  	 * This is technically optional, but highly recommended, because there is
+  	 * no other indication as to when it is safe to free the token.
+  	 *}
+  	cleanup: TCleanupCallback;
+
+  	{*
+  	 * The hook should set this to the Bearer token contents for the
+  	 * connection, once the flow is completed.  The token contents must remain
+  	 * available to libpq until the hook's cleanup callback is called.
+  	 *}
+  	token: PAnsiChar;
+
+  	{*
+  	 * Hook-defined data. libpq will not modify this pointer across calls to
+  	 * the async callback, so it can be used to keep track of
+  	 * application-specific state. Resources allocated here should be freed by
+  	 * the cleanup callback.
+  	 *}
+  	user: Pointer;
+  end;
+
   TPQencryptPassword = function(passwd: PByte; user: PByte): PByte; cdecl;
   TPQencryptPasswordConn = function(conn: PPGconn; passwd: PByte; user: PByte; algorithm: PByte): PByte; cdecl;
   TPQchangePassword = function(conn: PPGconn; user: PAnsiChar; passwd: PAnsiChar): PPGresult; cdecl;
+
+  TPQauthDataHook_type = function(auth_type: TPGauthData; conn: TPGconn; data: Pointer): Integer; cdecl;
+
+  TPQsetAuthDataHook = procedure(hook: TPQauthDataHook_type); cdecl;
+  TPQgetAuthDataHook = function: TPQauthDataHook_type; cdecl;
+  TPQdefaultAuthDataHook = function (auth_type: TPGauthData; conn: TPGconn; data: Pointer): Integer; cdecl;
 
   Tpg_char_to_encoding = function(name: PByte): Integer; cdecl;
   Tpg_encoding_to_char = function(encoding: Integer): PByte; cdecl;
@@ -852,6 +935,9 @@ var
   PQtransactionStatus: TPQtransactionStatus;
   PQparameterStatus: TPQparameterStatus;
   PQprotocolVersion: TPQprotocolVersion;
+  {$ifdef pg18}
+  PQfullProtocolVersion: TPQfullProtocolVersion;
+  {$endif}
   PQserverVersion: TPQserverVersion;
   PQerrorMessage: TPQerrorMessage;
   PQsocket: TPQsocket;
@@ -1017,6 +1103,10 @@ var
   PQencryptPasswordConn: TPQencryptPasswordConn;
   PQchangePassword: TPQchangePassword;
 
+  PQsetAuthDataHook: TPQsetAuthDataHook;
+  PQgetAuthDataHook: TPQgetAuthDataHook;
+  PQdefaultAuthDataHook: TPQdefaultAuthDataHook;
+
   pg_char_to_encoding: Tpg_char_to_encoding;
   pg_encoding_to_char: Tpg_encoding_to_char;
   pg_valid_server_encoding_id: Tpg_valid_server_encoding_id;
@@ -1092,6 +1182,9 @@ begin
   PQtransactionStatus := GetAddress('PQtransactionStatus');
   PQparameterStatus := GetAddress('PQparameterStatus');
   PQprotocolVersion := GetAddress('PQprotocolVersion');
+  {$ifdef pg18}
+  PQfullProtocolVersion := GetAddress('PQfullProtocolVersion');
+  {$endif}
   PQserverVersion := GetAddress('PQserverVersion');
 
   PQerrorMessage := GetAddress('PQerrorMessage');
@@ -1255,6 +1348,13 @@ begin
   PQencryptPassword := GetAddress('PQencryptPassword');
   PQencryptPasswordConn := GetAddress('PQencryptPasswordConn');
   PQchangePassword := GetAddress('PQchangePassword');
+
+  {$ifdef pg18}
+  PQsetAuthDataHook := GetAddress('PQsetAuthDataHook');
+  PQgetAuthDataHook := GetAddress('PQgetAuthDataHook');
+  PQdefaultAuthDataHook := GetAddress('PQdefaultAuthDataHook');
+  {$endif}
+
 
   pg_char_to_encoding := GetAddress('pg_char_to_encoding');
   pg_encoding_to_char := GetAddress('pg_encoding_to_char');
