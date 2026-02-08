@@ -16,7 +16,7 @@ unit mncPGHeader;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
- * @author    Belal Hamed <belalhamed at gmail dot com>  
+ * @author    Belal Hamed <belalhamed at gmail dot com>
  *
  * src/interfaces/libpq/libpq-fe.h
  *}
@@ -556,7 +556,7 @@ type
   TPQerrorMessage = function(conn: PPGconn): PByte; cdecl;
   TPQsocket = function(conn: PPGconn): Integer; cdecl;
   TPQbackendPID = function(conn: PPGconn): Integer; cdecl;
-  TPGpipelineStatus = procedure(conn: PPGconn); cdecl;
+  TPQpipelineStatus = function(conn: PPGconn): TPGpipelineStatusMode; cdecl;
   TPQconnectionNeedsPassword = function(conn: PPGconn): Integer; cdecl;
   TPQconnectionUsedPassword = function(conn: PPGconn): Integer; cdecl;
   TPQconnectionUsedGSSAPI = function(conn: PPGconn): Integer; cdecl;
@@ -647,7 +647,7 @@ type
 
   { Routines for pipeline mode management }
 
-  TPQenterPipelineMode = function(conn: PPGconn): integer;
+  TPQenterPipelineMode = function(conn: PPGconn): Integer; cdecl;
   TPQexitPipelineMode = function(conn: PPGconn): Integer; cdecl;
   TPQpipelineSync = function(conn: PPGconn): Integer; cdecl;
   TPQsendFlushRequest = function(conn: PPGconn): Integer; cdecl;
@@ -678,7 +678,7 @@ type
   TPQpingParams = function(Keywords: Pointer; Values: Pointer; expand_dbname: Integer): TPGPing; cdecl;
 
   { Force the write buffer to be written (or at least try) }
-  TPQflush = function(conn: PPGconn): Integer;
+  TPQflush = function(conn: PPGconn): Integer; cdecl;
 
   {
    * "Fast path" interface --- not really recommended for application
@@ -955,7 +955,7 @@ var
   PQerrorMessage: TPQerrorMessage;
   PQsocket: TPQsocket;
   PQbackendPID: TPQbackendPID;
-  PGpipelineStatus: TPGpipelineStatus;
+  PGpipelineStatus: TPQpipelineStatus;
   PQconnectionNeedsPassword: TPQconnectionNeedsPassword;
   PQconnectionUsedPassword: TPQconnectionUsedPassword;
   PQconnectionUsedGSSAPI: TPQconnectionUsedGSSAPI;
@@ -1383,4 +1383,3 @@ initialization
 finalization
   FreeAndNil(PGLib);
 end.
-
