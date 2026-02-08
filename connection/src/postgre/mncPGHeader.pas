@@ -21,6 +21,20 @@ unit mncPGHeader;
  * src/interfaces/libpq/libpq-fe.h
  *}
 
+{*-------------------------------------------------------------------------
+ *
+ * libpq-fe.h
+ *	  This file contains definitions for structures and
+ *	  externs for functions used by frontend postgres applications.
+ *
+ * Portions Copyright (c) 1996-2025, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1994, Regents of the University of California
+ *
+ * src/interfaces/libpq/libpq-fe.h
+ *
+ *-------------------------------------------------------------------------
+ *}
+
 interface
 
 uses
@@ -70,7 +84,6 @@ const
     /* Indicates presence of PQsetTraceFlags; also new PQtrace output format */
     #define LIBPQ_HAS_TRACE_FLAGS 1
   }
-
 
   {*
    * These symbols may be used in compile-time #ifdef tests for the availability
@@ -1354,7 +1367,6 @@ begin
   PQgetAuthDataHook := GetAddress('PQgetAuthDataHook');
   PQdefaultAuthDataHook := GetAddress('PQdefaultAuthDataHook');
   {$endif}
-
 
   pg_char_to_encoding := GetAddress('pg_char_to_encoding');
   pg_encoding_to_char := GetAddress('pg_encoding_to_char');
