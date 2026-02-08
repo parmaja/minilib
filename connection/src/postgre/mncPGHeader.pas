@@ -131,7 +131,7 @@ type
     {$else}
     ULONG_PTR = DWord;
     {$endif}
-  SIZE_T = ULONG_PTR;
+//  SIZE_T = ULONG_PTR;
   {$endif}
 
   PText = PByte;
@@ -744,8 +744,8 @@ type
   TPQescapeStringConn = function(conn: PPGconn; toStr: PByte; fromStr: PByte; length: size_t; var error: integer): size_t; cdecl; //TODO Check toStr
   TPQescapeLiteral = function(conn: PPGconn; str: PByte; len: size_t): PByte; cdecl;
   TPQescapeIdentifier = function(conn: PPGconn; str: PByte; len: size_t): PByte; cdecl;
-  TPQescapeByteaConn = function(conn: PPGconn; const from: PByte; from_length: longword; to_lenght: PLongword): PByte; cdecl;
-  TPQunescapeBytea = function(const from: PByte; to_lenght: PLongword): PByte; cdecl;
+  TPQescapeByteaConn = function(conn: PPGconn; const from: PByte; from_length: longword; to_length: PLongword): PByte; cdecl;
+  TPQunescapeBytea = function(const from: PByte; to_length: PLongword): PByte; cdecl;
 
   //TPQescapeBytea = function(const from: PByte; from_length: longword; to_lenght: PLongword): PByte; cdecl; deprecated;
 
