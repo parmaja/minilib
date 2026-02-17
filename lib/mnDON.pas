@@ -34,7 +34,7 @@ unit mnDON;
 interface
 
 uses
-{$IFDEF windows}Windows, {$ENDIF}
+  {$IFDEF windows}Windows, {$ENDIF}
   Classes, SysUtils, StrUtils, DateUtils, Types, Character,
   mnClasses, mnUtils, mnJSON, mnFields, mnStreams;
 
@@ -71,7 +71,17 @@ type
     FLine: string;
   public
     constructor Create(Strings: TStrings);
-    destructor Destroy; override;
+    procedure Flush; override;
+    procedure Add(const S: string); override;
+    procedure NewLine; override;
+  end;
+
+  { TConsoleSerializer }
+
+  TConsoleSerializer = class(TSerializer)
+  private
+    FLine: string;
+  public
     procedure Flush; override;
     procedure Add(const S: string); override;
     procedure NewLine; override;
@@ -318,6 +328,7 @@ type
 
   TDON_Root = class(TDON_Pair)
   public
+    constructor Create(AParent: TDON_Object_Value);
   end;
 
   { TDON_Pairs }
@@ -386,11 +397,14 @@ function JsonParseFilePair(const FileName: string; out Error: string; Options: T
 function JsonParseFileValue(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Value;
 
 procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
+procedure JsonConsoleSerialize(Pair: TDON_Pair);
 
 //Used in JSON parser
 procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
 
 function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
+
+function JsonParseFile(const FileName: string): TDON_Root;
 
 implementation
 
@@ -433,6 +447,33 @@ begin
   end
   else
     raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);
+end;
+
+function JsonParseFile(const FileName: string): TDON_Root;
+var
+  Parser: TmnJSONParser;
+  w: TmnWrapperStream;
+  fs: TFileStream;
+  aLine: string;
+begin
+  Result := TDON_Root.Create(nil);
+  Parser.Init(Result, @JsonParseAcquireCallback, []);
+  fs := TFileStream.Create(FileName, fmOpenRead);
+  try
+    w := TmnWrapperStream.Create(fs, False);
+    try
+      while not (cloRead in w.State) do
+      begin
+        if w.ReadLine(aLine, False) then
+          Parser.Parse(aLine)
+      end;
+    finally
+      w.Free;
+    end;
+  finally
+    fs.Free;
+  end;
+
 end;
 
 procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
@@ -503,6 +544,19 @@ begin
   end;
 end;
 
+procedure JsonConsoleSerialize(Pair: TDON_Pair);
+var
+  Serializer: TConsoleSerializer;
+begin
+  Serializer := TConsoleSerializer.Create;
+  try
+    Serializer.Serialize(TJsonSerializeGernerator, Pair);
+    //JSon4.Serialize(Writer, True, 0);
+  finally
+    Serializer.Free;
+  end;
+end;
+
 { TSerializer }
 
 procedure TSerializer.Add(const S: string; LastOne:Boolean; Separator: string);
@@ -554,11 +608,6 @@ begin
   FStrings := Strings;
 end;
 
-destructor TStringsSerializer.Destroy;
-begin
-  inherited;
-end;
-
 procedure TStringsSerializer.Add(const S: string);
 begin
   FLine := FLine + S;
@@ -578,6 +627,31 @@ begin
   if not (sroCompact in Options) then
   begin
     FStrings.Add(FLine);
+    FLine := '';
+  end;
+end;
+
+{ TConsoleSerializer }
+
+procedure TConsoleSerializer.Flush;
+begin
+  if FLine <> '' then
+  begin
+    WriteLn(FLine);
+    FLine := '';
+  end;
+end;
+
+procedure TConsoleSerializer.Add(const S: string);
+begin
+  FLine := FLine + S;
+end;
+
+procedure TConsoleSerializer.NewLine;
+begin
+  if not (sroCompact in Options) then
+  begin
+    WriteLn(FLine);
     FLine := '';
   end;
 end;
@@ -1054,6 +1128,13 @@ end;
 procedure TDON_Pair.SetValue(const AValue: Variant);
 begin
   AsString := AValue;
+end;
+
+{ TDON_Root }
+
+constructor TDON_Root.Create(AParent: TDON_Object_Value);
+begin
+  inherited;
 end;
 
 { TDON_Boolean_Value }
