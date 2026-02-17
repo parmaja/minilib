@@ -274,6 +274,7 @@ type
     property Section; default;
   end;
 
+function ParseArguments(KeyValues: TArray<string> = []): TConfFile; overload;
 procedure MergeArguments(Section: TConfSection; KeyValues: TArray<string> = []); overload;
 procedure MergeArguments(Section: TConfSection; SectionName: string; KeyValues: TArray<string> = []); overload;
 
@@ -284,18 +285,10 @@ const
 
 procedure ConfigArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
 begin
-  if Index > 0 then //ignore first param (exe file)
-    begin
-      if IsSwitch or ((Name <> '') and (Value <> '')) then
-        (TConfSection(Sender) as TConfSection).Replace(Name, Value)
-      else
-        (TConfSection(Sender) as TConfSection).Replace('', Name);
-    end;
-end;
-
-procedure MergeArguments(Section: TConfSection; KeyValues: TArray<string> = []);
-begin
-  ParseCommandArguments(@ConfigArgumentsCallbackProc, Section, KeyValues);
+  if IsSwitch or ((Name <> '') and (Value <> '')) then
+    (TConfSection(Sender) as TConfSection).Replace(Name, Value)
+  else
+    (TConfSection(Sender) as TConfSection).Replace('', Name);
 end;
 
 procedure MergeArguments(Section: TConfSection; SectionName: string; KeyValues: TArray<string> = []); overload;
@@ -308,6 +301,17 @@ begin
 {  if aSection = nil then
     raise Exception.Create('No section found' + SectioName);}
   MergeArguments(aSection, KeyValues);
+end;
+
+procedure MergeArguments(Section: TConfSection; KeyValues: TArray<string> = []);
+begin
+  ParseCommandArguments(@ConfigArgumentsCallbackProc, Section, KeyValues);
+end;
+
+function ParseArguments(KeyValues: TArray<string>): TConfFile;
+begin
+  Result := TConfFile.Create;
+  MergeArguments(Result);
 end;
 
 { TConfWriter }
