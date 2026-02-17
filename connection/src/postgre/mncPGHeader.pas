@@ -75,17 +75,6 @@ const
   CMDSTATUS_LEN = 64;
 
   {*
-    * These symbols may be used in compile-time #ifdef tests for the availability
-    * of newer libpq features.
-    */
-
-    /* Indicates presence of PQenterPipelineMode and friends */
-    #define LIBPQ_HAS_PIPELINING 1
-    /* Indicates presence of PQsetTraceFlags; also new PQtrace output format */
-    #define LIBPQ_HAS_TRACE_FLAGS 1
-  }
-
-  {*
    * These symbols may be used in compile-time #ifdef tests for the availability
    * of v14-and-newer libpq features.
    *}

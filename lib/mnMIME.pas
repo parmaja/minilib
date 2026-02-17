@@ -49,9 +49,9 @@ type
   end;
 
 //* You can call txt or .txt filename.txt or c:\temp\filename.txt
-function DocumentToContentType(const Extension: string): string;
+function DocumentToContentType(const FileOrExtension: string): string;
 //* Always return MIME , default is first one
-function DocumentToMIME(const Extension: string): TmnMIMEItem;
+function DocumentToMIME(const FileOrExtension: string): TmnMIMEItem;
 
 function MIME: TmnMIME;
 
@@ -70,15 +70,15 @@ begin
   Result := FMIME;
 end;
 
-function DocumentToMIME(const Extension: string): TmnMIMEItem;
+function DocumentToMIME(const FileOrExtension: string): TmnMIMEItem;
 var
   Ext: string;
 begin
-  if Pos('.', Extension) = 0 then
-    Ext := Extension
+  if Pos('.', FileOrExtension) = 0 then
+    Ext := FileOrExtension
   else
   begin
-    Ext := LowerCase(ExtractFileExt(Extension));
+    Ext := LowerCase(ExtractFileExt(FileOrExtension));
     if Length(Ext) > 1 then
       Ext := Copy(Ext, 2, Length(Ext));
   end;
@@ -87,11 +87,11 @@ begin
     Result := MIME[0];
 end;
 
-function DocumentToContentType(const Extension: string): string;
+function DocumentToContentType(const FileOrExtension: string): string;
 var
   item: TmnMIMEItem;
 begin
-  item := DocumentToMIME(Extension);
+  item := DocumentToMIME(FileOrExtension);
   if item = nil then
     Result := ''
   else
