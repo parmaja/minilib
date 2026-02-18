@@ -25,7 +25,7 @@ var
 begin
   Lines := TStringList.Create();
   try
-    JsonSerialize(DON, Lines);
+    JsonSerialize(DON, Lines, [sroModern]);
     for i := 0 to Lines.Count -1 do
       WriteLn(Lines[i]);
   finally
@@ -44,15 +44,21 @@ var
   options: TJSONParseOptions;
 begin
   try
-    options := [jsoStrict];
-    //E := JsonLintFile('test\fail09.json', [jsoStrict]);
-    //E := JsonLintFile('test.json', [jsoStrict]);
+    options := [jsoModern];
+    if Config.ReadSwitch('-modern') then
+      options := options + [jsoModern];
+    if Config.ReadSwitch('-strict') then
+      options := options - [jsoModern];
+
+    //E := JsonLintFile('test\fail09.json', options);
+    //E := JsonLintFile('test.json', options);
     //exit;
 
-    if jsoStrict in options then
-      WriteLn('Strict On')
+    if jsoModern in options then
+      WriteLn('Modern On')
     else
-      WriteLn('Strict Off');
+      WriteLn('Modern Off');
+    Writeln('-----------------');
     aFile := Config.ReadString('');
 
     if aFile = '' then
@@ -94,25 +100,27 @@ begin
       else
         EnumFiles(Files, WorkPath, '*.json', [efFile, efFullPath]);
 
-      for S in Files do
+      for aFile in Files do
       begin
         if print_it then
         begin
-          DON := JsonParseFile(S);
+          //DON := JsonParseFile(S, options);
+          DON := JsonParseFile(aFile, options);
           try
-            JsonConsoleSerialize(DON);
+            Writeln('-----------------');
+            JsonConsoleSerialize(DON, [sroModern]);
           finally
             DON.Free;
           end;
         end
         else
         begin
-          E := JsonLintFile(S, [jsoSafe]);
+          E := JsonLintString(LoadFileString(aFile), options + [jsoSafe]);
 
           if E <> '' then
-            Writeln('FAIL: ' + ExtractFileName(S)+' : ' + E)
+            Writeln('FAIL: ' + ExtractFileName(aFile)+' : ' + E)
           else
-            Writeln('PASS: ' + ExtractFileName(S));
+            Writeln('PASS: ' + ExtractFileName(aFile));
         end;
       end;
     finally
@@ -125,6 +133,7 @@ begin
       WriteLn(E.Message);
     end;
   end;
+  Writeln('-----------------');
   WriteLn('Type Enter to exit');
   ReadLn;
 end;

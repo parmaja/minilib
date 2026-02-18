@@ -219,7 +219,7 @@ const
 function EscapeString(const S: string; const Esc: string; Chars: array of Char; const Escapes: array of string): string;
 function DescapeString(const S: string; const Esc: string; Chars: array of Char; const Escapes: array of string): string;
 
-function EscapeStringC(const S: string): string;
+function EscapeStringC(const S: string; QuoteChar: UTF8Char = '"'): string;
 function DescapeStringC(const S: string): string;
 function ToUnixPathDelimiter(const S: string): string;
 
@@ -1891,9 +1891,9 @@ begin
   Result := false;
 end;
 
-function EscapeStringC(const S: string): string;
+function EscapeStringC(const S: string; QuoteChar: UTF8Char = '"'): string;
 begin
-  Result := EscapeString(s, '\', [#8, #9, #10, #13, '\', '"'], ['b', 't', 'n', 'r', '\', '"']);
+  Result := EscapeString(s, '\', [#8, #9, #10, #13, '\', QuoteChar], ['b', 't', 'n', 'r', '\', QuoteChar]);
 end;
 
 function DescapeStringC(const S: string): string;

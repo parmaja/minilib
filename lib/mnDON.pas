@@ -44,7 +44,7 @@ type
 
   TSerializerOption = (
     sroCompact,
-    sroSmartName  //* export names without qoutaions if not have space
+    sroModern  //* export names without qoutaions if not have space
   );
   TSerializerOptions = set of TSerializerOption;
 
@@ -115,7 +115,7 @@ type
   end;
 
 //-----------------------------------------------------------------------------
-//* DON objects
+//* DON objects (Data object notations)
 
 type
   { TDONType }
@@ -126,6 +126,7 @@ type
     donString,
     donNumber,
     donBoolean,
+    donComment,
     donIdentifier
   );
 
@@ -205,6 +206,7 @@ type
   TDON_Custom_String_Value = class abstract(TDON_Value)
   private
     FValue: string;
+    FSingleQuote: Boolean;
   protected
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
@@ -222,7 +224,7 @@ type
     procedure SetAsString(const Value: string); override;
     procedure SetValue(const Value: Variant); override;
   public
-    constructor Create(AParent: TDON_Parent; const AText: string); overload;
+    constructor Create(AParent: TDON_Parent; const AText: string; ASingleQuote: Boolean = False); overload;
   published
     property Value: string read FValue write FValue;
   end;
@@ -299,65 +301,22 @@ type
     property Value: Boolean read FValue write FValue;
   end;
 
+  { TDON_Comment }
+  //* Not used
+
+  TDON_Comment = class(TDON_Value)
+  private
+    FValue: string;
+  public
+    constructor Create(AParent: TDON_Parent; AValue: String); overload;
+  published
+    property Value: string read FValue write FValue;
+  end;
+
   TDON_Parent = class abstract(TDON_Value)
   end;
 
-  { TDON_Pair }
-
-  TDON_Pair = class(TDON_Parent)
-  private
-    FParent: TDON_Object_Value;
-    FName: string;
-    FValue: TDON_Value;
-    procedure SetPairValue(AValue: TDON_Value);
-  protected
-    function FindItem(const Name: string): TDON_Value; override;
-    function GetAsString: string; override;
-    function GetValue: Variant; override;
-    procedure SetValue(const AValue: Variant); override;
-  public
-    constructor Create(AParent: TDON_Object_Value);
-    destructor Destroy; override;
-    function ReleaseValue: TDON_Value;
-  published
-    property Value: TDON_Value read FValue write SetPairValue;
-    property Name: string read FName write FName;
-  end;
-
-  { TDON_Root }
-
-  TDON_Root = class(TDON_Pair)
-  public
-    constructor Create(AParent: TDON_Object_Value);
-  end;
-
-  { TDON_Pairs }
-
-  TDON_Pairs = class(TmnObjectList<TDON_Pair>)
-  public
-  end;
-
-  { TDON_Object_Value }
-
-  TDON_Object_Value = class(TDON_Parent)
-  private
-    FPairs: TDON_Pairs;
-  protected
-    function FindItem(const Name: string): TDON_Value; override;
-    function GetItem(Index: Integer): TDON_Value; override;
-    function GetAsString: string; override;
-    function GetValue: Variant; override;
-    procedure SetValue(const AValue: Variant); override;
-  public
-    procedure Created; override;
-    destructor Destroy; override;
-    function CreatePair(const PairName: string): TDON_Pair;
-    procedure AcquirePair(const AName: string; out AObject: TObject);
-    procedure AddPair(Value: TDON_Pair); overload;
-    function AddPair(const Name: String; const Value: string): TDON_Value; overload;
-    property Pairs: TDON_Pairs read FPairs;
-  published
-  end;
+  { Arrays }
 
   { TDON_List }
 
@@ -389,36 +348,101 @@ type
   published
   end;
 
+  { Pairs }
+
+  { TDON_Pair }
+
+  TDON_Pair = class(TDON_Parent)
+  private
+    FParent: TDON_Object_Value;
+    FName: string;
+    FValue: TDON_Value;
+    procedure SetPairValue(AValue: TDON_Value);
+  protected
+    function FindItem(const Name: string): TDON_Value; override;
+    function GetAsString: string; override;
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  public
+    constructor Create(AParent: TDON_Object_Value);
+    destructor Destroy; override;
+    function ReleaseValue: TDON_Value;
+  published
+    property Value: TDON_Value read FValue write SetPairValue;
+    property Name: string read FName write FName;
+  end;
+
+  { TDON_Pairs }
+
+  TDON_Pairs = class(TmnObjectList<TDON_Pair>)
+  public
+  end;
+
+  { Objects }
+
+  { TDON_Object_Value }
+
+  TDON_Object_Value = class(TDON_Parent)
+  private
+    FPairs: TDON_Pairs;
+  protected
+    function FindItem(const Name: string): TDON_Value; override;
+    function GetItem(Index: Integer): TDON_Value; override;
+    function GetAsString: string; override;
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  public
+    procedure Created; override;
+    destructor Destroy; override;
+    function CreatePair(const PairName: string): TDON_Pair;
+    procedure AcquirePair(const AName: string; out AObject: TObject);
+    procedure AddPair(Value: TDON_Pair); overload;
+    function AddPair(const Name: String; const Value: string): TDON_Value; overload;
+    property Pairs: TDON_Pairs read FPairs;
+  published
+  end;
+
+  { TDON_Root }
+
+  TDON_Root = class(TDON_Pair)
+  public
+    constructor Create(AParent: TDON_Object_Value);
+  end;
+
+//* Serializer
+procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList; Options: TSerializerOptions = []);
+procedure JsonConsoleSerialize(Pair: TDON_Pair; Options: TSerializerOptions = []);
+
+function JsonParseFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Root;
+function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Root;
+//* For testing
+function JsonParseChunks(const Content: string; Options: TJSONParseOptions = []; ChunkSize: Integer = 3): TDON_Root;
+
+//Useful function to build JSON objects
 function JsonParseStringPair(const S: utf8string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
 //* {"value": "test1"}
 function JsonParseStringValue(const S: utf8string; out Error: string; Options: TJSONParseOptions = []): TDON_Value;
-
 function JsonParseFilePair(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
 function JsonParseFileValue(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Value;
 
-procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
-procedure JsonConsoleSerialize(Pair: TDON_Pair);
-
 //Used in JSON parser
-procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
-
-function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
-
-function JsonParseFile(const FileName: string): TDON_Root;
+procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; ASubType: TmnJsonAcquireSubType; out AObject: TObject);
+function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType; ASubType: TmnJsonAcquireSubType = []): TObject;
 
 implementation
 
-function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType): TObject;
+function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType; ASubType: TmnJsonAcquireSubType): TObject;
 
   procedure CreateValue(VT: TDONType; const s: string; out res: TObject); inline;
   begin
     res := nil;
     case VT of
-      //donNumber: res := TDON_Number_Value.Create(nil, StrToFloatDef(s, 0));
-      donNumber: res := TDON_String_Value.Create(nil, s);
+      //donComment: res := TDON_Comment.Create(nil);
+      donNumber: res := TDON_Number_Value.Create(nil, StrToFloatDef(s, 0));
+      //donNumber: res := TDON_Number_Value.Create(nil, s);
       donIdentifier: res := TDON_Identifier_Value.Create(nil, s);
       donBoolean: res := TDON_Boolean_Value.Create(nil, StrToBoolDef(s, False));
-      donString: res := TDON_String_Value.Create(nil, s);
+      donString: res := TDON_String_Value.Create(nil, s, astSingleQuote in ASubType);
       donObject: res := TDON_Object_Value.Create(nil);
       donArray: res := TDON_Array_Value.Create(nil);
     end;
@@ -429,27 +453,28 @@ begin
   if AParentObject = nil then
     raise Exception.Create('Can not set value to nil object');
 
-  if (AParentObject is TDON_Pair) then
-  begin
-     if (AParentObject as TDON_Pair).Value <> nil then
-      raise Exception.Create('Value is already set and it is not array: ' + AParentObject.ClassName);
-    CreateValue(AType, AValue, Result);
-    (AParentObject as TDON_Pair).Value  :=  TDON_Value(Result);
-  end
-  {else if (AParentObject is TDON_Object_Value) then
-  begin
-    Result := (AParentObject as TDON_Object_Value).CreatePair(AValue);
-  end}
-  else if (AParentObject is TDON_Array_Value) then
+  if (AParentObject is TDON_Array_Value) then
   begin
     CreateValue(AType, AValue, Result);
     (AParentObject as TDON_Array_Value).Add(TDON_Value(Result));
   end
+  else if (AParentObject is TDON_Pair) then
+  begin
+     if (AParentObject as TDON_Pair).Value <> nil then
+      raise Exception.Create('Value is already set and it is not array: ' + AParentObject.ClassName);
+    CreateValue(AType, AValue, Result);
+    (AParentObject as TDON_Pair).Value := TDON_Value(Result);
+  end
+  {else if (AParentObject is TDON_Object_Value) then
+  begin
+    if
+    Result := (AParentObject as TDON_Object_Value).CreatePair(AValue);
+  end}
   else
     raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);
 end;
 
-function JsonParseFile(const FileName: string): TDON_Root;
+function JsonParseFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Root;
 var
   Parser: TmnJSONParser;
   w: TmnWrapperStream;
@@ -459,7 +484,7 @@ begin
   if not FileExists(FileName) then
     raise Exception.Create('File not found ' + FileName);
   Result := TDON_Root.Create(nil);
-  Parser.Init(Result, @JsonParseAcquireCallback, []);
+  Parser.Init(Result, @JsonParseAcquireCallback, Options);
   fs := TFileStream.Create(FileName, fmOpenRead);
   try
     w := TmnWrapperStream.Create(fs, False);
@@ -469,6 +494,7 @@ begin
         if w.ReadLine(aLine, False) then
           Parser.Parse(aLine)
       end;
+      Parser.Finish;
     finally
       w.Free;
     end;
@@ -477,16 +503,52 @@ begin
   end;
 end;
 
-procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
+function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Root;
+var
+  Parser: TmnJSONParser;
+  w: TmnWrapperStream;
+  fs: TFileStream;
+begin
+  Result := TDON_Root.Create(nil);
+  Parser.Init(Result, @JsonParseAcquireCallback, Options);
+  Parser.Parse(Content);
+  Parser.Finish;
+end;
+
+function JsonParseChunks(const Content: string; Options: TJSONParseOptions;
+  ChunkSize: Integer): TDON_Root;
+var
+  Parser: TmnJSONParser;
+  w: TmnWrapperStream;
+  fs: TFileStream;
+  s: string;
+  i: Integer;
+begin
+  Result := TDON_Root.Create(nil);
+  i:=1;
+  Parser.Init(Result, @JsonParseAcquireCallback, Options);
+  while i < Length(Content) do
+  begin
+    s := copy(Content, i, ChunkSize);
+    write(s);
+    Parser.Parse(s);
+    i := i + ChunkSize;
+  end;
+  Parser.Finish;
+end;
+
+procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; ASubType: TmnJsonAcquireSubType; out AObject: TObject);
 begin
   case ValueType of
     aqPair: (AParentObject as TDON_Object_Value).AcquirePair(Value, AObject);
-    aqObject: AObject := JsonAcquireValue(AParentObject, Value, donObject);
-    aqArray: AObject := JsonAcquireValue(AParentObject, Value, donArray);
-    aqString: AObject := JsonAcquireValue(AParentObject, Value, donString);
-    aqIdentifier: AObject := JsonAcquireValue(AParentObject, Value, donIdentifier);
-    aqNumber: AObject := JsonAcquireValue(AParentObject, Value, donNumber);
-    aqBoolean: AObject := JsonAcquireValue(AParentObject, Value, donBoolean);
+
+    aqObject: AObject := JsonAcquireValue(AParentObject, Value, donObject, ASubType);
+    aqArray: AObject := JsonAcquireValue(AParentObject, Value, donArray, ASubType);
+    aqString: AObject := JsonAcquireValue(AParentObject, Value, donString, ASubType);
+    aqIdentifier: AObject := JsonAcquireValue(AParentObject, Value, donIdentifier, ASubType);
+    aqNumber: AObject := JsonAcquireValue(AParentObject, Value, donNumber, ASubType);
+    aqBoolean: AObject := JsonAcquireValue(AParentObject, Value, donBoolean, ASubType);
+    //aqComment: AObject := JsonAcquireValue(AParentObject, Value, donBoolean, ASubType);
   end;
 end;
 
@@ -532,27 +594,28 @@ begin
   Result := Pair.ReleaseValue;
 end;
 
-procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList);
+procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList;
+  Options: TSerializerOptions);
 var
   Serializer: TStringsSerializer;
 begin
   Serializer := TStringsSerializer.Create(Strings);
   try
+    Serializer.Options := Options;
     Serializer.Serialize(TJsonSerializeGernerator, Pair);
-    //JSon4.Serialize(Writer, True, 0);
   finally
     Serializer.Free;
   end;
 end;
 
-procedure JsonConsoleSerialize(Pair: TDON_Pair);
+procedure JsonConsoleSerialize(Pair: TDON_Pair; Options: TSerializerOptions);
 var
   Serializer: TConsoleSerializer;
 begin
   Serializer := TConsoleSerializer.Create;
   try
+    Serializer.Options := Options;
     Serializer.Serialize(TJsonSerializeGernerator, Pair);
-    //JSon4.Serialize(Writer, True, 0);
   finally
     Serializer.Free;
   end;
@@ -575,7 +638,6 @@ end;
 
 procedure TSerializer.Flush;
 begin
-
 end;
 
 procedure TSerializer.NewLine;
@@ -1217,12 +1279,19 @@ begin
   FValue := Value;
 end;
 
+constructor TDON_Comment.Create(AParent: TDON_Parent; AValue: String);
+begin
+  inherited Create(AParent);
+  FValue := AValue;
+end;
+
 { TDON_Custom_String_Value }
 
-constructor TDON_Custom_String_Value.Create(AParent: TDON_Parent; const AText: string);
+constructor TDON_Custom_String_Value.Create(AParent: TDON_Parent; const AText: string; ASingleQuote: Boolean);
 begin
   inherited Create(AParent);
   FValue := AText;
+  FSingleQuote := ASingleQuote;
 end;
 
 function TDON_Custom_String_Value.GetAsBoolean: Boolean;
@@ -1323,9 +1392,9 @@ var
   p: TDON_Pair;
   v: TDON_Value;
 
-  function GetName(const AName: string): string;
+  function GetName(const AName: string): string; inline;
   begin
-    if (sroSmartName in Serializer.Options) and (Pos(' ', AName) <= 0) then
+    if (sroModern in Serializer.Options) and (Pos(' ', AName) <= 0) then
       Result := AName
     else
       Result := QuoteStr(AName, '"');
@@ -1335,8 +1404,35 @@ var
       Result := Result + ': ';
   end;
 
+  function Coalesce(B: Boolean; const V1, V2: string): string; inline; overload;
+  begin
+    if B then
+      Result := V1
+    else
+      Result := V2;
+  end;
+
+  function Coalesce(B: Boolean; const V1, V2: UTF8Char): UTF8Char; inline; overload;
+  begin
+    if B then
+      Result := V1
+    else
+      Result := V2;
+  end;
+var
+  s: string;
+  QuoteChar: UTF8Char;
 begin
-  if AClass = TDON_Pair then
+  if AClass = TDON_Comment then
+  begin
+    s := (AObject as TDON_Comment).Value;
+    if HaveChar(s, [#13, #10]) then //* It is a multiline
+      Serializer.Add('/*'+s+'*/', LastOne, '')
+    else
+      Serializer.Add('//' + s, LastOne, '');
+    Serializer.NewLine;
+  end
+  else if AClass = TDON_Pair then
   begin
     Serializer.Add(Level, GetName((AObject as TDON_Pair).Name));
 
@@ -1401,7 +1497,8 @@ begin
     Generate((AObject as TDON_Root).Value, LastOne, Level)
   else if AClass = TDON_String_Value then
   begin
-    Serializer.Add(QuoteStr(EscapeStringC((AObject as TDON_String_Value).Value), '"'), LastOne, ',');
+    QuoteChar := Coalesce((AObject as TDON_String_Value).FSingleQuote, '''', '"');
+    Serializer.Add(QuoteStr(EscapeStringC((AObject as TDON_String_Value).Value, QuoteChar), QuoteChar), LastOne, ',');
     Serializer.NewLine;
   end
   else if AClass = TDON_Identifier_Value then
