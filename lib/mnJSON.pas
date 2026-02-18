@@ -87,6 +87,7 @@ type
         tkEscapeChar,
         tkNumber,
         tkIdentifire,
+        tkCommentOpen,
         tkSLComment,
         tkMLComment,
         tkReturn //End of line to escape #10
@@ -124,6 +125,7 @@ type
       Index: Integer;
       Options: TJSONParseOptions;
       ErrorMessage: String;
+      LastChar: UTF8Char;
     procedure RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
     procedure Push; inline;
     procedure Pop; {$ifndef DEBUG}inline; {$endif}
@@ -240,6 +242,8 @@ begin
   LineNumber := 1;
   ColumnNumber := 1;
   Pair := nil;
+  Token := tkNone;
+  LastChar := #0;
 end;
 
 procedure TmnJSONParser.Finish;
@@ -324,20 +328,30 @@ var
     if Expect = exName then
     begin
       //Creating a Pair Item
-      AcquireProc(Parent, StringBuffer + CopyString(Content, StartString, Index - StartString), aqPair, Pair);
+      StringBuffer := StringBuffer + CopyString(Content, StartString, Index - StartString);
+      AcquireProc(Parent, StringBuffer, aqPair, Pair);
       Expect := exAssign;
     end
     else if Expect = exValue then
     begin
-      AcquireProc(Parent, StringBuffer + CopyString(Content, StartString, Index - StartString), aqString, AObject);
+      StringBuffer := StringBuffer + CopyString(Content, StartString, Index - StartString);
+      AcquireProc(Parent, StringBuffer, aqString, AObject);
       Expect := exNext;
     end
     else
       CheckExpected([exName, exValue], [Context]);
-    if StringBuffer<>'' then
+    if StringBuffer <> '' then
       StringBuffer := '';
     Token := tkNone;
     TokenString := tkNone;
+  end;
+
+  procedure SetEscapeChar(Ch: UTF8Char);
+  begin
+    StringBuffer := StringBuffer + Ch;
+    Next;
+    StartString := Index;
+    Token := TokenString;
   end;
 
   procedure IlligalCharacter(Ch: UTF8Char);
@@ -359,9 +373,10 @@ begin
 
   Index := Start;
   StartString := -1; //* for strings
-  Token := tkNone;
+//  Token := tkNone;
   try
     repeat
+      LastChar := Ch;
       Ch := UTF8Char(Content[Index]);
       case Token of
         tkReturn:
@@ -369,6 +384,28 @@ begin
           if Ch = #10 then
             Next;
           Token := tkNone;
+        end;
+        tkCommentOpen:
+        begin
+          if Ch = '/' then
+            Token := tkSLComment
+          else if Ch = '*' then
+            Token := tkMLComment
+          else
+            Error('Expected / or * for comment, but found ' + Ch);
+          Next;
+        end;
+        tkSLComment:
+        begin
+          if CharInSet(Ch, [#0, #10, #13]) then
+            Token := tkNone;
+          Next;
+        end;
+        tkMLComment:
+        begin
+          if (Ch = '/') and (LastChar = '*') then
+            Token := tkNone;
+          Next;
         end;
         tkEscapeChar:
         begin
@@ -401,25 +438,44 @@ begin
             if CharInSet(Ch, [#0, #10, #13]) then
               Error('End of line in string!');
           end;
+
           case Ch of
-            'b': StringBuffer := StringBuffer + #8;
-            't': StringBuffer := StringBuffer + #9;
-            'n': StringBuffer := StringBuffer + #10;
-            'f': StringBuffer := StringBuffer + #12;
-            'r': StringBuffer := StringBuffer + #13;
-            '0': StringBuffer := StringBuffer + #0;
             'u':
             begin
               EscapeBuffer := '';
               Token := tkEscapeChar;
-            end
+              Next;
+              StartString := Index;
+            end;
+            #13:
+            begin
+              StringBuffer := StringBuffer + #13;
+              inc(LineNumber);
+              ColumnNumber := 1;
+              Next;
+              StartString := Index;
+            end;
+            #10:
+            begin
+              StringBuffer := StringBuffer + #10;
+              if LastChar <> #13 then
+              begin
+                Inc(LineNumber);
+                ColumnNumber := 1;
+              end;
+              Next;
+              StartString := Index;
+            end;
+            //* We need use map instead
+            'b': SetEscapeChar(#8);
+            't': SetEscapeChar(#9);
+            'n': SetEscapeChar(#10);
+            'f': SetEscapeChar(#12);
+            'r': SetEscapeChar(#13);
+            '0': SetEscapeChar(#0);
             else
-              StringBuffer := StringBuffer + Ch;
+              SetEscapeChar(Ch);
           end;
-          Next;
-          StartString := Index;
-          if Token = tkEscape then //* not in \u
-            Token := TokenString;
         end;
         tkDQString:
         begin
@@ -493,8 +549,11 @@ begin
             end;
             #10:
             begin
-              Inc(LineNumber);
-              ColumnNumber := 1;
+              if LastChar <> #13 then
+              begin
+                Inc(LineNumber);
+                ColumnNumber := 1;
+              end;
             end;
             'A'..'Z', 'a'..'z', '_':
             begin
@@ -502,7 +561,7 @@ begin
               StartString := Index;
               Token := tkIdentifire;
             end;
-            '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9': //may start with . ?
+            '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.': //may start with . ?
             begin
               CheckExpected([exValue, exEnd]);
               StartString := Index;
@@ -526,6 +585,13 @@ begin
                 Token := tkSQString;
                 TokenString := tkSQString;
               end;
+            end;
+            '/':
+            begin
+              if jsoStrict in Options then
+                IlligalCharacter(Ch)
+              else
+                Token := tkCommentOpen;
             end;
             ':':
             begin

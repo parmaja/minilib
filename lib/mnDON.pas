@@ -456,6 +456,8 @@ var
   fs: TFileStream;
   aLine: string;
 begin
+  if not FileExists(FileName) then
+    raise Exception.Create('File not found ' + FileName);
   Result := TDON_Root.Create(nil);
   Parser.Init(Result, @JsonParseAcquireCallback, []);
   fs := TFileStream.Create(FileName, fmOpenRead);
@@ -473,7 +475,6 @@ begin
   finally
     fs.Free;
   end;
-
 end;
 
 procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; out AObject: TObject);
