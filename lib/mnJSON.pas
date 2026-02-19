@@ -1,15 +1,13 @@
 unit mnJSON;
 { **
   *  JSON Parser
-  *    without object tree
+  *  Without object tree, see DON
   *
   *  This file is part of the "Mini Library"
   *
-  * @license   The MIT License (MIT)
+  * @license   The MIT License (MIT)  *
   *
-  *            See the file COPYING.MLGPL, included in this distribution,
   * @author    Zaher Dirkey <zaher, zaherdirkey>
-  * @author    Belal AlHamad
   *
   * }
 
@@ -45,9 +43,7 @@ type
   TJSONParseOption = (
     jsoModern, //* JSON5 compatiple (as possible
     jsoComments, //* Read comment in object tree, do not skip it
-    jsoSafe, //* No Exceptions
-    jsoNoDuplicate,//TODO do not allow duplicate names
-    jsoUTF8 //TODO , no, always UTF8
+    jsoSafe //* No Exceptions
   );
   TJSONParseOptions = set of TJSONParseOption;
 
@@ -80,8 +76,8 @@ type
         exValue,
         exName,
         exAssign, // :
-        exNext, // ,
-        exEnd // End of line
+        exNext,   // ,
+        exEnd     // End of line
       );
       TExpects = set of TExpect;
 
@@ -97,7 +93,7 @@ type
         tkDQString,
         tkSQString,
         tkEscape,
-        tkEscapeChar,
+        tkEscapeHex,
         tkNumber,
         tkIdentifire,
         tkCommentOpen,
@@ -122,6 +118,7 @@ type
         Started: Integer;
         Buffer: UTF8String;
         Escape: UTF8String;
+        EscapeLength: Integer;
         IsMultiLine: Boolean;
         procedure Reset(AIndex: Integer; AToken: TToken); inline;
         procedure Append(const s: string); inline;
@@ -185,6 +182,11 @@ const
                   'A', 'B', 'C', 'D', 'E', 'F', 'H', 'X'
                  ];
 
+  sHexChars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+               'a', 'b', 'c', 'd', 'e', 'f',
+               'A', 'B', 'C', 'D', 'E', 'F'
+              ];
+
 function CopyString(const Value: PByte; Start, Count: Integer): String; {$ifndef DEBUG}inline; {$endif}
 begin
   if Count = 0 then
@@ -209,6 +211,7 @@ begin
   Started := AIndex;
   Buffer := '';
   Escape := '';
+  EscapeLength := 2;
   IsMultiLine := False;
 end;
 
@@ -503,28 +506,22 @@ begin
             Token := tkNone;
           Next;
         end;
-        tkEscapeChar:
+        tkEscapeHex:
         begin
-          if Length(Collector.Escape) < 4 then
+          if (Length(Collector.Escape) < Collector.EscapeLength) and (Ch in sHexChars) then
           begin
-            if not (jsoModern in Options) then
-            begin
-              if CharInSet(Ch, [#0, #10, #13]) then
-                Error('End of line in string!');
-            end;
             Collector.Escape := Collector.Escape + Ch;
             Next;
-        end
+          end
           else
           begin
             if Collector.Escape <> '' then
             begin
-              Collector.Buffer := Collector.Buffer + UTF8Encode({$ifdef FPC}Character{$else}Char{$endif}.ConvertFromUtf32(StrToInt('$'+Collector.Escape)));
+              Collector.Append(UTF8Encode({$ifdef FPC}Character{$else}Char{$endif}.ConvertFromUtf32(StrToInt('$'+Collector.Escape))));
               Collector.Escape := '';
             end;
             Collector.Started := Index;
             Token := Collector.Token;
-//            Next;
           end;
         end;
         tkEscape:
@@ -536,10 +533,14 @@ begin
           end;
 
           case Ch of
-            'u':
+            'x', 'u':
             begin
               Collector.Escape := '';
-              Token := tkEscapeChar;
+              if Ch = 'u' then
+                Collector.EscapeLength := 4
+              else
+                Collector.EscapeLength := 2;
+              Token := tkEscapeHex;
               Next;
               Collector.Started := Index;
             end;
@@ -770,14 +771,10 @@ begin
         end;
       end;
     until (Ch=#0) or (Index >= Size);
-    if Token in [tkSQString, tkDQString] then
-    begin
 
-    end
-    else if Token = tkSLComment then
+    {if Collector.Token > tkNone then //* TODO for chunks
     begin
-
-    end;
+    end}
   except
     on E: Exception do
     begin

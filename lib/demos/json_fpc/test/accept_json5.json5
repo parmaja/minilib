@@ -1,0 +1,100 @@
+// JSON5 Configuration Example
+// This file demonstrates various JSON5 features
+// including comments, trailing commas, and unquoted keys.
+{
+  // Application metadata
+  appName: 'SuperApp',
+  version: "1.0.5",
+  releaseDate: '2023-10-27',
+
+  // Database configuration
+  database: {
+    host: 'localhost',
+    port: 5432,
+    credentials: {
+      user: 'admin',
+      pass: 'secret123', // Please change this
+    },
+    options: {
+      ssl: true,
+      poolSize: 10,
+      timeout: 3000,
+    },
+  },
+
+  // Feature flags
+  features: [
+    'darkMode',
+    'betaAccess',
+    'analytics',
+    'notifications',
+  ],
+
+  // User list
+  users: [
+    {
+      id: 1,
+      name: 'Alice Johnson',
+      email: 'alice@example.com',
+      roles: ['admin', 'editor'],
+    },
+    {
+      id: 2,
+      name: 'Bob Smith',
+      email: 'bob@example.com',
+      roles: ['viewer'],
+    },
+    {
+      id: 3,
+      name: 'Charlie Brown',
+      email: 'charlie@example.com',
+      roles: ['editor', 'viewer'],
+    },
+  ],
+
+  // Server settings
+  server: {
+    host: '0.0.0.0',
+    port: 8080,
+    // Hexadecimal example
+    mask: 0xFFFFFF,
+    // Leading decimal point
+    loadFactor: .75,
+    // Trailing decimal point
+    retryCount: 5.,
+  },
+
+  // Multi-line string example
+  description: '\
+    This is a multi-line string\
+    supported in JSON5.\
+    It preserves newlines.\
+  ',
+
+  // Nullable values
+  deprecatedField: null,
+  optionalConfig: NaN,
+
+  // Nested categories
+  categories: {
+    tech: {
+      id: 101,
+      label: 'Technology',
+    },
+    science: {
+      id: 102,
+      label: 'Science',
+    },
+    arts: {
+      id: 103,
+      label: 'Arts',
+    },
+  },
+
+  // End of configuration
+  debugMode: false,
+  logLevel: 'info',
+  maxConnections: 100,
+  enableCache: true,
+  timestamp: 1698400000,
+}

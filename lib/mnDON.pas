@@ -4,10 +4,7 @@ unit mnDON;
   *
   *  @license   The MIT License (MIT)
   *
-  *  @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
-  *            See the file COPYING.MLGPL, included in this distribution,
   *  @author    Zaher Dirkey <zaher, zaherdirkey>
-  *  @author    Belal AlHamad
   *
   *}
 
@@ -53,7 +50,7 @@ type
   TSerializer = class abstract(TObject)
   public
     TabWidth: Integer;
-    EndOfLine: string;
+    LineTerminator: string;
     Options: TSerializerOptions;
     constructor Create;
     procedure Serialize(AGerneratorClass: TSerializeGerneratorClass; AObject: TObject);
@@ -236,6 +233,7 @@ type
   TDON_Number_Value = class(TDON_Element)
   private
     FValue: Double;
+    FIsHex: Boolean;
   protected
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
@@ -253,7 +251,8 @@ type
     procedure SetAsString(const Value: string); override;
     procedure SetValue(const Value: Variant); override;
   public
-    constructor Create(AParent: TDON_Parent; const ANumber: Double); overload;
+    constructor Create(AParent: TDON_Parent; const ANumber: Double; aIsHex: Boolean = False); overload;
+    property IsHex: Boolean read FIsHex write FIsHex;
   published
     property Value: Double read FValue write FValue;
   end;
@@ -413,52 +412,8 @@ function JsonParseFileValue(const FileName: string; out Error: string; Options: 
 
 //Used in JSON parser
 procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions; out AObject: TObject);
-function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions = []): TObject;
 
 implementation
-
-function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions): TObject;
-
-  procedure CreateValue(VT: TmnJsonAcquireType; const s: string; out res: TObject); inline;
-  begin
-    res := nil;
-    case VT of
-      //donComment: res := TDON_Comment.Create(nil);
-      aqNumber: res := TDON_Number_Value.Create(nil, StrToFloatDef(s, 0));
-      //donNumber: res := TDON_Number_Value.Create(nil, s);
-      aqIdentifier: res := TDON_Identifier_Value.Create(nil, s);
-      aqBoolean: res := TDON_Boolean_Value.Create(nil, StrToBoolDef(s, False));
-      aqString: res := TDON_String_Value.Create(nil, s, ATypeOptions);
-      aqObject: res := TDON_Object_Value.Create(nil);
-      aqArray: res := TDON_Array_Value.Create(nil);
-    end;
-  end;
-
-begin
-  Result := nil;
-  if AParentObject = nil then
-    raise Exception.Create('Can not set value to nil object');
-
-  if (AParentObject is TDON_Array_Value) then
-  begin
-    CreateValue(AType, AValue, Result);
-    (AParentObject as TDON_Array_Value).Add(TDON_Element(Result));
-  end
-  else if (AParentObject is TDON_Pair) then
-  begin
-     if (AParentObject as TDON_Pair).Value <> nil then
-      raise Exception.Create('Value is already set and it is not array: ' + AParentObject.ClassName);
-    CreateValue(AType, AValue, Result);
-    (AParentObject as TDON_Pair).Value := TDON_Element(Result);
-  end
-  {else if (AParentObject is TDON_Object_Value) then
-  begin
-    if
-    Result := (AParentObject as TDON_Object_Value).CreatePair(AValue);
-  end}
-  else
-    raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);
-end;
 
 function JsonParseFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Root;
 var
@@ -524,12 +479,65 @@ begin
 end;
 
 procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions; out AObject: TObject);
+
+  function CreateObjectValue: TObject; {$Ifdef D-}inline; {$endif}
+  begin
+    Result := nil;
+    case ValueType of
+      //donComment: Result := TDON_Comment.Create(nil);
+      aqNumber:
+      begin
+        if StartsStr('0x', Value) then
+          Result := TDON_Number_Value.Create(nil, StrToIntDef('$'+Copy(Value, 3, MaxInt), 0), True)
+        else
+          Result := TDON_Number_Value.Create(nil, StrToFloatDef(Value, 0));
+      end;
+      aqIdentifier:
+      begin
+        if SameText('true', Value) then
+          Result := TDON_Boolean_Value.Create(nil, True)
+        else if SameText('false', Value) then
+          Result := TDON_Boolean_Value.Create(nil, False)
+        else
+          Result := TDON_Identifier_Value.Create(nil, Value);
+      end;
+      aqBoolean: Result := TDON_Boolean_Value.Create(nil, StrToBoolDef(Value, False));
+      aqString: Result := TDON_String_Value.Create(nil, Value, ATypeOptions);
+      aqObject: Result := TDON_Object_Value.Create(nil);
+      aqArray: Result := TDON_Array_Value.Create(nil);
+    end;
+  end;
+
 begin
   case ValueType of
     aqPair:
       (AParentObject as TDON_Object_Value).AcquirePair(Value, AObject);
     else
-      AObject := JsonAcquireValue(AParentObject, Value, ValueType, ATypeOptions);
+    begin
+      AObject := nil;
+      if AParentObject = nil then
+        raise Exception.Create('Can not set value to nil object');
+
+      if (AParentObject is TDON_Array_Value) then
+      begin
+        AObject := CreateObjectValue;
+        (AParentObject as TDON_Array_Value).Add(TDON_Element(AObject));
+      end
+      else if (AParentObject is TDON_Pair) then
+      begin
+         if (AParentObject as TDON_Pair).Value <> nil then
+          raise Exception.Create('Value is already set and it is not array: ' + AParentObject.ClassName);
+        AObject := CreateObjectValue;
+        (AParentObject as TDON_Pair).Value := TDON_Element(AObject);
+      end
+      {else if (AParentObject is TDON_Object_Value) then
+      begin
+        if
+        Result := (AParentObject as TDON_Object_Value).CreatePair(AValue);
+      end}
+      else
+        raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);
+    end;
   end;
 end;
 
@@ -615,7 +623,7 @@ constructor TSerializer.Create;
 begin
   inherited Create;
   TabWidth := 4;
-  EndOfLine := #10;
+  LineTerminator := #10;
 end;
 
 procedure TSerializer.Flush;
@@ -774,10 +782,12 @@ begin
   FValue := Value;
 end;
 
-constructor TDON_Number_Value.Create(AParent: TDON_Parent; const ANumber: Double);
+constructor TDON_Number_Value.Create(AParent: TDON_Parent;
+  const ANumber: Double; aIsHex: Boolean);
 begin
   inherited Create(AParent);
   FValue := ANumber;
+  FIsHex := aIsHex;
 end;
 
 { TDON_Element }
@@ -1374,7 +1384,7 @@ var
   p: TDON_Pair;
   v: TDON_Element;
 
-  function GetName(const AName: string): string; inline;
+  function GetName(const AName: string): string; {$ifndef DEBUG}inline; {$endif}
   begin
     if (sroModern in Serializer.Options) and (Pos(' ', AName) <= 0) then
       Result := AName
@@ -1386,7 +1396,7 @@ var
       Result := Result + ': ';
   end;
 
-  function Coalesce(B: Boolean; const V1, V2: string): string; inline; overload;
+  function Coalesce(B: Boolean; const V1, V2: string): string; {$ifndef DEBUG}inline; {$endif} overload;
   begin
     if B then
       Result := V1
@@ -1394,7 +1404,7 @@ var
       Result := V2;
   end;
 
-  function Coalesce(B: Boolean; const V1, V2: UTF8Char): UTF8Char; inline; overload;
+  function Coalesce(B: Boolean; const V1, V2: UTF8Char): UTF8Char; {$ifndef DEBUG}inline; {$endif} overload;
   begin
     if B then
       Result := V1
@@ -1507,7 +1517,10 @@ begin
   end
   else if AClass = TDON_Number_Value then
   begin
-    Serializer.Add(FloatToStr((AObject as TDON_Number_Value).Value), LastOne, ',');
+    if (AObject as TDON_Number_Value).IsHex then
+      Serializer.Add('0x'+IntToHex(trunc((AObject as TDON_Number_Value).Value), 0), LastOne, ',')
+    else
+      Serializer.Add(FloatToStr((AObject as TDON_Number_Value).Value), LastOne, ',');
     Serializer.NewLine;
   end
   else if AClass = TDON_Boolean_Value then
