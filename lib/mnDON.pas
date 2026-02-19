@@ -120,17 +120,6 @@ type
 //-----------------------------------------------------------------------------
 
 type
-  { TDONType }
-
-  TDONType = (
-    donObject,
-    donArray,
-    donString,
-    donNumber,
-    donBoolean,
-    donComment,
-    donIdentifier
-  );
 
   TDON_Element = class;
   TDON_Parent = class;
@@ -424,24 +413,24 @@ function JsonParseFileValue(const FileName: string; out Error: string; Options: 
 
 //Used in JSON parser
 procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions; out AObject: TObject);
-function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType; ATypeOptions: TmnJsonTypeOptions = []): TObject;
+function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions = []): TObject;
 
 implementation
 
-function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TDONType; ATypeOptions: TmnJsonTypeOptions): TObject;
+function JsonAcquireValue(AParentObject: TObject; const AValue: string; AType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions): TObject;
 
-  procedure CreateValue(VT: TDONType; const s: string; out res: TObject); inline;
+  procedure CreateValue(VT: TmnJsonAcquireType; const s: string; out res: TObject); inline;
   begin
     res := nil;
     case VT of
       //donComment: res := TDON_Comment.Create(nil);
-      donNumber: res := TDON_Number_Value.Create(nil, StrToFloatDef(s, 0));
+      aqNumber: res := TDON_Number_Value.Create(nil, StrToFloatDef(s, 0));
       //donNumber: res := TDON_Number_Value.Create(nil, s);
-      donIdentifier: res := TDON_Identifier_Value.Create(nil, s);
-      donBoolean: res := TDON_Boolean_Value.Create(nil, StrToBoolDef(s, False));
-      donString: res := TDON_String_Value.Create(nil, s, ATypeOptions);
-      donObject: res := TDON_Object_Value.Create(nil);
-      donArray: res := TDON_Array_Value.Create(nil);
+      aqIdentifier: res := TDON_Identifier_Value.Create(nil, s);
+      aqBoolean: res := TDON_Boolean_Value.Create(nil, StrToBoolDef(s, False));
+      aqString: res := TDON_String_Value.Create(nil, s, ATypeOptions);
+      aqObject: res := TDON_Object_Value.Create(nil);
+      aqArray: res := TDON_Array_Value.Create(nil);
     end;
   end;
 
@@ -537,15 +526,10 @@ end;
 procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions; out AObject: TObject);
 begin
   case ValueType of
-    aqPair: (AParentObject as TDON_Object_Value).AcquirePair(Value, AObject);
-
-    aqObject: AObject := JsonAcquireValue(AParentObject, Value, donObject, ATypeOptions);
-    aqArray: AObject := JsonAcquireValue(AParentObject, Value, donArray, ATypeOptions);
-    aqString: AObject := JsonAcquireValue(AParentObject, Value, donString, ATypeOptions);
-    aqIdentifier: AObject := JsonAcquireValue(AParentObject, Value, donIdentifier, ATypeOptions);
-    aqBoolean: AObject := JsonAcquireValue(AParentObject, Value, donBoolean, ATypeOptions);
-    aqNumber: AObject := JsonAcquireValue(AParentObject, Value, donNumber, ATypeOptions);
-    //aqComment: AObject := JsonAcquireValue(AParentObject, Value, donBoolean, ATypeOptions);
+    aqPair:
+      (AParentObject as TDON_Object_Value).AcquirePair(Value, AObject);
+    else
+      AObject := JsonAcquireValue(AParentObject, Value, ValueType, ATypeOptions);
   end;
 end;
 
