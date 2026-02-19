@@ -543,8 +543,8 @@ begin
     aqArray: AObject := JsonAcquireValue(AParentObject, Value, donArray, ATypeOptions);
     aqString: AObject := JsonAcquireValue(AParentObject, Value, donString, ATypeOptions);
     aqIdentifier: AObject := JsonAcquireValue(AParentObject, Value, donIdentifier, ATypeOptions);
-    aqNumber: AObject := JsonAcquireValue(AParentObject, Value, donNumber, ATypeOptions);
     aqBoolean: AObject := JsonAcquireValue(AParentObject, Value, donBoolean, ATypeOptions);
+    aqNumber: AObject := JsonAcquireValue(AParentObject, Value, donNumber, ATypeOptions);
     //aqComment: AObject := JsonAcquireValue(AParentObject, Value, donBoolean, ATypeOptions);
   end;
 end;

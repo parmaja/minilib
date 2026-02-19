@@ -377,11 +377,6 @@ var
   begin
     if not (jsoModern in Options) then
     begin
-      if CharInSet(Ch, [#0, #10, #13]) then
-      begin
-        Error('End of line in string!');
-        exit;
-      end;
     end;
 
     if Ch = '\' then
@@ -390,6 +385,29 @@ var
       Collector.Started := Index + 1;
       Token := tkEscape;
     end
+    else if jsoModern in Options then
+    begin
+      if Ch = #0 then
+      begin
+        Collector.Collect(Content, Index);
+        Collector.Started := Index + 1;
+      end
+      else if Ch = #13 then
+      begin
+        Collector.Collect(Content, Index);
+        Collector.Started := Index + 1;
+      end
+      else if Ch = #10 then
+      begin
+        if LastChar <> #13 then
+        begin
+          Collector.Collect(Content, Index);
+          Collector.Started := Index + 1;
+        end;
+      end
+    end
+    else if CharInSet(Ch, [#0, #10, #13]) then
+      Error('End of line in string!');
   end;
 
   procedure EndString;
