@@ -1181,19 +1181,33 @@ end;
 function TmodResponse.ReceiveStream(s: TStream): Int64;
 var
   aDecompress: Boolean;
+  m: TMemoryStream;
 begin
-  if (Request.ChunkedProxy<>nil) and (ContentLength = 0) then
-    Result := Stream.ReadStream(s, -1)
-  else if (ContentLength > 0) and KeepAlive then //Response.KeepAlive because we cant use compressed with keeplive or contentlength >0
+  if (ContentLength > 0) then //Response.KeepAlive because we cant use compressed with keeplive or contentlength >0
   begin
-    aDecompress := (Request.Use.AcceptCompressing in [ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
+    aDecompress := (Request.Use.AcceptCompressing in [ovYes, ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
     if aDecompress then
       Result := gzipDecompressStream(Stream, s, ContentLength)
     else
       Result := Stream.ReadStream(s, ContentLength);
   end
   else
-    Result := Stream.ReadStream(s, -1); //read complete stream
+  begin
+    aDecompress := (Request.Use.AcceptCompressing in [ovYes, ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
+    if aDecompress then
+    begin
+      m := TMemoryStream.Create;
+      try
+        Stream.ReadStream(m, -1); //read complete stream
+        m.Position := 0;
+        Result := gzipDecompressStream(m, s, m.Size);
+      finally
+        m.Free;
+      end;
+    end
+    else
+      Result := Stream.ReadStream(s, -1); //read complete stream
+  end;
 end;
 
 function TmodResponse.SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions): Boolean;
