@@ -1405,7 +1405,7 @@ var
       Result := V2;
   end;
 
-  function Coalesce(B: Boolean; const V1, V2: UTF8Char): UTF8Char; {$ifndef DEBUG}inline; {$endif} overload;
+  function Coalesce(B: Boolean; const V1, V2: Char): Char; {$ifndef DEBUG}inline; {$endif} overload;
   begin
     if B then
       Result := V1
@@ -1415,7 +1415,7 @@ var
 
 var
   s: string;
-  QuoteChar: UTF8Char;
+  QuoteChar: Char;
   Strings: TStringList;
 begin
   if AClass = TDON_Comment then

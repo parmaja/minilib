@@ -126,6 +126,7 @@ type
         procedure Collect(const Content: PByte; Index: Integer); inline;
         function GetSize(Index: Integer): Integer;
         function GetTypeOptions: TmnJsonTypeOptions;
+        function CopyString(const Value: PByte; Start, Count: Integer): String;
       end;
 
     var
@@ -148,7 +149,7 @@ type
 
       CommentStarted: Integer;
       CommentBuffer: UTF8String;
-      Comments: TStringArray;
+      Comments: array of string;
 
       Index: Integer;
       Options: TJSONParseOptions;
@@ -161,6 +162,7 @@ type
     procedure CheckExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); inline;
     procedure Error(const Msg: string); inline;
     procedure ErrorNotExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); //not inline
+
   public
     //Always Init and Finish
     procedure Init(AParent: TObject; vAcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
@@ -188,7 +190,8 @@ const
                'A', 'B', 'C', 'D', 'E', 'F'
               ];
 
-function CopyString(const Value: PByte; Start, Count: Integer): String; {$ifndef DEBUG}inline; {$endif}
+
+function TmnJSONParser.TStringCollector.CopyString(const Value: PByte; Start, Count: Integer): String;
 begin
   if Count = 0 then
     Result := ''
