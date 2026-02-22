@@ -303,19 +303,20 @@ type
 
   { Arrays }
 
-  { TDON_List }
-
-  TDON_List = class(TmnObjectList<TDON_Element>)
-  public
-  end;
-
   { TDON_Array_Value }
 
   TDON_Array_Value = class(TDON_Parent)
+  protected
+    { TDON_List }
+    type
+      TDON_List = class(TmnObjectList<TDON_Element>)
+      public
+      end;
   private
     FItems: TDON_List;
     function GetCount: Integer;
   protected
+
     function GetAsString: string; override;
     function FindItem(const Name: string): TDON_Element; override;
     function GetItem(Index: Integer): TDON_Element; override;

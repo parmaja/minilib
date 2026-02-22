@@ -148,6 +148,7 @@ type
 
       CommentStarted: Integer;
       CommentBuffer: UTF8String;
+      Comments: TStringArray;
 
       Index: Integer;
       Options: TJSONParseOptions;
@@ -347,7 +348,8 @@ begin
     end
   end
   else if (Expect <> exEnd) then
-    Error('Expected EOF');
+    CheckExpected([exEnd], [Context]);
+    //Error('Expected EOF');
 end;
 
 procedure TmnJSONParser.Parse(const Content: UTF8String);
@@ -546,7 +548,7 @@ begin
             end;
             #13:
             begin
-              Collector.Buffer := Collector.Buffer + #13;
+              Collector.Buffer := Collector.Buffer;
               Collector.IsMultiLine := True;
               inc(LineNumber);
               ColumnNumber := 1;
@@ -555,7 +557,7 @@ begin
             end;
             #10:
             begin
-              Collector.Buffer := Collector.Buffer + #10;
+              Collector.Buffer := Collector.Buffer;
               if LastChar <> #13 then
               begin
                 Collector.IsMultiLine := True;

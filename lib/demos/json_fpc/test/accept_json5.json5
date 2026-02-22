@@ -3,7 +3,8 @@
 // including comments, trailing commas, and unquoted keys.
 {
   // Application metadata
-  appName: 'SuperApp',
+  appName: 'Super\
+App',
   version: "1.0.5",
   releaseDate: '2023-10-27',
 
