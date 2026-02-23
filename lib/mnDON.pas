@@ -1385,7 +1385,7 @@ var
   p: TDON_Pair;
   v: TDON_Element;
 
-  function GetName(const AName: string): string; {$ifndef DEBUG}inline; {$endif}
+  function GetName(const AName: string): string; //{$ifndef DEBUG}inline; {$endif}
   begin
     if (sroModern in Serializer.Options) and (Pos(' ', AName) <= 0) then
       Result := AName
