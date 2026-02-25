@@ -505,6 +505,8 @@ type
     property Last: TmnrReferencesRow read GetLast;
   end;
 
+  TmnrRowItems = TmnObjectList<TmnrRow>;
+
   TmnrSection = class(TmnrLinkNode)
   private
     FSections: TmnrSections;
@@ -523,7 +525,7 @@ type
     FSectionLoopWay: TmnrSectionLoopWay;
     FAppendPageTotals: Boolean;
     FHitAppendTitles: Boolean;
-    FRows: TmnObjectList<TmnrRow>;
+    FRows: TmnrRowItems;
     FTitleRow: TmnrRow; //default row data
 
     function GetNext: TmnrSection;
@@ -531,6 +533,7 @@ type
     function GetPrior: TmnrSection;
     procedure SetNodes(const Value: TmnrSections);
     function GetLoopWay: TmnrSectionLoopWay;
+    function GetParentSections: TmnrSections;
   protected
     function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 
@@ -556,7 +559,8 @@ type
     constructor Create(vNodes: TmnrNode; vClass: TmnrSectionClassID);
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
-    property Rows: TmnObjectList<TmnrRow> read FRows;
+    property ParentSections: TmnrSections read GetParentSections; //alias for nodes
+    property Rows: TmnrRowItems read FRows;
     property TitleRow: TmnrRow read FTitleRow;
 
     property Next: TmnrSection read GetNext;
@@ -661,7 +665,7 @@ type
 
   TmnrExportOptions = set of (mnrExportDisplayText, mnrTAB, mnrBOM);
 
-  TmnrRowList = class(TmnObjectList<TmnrRow>)
+  TmnrRowList = class(TmnrRowItems)
   public
     constructor Create;
     procedure AppendRows(vRows: TmnrRows);
@@ -672,7 +676,7 @@ type
     function CreateJsonData: TJSONObject;
   end;
 
-  TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
+  TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix
   private
     FCanceled: Boolean;
     FRowsData: TRowsData;
@@ -1784,8 +1788,8 @@ begin
   FAppendReportTitles := GetAppendTitlesDefault;
 
   FSectionLoopWay     := slwAuto;
-  FRows := TmnObjectList<TmnrRow>.Create;
-  FRows.OwnsObjects := False;
+  FRows               := TmnrRowItems.Create;
+  FRows.OwnsObjects   := False;
 end;
 
 destructor TmnrSection.Destroy;
@@ -1933,6 +1937,11 @@ begin
   Result := TmnrSections(inherited GetNodes);
 end;
 
+function TmnrSection.GetParentSections: TmnrSections;
+begin
+  Result := Nodes;
+end;
+
 function TmnrSection.GetPrior: TmnrSection;
 begin
   Result := TmnrSection(inherited GetPrior);
@@ -2061,6 +2070,7 @@ begin
           begin
             s.FillNow(aParams, aIdx, r);
             //s.Sections.Loop;
+            s.Sections.CustomLoop;
           end;
 
           if (aParams.AcceptMode = acmEof) and (s.Rows.Count <> 0) then
