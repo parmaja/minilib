@@ -127,7 +127,8 @@ function udtStringToPeriod(S: String): Double;
 function udtHourPeriodToString(vPeriod: Double): String;
 
 function udtDateToString(DateTime: TDateTime; Options: TUniviersalDateFlags = []): String; overload;
-function udtStringToDate(vStr: String): TDateTime;
+function udtStringToDate(const vStr: String): TDateTime; overload;
+function udtStringToDate(const vStr: String; vDef: TDateTime): TDateTime; overload;
 
 procedure udtISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False); overload; deprecated 'Use in mnUtils';
 function udtISOStrToDate(UDS: TUniviersalDateSystem; ISODate: String; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload; deprecated 'Use in mnUtils';
@@ -180,7 +181,12 @@ begin
   Result := StrToIntDef(Trim(SubStr(s, GetFormatSettings.TimeSeparator, 0)), 0) + StrToIntDef(Trim(SubStr(s, GetFormatSettings.TimeSeparator, 1)), 0) / 60 + StrToIntDef(Trim(SubStr(s, GetFormatSettings.TimeSeparator, 2)), 0) / 3600;
 end;
 
-function udtStringToDate(vStr: String): TDateTime;
+function udtStringToDate(const vStr: String): TDateTime;
+begin
+  Result := udtStringToDate(vStr, Now)
+end;
+
+function udtStringToDate(const vStr: String; vDef: TDateTime): TDateTime;
 
   function ToInt(const s: String; Default: Integer): Integer;
   begin
@@ -196,11 +202,11 @@ var
   DayCount: Integer;
 begin
   if vStr = '' then
-    Result := Now
+    Result := vDef
   else
   begin
     t := udtExtractDateTimeString(vStr);
-    udtDecodeDate(Now, y, m, d);
+    udtDecodeDate(vDef, y, m, d);
     y1 := y;
     m1 := m;
     s := Trim(SubStr(t, GetFormatSettings.DateSeparator, 0));
@@ -227,7 +233,7 @@ begin
       Result := udtEncodeDate(y, m, d);
     end
     else
-      Result := Now;
+      Result := vDef;
   end;
 end;
 
