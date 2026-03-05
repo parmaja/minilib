@@ -705,7 +705,8 @@ type
     function Match(ARequest: TmodRequest): TmodModule; virtual;
     property DefaultProtocol: String read FDefaultProtocol write FDefaultProtocol;
 
-    function ServerUseSSL: Boolean;
+    function UseSSL: Boolean;
+
     function Find<T: Class>: T; overload;
     function Find<T: Class>(const AName: string): T; overload;
     function Find(const AName: string): TmodModule; overload;
@@ -756,23 +757,25 @@ type
     FName: string;
     procedure SetEnabled(AValue: Boolean);
   protected
-    function DoCreateListener: TmnListener; override;
     procedure StreamCreated(AStream: TmnBufferStream); virtual;
+    function DoCreateListener: TmnListener; override;
     procedure DoBeforeOpen; override;
     procedure DoAfterClose; override;
-    function CreateModules: TmodModules; virtual;
     procedure DoStart; override;
     procedure DoStop; override;
     procedure DoIdle; override;
-    function Module<T: class>: T;
+    function CreateModules: TmodModules; virtual;
     procedure Created; override;
   public
     constructor Create; override;
     destructor Destroy; override;
+    function Module<T: class>: T;
     property Modules: TmodModules read FModules;
     property Enabled: Boolean read FEnabled write SetEnabled;
     property Name: string read FName write FName;
   end;
+
+  TmodModuleServerClass = class of TmodModuleServer;
 
 { Pool }
 
@@ -845,6 +848,22 @@ type
     property Terminated: Boolean read FTerminated;
   end;
 
+  TmnRegisteredModule = class(TmnNamedObject)
+  public
+    Alias: string;
+    ServerClass: TmodModuleServerClass;
+    ModuleClass: TmodModuleClass;
+  end;
+
+  TmnRegisteredModules = class(TmnObjectList<TmnRegisteredModule>)
+  public
+    procedure RegisterModule(const AName, AAlias: string; ServerClass: TmodModuleServerClass; ModuleClass: TmodModuleClass); overload;
+    procedure RegisterModule(const AName, AAlias: string; ModuleClass: TmodModuleClass); overload;
+    procedure CreateModules(Modules: TmodModules);
+  end;
+
+function RegisteredModules: TmnRegisteredModules;
+
 function URIDecode(const S: UTF8String): utf8string;
 function ParseHttpHead(const Raw: String; out Method, Params, Protocol: string): Boolean; overload;
 function ParseHttpHead(const Raw: String; out Method, Params: string): Boolean; overload;
@@ -883,6 +902,16 @@ implementation
 
 uses
   mnUtils;
+
+var
+  FRegisteredModules: TmnRegisteredModules;
+
+function RegisteredModules: TmnRegisteredModules;
+begin
+  if not Assigned(FRegisteredModules) then
+    FRegisteredModules := TmnRegisteredModules.Create;
+  Result := FRegisteredModules;
+end;
 
 function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 begin
@@ -1638,7 +1667,7 @@ end;
 procedure TmodModuleServer.DoIdle;
 begin
   inherited;
-  if Modules<>nil then //not stoped
+  if Modules <> nil then //not stoped
   begin
     Modules.Idle;
   end;
@@ -1662,7 +1691,7 @@ function TmodModuleServer.Module<T>: T;
 var
   i: Integer;
 begin
-  if Modules<>nil then
+  if Modules <> nil then
     for I := 0 to Modules.Count-1 do
       if Modules[i] is T then
         Exit(Modules[i] as T);
@@ -1679,6 +1708,7 @@ end;
 procedure TmodModuleServer.DoBeforeOpen;
 begin
   inherited;
+  RegisteredModules.CreateModules(Modules);
 end;
 
 procedure TmodModuleServer.DoAfterClose;
@@ -2249,9 +2279,9 @@ begin
   Result := inherited Add(AModule);
 end;
 
-function TmodModules.ServerUseSSL: Boolean;
+function TmodModules.UseSSL: Boolean;
 begin
-  if Server<>nil then
+  if Server <> nil then
     Result := Server.UseSSL
   else
     Result := False;
@@ -3519,5 +3549,39 @@ begin
   Stream.CopyFrom(FStream, Count);
 end;
 
+{ TmnRegisteredModules }
+
+procedure TmnRegisteredModules.RegisterModule(const AName, AAlias: string; ServerClass: TmodModuleServerClass; ModuleClass: TmodModuleClass);
+var
+  item: TmnRegisteredModule;
+begin
+  item := TmnRegisteredModule.Create;
+  item.Name := AName;
+  item.Alias := AAlias;
+  item.ServerClass := ServerClass;
+  item.ModuleClass := ModuleClass;
+  Add(Item);
+end;
+
+procedure TmnRegisteredModules.CreateModules(Modules: TmodModules);
+var
+  item: TmnRegisteredModule;
+begin
+  for item in Self do
+  begin
+    if (item.ServerClass = nil) or (Modules.Server is item.ServerClass) then
+    begin
+      item.ModuleClass.Create(Modules, item.Name, item.Alias);
+    end;
+  end;
+end;
+
+procedure TmnRegisteredModules.RegisterModule(const AName, AAlias: string; ModuleClass: TmodModuleClass);
+begin
+  RegisterModule(AName, AAlias, nil, ModuleClass);
+end;
+
 initialization
+finalization
+  FreeAndNil(FRegisteredModules);
 end.
