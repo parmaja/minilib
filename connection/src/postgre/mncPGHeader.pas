@@ -4,7 +4,7 @@ unit mncPGHeader;
 {$MODE delphi}
 {$PACKRECORDS C}
 {$ENDIF}
-{.$define pg18}
+{$define pg18}
 {$M+}{$H+}
 
 //{$MINENUMSIZE 4} //same as {$Z4} All enum must be sized as Integer
