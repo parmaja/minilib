@@ -79,6 +79,7 @@ type
 
     procedure Reset; //call in new fetch
     procedure Clear; //call in start loop
+    function Accepted: Boolean;
   end;
 
   TOnRequest = procedure(vCell: TmnrCell) of object;
@@ -3764,6 +3765,11 @@ begin
 end;
 
 { TmnrFetch }
+
+function TmnrFetch.Accepted: Boolean;
+begin
+  Result := AcceptMode = acmAccept;
+end;
 
 procedure TmnrFetch.Clear;
 begin
