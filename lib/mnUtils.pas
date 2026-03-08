@@ -281,8 +281,10 @@ function GetFormatSettings: TFormatSettings;
 
 //Ported from UniDates
 
-procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False); overload;
-function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload;
+procedure ISOStrToDate(const ISODate: String; out Y, M, D, H, N, S: Word; vDef: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = #0); overload;
+procedure ISOStrToDate(const ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False); overload;
+function ISOStrToDate(const ISODate: String; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload;
+function ISOStrToDate(const ISODate: String; vDef: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = #0): TDateTime; overload;
 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; TimeSeparator: Char = ':'; WithTime: Boolean = False): String; overload;
 function ISODateTimeToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '): String; overload;
@@ -2067,7 +2069,7 @@ begin
 end;
 
 
-procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char; TimeDivider: Char; UseDefault: Boolean);
+procedure ISOStrToDate(const ISODate: String; out Y, M, D, H, N, S: Word; vDef: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = #0); overload;
 var
   Dt, Tm: String;
 begin
@@ -2080,10 +2082,7 @@ begin
         TimeDivider := ' ';
     end;
 
-    if UseDefault then
-      DecodeDate(Now, Y, M, D)
-    else
-      DecodeDate(0, Y, M, D);
+    DecodeDate(vDef, Y, M, D);
 
     Dt := SubStr(ISODate, TimeDivider, 0);
     Tm := SubStr(ISODate, TimeDivider, 1);
@@ -2122,11 +2121,27 @@ begin
   end;
 end;
 
-function ISOStrToDate(ISODate: String; vDateSeparator: Char; TimeDivider: Char; UseDefault: Boolean): TDateTime;
+procedure ISOStrToDate(const ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char; TimeDivider: Char; UseDefault: Boolean);
+begin
+  if UseDefault then
+    ISOStrToDate(ISODate, Y, M, D, H, N, S, Now, vDateSeparator, TimeDivider)
+  else
+    ISOStrToDate(ISODate, Y, M, D, H, N, S, 0, vDateSeparator, TimeDivider);
+end;
+
+function ISOStrToDate(const ISODate: String; vDateSeparator: Char; TimeDivider: Char; UseDefault: Boolean): TDateTime;
 var
   Y, M, D, H, N, S: Word;
 begin
   ISOStrToDate(ISODate, Y, M, D, H, N, S, vDateSeparator, TimeDivider, UseDefault);
+  Result := EncodeDate(Y, M, D) + EncodeTime(H, N, S, 0);
+end;
+
+function ISOStrToDate(const ISODate: String; vDef: TDateTime; vDateSeparator: Char; TimeDivider: Char): TDateTime; overload;
+var
+  Y, M, D, H, N, S: Word;
+begin
+  ISOStrToDate(ISODate, Y, M, D, H, N, S, vDef, vDateSeparator, TimeDivider);
   Result := EncodeDate(Y, M, D) + EncodeTime(H, N, S, 0);
 end;
 
