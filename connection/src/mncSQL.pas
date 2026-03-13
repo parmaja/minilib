@@ -126,11 +126,12 @@ type
     function DoGetNextIDSQL(const vName: string; vStep: Integer): string; virtual; deprecated; //TODO move it to dervied class should not be here, wrong place
     function GetSequenceSQL: string; virtual;
     procedure DoExecute(const vSQL: string); virtual;
+    function DoCreateTransaction: TmncSQLTransaction; virtual; abstract;
   public
     constructor Create; override;
     destructor Destroy; override;
 
-    function CreateTransaction: TmncSQLTransaction; virtual; abstract;
+    function CreateTransaction: TmncSQLTransaction;
 
     property NextID[const vName: string; vStep: Integer]: Integer read GetNextID; //deprecated;
 
@@ -609,6 +610,11 @@ end;
 procedure TmncSQLConnection.CreateDatabase(CheckExists: Boolean);
 begin
   CreateDatabase(Resource, CheckExists);
+end;
+
+function TmncSQLConnection.CreateTransaction: TmncSQLTransaction;
+begin
+  Result := DoCreateTransaction;
 end;
 
 procedure TmncSQLConnection.DropDatabase(CheckExists: Boolean);

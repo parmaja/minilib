@@ -58,11 +58,11 @@ type
     procedure DoInit; override;
     function DoGetNextIDSQL(const vName: string; vStep: Integer): string; override;
     procedure DoExecute(const vSQL: string); override;
+    function DoCreateTransaction: TmncSQLTransaction; overload; override;
   public
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
-    function CreateTransaction: TmncSQLTransaction; overload; override;
     procedure Interrupt;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean =False); override;
     function IsDatabaseExists(const vName: string): Boolean; override;
@@ -413,7 +413,7 @@ begin
   Result := 'SQLite';
 end;
 
-function TmncSQLiteConnection.CreateTransaction: TmncSQLTransaction;
+function TmncSQLiteConnection.DoCreateTransaction: TmncSQLTransaction;
 begin
   Result := TmncSQLiteTransaction.Create(Self);
 end;

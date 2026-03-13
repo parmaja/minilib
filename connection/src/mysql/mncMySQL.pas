@@ -46,11 +46,11 @@ type
     procedure CheckError(Error: Integer; const ExtraMsg: string = ''); overload;
     procedure CheckError(vMySQL: PMYSQL); overload;
     procedure DoInit; override;
+    function DoCreateTransaction: TmncSQLTransaction; overload; override;
   public
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
-    function CreateTransaction: TmncSQLTransaction; overload; override; 
     procedure Interrupt;
     procedure SetCharsetName(Charset: string);
     procedure SetStorageEngine(vName: string);
@@ -467,7 +467,7 @@ begin
   Result := 'MySQL';
 end;
 
-function TmncMySQLConnection.CreateTransaction: TmncSQLTransaction;
+function TmncMySQLConnection.DoCreateTransaction: TmncSQLTransaction;
 begin
   Result := TmncMySQLTransaction.Create(Self);
 end;

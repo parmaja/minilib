@@ -70,6 +70,9 @@ type
 
   end;
 
+  TmncPGTransaction = class;
+  TmncPGCommand = class;
+
   { TmncPGConnection }
 
   TmncPGConnection = class(TmncSQLConnection)
@@ -117,11 +120,11 @@ type
     function loCopy(vOID: Integer): Integer; overload;
     property Channel: string read FChannel write SetChannel; //TODO make new classes for it
     procedure DoExecute(const vSQL: string); overload; override;
+    function DoCreateTransaction: TmncSQLTransaction; overload; override;
   public
     constructor Create; override;
     destructor Destroy; override;
 
-    function CreateTransaction: TmncSQLTransaction; override;
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
     property Handle: PPGconn read FHandle;
@@ -136,6 +139,7 @@ type
     function EnumDatabases: TStrings; override;
     procedure TerminateConnections(const vResource: string);
     function GetParamChar: string; override;
+    function CreateTransaction: TmncPGTransaction;
 
     //function UniqueDBName(const vBase: string): string; override; //zaher, do not copy
     function loCopy(vSrc: TmncPGConnection; vOID: Integer): Integer; overload;
@@ -145,7 +149,7 @@ type
     property DateStyle: string read FDateStyle write FDateStyle;
     property AppName: string read FAppName write FAppName;
     property UseSSL: Boolean read FUseSSL write FUseSSL;
-    property SimpleConnection: Boolean read FSimpleConnection write FSimpleConnection;
+    property SimpleConnection: Boolean read FSimpleConnection write FSimpleConnection; //* Deprecated
   end;
 
   { TmncPGTransaction }
@@ -168,6 +172,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
+    function CreateCommand(ASQL: string = ''): TmncPGCommand;
     procedure Execute(const vSQL: string);
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
@@ -833,7 +838,12 @@ begin
   CloneExecute('postgres', 'Create Database %s;', [vName]);
 end;
 
-function TmncPGConnection.CreateTransaction: TmncSQLTransaction;
+function TmncPGConnection.CreateTransaction: TmncPGTransaction;
+begin
+  Result := (inherited CreateTransaction) as TmncPGTransaction;
+end;
+
+function TmncPGConnection.DoCreateTransaction: TmncSQLTransaction;
 begin
   Result := TmncPGTransaction.Create(Self);
 end;
@@ -990,6 +1000,11 @@ constructor TmncPGTransaction.Create(vConnection: TmncConnection);
 begin
   inherited;
   FIsolated := True;
+end;
+
+function TmncPGTransaction.CreateCommand(ASQL: string): TmncPGCommand;
+begin
+  Result := inherited CreateCommand(ASQL) as TmncPGCommand;
 end;
 
 destructor TmncPGTransaction.Destroy;

@@ -55,11 +55,11 @@ type
     function GetConnected: Boolean; override;
     procedure DoInit; override;
     procedure DoExecute(const vSQL: string); override;
+    function DoCreateTransaction: TmncSQLTransaction; override;
   public
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
-    function CreateTransaction: TmncSQLTransaction; override;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); override;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
     function IsDatabaseExists(const vName: string): Boolean; override;
@@ -357,7 +357,7 @@ begin
   Result := '.fdb';
 end;
 
-function TmncFBConnection.CreateTransaction: TmncSQLTransaction;
+function TmncFBConnection.DoCreateTransaction: TmncSQLTransaction;
 begin
   Result := TmncFBTransaction.Create(Self);
 end;
