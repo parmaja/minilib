@@ -72,6 +72,7 @@ type
   TSendFileDisposition = (sdDefault, sdInline, sdAttachment);
   TmodServeFiles = set of (
     serveEnabled,
+//    serveUnauthorized, //* if file not exist not to render the schema
     serveIndex,
     serveSmart, //
     serveDefault
@@ -692,7 +693,7 @@ begin
     //Response.SendHead(sHTTPProtocol1 + ' 301 Moved Permanently');
     Response.Answer := hrRedirect;
     //Response.SendHead(sHTTPProtocol1 + ' 307 Temporary Redirect');
-    Response.Location := IncludeURLDelimiter(Request.Address);
+    Response.Redirect := IncludeURLDelimiter(Request.Address);
     Response.SendHeader;
   end
   else

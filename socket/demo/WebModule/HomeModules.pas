@@ -245,8 +245,8 @@ begin
         Source := '/doc/logo.png';
       end;
 
-      Header.RenderIt := True;
-      Toast.RenderIt := True;
+      Header.RenderIt := ovYes;
+      Toast.RenderIt := ovYes;
 
       with Main do
       begin
@@ -383,7 +383,7 @@ begin
       AResponse.Session.Value := aUsername +'/'+ aPassword;
       AResponse.Resume := False;
       AResponse.Answer := hrRedirect;
-      AResponse.Location := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
+      AResponse.Redirect := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
     end;
   end;
   inherited;
@@ -406,7 +406,7 @@ begin
 
       with Header do
       begin
-        RenderIt := True;
+        RenderIt := ovYes;
 //        Fixed := fixedTop;
         with NavBar do
         begin
@@ -425,7 +425,7 @@ begin
 
       with SideBar do
       begin
-        RenderIt := True;
+        RenderIt := ovYes;
         with TLink.Create(This, 'http://www.google.com', 'Google') do
         begin
           ClickType := clickNavigate;
@@ -517,7 +517,7 @@ begin
       AResponse.Session.Value := aUsername +'/'+ aPassword;
       AResponse.Resume := False;
       AResponse.Answer := hrRedirect;
-      AResponse.Location := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
+      AResponse.Redirect := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
     end;
   end;
   inherited;
@@ -541,7 +541,7 @@ begin
 
       with Header do
       begin
-        RenderIt := True;
+        RenderIt := ovYes;
 //        Fixed := fixedTop;
         with NavBar do
         begin
@@ -577,7 +577,7 @@ begin
 
       with SideBar do
       begin
-        RenderIt := True;
+        RenderIt := ovYes;
         with TAccordion.Create(This) do
         begin
           AlwaysOpen := True;
@@ -775,12 +775,12 @@ procedure TFilesSchema.DoCompose;
 begin
   inherited;
   ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
-  HomePath := IncludePathDelimiter(App.HomePath) + 'files';
+  HomePath := IncludePathDelimiter(Web.HomePath) + 'files';
   with TFolder.Create(This) do
   begin
     ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
     Route := 'folder';
-    HomePath := ExpandFileName(App.HomePath + 'smilies');
+    HomePath := ExpandFileName(Web.HomePath + 'smilies');
   end;
 end;
 
@@ -794,7 +794,7 @@ begin
   with TFile.Create(This) do
   begin
     Route := 'echo';
-    FileName := IncludePathDelimiter(App.HomePath) + 'ws.html';
+    FileName := IncludePathDelimiter(Web.HomePath) + 'ws.html';
   end;
 end;
 

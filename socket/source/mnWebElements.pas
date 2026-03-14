@@ -3034,12 +3034,12 @@ begin
       AResponse.Session.ResetChanged;
       AResponse.Answer := hrOK;
       AResponse.Resume := True;
-      AResponse.Location := '';
+      AResponse.Redirect := '';
 
       //* If you call schema name without ending by /
       if (aElement = aSchema) and (aSchema.Name <> '') and (AContext.Route = '') then
       begin
-        AResponse.Location := IncludeURLDelimiter(AContext.GetPath(aSchema));
+        AResponse.Redirect := IncludeURLDelimiter(AContext.GetPath(aSchema));
         AResponse.Resume := False;
         AResponse.Answer := hrRedirect;
       end
@@ -4065,11 +4065,17 @@ begin
     WebExpandFile(HomePath, AContext.Route, aRequestDocument);
 
     if not WebExpandFile(HomePath, AContext.Route, aDocument, serveSmart in Options) then
-      AResponse.Answer := hrUnauthorized
+    begin
+      //if serveUnauthorized in Schema.ServeFiles then // Need the Schema
+      if (AContext.Route = '') or IsStrInArray(AContext.Route, ['\', '/']) then // Need the Schema
+        Render(AContext, AResponse)
+      else
+        AResponse.Answer := hrUnauthorized
+    end
     else if ((AContext.Route = '') and not FileExists(aDocument)) or (not EndsDelimiter(aRequestDocument) and DirectoryExists(aRequestDocument)) then
     begin
       AResponse.Answer := hrRedirect;
-      AResponse.Location := IncludeURLDelimiter(AResponse.Request.Address);
+      AResponse.Redirect := IncludeURLDelimiter(AResponse.Request.Address);
     end
     else
     begin
@@ -5277,8 +5283,8 @@ end;
 
 procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'WebElements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
-  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + Context.GetAssetsURL + 'WebElements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'web-elements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + Context.GetAssetsURL + 'web-elements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { THTML }
@@ -5725,7 +5731,7 @@ begin
   if (RedirectTo <> '') and (AResponse.Answer = hrNone) then
   begin
     AResponse.Answer := hrRedirect;
-    AResponse.Location := RedirectTo;
+    AResponse.Redirect := RedirectTo;
   end;
 end;
 
@@ -6138,26 +6144,25 @@ begin
   begin
     if FileExists(GetHomePath + 'mnWebElements.js') then
     begin
-      TFile.Create(This, [], GetHomePath + 'mnWebElements.js', 'WebElements.js');
-      TFile.Create(This, [], GetHomePath + 'mnWebElements.css', 'WebElements.css');
+      TFile.Create(This, [], GetHomePath + 'web-elements.js', 'web-elements.js');
+      TFile.Create(This, [], GetHomePath + 'web-elements.css', 'web-elements.css');
     end
     else
     begin
-      TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
-      TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
+      TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'web-elements.css');
+      TFile.Create(This, [ftResource], 'WebElements_JS.js', 'web-elements.js');
     end;
   end
   else
   begin
-    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/socket/source/mnWebElements.js'), 'WebElements.js');
-    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/socket/source/mnWebElements.css'), 'WebElements.css');
+    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/socket/source/mnWebElements.js'), 'web-elements.js');
+    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/socket/source/mnWebElements.css'), 'web-elements.css');
   end;
 
   with TElement.Create(This, 'resource') do
   begin
-
-    TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'WebElements.css');
-    TFile.Create(This, [ftResource], 'WebElements_JS.js', 'WebElements.js');
+    TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'web-elements.css');
+    TFile.Create(This, [ftResource], 'WebElements_JS.js', 'web-elements.js');
   end;
 end;
 

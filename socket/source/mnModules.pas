@@ -520,7 +520,7 @@ type
 
   TwebResponse = class(TmodResponse)
   private
-    FLocation: string;
+    FRedirect: string;
     FHomePath: string; //Document root folder
     //FCompressed: Boolean;
     function GetRequest: TwebRequest;
@@ -539,7 +539,7 @@ type
     property HomePath: string read FHomePath write FHomePath;
 
     property Request: TwebRequest read GetRequest;
-    property Location: string read FLocation write FLocation; //Relocation it to another url
+    property Redirect: string read FRedirect write FRedirect; //Relocation it to another url
     //property Compressed: Boolean read FCompressed write FCompressed;
   public
     procedure RespondNotFound;
@@ -898,10 +898,26 @@ const
 var
   DevelopperMode:Boolean = False;
 
+function OptionValue(Value: TmodOptionValue): Boolean; overload; inline;
+function OptionValue(Value: Boolean): TmodOptionValue; overload; inline;
+
 implementation
 
 uses
   mnUtils;
+
+function OptionValue(Value: TmodOptionValue): Boolean;
+begin
+  Result := Value = ovYes;
+end;
+
+function OptionValue(Value: Boolean): TmodOptionValue; overload;
+begin
+  if Value then
+    Result := ovYes
+  else
+    Result := ovNo;
+end;
 
 var
   FRegisteredModules: TmnRegisteredModules;
@@ -3152,8 +3168,8 @@ begin
 //    if Compressed then
 //      PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
 
-  if Location <> '' then
-    PutHeader('Location', Location)
+  if Redirect <> '' then
+    PutHeader('Location', Redirect)
 end;
 
 procedure TwebResponse.DoSendHeader;
@@ -3203,7 +3219,7 @@ end;
 procedure TwebResponse.RespondRedirectTo(S: string);
 begin
   Answer := hrRedirect;
-  Location := S;
+  Redirect := S;
   SendHeader;
 end;
 
