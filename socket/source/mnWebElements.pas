@@ -916,6 +916,7 @@ type
       TToast = class;
       TMain = class;
       TImage = class;
+      TImageFile = class;
       TBody = class;
       TDocument = class;
 
@@ -1078,11 +1079,13 @@ type
       TNavBar = class(THTMLComponent)
       private
         FButtons: THTMLElement;
+        FImage: TImageFile;
       public
         Title: string;
 //        LogoImage: string;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: TmodOptionValue = ovYes); override;
         destructor Destroy; override;
+        property Image: TImageFile read FImage;
         property Buttons: THTMLElement read FButtons;
       end;
 
@@ -1387,20 +1390,38 @@ type
         procedure Created; override;
       end;
 
-      [TID_Extension]
-      TImage = class(THTMLComponent)
-      protected
-        procedure DoCompose; override;
+      TCustomImage = class(THTMLComponent)
       public
-        Source: TLocation;
         AltText: string;
         //Width, Height: double;
       end;
 
+      [TID_Extension]
+      TImage = class(TCustomImage)
+      protected
+        procedure DoCompose; override;
+      public
+        Source: TLocation;
+      end;
+
       { TMemoryImage }
 
-      [TID_Extension]
-      TMemoryImage = class(TImage)
+      [TRoute_Extension]
+      TImageFile = class(TCustomImage)
+      private
+      protected
+        function CanRender: Boolean; override;
+        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+      protected
+      public
+        FileName: string;
+        function GetContentType(Route: string): string; override;
+      end;
+
+      { TImageMemory }
+
+      [TRoute_Extension]
+      TImageMemory = class(TCustomImage)
       private
         FData: TMemoryStream;
       protected
@@ -1543,7 +1564,7 @@ type
       TNavBar = class(THTMLComponent)
       private
       protected
-        procedure DoRenderBrand(Scope: TmnwScope; Context: TmnwContext); virtual;
+        procedure DoRenderBrand(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); virtual;
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
@@ -1793,9 +1814,18 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
-      { TMemoryImage }
+      { TImageFile }
 
-      TMemoryImage = class(THTMLComponent)
+      TImageFile = class(THTMLComponent)
+      protected
+        procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TImageMemory }
+
+      TImageMemory = class(THTMLComponent)
       protected
         procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
@@ -1851,8 +1881,9 @@ type
 
   TAssetsSchema = class(TmnwSchema)
   private
+    FLogoFile: string;
   protected
-    FLogo: THTML.TMemory;
+    //FLogo: THTML.TMemory;
 
     procedure DoPrepare; override;
     procedure DoCompose; override;
@@ -1861,7 +1892,8 @@ type
   public
     destructor Destroy; override;
     class function GetCapabilities: TmnwSchemaCapabilities; override;
-    property Logo: THTML.TMemory read FLogo;
+    //property Logo: THTML.TMemory read FLogo;
+    property LogoFile: string read FLogoFile write FLogoFile;
     procedure Prepare; override;
   end;
 
@@ -1906,7 +1938,7 @@ type
   public
     destructor Destroy; override;
     constructor Create(AModules: TmodModules; const AName: string; const AAliasName: String); override;
-    property WebApp: TmnwWeb read FWeb;
+    property Web: TmnwWeb read FWeb;
   end;
 
 function LevelStr(vLevel: Integer): String;
@@ -3514,7 +3546,8 @@ begin
   RegisterRenderer(THTML.TInput, TInput);
   RegisterRenderer(THTML.TInputPassword, TInputPassword);
   RegisterRenderer(THTML.TImage, TImage);
-  RegisterRenderer(THTML.TMemoryImage, TMemoryImage);
+  RegisterRenderer(THTML.TImageFile, TImageFile);
+  RegisterRenderer(THTML.TImageMemory, TImageMemory);
   RegisterRenderer(THTML.TCard, TCard);
   RegisterRenderer(THTML.TDropdown, TDropdown);
   RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
@@ -3931,7 +3964,7 @@ end;
 procedure TmnwHTMLRenderer.TImage.DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
 begin
   inherited;
-  ARenderer.Libraries.Use('JQuery');
+  //ARenderer.Libraries.Use('JQuery');
 end;
 
 procedure TmnwHTMLRenderer.TImage.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
@@ -3949,24 +3982,24 @@ end;
 
 { TmnwHTMLRenderer.TMemoryImageHTML }
 
-procedure TmnwHTMLRenderer.TMemoryImage.DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
+procedure TmnwHTMLRenderer.TImageMemory.DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
 begin
   inherited;
-  ARenderer.Libraries.Use('JQuery');
+  //ARenderer.Libraries.Use('JQuery');
 end;
 
-procedure TmnwHTMLRenderer.TMemoryImage.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TImageMemory.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   Scope.Attributes['src'] := Context.GetPath(Scope.Element);
-  Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText;
+  Scope.Attributes['alt'] := (Scope.Element as THTML.TImageMemory).AltText;
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TMemoryImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TImageMemory.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
-  e: THTML.TMemoryImage;
+  e: THTML.TImageMemory;
 begin
-  e := Scope.Element as THTML.TMemoryImage;
+  e := Scope.Element as THTML.TImageMemory;
   Context.Writer.AddShortTag('img', Scope.ToString);
   inherited;
 end;
@@ -4449,38 +4482,38 @@ begin
   EditType := 'password';
 end;
 
-{ THTML.TMemoryImage }
+{ THTML.TImageMemory }
 
-procedure THTML.TMemoryImage.Created;
+procedure THTML.TImageMemory.Created;
 begin
   inherited;
   FData := TMemoryStream.Create;
 end;
 
-destructor THTML.TMemoryImage.Destroy;
+destructor THTML.TImageMemory.Destroy;
 begin
   FreeAndNil(FData);
   inherited;
 end;
 
-function THTML.TMemoryImage.GetContentType(Route: string): string;
+function THTML.TImageMemory.GetContentType(Route: string): string;
 begin
   Result := DocumentToContentType(FileName);
 end;
 
-procedure THTML.TMemoryImage.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure THTML.TImageMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
   AResponse.SendStream(Data, Data.Size, FileName, AContext.Schema.Web.InstanceDate);
 end;
 
-procedure THTML.TMemoryImage.LoadFromFile(const AFileName: string);
+procedure THTML.TImageMemory.LoadFromFile(const AFileName: string);
 begin
   Data.LoadFromFile(AFileName);
   FileName := ExtractFileName(AFileName);
 end;
 
-procedure THTML.TMemoryImage.LoadFromStream(AStream: TStream);
+procedure THTML.TImageMemory.LoadFromStream(AStream: TStream);
 begin
   Data.LoadFromStream(AStream);
   FileName := '';
@@ -5327,7 +5360,7 @@ begin
 
   FFooter := TFooter.Create(Self, [elEmbed], ovNo);
   FFooter.Priority := priorityEnd;
-  FToast := TToast.Create(Self, [elEmbed], ovNo);
+  FToast := TToast.Create(Self, [elEmbed], ovYes);
   FToast.Priority := priorityEnd;
 end;
 
@@ -5351,6 +5384,8 @@ end;
 constructor THTML.TNavBar.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: TmodOptionValue);
 begin
   inherited;
+  FImage := TImageFile.Create(This, [elInternal, elEmbed]);
+  FImage.FileName := Schema.Web.Assets.LogoFile;
   FButtons := THTMLElement.Create(This, [elInternal, elEmbed]);
 end;
 
@@ -5843,14 +5878,17 @@ end;
 
 { TmnwHTMLRenderer.TNavBar }
 
-procedure TmnwHTMLRenderer.TNavBar.DoRenderBrand(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TNavBar.DoRenderBrand(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TNavBar;
 begin
   e := Scope.Element as THTML.TNavBar;
   Context.Writer.OpenTag('a', 'class="logo navbar-brand align-items-center me-auto" href="' + Context.GetPath(e)+'"');
-  if e.Schema.Web.Assets.Logo.Data.Size > 0 then
-    Context.Writer.AddShortTag('img', 'src="' + Context.GetPath(e.Schema.Web.Assets.Logo)+ '" alt=""');
+
+//  if e.Schema.Web.Assets.Logo.Data.Size > 0 then
+//    Context.Writer.AddShortTag('img', 'src="' + Context.GetPath(e.Schema.Web.Assets.Logo)+ '" alt=""');
+  e.Image.Render(Context, AResponse); // Render Image
+
   if e.Title <> '' then
     Context.Writer.AddTag('span', 'class="navbar-brand"', e.Title);
   Context.Writer.CloseTag('a');
@@ -5893,7 +5931,7 @@ begin
     Context.Writer.CloseTag('button');
   end;
 
-	DoRenderBrand(Scope, Context);
+	DoRenderBrand(Scope, Context, AResponse);
 
   Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
   //Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
@@ -6065,14 +6103,14 @@ begin
   else
     SpliteStr(Request.Header['Host'], ':', aDomain, aPort);
 
-  if Module.WebApp.Domain = '' then
+  if Module.Web.Domain = '' then
   begin
-    Module.WebApp.Lock.Enter; //smart huh, first connection will setup the domain name, i don't like it
+    Module.Web.Lock.Enter; //smart huh, first connection will setup the domain name, i don't like it
     try
-      Module.WebApp.Domain := aDomain;
-      Module.WebApp.Port := aPort;
+      Module.Web.Domain := aDomain;
+      Module.Web.Port := aPort;
     finally
-      Module.WebApp.Lock.Leave;
+      Module.Web.Lock.Leave;
     end;
   end;
 
@@ -6082,7 +6120,7 @@ begin
   if Request.ConnectionType = ctWebSocket then
   begin
     //Serve the websocket
-    if (Module as TUIWebModule).WebApp.Attach(aContext, Self, Response.Stream) = nil then
+    if (Module as TUIWebModule).Web.Attach(aContext, Self, Response.Stream) = nil then
       Result.Status := []; // Disconnect
   end
   else
@@ -6103,11 +6141,11 @@ begin
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
     aContext.Writer := TmnwWriter.Create('html', Response.Stream);
-    aContext.Writer.Compact := Module.WebApp.CompactMode;
+    aContext.Writer.Compact := Module.Web.CompactMode;
     try
       aContext.Stamp := Request.Header['If-None-Match'];
 
-      (Module as TUIWebModule).WebApp.Respond(aContext, Response);
+      (Module as TUIWebModule).Web.Respond(aContext, Response);
 
       //SessionID
     finally
@@ -6124,9 +6162,9 @@ procedure TAssetsSchema.Created;
 begin
   inherited;
 //  Kind := Kind + [elFallback];
-  FLogo := THTML.TMemory.Create(This);
-  FLogo.Name := 'logo';
-  FLogo.Route := 'logo';
+  //FLogo := THTML.TMemory.Create(This);
+  //FLogo.Name := 'logo';
+  //FLogo.Route := 'logo';
   FPhase := scmpNormal;
   ServeFiles := [serveEnabled, serveSmart, serveDefault];
 end;
@@ -6207,26 +6245,26 @@ end;
 procedure TUIWebModule.Start;
 begin
   inherited;
-//  AssetsURL := '/' + AliasName + '/' + WebApp.Assets.Route;
-  if WebApp.HomePath = '' then
-    WebApp.HomePath := HomePath;
-  if WebApp.Domain = '' then
-    WebApp.Domain := Domain;
-  if WebApp.Port = '' then
-    WebApp.Port := Port;
-  if WebApp.WorkPath = '' then
-    WebApp.WorkPath := WorkPath;
-  if WebApp.Alias = '' then
-    WebApp.Alias := AliasName;
+//  AssetsURL := '/' + AliasName + '/' + Web.Assets.Route;
+  if Web.HomePath = '' then
+    Web.HomePath := HomePath;
+  if Web.Domain = '' then
+    Web.Domain := Domain;
+  if Web.Port = '' then
+    Web.Port := Port;
+  if Web.WorkPath = '' then
+    Web.WorkPath := WorkPath;
+  if Web.Alias = '' then
+    Web.Alias := AliasName;
 
-  //WebApp.Assets.HomePath := WebApp.HomePath;
+  //Web.Assets.HomePath := Web.HomePath;
 
-  WebApp.Start;
+  Web.Start;
 end;
 
 procedure TUIWebModule.Stop;
 begin
-  WebApp.Stop;
+  Web.Stop;
   inherited;
 end;
 
@@ -6243,7 +6281,7 @@ end;
 
 function TUIWebModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwHTMLRenderer.Create(Self, WebApp.IsLocal);
+  Result := TmnwHTMLRenderer.Create(Self, Web.IsLocal);
 end;
 
 destructor TUIWebModule.Destroy;
@@ -6653,6 +6691,47 @@ begin
   AResponse.Resume := False;
   AResponse.Answer := hrRedirect;
   AResponse.RespondRedirectTo(AContext.GetSchemaURL);
+  inherited;
+end;
+
+{ THTML.TImageFile }
+
+function THTML.TImageFile.CanRender: Boolean;
+begin
+  Result := (inherited CanRender) and (FileName <> '');
+end;
+
+procedure THTML.TImageFile.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+begin
+  inherited;
+  AResponse.SendFile(FileName);
+end;
+
+function THTML.TImageFile.GetContentType(Route: string): string;
+begin
+  Result := DocumentToContentType(FileName);
+end;
+
+{ TmnwHTMLRenderer.TImageFile }
+
+procedure TmnwHTMLRenderer.TImageFile.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  Scope.Attributes['src'] := Context.GetPath(Scope.Element);
+  Scope.Attributes['alt'] := (Scope.Element as THTML.TImageFile).AltText;
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TImageFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TImageFile;
+begin
+  e := Scope.Element as THTML.TImageFile;
+  Context.Writer.AddShortTag('img', Scope.ToString);
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TImageFile.DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
+begin
   inherited;
 end;
 

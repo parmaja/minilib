@@ -267,7 +267,7 @@ begin
           Caption := 'Welcome';
           Name := 'card';
 
-          with TMemoryImage.Create(This) do
+          with TImageMemory.Create(This) do
           begin
             Name := 'logo';
             Route := 'logo';
@@ -802,7 +802,7 @@ end;
 
 function THomeModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwBootstrapRenderer.Create(Self, WebApp.IsLocal);
+  Result := TmnwBootstrapRenderer.Create(Self, Web.IsLocal);
 end;
 
 destructor THomeModule.Destroy;
@@ -813,22 +813,21 @@ end;
 procedure THomeModule.InitItems;
 begin
   inherited;
-  WebApp.RegisterSchema('', TWelcomeSchema);
-  WebApp.RegisterSchema('login', TLoginSchema);
-  WebApp.RegisterSchema('demo', TDemoSchema);
-  WebApp.RegisterSchema('simple', TSimpleSchema);
-  WebApp.RegisterSchema('files', TFilesSchema);
-  WebApp.RegisterSchema('ws', TWSShema);
+  Web.RegisterSchema('', TWelcomeSchema);
+  Web.RegisterSchema('login', TLoginSchema);
+  Web.RegisterSchema('demo', TDemoSchema);
+  Web.RegisterSchema('simple', TSimpleSchema);
+  Web.RegisterSchema('files', TFilesSchema);
+  Web.RegisterSchema('ws', TWSShema);
   RegisterCommand('.ws', TWSEchoGetHomeCommand, False);
 end;
 
 procedure THomeModule.Start;
 begin
   inherited;
-  with WebApp.Assets do
+  with Web.Assets do
   begin
-    if Logo.Data.Size = 0 then
-      Logo.LoadFromFile(HomePath + 'logo.png');
+    LogoFile := HomePath + 'logo.png';
       //Logo.LoadFromFile(HomePath + 'logo.png');
     with thtml.TFile.Create(This) do
     begin

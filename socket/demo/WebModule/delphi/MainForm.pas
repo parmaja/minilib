@@ -138,16 +138,16 @@ begin
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := HomeAliasEdit.Text;
-    aHomeModule.WebApp.AppPath := ExtractFilePath(Application.ExeName);
+    aHomeModule.Web.AppPath := ExtractFilePath(Application.ExeName);
 
 
 //    aHomeModule.Domain := 'localhost';
 //    aHomeModule.Port := HttpServer.Port;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
-    aHomeModule.WebApp.HomePath := IncludePathDelimiter(aHomePath);
+    aHomeModule.Web.HomePath := IncludePathDelimiter(aHomePath);
     aHomeModule.HomePath := IncludePathDelimiter(aHomePath);
-    aHomeModule.WorkPath := aHomeModule.WebApp.AppPath;
-    aHomeModule.WebApp.CompactMode := False;
+    aHomeModule.WorkPath := aHomeModule.Web.AppPath;
+    aHomeModule.Web.CompactMode := False;
     ForceDirectories(aHomeModule.WorkPath + 'cache');
     ForceDirectories(aHomeModule.WorkPath + 'temp');
 
