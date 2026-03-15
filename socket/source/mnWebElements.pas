@@ -818,9 +818,11 @@ type
     FAppPath: string;
     FWorkPath: string;
     FAssets: TAssetsSchema;
+    FDefaultSchema: TmnwSchemaItem;
     FShutdown: Boolean;
     FLock: TCriticalSection;
     FRegistered: TRegisteredSchemas;
+    FTimeStamp: Int64;
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
@@ -836,12 +838,13 @@ type
     CompactMode: Boolean;
     IsLocal: Boolean;
     DefaultAge: Integer;
+
     constructor Create;
     destructor Destroy; override;
     procedure Start;
     procedure Stop;
 
-    function RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass): TmnwSchema;
+    function RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass; AsDefaultSchema: Boolean = False): TmnwSchema;
     property Registered: TRegisteredSchemas read FRegistered;
 
     function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
@@ -860,6 +863,7 @@ type
 
     property Lock: TCriticalSection read FLock;
     property Assets: TAssetsSchema read FAssets;
+    property DefaultSchema: TmnwSchemaItem read FDefaultSchema;
     //Public Web Files
     property HomePath: string read FHomePath write FHomePath;
     //Private Files
@@ -868,6 +872,7 @@ type
     property AppPath: string read FAppPath write FAppPath;
     property Shutdown: Boolean read FShutdown;
     property Options: TmnwAppOptions read FOptions write FOptions;
+    property TimeStamp: Int64 read FTimeStamp;
   end;
 
   TSize = (
@@ -964,6 +969,7 @@ type
         Size: TSize; //Max Width
         Shadow: TmnwShadow;
         Hint: string;
+        ControlStyle: TItemStyle;
       end;
 
       { TJSFile }
@@ -1161,7 +1167,6 @@ type
         FCaption: string;
         procedure SetCaption(const AValue: string);
       public
-        ItemStyle: TItemStyle;
         Image: TImageLocation;
         AutoHideText: Boolean;
         property Caption: string read FCaption write SetCaption;
@@ -1227,16 +1232,18 @@ type
       public
       end;
 
-      TDropdownOptions = set of (dropArraw, dropSplit);
+      TDropdownOptions = set of (dropArraw, dropSplit, dropEnd);
 
       { TDropdown }
 
       [TID_Extension]
-      TDropdown = class(THTMLItem)
+      TDropdown = class(THTMLControl)
       protected
         procedure Created; override;
       public
         Options: TDropdownOptions;
+        Caption: string;
+        Image: TImageLocation;
       end;
 
       { THTMLGroup }
@@ -1491,6 +1498,7 @@ type
 
       THTMLControl = class(THTMLComponent)
       protected
+        procedure RenderImageLocation(const Context: TmnwContext; const Image: TImageLocation);
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -1712,7 +1720,7 @@ type
 
       { TDropdown }
 
-      TDropdown = class(THTMLItem)
+      TDropdown = class(THTMLControl)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
 
@@ -2846,7 +2854,7 @@ begin
   Started := False;
 end;
 
-function TmnwWeb.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass): TmnwSchema;
+function TmnwWeb.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass; AsDefaultSchema: Boolean = False): TmnwSchema;
 var
   aSchemaItem: TmnwSchemaItem;
 begin
@@ -2854,6 +2862,9 @@ begin
   aSchemaItem.Name := AName;
   aSchemaItem.SchemaClass := SchemaClass;
   Registered.Add(aSchemaItem);
+  if AsDefaultSchema then
+    FDefaultSchema := aSchemaItem;
+
   aSchemaItem.SchemaClass.Registered;
   if schemaStartup in aSchemaItem.SchemaClass.GetCapabilities then
   begin
@@ -3218,6 +3229,7 @@ end;
 
 constructor TmnwWeb.Create;
 begin
+  FTimeStamp := GetTimeStamp;
   InstanceUID := TGUID.NewGuid;
   FileAge(ParamStr(0), InstanceDate);
   FLock := TCriticalSection.Create;
@@ -3609,6 +3621,14 @@ begin
   inherited;
 end;
 
+procedure TmnwHTMLRenderer.THTMLControl.RenderImageLocation(const Context: TmnwContext; const Image: TImageLocation);
+begin
+  if Image.Icon <> '' then
+    Context.Writer.AddTag('span', 'class='+ DQ(Image.Icon))
+  else if Image.Path <> '' then
+    Context.Writer.AddShortTag('img', 'src='+ DQ(Image.Path) + ' alt=""');
+end;
+
 { TmnwHTMLRenderer.TComment }
 
 procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
@@ -3876,7 +3896,7 @@ var
 begin
   e := Scope.Element as THTML.TButton;
   Scope.Classes.Add('btn');
-  Scope.Classes.Add(BSItemStyleToStr('btn-', e.ItemStyle));
+  Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
   if e.JSFunction <> '' then
     event := ' onclick="'+e.JSFunction+'(this, event)"'
   else if Context.Schema.Interactive then
@@ -5309,15 +5329,15 @@ end;
 
 procedure TJQuery_LocalLibrary.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'jquery.min.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { TWebElements_Library }
 
 procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'web-elements.js?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
-  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + Context.GetAssetsURL + 'web-elements.css?v=' + IntToStr(Context.Schema.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'web-elements.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + Context.GetAssetsURL + 'web-elements.css?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { THTML }
@@ -5538,6 +5558,7 @@ end;
 procedure TmnwHTMLRenderer.TDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TDropdown;
+  classes: string;
 begin
   e := Scope.Element as THTML.TDropdown;
 
@@ -5546,17 +5567,22 @@ begin
     Scope.Classes.Add('dropdown-toggle');
   if dropSplit in e.Options then
     Scope.Classes.Add('dropdown-toggle-split');
-  Scope.Classes.Add(BSItemStyleToStr('btn-', e.ItemStyle));
+  Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
 	Scope.Attributes.Add('data-bs-toggle', 'dropdown');
   Scope.Attributes.Add('aria-expanded', 'false');
   Scope.Attributes.Add('type', 'button');
 
   Context.Writer.OpenTag('div', 'class="dropdown"');
   Context.Writer.OpenTag('button', Scope.ToString);
+  RenderImageLocation(Context, e.Image);
   if e.Caption <> '' then
     Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('button');
-  Context.Writer.OpenTag('div', 'class="dropdown-menu" aria-labelledby="' + e.ID + '"');
+  classes := 'dropdown-menu';
+  if dropEnd in e.Options then
+    classes := classes + ' dropdown-menu-end';
+  // Body of dropdown menu
+  Context.Writer.OpenTag('div', 'class="' + classes + '" aria-labelledby="' + e.ID + '"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -5980,10 +6006,7 @@ var
   e: THTML.THTMLItem;
 begin
   e := Scope.Element as THTML.THTMLItem;
-  if e.Image.Icon <> '' then
-    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Icon))
-  else if e.Image.Path <> '' then
-    Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
+  RenderImageLocation(Context, e.Image);
   inherited;
   if e.Caption <> '' then
   begin
@@ -6031,7 +6054,7 @@ begin
   else
   begin
     src := Context.GetPath(e);
-    Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src)+'?v='+IntToStr(Context.Schema.TimeStamp));
+    Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src)+'?v='+IntToStr(Context.Schema.Web.TimeStamp));
     inherited;
   end;
 end;
@@ -6054,7 +6077,7 @@ begin
   else
   begin
     src := Context.GetPath(e);
-    Context.Writer.AddTag('link', 'rel="stylesheet" href='+ DQ(src) + '?v=' + IntToStr(Context.Schema.TimeStamp));
+    Context.Writer.AddTag('link', 'rel="stylesheet" href='+ DQ(src) + '?v=' + IntToStr(Context.Schema.Web.TimeStamp));
     inherited;
   end;
 end;
@@ -6473,19 +6496,19 @@ begin
   inherited;
   FButtonSmall := TButton.Create(Self, [elEmbed]);
   FButtonSmall.ID := 'zoom-small';
-  FButtonSmall.ItemStyle := styleUndefined;
+  FButtonSmall.ControlStyle := styleUndefined;
   FButtonSmall.Image.Icon := 'icon mw-font-small';
   FButtonSmall.JSFunction := 'mnw.switch_zoom';
 
   FButtonNormal := TButton.Create(Self, [elEmbed]);
   FButtonNormal.ID := 'zoom-normal';
-  FButtonNormal.ItemStyle := styleUndefined;
+  FButtonNormal.ControlStyle := styleUndefined;
   FButtonNormal.Image.Icon := 'icon mw-font-normal';
   FButtonNormal.JSFunction := 'mnw.switch_zoom';
 
   FButtonLarge := TButton.Create(Self, [elEmbed]);
   FButtonLarge.ID := 'zoom-large';
-  FButtonLarge.ItemStyle := styleUndefined;
+  FButtonLarge.ControlStyle := styleUndefined;
   FButtonLarge.Image.Icon := 'icon mw-font-large';
   FButtonLarge.JSFunction := 'mnw.switch_zoom';
 end;
@@ -6515,7 +6538,7 @@ end;
 procedure THTML.TButton.Created;
 begin
   inherited;
-  ItemStyle := stylePrimary;
+  ControlStyle := stylePrimary;
 end;
 
 { TmnwHTMLRenderer.TSpan }
