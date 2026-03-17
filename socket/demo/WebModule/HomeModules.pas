@@ -556,14 +556,14 @@ begin
             Caption := 'Item2';
           end;
 
-          with Buttons do
+          with Tools do
           begin
             with TThemeModeButton.Create(This) do
             begin
               Caption := 'Mode';
             end;
 
-            with TDropdown.Create(This) do
+            with TDropdownButton.Create(This) do
             begin
               Image.Icon := 'icon mw-font-normal';
               Options := Options + [dropEnd];
@@ -651,7 +651,7 @@ begin
 
         //with TRow.Create(This) do
         begin
-          with TDropdown.Create(This) do
+          with TDropdownButton.Create(This) do
           begin
             Caption := 'Font';
             with TButton.Create(This) do

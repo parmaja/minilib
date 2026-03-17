@@ -182,7 +182,11 @@ type
     styleSuccess,
     styleDanger,
     styleWarning,
-    styleInfo
+    styleInfo,
+    styleLight,
+    styleDark,
+    styleLink,
+    styleNone
   );
 
   { TLocation }
@@ -238,7 +242,8 @@ type
     Items: TArray<String>;
     function Find(const Name: string): Integer;
     function Add(const Name: string): Integer;
-    procedure AddClasses(const S: string);
+    procedure AddClasses(const S: string); overload;
+    procedure AddClasses(A: TElementClasses); overload;
     function ToString: string;
     class operator Add(A: TElementClasses; B: string): TElementClasses;
     class operator Subtract(A: TElementClasses; B: string): TElementClasses;
@@ -254,6 +259,7 @@ type
     Element: TmnwElement;
     Attributes: TmnwAttributes;
     Classes: TElementClasses;
+    WrapClass: TElementClasses; //WrapClass is a class used of what parent wrapped it
     function ToString: string;
     function GetText: string;
   end;
@@ -1079,12 +1085,25 @@ type
         property Wide: Boolean read GetWide write SetWide;
       end;
 
+      TNavTools = class(THTMLComponent)
+      end;
+
+      TDropdownOptions = set of (dropArraw, dropSplit, dropEnd);
+
+      TNavDropdown = class(THTMLComponent)
+      protected
+      public
+        Options: TDropdownOptions;
+        Caption: string;
+        Image: TImageLocation;
+      end;
+
       { TNavBar }
 
       [TID_Extension]
       TNavBar = class(THTMLComponent)
       private
-        FButtons: THTMLElement;
+        FTools: TNavTools;
         FImage: TImageFile;
       public
         Title: string;
@@ -1092,7 +1111,7 @@ type
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: TmodOptionValue = ovYes); override;
         destructor Destroy; override;
         property Image: TImageFile read FImage;
-        property Buttons: THTMLElement read FButtons;
+        property Tools: TNavTools read FTools;
       end;
 
       THeader = class(THTMLControl)
@@ -1232,12 +1251,10 @@ type
       public
       end;
 
-      TDropdownOptions = set of (dropArraw, dropSplit, dropEnd);
-
-      { TDropdown }
+      { TDropdownButton }
 
       [TID_Extension]
-      TDropdown = class(THTMLControl)
+      TDropdownButton = class(THTMLControl)
       protected
         procedure Created; override;
       public
@@ -1567,6 +1584,26 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
+      TNavTools = class(THTMLComponent)
+      private
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      public
+      end;
+
+      TNavDropdown = class(THTMLComponent)
+      private
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      public
+      end;
+
       { TNavBar }
 
       TNavBar = class(THTMLComponent)
@@ -1718,9 +1755,9 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
-      { TDropdown }
+      { TDropdownButton }
 
-      TDropdown = class(THTMLControl)
+      TDropdownButton = class(THTMLControl)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
 
@@ -2083,6 +2120,10 @@ begin
     styleDanger: Result := Prefix + 'danger';
     styleWarning: Result := Prefix + 'warning';
     styleInfo: Result := Prefix + 'info';
+    styleLight: Result := Prefix + 'light';
+    styleDark: Result := Prefix + 'dark';
+    styleLink: Result := Prefix + 'link';
+    styleNone: Result := 'bg-transparent';
   end;
 end;
 
@@ -3539,6 +3580,8 @@ begin
   RegisterRenderer(THTML.TBody ,TBody);
   RegisterRenderer(THTML.TParagraph, TParagraph);
   RegisterRenderer(THTML.TBreak, TBreak);
+  RegisterRenderer(THTML.TNavTools, TNavTools);
+  RegisterRenderer(THTML.TNavDropdown, TNavDropdown);
   RegisterRenderer(THTML.TNavBar, TNavBar);
   RegisterRenderer(THTML.TMenuBar, TMenuBar);
   RegisterRenderer(THTML.THeader, THeader);
@@ -3561,7 +3604,7 @@ begin
   RegisterRenderer(THTML.TImageFile, TImageFile);
   RegisterRenderer(THTML.TImageMemory, TImageMemory);
   RegisterRenderer(THTML.TCard, TCard);
-  RegisterRenderer(THTML.TDropdown, TDropdown);
+  RegisterRenderer(THTML.TDropdownButton, TDropdownButton);
   RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
   RegisterRenderer(THTML.TToolbar, TToolbar);
   RegisterRenderer(THTML.TZoomButtons, TZoomButtons);
@@ -3704,6 +3747,7 @@ end;
 procedure TmnwHTMLRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   Scope.Classes.AddClasses('header sticky-top d-flex align-items-center navbar-dark bg-black py-0 px-1');
+  Scope.Attributes.Add('data-bs-theme', 'dark');
   Context.Writer.OpenTag('header', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('header');
@@ -3896,7 +3940,8 @@ var
 begin
   e := Scope.Element as THTML.TButton;
   Scope.Classes.Add('btn');
-  Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
+  if e.ControlStyle <> styleUndefined then
+    Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
   if e.JSFunction <> '' then
     event := ' onclick="'+e.JSFunction+'(this, event)"'
   else if Context.Schema.Interactive then
@@ -3939,7 +3984,7 @@ end;
 
 procedure TmnwHTMLRenderer.TSubMenu.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
-  inherited DoCollectAttributes(Scope, Context);
+  inherited;
 end;
 
 procedure TmnwHTMLRenderer.TSubMenu.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
@@ -4879,7 +4924,7 @@ end;
 
 procedure TmnwElement.Add(O: TmnwElementClass);
 begin
-  Add(O.Create(Self));
+  O.Create(Self);
 end;
 
 //in FPC if you got error, change <O: TmnwElement> to <O>
@@ -5406,7 +5451,7 @@ begin
   inherited;
   FImage := TImageFile.Create(This, [elInternal, elEmbed]);
   FImage.FileName := Schema.Web.Assets.LogoFile;
-  FButtons := THTMLElement.Create(This, [elInternal, elEmbed]);
+  FTools := TNavTools.Create(This, [elInternal, elEmbed]);
 end;
 
 destructor THTML.TNavBar.Destroy;
@@ -5536,47 +5581,50 @@ var
 begin
   e := Scope.Element as THTML.TThemeModeButton;
   Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(this, event)"');
-  Context.Writer.AddTag('span', 'class="icon mw-moon-stars"');
+  Context.Writer.AddTag('span', 'class="icon mw-theme"');
   inherited;
   Context.Writer.CloseTag('button');
 end;
 
-{ TmnwHTMLRenderer.TDropdown }
+{ TmnwHTMLRenderer.TDropdownButton }
 
-procedure TmnwHTMLRenderer.TDropdown.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TDropdownButton.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
   Scope.Classes.Add('dropdown-item');
 //  Context.Writer.OpenTag('dropdown-item', 'class="dropdown-item"');
 end;
 
-procedure TmnwHTMLRenderer.TDropdown.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TDropdownButton.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TDropdownButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
-  e: THTML.TDropdown;
+  e: THTML.TDropdownButton;
   classes: string;
 begin
-  e := Scope.Element as THTML.TDropdown;
+  e := Scope.Element as THTML.TDropdownButton;
 
   Scope.Classes.Add('btn');
   if dropArraw in e.Options then
     Scope.Classes.Add('dropdown-toggle');
   if dropSplit in e.Options then
     Scope.Classes.Add('dropdown-toggle-split');
-  Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
+  if e.ControlStyle <> styleUndefined then
+    Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
 	Scope.Attributes.Add('data-bs-toggle', 'dropdown');
   Scope.Attributes.Add('aria-expanded', 'false');
   Scope.Attributes.Add('type', 'button');
 
   Context.Writer.OpenTag('div', 'class="dropdown"');
   Context.Writer.OpenTag('button', Scope.ToString);
+
   RenderImageLocation(Context, e.Image);
   if e.Caption <> '' then
     Context.Writer.WriteLn(e.Caption);
+
   Context.Writer.CloseTag('button');
   classes := 'dropdown-menu';
   if dropEnd in e.Options then
@@ -5588,7 +5636,7 @@ begin
   Context.Writer.CloseTag('div');
 end;
 
-procedure TmnwHTMLRenderer.TDropdown.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TDropdownButton.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
 end;
@@ -5921,8 +5969,12 @@ begin
 end;
 
 procedure TmnwHTMLRenderer.TNavBar.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+var
+  classes: TElementClasses;
 begin
-  Context.Writer.OpenTag('li', 'class="nav-item"');
+  classes.Init('nav-item');
+  classes.AddClasses(Scope.WrapClass);
+  Context.Writer.OpenTag('li', classes.ToString);
   inherited;
 end;
 
@@ -5943,9 +5995,8 @@ begin
     Scope.Classes.Add('fixed-top');
   Scope.Classes.Add('navbar-expand-md');
   Scope.Classes.Add('navbar-dark');
-  Scope.Classes.Add('bg-black');
+//  Scope.Classes.Add('bg-black');
   Scope.Classes.AddClasses('flex-nowrap navbar-expand-md w-100 py-0 px-1');
-  Scope.Attributes.Add('data-bs-theme', 'dark');
 
   Context.Writer.OpenTag('nav', Scope.ToString);
 
@@ -5966,7 +6017,9 @@ begin
   Context.Writer.CloseTag('ul');
   Context.Writer.CloseTag('div');
   //Context.Writer.WriteLn('</div>', [woCloseIndent]);
-  e.Buttons.Render(Context, AResponse); // Render buttons
+
+  if e.Tools.Count>0 then
+    e.Tools.Render(Context, AResponse); // Render buttons
 
   if e.Count > 0 then
   begin
@@ -6327,7 +6380,7 @@ begin
     exit(-1);
 
   Result:= Find(Name);
-  if Result<0 then
+  if Result < 0 then
   begin
     Items := Items + [Name];
     Result := Length(Items) - 1;
@@ -6364,6 +6417,16 @@ class operator TElementClasses.Add(A: TElementClasses; B: string): TElementClass
 begin
   A.Add(B);
   Result := A;
+end;
+
+procedure TElementClasses.AddClasses(A: TElementClasses);
+var
+ itm : String;
+begin
+  for itm in A.Items do
+  begin
+    Add(itm);
+  end;
 end;
 
 class operator TElementClasses.Explicit(const Source: string): TElementClasses;
@@ -6481,9 +6544,9 @@ begin
   inherited;
 end;
 
-{ THTML.TDropdown }
+{ THTML.TDropdownButton }
 
-procedure THTML.TDropdown.Created;
+procedure THTML.TDropdownButton.Created;
 begin
   inherited;
   Options := [dropArraw];
@@ -6756,6 +6819,86 @@ end;
 procedure TmnwHTMLRenderer.TImageFile.DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
 begin
   inherited;
+end;
+
+{ TmnwHTMLRenderer.TNavTools }
+
+procedure TmnwHTMLRenderer.TNavTools.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TNavTools.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+var
+  classes: TElementClasses;
+begin
+  //classes.Init('nav-item');
+  //classes.AddClasses('align-items-center');
+  //classes.AddClasses(Scope.WrapClass);
+  //Context.Writer.OpenTag('li', classes.ToString);
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TNavTools.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TNavTools;
+  event: string;
+begin
+  e := Scope.Element as THTML.TNavTools;
+  Scope.Classes.Add('navbar-nav ms-auto');
+//  Context.Writer.OpenTag('ul', 'class="navbar-nav"');
+  inherited;
+//  Context.Writer.CloseTag('ul');
+end;
+
+procedure TmnwHTMLRenderer.TNavTools.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
+//  Context.Writer.CloseTag('li');
+end;
+
+{ TmnwHTMLRenderer.TNavDropdown }
+
+procedure TmnwHTMLRenderer.TNavDropdown.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.WrapClass.Add('dropdown');
+end;
+
+procedure TmnwHTMLRenderer.TNavDropdown.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+  Context.Writer.OpenTag('li', 'class="dropdown-item"');
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TNavDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TNavDropdown;
+  event: string;
+  classes: TElementClasses;
+begin
+  e := Scope.Element as THTML.TNavDropdown;
+  Scope.Classes.Add('nav-link');
+  if dropArraw in e.Options then
+    Scope.Classes.Add('dropdown-toggle');
+  if dropSplit in e.Options then
+    Scope.Classes.Add('dropdown-toggle-split');
+  Scope.Attributes.Add('data-bs-toggle', 'dropdown');
+  Scope.Attributes.Add('aria-expanded', 'false');
+  Context.Writer.AddTag('a', 'href="#" ' + event + Scope.GetText, e.Caption);
+
+  classes.Init('dropdown-menu');
+  if dropEnd in e.Options then
+    classes.Add ('dropdown-menu-end');
+  Context.Writer.OpenTag('ul', classes.ToString);
+  inherited;
+  Context.Writer.CloseTag('ul');
+end;
+
+procedure TmnwHTMLRenderer.TNavDropdown.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
+  Context.Writer.CloseTag('li');
 end;
 
 initialization
