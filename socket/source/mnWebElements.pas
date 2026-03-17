@@ -242,6 +242,7 @@ type
     Items: TArray<String>;
     function Find(const Name: string): Integer;
     function Add(const Name: string): Integer;
+    function Remove(const Name: string): Boolean;
     procedure AddClasses(const S: string); overload;
     procedure AddClasses(A: TElementClasses); overload;
     function ToString: string;
@@ -270,7 +271,6 @@ type
     Element: TmnwElement;
     Renderer: TmnwRenderer;
 
-    SessionID: String;
     Stamp: string; //IfNone-Match
     Route: string;
     Directory: string;
@@ -278,6 +278,9 @@ type
     ParentRenderer: TmnwElementRenderer;
     Writer: TmnwWriter;
     Data: TmnMultipartData;
+    // For
+    SessionID: String;
+    Session: TObject;
     //this get path with host/directory/
     function GetPath: string; overload;
     //this get absolute path with host/directory/alias/schema/element
@@ -400,7 +403,7 @@ type
     procedure ServeFile(HomePath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
 
     procedure DoPrepare; virtual;
-    procedure DoCompose; virtual;
+    procedure DoCompose(const AContext: TmnwContext); virtual;
     procedure DoComposed; virtual;
     procedure DoRespondHeader(AContext: TmnwContext); virtual;
     procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
@@ -427,7 +430,7 @@ type
 
     class function ClassLevel: Integer;
 
-    procedure Add(O: TmnwElementClass); overload;
+    function Add(O: TmnwElementClass): TmnwElement; overload;
     procedure Add(O: TmnwElement); overload;
     function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;
     function Find(const Name: string): TmnwElement;
@@ -452,7 +455,7 @@ type
     function GetRelativePath(ToElement: TmnwElement): string; overload;
 
     function CreateRender(const Context: TmnwContext): TmnwElementRenderer;
-    procedure Compose; virtual;
+    procedure Compose(const AContext: TmnwContext); virtual;
     procedure AddState(AState: TmnwElementState);
     procedure RemoveState(AState: TmnwElementState);
 
@@ -610,7 +613,7 @@ type
     procedure UpdateAttached;
     class procedure Registered; virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
-    procedure DoAccept(const AContext: TmnwContext; var Resume: Boolean); virtual;
+    procedure DoAccept(var AContext: TmnwContext; var Resume: Boolean); virtual;
     procedure DoChildAction(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure AttachedMessage(const s: string); virtual; //from websocket
     procedure InteractiveMessage(const s: string);
@@ -634,8 +637,8 @@ type
     //* Attaching cap
     //function Interactive: Boolean;
 
-    function Accept(const AContext: TmnwContext): Boolean;
-    procedure Compose; override;
+    function Accept(var AContext: TmnwContext): Boolean;
+    procedure Compose(const AContext: TmnwContext); override;
     procedure Prepare; override;
 
     // Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
@@ -709,6 +712,7 @@ type
     FRenderer: TmnwRenderer;
     FRendererRegister: TmnwRendererRegister;
   protected
+    //* Keep `var`
     procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); virtual;
     //* This called once from the TmnwRenderer
     procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); virtual;
@@ -718,6 +722,7 @@ type
 
     //* Called to parent to wrap the child rendering, each chiled will wrap it with this render
     //* This method exists in parent render
+    //* Keep `var`
     procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); virtual;
     procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); virtual;
 
@@ -1238,14 +1243,25 @@ type
         Collapse: Boolean;
       end;
 
+      { TPanel }
+
       TPanel = class(THTMLItem)
       public
+      end;
+
+      { TLink }
+
+			TLink = class(TClickable)
+      public
+        Location: string;
+        NoDecoration: Boolean;
+        constructor Create(AParent: TmnwElement; const ALocation: string = ''; ACaption: string = ''); reintroduce;
       end;
 
       [TID_Extension]
       TCollapseCaption = class(THTMLItem)
       protected
-        procedure DoCompose; override;
+        procedure DoCompose(const AContext: TmnwContext); override;
       public
       end;
 
@@ -1253,16 +1269,22 @@ type
       public
       end;
 
-      { TDropdownButton }
+      { TDropdown }
 
       [TID_Extension]
-      TDropdownButton = class(THTMLControl)
+      TDropdown = class(THTMLControl)
       protected
         procedure Created; override;
       public
         Options: TDropdownOptions;
         Caption: string;
         Image: TImageLocation;
+      end;
+
+      TDropdownItem = class(TLink)
+      private
+      protected
+      public
       end;
 
       { THTMLGroup }
@@ -1329,15 +1351,6 @@ type
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public
         procedure Loop; virtual;
-      end;
-
-      { TLink }
-
-			TLink = class(TClickable)
-      public
-        Location: string;
-        NoDecoration: Boolean;
-        constructor Create(AParent: TmnwElement; const ALocation: string; ACaption: string = ''); reintroduce;
       end;
 
 			TSpan = class(THTMLElement)
@@ -1425,7 +1438,7 @@ type
       [TID_Extension]
       TImage = class(TCustomImage)
       protected
-        procedure DoCompose; override;
+        procedure DoCompose(const AContext: TmnwContext); override;
       public
         Source: TLocation;
       end;
@@ -1756,15 +1769,22 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
-      { TDropdownButton }
+      { TDropdown }
 
-      TDropdownButton = class(THTMLControl)
+      TDropdown = class(THTMLControl)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
 
         procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
         procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;
+      end;
+
+      { TDropdownItem }
+
+      TDropdownItem = class(TLink)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TGroupButtons }
@@ -1913,6 +1933,8 @@ type
   private
     FResume: Boolean;
     FSession: TmnwCookie;
+    function GetSessionID: string;
+    procedure SetSessionID(const Value: string);
   protected
     procedure DoPrepareHeader; override; //Called by Server
     procedure DoWriteCookies; override;
@@ -1920,6 +1942,7 @@ type
   public
     destructor Destroy; override;
     property Session: TmnwCookie read FSession;
+    property SessionID: string read GetSessionID write SetSessionID;
     property Resume: Boolean read FResume write FResume;
   end;
 
@@ -1932,7 +1955,7 @@ type
     //FLogo: THTML.TMemory;
 
     procedure DoPrepare; override;
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
     procedure Created; override;
 
   public
@@ -1943,9 +1966,9 @@ type
     procedure Prepare; override;
   end;
 
-  TLoginElement = class(THTML.TCard)
+  TLoginElement = class(THTML.THTMLItem)
   protected
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
 
@@ -1956,7 +1979,7 @@ type
     procedure DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoChildAction(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
 
@@ -2035,6 +2058,8 @@ function GetTimeStamp: Int64;
 function SQ(s: string): string; inline;
 function DQ(s: string): string; inline;
 
+function NewUUID: string;
+
 implementation
 
 function GetTimeStamp: Int64;
@@ -2042,6 +2067,11 @@ var
   t: Double absolute Result;
 begin
   t := Now;
+end;
+
+function NewUUID: string;
+begin
+  Result := UUIDToString(TGUID.NewGuid);
 end;
 
 function BSCustomAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean): string; inline;
@@ -3040,6 +3070,7 @@ begin
 
     if (Schema <> nil) then
     begin
+      AContext.Schema := Schema;
       if Schema.Accept(AContext) then
       begin
         if not (estComposed in Schema.State) then
@@ -3047,7 +3078,7 @@ begin
           Schema.Lock.Enter;
           try
             try
-              Schema.Compose; //Compose
+              Schema.Compose(AContext); //Compose
             except
               Schema.Lock.Leave;
               FreeAndNil(Schema);
@@ -3115,7 +3146,7 @@ begin
     GetElement(AContext, aSchema, aElement);
     if aElement <> nil then
     begin
-      aContext.Schema := aSchema;
+      //aContext.Schema := aSchema;
       aContext.Element := aElement;
 
       AResponse.Session.Value := AResponse.Request.GetCookie('', 'session');
@@ -3603,13 +3634,14 @@ begin
   RegisterRenderer(THTML.TButton, TButton);
   RegisterRenderer(THTML.TNavItem, TNavItem);
   RegisterRenderer(THTML.TMenuItem, TMenuItem);
+  RegisterRenderer(THTML.TDropdownItem, TDropdownItem);
   RegisterRenderer(THTML.TInput, TInput);
   RegisterRenderer(THTML.TInputPassword, TInputPassword);
   RegisterRenderer(THTML.TImage, TImage);
   RegisterRenderer(THTML.TImageFile, TImageFile);
   RegisterRenderer(THTML.TImageMemory, TImageMemory);
   RegisterRenderer(THTML.TCard, TCard);
-  RegisterRenderer(THTML.TDropdownButton, TDropdownButton);
+  RegisterRenderer(THTML.TDropdown, TDropdown);
   RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
   RegisterRenderer(THTML.TToolbar, TToolbar);
   RegisterRenderer(THTML.TZoomButtons, TZoomButtons);
@@ -4277,7 +4309,7 @@ begin
     Render(AContext, AResponse);
 end;
 
-procedure TmnwSchema.DoAccept(const AContext: TmnwContext; var Resume: Boolean);
+procedure TmnwSchema.DoAccept(var AContext: TmnwContext; var Resume: Boolean);
 begin
 end;
 
@@ -4346,7 +4378,7 @@ begin
   Result := [];
 end;
 
-function TmnwSchema.Accept(const AContext: TmnwContext): Boolean;
+function TmnwSchema.Accept(var AContext: TmnwContext): Boolean;
 begin
   Result := True;
   DoAccept(AContext, Result);
@@ -4357,7 +4389,7 @@ begin
   Result := schemaInteractive in GetCapabilities;
 end;}
 
-procedure TmnwSchema.Compose;
+procedure TmnwSchema.Compose(const AContext: TmnwContext);
 begin
   AddState([estComposing]);
   inherited;
@@ -4798,7 +4830,7 @@ begin
     Result := Self;}
 end;
 
-procedure TmnwElement.DoCompose;
+procedure TmnwElement.DoCompose(const AContext: TmnwContext);
 begin
 end;
 
@@ -4927,9 +4959,9 @@ begin
   inherited Add(O);
 end;
 
-procedure TmnwElement.Add(O: TmnwElementClass);
+function TmnwElement.Add(O: TmnwElementClass): TmnwElement;
 begin
-  O.Create(Self);
+  Result := O.Create(Self);
 end;
 
 //in FPC if you got error, change <O: TmnwElement> to <O>
@@ -4966,17 +4998,17 @@ begin
   DoRespond(AContext, AResponse);
 end;
 
-procedure TmnwElement.Compose;
+procedure TmnwElement.Compose(const AContext: TmnwContext);
 var
   o: TmnwElement;
 begin
 //  Clear; //*Should not clear here
   Prepare;
-  DoCompose;
+  DoCompose(AContext);
   UpdateElement(Self);
   for o in Self do
   begin
-    o.Compose; //Compose
+    o.Compose(AContext); //Compose
   end;
   DoComposed;
 end;
@@ -5283,7 +5315,7 @@ begin
     InnerCompose(Inner, AResponse);
     if Assigned(OnCompose) then
       OnCompose(Inner, AResponse);
-    Inner.Compose;
+    Inner.Compose(AContext);
 
     Inner.Render(AContext, AResponse);
   finally
@@ -5391,7 +5423,7 @@ end;
 
 { THTML.TImage }
 
-procedure THTML.TImage.DoCompose;
+procedure THTML.TImage.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
 end;
@@ -5588,26 +5620,25 @@ begin
   Context.Writer.CloseTag('button');
 end;
 
-{ TmnwHTMLRenderer.TDropdownButton }
+{ TmnwHTMLRenderer.TDropdown }
 
-procedure TmnwHTMLRenderer.TDropdownButton.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TDropdown.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
   Scope.Classes.Add('dropdown-item');
-//  Context.Writer.OpenTag('dropdown-item', 'class="dropdown-item"');
 end;
 
-procedure TmnwHTMLRenderer.TDropdownButton.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TDropdown.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TDropdownButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
-  e: THTML.TDropdownButton;
+  e: THTML.TDropdown;
   classes: string;
 begin
-  e := Scope.Element as THTML.TDropdownButton;
+  e := Scope.Element as THTML.TDropdown;
 
   Scope.Classes.Add('btn');
   if dropArraw in e.Options then
@@ -5621,13 +5652,14 @@ begin
   Scope.Attributes.Add('type', 'button');
 
   Context.Writer.OpenTag('div', 'class="dropdown"');
-  Context.Writer.OpenTag('button', Scope.ToString);
 
+  //Button
+  Context.Writer.OpenTag('button', Scope.ToString);
   RenderImageLocation(Context, e.Image);
   if e.Caption <> '' then
     Context.Writer.WriteLn(e.Caption);
-
   Context.Writer.CloseTag('button');
+
   classes := 'dropdown-menu';
   if dropEnd in e.Options then
     classes := classes + ' dropdown-menu-end';
@@ -5635,12 +5667,34 @@ begin
   Context.Writer.OpenTag('div', 'class="' + classes + '" aria-labelledby="' + e.ID + '"');
   inherited;
   Context.Writer.CloseTag('div');
+
   Context.Writer.CloseTag('div');
 end;
 
-procedure TmnwHTMLRenderer.TDropdownButton.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TmnwHTMLRenderer.TDropdown.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
+end;
+
+{ TmnwHTMLRenderer.TDropdownItem }
+
+procedure TmnwHTMLRenderer.TDropdownItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TDropdownItem;
+begin
+  e := Scope.Element as THTML.TDropdownItem;
+  if e.Caption = '-' then
+  begin
+    Scope.Classes.Remove('dropdown-item');
+    Scope.Classes.Add('dropdown-divider');
+    Context.Writer.AddTag('div', Scope.ToString);
+  end
+  else
+  begin
+//    Scope.Classes.Add('dropdown-item');
+//    Context.Writer.AddTag('a', Scope.ToString, e.Caption);
+    inherited;
+  end;
 end;
 
 { TmnwHTMLRenderer.TGroupButtons }
@@ -6298,7 +6352,7 @@ begin
   inherited;
 end;
 
-procedure TAssetsSchema.DoCompose;
+procedure TAssetsSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
 end;
@@ -6454,6 +6508,16 @@ begin
   AddClasses(classes);
 end;
 
+function TElementClasses.Remove(const Name: string): Boolean;
+var
+  index: integer;
+begin
+  index := Find(Name);
+  Result := index >= 0;
+  if Result then
+    Delete(Items, index, 1);
+end;
+
 class operator TElementClasses.Subtract(A: TElementClasses; B: string): TElementClasses;
 var
   i: Integer;
@@ -6532,7 +6596,7 @@ end;
 
 { THTML.TLink }
 
-constructor THTML.TLink.Create(AParent: TmnwElement; const ALocation: string; ACaption: string = '');
+constructor THTML.TLink.Create(AParent: TmnwElement; const ALocation: string; ACaption: string);
 begin
   inherited Create(AParent);
   Location := ALocation;
@@ -6541,14 +6605,14 @@ end;
 
 { THTML.TCollapseCaption }
 
-procedure THTML.TCollapseCaption.DoCompose;
+procedure THTML.TCollapseCaption.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
 end;
 
-{ THTML.TDropdownButton }
+{ THTML.TDropdown }
 
-procedure THTML.TDropdownButton.Created;
+procedure THTML.TDropdown.Created;
 begin
   inherited;
   Options := [dropArraw];
@@ -6704,11 +6768,19 @@ begin
   inherited;
 end;
 
+function TmnwResponse.GetSessionID: string;
+begin
+  Result := Session.Value;
+end;
+
+procedure TmnwResponse.SetSessionID(const Value: string);
+begin
+  Session.Value := Value;
+end;
+
 { TLoginSchema }
 
 procedure TLoginSchema.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
-var
-  aUsername, aPassword: string;
 begin
   if (AContext.Data <> nil) and SameText(AContext.Data.Values['execute'], 'true') then
   begin
@@ -6726,7 +6798,7 @@ begin
   end;
 end;
 
-procedure TLoginSchema.DoCompose;
+procedure TLoginSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   with Document do
@@ -6740,7 +6812,14 @@ begin
     begin
       with Main do
       begin
-        Add(TLoginElement);
+        with TCard.Create(this) do
+        begin
+          Solitary := True;
+          Size := szNormal;
+          Caption := 'Login';
+
+          Add(TLoginElement);
+        end;
       end;
     end;
   end;
@@ -6748,9 +6827,6 @@ end;
 
 procedure TLoginSchema.DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
-  AResponse.Resume := False;
-  AResponse.Answer := hrRedirect;
-  AResponse.RespondRedirectTo(AContext.GetSchemaURL);
   inherited;
 end;
 
@@ -6877,7 +6953,7 @@ end;
 
 { TLoginElement }
 
-procedure TLoginElement.DoCompose;
+procedure TLoginElement.DoCompose(const AContext: TmnwContext);
 begin
   Solitary := True;
   Size := szNormal;

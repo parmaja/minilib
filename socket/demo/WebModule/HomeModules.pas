@@ -19,7 +19,7 @@ type
 
   TmySchema = class abstract(THTML)
   protected
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   end;
 
   { TWelcomeSchema }
@@ -30,8 +30,8 @@ type
     Input1: THTML.TInput;
     Input2: THTML.TInput;
     Input3: THTML.TInput;
-    procedure DoAccept(const AContext: TmnwContext; var Resume: Boolean); override;
-    procedure DoCompose; override;
+    procedure DoAccept(var AContext: TmnwContext; var Resume: Boolean); override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
     class function GetCapabilities: TmnwSchemaCapabilities; override;
   end;
@@ -40,7 +40,7 @@ type
   private
   public
   protected
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
 
@@ -51,7 +51,7 @@ type
   public
   protected
     procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
 
@@ -62,7 +62,7 @@ type
   public
   protected
     procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
 
@@ -72,7 +72,7 @@ type
   private
   public
   protected
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
 
@@ -83,7 +83,7 @@ type
   public
   protected
     procedure Created; override;
-    procedure DoCompose; override;
+    procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
 
@@ -196,20 +196,19 @@ end;
 
 { TmySchema }
 
-procedure TmySchema.DoCompose;
+procedure TmySchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
 end;
 
 { TWellcomeSchema }
 
-procedure TWelcomeSchema.DoAccept(const AContext: TmnwContext;
-  var Resume: Boolean);
+procedure TWelcomeSchema.DoAccept(var AContext: TmnwContext; var Resume: Boolean);
 begin
   Resume := True;
 end;
 
-procedure TWelcomeSchema.DoCompose;
+procedure TWelcomeSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   RefreshInterval := 5;
@@ -389,7 +388,7 @@ begin
   inherited;
 end;
 
-procedure TLoginSchema.DoCompose;
+procedure TLoginSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   with Document do
@@ -523,7 +522,7 @@ begin
   inherited;
 end;
 
-procedure TDemoSchema.DoCompose;
+procedure TDemoSchema.DoCompose(const AContext: TmnwContext);
 var
   i: Integer;
 begin
@@ -563,7 +562,7 @@ begin
               Caption := 'Mode';
             end;
 
-            with TDropdownButton.Create(This) do
+            with TDropdown.Create(This) do
             begin
               Image.Icon := 'icon mw-font-normal';
               Options := Options + [dropEnd];
@@ -651,7 +650,7 @@ begin
 
         //with TRow.Create(This) do
         begin
-          with TDropdownButton.Create(This) do
+          with TDropdown.Create(This) do
           begin
             Caption := 'Font';
             with TButton.Create(This) do
@@ -760,7 +759,7 @@ end;
 
 { TSimpleSchema }
 
-procedure TSimpleSchema.DoCompose;
+procedure TSimpleSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
 end;
@@ -772,7 +771,7 @@ begin
   inherited;
 end;
 
-procedure TFilesSchema.DoCompose;
+procedure TFilesSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
@@ -787,7 +786,7 @@ end;
 
 { TWSShema }
 
-procedure TWSShema.DoCompose;
+procedure TWSShema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   Name := 'ws';
@@ -803,7 +802,7 @@ end;
 
 function THomeModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwBootstrapRenderer.Create(Self, Web.IsLocal);
+  Result := TmnwBootstrapRenderer.Create(Self);
 end;
 
 destructor THomeModule.Destroy;

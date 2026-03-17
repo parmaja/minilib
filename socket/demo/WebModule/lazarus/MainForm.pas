@@ -202,15 +202,14 @@ begin
     //aHomeModule.IsSSL := HttpServer.UseSSL;
     //aHomeModule.Domain := 'localhost';
     //aHomeModule.Port := HttpServer.Port;
-    aHomeModule.WebApp.IsLocal := True;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.HomePath := aHomePath;
     aHomeModule.WorkPath := aAppPath;
 
-    aHomeModule.WebApp.IsSSL := HttpServer.UseSSL;
-    aHomeModule.WebApp.AppPath := Application.Location;
-    //aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs-v2.png');
-    aHomeModule.WebApp.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs.svg');
+    aHomeModule.Web.IsSSL := HttpServer.UseSSL;
+    aHomeModule.Web.AppPath := Application.Location;
+    //aHomeModule.Web.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs-v2.png');
+    aHomeModule.Web.Assets.LogoFile := aHomeModule.HomePath + 'cs.svg';
 
     ForceDirectories(aHomeModule.WorkPath + 'cache');
     ForceDirectories(aHomeModule.WorkPath + 'temp');
@@ -366,7 +365,7 @@ begin
     aIni.Free;
   end;
   FreeAndNil(WebServers);
-  UninstallEventLog(ServerLog);
+  //UninstallEventLog(ServerLog);
 end;
 
 procedure TMain.UpdateStatus;
