@@ -286,6 +286,9 @@ type
     function GetSchemaURL: string;
     //this get absolute path with host/directory/alias/assets/
     function GetAssetsURL: string;
+    //Folder of HomePath of assets
+    function GetAssetPath: string;
+
   end;
 
   TmnwObject = class(TmnNamedObject);
@@ -294,8 +297,8 @@ type
   private
     FUsage: Integer;
   protected
+    function CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
   public
-    IsLocal: Boolean;
     procedure AddHead(const Context: TmnwContext); virtual; abstract;
     procedure IncUsage;
     procedure DecUsage;
@@ -314,22 +317,14 @@ type
 
   TmnwLibraries = class(TmnNamedObjectList<TmnwLibrary>)
   public
-    Local: Boolean; //* when find lib, find local first
     procedure Use(ALibrary: TmnwLibrary); overload;
     procedure Use(ALibraryName: string); overload;
-    function Find(ALibrary: string; OnlyLocal: Boolean = False): TmnwLibrary; overload;
-    procedure RegisterLibrary(ALibraryName: string; IsLocal: Boolean; ALibraryClass: TmnwLibraryClass); overload;
-    procedure RegisterLibrary(ALibraryName: string; IsLocal: Boolean; Source: string); overload;
+    function Find(ALibrary: string): TmnwLibrary; overload;
+    procedure RegisterLibrary(ALibraryName: string; ALibraryClass: TmnwLibraryClass); overload;
+    procedure RegisterLibrary(ALibraryName: string; Source: string); overload;
   end;
 
   TJQuery_Library = class(TmnwLibrary)
-  public
-    procedure AddHead(const Context: TmnwContext); override;
-  end;
-
-  { TJQuery_LocalLibrary }
-
-  TJQuery_LocalLibrary = class(TmnwLibrary)
   public
     procedure AddHead(const Context: TmnwContext); override;
   end;
@@ -763,7 +758,7 @@ type
   public
     type
       TmnwRegisterHow = (None, Replace, Extend);
-    constructor Create(AModule: TmodWebModule; IsLocal: Boolean); virtual;
+    constructor Create(AModule: TmodWebModule); virtual;
     destructor Destroy; override;
     class destructor Destroy;
 
@@ -815,6 +810,12 @@ type
     apoFooter
   );
 
+  TOnlineFiles = (
+    olfSmart,
+    olfOnline,
+    olfOffline
+  );
+
   { TmnwWeb }
 
   TmnwWeb = class(TmnObjectList<TmnwSchema>)
@@ -829,6 +830,7 @@ type
     FLock: TCriticalSection;
     FRegistered: TRegisteredSchemas;
     FTimeStamp: Int64;
+    FOnlineFiles: TOnlineFiles;
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
@@ -842,7 +844,6 @@ type
     Port: string;
     Alias: string; //ModuleName
     CompactMode: Boolean;
-    IsLocal: Boolean;
     DefaultAge: Integer;
 
     constructor Create;
@@ -878,6 +879,7 @@ type
     property AppPath: string read FAppPath write FAppPath;
     property Shutdown: Boolean read FShutdown;
     property Options: TmnwAppOptions read FOptions write FOptions;
+    property OnlineFiles: TOnlineFiles read FOnlineFiles;
     property TimeStamp: Int64 read FTimeStamp;
   end;
 
@@ -1434,11 +1436,10 @@ type
       TImageFile = class(TCustomImage)
       private
       protected
-        function CanRender: Boolean; override;
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
-      protected
       public
         FileName: string;
+        function CanRender: Boolean; override;
         function GetContentType(Route: string): string; override;
       end;
 
@@ -1940,6 +1941,12 @@ type
     //property Logo: THTML.TMemory read FLogo;
     property LogoFile: string read FLogoFile write FLogoFile;
     procedure Prepare; override;
+  end;
+
+  TLoginElement = class(THTML.TCard)
+  protected
+    procedure DoCompose; override;
+  public
   end;
 
   TLoginSchema = class(THTML)
@@ -3211,10 +3218,9 @@ begin
   try
     i := 0;
     StrToStrings(AContext.Route, Routes, [URLPathDelim]);
-    if (i<Routes.Count) then
+    if (i < Routes.Count) then
     begin
       aRoute := Routes[i];
-      inc(i);
       aSchema := FindBy(aRoute, '');
     end;
 
@@ -3556,9 +3562,8 @@ end;
 procedure TmnwHTMLRenderer.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary('JQuery', False, TJQuery_Library);
-  Libraries.RegisterLibrary('JQuery', False, TJQuery_LocalLibrary);
-  Libraries.RegisterLibrary('WebElements', False, TWebElements_Library);
+  Libraries.RegisterLibrary('JQuery', TJQuery_Library);
+  Libraries.RegisterLibrary('WebElements', TWebElements_Library);
   Libraries.Use('WebElements');
 end;
 
@@ -5081,12 +5086,11 @@ begin
   DoBeginRender;
 end;
 
-constructor TmnwRenderer.Create(AModule: TmodWebModule; IsLocal: Boolean);
+constructor TmnwRenderer.Create(AModule: TmodWebModule);
 {var
   o: TmnwRenderer.TmnwRendererRegister;}
 begin
   FLibraries := TmnwLibraries.Create;
-  FLibraries.Local := IsLocal;
   inherited Create;
   FModule := AModule;
   FParams := TmnwAttributes.Create;
@@ -5293,6 +5297,12 @@ end;
 
 { TmnwLibrary }
 
+function TmnwLibrary.CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
+begin
+  with Context.Schema do
+    Result := (Web.OnlineFiles = olfOffline) or ((Web.OnlineFiles = olfSmart) and FileExists(FileName));
+end;
+
 procedure TmnwLibrary.DecUsage;
 begin
   FUsage := FUsage - 1;
@@ -5305,26 +5315,25 @@ end;
 
 { TmnwLibraries }
 
-function TmnwLibraries.Find(ALibrary: string; OnlyLocal: Boolean): TmnwLibrary;
+function TmnwLibraries.Find(ALibrary: string): TmnwLibrary;
 var
   i: Integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
-    if (SameText(Items[i].Name, ALibrary)) and (not OnlyLocal or Items[i].IsLocal)  then
+    if (SameText(Items[i].Name, ALibrary)) then
     begin
       Result := Items[i];
       break;
     end;
 end;
 
-procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; IsLocal: Boolean; ALibraryClass: TmnwLibraryClass);
+procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; ALibraryClass: TmnwLibraryClass);
 var
   ALibrary: TmnwLibrary;
 begin
   ALibrary := ALibraryClass.Create;
   ALibrary.Name := ALibraryName;
-  ALibrary.IsLocal := IsLocal;
   Add(ALibrary);
 end;
 
@@ -5339,13 +5348,12 @@ begin
     raise Exception.Create('library is nil');
 end;
 
-procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; IsLocal: Boolean; Source: string);
+procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; Source: string);
 var
   lib: TmnwCustomLibrary;
 begin
   lib := TmnwCustomLibrary.Create;
   lib.Name := ALibraryName;
-  lib.IsLocal := IsLocal;
   lib.Source := Source;
   Add(lib);
 end;
@@ -5354,9 +5362,7 @@ procedure TmnwLibraries.Use(ALibraryName: string);
 var
   ALibrary: TmnwLibrary;
 begin
-  ALibrary := Find(ALibraryName, Local);
-  if (ALibrary = nil) and Local then
-    ALibrary := Find(ALibraryName, False);
+  ALibrary := Find(ALibraryName);
   if ALibrary <> nil then
     Use(ALibrary)
   else
@@ -5367,14 +5373,10 @@ end;
 
 procedure TJQuery_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"');
-end;
-
-{ TJQuery_LocalLibrary }
-
-procedure TJQuery_LocalLibrary.AddHead(const Context: TmnwContext);
-begin
-  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
+  if CheckOffline(Context, Context.GetAssetPath + 'jquery.min.js') then
+    Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"')
+  else
+    Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"')
 end;
 
 { TWebElements_Library }
@@ -6357,7 +6359,7 @@ end;
 
 function TUIWebModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := TmnwHTMLRenderer.Create(Self, Web.IsLocal);
+  Result := TmnwHTMLRenderer.Create(Self);
 end;
 
 destructor TUIWebModule.Destroy;
@@ -6658,6 +6660,11 @@ begin
   Result := IncludeURLDelimiter(GetPath(Schema));
 end;
 
+function TmnwContext.GetAssetPath: string;
+begin
+  Result := Schema.Web.Assets.HomePath
+end;
+
 function TmnwContext.GetAssetsURL: string;
 begin
   Result := IncludeURLDelimiter(GetPath(Schema.Web.Assets));
@@ -6733,40 +6740,7 @@ begin
     begin
       with Main do
       begin
-        with TCard.Create(This) do
-        begin
-          Solitary := True;
-          Size := szNormal;
-          Caption := 'Login';
-
-          with TForm.Create(This) do
-          begin
-            Route := 'login';
-            Name := 'login-form';
-            PostTo.Where := toElement;
-
-            with TInput.Create(This) do
-            begin
-              ID := 'username';
-              Name := 'username';
-              Caption := 'Username';
-              PlaceHolder := 'Type user name';
-            end;
-
-            with TInputPassword.Create(This) do
-            begin
-              ID := 'password';
-              Name := 'password';
-              Caption := 'Password';
-              HelpText := 'You need to use numbers';
-            end;
-
-            TBreak.Create(This);
-
-            Submit.Caption := 'Submit';
-            Reset.Caption := 'Reset';
-          end;
-        end;
+        Add(TLoginElement);
       end;
     end;
   end;
@@ -6842,7 +6816,7 @@ end;
 procedure TmnwHTMLRenderer.TNavTools.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TNavTools;
-  event: string;
+//  event: string;
 begin
   e := Scope.Element as THTML.TNavTools;
   Scope.Classes.Add('navbar-nav ms-auto');
@@ -6899,6 +6873,47 @@ procedure TmnwHTMLRenderer.TNavDropdown.DoLeaveChildRender(var Scope: TmnwScope;
 begin
   inherited;
   Context.Writer.CloseTag('li');
+end;
+
+{ TLoginElement }
+
+procedure TLoginElement.DoCompose;
+begin
+  Solitary := True;
+  Size := szNormal;
+  Caption := 'Login';
+
+  with THTML, Self do
+  begin
+    with THTML.TForm.Create(This) do
+    begin
+      Route := 'login';
+      Name := 'login-form';
+      PostTo.Where := toElement;
+
+      with TInput.Create(This) do
+      begin
+        ID := 'username';
+        Name := 'username';
+        Caption := 'Username';
+        PlaceHolder := 'Type user name';
+      end;
+
+      with TInputPassword.Create(This) do
+      begin
+        ID := 'password';
+        Name := 'password';
+        Caption := 'Password';
+        HelpText := 'You need to use numbers';
+      end;
+
+      TBreak.Create(This);
+
+      Submit.Caption := 'Submit';
+      Reset.Caption := 'Reset';
+    end;
+  end;
+  inherited;
 end;
 
 initialization
