@@ -25,8 +25,8 @@ GET https://john.doe@www.example.com:123/username/forum/questions/qst1/?tag=netw
 └┬┘                  └──────┬──────┘    └───────────────┬─────────────┘└────────────┬─────────────┘└─┬─┘
 Method                  DomainName                    Path(Full)                  Query           Fragment
                                         └───┬───┘└──┬──┘└───┬────┴──┬─┘             ┬
-                                        Directory Alias   Schema   Path            Params
-    └────────────────────────┬─────────┘─ ─ ┘     /Module
+WebElement:                             Directory Alias   Schema   Path            Params
+    └────────────────────────┬─────────┘─ ─ ┘    /Module
                           HomeURL
 }
 
@@ -201,7 +201,7 @@ type
     function IsDefeined: Boolean;
   end;
 
-  TImageLocationType = (imgIcon, imgPath);
+  TImageLocationType = (imgIconClass, imgPath);
 
   { TImageLocation }
 
@@ -209,13 +209,13 @@ type
   private
     FLocationType: TImageLocationType;
     FValue: string;
-    function GetIcon: string;
+    function GetIconClass: string;
     function GetPath: string;
-    procedure SetIcon(const AValue: string);
+    procedure SetIconClass(const AValue: string);
     procedure SetPath(const AValue: string);
   public
     property Path: string read GetPath write SetPath;
-    property Icon: string read GetIcon write SetIcon;
+    property IconClass: string read GetIconClass write SetIconClass;
   end;
 
   { TmnwBounding }
@@ -254,18 +254,21 @@ type
     procedure Init(classes: string = '');
   end;
 
+  TmnwWeb = class;
+  
   { TmnwScope }
 
   TmnwScope = record
     Element: TmnwElement;
     Attributes: TmnwAttributes;
     Classes: TElementClasses;
-    WrapClass: TElementClasses; //WrapClass is a class used of what parent wrapped it
+    WrapClasses: TElementClasses; //WrapClass is a class used of what parent wrapped it
     function ToString: string;
     function GetText: string;
   end;
 
   TmnwContext = record
+    Web: TmnwWeb;
     Sender: TObject;
     Schema: TmnwSchema;
     Element: TmnwElement;
@@ -273,6 +276,8 @@ type
 
     Stamp: string; //IfNone-Match
     Route: string;
+    
+    Namespace: string;//TODO
     Directory: string;
 
     ParentRenderer: TmnwElementRenderer;
@@ -286,12 +291,12 @@ type
     //this get absolute path with host/directory/alias/schema/element
     function GetPath(e: TmnwElement): string; overload;
     //this get absolute path with host/directory/alias/schema/
-    function GetSchemaURL: string;
+    function GetSchemaURL(ASchema: TmnwSchema): string; overload;
+    function GetSchemaURL: string; overload;
     //this get absolute path with host/directory/alias/assets/
     function GetAssetsURL: string;
     //Folder of HomePath of assets
     function GetAssetPath: string;
-
   end;
 
   TmnwObject = class(TmnNamedObject);
@@ -586,7 +591,6 @@ type
 
   TmnwSchemaCapabilities = set of TmnwSchamaCapability;
 
-  TmnwWeb = class;
   TUIWebModule = class;
 
   TmnwSchemaPhase = (
@@ -860,8 +864,9 @@ type
     property Registered: TRegisteredSchemas read FRegistered;
 
     function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
-    function CreateSchema(const aSchemaName: string; Fallback: Boolean =  False): TmnwSchema; overload;
-    function CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string; Fallback: Boolean =  False): TmnwSchema; overload;
+    function CreateSchema(const aSchemaName: string): TmnwSchema; overload;
+    function CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string): TmnwSchema; overload;
+    function CreateSchema(SchemaItem: TmnwSchemaItem): TmnwSchema; overload;
     function ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
     function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
 
@@ -1349,8 +1354,9 @@ type
       TAction = class(THTMLElement)
       protected
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
-      public
+      public        
         procedure Loop; virtual;
+        constructor Create(AParent: TmnwElement; ARoute: string; ActionProc: TActionProc = nil); reintroduce;
       end;
 
 			TSpan = class(THTMLElement)
@@ -1966,6 +1972,7 @@ type
     procedure Prepare; override;
   end;
 
+  //Return error as json if fail with message of error, so we need JS to post
   TLoginElement = class(THTML.THTMLItem)
   protected
     procedure DoCompose(const AContext: TmnwContext); override;
@@ -1977,6 +1984,7 @@ type
   public
   protected
     procedure DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
+    procedure DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoChildAction(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoCompose(const AContext: TmnwContext); override;
@@ -2968,14 +2976,14 @@ begin
   end;
 end;
 
-function TmnwWeb.CreateSchema(const aSchemaName: string; Fallback: Boolean =  False): TmnwSchema;
+function TmnwWeb.CreateSchema(const aSchemaName: string): TmnwSchema;
 var
   SchemaItem: TmnwSchemaItem;
 begin
 	SchemaItem := Registered.Find(aSchemaName);
   if SchemaItem <> nil then
   begin
-    Result := CreateSchema(SchemaItem.SchemaClass, SchemaItem.Name, Fallback);
+    Result := CreateSchema(SchemaItem);
     SchemaCreated(Result);
     if Started then
       Result.Prepare;
@@ -3039,6 +3047,8 @@ begin
         end;
         if Schema = nil then
           Schema := CreateSchema('');
+{        if Schema = nil then
+          Schema := CreateSchema(DefaultSchema);}
         if Schema <> nil then
           aSchemaName := '';
       end;
@@ -3147,7 +3157,7 @@ begin
     if aElement <> nil then
     begin
       //aContext.Schema := aSchema;
-      aContext.Element := aElement;
+      AContext.Element := aElement;
 
       AResponse.Session.Value := AResponse.Request.GetCookie('', 'session');
       AResponse.Session.Age := DefaultAge;
@@ -3161,9 +3171,9 @@ begin
       //* If you call schema name without ending by /
       if (aElement = aSchema) and (aSchema.Name <> '') and (AContext.Route = '') then
       begin
-        AResponse.Redirect := IncludeURLDelimiter(AContext.GetPath(aSchema));
         AResponse.Resume := False;
         AResponse.Answer := hrRedirect;
+        AResponse.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(aSchema)));
       end
       else
         AResponse.ContentType := aElement.GetContentType(AContext.Route);
@@ -3192,7 +3202,13 @@ begin
     begin
       if not (AResponse.IsHeaderSent) then
       begin
-        AResponse.RespondNotFound;
+        if DefaultSchema <> nil then
+        begin            
+          //AResponse.RespondRedirectTo(AContext.GetPath + DefaultSchema.Name);
+          AResponse.RespondNotFound;
+        end
+        else
+          AResponse.RespondNotFound;
       end;
     end;
 
@@ -3287,7 +3303,7 @@ begin
   FAssets := RegisterSchema('assets', TAssetsSchema) as TAssetsSchema;
 end;
 
-function TmnwWeb.CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string; Fallback: Boolean): TmnwSchema;
+function TmnwWeb.CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string): TmnwSchema;
 begin
   Result := SchemaClass.Create(Self, AName, AName);
 end;
@@ -3319,6 +3335,17 @@ end;
 function TmnwWeb.GetHostURL: string;
 begin
   Result := IncludeURLDelimiter(ComposeHttpURL(IsSSL, Domain, Port));
+end;
+
+function TmnwWeb.CreateSchema(SchemaItem: TmnwSchemaItem): TmnwSchema;
+begin
+  Result := CreateSchema(SchemaItem.SchemaClass, SchemaItem.Name);
+  if Result <> nil then
+  begin
+    SchemaCreated(Result);
+    if Started then
+      Result.Prepare;
+  end;
 end;
 
 { TmnwHTMLWriterHelper }
@@ -3423,16 +3450,16 @@ begin
   FLocationType := imgPath;
 end;
 
-procedure TImageLocation.SetIcon(const AValue: string);
+procedure TImageLocation.SetIconClass(const AValue: string);
 begin
   if FValue =AValue then Exit;
   FValue :=AValue;
-  FLocationType := imgIcon;
+  FLocationType := imgIconClass;
 end;
 
-function TImageLocation.GetIcon: string;
+function TImageLocation.GetIconClass: string;
 begin
-  if FLocationType = imgIcon then
+  if FLocationType = imgIconClass then
     Result := FValue
   else
     Result := '';
@@ -3703,8 +3730,8 @@ end;
 
 procedure TmnwHTMLRenderer.THTMLControl.RenderImageLocation(const Context: TmnwContext; const Image: TImageLocation);
 begin
-  if Image.Icon <> '' then
-    Context.Writer.AddTag('span', 'class='+ DQ(Image.Icon))
+  if Image.IconClass <> '' then
+    Context.Writer.AddTag('span', 'class='+ DQ(Image.IconClass))
   else if Image.Path <> '' then
     Context.Writer.AddShortTag('img', 'src='+ DQ(Image.Path) + ' alt=""');
 end;
@@ -5809,8 +5836,13 @@ end;
 { TmnwHTMLRenderer.TAccordionSection }
 
 procedure TmnwHTMLRenderer.TAccordionSection.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+var 
+  classes: TElementClasses;
 begin
-  Context.Writer.OpenTag('li', 'class="list-group-item bg-transparent"');
+  classes.init('list-group-item');
+  classes.Add('bg-transparent');
+  classes.AddClasses(Scope.WrapClasses);
+  Context.Writer.OpenTag('li',classes.ToString);
   inherited;
 end;
 
@@ -5828,8 +5860,8 @@ begin
   Context.Writer.OpenTag('div', 'class="accordion-item bg-transparent"');
   Context.Writer.OpenTag('h', 'id="'+e.id+'-header" class="accordion-header"');
   Context.Writer.OpenTag('button ', 'class="accordion-button p-2'+ When(not e.Expanded, ' collapsed')+'" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
-  if e.Image.Icon <> '' then
-    Context.Writer.AddTag('span', 'class='+ DQ('bi bi-'+e.Image.Icon))
+  if e.Image.IconClass <> '' then
+    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.IconClass))
   else if e.Image.Path <> '' then
     Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
   if e.Caption <> '' then
@@ -5922,6 +5954,13 @@ begin
 end;
 
 { THTML.TAction }
+
+constructor THTML.TAction.Create(AParent: TmnwElement; ARoute: string; ActionProc: TActionProc);
+begin
+  inherited Create(AParent);
+  Route := ARoute;
+  OnAction := ActionProc;
+end;
 
 procedure THTML.TAction.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
@@ -6029,7 +6068,7 @@ var
   classes: TElementClasses;
 begin
   classes.Init('nav-item');
-  classes.AddClasses(Scope.WrapClass);
+  classes.AddClasses(Scope.WrapClasses);
   Context.Writer.OpenTag('li', classes.ToString);
   inherited;
 end;
@@ -6257,6 +6296,7 @@ begin
   end
   else
   begin
+    aContext.Web := Module.Web;
     aContext.SessionID := Request.Params.Values['session'];
     if aContext.SessionID = '' then
       aContext.SessionID := Request.Cookies.Values['session'];
@@ -6626,19 +6666,19 @@ begin
   FButtonSmall := TButton.Create(Self, [elEmbed]);
   FButtonSmall.ID := 'zoom-small';
   FButtonSmall.ControlStyle := styleUndefined;
-  FButtonSmall.Image.Icon := 'icon mw-font-small';
+  FButtonSmall.Image.IconClass := 'icon mw-font-small';
   FButtonSmall.JSFunction := 'mnw.switch_zoom';
 
   FButtonNormal := TButton.Create(Self, [elEmbed]);
   FButtonNormal.ID := 'zoom-normal';
   FButtonNormal.ControlStyle := styleUndefined;
-  FButtonNormal.Image.Icon := 'icon mw-font-normal';
+  FButtonNormal.Image.IconClass := 'icon mw-font-normal';
   FButtonNormal.JSFunction := 'mnw.switch_zoom';
 
   FButtonLarge := TButton.Create(Self, [elEmbed]);
   FButtonLarge.ID := 'zoom-large';
   FButtonLarge.ControlStyle := styleUndefined;
-  FButtonLarge.Image.Icon := 'icon mw-font-large';
+  FButtonLarge.Image.IconClass := 'icon mw-font-large';
   FButtonLarge.JSFunction := 'mnw.switch_zoom';
 end;
 
@@ -6719,9 +6759,14 @@ begin
   Result := IncludeURLDelimiter(GetPath) + e.GetPath
 end;
 
+function TmnwContext.GetSchemaURL(ASchema: TmnwSchema): string;
+begin
+  Result := IncludeURLDelimiter(GetPath(ASchema));
+end;
+
 function TmnwContext.GetSchemaURL: string;
 begin
-  Result := IncludeURLDelimiter(GetPath(Schema));
+  Result := GetSchemaURL(Schema);
 end;
 
 function TmnwContext.GetAssetPath: string;
@@ -6808,6 +6853,9 @@ begin
     Title := 'Login';
     Direction := dirLeftToRight;
 
+    TAction.Create(This, 'login', DoLogin);
+    TAction.Create(This, 'logout', DoLogout);
+    
     with Body do
     begin
       with Main do
@@ -6828,6 +6876,13 @@ end;
 procedure TLoginSchema.DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
+end;
+
+procedure TLoginSchema.DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse);
+begin
+  AResponse.Answer := hrOK;
+  AResponse.SessionID := '';
+  AResponse.RespondRedirectTo(AContext.GetSchemaURL);
 end;
 
 { THTML.TImageFile }
@@ -6884,7 +6939,7 @@ var
 begin
   //classes.Init('nav-item');
   //classes.AddClasses('align-items-center');
-  //classes.AddClasses(Scope.WrapClass);
+  //classes.AddClasses(Scope.WrapClasses);
   //Context.Writer.OpenTag('li', classes.ToString);
   inherited;
 end;
@@ -6912,7 +6967,7 @@ end;
 procedure TmnwHTMLRenderer.TNavDropdown.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Scope.WrapClass.Add('dropdown');
+  Scope.WrapClasses.Add('dropdown');
 end;
 
 procedure TmnwHTMLRenderer.TNavDropdown.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
