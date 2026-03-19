@@ -1,6 +1,5 @@
-
 /* version 1.5 */
-"use-strict";
+"use strict";
 
 let mnw = {};
 
@@ -11,25 +10,29 @@ mnw.url = "";
 mnw.pool = [];
 
 mnw.raw_receive = function(msg)
-{  
+{
   if (msg.charAt(0) === '{')
-  {    
-    const json = JSON.parse(msg);
-    if (json.command === 'change') 
-    {      
-      const element = document.getElementById(json.element);
-      if (element)
-        element.value = json.content;
+  {
+    try {
+      const json = JSON.parse(msg);
+      if (json.command === 'change')
+      {
+        const element = document.getElementById(json.element);
+        if (element)
+          element.value = json.content;
+      }
+    } catch (e) {
+      console.error('Error parsing JSON:', e);
     }
-  } 
+  }
   else if (msg == "attached")
   {
     this.attached = true;
-  } 
+  }
   else if (msg == "ping")
   {
     this.ws.send("pong");
-  } 
+  }
   else if (msg == "close")
   {
     this.attached = false;
@@ -37,12 +40,12 @@ mnw.raw_receive = function(msg)
   }
 }
 
-mnw.raw_send = function(msg) 
-{  
+mnw.raw_send = function(msg)
+{
   this.ws.send(msg);
 }
 
-mnw.send = function(id, command, content) 
+mnw.send = function(id, command, content)
 {
   this.raw_send(JSON.stringify({"element": id, "command": command, "content": content}));
 }
@@ -50,19 +53,19 @@ mnw.send = function(id, command, content)
 mnw.connect = function()
 {
   console.log("Connecting to: " + this.url);
-  this.ws = new WebSocket(this.url);  
-  this.ws.onopen = function(ev) 
+  this.ws = new WebSocket(this.url);
+  this.ws.onopen = function(ev)
   {
     console.log("Connection established");
     mnw.raw_send('attach');
   }
 
-  this.ws.onmessage = function(ev) 
+  this.ws.onmessage = function(ev)
   {
     mnw.raw_receive(ev.data);
   }
 
-  this.ws.onclose  = function(ev) 
+  this.ws.onclose  = function(ev)
   {
     mnw.attached = false;
     console.log("Connection closed, deattached");
@@ -71,42 +74,41 @@ mnw.connect = function()
       console.log("Error, trying in 5s")
       setTimeout(function() { mnw.connect(); }, 5000);
     }
-  }  
+  }
 
-  this.ws.onerror = function(ev) 
+  this.ws.onerror = function(ev)
   {
     console.log("Connection error")
     if (mnw.interactive)
     {
-      //mnw.ws.close();      
-      //setTimeout(function() { mnw.connect(); }, 5000);
+      // Reconnection is handled in onclose, so we just log the error
     }
   }
 }
 
 mnw.attach = function(url)
 {
-  this.url = url;  
+  this.url = url;
   this.connect();
 }
 
 var interval = 1000;
 var reload_elements = [];
 
-function reloadElements() 
+function reloadElements()
 {
   reload_elements.forEach(element => {
     const tagId = element.id;
     const tagUrl = element.getAttribute('data-mnw-refresh-url');
-    let tagStamp =  element.getAttribute('data-mnw-stamp');    
+    let tagStamp =  element.getAttribute('data-mnw-stamp');
     /*if (tagStamp == '' && element.firstElementChild)
       tagStamp = element.firstElementChild.getAttribute('data-mnw-stamp');*/
 
-    fetch(tagUrl, { headers:{"If-None-Match": tagStamp }}) 
+    fetch(tagUrl, { headers:{"If-None-Match": tagStamp }})
       .then(response => {
           const etag = response.headers.get('ETag');
-          const data = response.text();    
-          return Promise.all([etag, data]);      
+          const data = response.text();
+          return Promise.all([etag, data]);
         }
       )
       .then(([etag, data]) => {
@@ -120,32 +122,40 @@ function reloadElements()
   });
 }
 
-mnw.click = function(sender, event) 
+mnw.click = function(sender, event)
 {
   const url = sender.getAttribute('href');
   fetch(url)
   .then(response => response.text())
-  .then(data => console.log("Error on click: " + data));
+  .then(data => console.log("Click response: " + data))
+  .catch(error => {
+    console.error('Error on click:', error);
+    console.log("Error on click: " + error.message);
+  });
   event.preventDefault();
   return false;
 }
 
-mnw.action = function(event, url, data) 
-{  
+mnw.action = function(event, url, data)
+{
   //console.log(JSON.stringify(data));
   fetch(url, {
     method: 'POST',
     body: JSON.stringify(data),
     headers: {
-      'Content-Type': 'application/json'  
+      'Content-Type': 'application/json'
     }
   })
   .then(response => response.text())
-  .then(data => console.log("Error in action: "+data));  
+  .then(data => console.log("Action response: "+data))
+  .catch(error => {
+    console.error('Error in action:', error);
+    console.log("Error in action: "+error.message);
+  });
   return false;
 }
 
-function createToastElement(type, content) 
+function createToastElement(type, content)
 {
   let toastContainer = document.createElement('div');
   toastContainer.classList.add('toast-container');
@@ -175,20 +185,24 @@ mnw.showToast = function(content, type = "warning")
 {
   var delay = 15000;
   var toastContainer = document.querySelector("#toast-container");
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
 
- 
   var element = document.createElement('div');
   element.className = `toast align-items-center bg-${type} text-black border-black shadow-thin`;
   element.setAttribute('role', 'alert');
-  element.setAttribute('aria-live', 'assertive');  
+  element.setAttribute('aria-live', 'assertive');
   element.setAttribute('aria-atomic', 'true');
   element.innerHTML = `<div class="d-flex">
-                        <div class="toast-body h6 p-3 m-0">${content}</div>
-                        <button type="button" class="btn-close btn-close-black me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                      </div>`;
+                         <div class="toast-body h6 p-3 m-0">${content}</div>
+                         <button type="button" class="btn-close btn-close-black me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                       </div>`;
 
-  toastContainer.appendChild(element);  
-  
+  toastContainer.appendChild(element);
+
   var toast = new bootstrap.Toast(element, {delay: delay, autohide: true, animation: true});
 
   element.addEventListener('hidden.bs.toast', function () {
@@ -215,7 +229,7 @@ mnw.init_theme = function()
   }
 }
 
-mnw.switch_zoom = function(sender, event) 
+mnw.switch_zoom = function(sender, event)
 {
   let bs_zoom = '';
   if (sender.id == "zoom-large")
@@ -249,7 +263,7 @@ mnw.switch_theme = function(sender, event)
 function init()
 {
   reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');
-  if (reload_elements.length > 0) 
+  if (reload_elements.length > 0)
   {
     console.log('Interval is ' + document.body.getAttribute('data-mnw-refresh-interval'));
 
@@ -266,9 +280,9 @@ function init()
   }
 
   mnw.interactive = document.body.hasAttribute('data-mnw-interactive');
-  if (mnw.interactive)  
+  if (mnw.interactive)
     mnw.attach(window.location.href);
-  
+
   // JavaScript to toggle dark mode
 }
 
@@ -278,8 +292,8 @@ function finish()
     mnw.ws.close();*/
 }
 
-document.addEventListener('DOMContentLoaded', function() {  
-  mnw.init_theme();      
+document.addEventListener('DOMContentLoaded', function() {
+  mnw.init_theme();
 });
 
 window.addEventListener('load', init);
