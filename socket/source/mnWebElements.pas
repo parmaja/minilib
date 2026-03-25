@@ -413,8 +413,8 @@ type
     procedure ServeFile(HomePath: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
     procedure ServeFile(HomePath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
 
-    procedure DoRendererCreated(const AContext: TmnwContext); virtual;
-    procedure RendererCreated(const AContext: TmnwContext); 
+    procedure DoPrepareRenderer(const AContext: TmnwContext); virtual;
+    procedure PrepareRenderer(const AContext: TmnwContext); 
     
     procedure DoPrepare; virtual;
     procedure DoCompose(const AContext: TmnwContext); virtual;
@@ -1958,7 +1958,10 @@ type
     FSession: TmnwCookie;
     function GetSessionID: string;
     procedure SetSessionID(const Value: string);
+    function GetHandled: Boolean;
+    procedure SetHandled(const Value: Boolean);
   protected
+    procedure SetAnswer(const Value: TmodAnswer); override;
     procedure DoPrepareHeader; override; //Called by Server
     procedure DoWriteCookies; override;
     procedure Created; override;
@@ -1967,6 +1970,7 @@ type
     property Session: TmnwCookie read FSession;
     property SessionID: string read GetSessionID write SetSessionID;
     property Resume: Boolean read FResume write FResume;
+    property Handled: Boolean read GetHandled write SetHandled;
   end;
 
   { TAssetsSchema }
@@ -2852,15 +2856,15 @@ begin
   end;
 end;
 
-procedure TmnwElement.RendererCreated(const AContext: TmnwContext);
+procedure TmnwElement.PrepareRenderer(const AContext: TmnwContext);
 var
   o: TmnwElement;
 begin
-  DoRendererCreated(AContext);
-  for o in Self do
+  DoPrepareRenderer(AContext);
+{  for o in Self do
   begin
-    o.RendererCreated(AContext); 
-  end;
+    o.PrepareRenderer(AContext); 
+  end;}
 end;
 
 function TmnwElement.CanRender: Boolean;
@@ -2873,7 +2877,7 @@ begin
   if (Context.Renderer <> nil) then
   begin
     Result := Context.Renderer.CreateRenderer(Self);
-    RendererCreated(Context);
+    PrepareRenderer(Context);
   end
   else
     Result := nil;
@@ -3239,7 +3243,7 @@ begin
 
       if AResponse.Resume then
         aElement.Action(AContext, AResponse);
-
+      //* Resume maybe come false in action
       //* We will render it now
       if AResponse.Resume then
         aElement.Respond(AContext, AResponse);
@@ -3252,9 +3256,7 @@ begin
           AResponse.ContentLength := 0;
         end
         else if AResponse.Answer = hrNotFound then
-        begin
           AResponse.RespondNotFound;
-        end;
       end;
     end
     else
@@ -4258,10 +4260,7 @@ end;
 
 procedure TmnwElement.ServeFile(HomePath: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
 var
-  fs: TFileStream;
   aDocument, aRequestDocument, aFile: string;
-  Files: TStringList;
-  s: string;
 begin
   if HomePath <> '' then
   begin
@@ -4949,7 +4948,7 @@ begin
   Result := Name;
 end;
 
-procedure TmnwElement.DoRendererCreated(const AContext: TmnwContext);
+procedure TmnwElement.DoPrepareRenderer(const AContext: TmnwContext);
 begin
 end;
 
@@ -5240,16 +5239,11 @@ end;
 procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   aStream: TResourceStream;
-  aDate: TDateTime;
 begin
   inherited;
   if ftResource in Options then
-  begin
-    {$ifdef FPC}
-    aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), 'RT_RCDATA'); //* remove extension
-    {$else}
-    aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), RT_RCDATA); //* remove extension
-    {$endif}
+  begin   
+    aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), {$ifdef FPC}'RT_RCDATA'{$else}RT_RCDATA{$endif}); //* remove extension
     try
       AResponse.SendStream(aStream, aStream.Size, FileName, AContext.Schema.Web.InstanceDate);
     finally
@@ -6854,9 +6848,24 @@ begin
   inherited;
 end;
 
+function TmnwResponse.GetHandled: Boolean;
+begin
+  Result := not Resume;
+end;
+
 function TmnwResponse.GetSessionID: string;
 begin
   Result := Session.Value;
+end;
+
+procedure TmnwResponse.SetAnswer(const Value: TmodAnswer);
+begin
+  inherited;  
+end;
+
+procedure TmnwResponse.SetHandled(const Value: Boolean);
+begin
+  Resume := not Value;
 end;
 
 procedure TmnwResponse.SetSessionID(const Value: string);
@@ -6970,8 +6979,8 @@ begin
 end;
 
 procedure TmnwHTMLRenderer.TNavTools.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-var
-  classes: TElementClasses;
+{var
+  classes: TElementClasses;}
 begin
   //classes.Init('nav-item');
   //classes.AddClasses('align-items-center');

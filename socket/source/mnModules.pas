@@ -407,9 +407,9 @@ type
     FAnswer: TmodAnswer;
     FContentType: String;
     FDispositionFile: string;
-    procedure SetAnswer(const Value: TmodAnswer);
   protected
     FRequest: TmodRequest;
+    procedure SetAnswer(const Value: TmodAnswer); virtual;
     procedure SetHead(const Value: string); override;
     function GetStream: TmnBufferStream; override;
     procedure InitProtocol; override;
