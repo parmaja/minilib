@@ -306,6 +306,7 @@ type
   TmnwLibrary = class abstract(TmnNamedObject)
   private
     FUsage: Integer;
+    FPriority: Integer;
   protected
     function CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
     procedure Created; override;     
@@ -314,6 +315,7 @@ type
     procedure IncUsage;
     procedure DecUsage;
     property Usage: Integer read FUsage;
+    property Priority: Integer read FPriority write FPriority;
   end;
 
   TmnwLibraryClass = class of TmnwLibrary;
@@ -327,6 +329,8 @@ type
   { TmnwLibraries }
 
   TmnwLibraries = class(TmnNamedObjectList<TmnwLibrary>)
+  protected
+    function Compare(Item1, Item2: TmnwLibrary): Integer; override;
   public
     procedure Use(ALibraryClass: TmnwLibraryClass); overload;
     procedure Use(ALibrary: TmnwLibrary); overload;
@@ -334,6 +338,7 @@ type
     function Find(ALibrary: string): TmnwLibrary; overload;
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
     function RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False): TmnwLibrary; overload;
+    function RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer; UseIt: Boolean = False): TmnwLibrary; overload;
   end;
 
   TJQuery_Library = class(TmnwLibrary)
@@ -908,7 +913,7 @@ type
     property AppPath: string read FAppPath write FAppPath;
     property Shutdown: Boolean read FShutdown;
     property Options: TmnwAppOptions read FOptions write FOptions;
-    property OnlineFiles: TOnlineFiles read FOnlineFiles;
+    property OnlineFiles: TOnlineFiles read FOnlineFiles write FOnlineFiles;
     property TimeStamp: Int64 read FTimeStamp;
   end;
 
@@ -942,6 +947,9 @@ type
     procedure AddTag(const TagName, TagAttributes, Value: string); overload;
     procedure AddInlineTag(const TagName, TagAttributes, Value: string); overload;
     procedure ReadFromFile(FileName: string);
+
+    procedure AddHTMLScript(const src: string); 
+    procedure AddHTMLCss(const src: string); 
   end;
 
   { THTML }
@@ -3222,7 +3230,7 @@ begin
     begin
       //aContext.Schema := aSchema;
       AContext.Element := aElement;
-
+      
       AResponse.Session.Value := AResponse.Request.GetCookie('', 'session');
       AResponse.Session.Age := DefaultAge;
       AResponse.Session.Domain := Domain;
@@ -3231,6 +3239,12 @@ begin
       AResponse.Answer := hrOK;
       AResponse.Resume := True;
       AResponse.Redirect := '';
+
+      AResponse.Header['access-control-allow-origin'] := '*';
+      //AResponse.Header['Access-Control-Allow-Origin'] := '*';
+      //AResponse.Header['Access-Control-Allow-Headers'] := ' X-PINGOTHER, Content-Type';
+      //AResponse.Header['Access-Control-Allow-Methods'] := 'HEAD,POST,GET,OPTIONS,PUT,DELETE,CONNECT,TRACE,PATCH';
+      //AResponse.Header['Access-Control-Expose-Headers'] := ' Content-Encoding, Kuma-Revision';     
 
       //* If you call schema name without ending by /
       if (aElement = aSchema) and (aSchema.Name <> '') and (AContext.Route = '') then
@@ -3459,6 +3473,16 @@ begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
 end;
 
+procedure TmnwHTMLWriterHelper.AddHTMLCss(const src: string);
+begin
+  AddShortTag('link', 'rel="stylesheet" href="'+src+'"');
+end;
+
+procedure TmnwHTMLWriterHelper.AddHTMLScript(const src: string);
+begin
+  AddTag('script', 'src="' + src + '" crossorigin="anonymous" defer');
+end;
+
 procedure TmnwHTMLWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
 begin
   Write('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
@@ -3685,8 +3709,8 @@ end;
 procedure TmnwHTMLRenderer.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary(TJQuery_Library);
-  Libraries.RegisterLibrary(TWebElements_Library, True);
+  Libraries.RegisterLibrary(TJQuery_Library, 1000);
+  Libraries.RegisterLibrary(TWebElements_Library, 2000, True);
 end;
 
 procedure TmnwHTMLRenderer.AddHead(const Context: TmnwContext);
@@ -3841,6 +3865,7 @@ begin
   begin
     AddHead(Scope, Context);
     //* Library Head
+    Renderer.Libraries.QuickSort;
     for aLibrary in Renderer.Libraries do
     begin
       if aLibrary.Usage > 0 then
@@ -5435,10 +5460,15 @@ begin
   if ALibrary <> nil then
   begin
     ALibrary.IncUsage;
-    Move(IndexOf(ALibrary), 0);
+//    Move(IndexOf(ALibrary), 0);
   end
   else
     raise Exception.Create('library is nil');
+end;
+
+function TmnwLibraries.Compare(Item1, Item2: TmnwLibrary): Integer;
+begin
+  Result := Item1.Priority - Item2.Priority;
 end;
 
 function TmnwLibraries.Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary;
@@ -5452,6 +5482,15 @@ begin
       Result := Items[i];
       break;
     end;
+end;
+
+function TmnwLibraries.RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer; UseIt: Boolean): TmnwLibrary;
+begin
+  Result := ALibraryClass.Create;
+  Result.Priority := Priority;
+  Add(Result);
+  if UseIt then
+    Use(Result);
 end;
 
 procedure TmnwLibraries.Use(ALibraryClass: TmnwLibraryClass);
@@ -5481,9 +5520,10 @@ end;
 procedure TJQuery_Library.AddHead(const Context: TmnwContext);
 begin
   if CheckOffline(Context, Context.GetAssetPath + 'jquery.min.js') then
-    Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"')
-  else
     Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"')
+  else
+
+    Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"');
 end;
 
 { TWebElements_Library }
