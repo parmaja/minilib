@@ -333,7 +333,7 @@ type
     procedure Use(ALibraryName: string); overload;
     function Find(ALibrary: string): TmnwLibrary; overload;
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
-    procedure RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False); overload;
+    function RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False): TmnwLibrary; overload;
   end;
 
   TJQuery_Library = class(TmnwLibrary)
@@ -413,21 +413,23 @@ type
     procedure ServeFile(HomePath: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
     procedure ServeFile(HomePath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
 
-    procedure DoPrepareRenderer(const AContext: TmnwContext); virtual;
-    procedure PrepareRenderer(const AContext: TmnwContext); 
-    
+    procedure DoPrepareRenderer(const AContext: TmnwContext); virtual;   
     procedure DoPrepare; virtual;
+    
     procedure DoCompose(const AContext: TmnwContext); virtual;
     procedure DoComposed; virtual;
+
     procedure DoRespondHeader(AContext: TmnwContext); virtual;
     procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
+
+    procedure PrepareRenderer(const AContext: TmnwContext); 
+    procedure Prepare; 
 
     procedure DoExecute; virtual;
     procedure Execute;
     procedure DoChanged; virtual;
     procedure Changed;
-    procedure Prepare; 
 
     procedure SendMessage(AttachmentName:string; AMessage: string); overload;
     procedure SendInteractive(AMessage: string); overload;
@@ -1962,7 +1964,6 @@ type
     procedure SetHandled(const Value: Boolean);
   protected
     procedure SetAnswer(const Value: TmodAnswer); override;
-    procedure DoPrepareHeader; override; //Called by Server
     procedure DoWriteCookies; override;
     procedure Created; override;
   public
@@ -2861,10 +2862,10 @@ var
   o: TmnwElement;
 begin
   DoPrepareRenderer(AContext);
-{  for o in Self do
+  for o in Self do
   begin
     o.PrepareRenderer(AContext); 
-  end;}
+  end;
 end;
 
 function TmnwElement.CanRender: Boolean;
@@ -2877,7 +2878,7 @@ begin
   if (Context.Renderer <> nil) then
   begin
     Result := Context.Renderer.CreateRenderer(Self);
-    PrepareRenderer(Context);
+    //PrepareRenderer(Context);
   end
   else
     Result := nil;
@@ -3164,7 +3165,7 @@ begin
         end;
 
         if (estComposed in Schema.State) then
-        begin
+        begin                 
           aElement := Schema;
 
           if aElement <> nil then
@@ -3246,7 +3247,10 @@ begin
       //* Resume maybe come false in action
       //* We will render it now
       if AResponse.Resume then
+      begin
+        aElement.PrepareRenderer(AContext); 
         aElement.Respond(AContext, AResponse);
+      end;
 
       if not (AResponse.IsHeaderSent) then
       begin
@@ -4563,7 +4567,7 @@ begin
   aRendererRegister := ElementRenderers.Find(AElementClass, True);
   if aRendererRegister <> nil then
   begin
-    Result := aRendererRegister.RendererClass.Create(Self, aRendererRegister);    
+    Result := aRendererRegister.RendererClass.Create(Self, aRendererRegister);
   end
   else
     Result := nil;
@@ -5418,14 +5422,12 @@ begin
     end;
 end;
 
-procedure TmnwLibraries.RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False);
-var
-  ALibrary: TmnwLibrary;
+function TmnwLibraries.RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False): TmnwLibrary;
 begin
-  ALibrary := ALibraryClass.Create;
-  Add(ALibrary);
+  Result := ALibraryClass.Create;
+  Add(Result);
   if UseIt then
-    Use(ALibrary);
+    Use(Result);
 end;
 
 procedure TmnwLibraries.Use(ALibrary: TmnwLibrary);
@@ -6828,11 +6830,6 @@ end;
 destructor TmnwResponse.Destroy;
 begin
   FreeAndNil(FSession);
-  inherited;
-end;
-
-procedure TmnwResponse.DoPrepareHeader;
-begin
   inherited;
 end;
 
