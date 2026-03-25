@@ -31,7 +31,7 @@ uses
 
 type
   TBootstrap_Library = class(TmnwLibrary)
-  public
+  public  
     procedure AddHead(const Context: TmnwContext); override;
   end;
 
@@ -58,9 +58,8 @@ implementation
 procedure TmnwBootstrapRenderer.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary('Bootstrap', TBootstrap_Library);
-  Libraries.RegisterLibrary('BootstrapIcons', TBootstrapIcons_Library);
-  Libraries.Use('Bootstrap');
+  Libraries.RegisterLibrary(TBootstrap_Library, True);
+  Libraries.RegisterLibrary(TBootstrapIcons_Library);
 end;
 
 procedure TmnwBootstrapRenderer.AddHead(const Context: TmnwContext);

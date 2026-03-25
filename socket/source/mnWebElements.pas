@@ -26,10 +26,12 @@ GET https://john.doe@www.example.com:123/username/forum/questions/qst1/?tag=netw
 Method                  DomainName                    Path(Full)                  Query           Fragment
                                         └───┬───┘└──┬──┘└───┬────┴──┬─┘             ┬
 WebElement:                             Directory Alias   Schema   Path            Params
-    └────────────────────────┬─────────┘─ ─ ┘    /Module
-                          HomeURL
-}
-
+    └────────────┬─────────────────────┘─ ─ ┘    /Module
+    |          HomeURL (From Request or Config)         |        |
+    └────────────────────────┬──────────────────────────┘        |
+    |                     WebURL (WebApp)                        |
+    └────────────────────────┬───────────────────────────────────┘
+                         SchemaURL
 {
 
     Application
@@ -37,7 +39,7 @@ WebElement:                             Directory Alias   Schema   Path         
 
 ┌──────┬──────────────────────────────────────┐  ─┐
 │>Logo │ Brand NavBar                      c =│   ├─ Header
-├──────┴──────────────────────────────────────┤  ─│
+├──────┴──────────────────────────────────────┤  ─┤
 │ MenuBar                                     │   │
 ├────────────┬────────────────────────────────┤   │
 │ Sidebar    │ Main                           │   │
@@ -306,6 +308,7 @@ type
     FUsage: Integer;
   protected
     function CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
+    procedure Created; override;     
   public
     procedure AddHead(const Context: TmnwContext); virtual; abstract;
     procedure IncUsage;
@@ -313,26 +316,28 @@ type
     property Usage: Integer read FUsage;
   end;
 
+  TmnwLibraryClass = class of TmnwLibrary;
+
   TmnwCustomLibrary = class(TmnwLibrary)
   public
     Source: string;
     procedure AddHead(const Context: TmnwContext); override;
   end;
 
-  TmnwLibraryClass = class of TmnwLibrary;
-
   { TmnwLibraries }
 
   TmnwLibraries = class(TmnNamedObjectList<TmnwLibrary>)
   public
+    procedure Use(ALibraryClass: TmnwLibraryClass); overload;
     procedure Use(ALibrary: TmnwLibrary); overload;
     procedure Use(ALibraryName: string); overload;
     function Find(ALibrary: string): TmnwLibrary; overload;
-    procedure RegisterLibrary(ALibraryName: string; ALibraryClass: TmnwLibraryClass); overload;
-    procedure RegisterLibrary(ALibraryName: string; Source: string); overload;
+    function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
+    procedure RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False); overload;
   end;
 
   TJQuery_Library = class(TmnwLibrary)
+  protected
   public
     procedure AddHead(const Context: TmnwContext); override;
   end;
@@ -340,6 +345,7 @@ type
   { TWebElements_Library }
 
   TWebElements_Library = class(TmnwLibrary)
+  protected
   public
     procedure AddHead(const Context: TmnwContext); override;
   end;
@@ -407,6 +413,9 @@ type
     procedure ServeFile(HomePath: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
     procedure ServeFile(HomePath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
 
+    procedure DoRendererCreated(const AContext: TmnwContext); virtual;
+    procedure RendererCreated(const AContext: TmnwContext); 
+    
     procedure DoPrepare; virtual;
     procedure DoCompose(const AContext: TmnwContext); virtual;
     procedure DoComposed; virtual;
@@ -418,13 +427,14 @@ type
     procedure Execute;
     procedure DoChanged; virtual;
     procedure Changed;
-    procedure Prepare; virtual;
+    procedure Prepare; 
 
     procedure SendMessage(AttachmentName:string; AMessage: string); overload;
     procedure SendInteractive(AMessage: string); overload;
 
     procedure SendMessage(JSON: TDON_Pair); overload; virtual;
     procedure ReceiveMessage(JSON: TDON_Pair); virtual;
+    
     function GenHandle: Integer;
     function GenID: string;
     function GenRoute: string;
@@ -459,7 +469,7 @@ type
     //this get path without schema and parent element name, element/element
     function GetRelativePath(ToElement: TmnwElement): string; overload;
 
-    function CreateRender(const Context: TmnwContext): TmnwElementRenderer;
+    function CreateRenderer(const Context: TmnwContext): TmnwElementRenderer;
     procedure Compose(const AContext: TmnwContext); virtual;
     procedure AddState(AState: TmnwElementState);
     procedure RemoveState(AState: TmnwElementState);
@@ -618,6 +628,7 @@ type
     class procedure Registered; virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAccept(var AContext: TmnwContext; var Resume: Boolean); virtual;
+    procedure DoPrepare; override;
     procedure DoChildAction(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure AttachedMessage(const s: string); virtual; //from websocket
     procedure InteractiveMessage(const s: string);
@@ -643,7 +654,6 @@ type
 
     function Accept(var AContext: TmnwContext): Boolean;
     procedure Compose(const AContext: TmnwContext); override;
-    procedure Prepare; override;
 
     // Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
     procedure Attach(Route: string; Sender: TObject; AStream: TmnBufferStream); // in connection thread
@@ -718,12 +728,11 @@ type
   protected
     //* Keep `var`
     procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); virtual;
-    //* This called once from the TmnwRenderer
-    procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); virtual;
-    procedure Prepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
 
     procedure RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 
+    //This function called one time
+    procedure AddHead(const Scope: TmnwScope; const Context: TmnwContext); virtual;
     //* Called to parent to wrap the child rendering, each chiled will wrap it with this render
     //* This method exists in parent render
     //* Keep `var`
@@ -749,6 +758,17 @@ type
 
   TmnwElementRendererClass = class of TmnwElementRenderer;
 
+  TmnwElementLibraryItem = class(TmnObject)
+  public
+    Usage: Integer;
+    RendererClass: TmnwElementRendererClass;
+  end;
+  
+  TmnwElementLibrary = class(TmnObjectList<TmnwElementLibraryItem>)
+  public  
+    function Add(ARendererClass: TmnwElementRendererClass): TmnwElementLibraryItem;
+  end;
+
   { TmnwRenderer }
 
   TmnwRenderer = class abstract(TmnwObject)
@@ -765,16 +785,13 @@ type
 
     class constructor RegisterObjects;
   public
-    type
-      TmnwRegisterHow = (None, Replace, Extend);
     constructor Create(AModule: TmodWebModule); virtual;
     destructor Destroy; override;
     class destructor Destroy;
 
     procedure BeginRender;
     procedure EndRender;
-
-    class procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwRegisterHow = None);
+    
     function CreateRenderer(AElementClass: TmnwElementClass): TmnwElementRenderer; overload;
     function CreateRenderer(AObject: TmnwElement): TmnwElementRenderer; overload;
 
@@ -1356,7 +1373,7 @@ type
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public        
         procedure Loop; virtual;
-        constructor Create(AParent: TmnwElement; ARoute: string; ActionProc: TActionProc = nil); reintroduce;
+        constructor Create(AParent: TmnwElement; ARoute: string = ''; ActionProc: TActionProc = nil); reintroduce;
       end;
 
 			TSpan = class(THTMLElement)
@@ -1514,7 +1531,6 @@ type
 
       THTMLElement = class abstract(TmnwElementRenderer)
       protected
-        procedure AddHead(const Scope: TmnwScope; const Context: TmnwContext); virtual;
         procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
@@ -1881,7 +1897,6 @@ type
 
       TImage = class(THTMLComponent)
       protected
-        procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -1890,7 +1905,6 @@ type
 
       TImageFile = class(THTMLComponent)
       protected
-        procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -1899,7 +1913,6 @@ type
 
       TImageMemory = class(THTMLComponent)
       protected
-        procedure DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer); override;
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -1915,6 +1928,7 @@ type
 
   TmnwRendererRegister = class(TObject)
   public
+    Usage: Integer;
     ElementClass: TmnwElementClass;
     RendererClass: TmnwElementRendererClass;
     Renderers: array of TmnwElementRendererClass;
@@ -1925,14 +1939,17 @@ type
   end;
 
   { TmnwElementRenderers }
-
+  //TODO use hash table TDicionary 
   TmnwElementRenderers = class(TmnObjectList<TmnwRendererRegister>)
   protected
     function Compare(Item1, Item2: TmnwRendererRegister): Integer; override;
   public
     Sorted: Boolean;
+    type
+      TmnwRegisterHow = (None, Replace, Extend);
     procedure QuickSort; override;
     function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
+    procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwElementRenderers.TmnwRegisterHow = None);
   end;
 
   TmnwResponse = class(TwebResponse)
@@ -1964,12 +1981,10 @@ type
     procedure DoCompose(const AContext: TmnwContext); override;
     procedure Created; override;
 
-  public
-    destructor Destroy; override;
+  public    
     class function GetCapabilities: TmnwSchemaCapabilities; override;
     //property Logo: THTML.TMemory read FLogo;
     property LogoFile: string read FLogoFile write FLogoFile;
-    procedure Prepare; override;
   end;
 
   //Return error as json if fail with message of error, so we need JS to post
@@ -2067,6 +2082,9 @@ function SQ(s: string): string; inline;
 function DQ(s: string): string; inline;
 
 function NewUUID: string;
+
+function ElementRenderers: TmnwElementRenderers;
+procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwElementRenderers.TmnwRegisterHow = None);
 
 implementation
 
@@ -2298,8 +2316,21 @@ end;
 
 var
   //*Should be by base class categoried
-  ElementRenderers: TmnwElementRenderers = nil;
+  FElementRenderers: TmnwElementRenderers = nil;
 
+function ElementRenderers: TmnwElementRenderers;
+begin
+  if FElementRenderers = nil then
+    FElementRenderers := TmnwElementRenderers.Create;
+  Result := FElementRenderers;  
+end;
+
+procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwElementRenderers.TmnwRegisterHow = None);
+begin
+  ElementRenderers.RegisterRenderer(AElementClass, ARendererClass, How);
+end;
+
+  
 {$ifdef rtti_objects}
 procedure CacheClasses;
 var
@@ -2734,27 +2765,6 @@ procedure TmnwElementRenderer.DoCollectAttributes(var Scope: TmnwScope; Context:
 begin
 end;
 
-procedure TmnwElementRenderer.DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
-begin
-end;
-
-procedure TmnwElementRenderer.Prepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
-var
-  o: TmnwElement;
-  r: TmnwElementRenderer;
-begin
-  DoPrepare(AElement, ARenderer);
-  for o in AElement do
-  begin
-    r := ARenderer.CreateRenderer(o);
-    try
-      r.Prepare(AElement, ARenderer);
-    finally
-      r.Free;
-    end;
-  end;
-end;
-
 procedure TmnwElementRenderer.Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TmnwResponse);
 var
   aScope: TmnwScope;
@@ -2784,6 +2794,10 @@ begin
   inherited Create;
   FRenderer := ARenderer;
   FRendererRegister:= ARendererRegister;
+end;
+
+procedure TmnwElementRenderer.AddHead(const Scope: TmnwScope; const Context: TmnwContext);
+begin
 end;
 
 procedure TmnwElementRenderer.CollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
@@ -2819,7 +2833,7 @@ var
 begin
   if CanRender then
   begin
-    er := CreateRender(Context);
+    er := CreateRenderer(Context);
     if er <> nil then
     begin
       try
@@ -2838,15 +2852,29 @@ begin
   end;
 end;
 
+procedure TmnwElement.RendererCreated(const AContext: TmnwContext);
+var
+  o: TmnwElement;
+begin
+  DoRendererCreated(AContext);
+  for o in Self do
+  begin
+    o.RendererCreated(AContext); 
+  end;
+end;
+
 function TmnwElement.CanRender: Boolean;
 begin
   Result := RenderIt in [ovYes];
 end;
 
-function TmnwElement.CreateRender(const Context: TmnwContext): TmnwElementRenderer;
+function TmnwElement.CreateRenderer(const Context: TmnwContext): TmnwElementRenderer;
 begin
   if (Context.Renderer <> nil) then
-    Result := Context.Renderer.CreateRenderer(Self)
+  begin
+    Result := Context.Renderer.CreateRenderer(Self);
+    RendererCreated(Context);
+  end
   else
     Result := nil;
 end;
@@ -2862,6 +2890,37 @@ procedure TmnwElementRenderers.QuickSort;
 begin
   inherited;
   Sorted := True;
+end;
+
+procedure TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwRegisterHow);
+var
+  aRendererRegister: TmnwRendererRegister;
+begin
+  if Sorted then
+    raise Exception.Create('You can''t re-register any more class after sorted: '+ AElementClass.ClassName);    
+    
+  Sorted := False;
+  aRendererRegister := Find(AElementClass);
+  if aRendererRegister <> nil then
+  begin
+    if (How = Replace) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
+      aRendererRegister.RendererClass := ARendererClass
+    else if (How = Extend) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
+      aRendererRegister.Renderers := aRendererRegister.Renderers + [ARendererClass]
+    else
+      raise Exception.Create('You can''t re-register same class: '+ AElementClass.ClassName);
+  end
+  else
+  begin
+    if (How = Extend) then
+      raise Exception.Create('Ops we can''t add extended, we need to optimize code: '+ AElementClass.ClassName);
+    aRendererRegister := TmnwRendererRegister.Create;
+    aRendererRegister.ElementClass := AElementClass;
+    aRendererRegister.RendererClass := ARendererClass;
+    aRendererRegister.Level := AElementClass.ClassLevel;
+    rttiCollectExtensions(aRendererRegister.ElementClass, aRendererRegister.Extensions);
+    Add(aRendererRegister);
+  end;
 end;
 
 function TmnwElementRenderers.Find(AElementClass: TmnwElementClass; Nearst: Boolean): TmnwRendererRegister;
@@ -3620,9 +3679,8 @@ end;
 procedure TmnwHTMLRenderer.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary('JQuery', TJQuery_Library);
-  Libraries.RegisterLibrary('WebElements', TWebElements_Library);
-  Libraries.Use('WebElements');
+  Libraries.RegisterLibrary(TJQuery_Library);
+  Libraries.RegisterLibrary(TWebElements_Library, True);
 end;
 
 procedure TmnwHTMLRenderer.AddHead(const Context: TmnwContext);
@@ -3683,10 +3741,6 @@ begin
 end;
 
 { TmnwHTMLRenderer.THTMLElement }
-
-procedure TmnwHTMLRenderer.THTMLElement.AddHead(const Scope: TmnwScope; const Context: TmnwContext);
-begin
-end;
 
 procedure TmnwHTMLRenderer.THTMLElement.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
@@ -3780,11 +3834,13 @@ begin
   if e.Parent <> nil then // Only root have head
   begin
     AddHead(Scope, Context);
+    //* Library Head
     for aLibrary in Renderer.Libraries do
     begin
       if aLibrary.Usage > 0 then
         aLibrary.AddHead(Context);
     end;
+    //* Renderer Head
     (Renderer as TmnwHTMLRenderer).AddHead(Context);
   end;
 
@@ -4090,12 +4146,6 @@ end;
 
 { TmnwHTMLRenderer.TImageHTML }
 
-procedure TmnwHTMLRenderer.TImage.DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
-begin
-  inherited;
-  //ARenderer.Libraries.Use('JQuery');
-end;
-
 procedure TmnwHTMLRenderer.TImage.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   Scope.Attributes['src'] := (Scope.Element as THTML.TImage).Source;
@@ -4110,12 +4160,6 @@ begin
 end;
 
 { TmnwHTMLRenderer.TMemoryImageHTML }
-
-procedure TmnwHTMLRenderer.TImageMemory.DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
-begin
-  inherited;
-  //ARenderer.Libraries.Use('JQuery');
-end;
 
 procedure TmnwHTMLRenderer.TImageMemory.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
@@ -4424,7 +4468,7 @@ begin
   AddState([estComposed]);
 end;
 
-procedure TmnwSchema.Prepare;
+procedure TmnwSchema.DoPrepare;
 begin
   if (HomePath = '') then
     HomePath := Web.HomePath;
@@ -4513,40 +4557,15 @@ begin
 end;
 {$endif}
 
-class procedure TmnwRenderer.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwRegisterHow);
-var
-  aRendererRegister: TmnwRendererRegister;
-begin
-  aRendererRegister := ElementRenderers.Find(AElementClass);
-  if aRendererRegister <> nil then
-  begin
-    if (How = Replace) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
-      aRendererRegister.RendererClass := ARendererClass
-    else if (How = Extend) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
-      aRendererRegister.Renderers := aRendererRegister.Renderers + [ARendererClass]
-    else
-      raise Exception.Create('You can''t re-register same class: '+ AElementClass.ClassName);
-  end
-  else
-  begin
-    if (How = Extend) then
-      raise Exception.Create('Ops we can''t add extended, we need to optimize code: '+ AElementClass.ClassName);
-    aRendererRegister := TmnwRendererRegister.Create;
-    aRendererRegister.ElementClass := AElementClass;
-    aRendererRegister.RendererClass := ARendererClass;
-    aRendererRegister.Level := AElementClass.ClassLevel;
-    rttiCollectExtensions(aRendererRegister.ElementClass, aRendererRegister.Extensions);
-    ElementRenderers.Add(aRendererRegister);
-  end;
-end;
-
 function TmnwRenderer.CreateRenderer(AElementClass: TmnwElementClass): TmnwElementRenderer;
 var
   aRendererRegister: TmnwRendererRegister;
 begin
   aRendererRegister := ElementRenderers.Find(AElementClass, True);
   if aRendererRegister <> nil then
-    Result := aRendererRegister.RendererClass.Create(Self, aRendererRegister)
+  begin
+    Result := aRendererRegister.RendererClass.Create(Self, aRendererRegister);    
+  end
   else
     Result := nil;
 end;
@@ -4930,6 +4949,10 @@ begin
   Result := Name;
 end;
 
+procedure TmnwElement.DoRendererCreated(const AContext: TmnwContext);
+begin
+end;
+
 procedure TmnwElement.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
 end;
@@ -5189,7 +5212,6 @@ end;
 
 class constructor TmnwRenderer.RegisterObjects;
 begin
-  ElementRenderers := TmnwElementRenderers.Create;
   RegisterRenderer(TmnwElement, TmnwElementRenderer);
 end;
 
@@ -5362,6 +5384,21 @@ begin
     Result := (Web.OnlineFiles = olfOffline) or ((Web.OnlineFiles = olfSmart) and FileExists(FileName));
 end;
 
+procedure TmnwLibrary.Created;
+var
+  i: Integer;
+  s: string;
+begin
+  inherited;
+  s := ClassName;
+  i:= Pos('_', s);
+  if i > 0 then
+    s := MidStr(s, 2, i - 2)
+  else
+    s := MidStr(s, 2, MaxInt);
+  Name := s;
+end;
+
 procedure TmnwLibrary.DecUsage;
 begin
   FUsage := FUsage - 1;
@@ -5387,13 +5424,14 @@ begin
     end;
 end;
 
-procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; ALibraryClass: TmnwLibraryClass);
+procedure TmnwLibraries.RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False);
 var
   ALibrary: TmnwLibrary;
 begin
   ALibrary := ALibraryClass.Create;
-  ALibrary.Name := ALibraryName;
   Add(ALibrary);
+  if UseIt then
+    Use(ALibrary);
 end;
 
 procedure TmnwLibraries.Use(ALibrary: TmnwLibrary);
@@ -5407,14 +5445,28 @@ begin
     raise Exception.Create('library is nil');
 end;
 
-procedure TmnwLibraries.RegisterLibrary(ALibraryName: string; Source: string);
+function TmnwLibraries.Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary;
 var
-  lib: TmnwCustomLibrary;
+  i: Integer;
 begin
-  lib := TmnwCustomLibrary.Create;
-  lib.Name := ALibraryName;
-  lib.Source := Source;
-  Add(lib);
+  Result := nil;
+  for i := 0 to Count - 1 do
+    if Items[i] is ALibraryClass then
+    begin
+      Result := Items[i];
+      break;
+    end;
+end;
+
+procedure TmnwLibraries.Use(ALibraryClass: TmnwLibraryClass);
+var
+  ALibrary: TmnwLibrary;
+begin
+  ALibrary := Find(ALibraryClass);
+  if ALibrary = nil then
+    RegisterLibrary(ALibraryClass, True)
+  else
+    Use(ALibrary)
 end;
 
 procedure TmnwLibraries.Use(ALibraryName: string);
@@ -6381,17 +6433,6 @@ begin
   Result := inherited + [schemaStartup, schemaPermanent];
 end;
 
-procedure TAssetsSchema.Prepare;
-begin
-  inherited;
-end;
-
-destructor TAssetsSchema.Destroy;
-begin
-
-  inherited;
-end;
-
 procedure TAssetsSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
@@ -6921,11 +6962,6 @@ begin
   inherited;
 end;
 
-procedure TmnwHTMLRenderer.TImageFile.DoPrepare(AElement: TmnwElement; ARenderer: TmnwRenderer);
-begin
-  inherited;
-end;
-
 { TmnwHTMLRenderer.TNavTools }
 
 procedure TmnwHTMLRenderer.TNavTools.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
@@ -7047,10 +7083,19 @@ begin
   inherited;
 end;
 
+{ TmnwElementLibrary }
+
+function TmnwElementLibrary.Add(ARendererClass: TmnwElementRendererClass): TmnwElementLibraryItem;
+begin
+  Result := TmnwElementLibraryItem.Create;
+  Result.RendererClass := ARendererClass;
+  inherited Add(Result);
+end;
+
 initialization
 
 finalization
-  FreeAndNil(ElementRenderers);
+  FreeAndNil(FElementRenderers);
 {$ifdef rtti_objects}
   FreeAndNil(CacheClassObjects);
 {$endif}

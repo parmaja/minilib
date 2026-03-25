@@ -564,7 +564,7 @@ begin
 
             with TDropdown.Create(This) do
             begin
-              Image.Icon := 'icon mw-font-normal';
+              Image.IconClass := 'icon mw-font-normal';
               Options := Options + [dropEnd];
               with TZoomButtons.Create(This) do
               begin
