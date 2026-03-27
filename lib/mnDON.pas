@@ -188,7 +188,7 @@ type
   TDON_Custom_String_Value = class abstract(TDON_Element)
   private
     FValue: string;
-    FStringOptions: TmnJsonTypeOptions;
+    FStringOptions: TmnJsonStringOptions;
   protected
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
@@ -206,8 +206,8 @@ type
     procedure SetAsString(const Value: string); override;
     procedure SetValue(const Value: Variant); override;
   public
-    constructor Create(AParent: TDON_Parent; const AText: string; AStringOptions: TmnJsonTypeOptions = []); overload;
-    property StringOptions: TmnJsonTypeOptions read FStringOptions write FStringOptions;
+    constructor Create(AParent: TDON_Parent; const AText: string; AStringOptions: TmnJsonStringOptions = []); overload;
+    property StringOptions: TmnJsonStringOptions read FStringOptions write FStringOptions;
   published
     property Value: string read FValue write FValue;
   end;
@@ -216,6 +216,13 @@ type
 
   TDON_String_Value = class(TDON_Custom_String_Value)
   public
+  end;
+
+  { TDON_Script_Value }
+
+  TDON_Script_Value = class(TDON_String_Value)
+  public
+    ScriptType: string;
   end;
 
   { TDON_Identifier_Value }
@@ -412,7 +419,7 @@ function JsonParseFilePair(const FileName: string; out Error: string; Options: T
 function JsonParseFileValue(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Element;
 
 //Used in JSON parser
-procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions; out AObject: TObject);
+    procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; const ATypeOptions: TmnJsonStringType);
 
 implementation
 
@@ -479,7 +486,7 @@ begin
   Parser.Finish;
 end;
 
-procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; ATypeOptions: TmnJsonTypeOptions; out AObject: TObject);
+procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; const ATypeOptions: TmnJsonStringType);
 
   function CreateObjectValue: TObject; {$Ifdef D-}inline; {$endif}
   begin
@@ -503,7 +510,7 @@ procedure JsonParseAcquireCallback(AParentObject: TObject; const Value: string; 
           Result := TDON_Identifier_Value.Create(nil, Value);
       end;
       aqBoolean: Result := TDON_Boolean_Value.Create(nil, StrToBoolDef(Value, False));
-      aqString: Result := TDON_String_Value.Create(nil, Value, ATypeOptions);
+      aqString: Result := TDON_String_Value.Create(nil, Value, ATypeOptions.StringOptions);
       aqObject: Result := TDON_Object_Value.Create(nil);
       aqArray: Result := TDON_Array_Value.Create(nil);
     end;
@@ -1280,7 +1287,7 @@ end;
 
 { TDON_Custom_String_Value }
 
-constructor TDON_Custom_String_Value.Create(AParent: TDON_Parent; const AText: string; AStringOptions: TmnJsonTypeOptions);
+constructor TDON_Custom_String_Value.Create(AParent: TDON_Parent; const AText: string; AStringOptions: TmnJsonStringOptions);
 begin
   inherited Create(AParent);
   FValue := AText;

@@ -58,12 +58,19 @@ type
     aqBoolean
   );
 
-  TmnJsonTypeOptions = set of (
+  TmnJsonStringOptions = set of (
     jtoMultiLine,
-    jtoSingleQuote
+    jtoSingleQuote,
+    jtoBackQuote
   );
 
-  TmnJsonAcquireProc = procedure(AParentObject: TObject; const Value: String; const ValueType: TmnJsonAcquireType; TypeOptions: TmnJsonTypeOptions; out AObject: TObject);
+  TmnJsonStringType = record
+    StringType: string;
+    StringOptions: TmnJsonStringOptions;
+  end;
+
+
+  TmnJsonAcquireProc = procedure(out AObject: TObject; AParentObject: TObject; const Value: String; const ValueType: TmnJsonAcquireType; const TypeOptions: TmnJsonStringType);
 
   { TmnJSONParser }
 
@@ -90,8 +97,9 @@ type
 
       TToken = (
         tkNone,
-        tkDQString,
-        tkSQString,
+        tkDQString,  //Double Quote "
+        tkSQString,  //Single Quote '
+        tkBQString,  //Back Quote `
         tkEscape,
         tkEscapeHex,
         tkNumber,
@@ -114,6 +122,7 @@ type
 
       TStringCollector = record
       public
+        StringType: string;
         Token: TToken;
         Started: Integer;
         Buffer: UTF8String;
@@ -125,7 +134,7 @@ type
         //* Take partial content
         procedure Collect(const Content: PByte; Index: Integer); inline;
         function GetSize(Index: Integer): Integer;
-        function GetTypeOptions: TmnJsonTypeOptions;
+        function GetStringOptions: TmnJsonStringType;
         function CopyString(const Value: PByte; Start, Count: Integer): String;
       end;
 
@@ -234,14 +243,17 @@ begin
   Result := Index - Started;
 end;
 
-function TmnJSONParser.TStringCollector.GetTypeOptions: TmnJsonTypeOptions;
+function TmnJSONParser.TStringCollector.GetStringOptions: TmnJsonStringType;
 begin
+  Result.StringType := StringType;
   if Token = tkSQString then
-    Result := [jtoSingleQuote]
+    Result.StringOptions := [jtoSingleQuote]
+  else if Token = tkBQString then
+    Result.StringOptions := [jtoSingleQuote, jtoBackQuote]
   else
-    Result := [];
+    Result.StringOptions := [];
   if IsMultiLine then
-    Result := Result + [jtoMultiLine];
+    Result.StringOptions := Result.StringOptions + [jtoMultiLine];
 end;
 
 procedure TmnJSONParser.RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
@@ -424,13 +436,13 @@ var
     begin
       //Creating a Pair Item
       Collector.Collect(Content, Index);
-      AcquireProc(Parent, Collector.Buffer, aqPair, [], Pair);
+      AcquireProc(Pair, Parent, Collector.Buffer, aqPair, Default(TmnJsonStringType));
       Expect := exAssign;
     end
     else if Expect = exValue then
     begin
       Collector.Collect(Content, Index);
-      AcquireProc(Parent, Collector.Buffer, aqString, Collector.GetTypeOptions, AObject);
+      AcquireProc(AObject, Parent, Collector.Buffer, aqString, Collector.GetStringOptions);
       Expect := exNext;
     end
     else
@@ -599,6 +611,14 @@ begin
           //Next char yes, we do not need ' anymore
           Next;
         end;
+        tkBQString:
+        begin
+          if Ch = '`' then
+            EndString
+          else
+            ContinueString;
+          Next;
+        end;
         tkIdentifire:
         begin
           if not CharInSet(Ch, ['A'..'Z', 'a'..'z', '0'..'9',  '_']) then
@@ -607,13 +627,13 @@ begin
             begin
               //Creating a Pair Item
               Collector.Collect(Content, Index);
-              AcquireProc(Parent, Collector.Buffer, aqPair, [], Pair);
+              AcquireProc(Pair, Parent, Collector.Buffer, aqPair, Default(TmnJsonStringType));
               Expect := exAssign;
             end
             else if Expect = exValue then
             begin
               Collector.Collect(Content, Index);
-              AcquireProc(Parent, Collector.Buffer, aqIdentifier, [], AObject);
+              AcquireProc(AObject, Parent, Collector.Buffer, aqIdentifier, Default(TmnJsonStringType));
               Expect := exNext;
             end
             else
@@ -632,7 +652,7 @@ begin
             if Expect = exValue then
             begin
               Collector.Collect(Content, Index);
-              AcquireProc(Parent, Collector.Buffer, aqNumber, [], AObject);
+              AcquireProc(AObject, Parent, Collector.Buffer, aqNumber, Default(TmnJsonStringType));
               Expect := exNext;
             end
             else
@@ -691,6 +711,17 @@ begin
                 Token := tkSQString;
               end;
             end;
+            '`':
+            begin
+              if not (jsoModern in Options) then
+                IlligalCharacter(Ch)
+              else
+              begin
+                CheckExpected([exName, exValue, exEnd]);
+                Collector.Reset(Index + 1, tkBQString);
+                Token := tkBQString;
+              end;
+            end;
             '/':
             begin
               if not (jsoModern in Options) then
@@ -721,7 +752,7 @@ begin
             begin
               CheckExpected([exValue]);
               Push;
-              AcquireProc(Parent, '', aqObject, [], AObject);
+              AcquireProc(AObject, Parent, '', aqObject, Default(TmnJsonStringType));
               Parent := AObject;
               Context := cxPair;
               Expect := exName;
@@ -748,7 +779,7 @@ begin
             begin
               CheckExpected([exValue]);
               Push;
-              AcquireProc(Parent, '', aqArray, [], AObject);
+              AcquireProc(AObject, Parent, '', aqArray, Default(TmnJsonStringType));
               Parent := AObject;
               Context := cxArray;
               Expect := exValue;
@@ -801,7 +832,7 @@ begin
   Error := JSONParser.ErrorMessage;
 end;
 
-procedure JsonLintAcquireCallback(AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; TypeOptions: TmnJsonTypeOptions; out AObject: TObject);
+procedure JsonLintAcquireCallback(out AObject: TObject; AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; const TypeOptions: TmnJsonStringType);
 begin
   AObject := nil;
 end;
