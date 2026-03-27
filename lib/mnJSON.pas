@@ -106,8 +106,7 @@ type
         tkIdentifire,
         tkCommentOpen,
         tkSingleLineComment,
-        tkMultiLineComment,
-        tkReturn //End of line to escape #10
+        tkMultiLineComment
       );
 
       TStackItem = record
@@ -171,7 +170,7 @@ type
     procedure CheckExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); inline;
     procedure Error(const Msg: string); inline;
     procedure ErrorNotExpected(AExpected: TExpects; AContexts: TContexts = [cxPair, cxArray]); //not inline
-
+    procedure NewLine; {$ifdef DEBUG}inline;{$endif}
   public
     //Always Init and Finish
     procedure Init(AParent: TObject; vAcquireProc: TmnJsonAcquireProc; vOptions: TJSONParseOptions);
@@ -301,6 +300,12 @@ begin
   end;
 end;
 
+procedure TmnJSONParser.NewLine;
+begin
+  inc(LineNumber);
+  ColumnNumber := 1;
+end;
+
 procedure TmnJSONParser.Push; {$ifdef FPC} inline; {$endif}
 begin
   {$ifdef verbose}
@@ -407,6 +412,7 @@ var
       begin
         Collector.Collect(Content, Index);
         Collector.Started := Index + 1;
+        NewLine;
       end
       else if (Ch = #13) or ((Ch = #10) and (LastChar <> #13)) then
       begin
@@ -421,6 +427,7 @@ var
           Collector.Collect(Content, Index);
           Collector.Started := Index + 1;
         end;
+        NewLine;
       end;
     end
     else if CharInSet(Ch, [#0, #10, #13]) then
@@ -458,7 +465,7 @@ var
 
   procedure IlligalCharacter(Ch: UTF8Char);
   begin
-    Error('Illigal character: ' + Ch + ' '+ IntToHex(ord(Ch)));
+    Error('Illigal character: `' + Ch + '` '+ IntToHex(ord(Ch)));
   end;
 var
   SkipObject: TObject;
@@ -481,12 +488,6 @@ begin
       LastChar := Ch;
       Ch := UTF8Char(Content[Index]);
       case Token of
-        tkReturn:
-        begin
-          if Ch = #10 then
-            Next;
-          Token := tkNone;
-        end;
         tkCommentOpen:
         begin
           if Ch = '/' then
@@ -509,8 +510,7 @@ begin
           if CharInSet(Ch, [#0, #10, #13]) then
           begin
             Token := tkNone;
-            //CommentBuffer := CommentBuffer + CopyString(Content, CommentStarted, Index - CommentStarted);
-            //AcquireProc(Parent, CommentBuffer, aqComment, [], SkipObject);
+            NewLine;
           end;
           Next;
         end;
@@ -562,8 +562,7 @@ begin
             begin
               Collector.Buffer := Collector.Buffer;
               Collector.IsMultiLine := True;
-              inc(LineNumber);
-              ColumnNumber := 1;
+              NewLine;
               Next;
               Collector.Started := Index;
             end;
@@ -573,8 +572,7 @@ begin
               if LastChar <> #13 then
               begin
                 Collector.IsMultiLine := True;
-                Inc(LineNumber);
-                ColumnNumber := 1;
+                NewLine;
               end;
               Next;
               Collector.Started := Index;
@@ -616,6 +614,8 @@ begin
             Collector.Collect(Content, Index);
             Collector.Name := Collector.Buffer;
             Collector.Reset(Index, tkBackQuoteString);
+            if (Ch = #13) or ((Ch = #10) and (LastChar <> #13)) then
+              NewLine;
             Next;
           end
           else
@@ -785,18 +785,11 @@ begin
             end;
             ' ', #8, #9:; //* Nothing to do
             #13:
-            begin
-              Inc(LineNumber);
-              ColumnNumber := 1;
-              Token := tkReturn;
-            end;
+              NewLine;
             #10:
             begin
               if LastChar <> #13 then
-              begin
-                Inc(LineNumber);
-                ColumnNumber := 1;
-              end;
+                NewLine;
             end;
             '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.': //may start with . ?
             begin

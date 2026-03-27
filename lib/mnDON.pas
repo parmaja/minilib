@@ -1505,7 +1505,7 @@ begin
       if jtoMultiLine in (AObject as TDON_String_Value).StringType.Options then
         Serializer.NewLine;
       Serializer.Add((AObject as TDON_String_Value).Value);
-      Serializer.Add('`');
+      Serializer.Add('`', LastOne, ',');
     end
     else
     begin
