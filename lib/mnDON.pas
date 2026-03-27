@@ -188,7 +188,7 @@ type
   TDON_Custom_String_Value = class abstract(TDON_Element)
   private
     FValue: string;
-    FStringOptions: TmnJsonStringOptions;
+    FStringType: TmnJsonStringType;
   protected
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
@@ -206,8 +206,9 @@ type
     procedure SetAsString(const Value: string); override;
     procedure SetValue(const Value: Variant); override;
   public
-    constructor Create(AParent: TDON_Parent; const AText: string; AStringOptions: TmnJsonStringOptions = []); overload;
-    property StringOptions: TmnJsonStringOptions read FStringOptions write FStringOptions;
+    constructor Create(AParent: TDON_Parent; const AText: string; AStringType: TmnJsonStringType); overload;
+    constructor Create(AParent: TDON_Parent; const AText: string); overload;
+    property StringType: TmnJsonStringType read FStringType write FStringType;
   published
     property Value: string read FValue write FValue;
   end;
@@ -216,13 +217,6 @@ type
 
   TDON_String_Value = class(TDON_Custom_String_Value)
   public
-  end;
-
-  { TDON_Script_Value }
-
-  TDON_Script_Value = class(TDON_String_Value)
-  public
-    ScriptType: string;
   end;
 
   { TDON_Identifier_Value }
@@ -419,7 +413,7 @@ function JsonParseFilePair(const FileName: string; out Error: string; Options: T
 function JsonParseFileValue(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Element;
 
 //Used in JSON parser
-    procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; const ATypeOptions: TmnJsonStringType);
+    procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject; const Value: string; const ValueType: TmnJsonType; const AStringType: TmnJsonStringType);
 
 implementation
 
@@ -486,7 +480,7 @@ begin
   Parser.Finish;
 end;
 
-procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject; const Value: string; const ValueType: TmnJsonAcquireType; const ATypeOptions: TmnJsonStringType);
+procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject; const Value: string; const ValueType: TmnJsonType; const AStringType: TmnJsonStringType);
 
   function CreateObjectValue: TObject; {$Ifdef D-}inline; {$endif}
   begin
@@ -510,7 +504,7 @@ procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject;
           Result := TDON_Identifier_Value.Create(nil, Value);
       end;
       aqBoolean: Result := TDON_Boolean_Value.Create(nil, StrToBoolDef(Value, False));
-      aqString: Result := TDON_String_Value.Create(nil, Value, ATypeOptions.StringOptions);
+      aqString: Result := TDON_String_Value.Create(nil, Value, AStringType);
       aqObject: Result := TDON_Object_Value.Create(nil);
       aqArray: Result := TDON_Array_Value.Create(nil);
     end;
@@ -1287,11 +1281,16 @@ end;
 
 { TDON_Custom_String_Value }
 
-constructor TDON_Custom_String_Value.Create(AParent: TDON_Parent; const AText: string; AStringOptions: TmnJsonStringOptions);
+constructor TDON_Custom_String_Value.Create(AParent: TDON_Parent; const AText: string; AStringType: TmnJsonStringType);
 begin
   inherited Create(AParent);
   FValue := AText;
-  FStringOptions := AStringOptions;
+  FStringType := AStringType;
+end;
+
+constructor TDON_Custom_String_Value.Create(AParent: TDON_Parent; const AText: string);
+begin
+  Create(AParent, AText, Default(TmnJsonStringType));
 end;
 
 function TDON_Custom_String_Value.GetAsBoolean: Boolean;
@@ -1499,7 +1498,18 @@ begin
     Generate((AObject as TDON_Root).Value, LastOne, Level)
   else if AClass = TDON_String_Value then
   begin
-    QuoteChar := Coalesce(jtoSingleQuote in (AObject as TDON_String_Value).StringOptions, '''', '"');
+    if (AObject as TDON_String_Value).StringType.Name <> '' then
+    begin
+      QuoteChar := '`';
+      Serializer.Add('`' + (AObject as TDON_String_Value).StringType.Name);
+      if jtoMultiLine in (AObject as TDON_String_Value).StringType.Options then
+        Serializer.NewLine;
+      Serializer.Add((AObject as TDON_String_Value).Value);
+      Serializer.Add('`');
+    end
+    else
+    begin
+      QuoteChar := Coalesce(jtoSingleQuote in (AObject as TDON_String_Value).StringType.Options, '''', '"');
 
     {if (sroModern in Serializer.Options) and (jtoMultiLine in (AObject as TDON_String_Value).StringOptions) then
     begin
@@ -1516,6 +1526,7 @@ begin
     end
     else}
       Serializer.Add(QuoteStr(EscapeStringC((AObject as TDON_String_Value).Value, QuoteChar), QuoteChar), LastOne, ',');
+    end;
     Serializer.NewLine;
   end
   else if AClass = TDON_Identifier_Value then
