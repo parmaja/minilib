@@ -1348,11 +1348,14 @@ end;
 
 function TDON_Custom_String_Value.GetAsString: string;
 begin
-  Result := FValue;
+  if Self = nil then
+    Result := ''
+  else
+    Result := FValue;
 end;
 
 function TDON_Custom_String_Value.GetValue: Variant;
-begin
+begin  
   Result := FValue;
 end;
 

@@ -160,6 +160,7 @@ type
   public
     function ToString: string; override;
     function GetText: string;
+    procedure Delete(Name: string); overload;
     function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function UnsetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
@@ -288,6 +289,8 @@ type
     // For
     SessionID: String;
     Session: TObject;
+    //TODO this get relative
+    //function GetRelativePath: string; overload; //TODO
     //this get path with host/directory/
     function GetPath: string; overload;
     //this get absolute path with host/directory/alias/schema/element
@@ -307,6 +310,7 @@ type
   private
     FUsage: Integer;
     FPriority: Integer;
+    FEndOfBody: Boolean;
   protected
     function CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
     procedure Created; override;     
@@ -315,6 +319,7 @@ type
     procedure IncUsage;
     procedure DecUsage;
     property Usage: Integer read FUsage;
+    property EndOfBody: Boolean read FEndOfBody write FEndOfBody;
     property Priority: Integer read FPriority write FPriority;
   end;
 
@@ -940,7 +945,7 @@ type
     procedure OpenTag(const Tag: string); overload;
     procedure OpenTag(const TagName, TagAttributes: string; TagText: string = ''); overload;
     procedure OpenInlineTag(const TagName:string; TagAttributes: string = ''; TagText: string = ''); overload; // keep inline
-    procedure CloseTag(const Tag: string);
+    procedure CloseTag(const Tag: string; TrailText: string = '');
     procedure AddShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
     procedure AddInlineShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
     procedure AddTag(const TagName, TagAttributes: string); overload;
@@ -2725,6 +2730,15 @@ begin
   //AutoRemove := True; //no AltTxt in image should writen even if it empty
 end;
 
+procedure TmnwAttributes.Delete(Name: string);
+var
+  i: Integer;
+begin
+  i:= IndexOfName(Name);
+  if i>=0 then
+    Delete(i);
+end;
+
 { TmnwElementRenderer }
 
 procedure TmnwElementRenderer.RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
@@ -2921,7 +2935,7 @@ begin
     else if (How = Extend) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
       aRendererRegister.Renderers := aRendererRegister.Renderers + [ARendererClass]
     else
-      raise Exception.Create('You can''t re-register same class: '+ AElementClass.ClassName);
+      raise Exception.Create('You can''t re-register same class: ' + AElementClass.ClassName);
   end
   else
   begin
@@ -3228,7 +3242,7 @@ begin
     GetElement(AContext, aSchema, aElement);
     if aElement <> nil then
     begin
-      //aContext.Schema := aSchema;
+    //aContext.Schema := aSchema;
       AContext.Element := aElement;
       
       AResponse.Session.Value := AResponse.Request.GetCookie('', 'session');
@@ -3463,9 +3477,9 @@ begin
   Write('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
 end;
 
-procedure TmnwHTMLWriterHelper.CloseTag(const Tag: string);
+procedure TmnwHTMLWriterHelper.CloseTag(const Tag: string; TrailText: string);
 begin
-  WriteLn('</'+Tag+'>', [woCloseIndent])
+  WriteLn(TrailText + '</'+Tag+'>', [woCloseIndent])
 end;
 
 procedure TmnwHTMLWriterHelper.AddShortTag(const TagName: string; TagAttributes: string);
@@ -3480,7 +3494,7 @@ end;
 
 procedure TmnwHTMLWriterHelper.AddHTMLScript(const src: string);
 begin
-  AddTag('script', 'src="' + src + '" crossorigin="anonymous" defer');
+  AddTag('script', 'src="' + src + '" crossorigin="anonymous" defer'); 
 end;
 
 procedure TmnwHTMLWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
@@ -3853,6 +3867,7 @@ var
 //  r: THTMLElement;
 begin
   e := Scope.Element as THTML.TDocument;
+  Scope.Attributes.Delete('Name'); //* Not for HTML tag
   Context.Writer.WriteLn('<!DOCTYPE html>');
   Context.Writer.OpenTag('html', Scope.ToString);
   Context.Writer.OpenTag('head');
@@ -3865,10 +3880,9 @@ begin
   begin
     AddHead(Scope, Context);
     //* Library Head
-    Renderer.Libraries.QuickSort;
     for aLibrary in Renderer.Libraries do
     begin
-      if aLibrary.Usage > 0 then
+      if (aLibrary.Usage > 0) and not aLibrary.EndOfBody then
         aLibrary.AddHead(Context);
     end;
     //* Renderer Head
@@ -5522,8 +5536,8 @@ begin
   if CheckOffline(Context, Context.GetAssetPath + 'jquery.min.js') then
     Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"')
   else
-
     Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"');
+
 end;
 
 { TWebElements_Library }
@@ -5674,8 +5688,11 @@ var
       Result := ' data-mnw-interactive="true"';
     end;
   end;
+var
+  aLibrary: TmnwLibrary;  
 begin
   e := Scope.Element as THTML.TBody;
+  Scope.Attributes.Delete('Name'); //* Not for HTML tag
 
   if e.FontName<>'' then
     s := ' style="font-family: '+SQ(e.FontName)+'!important;"'
@@ -5684,6 +5701,13 @@ begin
 
   Context.Writer.OpenTag('body', Scope.ToString + GetAttach + s);
   inherited;
+  
+  for aLibrary in Renderer.Libraries do
+  begin
+    if (aLibrary.Usage > 0) and aLibrary.EndOfBody then
+      aLibrary.AddHead(Context);
+  end;
+  
   Context.Writer.CloseTag('body');
 end;
 
@@ -6400,6 +6424,7 @@ begin
     Response.Answer := hrOK;
     aContext.Renderer := (Module as TUIWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
+    aContext.Renderer.Libraries.QuickSort;
     aContext.Writer := TmnwWriter.Create('html', Response.Stream);
     aContext.Writer.Compact := Module.Web.CompactMode;
     try
