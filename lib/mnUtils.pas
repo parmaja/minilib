@@ -332,9 +332,11 @@ function DataToBinStr(var Data; Size: Integer; Separator: string = ''): string;
 type
   TEnumFilesOptions = set of (efFile, efDirectory, efFullPath);
   //If set Resume to false it will stop loop
-  TEnumFilesCallback = procedure(AObject: TObject; const FileName: string; Count, Level:Integer; IsDirectory: Boolean; var Resume: Boolean);
+  TEnumFilesCallback = procedure(AObject: TObject; const FileName: string; Index:Integer; IsDirectory: Boolean; var Resume: Boolean);
 
+//TODO make EnumFilesCallback
 procedure EnumFiles(FileList: TStrings; const Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
+procedure EnumFiles(Callback: TEnumFilesCallback; AObject: TObject; const Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
 function FirstFile(const Path, Files: string): string;
 function DeleteFiles(const Path, Files: string): Integer;
 function GetSizeOfFile(const vFile: string): Int64; //GetFileSize
@@ -2663,28 +2665,45 @@ begin
     Result := -1;
 end;
 
-procedure EnumFiles(FileList: TStrings; const Folder, Filter: string; Options: TEnumFilesOptions); overload;
+procedure EnumFiles(Callback: TEnumFilesCallback; AObject: TObject; const Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
 var
   R: integer;
   SearchRec: TSearchRec;
   aFolder: string;
+  Index: Integer;
+  Resume: Boolean;
 begin
   aFolder := IncludeTrailingPathDelimiter(Folder);
   R := FindFirst(aFolder + Filter, faAnyFile, SearchRec);
+  Index := 0;
   while R = 0 do
   begin
     if (((efDirectory in Options) and ((SearchRec.Attr and faDirectory) = faDirectory))
       or ((efFile in Options) and ((SearchRec.Attr and faDirectory) <> faDirectory)))
       and ((SearchRec.Name <> '.') and (SearchRec.Name <> '..')) then
     begin
+      Resume := True;
       if efFullPath in Options then
-        FileList.Add(aFolder + SearchRec.Name)
+        Callback(AObject, aFolder + SearchRec.Name, Index, (SearchRec.Attr and faDirectory) = faDirectory, Resume)
       else
-        FileList.Add(SearchRec.Name);
+        Callback(AObject, SearchRec.Name, Index, (SearchRec.Attr and faDirectory) = faDirectory, Resume);
+      if not Resume then
+        break;
+      Index := Index + 1;
     end;
     R := FindNext(SearchRec);
   end;
   FindClose(SearchRec);
+end;
+
+procedure EnumFilesCallback(AObject: TObject; const FileName: string; Index:Integer; IsDirectory: Boolean; var Resume: Boolean);
+begin 
+  (AObject as TStrings).Add(FileName);
+end;
+
+procedure EnumFiles(FileList: TStrings; const Folder, Filter: string; Options: TEnumFilesOptions); overload;
+begin
+  EnumFiles(EnumFilesCallback, FileList, Folder, Filter, Options);
 end;
 
 function DeleteFiles(const Path, Files: string): Integer;

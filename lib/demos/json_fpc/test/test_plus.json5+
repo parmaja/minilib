@@ -1,0 +1,21 @@
+//* JSON5+ example
+/**
+    MultiLine strings with string type
+*/
+{
+    //html: `html <title> Title <?php if(10=9) print("test") ?> </title>` TODO
+    html:`html <title id="ttt"> Title </title>`,
+    Name: "Example",
+    Number: 0x1055,
+    TestSQL: `sql select * from "employees"`,
+    scriptID: app15546546,
+    executeSQL: `sql
+        select * from employees
+        where empID = 10 and empName = "Tester"
+    `,
+    execute: `lua
+        x = 10;
+        if x==10 then
+            print("it is 10");
+    `
+}

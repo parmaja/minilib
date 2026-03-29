@@ -42,7 +42,8 @@ uses
 type
   TJSONParseOption = (
     jsoModern, //* JSON5 compatiple (as possible
-    jsoComments, //* Read comment in object tree, do not skip it
+    jsoModernPlus, //* JSON5 compatiple (as possible
+//    jsoComments, //* Read comment in object tree, do not skip it, now in Modern
     jsoSafe //* No Exceptions
   );
   TJSONParseOptions = set of TJSONParseOption;
@@ -278,10 +279,10 @@ begin
   begin
     Result := 'Expected';
     case Expect of
-      exName: Result := Result + ' name';
-      exValue: Result := Result + ' value';
-      exAssign: Result := Result + ' colon `:`';
-      exNext: Result := Result + ' comma `,`';
+      exName: Result := Result + ' a Name';
+      exValue: Result := Result + ' a Value';
+      exAssign: Result := Result + ' a Colon `:`';
+      exNext: Result := Result + ' a Comma `,`';
       exEnd:;
     end;
 

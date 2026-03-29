@@ -14,7 +14,7 @@ implementation
 
 var
   Config: TConfFile;
-  DON: TDON_Root = nil;
+  DON: TDON_Pair = nil;
   AppPath: string;
   WorkPath: string;
 
@@ -44,7 +44,8 @@ var
   options: TJSONParseOptions;
 begin
   try
-    options := [jsoModern];
+    //options := [jsoModern];
+    options := [];
     if Config.ReadSwitch('-modern') then
       options := options + [jsoModern];
     if Config.ReadSwitch('-strict') then

@@ -1,6 +1,6 @@
 unit mnDON;
 { **
-  *  Data Object Notication/Nodes Tree
+  *  Data Object Notation/Nodes Tree
   *
   *  @license   The MIT License (MIT)
   *
@@ -393,18 +393,22 @@ type
 
   TDON_Root = class(TDON_Pair)
   public
-    constructor Create(AParent: TDON_Object_Value);
   end;
 
 //* Serializer
 procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList; Options: TSerializerOptions = []);
 procedure JsonConsoleSerialize(Pair: TDON_Pair; Options: TSerializerOptions = []);
 
-function JsonParseFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Root;
-function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Root;
+//Loading file line by line
+procedure LoadJsonFile(out Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []); overload;
+procedure LoadJsonFile(out AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
+function LoadJsonFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
+
+function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
 //* For testing
 function JsonParseChunks(const Content: string; Options: TJSONParseOptions = []; ChunkSize: Integer = 3): TDON_Root;
 
+//Loading it as string
 //Useful function to build JSON objects
 function JsonParseStringPair(const S: utf8string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
 //* {"value": "test1"}
@@ -413,11 +417,11 @@ function JsonParseFilePair(const FileName: string; out Error: string; Options: T
 function JsonParseFileValue(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Element;
 
 //Used in JSON parser
-    procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject; const Value: string; const ValueType: TmnJsonType; const AStringType: TmnJsonStringType);
+procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject; const Value: string; const ValueType: TmnJsonType; const AStringType: TmnJsonStringType);
 
 implementation
 
-function JsonParseFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Root;
+procedure LoadJsonFile(out Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []);
 var
   Parser: TmnJSONParser;
   w: TmnWrapperStream;
@@ -426,16 +430,26 @@ var
 begin
   if not FileExists(FileName) then
     raise Exception.Create('File not found ' + FileName);
-  Result := TDON_Root.Create(nil);
-  Parser.Init(Result, @JsonParseAcquireCallback, Options);
+  Pair := TDON_Pair.Create(nil);
+  Parser.Init(Pair, @JsonParseAcquireCallback, Options);
   fs := TFileStream.Create(FileName, fmOpenRead);
   try
     w := TmnWrapperStream.Create(fs, False);
     try
       while not (cloRead in w.State) do
       begin
-        if w.ReadLine(aLine, False) then
-          Parser.Parse(aLine)
+        if w.ReadUTF8Line(aLine, False) then
+        begin
+          try
+            Parser.Parse(aLine);
+          except
+            on E: Exception do
+            begin
+              E.Message := E.Message + sLineBreak + 'On line:' + sLineBreak + aLine;
+              raise;
+            end;
+          end;
+        end;
       end;
       Parser.Finish;
     finally
@@ -446,7 +460,24 @@ begin
   end;
 end;
 
-function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Root;
+function LoadJsonFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
+begin
+  LoadJsonFile(Result, FileName, Options);
+end;
+
+procedure LoadJsonFile(out AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
+var
+  Pair: TDON_Pair;
+begin
+  LoadJsonFile(Pair, FileName, Options);
+  try
+    AObject := Pair.ReleaseValue;
+  finally
+    Pair.Free;
+  end;
+end;
+
+function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
 var
   Parser: TmnJSONParser;
   w: TmnWrapperStream;
@@ -582,7 +613,11 @@ var
   Pair: TDON_Pair;
 begin
   Pair := JsonParseFilePair(FileName, Error, Options);
-  Result := Pair.ReleaseValue;
+  try
+    Result := Pair.ReleaseValue;
+  finally
+    Pair.Free;
+  end;
 end;
 
 procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList;
@@ -1185,13 +1220,6 @@ end;
 procedure TDON_Pair.SetValue(const AValue: Variant);
 begin
   AsString := AValue;
-end;
-
-{ TDON_Root }
-
-constructor TDON_Root.Create(AParent: TDON_Object_Value);
-begin
-  inherited;
 end;
 
 { TDON_Boolean_Value }
