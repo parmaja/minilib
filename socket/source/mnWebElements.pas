@@ -23,7 +23,7 @@
     ┌─┴─┐   ┌──┴───┐ ┌──────┴────────┬┴┐
 GET https://john.doe@www.example.com:123/username/forum/questions/q/10/?tag=networking&order=newest#top
 └┬┘                  └──────┬──────┘    └───────────────┬─────────────┘└────────────┬─────────────┘└─┬─┘
-Method                  DomainName                    Path(Full)                  Query           Fragment
+Method                  DomainName                    Path                        Query           Fragment
                                         └───┬───┘└──┬──┘└───┬────┴──┬─┘           └─┬─┘
 WebElement:                             Namespace Alias   Schema  Directory       Params
     └────────────┬──────────────────────┘ ─ ┘    /Module         |    |
@@ -36,9 +36,9 @@ WebElement:                             Namespace Alias   Schema  Directory     
                           PathURL       |               |        |    |
                                         |               |        |    |
                                         └──────────┬────┘        |    |
-                                        |       SchemaPath       |    |
+                                        |       ModulePath       |    |
                                         └──────────┬─────────────┘    |                                        
-                                        |       ModulePath            |  
+                                        |       SchamaPath            |  
                                         └──────────┬──────────────────┘
                                                   Path
 {
@@ -530,7 +530,7 @@ type
     property State: TmnwElementState read FState write SetState;
 
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
-    property OnAction: TActionProc read FOnAction write FOnAction;
+    property OnRespond: TActionProc read FOnAction write FOnAction;
     property Handle: THandle read FHandle;
 
     property TimeStamp: Int64 read FTimeStamp;
@@ -6081,7 +6081,7 @@ constructor THTML.TAction.Create(AParent: TmnwElement; ARoute: string; ActionPro
 begin
   inherited Create(AParent);
   Route := ARoute;
-  OnAction := ActionProc;
+  OnRespond := ActionProc;
 end;
 
 procedure THTML.TAction.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
