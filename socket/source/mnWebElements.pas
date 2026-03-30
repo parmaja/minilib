@@ -394,7 +394,7 @@ type
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignBaseline, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
 
-  TActionProc = reference to procedure (const AContext: TmnwContext; AResponse: TmnwResponse);
+  TRespondProc = reference to procedure (const AContext: TmnwContext; AResponse: TmnwResponse);
 
   { TmnwElement }
 
@@ -418,7 +418,7 @@ type
     FPriority: TmnwPriority;
     FState: TmnwElementState;
     FOnExecute: TElementExecute;
-    FOnAction: TActionProc;
+    FOnRespond: TRespondProc;
     FPrepared: Boolean;
     FIsRoot: Boolean;
     FTimeStamp: Int64;
@@ -439,8 +439,7 @@ type
     procedure DoCompose(const AContext: TmnwContext); virtual;
     procedure DoComposed; virtual;
 
-    procedure DoRespondHeader(AContext: TmnwContext); virtual;
-    procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
+    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
 
     procedure PrepareRenderer(const AContext: TmnwContext); 
@@ -501,7 +500,7 @@ type
     function GetContentType(Route: string): string; virtual;
 
 
-    procedure Action(const AContext: TmnwContext; AResponse: TmnwResponse);
+    procedure RespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
     procedure Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
 
     //* Original Render
@@ -530,7 +529,7 @@ type
     property State: TmnwElementState read FState write SetState;
 
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
-    property OnRespond: TActionProc read FOnAction write FOnAction;
+    property OnRespond: TRespondProc read FOnRespond write FOnRespond;
     property Handle: THandle read FHandle;
 
     property TimeStamp: Int64 read FTimeStamp;
@@ -1366,7 +1365,7 @@ type
       TForm = class(THTMLElement)
       private
       protected
-        procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
         procedure Created; override;
         procedure DoComposed; override;
       public
@@ -1398,7 +1397,7 @@ type
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public        
         procedure Loop; virtual;
-        constructor Create(AParent: TmnwElement; ARoute: string = ''; ActionProc: TActionProc = nil); reintroduce;
+        constructor Create(AParent: TmnwElement; ARoute: string = ''; ActionProc: TRespondProc = nil); reintroduce;
       end;
 
 			TSpan = class(THTMLElement)
@@ -2029,7 +2028,7 @@ type
     procedure DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoChildAction(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); override;
-    procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
@@ -3281,13 +3280,14 @@ begin
         AResponse.ContentType := aElement.GetContentType(AContext.Route);
 
       if AResponse.Resume then
-        aElement.Action(AContext, AResponse);
+        aElement.RespondHeader(AContext, AResponse);
       //* Resume maybe come false in action
       //* We will render it now
       if AResponse.Resume then
       begin
         aElement.PrepareRenderer(AContext); 
-        aElement.Respond(AContext, AResponse);
+        if AResponse.Resume then
+          aElement.Respond(AContext, AResponse);
       end;
 
       if not (AResponse.IsHeaderSent) then
@@ -5009,11 +5009,7 @@ procedure TmnwElement.DoRespond(const AContext: TmnwContext; AResponse: TmnwResp
 begin
 end;
 
-procedure TmnwElement.DoRespondHeader(AContext: TmnwContext);
-begin
-end;
-
-procedure TmnwElement.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
 end;
 
@@ -5152,15 +5148,14 @@ begin
   Result := 'text/html';
 end;
 
-procedure TmnwElement.Action(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.RespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
-  DoRespondHeader(AContext);
-  DoAction(AContext, AResponse);
+  DoRespondHeader(AContext, AResponse);
   if (Schema <> nil) and (Schema <> Self) then
     Schema.DoChildAction(Self, AContext, AResponse);
-  if AResponse.Resume and Assigned(FOnAction) then
-    FOnAction(AContext, AResponse);
+  if AResponse.Resume and Assigned(OnRespond) then
+    OnRespond(AContext, AResponse);
 end;
 
 constructor TmnwWriter.Create(AName: string; AStream: TmnBufferStream);
@@ -6044,7 +6039,7 @@ end;
 
 { THTML.TForm }
 
-procedure THTML.TForm.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure THTML.TForm.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
   if (RedirectTo <> '') and (AResponse.Answer = hrNone) then
@@ -6077,7 +6072,7 @@ end;
 
 { THTML.TAction }
 
-constructor THTML.TAction.Create(AParent: TmnwElement; ARoute: string; ActionProc: TActionProc);
+constructor THTML.TAction.Create(AParent: TmnwElement; ARoute: string; ActionProc: TRespondProc);
 begin
   inherited Create(AParent);
   Route := ARoute;
@@ -6947,7 +6942,7 @@ end;
 
 { TLoginSchema }
 
-procedure TLoginSchema.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TLoginSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   if (AContext.Data <> nil) and SameText(AContext.Data.Values['execute'], 'true') then
   begin

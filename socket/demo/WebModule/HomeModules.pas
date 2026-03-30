@@ -50,7 +50,7 @@ type
   private
   public
   protected
-    procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
@@ -61,7 +61,7 @@ type
   private
   public
   protected
-    procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
@@ -134,7 +134,7 @@ type
 
   TMyLink = class(THTML.TLink)
   public
-    procedure DoAction(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoExecute; override;
   end;
 
@@ -147,7 +147,7 @@ type
 
 { TMyLink }
 
-procedure TMyLink.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TMyLink.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
   AResponse.Resume := False;
@@ -369,7 +369,7 @@ end;
 
 { TLoginSchema }
 
-procedure TLoginSchema.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TLoginSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   aUsername, aPassword: string;
 begin
@@ -503,7 +503,7 @@ end;
 
 { TDemoSchema }
 
-procedure TDemoSchema.DoAction(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TDemoSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   aUsername, aPassword: string;
 begin
