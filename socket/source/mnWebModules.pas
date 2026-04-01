@@ -89,12 +89,12 @@ type
 
   TmodWebModule = class abstract(TmodModule)
   private
-    FHomePath: string;
+    FHomeFolder: string;
     FOrigins: TStrings;
-    FWorkPath: string;
+    FWorkFolder: string;
 
     //FSmartURL: Boolean;
-    procedure SetHomePath(AValue: string);
+    procedure SetHomeFolder(AValue: string);
     procedure SetOrigins(AValue: TStrings);
   protected
     procedure Created; override;
@@ -117,9 +117,9 @@ type
 
     property Origins: TStrings read FOrigins write SetOrigins;
     //Public Path
-    property HomePath: string read FHomePath write SetHomePath;
+    property HomeFolder: string read FHomeFolder write SetHomeFolder;
     //Private Path
-    property WorkPath: string read FWorkPath write FWorkPath;
+    property WorkFolder: string read FWorkFolder write FWorkFolder;
   end;
   { TmodWebFileModule }
 
@@ -189,8 +189,8 @@ type
     function CreateModules: TmodModules; override;
   public
     constructor Create; override;
-    procedure AddChallengeAcme(const AHomePath: string);
-    procedure AddFileModule(const Alias: string; const AHomePath: string);
+    procedure AddChallengeAcme(const AHomeFolder: string);
+    procedure AddFileModule(const Alias: string; const AHomeFolder: string);
     procedure AddRedirectHttps;
     procedure SetFallbackRedirect(ToLocation: string);
     procedure SetNotfound;
@@ -331,8 +331,8 @@ type
 var
   modLock: TCriticalSection = nil;
 
-function WebFindDocument(const HomePath, Path: string; out Document:string; Smart: Boolean = False): Boolean;
-function WebExpandFile(HomePath, Path: string; out Document: string; Smart: Boolean = False): Boolean;
+function WebFindDocument(const HomeFolder, Path: string; out Document:string; Smart: Boolean = False): Boolean;
+function WebExpandFile(HomeFolder, Path: string; out Document: string; Smart: Boolean = False): Boolean;
 function WebExpandToRoot(FileName: string; Root: string): string;
 function FindDefaultDocument(Root: string; DefaultDocuments: TStringList): string;
 procedure WebServeFolder(Title, Path: string; Response: TwebResponse; Request: TmodRequest);
@@ -355,11 +355,11 @@ begin
   Result := FWebServers;
 end;
 
-function WebFindDocument(const HomePath, Path: string; out Document:string; Smart: Boolean = False): Boolean;
+function WebFindDocument(const HomeFolder, Path: string; out Document:string; Smart: Boolean = False): Boolean;
 var
   aTruncPath: string;
 begin
-  Document := HomePath;
+  Document := HomeFolder;
   // path = '' or '/' or './' or '../'
   if not ((Path = '') or StartsDelimiter(Path) or StartsStr('./', Path) or StartsStr('../', Path)) then //* some file or folder names starts with . like '.well-known/acme-challenge/'
     Document := IncludePathDelimiter(Document);
@@ -371,19 +371,19 @@ begin
     aTruncPath := TruncPath(Path, -1);
     if aTruncPath='' then
     begin
-      Document := IncludePathDelimiter(HomePath);
+      Document := IncludePathDelimiter(HomeFolder);
       Result := DirectoryExists(Document);
     end
     else
-      Result := WebFindDocument(HomePath, aTruncPath, Document, Smart);
+      Result := WebFindDocument(HomeFolder, aTruncPath, Document, Smart);
   end;
 end;
 
-function WebExpandFile(HomePath, Path: string; out Document: string; Smart: Boolean): Boolean;
+function WebExpandFile(HomeFolder, Path: string; out Document: string; Smart: Boolean): Boolean;
 begin
-  HomePath := ExcludePathDelimiter(ExpandFile(CorrectPath(HomePath)));
-  Result := WebFindDocument(HomePath, CorrectPath(Path), Document, Smart);
-  Result := Result and StartsStr(HomePath, Document); //check if out of root :)
+  HomeFolder := ExcludePathDelimiter(ExpandFile(CorrectPath(HomeFolder)));
+  Result := WebFindDocument(HomeFolder, CorrectPath(Path), Document, Smart);
+  Result := Result and StartsStr(HomeFolder, Document); //check if out of root :)
 end;
 
 function WebExpandToRoot(FileName: string; Root: string): string;
@@ -430,11 +430,11 @@ end;
 
 { TmodWebModule }
 
-procedure TmodWebModule.SetHomePath(AValue: string);
+procedure TmodWebModule.SetHomeFolder(AValue: string);
 begin
-  if FHomePath = AValue then
+  if FHomeFolder = AValue then
 	  exit;
-  FHomePath := AValue;
+  FHomeFolder := AValue;
 end;
 
 procedure TmodWebModule.SetOrigins(AValue: TStrings);
@@ -449,7 +449,7 @@ begin
   UseKeepAlive := ovUndefined;
   UseCompressing := ovNo;
   UseWebSocket := True;
-  FHomePath := '';
+  FHomeFolder := '';
   FOrigins := TStringList.Create;
 end;
 
@@ -529,7 +529,7 @@ end;
 procedure TmodWebFileModule.Started;
 begin
   inherited;
-  if HomePath = '' then
+  if HomeFolder = '' then
     raise Exception.Create('Home path not set!');
 end;
 
@@ -562,7 +562,7 @@ end;
 procedure TwebFileCommand.Prepare(var Result: TmodRespondResult);
 begin
   inherited;
-  Response.HomePath := Module.HomePath;
+  Response.HomeFolder := Module.HomeFolder;
 end;
 
 procedure TwebFileCommand.Created;
@@ -645,7 +645,7 @@ end;
 
 procedure WebServeFile(Response: TwebResponse; Request: TmodRequest; DefaultDocuments: TStringList; Options: TmodServeFiles);
 var
-  aDocument, aRequestDocument, aFile, aHomePath: string;
+  aDocument, aRequestDocument, aFile, aHomeFolder: string;
 
   {function FindDocument(Path: string; Smart: Boolean = False): Boolean;
   begin
@@ -655,7 +655,7 @@ var
     aPath := Path;
     // path = '' or '/' or './' or '../'
     if not ((aPath = '') or StartsDelimiter(aPath) or StartsStr('./', aPath) or StartsStr('../', aPath)) then //* some file or folder names starts with . like '.well-known/acme-challenge/'
-      aDocument := IncludePathDelimiter(aHomePath);
+      aDocument := IncludePathDelimiter(aHomeFolder);
     aDocument := ExpandFile(aDocument + aPath);
 
     Result := FileExists(aDocument) or DirectoryExists(aDocument);
@@ -674,11 +674,11 @@ begin
   '/web/dashbord/index.html' file
 
 *)
-  aHomePath := ExpandFile(CorrectPath(ExcludePathDelimiter(Response.HomePath)));
+  aHomeFolder := ExpandFile(CorrectPath(ExcludePathDelimiter(Response.HomeFolder)));
 
-  WebExpandFile(aHomePath, Request.Path, aRequestDocument, False);
+  WebExpandFile(aHomeFolder, Request.Path, aRequestDocument, False);
 
-  if not WebExpandFile(aHomePath, Request.Path, aDocument, serveSmart in Options) then
+  if not WebExpandFile(aHomeFolder, Request.Path, aDocument, serveSmart in Options) then
     Response.Answer := hrUnauthorized
   else if ((Request.Path = '') and not FileExists(aDocument)) or (not EndsDelimiter(aRequestDocument) and DirectoryExists(aRequestDocument)) then
   //                                                                  http://127.0.0.1:81/web  to   http://127.0.0.1:81/web/
@@ -750,7 +750,7 @@ begin
   inherited;
   Response.Stream.WriteCommand('OK');
   aFileName := Request.Params.Values['FileName'];
-  aFile := TFileStream.Create(Response.HomePath + aFileName, fmCreate);
+  aFile := TFileStream.Create(Response.HomeFolder + aFileName, fmCreate);
   try
     Response.Stream.ReadStream(aFile, Request.ContentLength);
   finally
@@ -811,7 +811,7 @@ var
   aFileName: string;
 begin
   inherited;
-  aFileName := IncludeTrailingPathDelimiter(Response.HomePath) + Request.Path;
+  aFileName := IncludeTrailingPathDelimiter(Response.HomeFolder) + Request.Path;
   if FileExists(aFileName) then
     DeleteFile(aFileName);
   Response.Stream.WriteCommand('OK');
@@ -928,7 +928,7 @@ end;
 const
   sAcmeNameFolder = 'well-known';
 
-procedure TmodCustomWebServer.AddChallengeAcme(const AHomePath: string);
+procedure TmodCustomWebServer.AddChallengeAcme(const AHomeFolder: string);
 begin
   if Modules.Find(sAcmeNameFolder) = nil then
   begin
@@ -936,7 +936,7 @@ begin
     with TmodWebFileModule.Create(Modules, sAcmeNameFolder, '.' + sAcmeNameFolder) do
     begin
       Level := -1;
-      HomePath := AHomePath;
+      HomeFolder := AHomeFolder;
     end;
     //* use certbot folder to "Application.Location + 'acme'" because certbot will create folder .well-known
   end;
@@ -945,14 +945,14 @@ end;
 const
   sForwardHttps = 'ForwardHttps';
 
-procedure TmodCustomWebServer.AddFileModule(const Alias: string; const AHomePath: string);
+procedure TmodCustomWebServer.AddFileModule(const Alias: string; const AHomeFolder: string);
 begin
   if Modules.Find(Alias) = nil then
   begin
     with TmodWebFileModule.Create(Modules, Alias, Alias) do
     begin
       Level := -1;
-      HomePath := AHomePath;
+      HomeFolder := AHomeFolder;
     end;
   end;
 end;

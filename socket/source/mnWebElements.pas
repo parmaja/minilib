@@ -281,22 +281,20 @@ type
   end;
 
   TmnwContext = record
-    Web: TmnwWeb;
     Sender: TObject;
-    Schema: TmnwSchema;
+    Web: TmnwWeb;
+    Request: TmodRequest;
+    Schema: TmnwSchema;    
     Element: TmnwElement;
     Renderer: TmnwRenderer;
-
-    Stamp: string; //IfNone-Match
-    Route: string;
-    
-    Namespace: string;//TODO
-    Directory: string;
-
     ParentRenderer: TmnwElementRenderer;
+
     Writer: TmnwWriter;
+    //
     Data: TmnMultipartData;
     // For
+    Stamp: string; //IfNone-Match
+    Route: string;   
     SessionID: String;
     Session: TObject;
     //TODO this get relative
@@ -304,14 +302,20 @@ type
     //this get path with host/directory/
     function GetPath: string; overload;
     //this get absolute path with host/directory/alias/schema/element
-    function GetPath(e: TmnwElement): string; overload;
-    //this get absolute path with host/directory/alias/schema/
+    function GetPath(e: TmnwElement): string; overload;    
+    function GetURL(e: TmnwElement): string; overload;
+
+    //this get absolute path with namespace/alias/schema/
+    function GetSchemaPath: string; overload;
+    //With Host
+    //this get absolute path with http://Host:80/namespace/alias/schema/
     function GetSchemaURL(ASchema: TmnwSchema): string; overload;
     function GetSchemaURL: string; overload;
-    //this get absolute path with host/directory/alias/assets/
+
+    function GetAssetsPath: string;
     function GetAssetsURL: string;
-    //Folder of HomePath of assets
-    function GetAssetPath: string;
+    //Folder of HomeFolder of assets
+    function GetAssetFolder: string;
   end;
 
   TmnwObject = class(TmnNamedObject);
@@ -430,8 +434,8 @@ type
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
 
     procedure ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
-    procedure ServeFile(HomePath: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
-    procedure ServeFile(HomePath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
+    procedure ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
+    procedure ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
 
     procedure DoPrepareRenderer(const AContext: TmnwContext); virtual;   
     procedure DoPrepare; virtual;
@@ -486,6 +490,7 @@ type
     //this get path with schema/element/element/element
     function GetPath: string;
     //this get path without schema name, element/element/element
+    //Relative to parent
     function GetRelativePath: string; overload;
     //this get path without schema and parent element name, element/element
     function GetRelativePath(ToElement: TmnwElement): string; overload;
@@ -659,7 +664,7 @@ type
     IsManual: Boolean;
     Direction: TDirection;
     RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
-    HomePath: string;
+    HomeFolder: string;
     ServeFiles: TmodServeFiles;
     SessionID: string;
     Interactive: Boolean;
@@ -669,7 +674,7 @@ type
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
     function NewHandle: THandle;
 
-    function GetHomePath: string;
+    function GetHomeFolder: string;
     //* Attaching cap
     //function Interactive: Boolean;
 
@@ -868,9 +873,9 @@ type
   TmnwWeb = class(TmnObjectList<TmnwSchema>)
   private
     FOptions: TmnwAppOptions;
-    FHomePath: string;
-    FAppPath: string;
-    FWorkPath: string;
+    FHomeFolder: string;
+    FAppFolder: string;
+    FWorkFolder: string;
     FAssets: TAssetsSchema;
     FDefaultSchema: TmnwSchemaItem;
     FShutdown: Boolean;
@@ -886,10 +891,12 @@ type
     Started: Boolean;
     InstanceUID: TGUID;
     InstanceDate: TDateTime;
+
     IsSSL: Boolean;
     Domain: string; //localhost
     Port: string;
     Alias: string; //ModuleName
+
     CompactMode: Boolean;
     DefaultAge: Integer;
 
@@ -913,18 +920,17 @@ type
     //for WebSocket
     function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
-    //function GetPath: string; virtual;
     function GetHostURL: string; virtual;
 
     property Lock: TCriticalSection read FLock;
     property Assets: TAssetsSchema read FAssets;
     property DefaultSchema: TmnwSchemaItem read FDefaultSchema;
     //Public Web Files
-    property HomePath: string read FHomePath write FHomePath;
+    property HomeFolder: string read FHomeFolder write FHomeFolder;
     //Private Files
-    property WorkPath: string read FWorkPath write FWorkPath;
+    property WorkFolder: string read FWorkFolder write FWorkFolder;
     //Exe path
-    property AppPath: string read FAppPath write FAppPath;
+    property AppFolder: string read FAppFolder write FAppFolder;
     property Shutdown: Boolean read FShutdown;
     property Options: TmnwAppOptions read FOptions write FOptions;
     property OnlineFiles: TOnlineFiles read FOnlineFiles write FOnlineFiles;
@@ -1050,7 +1056,7 @@ type
       protected
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public
-        HomePath: string;
+        HomeFolder: string;
         ServeFiles: TmodServeFiles;
         function GetContentType(Route: string): string; override;
       end;
@@ -1059,7 +1065,7 @@ type
       protected
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public
-        HomePath: string;
+        HomeFolder: string;
         ServeFiles: TmodServeFiles;
         function GetContentType(Route: string): string; override;
       end;
@@ -1383,6 +1389,16 @@ type
       public
         Text: string;
         constructor Create(AParent: TmnwElement; AText: string = ''); reintroduce;
+      end;
+
+      TCode = class(THTMLComponent)
+      public
+        Language: string;
+        Text: string;
+      end;
+
+      TMultilineCode = class(TCode)
+      public
       end;
 
       { TAction }
@@ -1863,6 +1879,17 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
+      TCode = class(THTMLComponent)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      TMultilineCode = class(THTMLComponent)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+      
+
       { TBreak }
 
       TBreak = class(THTMLElement)
@@ -1961,6 +1988,7 @@ type
     constructor Create;
     destructor Destroy; override;
   end;
+  TmnwRendererRegisterClass = class of TmnwRendererRegister;
 
   { TmnwElementRenderers }
   //TODO use hash table TDicionary 
@@ -1971,7 +1999,7 @@ type
     Sorted: Boolean;
     type
       TmnwRegisterHow = (None, Replace, Extend);
-    procedure QuickSort; override;
+    procedure QuickSort; override;        
     function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
     procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwElementRenderers.TmnwRegisterHow = None);
   end;
@@ -2114,6 +2142,9 @@ function ElementRenderers: TmnwElementRenderers;
 procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwElementRenderers.TmnwRegisterHow = None);
 
 implementation
+
+uses  
+  Generics.Collections;
 
 function GetTimeStamp: Int64;
 var
@@ -2918,14 +2949,30 @@ end;
 { TmnwSchema.TmnwElementRenderers }
 
 function TmnwElementRenderers.Compare(Item1, Item2: TmnwRendererRegister): Integer;
+var
+  ClassItem1, ClassItem2: TClass;
 begin
-  Result := Item2.Level - Item1.Level;
+  ClassItem1 := Item1.ElementClass;
+  ClassItem2 := Item2.ElementClass;
+  if ClassItem1 = ClassItem2 then
+    Exit(0);
+  if ClassItem2.InheritsFrom(ClassItem1) then
+    Exit(1);
+  if ClassItem1.InheritsFrom(ClassItem2) then
+    Exit(-1);
+  Result := Item2.Level - Item2.Level;
+  if Result = 0 then  
+    Result := CompareText(ClassItem2.ClassName, ClassItem1.ClassName);
 end;
 
 procedure TmnwElementRenderers.QuickSort;
+var
+  itm: TmnwRendererRegister;
 begin
   inherited;
   Sorted := True;
+{  for itm in Self do
+    Writeln(itm.ElementClass.ClassName);}
 end;
 
 procedure TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwRegisterHow);
@@ -2934,7 +2981,13 @@ var
 begin
   if Sorted then
     raise Exception.Create('You can''t re-register any more class after sorted: '+ AElementClass.ClassName);    
-    
+
+  if not AElementClass.InheritsFrom(TmnwElement) then
+    raise Exception.Create('Element should inherited from THTML');
+      
+  if not ARendererClass.InheritsFrom(TmnwElementRenderer) then
+    raise Exception.Create('Renderer should inherited from TmnwElementRenderer');
+      
   Sorted := False;
   aRendererRegister := Find(AElementClass);
   if aRendererRegister <> nil then
@@ -3437,7 +3490,7 @@ end;
 
 function TmnwWeb.GetHostURL: string;
 begin
-  Result := IncludeURLDelimiter(ComposeHttpURL(IsSSL, Domain, Port));
+  Result := ComposeHttpURL(IsSSL, Domain, Port);
 end;
 
 function TmnwWeb.CreateSchema(SchemaItem: TmnwSchemaItem): TmnwSchema;
@@ -3789,7 +3842,13 @@ begin
   RegisterRenderer(THTML.TRow, TRow);
   RegisterRenderer(THTML.TColumn, TColumn);
   RegisterRenderer(THTML.TPanel, TPanel);
+  RegisterRenderer(THTML.TCode, TCode);  
+  RegisterRenderer(THTML.TMultilineCode, TMultilineCode);    
   RegisterRenderer(THTML.TBar, TBar);
+
+  RegisterRenderer(THTML.THTMLElement, THTMLElement);
+  RegisterRenderer(THTML.THTMLComponent, THTMLComponent);
+  RegisterRenderer(THTML.THTMLControl, THTMLControl);
 
   RegisterRenderer(THTML.TThemeModeButton, TThemeModeButton);
 end;
@@ -4311,18 +4370,18 @@ begin
     Schema.Attachments.SendMessage('', AMessage);
 end;
 
-procedure TmnwElement.ServeFile(HomePath: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   aDocument, aRequestDocument, aFile: string;
 begin
-  if HomePath <> '' then
+  if HomeFolder <> '' then
   begin
     {if (AContext.Route = '') or (AContext.Route = URLPathDelim) then
       Render(AContext, AResponse)
     else }
-    WebExpandFile(HomePath, AContext.Route, aRequestDocument);
+    WebExpandFile(HomeFolder, AContext.Route, aRequestDocument);
 
-    if not WebExpandFile(HomePath, AContext.Route, aDocument, serveSmart in Options) then
+    if not WebExpandFile(HomeFolder, AContext.Route, aDocument, serveSmart in Options) then
     begin
       //if serveUnauthorized in Schema.ServeFiles then // Need the Schema
       if (AContext.Route = '') or IsStrInArray(AContext.Route, ['\', '/']) then // Need the Schema
@@ -4363,9 +4422,9 @@ begin
     Render(AContext, AResponse);
 end;
 
-procedure TmnwElement.ServeFile(HomePath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
-  ServeFile(HomePath, nil, Options, AContext, AResponse);
+  ServeFile(HomeFolder, nil, Options, AContext, AResponse);
 end;
 
 procedure TmnwElement.ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
@@ -4427,7 +4486,7 @@ end;
 procedure TmnwSchema.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   if serveEnabled in ServeFiles then
-    ServeFile(GetHomePath, DefaultDocuments, ServeFiles, AContext, AResponse)
+    ServeFile(GetHomeFolder, DefaultDocuments, ServeFiles, AContext, AResponse)
   else
     Render(AContext, AResponse);
 end;
@@ -4522,8 +4581,8 @@ end;
 
 procedure TmnwSchema.DoPrepare;
 begin
-  if (HomePath = '') then
-    HomePath := Web.HomePath;
+  if (HomeFolder = '') then
+    HomeFolder := Web.HomeFolder;
   inherited;
 end;
 
@@ -4543,12 +4602,12 @@ begin
   Result := FNamingLastNumber;
 end;
 
-function TmnwSchema.GetHomePath: string;
+function TmnwSchema.GetHomeFolder: string;
 begin
-  if HomePath = '' then
-    Result := Web.HomePath
+  if HomeFolder = '' then
+    Result := Web.HomeFolder
   else
-    Result := HomePath;
+    Result := HomeFolder;
 end;
 
 procedure TmnwSchema.UpdateAttached;
@@ -5364,7 +5423,7 @@ end;
 procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
-  ServeFile(Schema.GetHomePath, [serveDefault], AContext, AResponse);
+  ServeFile(Schema.GetHomeFolder, [serveDefault], AContext, AResponse);
 end;
 
 function THTML.TAssets.GetContentType(Route: string): string;
@@ -5377,7 +5436,7 @@ end;
 procedure THTML.TFolder.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
-  ServeFile(HomePath, ServeFiles, AContext, AResponse);
+  ServeFile(HomeFolder, ServeFiles, AContext, AResponse);
 end;
 
 function THTML.TFolder.GetContentType(Route: string): string;
@@ -5538,8 +5597,8 @@ end;
 
 procedure TJQuery_Library.AddHead(const Context: TmnwContext);
 begin
-  if CheckOffline(Context, Context.GetAssetPath + 'jquery.min.js') then
-    Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"')
+  if CheckOffline(Context, Context.GetAssetFolder + 'jquery.min.js') then
+    Context.Writer.AddTag('script', 'src="' + Context.GetAssetsPath + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"')
   else
     Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"');
 
@@ -5549,8 +5608,8 @@ end;
 
 procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsURL + 'web-elements.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
-  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + Context.GetAssetsURL + 'web-elements.css?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsPath + 'web-elements.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + Context.GetAssetsPath + 'web-elements.css?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { THTML }
@@ -6381,7 +6440,7 @@ begin
 
   aContext.Route := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
-  aContext.Directory := Request.Directory;
+  aContext.Request := Request;
 
   if Module.Domain <> '' then
   begin
@@ -6421,7 +6480,7 @@ begin
     if Request.ConnectionType = ctFormData then
     begin
       aContext.Data.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
-      aContext.Data.TempPath := (Module as TUIWebModule).WorkPath + 'temp';
+      aContext.Data.TempPath := (Module as TUIWebModule).WorkFolder + 'temp';
       aContext.Data.Read(Request.Stream);
     end;
     Response.ContentType := DocumentToContentType('html');
@@ -6470,10 +6529,10 @@ begin
   minilib := GetEnvironmentVariable('minilib');
   if minilib = '' then
   begin
-    if FileExists(GetHomePath + 'mnWebElements.js') then
+    if FileExists(GetHomeFolder + 'mnWebElements.js') then
     begin
-      TFile.Create(This, [], GetHomePath + 'web-elements.js', 'web-elements.js');
-      TFile.Create(This, [], GetHomePath + 'web-elements.css', 'web-elements.css');
+      TFile.Create(This, [], GetHomeFolder + 'web-elements.js', 'web-elements.js');
+      TFile.Create(This, [], GetHomeFolder + 'web-elements.css', 'web-elements.css');
     end
     else
     begin
@@ -6525,18 +6584,18 @@ procedure TUIWebModule.Start;
 begin
   inherited;
 //  AssetsURL := '/' + AliasName + '/' + Web.Assets.Route;
-  if Web.HomePath = '' then
-    Web.HomePath := HomePath;
+  if Web.HomeFolder = '' then
+    Web.HomeFolder := HomeFolder;
   if Web.Domain = '' then
     Web.Domain := Domain;
   if Web.Port = '' then
     Web.Port := Port;
-  if Web.WorkPath = '' then
-    Web.WorkPath := WorkPath;
+  if Web.WorkFolder = '' then
+    Web.WorkFolder := WorkFolder;
   if Web.Alias = '' then
     Web.Alias := AliasName;
 
-  //Web.Assets.HomePath := Web.HomePath;
+  //Web.Assets.HomeFolder := Web.HomeFolder;
 
   Web.Start;
 end;
@@ -6858,7 +6917,7 @@ end;
 
 function TmnwContext.GetPath: string;
 begin
-  Result := IncludeURLDelimiter(IncludeURLDelimiter(Directory) + Schema.Web.Alias);
+  Result := IncludeURLDelimiter(IncludeURLDelimiter(Request.Directory) + Schema.Web.Alias);
 end;
 
 function TmnwContext.GetPath(e: TmnwElement): string;
@@ -6868,22 +6927,40 @@ end;
 
 function TmnwContext.GetSchemaURL(ASchema: TmnwSchema): string;
 begin
-  Result := IncludeURLDelimiter(GetPath(ASchema));
+  Result := Web.GetHostURL + GetPath(ASchema);
 end;
 
-function TmnwContext.GetSchemaURL: string;
+function TmnwContext.GetSchemaPath: string;
 begin
   Result := GetSchemaURL(Schema);
 end;
 
-function TmnwContext.GetAssetPath: string;
+function TmnwContext.GetSchemaURL: string;
 begin
-  Result := Schema.Web.Assets.HomePath
+  Result := Web.GetHostURL + GetSchemaURL(Schema);
+end;
+
+function TmnwContext.GetURL(e: TmnwElement): string;
+begin
+  Result := GetSchemaURL(Schema) + GetPath(e);
+end;
+
+function TmnwContext.GetAssetFolder: string;
+begin
+  if Schema.Web.Assets <> nil then
+    Result := Schema.Web.Assets.HomeFolder
+  else
+    Result := Schema.Web.HomeFolder;
+end;
+
+function TmnwContext.GetAssetsPath: string;
+begin
+  Result := IncludeURLDelimiter(GetPath(Schema.Web.Assets));
 end;
 
 function TmnwContext.GetAssetsURL: string;
 begin
-  Result := IncludeURLDelimiter(GetPath(Schema.Web.Assets));
+  Result := Schema.Web.GetHostURL + IncludeURLDelimiter(GetPath(Schema.Web.Assets));
 end;
 
 { TmnwResponse }
@@ -6999,7 +7076,7 @@ procedure TLoginSchema.DoLogout(const AContext: TmnwContext; AResponse: TmnwResp
 begin
   AResponse.Answer := hrOK;
   AResponse.SessionID := '';
-  AResponse.RespondRedirectTo(AContext.GetSchemaURL);
+  AResponse.RespondRedirectTo(AContext.GetSchemaPath);
 end;
 
 { THTML.TImageFile }
@@ -7166,6 +7243,31 @@ begin
   Result := TmnwElementLibraryItem.Create;
   Result.RendererClass := ARendererClass;
   inherited Add(Result);
+end;
+
+{ TmnwHTMLRenderer.TCoded }
+
+procedure TmnwHTMLRenderer.TCode.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TCode;
+begin
+  e := Scope.Element as THTML.TCode;
+//  Scope.Classes.Add('language-'+e.Language);
+  Context.Writer.OpenTag('code', Scope.ToString, e.Text);
+  inherited;
+  Context.Writer.CloseTag('code');
+end;
+
+{ TmnwHTMLRenderer.TMultilineCode }
+
+procedure TmnwHTMLRenderer.TMultilineCode.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TCode;
+begin
+  e := Scope.Element as THTML.TCode;
+  Context.Writer.OpenTag('pre');
+  inherited;
+  Context.Writer.CloseTag('pre');
 end;
 
 initialization

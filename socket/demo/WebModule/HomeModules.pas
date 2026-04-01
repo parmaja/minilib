@@ -270,7 +270,7 @@ begin
           begin
             Name := 'logo';
             Route := 'logo';
-            LoadFromFile(IncludePathDelimiter(Schema.GetHomePath) + 'logo.png');
+            LoadFromFile(IncludePathDelimiter(Schema.GetHomeFolder) + 'logo.png');
           end;
 
 {          with TImage.Create(This) do
@@ -775,12 +775,12 @@ procedure TFilesSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
-  HomePath := IncludePathDelimiter(Web.HomePath) + 'files';
+  HomeFolder := IncludePathDelimiter(Web.HomeFolder) + 'files';
   with TFolder.Create(This) do
   begin
     ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
     Route := 'folder';
-    HomePath := ExpandFileName(Web.HomePath + 'smilies');
+    HomeFolder := ExpandFileName(Web.HomeFolder+ 'smilies');
   end;
 end;
 
@@ -794,7 +794,7 @@ begin
   with TFile.Create(This) do
   begin
     Route := 'echo';
-    FileName := IncludePathDelimiter(Web.HomePath) + 'ws.html';
+    FileName := IncludePathDelimiter(Web.HomeFolder) + 'ws.html';
   end;
 end;
 
@@ -827,13 +827,13 @@ begin
   inherited;
   with Web.Assets do
   begin
-    LogoFile := HomePath + 'logo.png';
+    LogoFile := HomeFolder + 'logo.png';
       //Logo.LoadFromFile(HomePath + 'logo.png');
     with thtml.TFile.Create(This) do
     begin
       Name := 'jquery';
       Route := 'jquery';
-      FileName := IncludePathDelimiter(HomePath) + 'jquery-3.7.1.min.js';
+      FileName := IncludePathDelimiter(HomeFolder) + 'jquery-3.7.1.min.js';
     end;
   end;
 end;

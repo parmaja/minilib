@@ -80,7 +80,7 @@ end;
 
 procedure TBootstrap_Library.AddHead(const Context: TmnwContext);
 begin
-  if CheckOffline(Context, Context.GetAssetPath + 'bootstrap.rtl.min.css') then
+  if CheckOffline(Context, Context.GetAssetFolder + 'bootstrap.rtl.min.css') then
   begin
     if Context.Schema.Direction = dirRightToLeft then
       Context.Writer.WriteLn('<link rel="stylesheet" href="' + Context.GetAssetsURL + 'bootstrap.rtl.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous">')
@@ -103,7 +103,7 @@ end;
 procedure TBootstrapIcons_Library.AddHead(const Context: TmnwContext);
 begin
   inherited;
-  if CheckOffline(Context, Context.GetAssetPath + 'bootstrap-icons.min.css') then
+  if CheckOffline(Context, Context.GetAssetFolder + 'bootstrap-icons.min.css') then
     Context.Writer.WriteLn('<link rel="stylesheet" href="' + Context.GetAssetsURL + 'bootstrap-icons.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous">')
   else
     Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">');

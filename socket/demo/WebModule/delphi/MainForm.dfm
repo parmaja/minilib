@@ -141,7 +141,7 @@ object Main: TMain
       Left = 233
       Top = 6
       Width = 60
-      Height = 23
+      Height = 26
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -166,7 +166,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 13
+      Height = 26
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -179,13 +179,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object Label3: TLabel
       AlignWithMargins = True
       Left = 101
       Top = 6
       Width = 20
-      Height = 13
+      Height = 26
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -198,13 +199,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object MaxOfThreadsLabel: TLabel
       AlignWithMargins = True
       Left = 127
       Top = 6
       Width = 60
-      Height = 23
+      Height = 26
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -229,7 +231,7 @@ object Main: TMain
       Left = 35
       Top = 6
       Width = 60
-      Height = 23
+      Height = 26
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -252,7 +254,7 @@ object Main: TMain
       Left = 3
       Top = 3
       Width = 29
-      Height = 13
+      Height = 29
       Align = alLeft
       Caption = 'Count'
       Color = clBtnFace
@@ -265,6 +267,7 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
   end
   object Button1: TButton

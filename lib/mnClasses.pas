@@ -339,7 +339,7 @@ end;
 
 procedure TmnObjectList<_Object_>.QuickSort;
 begin
-  if Count<>0 then
+  if Count <> 0 then
     QuickSortItems(0, Count - 1);
 end;
 

@@ -116,7 +116,7 @@ begin
 
   if aDocModule <> nil then
   begin
-    aDocModule.HomePath := aHomePath;
+    aDocModule.HomeFolder := aHomePath;
     aDocModule.AliasName := DocAliasEdit.Text;
     (aDocModule as TmodWebFileModule).ServeFiles:= [serveEnabled, serveIndex, serveDefault, serveSmart];
 
@@ -138,18 +138,18 @@ begin
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := HomeAliasEdit.Text;
-    aHomeModule.Web.AppPath := ExtractFilePath(Application.ExeName);
+    aHomeModule.Web.AppFolder := ExtractFilePath(Application.ExeName);
 
 
 //    aHomeModule.Domain := 'localhost';
 //    aHomeModule.Port := HttpServer.Port;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
-    aHomeModule.Web.HomePath := IncludePathDelimiter(aHomePath);
-    aHomeModule.HomePath := IncludePathDelimiter(aHomePath);
-    aHomeModule.WorkPath := aHomeModule.Web.AppPath;
+    aHomeModule.Web.HomeFolder := IncludePathDelimiter(aHomePath);
+    aHomeModule.HomeFolder := IncludePathDelimiter(aHomePath);
+    aHomeModule.WorkFolder := aHomeModule.Web.AppFolder;
     aHomeModule.Web.CompactMode := False;
-    ForceDirectories(aHomeModule.WorkPath + 'cache');
-    ForceDirectories(aHomeModule.WorkPath + 'temp');
+    ForceDirectories(aHomeModule.WorkFolder + 'cache');
+    ForceDirectories(aHomeModule.WorkFolder + 'temp');
 
     if KeepAliveChk.Checked then
       aHomeModule.UseKeepAlive := ovYes

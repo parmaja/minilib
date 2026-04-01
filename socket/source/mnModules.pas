@@ -310,7 +310,6 @@ type
   TmodRequest = class(TmodCommunicate)
   private
     FArguments: TmodParams;
-    FRoute: TmnRoute;
     FPath: String;
     FConnectionType: TConnectionType;
     //FChunked: Boolean;
@@ -319,6 +318,8 @@ type
     FChunkedProxy: TmnChunkStreamProxy;
     FStream: TmnBufferStream;
     FMode: TStreamMode;
+    FNameSpace: TStrings;
+    FRoute: TmnRoute;
     FDirectory: String;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
@@ -357,6 +358,7 @@ type
     property IsSSL: Boolean read Info.IsSSL write Info.IsSSL;
     property Path: String read FPath write FPath;
 
+    property NameSpace: TStrings read FNameSpace write FNameSpace;
     property Directory: String read FDirectory write FDirectory;
     property Route: TmnRoute read FRoute write FRoute;
     property Params: TmodParams read FArguments; //deprecated 'use Arguments';
@@ -521,7 +523,7 @@ type
   TwebResponse = class(TmodResponse)
   private
     FRedirect: string;
-    FHomePath: string; //Document root folder
+    FHomeFolder: string; //Document root folder
     //FCompressed: Boolean;
     function GetRequest: TwebRequest;
   protected
@@ -536,7 +538,7 @@ type
     function StatusVersion: string;
 
     //Document root folder
-    property HomePath: string read FHomePath write FHomePath;
+    property HomeFolder: string read FHomeFolder write FHomeFolder;
 
     property Request: TwebRequest read GetRequest;
     property Redirect: string read FRedirect write FRedirect; //Relocation it to another url
@@ -1483,12 +1485,14 @@ procedure TmodRequest.Created;
 begin
   inherited;
   FRoute := TmnRoute.Create;
+  FNameSpace := TStringList.Create;
   FArguments := TmodParams.Create;
 end;
 
 destructor TmodRequest.Destroy;
 begin
   FreeAndNil(FRoute);
+  FreeAndNil(FNameSpace);
   FreeAndNil(FArguments);
   inherited Destroy;
 end;
