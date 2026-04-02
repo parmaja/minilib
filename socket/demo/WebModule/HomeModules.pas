@@ -66,14 +66,15 @@ type
   public
   end;
 
-  { TSimpleSchema }
+  { TInfoSchema }
 
-  TSimpleSchema = class(THTML)
+  TInfoSchema = class(THTML)
   private
   public
-  protected
+  protected     
     procedure DoCompose(const AContext: TmnwContext); override;
   public
+    class function GetCapabilities: TmnwSchemaCapabilities; override;
   end;
 
   { TFilesSchema }
@@ -757,11 +758,38 @@ begin
   end;
 end;
 
-{ TSimpleSchema }
+{ TInfoSchema }
 
-procedure TSimpleSchema.DoCompose(const AContext: TmnwContext);
+procedure TInfoSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
+  with Document.Body.Main do
+  begin            
+    Route := 'main';
+    with TPanel.Create(this) do    
+    begin
+      Route := 'panel';
+      TCode.Create(This, 'e.GetPath: ' + This.GetPath);
+      TBreak.Create(This);
+      TCode.Create(This, 'e.GetURL: ' + This.GetURL);
+      TBreak.Create(This);
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.GetRelativePath: ' + AContext.GetRelativePath(This));
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.GetPath(e): ' + AContext.GetPath(This));
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.GetHomePath: ' + AContext.GetHomePath);
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.GetURL(e): ' + AContext.GetURL(this));
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.GetHomeURL: ' + AContext.GetHomeURL);
+    end;
+  end;
+end;
+
+class function TInfoSchema.GetCapabilities: TmnwSchemaCapabilities;
+begin
+  Result := (inherited GetCapabilities) + [schemaDynamic];
 end;
 
 { TFilesSchema }
@@ -816,7 +844,7 @@ begin
   Web.RegisterSchema('', TWelcomeSchema);
   Web.RegisterSchema('login', TLoginSchema);
   Web.RegisterSchema('demo', TDemoSchema);
-  Web.RegisterSchema('simple', TSimpleSchema);
+  Web.RegisterSchema('info', TInfoSchema);
   Web.RegisterSchema('files', TFilesSchema);
   Web.RegisterSchema('ws', TWSShema);
   RegisterCommand('.ws', TWSEchoGetHomeCommand, False);

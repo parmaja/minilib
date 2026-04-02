@@ -87,6 +87,8 @@ WebElement:                             Namespace Alias   Schema  Directory     
     https://bootstrapmade.com/demo/templates/NiceAdmin/index.html
 }
 
+{$define LOG}
+
 interface
 
 uses
@@ -116,6 +118,7 @@ type
   TmnwWriter = class;
   TmnwElementRenderer = class;
   TmnwRendererClass = class of TmnwRenderer;
+  TmnwRendererRegister = class;
 
   TmnwElementClass = class of TmnwElement;
   TElementExtension = class;
@@ -284,8 +287,10 @@ type
     Sender: TObject;
     Web: TmnwWeb;
     Request: TmodRequest;
+
     Schema: TmnwSchema;    
     Element: TmnwElement;
+    
     Renderer: TmnwRenderer;
     ParentRenderer: TmnwElementRenderer;
 
@@ -297,21 +302,22 @@ type
     Route: string;   
     SessionID: String;
     Session: TObject;
-    //TODO this get relative
-    //function GetRelativePath: string; overload; //TODO
-    //this get path with host/directory/
+    //Module Path /namespace/alias
     function GetPath: string; overload;
-    //this get absolute path with host/directory/alias/schema/element
+    //Module/Element Path /namespace/alias/element    
     function GetPath(e: TmnwElement): string; overload;    
+    //this get absolute path http://host:80/namespace/alias/schema/element
     function GetURL(e: TmnwElement): string; overload;
+    //this get path relative requested path /element1/element2
+    function GetRelativePath(e: TmnwElement): string; overload;    
 
-    //this get absolute path with namespace/alias/schema/
-    function GetSchemaPath: string; overload;
-    //With Host
-    //this get absolute path with http://Host:80/namespace/alias/schema/
-    function GetSchemaURL(ASchema: TmnwSchema): string; overload;
-    function GetSchemaURL: string; overload;
+    //Schema Path /namespace/alias/schema
+    function GetHomePath: string; overload;
+    //Schema URL with http://host:80/namespace/alias/schema
+    function GetHomeURL(ASchema: TmnwSchema): string; overload;
+    function GetHomeURL: string; overload;
 
+    //Schema URL with http://host:80/namespace/assets/schema
     function GetAssetsPath: string;
     function GetAssetsURL: string;
     //Folder of HomeFolder of assets
@@ -427,7 +433,7 @@ type
     FIsRoot: Boolean;
     FTimeStamp: Int64;
     procedure SetState(const AValue: TmnwElementState);
-  protected
+  protected    
     procedure Update; virtual;
     procedure Added(Item: TmnwElement); override;
     procedure Check; virtual;
@@ -466,9 +472,7 @@ type
     function GenName: string;
   public
     constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: TmodOptionValue = ovYes); virtual;
-    destructor Destroy; override;
-
-    class function ClassLevel: Integer;
+    destructor Destroy; override;    
 
     function Add(O: TmnwElementClass): TmnwElement; overload;
     procedure Add(O: TmnwElement); overload;
@@ -488,13 +492,12 @@ type
     //GetPath get path to the schema, not to domain/host
     //Use Contex.GetPath(e) to get path to the module/alias name
     //this get path with schema/element/element/element
-    function GetPath: string;
-    //this get path without schema name, element/element/element
-    //Relative to parent
-    function GetRelativePath: string; overload;
+    function GetPath: string; 
     //this get path without schema and parent element name, element/element
-    function GetRelativePath(ToElement: TmnwElement): string; overload;
-
+    function GetPathTo(ToElement: TmnwElement): string; overload;
+    //Include Host
+    function GetURL: string; overload;
+    
     function CreateRenderer(const Context: TmnwContext): TmnwElementRenderer;
     procedure Compose(const AContext: TmnwContext); virtual;
     procedure AddState(AState: TmnwElementState);
@@ -502,8 +505,7 @@ type
 
     procedure Clear; {$ifdef FPC} override; {$else} virtual; {$endif} //* see TmnObjectList
 
-    function GetContentType(Route: string): string; virtual;
-
+    function GetContentType(Route: string = ''): string; virtual;
 
     procedure RespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
     procedure Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
@@ -743,8 +745,6 @@ type
 
   TmnwSchemaClass = class of TmnwSchema;
 
-  TmnwRendererRegister = class;
-
   { TmnwElementRenderer }
 
   TmnwElementRenderer = class(TObject)
@@ -895,6 +895,7 @@ type
     IsSSL: Boolean;
     Domain: string; //localhost
     Port: string;
+    
     Alias: string; //ModuleName
 
     CompactMode: Boolean;
@@ -913,7 +914,7 @@ type
     function CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string): TmnwSchema; overload;
     function CreateSchema(SchemaItem: TmnwSchemaItem): TmnwSchema; overload;
     function ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
-    function GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
+    function GetElement(var AContext: TmnwContext; out Element: TmnwElement): Boolean;
 
     //for HTML
     procedure Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
@@ -1346,7 +1347,8 @@ type
       public
         function CanRender: Boolean; override;
       end;
-            { TGroupButtons }
+
+      { TGroupButtons }
 
       [TID_Extension]
       TGroupButtons = class(THTMLGroup)
@@ -1395,6 +1397,7 @@ type
       public
         Language: string;
         Text: string;
+        constructor Create(AParent: TmnwElement; AText: string = ''; ALanguage: string = ''); reintroduce;
       end;
 
       TMultilineCode = class(TCode)
@@ -1556,7 +1559,7 @@ type
   protected
     procedure Created; override;
   public
-    function GetContentType(Route: string): string; override;
+    //function GetContentType(Route: string): string; override;
     property Document: TDocument read FDocument;
   end;
 
@@ -1979,12 +1982,10 @@ type
 
   TmnwRendererRegister = class(TObject)
   public
-    Usage: Integer;
+    Index: Integer;
     ElementClass: TmnwElementClass;
     RendererClass: TmnwElementRendererClass;
-    Renderers: array of TmnwElementRendererClass;
     Extensions: TClassList;
-    Level: Integer;
     constructor Create;
     destructor Destroy; override;
   end;
@@ -1996,12 +1997,10 @@ type
   protected
     function Compare(Item1, Item2: TmnwRendererRegister): Integer; override;
   public
-    Sorted: Boolean;
-    type
-      TmnwRegisterHow = (None, Replace, Extend);
     procedure QuickSort; override;        
-    function Find(AElementClass: TmnwElementClass; Nearst: Boolean = False): TmnwRendererRegister;
-    procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwElementRenderers.TmnwRegisterHow = None);
+    function Find(AElementClass: TmnwElementClass): TmnwRendererRegister;
+    function FindByParents(AElementClass: TmnwElementClass): TmnwRendererRegister;
+    function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwRendererRegister;
   end;
 
   TmnwResponse = class(TwebResponse)
@@ -2139,7 +2138,7 @@ function DQ(s: string): string; inline;
 function NewUUID: string;
 
 function ElementRenderers: TmnwElementRenderers;
-procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwElementRenderers.TmnwRegisterHow = None);
+procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False);
 
 implementation
 
@@ -2383,9 +2382,9 @@ begin
   Result := FElementRenderers;  
 end;
 
-procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwElementRenderers.TmnwRegisterHow = None);
+procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean);
 begin
-  ElementRenderers.RegisterRenderer(AElementClass, ARendererClass, How);
+  ElementRenderers.RegisterRenderer(AElementClass, ARendererClass, Replace);
 end;
 
   
@@ -2952,67 +2951,77 @@ function TmnwElementRenderers.Compare(Item1, Item2: TmnwRendererRegister): Integ
 var
   ClassItem1, ClassItem2: TClass;
 begin
-  ClassItem1 := Item1.ElementClass;
-  ClassItem2 := Item2.ElementClass;
-  if ClassItem1 = ClassItem2 then
-    Exit(0);
+  ClassItem1 := Item1.RendererClass;
+  ClassItem2 := Item2.RendererClass;
+
+  if (ClassItem1 = TmnwHTMLRenderer.TNavItem) and (ClassItem2 = TmnwHTMLRenderer.THTMLComponent) then
+    nothing;
+
   if ClassItem2.InheritsFrom(ClassItem1) then
-    Exit(1);
-  if ClassItem1.InheritsFrom(ClassItem2) then
-    Exit(-1);
-  Result := Item2.Level - Item2.Level;
-  if Result = 0 then  
-    Result := CompareText(ClassItem2.ClassName, ClassItem1.ClassName);
+    Result := 1
+  else if ClassItem1.InheritsFrom(ClassItem2) then
+    Result := -1
+  else
+    Result := 0;
+
+  {$ifdef LOG}
+  LogAppendToFile('d:\temp\log\log-t.txt', ClassItem1.ClassName+', '+ClassItem2.ClassName+', '+ Result.ToString);
+  {$endif}
+  
+{  if Result = 0 then  
+    Result := Item2.Index - Item1.Index;}
+{  if Result = 0 then  
+    Result := Item2.Level - Item1.Level;}
+{  if Result = 0 then  
+    Result := CompareText(ClassItem2.ClassName, ClassItem1.ClassName);}
 end;
 
 procedure TmnwElementRenderers.QuickSort;
 var
   itm: TmnwRendererRegister;
-begin
+  {$ifdef LOG}
+  b: TmnWrapperStream;
+  {$endif}
+begin  
+  {$ifdef LOG}
+  DeleteFile('d:\temp\log\log-t.txt');
+  {$endif}
   inherited;
-  Sorted := True;
-{  for itm in Self do
-    Writeln(itm.ElementClass.ClassName);}
+  {$ifdef LOG}
+  b:=TmnWrapperStream.Create(TFileStream.Create('d:\temp\log\log.txt', fmCreate or fmOpenWrite));
+  for itm in Self do
+    b.WriteUTF8Line(itm.RendererClass.ClassName+'('+itm.RendererClass.ClassParent.ClassName+')');
+  b.Free;
+  {$endif}
 end;
 
-procedure TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; How: TmnwRegisterHow);
-var
-  aRendererRegister: TmnwRendererRegister;
+function TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwRendererRegister;
 begin
-  if Sorted then
-    raise Exception.Create('You can''t re-register any more class after sorted: '+ AElementClass.ClassName);    
-
   if not AElementClass.InheritsFrom(TmnwElement) then
     raise Exception.Create('Element should inherited from THTML');
       
   if not ARendererClass.InheritsFrom(TmnwElementRenderer) then
     raise Exception.Create('Renderer should inherited from TmnwElementRenderer');
       
-  Sorted := False;
-  aRendererRegister := Find(AElementClass);
-  if aRendererRegister <> nil then
+  Result := Find(AElementClass);
+  if Result <> nil then
   begin
-    if (How = Replace) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
-      aRendererRegister.RendererClass := ARendererClass
-    else if (How = Extend) and (AElementClass.InheritsFrom(aRendererRegister.ElementClass)) then
-      aRendererRegister.Renderers := aRendererRegister.Renderers + [ARendererClass]
+    if (Replace) and (AElementClass.InheritsFrom(Result.ElementClass)) then
+      Result.RendererClass := ARendererClass
     else
       raise Exception.Create('You can''t re-register same class: ' + AElementClass.ClassName);
   end
   else
   begin
-    if (How = Extend) then
-      raise Exception.Create('Ops we can''t add extended, we need to optimize code: '+ AElementClass.ClassName);
-    aRendererRegister := TmnwRendererRegister.Create;
-    aRendererRegister.ElementClass := AElementClass;
-    aRendererRegister.RendererClass := ARendererClass;
-    aRendererRegister.Level := AElementClass.ClassLevel;
-    rttiCollectExtensions(aRendererRegister.ElementClass, aRendererRegister.Extensions);
-    Add(aRendererRegister);
+    Result := TmnwRendererRegister.Create;
+    Result.ElementClass := AElementClass;
+    Result.RendererClass := ARendererClass;
+    rttiCollectExtensions(Result.ElementClass, Result.Extensions);
+    Result.Index := Add(Result);
   end;
 end;
 
-function TmnwElementRenderers.Find(AElementClass: TmnwElementClass; Nearst: Boolean): TmnwRendererRegister;
+function TmnwElementRenderers.Find(AElementClass: TmnwElementClass): TmnwRendererRegister;
 var
   o: TmnwRendererRegister;
   i: Integer;
@@ -3026,11 +3035,31 @@ begin
       Result := o;
       break;
     end
-    else if Nearst and AElementClass.InheritsFrom(o.ElementClass) then
+  end;
+{  if (Result <> nil) and (AElementClass <> Result.ElementClass) then  
+    Log.WriteLn(lglError, '> ' + AElementClass.ClassName + ' with ' + Result.ElementClass.ClassName);}
+end;
+
+function TmnwElementRenderers.FindByParents(AElementClass: TmnwElementClass): TmnwRendererRegister;
+var
+  aClass: TmnwElementClass;
+begin
+  Result := Find(AElementClass);
+  if Result = nil then  
+  begin
+    aClass := AElementClass;
+    while aClass <> nil do  
     begin
-      Result := o;
-      break; //* because it sorted down
+      Result := Find(aClass);
+      if Result <> nil then
+        break
+      else if aClass.ClassParent.InheritsFrom(TmnwElement) then           
+        aClass := TmnwElementClass(aClass.ClassParent)
+      else
+        aClass := nil;
     end;
+    if Result <> nil then
+      Result := RegisterRenderer(AElementClass, Result.RendererClass);
   end;
 end;
 
@@ -3157,19 +3186,20 @@ begin
 end;
 
 //Main
-function TmnwWeb.GetElement(var AContext: TmnwContext; out Schema: TmnwSchema; out Element: TmnwElement): Boolean;
+function TmnwWeb.GetElement(var AContext: TmnwContext; out Element: TmnwElement): Boolean;
 var
   aElement: TmnwElement;
   Routes: TStringList;
   i: Integer;
   aSchemaName, aRoute: string;
+  aSchema: TmnwSchema; 
 begin
   Element := nil;
-  Schema := nil;
+  aSchema := nil;
   Result := False;
   Routes := TStringList.Create;
   try
-    StrToStrings(AContext.Route, Routes, [URLPathDelim]);
+    StrToStrings(AContext.Route, Routes, [URLDelimiter]);
     if (Routes.Count > 0) then
       aSchemaName := Routes[0]
     else
@@ -3177,32 +3207,32 @@ begin
 
     Lock.Enter;
     try
-      Schema := FindBy(aSchemaName, AContext.SessionID);
+      aSchema := FindBy(aSchemaName, AContext.SessionID);
     finally
       Lock.Leave;
     end;
 
-    if Schema = nil then // Not cached, create it.
+    if aSchema = nil then // Not cached, create it.
     begin
-      Schema := CreateSchema(aSchemaName);
-      if Schema = nil then  //* Fallback
+      aSchema := CreateSchema(aSchemaName);
+      if aSchema = nil then  //* Fallback
       begin
         Lock.Enter;
         try
-          Schema := FindBy('', AContext.SessionID);
+          aSchema := FindBy('', AContext.SessionID);
         finally
           Lock.Leave;
         end;
-        if Schema = nil then
-          Schema := CreateSchema('');
+        if aSchema = nil then
+          aSchema := CreateSchema('');
 {        if Schema = nil then
           Schema := CreateSchema(DefaultSchema);}
-        if Schema <> nil then
+        if aSchema <> nil then
           aSchemaName := '';
       end;
 
-      if (Schema <> nil) and (schemaSession in Schema.GetCapabilities) then
-        Schema.SessionID := AContext.SessionID;
+      if (aSchema <> nil) and (schemaSession in aSchema.GetCapabilities) then
+        aSchema.SessionID := AContext.SessionID;
     end;
 
 {
@@ -3220,37 +3250,37 @@ begin
 
     Lock.Enter;
     try
-      if Schema <> nil then
-        Inc(Schema.Usage);
+      if aSchema <> nil then
+        Inc(aSchema.Usage);
     finally
       Lock.Leave;
     end;
 
-    if (Schema <> nil) then
+    if (aSchema <> nil) then
     begin
-      AContext.Schema := Schema;
-      if Schema.Accept(AContext) then
+      AContext.Schema := aSchema;      
+      if aSchema.Accept(AContext) then
       begin
-        if not (estComposed in Schema.State) then
+        if not (estComposed in aSchema.State) then
         begin
-          Schema.Lock.Enter;
+          aSchema.Lock.Enter;
           try
             try
-              Schema.Compose(AContext); //Compose
+              aSchema.Compose(AContext); //Compose
             except
-              Schema.Lock.Leave;
-              FreeAndNil(Schema);
+              aSchema.Lock.Leave;
+              FreeAndNil(aSchema);
               raise;
             end;
           finally
-            if Schema <> nil then
-              Schema.Lock.Leave;
+            if aSchema <> nil then
+              aSchema.Lock.Leave;
           end;
         end;
 
-        if (estComposed in Schema.State) then
+        if (estComposed in aSchema.State) then
         begin                 
-          aElement := Schema;
+          aElement := aSchema;
 
           if aElement <> nil then
           begin
@@ -3294,14 +3324,13 @@ end;
 
 procedure TmnwWeb.Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
 var
-  aSchema: TmnwSchema;
   aElement: TmnwElement;
 begin
   if Shutdown then
     exit;
 
   try
-    GetElement(AContext, aSchema, aElement);
+    GetElement(AContext, aElement);
     if aElement <> nil then
     begin
     //aContext.Schema := aSchema;
@@ -3310,7 +3339,8 @@ begin
       AResponse.Session.Value := AResponse.Request.GetCookie('', 'session');
       AResponse.Session.Age := DefaultAge;
       AResponse.Session.Domain := Domain;
-      AResponse.Session.Path:= AddStartURLDelimiter(Alias, True);
+      //AResponse.Session.Path := AddStartURLDelimiter(Alias, True);
+      AResponse.Session.Path := AContext.GetHomePath;
       AResponse.Session.ResetChanged;
       AResponse.Answer := hrOK;
       AResponse.Resume := True;
@@ -3323,11 +3353,11 @@ begin
       //AResponse.Header['Access-Control-Expose-Headers'] := ' Content-Encoding, Kuma-Revision';     
 
       //* If you call schema name without ending by /
-      if (aElement = aSchema) and (aSchema.Name <> '') and (AContext.Route = '') then
+      if (aElement = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.Route = '') then
       begin
         AResponse.Resume := False;
         AResponse.Answer := hrRedirect;
-        AResponse.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(aSchema)));
+        AResponse.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)));
       end
       else
         AResponse.ContentType := aElement.GetContentType(AContext.Route);
@@ -3368,20 +3398,20 @@ begin
       end;
     end;
 
-    if aSchema <> nil then
+    if AContext.Schema <> nil then
     begin
       Lock.Enter;
       try
-        aSchema.LastAccess := Now;
-        Dec(aSchema.Usage);
-        if (aSchema.Usage = 0) and (aSchema.Released) then
-          FreeAndNil(aSchema)
+        AContext.Schema.LastAccess := Now;
+        Dec(AContext.Schema.Usage);
+        if (AContext.Schema.Usage = 0) and (AContext.Schema.Released) then
+          FreeAndNil(AContext.Schema)
         else
         begin
-          if aSchema.Phase = scmpNew then
+          if AContext.Schema.Phase = scmpNew then
           begin
-            aSchema.FPhase := scmpNormal;
-            Add(aSchema);
+            AContext.Schema.FPhase := scmpNormal;
+            Add(AContext.Schema);
           end;
         end;
       finally
@@ -3420,7 +3450,7 @@ begin
   Routes := TStringList.Create;
   try
     i := 0;
-    StrToStrings(AContext.Route, Routes, [URLPathDelim]);
+    StrToStrings(AContext.Route, Routes, [URLDelimiter]);
     if (i < Routes.Count) then
     begin
       aRoute := Routes[i];
@@ -3758,13 +3788,13 @@ begin
   FDocument := TDocument.Create(Self, [elEmbed]);
 end;
 
-function THTML.GetContentType(Route: string): string;
+{function THTML.GetContentType(Route: string): string;
 begin
-  if (Route = '') or (Route = URLPathDelim) then
-    Result := inherited GetContentType(Route)
+  if (Route = '') or (Route = URLDelimiter) then
+    Result := 'text/html'
   else
     Result := DocumentToContentType(Route);
-end;
+end;}
 
 { THTML.THTMLComponent }
 
@@ -4128,7 +4158,7 @@ begin
   else if e.PostTo.Where = toElement then
     aPostTo := Context.GetPath(e)
   else if e.PostTo.Where = toHome then
-    aPostTo := URLPathDelim;
+    aPostTo := URLDelimiter;
   Context.Writer.OpenTag('form', 'method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText);
   inherited;
   if e.RedirectTo <> '' then
@@ -4376,7 +4406,7 @@ var
 begin
   if HomeFolder <> '' then
   begin
-    {if (AContext.Route = '') or (AContext.Route = URLPathDelim) then
+    {if (AContext.Route = '') or (AContext.Route = URLDelimiter) then
       Render(AContext, AResponse)
     else }
     WebExpandFile(HomeFolder, AContext.Route, aRequestDocument);
@@ -4412,7 +4442,9 @@ begin
         else if FileExists(aDocument) then
           AResponse.SendFile(aDocument)
         else if IsStrInArray(AContext.Route, ['', '/', '\']) then
+        begin
           Render(AContext, AResponse)
+        end
         else
           AResponse.Answer := hrNotFound;
       end;
@@ -4672,7 +4704,7 @@ function TmnwRenderer.CreateRenderer(AElementClass: TmnwElementClass): TmnwEleme
 var
   aRendererRegister: TmnwRendererRegister;
 begin
-  aRendererRegister := ElementRenderers.Find(AElementClass, True);
+  aRendererRegister := ElementRenderers.FindByParents(AElementClass);
   if aRendererRegister <> nil then
   begin
     Result := aRendererRegister.RendererClass.Create(Self, aRendererRegister);
@@ -4800,40 +4832,27 @@ begin
   end
   else
     Result := Route;
-
-//  Result := IncludeURLDelimiter(Result);
 end;
 
-function TmnwElement.GetRelativePath(ToElement: TmnwElement): string;
+function TmnwElement.GetPathTo(ToElement: TmnwElement): string;
 begin
-  if (Self = nil) or (Self <> ToElement) then
+  if (Self = nil) or (Self = ToElement) then
     exit('');
 
   if (Parent <> nil) then
   begin
     if Route <> '' then
-      Result := AddStartURLDelimiter(Parent.GetRelativePath) + Route
+      Result := ConcatString(Parent.GetPathTo(ToElement), URLDelimiter, Route)
     else
-      Result := Parent.GetRelativePath;
+      Result := Parent.GetPathTo(ToElement);
   end
   else
     Result := '';
 end;
 
-function TmnwElement.GetRelativePath: string;
+function TmnwElement.GetURL: string;
 begin
-  if Self = nil then
-    exit('');
-
-  if (Parent <> nil) then
-  begin
-    if Route <> '' then
-      Result := AddStartURLDelimiter(Parent.GetRelativePath) + Route
-    else
-      Result := Parent.GetRelativePath;
-  end
-  else
-    Result := '';
+  Result := IncludeURLDelimiter(Schema.Web.GetHostURL) + GetPath;
 end;
 
 procedure TmnwElement.SetState(const AValue: TmnwElementState);
@@ -5096,19 +5115,6 @@ begin
   inherited;
 end;
 
-class function TmnwElement.ClassLevel: Integer;
-var
-  c: TClass;
-begin
-  Result := 0;
-  c := Self;
-  while c <> nil do
-  begin
-    c := c.ClassParent;
-    inc(Result);
-  end;
-end;
-
 procedure TmnwElement.Add(O: TmnwElement);
 begin
   O.FParent := Self;
@@ -5209,7 +5215,7 @@ end;
 
 procedure TmnwElement.RespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
-  AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
+//  AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
   DoRespondHeader(AContext, AResponse);
   if (Schema <> nil) and (Schema <> Self) then
     Schema.DoChildAction(Self, AContext, AResponse);
@@ -5285,8 +5291,6 @@ begin
   //Renderers := TmnwElementRenderers.Create();
 {  for o in Renderers do
     log.WriteLn(o.ObjectClass.ClassName);}
-  if not ElementRenderers.Sorted then
-    ElementRenderers.QuickSort;
   {log.WriteLn('---------------------------');
   for o in Renderers do
     log.WriteLn(o.ObjectClass.ClassName);}
@@ -6064,10 +6068,10 @@ end;
 { TmnwHTMLRenderer.TAccordionItem }
 
 procedure TmnwHTMLRenderer.TAccordionItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TAccordionItem;
+{var
+  e: THTML.TAccordionItem;}
 begin
-  e := Scope.Element as THTML.TAccordionItem;
+  //e := Scope.Element as THTML.TAccordionItem;
   //Scope.Classes.Add('');
   inherited;
 end;
@@ -6917,32 +6921,40 @@ end;
 
 function TmnwContext.GetPath: string;
 begin
-  Result := IncludeURLDelimiter(IncludeURLDelimiter(Request.Directory) + Schema.Web.Alias);
+  Result := AddStartURLDelimiter(Request.NameSpace + AddStartURLDelimiter(Schema.Web.Alias));
 end;
 
 function TmnwContext.GetPath(e: TmnwElement): string;
 begin
-  Result := IncludeURLDelimiter(GetPath) + e.GetPath
+  Result := GetPath + AddStartURLDelimiter(e.GetPath)
 end;
 
-function TmnwContext.GetSchemaURL(ASchema: TmnwSchema): string;
+function TmnwContext.GetRelativePath(e: TmnwElement): string;
 begin
-  Result := Web.GetHostURL + GetPath(ASchema);
+  if Element = nil then  
+    Result := e.GetPathTo(Schema)
+  else
+    Result := e.GetPathTo(Element);
 end;
 
-function TmnwContext.GetSchemaPath: string;
+function TmnwContext.GetHomeURL(ASchema: TmnwSchema): string;
 begin
-  Result := GetSchemaURL(Schema);
+  Result := Web.GetHostURL + AddStartURLDelimiter(GetPath(ASchema));
 end;
 
-function TmnwContext.GetSchemaURL: string;
+function TmnwContext.GetHomePath: string;
 begin
-  Result := Web.GetHostURL + GetSchemaURL(Schema);
+  Result := AddStartURLDelimiter(GetPath(Schema));
+end;
+
+function TmnwContext.GetHomeURL: string;
+begin
+  Result := GetHomeURL(Schema);
 end;
 
 function TmnwContext.GetURL(e: TmnwElement): string;
 begin
-  Result := GetSchemaURL(Schema) + GetPath(e);
+  Result := Web.GetHostURL + AddStartURLDelimiter(GetPath(e));
 end;
 
 function TmnwContext.GetAssetFolder: string;
@@ -6955,12 +6967,12 @@ end;
 
 function TmnwContext.GetAssetsPath: string;
 begin
-  Result := IncludeURLDelimiter(GetPath(Schema.Web.Assets));
+  Result := AddStartURLDelimiter(AddEndURLDelimiter(GetPath(Schema.Web.Assets)));
 end;
 
 function TmnwContext.GetAssetsURL: string;
 begin
-  Result := Schema.Web.GetHostURL + IncludeURLDelimiter(GetPath(Schema.Web.Assets));
+  Result := Schema.Web.GetHostURL + AddStartURLDelimiter(GetAssetsPath);
 end;
 
 { TmnwResponse }
@@ -7076,7 +7088,7 @@ procedure TLoginSchema.DoLogout(const AContext: TmnwContext; AResponse: TmnwResp
 begin
   AResponse.Answer := hrOK;
   AResponse.SessionID := '';
-  AResponse.RespondRedirectTo(AContext.GetSchemaPath);
+  AResponse.RespondRedirectTo(AContext.GetHomePath);
 end;
 
 { THTML.TImageFile }
@@ -7268,6 +7280,15 @@ begin
   Context.Writer.OpenTag('pre');
   inherited;
   Context.Writer.CloseTag('pre');
+end;
+
+{ THTML.TCode }
+
+constructor THTML.TCode.Create(AParent: TmnwElement; AText, ALanguage: string);
+begin
+  inherited Create(AParent);
+  Text := AText;
+  Language := ALanguage;
 end;
 
 initialization

@@ -2030,8 +2030,8 @@ function AddStartURLDelimiter(const Path: string; Force: Boolean): string;
 begin
   if Force or (Path <> '') then
   begin
-    if (Path = '') or not StartsStr(URLPathDelim, Path) then
-      Result := URLPathDelim + Path
+    if (Path = '') or not StartsStr(URLDelimiter, Path) then
+      Result := URLDelimiter + Path
     else
       Result := Path
   end
@@ -2043,8 +2043,8 @@ function AddEndURLDelimiter(const Path: string; Force: Boolean): string;
 begin
   if Force or (Path <> '') then
   begin
-    if (Path = '') or not EndsStr(URLPathDelim, Path) then
-      Result := Path + URLPathDelim
+    if (Path = '') or not EndsStr(URLDelimiter, Path) then
+      Result := Path + URLDelimiter
     else
       Result := Path
   end

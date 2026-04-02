@@ -32,7 +32,7 @@ const
   JulianEpoch = TDateTime(-2415018.5);  //check EpochAsJulianDate
   {$endif}
 
-  URLPathDelim  = '/';
+  URLDelimiter = '/';
 
 type
   TmnDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig, dtColor {bigint or int64}, dtUUID{, dtEnum, dtSet});

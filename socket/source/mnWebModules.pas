@@ -109,9 +109,9 @@ type
     destructor Destroy; override;
     //property SmartURL: Boolean read FSmartURL write FSmartURL;
   public
-    //protocol://domain:port/alias/directory
-    //--------HOST URL------/alias/directory
-    //----------HOME URL----------/directory
+    //protocol://domain:port/namespace/alias/directory
+    //--------HOST URL------/namespace/alias/directory
+    //----------HOME URL--------------/directory
     Domain: string; //localhost
     Port: string;
 

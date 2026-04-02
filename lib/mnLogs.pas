@@ -133,12 +133,38 @@ procedure ChangeLogLevel(LogClass: TClass; vEnabled: Boolean); overload;
 
 function Log: TLogDispatcher;
 
+procedure LogAppendToFile(const vFile, vText: utf8string); overload;
+
 implementation
 
 var
   FLog: TLogDispatcher = nil;
   FShutdowning: Boolean = False;
 
+procedure LogAppendToFile(const vFile, vText: utf8string); overload;
+var
+  aStream : TFileStream;
+  s: utf8string;
+begin
+//  ForceDirectories(ExtractFilePath(vFile));
+  try
+    if not FileExists(vFile) then
+      aStream := TFileStream.Create(vFile, fmCreate or fmOpenWrite or fmShareDenyNone)
+    else
+    begin
+      aStream := TFileStream.Create(vFile, fmOpenWrite or fmShareDenyNone);
+      aStream.Seek(LongInt(0), soFromEnd);
+    end;
+
+    aStream.Write(PByte(vText)^, ByteLength(vText));
+
+    s := #13#10;
+    aStream.Write(PByte(s)^, ByteLength(s));
+  finally
+    FreeAndNil(aStream);
+  end;
+end;
+  
 function Log: TLogDispatcher;
 begin
   if FShutdowning then

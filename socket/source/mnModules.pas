@@ -318,7 +318,7 @@ type
     FChunkedProxy: TmnChunkStreamProxy;
     FStream: TmnBufferStream;
     FMode: TStreamMode;
-    FNameSpace: TStrings;
+    FNameSpace: string;
     FRoute: TmnRoute;
     FDirectory: String;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
@@ -358,9 +358,10 @@ type
     property IsSSL: Boolean read Info.IsSSL write Info.IsSSL;
     property Path: String read FPath write FPath;
 
-    property NameSpace: TStrings read FNameSpace write FNameSpace;
+    property NameSpace: string read FNameSpace write FNameSpace;
     property Directory: String read FDirectory write FDirectory;
     property Route: TmnRoute read FRoute write FRoute;
+    
     property Params: TmodParams read FArguments; //deprecated 'use Arguments';
     property Arguments: TmodParams read FArguments; //alias
 
@@ -1075,7 +1076,7 @@ begin
   URIPath := Copy(Request, J, I - J);
 
   if URIPath <> '' then
-    if URIPath[1] = URLPathDelim then //Not sure
+    if URIPath[1] = URLDelimiter then //Not sure
       Delete(URIPath, 1, 1);
 
   Result := URIPath <> '';
@@ -1106,7 +1107,7 @@ end;
 procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
 begin
   ParseAddress(aRequest, URIPath, URIParams, URIQuery);
-  Name := SubStr(URIPath, URLPathDelim, 0);
+  Name := SubStr(URIPath, URLDelimiter, 0);
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
@@ -1148,25 +1149,25 @@ end;
 
 function GetSubPath(const Path: string): string;
 begin
-  if StartsText(URLPathDelim, Path) then
-    Result := SubStr(Path, URLPathDelim, 1)
+  if StartsText(URLDelimiter, Path) then
+    Result := SubStr(Path, URLDelimiter, 1)
   else
-    Result := SubStr(Path, URLPathDelim, 0)
+    Result := SubStr(Path, URLDelimiter, 0)
 end;
 
 
 function DeleteSubPath(const SubKey, Path: string): string;
 begin
-  if StartsText(URLPathDelim, Path) then
-    Result := Copy(Path, Length(URLPathDelim) + Length(SubKey) + 1, MaxInt)
+  if StartsText(URLDelimiter, Path) then
+    Result := Copy(Path, Length(URLDelimiter) + Length(SubKey) + 1, MaxInt)
   else
     Result := Copy(Path, Length(SubKey) + 1, MaxInt);
 end;
 
 function StartsSubPath(const SubKey, Path: string): Boolean;
 begin
-  if StartsText(URLPathDelim, Path) then
-    Result := StartsStr(Path, URLPathDelim + SubKey)
+  if StartsText(URLDelimiter, Path) then
+    Result := StartsStr(Path, URLDelimiter + SubKey)
   else
     Result := StartsStr(Path, SubKey);
 end;
@@ -1467,7 +1468,7 @@ end;
 
 function TmodRequest.CollectURI: string;
 begin
-  Result := URLPathDelim + Address;
+  Result := URLDelimiter + Address;
   if Query<>'' then
     Result := Result+'?'+Query
 end;
@@ -1485,14 +1486,14 @@ procedure TmodRequest.Created;
 begin
   inherited;
   FRoute := TmnRoute.Create;
-  FNameSpace := TStringList.Create;
+//  FNameSpace := TStringList.Create;
   FArguments := TmodParams.Create;
 end;
 
 destructor TmodRequest.Destroy;
 begin
   FreeAndNil(FRoute);
-  FreeAndNil(FNameSpace);
+//  FreeAndNil(FNameSpace);
   FreeAndNil(FArguments);
   inherited Destroy;
 end;
@@ -2424,7 +2425,7 @@ begin
   ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Query);
 
   //zaher: @zaher,belal, I dont like it
-  if (ARequest.Address <> '') and (ARequest.Address <> '/') and StartsText(URLPathDelim, ARequest.Address) then
+  if (ARequest.Address <> '') and (ARequest.Address <> '/') and StartsText(URLDelimiter, ARequest.Address) then
     ARequest.Path := Copy(ARequest.Address, 2, MaxInt)
   else
     ARequest.Path := ARequest.Address;
@@ -2435,7 +2436,7 @@ begin
 
 {  if (ARequest.Address<>'') and (ARequest.Address<>'/') then
   begin
-    if StartsText(URLPathDelim, ARequest.Address) then
+    if StartsText(URLDelimiter, ARequest.Address) then
       StrToStrings(Copy(ARequest.Address, 2, MaxInt), ARequest.Route, ['/'])
     else
       StrToStrings(ARequest.Address, ARequest.Route, ['/']);
