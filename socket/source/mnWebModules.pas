@@ -328,9 +328,6 @@ type
     property Started: Boolean read FStarted;
   end;
 
-var
-  modLock: TCriticalSection = nil;
-
 function WebFindDocument(const HomeFolder, Path: string; out Document:string; Smart: Boolean = False): Boolean;
 function WebExpandFile(HomeFolder, Path: string; out Document: string; Smart: Boolean = False): Boolean;
 function WebExpandToRoot(FileName: string; Root: string): string;
@@ -1071,7 +1068,5 @@ begin
 end;
 
 initialization
-  modLock := TCriticalSection.Create;
 finalization
-  FreeAndNil(modLock);
 end.

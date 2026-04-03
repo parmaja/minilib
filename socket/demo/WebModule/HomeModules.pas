@@ -96,14 +96,12 @@ type
 
   { THomeModule }
 
-  THomeModule = class(TUIWebModule)
+  THomeModule = class(TmnwWebModule)
   private
   protected
-    function CreateRenderer: TmnwRenderer; override;
     procedure InitItems; override;
     procedure Start; override;
-  public
-    destructor Destroy; override;
+  public    
   end;
 
 implementation
@@ -828,16 +826,6 @@ end;
 
 { THomeModule }
 
-function THomeModule.CreateRenderer: TmnwRenderer;
-begin
-  Result := TmnwBootstrapRenderer.Create(Self);
-end;
-
-destructor THomeModule.Destroy;
-begin
-  inherited;
-end;
-
 procedure THomeModule.InitItems;
 begin
   inherited;
@@ -856,15 +844,9 @@ begin
   with Web.Assets do
   begin
     LogoFile := HomeFolder + 'logo.png';
-      //Logo.LoadFromFile(HomePath + 'logo.png');
-    with thtml.TFile.Create(This) do
-    begin
-      Name := 'jquery';
-      Route := 'jquery';
-      FileName := IncludePathDelimiter(HomeFolder) + 'jquery-3.7.1.min.js';
-    end;
   end;
 end;
 
+initialization  
 end.
 
