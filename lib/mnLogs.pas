@@ -73,6 +73,7 @@ type
     procedure Write(const S: string; I: Integer); overload;
 
     property Enabled: Boolean read FEnabled write FEnabled;
+    procedure AppendToFile(const vFile, vText: utf8string); 
 //    property ForceLevel: TLogLevel read FForceLevel write FForceLevel; //nop some logs like files set to debug
   end;
 
@@ -133,15 +134,13 @@ procedure ChangeLogLevel(LogClass: TClass; vEnabled: Boolean); overload;
 
 function Log: TLogDispatcher;
 
-procedure LogAppendToFile(const vFile, vText: utf8string); overload;
-
 implementation
 
 var
   FLog: TLogDispatcher = nil;
   FShutdowning: Boolean = False;
 
-procedure LogAppendToFile(const vFile, vText: utf8string); overload;
+procedure TLogDispatcher.AppendToFile(const vFile, vText: utf8string); 
 var
   aStream : TFileStream;
   s: utf8string;

@@ -34,9 +34,15 @@ type
 
   TBSRenderer = class(TmnwRenderer)
   protected
+    class var BS_ElementRenderers: TmnwElementRenderers;
+    class function GetElementRenderers: TmnwElementRenderers; override;
+    class procedure Register; override;
+    procedure Created; override;
+  public
+    class destructor Destroy;    
   public
   type
-
+  
       { TElement }
 
       THTMLElement = class abstract(TmnwElementRenderer)
@@ -437,13 +443,9 @@ type
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
-
-  protected
-    procedure Created; override;
-    class constructor RegisterObjects;
   public
     procedure AddHead(const Context: TmnwContext); override;
-  end;
+end;
 
   TBootstrap_Library = class(TmnwLibrary)
   public  
@@ -466,6 +468,18 @@ begin
   Libraries.RegisterLibrary(TBootstrapIcons_Library);
 end;
 
+class destructor TBSRenderer.Destroy;
+begin
+  FreeAndNil(BS_ElementRenderers);
+end;
+
+class function TBSRenderer.GetElementRenderers: TmnwElementRenderers;
+begin
+  if BS_ElementRenderers = nil then
+    BS_ElementRenderers:= TmnwElementRenderers.Create;
+  Result := BS_ElementRenderers;
+end;
+
 procedure TBSRenderer.AddHead(const Context: TmnwContext);
 begin
 (*  Context.Writer.WriteLn('<style type="text/css">', [woOpenIndent]);
@@ -475,8 +489,9 @@ begin
   Context.Writer.WriteLn('</style>', [woCloseIndent]); *)
 end;
 
-class constructor TBSRenderer.RegisterObjects;
+class procedure TBSRenderer.Register;
 begin
+  inherited;
   //RegisterClasses(THTML);
   RegisterRenderer(THTML.TDynamicCompose, TDynamicCompose);
   RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
@@ -1762,5 +1777,6 @@ end;
 
 initialization
   Renderers.RegisterRenderer(TBSRenderer);
+finalization
 end.
 

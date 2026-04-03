@@ -87,7 +87,7 @@ WebElement:                             Namespace Alias   Schema  Directory     
     https://bootstrapmade.com/demo/templates/NiceAdmin/index.html
 }
 
-{$define LOG}
+{.$define LOG}
 
 interface
 
@@ -117,6 +117,7 @@ type
   TmnwElement = class;
   TmnwWriter = class;
   TmnwElementRenderer = class;
+  TmnwElementRenderers = class;
   TmnwRendererClass = class of TmnwRenderer;
   TmnwRendererRegister = class;
 
@@ -802,6 +803,7 @@ type
     FModule: TmodWebModule;
     FLibraries: TmnwLibraries;
     FParams: TmnwAttributes;
+    class function GetElementRenderersWrap: TmnwElementRenderers; static; 
   protected
     {$ifdef rtti_objects}
     procedure RegisterClasses(ASchemaClass: TmnwSchemaClass);
@@ -809,12 +811,17 @@ type
     procedure DoBeginRender; virtual;
     procedure DoEndRender; virtual;
 
-    class constructor RegisterObjects;
+    class function GetElementRenderers: TmnwElementRenderers; virtual; abstract; 
+    class procedure Register; virtual;
+    
   public
-    constructor Create(AModule: TmodWebModule); virtual;
-    destructor Destroy; override;
+    class procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False); 
+    class constructor Create; 
     class destructor Destroy;
 
+    constructor Create(AModule: TmodWebModule); virtual;
+    destructor Destroy; override;
+    
     procedure BeginRender;
     procedure EndRender;
     
@@ -825,9 +832,10 @@ type
     property Libraries: TmnwLibraries read FLibraries;
     property Module: TmodWebModule read FModule;
 
-    procedure AddHead(const Context: TmnwContext); virtual; abstract;
+    procedure AddHead(const Context: TmnwContext); virtual; abstract;    
   public
     RendererID: Integer;
+    class property ElementRenderers: TmnwElementRenderers read GetElementRenderersWrap;
   end;
 
   { TmnwSchemaItem }
@@ -1583,14 +1591,19 @@ type
   protected
     function Compare(Item1, Item2: TmnwRendererRegister): Integer; override;
   public
-    HTMLRendererClass: TmnwRendererClass; //TODO
+    constructor Create;
     procedure QuickSort; override;        
     function Find(AElementClass: TmnwElementClass): TmnwRendererRegister;
     function FindByParents(AElementClass: TmnwElementClass): TmnwRendererRegister;
     function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwRendererRegister; overload;
-    procedure RegisterRenderer(ARendererClass: TmnwRendererClass); overload;
   end;
 
+  TmnwRenderers = class(TObject)    
+  public
+    HTMLRendererClass: TmnwRendererClass; //TODO
+    procedure RegisterRenderer(ARendererClass: TmnwRendererClass); overload;
+  end;
+  
   TmnwResponse = class(TwebResponse)
   private
     FResume: Boolean;
@@ -1728,8 +1741,7 @@ function When(Condition: Boolean; const Value: string; const Default: string = '
 
 function NewUUID: string;
 
-function Renderers: TmnwElementRenderers;
-procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False);
+function Renderers: TmnwRenderers;
 
 implementation
 
@@ -1964,20 +1976,14 @@ end;
 
 var
   //*Should be by base class categoried
-  FElementRenderers: TmnwElementRenderers = nil;
+  FRenderers: TmnwRenderers = nil;
 
-function Renderers: TmnwElementRenderers;
+function Renderers: TmnwRenderers;
 begin
-  if FElementRenderers = nil then
-    FElementRenderers := TmnwElementRenderers.Create;
-  Result := FElementRenderers;  
+  if FRenderers = nil then
+    FRenderers := TmnwRenderers.Create;
+  Result := FRenderers;  
 end;
-
-procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean);
-begin
-  Renderers.RegisterRenderer(AElementClass, ARendererClass, Replace);
-end;
-
   
 {$ifdef rtti_objects}
 procedure CacheClasses;
@@ -2553,7 +2559,7 @@ begin
     Result := 0;
 
   {$ifdef LOG}
-  LogAppendToFile('d:\temp\log\log-t.txt', ClassItem1.ClassName+', '+ClassItem2.ClassName+', '+ Result.ToString);
+  Log.AppendToFile('d:\temp\log\log-t.txt', ClassItem1.ClassName+', '+ClassItem2.ClassName+', '+ Result.ToString);
   {$endif}
   
 {  if Result = 0 then  
@@ -2583,11 +2589,6 @@ begin
   {$endif}
 end;
 
-procedure TmnwElementRenderers.RegisterRenderer(ARendererClass: TmnwRendererClass);
-begin
-  HTMLRendererClass := ARendererClass;
-end;
-
 function TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwRendererRegister;
 begin
   if not AElementClass.InheritsFrom(TmnwElement) then
@@ -2612,6 +2613,12 @@ begin
     rttiCollectExtensions(Result.ElementClass, Result.Extensions);
     Result.Index := Add(Result);
   end;
+end;
+
+constructor TmnwElementRenderers.Create;
+begin
+  inherited Create;
+  RegisterRenderer(TmnwElement, TmnwElementRenderer);  
 end;
 
 function TmnwElementRenderers.Find(AElementClass: TmnwElementClass): TmnwRendererRegister;
@@ -3787,7 +3794,7 @@ function TmnwRenderer.CreateRenderer(AElementClass: TmnwElementClass): TmnwEleme
 var
   aRendererRegister: TmnwRendererRegister;
 begin
-  aRendererRegister := Renderers.FindByParents(AElementClass);
+  aRendererRegister := ElementRenderers.FindByParents(AElementClass);
   if aRendererRegister <> nil then
   begin
     Result := aRendererRegister.RendererClass.Create(Self, aRendererRegister);
@@ -4395,6 +4402,16 @@ begin
   DoEndRender;
 end;
 
+class function TmnwRenderer.GetElementRenderersWrap: TmnwElementRenderers;
+begin
+  Result := GetElementRenderers;
+end;
+
+class constructor TmnwRenderer.Create;
+begin
+  Register;
+end;
+
 procedure TmnwRenderer.DoBeginRender;
 begin
 end;
@@ -4403,9 +4420,13 @@ procedure TmnwRenderer.DoEndRender;
 begin
 end;
 
-class constructor TmnwRenderer.RegisterObjects;
+class procedure TmnwRenderer.Register;
 begin
-  RegisterRenderer(TmnwElement, TmnwElementRenderer);
+end;
+
+class procedure TmnwRenderer.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean);
+begin
+  ElementRenderers.RegisterRenderer(AElementClass,ARendererClass, Replace);
 end;
 
 { TmnwSchemaItem }
@@ -5612,10 +5633,16 @@ begin
   Language := ALanguage;
 end;
 
+{ TmnwRenderers }
+
+procedure TmnwRenderers.RegisterRenderer(ARendererClass: TmnwRendererClass);
+begin
+  HTMLRendererClass := ARendererClass;
+end;
+
 initialization
 
 finalization
-  FreeAndNil(FElementRenderers);
 {$ifdef rtti_objects}
   FreeAndNil(CacheClassObjects);
 {$endif}
