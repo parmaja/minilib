@@ -803,7 +803,6 @@ type
     FModule: TmodWebModule;
     FLibraries: TmnwLibraries;
     FParams: TmnwAttributes;
-    class function GetElementRenderersWrap: TmnwElementRenderers; static; 
   protected
     {$ifdef rtti_objects}
     procedure RegisterClasses(ASchemaClass: TmnwSchemaClass);
@@ -811,16 +810,12 @@ type
     procedure DoBeginRender; virtual;
     procedure DoEndRender; virtual;
 
-    class function GetElementRenderers: TmnwElementRenderers; virtual; abstract; 
-    class procedure Register; virtual;
-    
   public
-    class procedure RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False); 
-    class constructor Create; 
-    class destructor Destroy;
-
     constructor Create(AModule: TmodWebModule); virtual;
     destructor Destroy; override;
+
+    class function ElementRenderers: TmnwElementRenderers; virtual; abstract; 
+    class function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwRendererRegister; 
     
     procedure BeginRender;
     procedure EndRender;
@@ -835,7 +830,6 @@ type
     procedure AddHead(const Context: TmnwContext); virtual; abstract;    
   public
     RendererID: Integer;
-    class property ElementRenderers: TmnwElementRenderers read GetElementRenderersWrap;
   end;
 
   { TmnwSchemaItem }
@@ -1586,6 +1580,7 @@ type
   TmnwRendererRegisterClass = class of TmnwRendererRegister;
 
   { TmnwElementRenderers }
+
   //TODO use hash table TDicionary 
   TmnwElementRenderers = class(TmnObjectList<TmnwRendererRegister>)
   protected
@@ -1600,7 +1595,7 @@ type
 
   TmnwRenderers = class(TObject)    
   public
-    HTMLRendererClass: TmnwRendererClass; //TODO
+    RendererClass: TmnwRendererClass; //TODO
     procedure RegisterRenderer(ARendererClass: TmnwRendererClass); overload;
   end;
   
@@ -1694,26 +1689,6 @@ type
   end;
 
 function LevelStr(vLevel: Integer): String;
-
-{$ifdef RTTI_OBJECTS}
-type
-  TCacheClassObject = class(TObject)
-  public
-    ObjectClass: TClass;
-  end;
-
-  { TmnwRendererRegisters }
-
-  TCacheClassObjects = class(TmnObjectList<TCacheClassObject>)
-  public
-    procedure AddClass(ObjectClass: TClass);
-  end;
-
-var
-  CacheClassObjects: TCacheClassObjects = nil;
-
-procedure CacheClasses;
-{$endif}
 
 //* You need to compile it by brcc32 mnWebElements.rc or wait another 100 years till Delphi/FPC auto compile it
 {$R 'mnWebElements.res' 'mnWebElements.rc'}
@@ -4393,23 +4368,14 @@ begin
   inherited;
 end;
 
-class destructor TmnwRenderer.Destroy;
-begin
-end;
-
 procedure TmnwRenderer.EndRender;
 begin
   DoEndRender;
 end;
 
-class function TmnwRenderer.GetElementRenderersWrap: TmnwElementRenderers;
+class function TmnwRenderer.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwRendererRegister;
 begin
-  Result := GetElementRenderers;
-end;
-
-class constructor TmnwRenderer.Create;
-begin
-  Register;
+  ElementRenderers.RegisterRenderer(AElementClass, ARendererClass, Replace);
 end;
 
 procedure TmnwRenderer.DoBeginRender;
@@ -4418,15 +4384,6 @@ end;
 
 procedure TmnwRenderer.DoEndRender;
 begin
-end;
-
-class procedure TmnwRenderer.Register;
-begin
-end;
-
-class procedure TmnwRenderer.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean);
-begin
-  ElementRenderers.RegisterRenderer(AElementClass,ARendererClass, Replace);
 end;
 
 { TmnwSchemaItem }
@@ -5157,7 +5114,7 @@ end;
 
 function TmnwWebModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := Renderers.HTMLRendererClass.Create(Self);
+  Result := Renderers.RendererClass.Create(Self);
 end;
 
 destructor TmnwWebModule.Destroy;
@@ -5637,13 +5594,10 @@ end;
 
 procedure TmnwRenderers.RegisterRenderer(ARendererClass: TmnwRendererClass);
 begin
-  HTMLRendererClass := ARendererClass;
+  RendererClass := ARendererClass;
 end;
 
 initialization
-
 finalization
-{$ifdef rtti_objects}
-  FreeAndNil(CacheClassObjects);
-{$endif}
+  FreeAndNil(FRenderers);
 end.

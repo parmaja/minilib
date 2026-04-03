@@ -35,11 +35,11 @@ type
   TBSRenderer = class(TmnwRenderer)
   protected
     class var BS_ElementRenderers: TmnwElementRenderers;
-    class function GetElementRenderers: TmnwElementRenderers; override;
-    class procedure Register; override;
     procedure Created; override;
   public
-    class destructor Destroy;    
+    class function ElementRenderers: TmnwElementRenderers; override;
+    class constructor Register; 
+    class destructor Destroy;      
   public
   type
   
@@ -473,7 +473,7 @@ begin
   FreeAndNil(BS_ElementRenderers);
 end;
 
-class function TBSRenderer.GetElementRenderers: TmnwElementRenderers;
+class function TBSRenderer.ElementRenderers: TmnwElementRenderers;
 begin
   if BS_ElementRenderers = nil then
     BS_ElementRenderers:= TmnwElementRenderers.Create;
@@ -489,64 +489,66 @@ begin
   Context.Writer.WriteLn('</style>', [woCloseIndent]); *)
 end;
 
-class procedure TBSRenderer.Register;
+class constructor TBSRenderer.Register;
 begin
-  inherited;
-  //RegisterClasses(THTML);
-  RegisterRenderer(THTML.TDynamicCompose, TDynamicCompose);
-  RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
-  RegisterRenderer(THTML.TFile, TFile);
-  RegisterRenderer(THTML.TJSFile, TJSFile);
-  RegisterRenderer(THTML.TCSSFile, TCSSFile);
+  inherited;  
+  with ElementRenderers do
+  begin 
+    RegisterRenderer(THTML.TDynamicCompose, TDynamicCompose);
+    RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
+    RegisterRenderer(THTML.TFile, TFile);
+    RegisterRenderer(THTML.TJSFile, TJSFile);
+    RegisterRenderer(THTML.TCSSFile, TCSSFile);
 
-  RegisterRenderer(THTML.TComment ,TComment);
-  RegisterRenderer(THTML.TDocument ,TDocument);
-  RegisterRenderer(THTML.TBody ,TBody);
-  RegisterRenderer(THTML.TParagraph, TParagraph);
-  RegisterRenderer(THTML.TBreak, TBreak);
-  RegisterRenderer(THTML.TNavTools, TNavTools);
-  RegisterRenderer(THTML.TNavDropdown, TNavDropdown);
-  RegisterRenderer(THTML.TNavBar, TNavBar);
-  RegisterRenderer(THTML.TMenuBar, TMenuBar);
-  RegisterRenderer(THTML.THeader, THeader);
-  RegisterRenderer(THTML.TContent, TContent);
-  RegisterRenderer(THTML.TSideBar, TSideBar);
-  RegisterRenderer(THTML.TAccordion, TAccordion);
-  RegisterRenderer(THTML.TAccordionSection, TAccordionSection);
-  RegisterRenderer(THTML.TAccordionItem, TAccordionItem);
-  RegisterRenderer(THTML.TMain, TMain);
-  RegisterRenderer(THTML.TFooter, TFooter);
-  RegisterRenderer(THTML.TToast, TToast);
-  RegisterRenderer(THTML.TLink, TLink);
-  RegisterRenderer(THTML.TSpan, TSpan);
-  RegisterRenderer(THTML.TButton, TButton);
-  RegisterRenderer(THTML.TNavItem, TNavItem);
-  RegisterRenderer(THTML.TMenuItem, TMenuItem);
-  RegisterRenderer(THTML.TDropdownItem, TDropdownItem);
-  RegisterRenderer(THTML.TInput, TInput);
-  RegisterRenderer(THTML.TInputPassword, TInputPassword);
-  RegisterRenderer(THTML.TImage, TImage);
-  RegisterRenderer(THTML.TImageFile, TImageFile);
-  RegisterRenderer(THTML.TImageMemory, TImageMemory);
-  RegisterRenderer(THTML.TCard, TCard);
-  RegisterRenderer(THTML.TDropdown, TDropdown);
-  RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
-  RegisterRenderer(THTML.TToolbar, TToolbar);
-  RegisterRenderer(THTML.TZoomButtons, TZoomButtons);
-  RegisterRenderer(THTML.TCollapseCaption, TCollapseCaption);
-  RegisterRenderer(THTML.TForm, TForm);
-  RegisterRenderer(THTML.TRow, TRow);
-  RegisterRenderer(THTML.TColumn, TColumn);
-  RegisterRenderer(THTML.TPanel, TPanel);
-  RegisterRenderer(THTML.TCode, TCode);  
-  RegisterRenderer(THTML.TMultilineCode, TMultilineCode);    
-  RegisterRenderer(THTML.TBar, TBar);
+    RegisterRenderer(THTML.TComment ,TComment);
+    RegisterRenderer(THTML.TDocument ,TDocument);
+    RegisterRenderer(THTML.TBody ,TBody);
+    RegisterRenderer(THTML.TParagraph, TParagraph);
+    RegisterRenderer(THTML.TBreak, TBreak);
+    RegisterRenderer(THTML.TNavTools, TNavTools);
+    RegisterRenderer(THTML.TNavDropdown, TNavDropdown);
+    RegisterRenderer(THTML.TNavBar, TNavBar);
+    RegisterRenderer(THTML.TMenuBar, TMenuBar);
+    RegisterRenderer(THTML.THeader, THeader);
+    RegisterRenderer(THTML.TContent, TContent);
+    RegisterRenderer(THTML.TSideBar, TSideBar);
+    RegisterRenderer(THTML.TAccordion, TAccordion);
+    RegisterRenderer(THTML.TAccordionSection, TAccordionSection);
+    RegisterRenderer(THTML.TAccordionItem, TAccordionItem);
+    RegisterRenderer(THTML.TMain, TMain);
+    RegisterRenderer(THTML.TFooter, TFooter);
+    RegisterRenderer(THTML.TToast, TToast);
+    RegisterRenderer(THTML.TLink, TLink);
+    RegisterRenderer(THTML.TSpan, TSpan);
+    RegisterRenderer(THTML.TButton, TButton);
+    RegisterRenderer(THTML.TNavItem, TNavItem);
+    RegisterRenderer(THTML.TMenuItem, TMenuItem);
+    RegisterRenderer(THTML.TDropdownItem, TDropdownItem);
+    RegisterRenderer(THTML.TInput, TInput);
+    RegisterRenderer(THTML.TInputPassword, TInputPassword);
+    RegisterRenderer(THTML.TImage, TImage);
+    RegisterRenderer(THTML.TImageFile, TImageFile);
+    RegisterRenderer(THTML.TImageMemory, TImageMemory);
+    RegisterRenderer(THTML.TCard, TCard);
+    RegisterRenderer(THTML.TDropdown, TDropdown);
+    RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
+    RegisterRenderer(THTML.TToolbar, TToolbar);
+    RegisterRenderer(THTML.TZoomButtons, TZoomButtons);
+    RegisterRenderer(THTML.TCollapseCaption, TCollapseCaption);
+    RegisterRenderer(THTML.TForm, TForm);
+    RegisterRenderer(THTML.TRow, TRow);
+    RegisterRenderer(THTML.TColumn, TColumn);
+    RegisterRenderer(THTML.TPanel, TPanel);
+    RegisterRenderer(THTML.TCode, TCode);  
+    RegisterRenderer(THTML.TMultilineCode, TMultilineCode);    
+    RegisterRenderer(THTML.TBar, TBar);
 
-  RegisterRenderer(THTML.THTMLElement, THTMLElement);
-  RegisterRenderer(THTML.THTMLComponent, THTMLComponent);
-  RegisterRenderer(THTML.THTMLControl, THTMLControl);
+    RegisterRenderer(THTML.THTMLElement, THTMLElement);
+    RegisterRenderer(THTML.THTMLComponent, THTMLComponent);
+    RegisterRenderer(THTML.THTMLControl, THTMLControl);
 
-  RegisterRenderer(THTML.TThemeModeButton, TThemeModeButton);
+    RegisterRenderer(THTML.TThemeModeButton, TThemeModeButton);
+  end;
 end;
 
 { TBSRenderer.THTMLElement }
