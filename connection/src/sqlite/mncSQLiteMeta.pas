@@ -24,8 +24,6 @@ type
 
   TmncSQLiteMeta = class(TmncSQLMeta)
   private
-    function GetTransaction: TmncTransaction;
-    procedure SetTransaction(AValue: TmncTransaction);
   protected
   public
     procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions =[]); override;
@@ -51,16 +49,6 @@ implementation
 
 uses
   mncDB, mncSQL;
-
-function TmncSQLiteMeta.GetTransaction: TmncTransaction;
-begin
-  Result := Link as TmncTransaction;
-end;
-
-procedure TmncSQLiteMeta.SetTransaction(AValue: TmncTransaction);
-begin
-  inherited Link := AValue;
-end;
 
 procedure TmncSQLiteMeta.EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 var

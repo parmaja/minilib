@@ -457,7 +457,105 @@ end;
     procedure AddHead(const Context: TmnwContext); override;
   end;
 
+function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+
+function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
+function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = True): string;
+
 implementation
+
+function BSCustomAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean): string; inline;
+begin
+  if Align = alignStart then
+    Result := s + '-start'
+  else if Align = alignCenter then
+    Result := s + '-center'
+  else if Align = alignStreach then
+    Result := s + '-streach'
+  else if Align = alignBaseline then
+    Result := s + '-baseline'
+  else if Align = alignEnd then
+    Result := s + '-end'
+  else
+    Result := '';
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
+end;
+
+function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+begin
+  Result := BSCustomAlignToStr('align-self', Align, WithSpace);
+end;
+
+function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+begin
+  Result := BSCustomAlignToStr('justify-content', Align, WithSpace);
+end;
+
+function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+begin
+  Result := BSCustomAlignToStr('align-items-', Align, WithSpace);
+end;
+
+function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
+begin
+  case Fixed of
+    fixedTop:
+      Result := 'fixed-top';
+    fixedBottom:
+      Result := 'fixed-bottom';
+    fixedStart:
+      Result := 'fixed-start'; // not exists
+    fixedEnd:
+      Result := 'fixed-end'; // not exists
+    stickyTop:
+      Result := 'sticky-top';
+    stickyBottom:
+      Result := 'sticky-bottom';
+    stickyStart:
+      Result := 'sticky-start'; // not exists
+    stickyEnd:
+      Result := 'sticky-end'; // not exists
+    else
+      Result := '';
+  end;
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
+end;
+
+function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+begin
+  case Size of
+    szUndefined: Result := '';
+	  szVerySmall: Result := 'xs';
+		szSmall: Result := 'sm';
+		szNormal: Result := 'md';
+		szLarge: Result := 'lg';
+		szVeryLarge: Result := 'xl';
+    else
+      Result := '';
+  end;
+end;
+
+function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean): string;
+begin
+  case Style of
+    styleUndefined: Result := '';
+    stylePrimary: Result := Prefix + 'primary';
+    styleSecondary: Result := Prefix + 'secondary';
+    styleSuccess: Result := Prefix + 'success';
+    styleDanger: Result := Prefix + 'danger';
+    styleWarning: Result := Prefix + 'warning';
+    styleInfo: Result := Prefix + 'info';
+    styleLight: Result := Prefix + 'light';
+    styleDark: Result := Prefix + 'dark';
+    styleLink: Result := Prefix + 'link';
+    styleNone: Result := 'bg-transparent';
+  end;
+end;
 
 procedure TBSRenderer.Created;
 begin
@@ -1778,7 +1876,7 @@ begin
 end;
 
 initialization
-  Renderers.RegisterRenderer(TBSRenderer);
+  Renderers.RegisterRenderer('Bootstrap', TBSRenderer);
 finalization
 end.
 

@@ -173,7 +173,7 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function CreateCommand(ASQL: string = ''): TmncPGCommand;
-    procedure Execute(const vSQL: string);
+    procedure Execute(const vSQL: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
     property DBHandle: PPGconn read GetDBHandle;
@@ -909,7 +909,7 @@ begin
   try
     InternalDisconnect(FHandle);
   except
-    beep; //belal need review some time access violation
+    beep; //TODO belal need review some time access violation
   end;
 end;
 
@@ -1670,7 +1670,7 @@ begin
           begin
             s := UTF8Encode(bind.Param.Value);
             if (cmoTruncate in Options) and ((bind.Param as TmncPostgreParam).FieldSize > 0) then
-              s := MidStr(s, 1, (bind.Param as TmncPostgreParam).FieldSize)
+              s := Copy(s, 1, (bind.Param as TmncPostgreParam).FieldSize)
             else
           end;
       end;

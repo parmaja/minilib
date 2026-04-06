@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mnUtils, mncCommons, mncConnections,
+  mnClasses, mnUtils, mncCommons, mncConnections, 
   mncORM, mncMeta;
 
 type
@@ -34,7 +34,7 @@ type
 
 { TmncEngines }
 
-  TmncEngines = class(TObjectList)
+  TmncEngines = class(TmnObjectList<TmncEngine>)
   private
     function GetItems(Index: Integer): TmncEngine;
   public
@@ -57,7 +57,6 @@ type
     procedure EnumConnections(Strings: TStrings);
     procedure EnumORMs(Strings: TStrings);
     procedure EnumMatas(Strings: TStrings);
-    property Items[Index:Integer]: TmncEngine read GetItems; default;
   end;
 
 function Engines: TmncEngines;

@@ -39,7 +39,7 @@ type
   public
     constructor Create(AClient: TmnCustomSMTPClient); virtual;
     destructor Destroy; override;
-    procedure Clear; virtual;
+    procedure Clear; override;
 
     property Client: TmnCustomSMTPClient read FClient;
   end;
@@ -205,7 +205,7 @@ begin
   Body := TStringList.Create;
   try
     Body.Text := vBody;
-    SMTPMail(vHost, vUsername, vPassword, vFrom, vTo, vSubject, Body);
+    Result := SMTPMail(vHost, vUsername, vPassword, vFrom, vTo, vSubject, Body);
   finally
     Body.Free;
   end;
@@ -314,7 +314,7 @@ end;
 
 function TmnCustomSMTPClient.ReadLine(out s: String): Boolean;
 begin
-  Result := FStream.ReadLineUTF8(s);
+  Result := FStream.ReadUTF8Line(s);
   Log.WriteLn('=> '+S);
 end;
 
@@ -328,7 +328,7 @@ end;
 
 procedure TmnCustomSMTPClient.WriteLine(s: string);
 begin
-  FStream.WriteLineUTF8(s);
+  FStream.WriteUTF8Line(s);
   Log.Writeln('<= '+s);
 end;
 
@@ -420,7 +420,6 @@ var
 var
   Auths: TStringList;
   s: string;
-  i: Integer;
 begin
   Result := False;
 
