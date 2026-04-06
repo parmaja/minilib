@@ -19,11 +19,11 @@
             Userinfo       Host      Port                       URI (always started / )
             ┌──┴───┐ ┌──────┴────────┌┴┐┌────────────────────────┴───────────────────────────────┐
 GET https://john.doe@www.example.com:123/username/forum/questions/?tag=networking&order=newest#top
-                     └──────┬──────┘    └───────────────┬────────┘└───────────┬─────────────┘ └┬─┘
-                       DomainName                    Address                Query           Fragment
-                                        └───┬───┘└──┬──┘└──┬─────┘            ┬
-                                        Directory Alias   Path              Params
-    └────────────────────────┬─────────┘       Module Name
+    |                └──────┬──────┘    └───────────────┬────────┘└───────────┬─────────────┘ └┬─┘
+    |                  DomainName                    Address                Query           Fragment
+    |                                   └───┬───┘└──┬──┘└──┬─────┘          └─┬─┘
+    |                                   Namespace Alias Directory           Params
+    └────────────────────────┬──────────┘         Module 
                            HomeURL
 }
 

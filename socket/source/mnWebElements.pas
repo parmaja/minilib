@@ -119,7 +119,7 @@ type
   TmnwElementRenderer = class;
   TmnwElementRenderers = class;
   TmnwRendererClass = class of TmnwRenderer;
-  TmnwRendererRegister = class;
+  TmnwElementRendererRegister = class;
 
   TmnwElementClass = class of TmnwElement;
   TElementExtension = class;
@@ -332,6 +332,7 @@ type
     FUsage: Integer;
     FPriority: Integer;
     FEndOfBody: Boolean;
+    FDependsOn: TmnwLibrary;
   protected
     function CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
     procedure Created; override;     
@@ -342,6 +343,7 @@ type
     property Usage: Integer read FUsage;
     property EndOfBody: Boolean read FEndOfBody write FEndOfBody;
     property Priority: Integer read FPriority write FPriority;
+    property DependsOn: TmnwLibrary read FDependsOn write FDependsOn;
   end;
 
   TmnwLibraryClass = class of TmnwLibrary;
@@ -751,7 +753,7 @@ type
   TmnwElementRenderer = class(TObject)
   private
     FRenderer: TmnwRenderer;
-    FRendererRegister: TmnwRendererRegister;
+    FRendererRegister: TmnwElementRendererRegister;
   protected
     //* Keep `var`
     procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); virtual;
@@ -776,10 +778,10 @@ type
     procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     property Renderer: TmnwRenderer read FRenderer;
-    property RendererRegister: TmnwRendererRegister read FRendererRegister;
+    property RendererRegister: TmnwElementRendererRegister read FRendererRegister;
   public
     procedure Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TmnwResponse);
-    constructor Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwRendererRegister); virtual; //useful for creating it by RendererClass.Create
+    constructor Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwElementRendererRegister); virtual; //useful for creating it by RendererClass.Create
     procedure CollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
   end;
 
@@ -808,14 +810,14 @@ type
     procedure RegisterClasses(ASchemaClass: TmnwSchemaClass);
     {$endif}
     procedure DoBeginRender; virtual;
-    procedure DoEndRender; virtual;
+    procedure DoEndRender; virtual;    
 
   public
     constructor Create(AModule: TmodWebModule); virtual;
     destructor Destroy; override;
 
     class function ElementRenderers: TmnwElementRenderers; virtual; abstract; 
-    class function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwRendererRegister; 
+    class function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwElementRendererRegister; 
     
     procedure BeginRender;
     procedure EndRender;
@@ -1566,9 +1568,9 @@ type
     property Document: TDocument read FDocument;
   end;
 
-  { TmnwRendererRegister }
+  { TmnwElementRendererRegister }
 
-  TmnwRendererRegister = class(TObject)
+  TmnwElementRendererRegister = class(TObject)
   public
     Index: Integer;
     ElementClass: TmnwElementClass;
@@ -1577,26 +1579,29 @@ type
     constructor Create;
     destructor Destroy; override;
   end;
-  TmnwRendererRegisterClass = class of TmnwRendererRegister;
+  TmnwElementRendererRegisterClass = class of TmnwElementRendererRegister;
 
   { TmnwElementRenderers }
 
   //TODO use hash table TDicionary 
-  TmnwElementRenderers = class(TmnObjectList<TmnwRendererRegister>)
+  TmnwElementRenderers = class(TmnObjectList<TmnwElementRendererRegister>)
   protected
-    function Compare(Item1, Item2: TmnwRendererRegister): Integer; override;
   public
     constructor Create;
-    procedure QuickSort; override;        
-    function Find(AElementClass: TmnwElementClass): TmnwRendererRegister;
-    function FindByParents(AElementClass: TmnwElementClass): TmnwRendererRegister;
-    function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwRendererRegister; overload;
+    function Find(AElementClass: TmnwElementClass): TmnwElementRendererRegister;
+    function FindByParents(AElementClass: TmnwElementClass): TmnwElementRendererRegister;
+    function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwElementRendererRegister; overload;
   end;
 
-  TmnwRenderers = class(TObject)    
+  TmnwRendererRegister = class(TmnNamedObject)  
+  public    
+    RendererClass: TmnwRendererClass;
+  end;  
+  
+  TmnwRenderers = class(TmnObjectList<TmnwRendererRegister>)
   public
-    RendererClass: TmnwRendererClass; //TODO
-    procedure RegisterRenderer(ARendererClass: TmnwRendererClass); overload;
+    RendererClass: TmnwRendererClass; //* Default, TODO
+    function RegisterRenderer(AName: string; ARendererClass: TmnwRendererClass): TmnwRendererRegister; overload;
   end;
   
   TmnwResponse = class(TwebResponse)
@@ -1696,21 +1701,19 @@ function LevelStr(vLevel: Integer): String;
 const
   woFullTag = [woOpenIndent, woCloseIndent];
 
-function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
-function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
-function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
-
-function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
-function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
-function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = True): string;
-
 function DirectionToStr(Direction: TDirection): string;
 function GetTimeStamp: Int64;
 
+//Short functions
+//Single Quote
 function SQ(s: string): string; inline;
+//Double Quote
 function DQ(s: string): string; inline;
+
+//Name Value with Quote 
 function NV(const Name, Value: string): string; overload; inline;
 function NV(const Name, Value, Default: string): string; overload; inline;
+
 function When(const Value: string; const Default: string = ''): string; overload; inline;
 function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
 
@@ -1733,96 +1736,6 @@ end;
 function NewUUID: string;
 begin
   Result := UUIDToString(TGUID.NewGuid);
-end;
-
-function BSCustomAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean): string; inline;
-begin
-  if Align = alignStart then
-    Result := s + '-start'
-  else if Align = alignCenter then
-    Result := s + '-center'
-  else if Align = alignStreach then
-    Result := s + '-streach'
-  else if Align = alignBaseline then
-    Result := s + '-baseline'
-  else if Align = alignEnd then
-    Result := s + '-end'
-  else
-    Result := '';
-  if (Result <> '') and WithSpace then
-    Result := ' ' + Result;
-end;
-
-function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
-begin
-  Result := BSCustomAlignToStr('align-self', Align, WithSpace);
-end;
-
-function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean): string;
-begin
-  Result := BSCustomAlignToStr('justify-content', Align, WithSpace);
-end;
-
-function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean): string;
-begin
-  Result := BSCustomAlignToStr('align-items-', Align, WithSpace);
-end;
-
-function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
-begin
-  case Fixed of
-    fixedTop:
-      Result := 'fixed-top';
-    fixedBottom:
-      Result := 'fixed-bottom';
-    fixedStart:
-      Result := 'fixed-start'; // not exists
-    fixedEnd:
-      Result := 'fixed-end'; // not exists
-    stickyTop:
-      Result := 'sticky-top';
-    stickyBottom:
-      Result := 'sticky-bottom';
-    stickyStart:
-      Result := 'sticky-start'; // not exists
-    stickyEnd:
-      Result := 'sticky-end'; // not exists
-    else
-      Result := '';
-  end;
-  if (Result <> '') and WithSpace then
-    Result := ' ' + Result;
-end;
-
-function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
-begin
-  case Size of
-    szUndefined: Result := '';
-	  szVerySmall: Result := 'xs';
-		szSmall: Result := 'sm';
-		szNormal: Result := 'md';
-		szLarge: Result := 'lg';
-		szVeryLarge: Result := 'xl';
-    else
-      Result := '';
-  end;
-end;
-
-function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean): string;
-begin
-  case Style of
-    styleUndefined: Result := '';
-    stylePrimary: Result := Prefix + 'primary';
-    styleSecondary: Result := Prefix + 'secondary';
-    styleSuccess: Result := Prefix + 'success';
-    styleDanger: Result := Prefix + 'danger';
-    styleWarning: Result := Prefix + 'warning';
-    styleInfo: Result := Prefix + 'info';
-    styleLight: Result := Prefix + 'light';
-    styleDark: Result := Prefix + 'dark';
-    styleLink: Result := Prefix + 'link';
-    styleNone: Result := 'bg-transparent';
-  end;
 end;
 
 function DirectionToStr(Direction: TDirection): string;
@@ -1866,7 +1779,6 @@ begin
     Result := ' ' + Name + '=' + DQ(Value)
   else
     Result := '';
-
 end;
 
 function NV(const Name, Value, Default: string): string; overload; inline;
@@ -2427,7 +2339,7 @@ begin
   end;
 end;
 
-constructor TmnwElementRenderer.Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwRendererRegister);
+constructor TmnwElementRenderer.Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwElementRendererRegister);
 begin
   inherited Create;
   FRenderer := ARenderer;
@@ -2519,52 +2431,7 @@ end;
 
 { TmnwSchema.TmnwElementRenderers }
 
-function TmnwElementRenderers.Compare(Item1, Item2: TmnwRendererRegister): Integer;
-var
-  ClassItem1, ClassItem2: TClass;
-begin
-  ClassItem1 := Item1.RendererClass;
-  ClassItem2 := Item2.RendererClass;
-
-  if ClassItem2.InheritsFrom(ClassItem1) then
-    Result := 1
-  else if ClassItem1.InheritsFrom(ClassItem2) then
-    Result := -1
-  else
-    Result := 0;
-
-  {$ifdef LOG}
-  Log.AppendToFile('d:\temp\log\log-t.txt', ClassItem1.ClassName+', '+ClassItem2.ClassName+', '+ Result.ToString);
-  {$endif}
-  
-{  if Result = 0 then  
-    Result := Item2.Index - Item1.Index;}
-{  if Result = 0 then  
-    Result := Item2.Level - Item1.Level;}
-{  if Result = 0 then  
-    Result := CompareText(ClassItem2.ClassName, ClassItem1.ClassName);}
-end;
-
-procedure TmnwElementRenderers.QuickSort;
-var
-  itm: TmnwRendererRegister;
-  {$ifdef LOG}
-  b: TmnWrapperStream;
-  {$endif}
-begin  
-  {$ifdef LOG}
-  DeleteFile('d:\temp\log\log-t.txt');
-  {$endif}
-  inherited;
-  {$ifdef LOG}
-  b:=TmnWrapperStream.Create(TFileStream.Create('d:\temp\log\log.txt', fmCreate or fmOpenWrite));
-  for itm in Self do
-    b.WriteUTF8Line(itm.RendererClass.ClassName+'('+itm.RendererClass.ClassParent.ClassName+')');
-  b.Free;
-  {$endif}
-end;
-
-function TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwRendererRegister;
+function TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwElementRendererRegister;
 begin
   if not AElementClass.InheritsFrom(TmnwElement) then
     raise Exception.Create('Element should inherited from THTML');
@@ -2582,7 +2449,7 @@ begin
   end
   else
   begin
-    Result := TmnwRendererRegister.Create;
+    Result := TmnwElementRendererRegister.Create;
     Result.ElementClass := AElementClass;
     Result.RendererClass := ARendererClass;
     rttiCollectExtensions(Result.ElementClass, Result.Extensions);
@@ -2596,9 +2463,9 @@ begin
   RegisterRenderer(TmnwElement, TmnwElementRenderer);  
 end;
 
-function TmnwElementRenderers.Find(AElementClass: TmnwElementClass): TmnwRendererRegister;
+function TmnwElementRenderers.Find(AElementClass: TmnwElementClass): TmnwElementRendererRegister;
 var
-  o: TmnwRendererRegister;
+  o: TmnwElementRendererRegister;
   i: Integer;
 begin
   Result := nil;
@@ -2615,7 +2482,7 @@ begin
     Log.WriteLn(lglError, '> ' + AElementClass.ClassName + ' with ' + Result.ElementClass.ClassName);}
 end;
 
-function TmnwElementRenderers.FindByParents(AElementClass: TmnwElementClass): TmnwRendererRegister;
+function TmnwElementRenderers.FindByParents(AElementClass: TmnwElementClass): TmnwElementRendererRegister;
 var
   aClass: TmnwElementClass;
 begin
@@ -2640,7 +2507,7 @@ end;
 
 {function TmnwElementRenderers.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
 var
-  o: TmnwRendererRegister;
+  o: TmnwElementRendererRegister;
 begin
   o := Find(AObjectClass, True);
   if o <> nil then
@@ -3386,15 +3253,15 @@ begin
   Size := szUndefined;
 end;
 
-{ TmnwRendererRegister }
+{ TmnwElementRendererRegister }
 
-constructor TmnwRendererRegister.Create;
+constructor TmnwElementRendererRegister.Create;
 begin
   inherited Create;
   Extensions := TClassList.Create;
 end;
 
-destructor TmnwRendererRegister.Destroy;
+destructor TmnwElementRendererRegister.Destroy;
 begin
   FreeAndNil(Extensions);
   inherited;
@@ -3748,26 +3615,9 @@ begin
   Route := ARoute;
 end;
 
-{$ifdef rtti_objects}
-procedure TmnwRenderer.RegisterClasses(ASchemaClass: TmnwSchemaClass);
-var
-  aObjectClass: TCacheClassObject;
-  aName, aClassName: string;
-begin
-  aClassName := ClassName;
-  for aObjectClass in CacheClassObjects do
-  begin
-    aName := SubStr(aObjectClass.ObjectClass.ClassName, '.', 1);
-    if (aName = aClassName) then
-    begin
-    end;
-  end;
-end;
-{$endif}
-
 function TmnwRenderer.CreateRenderer(AElementClass: TmnwElementClass): TmnwElementRenderer;
 var
-  aRendererRegister: TmnwRendererRegister;
+  aRendererRegister: TmnwElementRendererRegister;
 begin
   aRendererRegister := ElementRenderers.FindByParents(AElementClass);
   if aRendererRegister <> nil then
@@ -4347,7 +4197,7 @@ end;
 
 constructor TmnwRenderer.Create(AModule: TmodWebModule);
 {var
-  o: TmnwRenderer.TmnwRendererRegister;}
+  o: TmnwRenderer.TmnwElementRendererRegister;}
 begin
   FLibraries := TmnwLibraries.Create;
   inherited Create;
@@ -4373,9 +4223,9 @@ begin
   DoEndRender;
 end;
 
-class function TmnwRenderer.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwRendererRegister;
+class function TmnwRenderer.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwElementRendererRegister;
 begin
-  ElementRenderers.RegisterRenderer(AElementClass, ARendererClass, Replace);
+  Result := ElementRenderers.RegisterRenderer(AElementClass, ARendererClass, Replace);
 end;
 
 procedure TmnwRenderer.DoBeginRender;
@@ -4612,6 +4462,7 @@ end;
 function TmnwLibraries.Compare(Item1, Item2: TmnwLibrary): Integer;
 begin
   Result := Item1.Priority - Item2.Priority;
+  //TODO use DependsOn
 end;
 
 function TmnwLibraries.Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary;
@@ -5592,9 +5443,14 @@ end;
 
 { TmnwRenderers }
 
-procedure TmnwRenderers.RegisterRenderer(ARendererClass: TmnwRendererClass);
+function TmnwRenderers.RegisterRenderer(AName: string; ARendererClass: TmnwRendererClass): TmnwRendererRegister;
 begin
-  RendererClass := ARendererClass;
+  if RendererClass = nil then  
+    RendererClass := ARendererClass;
+  Result := TmnwRendererRegister.Create;
+  Result.Name := AName;
+  Result.RendererClass := ARendererClass;
+  Add(Result);
 end;
 
 initialization
