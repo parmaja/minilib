@@ -532,8 +532,6 @@ end;
 function TmnListener.AcceptSocket(Socket: TmnCustomSocket): TmnServerConnection;
 begin
   //check to make this in new thread
-  Result := nil;
-
   if Socket=nil then
     raise EmnStreamException.CreateFmt('socket is null', []);
 

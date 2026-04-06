@@ -11,7 +11,7 @@ interface
 uses
   Classes, SysUtils, StrUtils, DateUtils,
   mnUtils, mnStreams, mnModules, mnWebModules, mnMultipartData,
-	mnLogs, mnWebElements, mnBootstraps;
+	mnLogs, mnWebElements, mnBootstraps, mnwCalendars, mnwBootstrapTables;
 
 type
 
@@ -758,31 +758,45 @@ end;
 
 { TInfoSchema }
 
+// http://localhost:8080/home/info/panel1/test1/test2
 procedure TInfoSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   with Document.Body.Main do
   begin            
-    Route := 'main';
+//    Route := 'main';
     with TPanel.Create(this) do    
     begin
-      Route := 'panel';
+      Route := 'panel1';
+      TCode.Create(This, 'Context.Route: ' + AContext.Route);
+      TBreak.Create(This);
       TCode.Create(This, 'e.GetPath: ' + This.GetPath);
-      TBreak.Create(This);
-      TCode.Create(This, 'e.GetURL: ' + This.GetURL);
-      TBreak.Create(This);
       TBreak.Create(This);
       TCode.Create(This, 'Context.GetRelativePath: ' + AContext.GetRelativePath(This));
       TBreak.Create(This);
-      TCode.Create(This, 'Context.GetPath(e): ' + AContext.GetPath(This));
       TBreak.Create(This);
       TCode.Create(This, 'Context.GetHomePath: ' + AContext.GetHomePath);
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.GetPath(e): ' + AContext.GetPath(This));
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.GetURL: ' + AContext.GetURL);
       TBreak.Create(This);
       TCode.Create(This, 'Context.GetURL(e): ' + AContext.GetURL(this));
       TBreak.Create(This);
       TCode.Create(This, 'Context.GetHomeURL: ' + AContext.GetHomeURL);
     end;
+    
+    var aPanel := TPanel.Create(this);
+    with aPanel do    
+    begin
+      Route := 'panel2'; 
+      OnRespond := procedure (const AContext: TmnwContext; AResponse: TmnwResponse)
+      begin
+        AResponse.RespondText('Hello World'+#13 + AContext.Route);
+      end;
+    end;
   end;
+    
 end;
 
 class function TInfoSchema.GetCapabilities: TmnwSchemaCapabilities;

@@ -21,12 +21,12 @@
 {
    Protocol UserInfo       Host      Port
     ┌─┴─┐   ┌──┴───┐ ┌──────┴────────┬┴┐
-GET https://john.doe@www.example.com:123/username/forum/questions/q/10/?tag=networking&order=newest#top
+GET https://john.doe@www.example.com:123/forum/username/questions/q/10/?tag=networking&order=newest#top
 └┬┘                  └──────┬──────┘    └───────────────┬─────────────┘└────────────┬─────────────┘└─┬─┘
 Method                  DomainName                    Path                        Query           Fragment
-                                        └───┬───┘└──┬──┘└───┬────┴──┬─┘           └─┬─┘
-WebElement:                             Namespace Alias   Schema  Directory       Params
-    └────────────┬──────────────────────┘ ─ ┘    /Module         |    |
+                                        └──┬──┘└───┬───┘└───┬────┴──┬─┘           └─┬─┘
+WebElement:                             Module  Namespace Schema  Directory       Params
+    └────────────┬──────────────────────┘ ─ ┘           |        |    |
     |          HomeURL (From Request or Config)         |        |    |
     └────────────────────────┬──────────────────────────┘        |    |
     |           ModuleURL/WebURL (WebApp)                        |    |
@@ -303,22 +303,29 @@ type
     Route: string;   
     SessionID: String;
     Session: TObject;
-    //Module Path /namespace/alias
+
+    // http://host:80/
+    function GetHostURL: string; overload;
+    // /module/namespace
+    function GetHomePath: string; overload;
+    // http://host:80/module/namespace/
+    function GetHomeURL: string; overload;
+
+    // With Schema
+    // /module/namespace/schema
     function GetPath: string; overload;
-    //Module/Element Path /namespace/alias/element    
+    // /module/namespace/schema/element    
     function GetPath(e: TmnwElement): string; overload;    
-    //this get absolute path http://host:80/namespace/alias/schema/element
+
+    //this get absolute path http://host:80/module/namespace/schema/element
     function GetURL(e: TmnwElement): string; overload;
+    //this get absolute path http://host:80/module/namespace/schema
+    function GetURL: string; overload;
+
     //this get path relative requested path /element1/element2
     function GetRelativePath(e: TmnwElement): string; overload;    
 
-    //Schema Path /namespace/alias/schema
-    function GetHomePath: string; overload;
-    //Schema URL with http://host:80/namespace/alias/schema
-    function GetHomeURL(ASchema: TmnwSchema): string; overload;
-    function GetHomeURL: string; overload;
-
-    //Schema URL with http://host:80/namespace/assets/schema
+    //Schema URL with http://host:80/assets/namespace/schema
     function GetAssetsPath: string;
     function GetAssetsURL: string;
     //Folder of HomeFolder of assets
@@ -392,12 +399,16 @@ type
     estComposed
   );
 
-  TmnwElementKind = set of(
+  TmnwElementKind = (
 //    elRender,
     elEmbed, //* created by parent
-    elInternal, //* do not render we will call it manually
+    elNoRender,
+    elNoRespond,
+    elInternal, //* we will render it manually
     elFallback //* if no child have the route name, it take the respond if have a name
   );
+  TmnwElementKinds = set of TmnwElementKind;
+
 
   TmnwPriority = (priorityNormal, priorityStart, priorityEnd);
 
@@ -417,7 +428,6 @@ type
     FHandle: THandle;
     FStyle: String;
     FVisible: Boolean;
-    FRenderIt: TmodOptionValue;
     FSchema: TmnwSchema;
     FParent: TmnwElement;
 
@@ -427,7 +437,7 @@ type
     FName: String;
     FElementClass: String;
     FAttributes: TmnwAttributes;
-    FKind: TmnwElementKind;
+    FKind: TmnwElementKinds;
     FPriority: TmnwPriority;
     FState: TmnwElementState;
     FOnExecute: TElementExecute;
@@ -436,6 +446,9 @@ type
     FIsRoot: Boolean;
     FTimeStamp: Int64;
     procedure SetState(const AValue: TmnwElementState);
+    function GetRespondIt: Boolean;
+    function GetRenderIt: Boolean;
+    procedure SetRenderIt(const Value: Boolean);
   protected    
     procedure Update; virtual;
     procedure Added(Item: TmnwElement); override;
@@ -443,8 +456,8 @@ type
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
 
     procedure ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
-    procedure ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
-    procedure ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse); overload;
+    function ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean; overload;
+    function ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean; overload;
 
     procedure DoPrepareRenderer(const AContext: TmnwContext); virtual;   
     procedure DoPrepare; virtual;
@@ -474,7 +487,7 @@ type
     function GenRoute: string;
     function GenName: string;
   public
-    constructor Create(AParent: TmnwElement; AKind: TmnwElementKind = []; ARenderIt: TmodOptionValue = ovYes); virtual;
+    constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds = []); virtual;
     destructor Destroy; override;    
 
     function Add(O: TmnwElementClass): TmnwElement; overload;
@@ -493,13 +506,12 @@ type
     property Parent: TmnwElement read FParent;
 
     //GetPath get path to the schema, not to domain/host
-    //Use Contex.GetPath(e) to get path to the module/alias name
+    //Use Contex.GetPath(e) to get path to the module name
     //this get path with schema/element/element/element
     function GetPath: string; 
     //this get path without schema and parent element name, element/element
     function GetPathTo(ToElement: TmnwElement): string; overload;
     //Include Host
-    function GetURL: string; overload;
     
     function CreateRenderer(const Context: TmnwContext): TmnwElementRenderer;
     procedure Compose(const AContext: TmnwContext); virtual;
@@ -510,7 +522,7 @@ type
 
     function GetContentType(Route: string = ''): string; virtual;
 
-    procedure RespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
+    procedure RespondInit(const AContext: TmnwContext; AResponse: TmnwResponse);
     procedure Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
 
     //* Original Render
@@ -518,23 +530,25 @@ type
 
     function CanRender: Boolean; virtual;
 
-    //* This will just prepare to Render(Context)
+    property IsRoot: Boolean read FIsRoot write FIsRoot;
 
-    property Route: String read FRoute write FRoute; //TODO change it to Alias
+    property ID: String read FID write FID;
     property Name: String read FName write FName;
+    property Route: String read FRoute write FRoute; 
     property Style: String read FStyle write FStyle; //* no, it is not css style
     property ElementClass: String read FElementClass write FElementClass;
-    property ID: String read FID write FID;
     property Comment: String read FComment write FComment;
+
     property Visible: Boolean read FVisible write FVisible;
     property Enabled: Boolean read FEnabled write FEnabled;
 
-    property RenderIt: TmodOptionValue read FRenderIt write FRenderIt;
-    property IsRoot: Boolean read FIsRoot write FIsRoot;
+
+    property RespondIt: Boolean read GetRespondIt; // false: do not use respond
+    property RenderIt: Boolean read GetRenderIt write SetRenderIt;
 
 
     property Attributes: TmnwAttributes read FAttributes;
-    property Kind: TmnwElementKind read FKind write FKind;
+    property Kind: TmnwElementKinds read FKind write FKind;
     property Priority: TmnwPriority read FPriority write FPriority;
     property State: TmnwElementState read FState write SetState;
 
@@ -660,7 +674,7 @@ type
     procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoAccept(var AContext: TmnwContext; var Resume: Boolean); virtual;
     procedure DoPrepare; override;
-    procedure DoChildAction(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
+    procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure AttachedMessage(const s: string); virtual; //from websocket
     procedure InteractiveMessage(const s: string);
     property DefaultDocuments: TStringList read FDefaultDocuments write SetDefaultDocuments;
@@ -683,6 +697,7 @@ type
     //* Attaching cap
     //function Interactive: Boolean;
 
+    procedure Start; virtual;
     function Accept(var AContext: TmnwContext): Boolean;
     procedure Compose(const AContext: TmnwContext); override;
 
@@ -900,7 +915,7 @@ type
     Domain: string; //localhost
     Port: string;
     
-    Alias: string; //ModuleName
+    Module: string; //Module Name
 
     CompactMode: Boolean;
     DefaultAge: Integer;
@@ -925,7 +940,7 @@ type
     //for WebSocket
     function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
-    function GetHostURL: string; virtual;
+    function GetHostURL: string; virtual;    
 
     property Lock: TCriticalSection read FLock;
     property Assets: TAssetsSchema read FAssets;
@@ -1140,7 +1155,7 @@ type
       public
         Theme: TTheme;
         FontName: string;
-        constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: TmodOptionValue =ovYes); override;
+        constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         destructor Destroy; override;
         property Header: THeader read FHeader;
         property SideBar: TSideBar read FSideBar;
@@ -1173,7 +1188,7 @@ type
       public
         Title: string;
 //        LogoImage: string;
-        constructor Create(AParent: TmnwElement; AKind: TmnwElementKind =[]; ARenderIt: TmodOptionValue = ovYes); override;
+        constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         destructor Destroy; override;
         property Image: TImageFile read FImage;
         property Tools: TNavTools read FTools;
@@ -1611,13 +1626,14 @@ type
     function GetSessionID: string;
     procedure SetSessionID(const Value: string);
     function GetHandled: Boolean;
-    procedure SetHandled(const Value: Boolean);
+    procedure SetHandled(const Value: Boolean); overload;
   protected
     procedure SetAnswer(const Value: TmodAnswer); override;
     procedure DoWriteCookies; override;
     procedure Created; override;
   public
     destructor Destroy; override;
+    procedure SetHandled; overload; virtual; 
     property Session: TmnwCookie read FSession;
     property SessionID: string read GetSessionID write SetSessionID;
     property Resume: Boolean read FResume write FResume;
@@ -1630,14 +1646,11 @@ type
   private
     FLogoFile: string;
   protected
-    //FLogo: THTML.TMemory;
-
-    procedure DoPrepare; override;
-    procedure DoCompose(const AContext: TmnwContext); override;
+    //FLogo: THTML.TMemory;  
     procedure Created; override;
-
   public    
     class function GetCapabilities: TmnwSchemaCapabilities; override;
+    procedure Start; override;
     //property Logo: THTML.TMemory read FLogo;
     property LogoFile: string read FLogoFile write FLogoFile;
   end;
@@ -1655,7 +1668,7 @@ type
   protected
     procedure DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
-    procedure DoChildAction(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoCompose(const AContext: TmnwContext); override;
   public
@@ -1716,6 +1729,9 @@ function NV(const Name, Value, Default: string): string; overload; inline;
 
 function When(const Value: string; const Default: string = ''): string; overload; inline;
 function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
+function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds; overload;
+function StartURL(const Path: string): string; inline;
+function EndURL(const Path: string): string; inline;
 
 function NewUUID: string;
 
@@ -1805,6 +1821,24 @@ begin
     Result := Value
   else
     Result := Default;
+end;
+
+function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds;
+begin
+ if Value then
+  Result := [Kind]
+ else
+  Result := [];
+end;
+
+function StartURL(const Path: string): string;
+begin
+  Result := AddStartURLDelimiter(Path);
+end;
+
+function EndURL(const Path: string): string;
+begin
+  Result := AddEndURLDelimiter(Path);
 end;
 
 procedure NewID(Element: TmnwElement);
@@ -2415,7 +2449,7 @@ end;
 
 function TmnwElement.CanRender: Boolean;
 begin
-  Result := RenderIt in [ovYes];
+  Result := RenderIt;
 end;
 
 function TmnwElement.CreateRenderer(const Context: TmnwContext): TmnwElementRenderer;
@@ -2547,7 +2581,7 @@ begin
   FShutdown := False;
   for item in Self do
   begin
-    item.Prepare;
+    item.Start;
   end;
   Started := True;
 end;
@@ -2605,7 +2639,7 @@ begin
     Result := CreateSchema(SchemaItem);
     SchemaCreated(Result);
     if Started then
-      Result.Prepare;
+      Result.Start;
     //Add(SchemaObject); no, when compose it we add it
   end
   else
@@ -2647,6 +2681,7 @@ begin
     else
       aSchemaName := '';
 
+    //Find already exists Schema
     Lock.Enter;
     try
       aSchema := FindBy(aSchemaName, AContext.SessionID);
@@ -2720,6 +2755,7 @@ begin
           end;
         end;
 
+        //Finding nested element inside Schema
         if (estComposed in aSchema.State) then
         begin                 
           aElement := aSchema;
@@ -2781,7 +2817,7 @@ begin
       AResponse.Session.Value := AResponse.Request.GetCookie('', 'session');
       AResponse.Session.Age := DefaultAge;
       AResponse.Session.Domain := Domain;
-      //AResponse.Session.Path := AddStartURLDelimiter(Alias, True);
+      //AResponse.Session.Path := StartURL(Alias, True);
       AResponse.Session.Path := AContext.GetHomePath;
       AResponse.Session.ResetChanged;
       AResponse.Answer := hrOK;
@@ -2805,7 +2841,7 @@ begin
         AResponse.ContentType := aElement.GetContentType(AContext.Route);
 
       if AResponse.Resume then
-        aElement.RespondHeader(AContext, AResponse);
+        aElement.RespondInit(AContext, AResponse);
       //* Resume maybe come false in action
       //* We will render it now
       if AResponse.Resume then
@@ -2972,7 +3008,7 @@ begin
   begin
     SchemaCreated(Result);
     if Started then
-      Result.Prepare;
+      Result.Start;
   end;
 end;
 
@@ -3332,63 +3368,53 @@ begin
     Schema.Attachments.SendMessage('', AMessage);
 end;
 
-procedure TmnwElement.ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
+function TmnwElement.ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean;
 var
   aDocument, aRequestDocument, aFile: string;
 begin
+  Result := True; // Result False if we want caller to render page
   if HomeFolder <> '' then
   begin
-    {if (AContext.Route = '') or (AContext.Route = URLDelimiter) then
-      Render(AContext, AResponse)
-    else }
-    WebExpandFile(HomeFolder, AContext.Route, aRequestDocument);
+    WebExpandFile(HomeFolder, AContext.Route, aRequestDocument, False);
 
     if not WebExpandFile(HomeFolder, AContext.Route, aDocument, serveSmart in Options) then
     begin
-      //if serveUnauthorized in Schema.ServeFiles then // Need the Schema
       if (AContext.Route = '') or IsStrInArray(AContext.Route, ['\', '/']) then // Need the Schema
-        Render(AContext, AResponse)
+        Result := False
       else
         AResponse.Answer := hrUnauthorized
     end
     else if ((AContext.Route = '') and not FileExists(aDocument)) or (not EndsDelimiter(aRequestDocument) and DirectoryExists(aRequestDocument)) then
-    begin
-      AResponse.Answer := hrRedirect;
-      AResponse.Redirect := IncludeURLDelimiter(AResponse.Request.Address);
-    end
+      AResponse.RespondRedirectTo(AResponse.Request.Address)
     else
     begin
-      if (serveDefault in Options) and EndsDelimiter(aDocument) {and DirectoryExists(aDocument)} then
+      if (serveDefault in Options) and EndsDelimiter(aDocument) and IsStrInArray(AContext.Route, ['', '/', '\']) {and DirectoryExists(aDocument)} then
       begin
         aFile := FindDefaultDocument(aDocument, DefaultDocuments);
         if FileExists(aFile) then
           aDocument := aFile;
       end;
 
-      if (serveIndex in Options) and EndsDelimiter(aDocument) then
+      if (serveIndex in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then
         ServeFolder(aDocument, Options, AContext, AResponse)
       else
       begin
         if StartsText('.', ExtractFileName(aDocument)) then //no files starts with dots, TODO no folders in path
-          AResponse.Answer := hrForbidden
+          AResponse.RespondForbidden //or maybe Result := False
         else if FileExists(aDocument) then
           AResponse.SendFile(aDocument)
-        else if IsStrInArray(AContext.Route, ['', '/', '\']) then
-        begin
-          Render(AContext, AResponse)
-        end
-        else
-          AResponse.Answer := hrNotFound;
+        else 
+          Result := False;
       end;
     end;
   end
   else
-    Render(AContext, AResponse);
+    Result := False;
 end;
 
-procedure TmnwElement.ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
+function TmnwElement.ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean;
 begin
-  ServeFile(HomeFolder, nil, Options, AContext, AResponse);
+  Result := ServeFile(HomeFolder, nil, Options, AContext, AResponse);
 end;
 
 procedure TmnwElement.ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
@@ -3449,9 +3475,7 @@ end;
 
 procedure TmnwSchema.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
-  if serveEnabled in ServeFiles then
-    ServeFile(GetHomeFolder, DefaultDocuments, ServeFiles, AContext, AResponse)
-  else
+  if not (serveEnabled in ServeFiles) or not ServeFile(GetHomeFolder, DefaultDocuments, ServeFiles, AContext, AResponse) then    
     Render(AContext, AResponse);
 end;
 
@@ -3459,7 +3483,7 @@ procedure TmnwSchema.DoAccept(var AContext: TmnwContext; var Resume: Boolean);
 begin
 end;
 
-procedure TmnwSchema.DoChildAction(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
 end;
 
@@ -3545,8 +3569,6 @@ end;
 
 procedure TmnwSchema.DoPrepare;
 begin
-  if (HomeFolder = '') then
-    HomeFolder := Web.HomeFolder;
   inherited;
 end;
 
@@ -3558,6 +3580,12 @@ end;
 procedure TmnwSchema.SetDefaultDocuments(AValue: TStringList);
 begin
   FDefaultDocuments.Assign(AValue);
+end;
+
+procedure TmnwSchema.Start;
+begin
+  if (HomeFolder = '') then
+    HomeFolder := Web.HomeFolder;
 end;
 
 function TmnwSchema.NewHandle: THandle;
@@ -3765,9 +3793,19 @@ begin
     Result := '';
 end;
 
-function TmnwElement.GetURL: string;
+function TmnwElement.GetRenderIt: Boolean;
 begin
-  Result := IncludeURLDelimiter(Schema.Web.GetHostURL) + GetPath;
+  Result := not (elNoRender in Kind);
+end;
+
+function TmnwElement.GetRespondIt: Boolean;
+begin
+  Result := not (elNoRespond in Kind);
+end;
+
+procedure TmnwElement.SetRenderIt(const Value: Boolean);
+begin
+  Kind := Kind - [elNoRender];
 end;
 
 procedure TmnwElement.SetState(const AValue: TmnwElementState);
@@ -3907,7 +3945,7 @@ begin
   Result := nil;
   for i := 0 to Count - 1 do
   begin
-    if (Items[i].Route <> '') then
+    if (Items[i].Route <> '') and not (elNoRespond in Items[i].Kind) then
     begin
       if SameText(Items[i].Route, Route) then
         Result := Items[i];
@@ -4006,13 +4044,12 @@ procedure TmnwElement.DoRespondHeader(const AContext: TmnwContext; AResponse: Tm
 begin
 end;
 
-constructor TmnwElement.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: TmodOptionValue);
+constructor TmnwElement.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
 begin
   inherited Create;
   FTimeStamp := GetTimeStamp;
   FEnabled := True;
-  FVisible := True;
-  FRenderIt := ARenderIt;
+  FVisible := True;  
   FName := '';
   FAttributes := TmnwAttributes.Create;
   FKind := AKind;
@@ -4081,7 +4118,7 @@ var
   o: TmnwElement;
 begin
 //  Clear; //*Should not clear here
-  Prepare;
+//  Prepare;
   DoCompose(AContext);
   UpdateElement(Self);
   for o in Self do
@@ -4128,12 +4165,12 @@ begin
   Result := 'text/html';
 end;
 
-procedure TmnwElement.RespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.RespondInit(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
 //  AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
   DoRespondHeader(AContext, AResponse);
   if (Schema <> nil) and (Schema <> Self) then
-    Schema.DoChildAction(Self, AContext, AResponse);
+    Schema.DoChildRespond(Self, AContext, AResponse);
   if AResponse.Resume and Assigned(OnRespond) then
     OnRespond(AContext, AResponse);
 end;
@@ -4514,7 +4551,7 @@ end;
 procedure TJQuery_Library.AddHead(const Context: TmnwContext);
 begin
   if CheckOffline(Context, Context.GetAssetFolder + 'jquery.min.js') then
-    Context.Writer.AddTag('script', 'src="' + Context.GetAssetsPath + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"')
+    Context.Writer.AddTag('script', 'src="' + EndUrl(Context.GetAssetsPath) + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"')
   else
     Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"');
 
@@ -4524,8 +4561,8 @@ end;
 
 procedure TWebElements_Library.AddHead(const Context: TmnwContext);
 begin
-  Context.Writer.AddTag('script', 'src="' + Context.GetAssetsPath + 'web-elements.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
-  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + Context.GetAssetsPath + 'web-elements.css?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddTag('script', 'src="' + EndUrl(Context.GetAssetsPath) + 'web-elements.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
+  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + EndUrl(Context.GetAssetsPath) + 'web-elements.css?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
 end;
 
 { THTML }
@@ -4539,24 +4576,24 @@ end;
 
 { THTML.TBody }
 
-constructor THTML.TBody.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: TmodOptionValue);
+constructor THTML.TBody.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
 begin
   inherited;
   //This object auto free by parents
-  FHeader := THeader.Create(Self, [elEmbed], OptionValue(apoHeader in Schema.Web.Options));
+  FHeader := THeader.Create(Self, [elEmbed, elNoRespond] + When(not (apoHeader in Schema.Web.Options), elNoRender));
   FHeader.Priority := priorityStart;
 
-  FContent := TContent.Create(Self, [elEmbed]);
+  FContent := TContent.Create(Self, [elEmbed, elNoRespond]);
   with FContent do
   begin
-    FSideBar := TSideBar.Create(This, [elEmbed], OptionValue(apoSideBar in Schema.Web.Options));
+    FSideBar := TSideBar.Create(This, [elEmbed, elNoRespond] + When(not (apoSideBar in Schema.Web.Options), elNoRender));
     FSideBar.Priority := priorityStart;
     FMain := TMain.Create(This, [elEmbed]);
   end;
 
-  FFooter := TFooter.Create(Self, [elEmbed], ovNo);
+  FFooter := TFooter.Create(Self, [elEmbed, elNoRespond, elNoRender]);
   FFooter.Priority := priorityEnd;
-  FToast := TToast.Create(Self, [elEmbed], ovYes);
+  FToast := TToast.Create(Self, [elEmbed, elNoRespond]);
   FToast.Priority := priorityEnd;
 end;
 
@@ -4577,7 +4614,7 @@ end;
 
 { THTML.TNavBar }
 
-constructor THTML.TNavBar.Create(AParent: TmnwElement; AKind: TmnwElementKind; ARenderIt: TmodOptionValue);
+constructor THTML.TNavBar.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
 begin
   inherited;
   FImage := TImageFile.Create(This, [elInternal, elEmbed]);
@@ -4869,7 +4906,7 @@ begin
   ServeFiles := [serveEnabled, serveSmart, serveDefault];
 end;
 
-procedure TAssetsSchema.DoPrepare;
+procedure TAssetsSchema.Start;
 var
   minilib: string;
 begin
@@ -4909,11 +4946,6 @@ begin
   Result := inherited + [schemaStartup, schemaPermanent];
 end;
 
-procedure TAssetsSchema.DoCompose(const AContext: TmnwContext);
-begin
-  inherited;
-end;
-
 { TmnwWebModule }
 
 procedure TmnwWebModule.DoPrepareRequest(ARequest: TmodRequest);
@@ -4943,8 +4975,8 @@ begin
     Web.Port := Port;
   if Web.WorkFolder = '' then
     Web.WorkFolder := WorkFolder;
-  if Web.Alias = '' then
-    Web.Alias := AliasName;
+  if Web.Module = '' then
+    Web.Module := AliasName;
 
   //Web.Assets.HomeFolder := Web.HomeFolder;
 
@@ -5194,12 +5226,12 @@ end;
 
 function TmnwContext.GetPath: string;
 begin
-  Result := AddStartURLDelimiter(Request.NameSpace + AddStartURLDelimiter(Schema.Web.Alias));
+  Result := GetHomePath + GetPath(Schema);
 end;
 
 function TmnwContext.GetPath(e: TmnwElement): string;
 begin
-  Result := GetPath + AddStartURLDelimiter(e.GetPath)
+  Result := GetHomePath + StartURL(e.GetPath);
 end;
 
 function TmnwContext.GetRelativePath(e: TmnwElement): string;
@@ -5210,24 +5242,29 @@ begin
     Result := e.GetPathTo(Element);
 end;
 
-function TmnwContext.GetHomeURL(ASchema: TmnwSchema): string;
+function TmnwContext.GetURL: string;
 begin
-  Result := Web.GetHostURL + AddStartURLDelimiter(GetPath(ASchema));
+  Result := GetURL(Schema);
 end;
 
 function TmnwContext.GetHomePath: string;
 begin
-  Result := AddStartURLDelimiter(GetPath(Schema));
+  Result := StartURL(Schema.Web.Module + StartURL(Request.NameSpace));
 end;
 
 function TmnwContext.GetHomeURL: string;
 begin
-  Result := GetHomeURL(Schema);
+  Result := Web.GetHostURL + GetHomePath;
+end;
+
+function TmnwContext.GetHostURL: string;
+begin
+  Result := Web.GetHostURL;
 end;
 
 function TmnwContext.GetURL(e: TmnwElement): string;
 begin
-  Result := Web.GetHostURL + AddStartURLDelimiter(GetPath(e));
+  Result := GetHomeURL + StartURL(e.GetPath);
 end;
 
 function TmnwContext.GetAssetFolder: string;
@@ -5240,12 +5277,12 @@ end;
 
 function TmnwContext.GetAssetsPath: string;
 begin
-  Result := AddStartURLDelimiter(AddEndURLDelimiter(GetPath(Schema.Web.Assets)));
+  Result := GetPath(Schema.Web.Assets);
 end;
 
 function TmnwContext.GetAssetsURL: string;
 begin
-  Result := Schema.Web.GetHostURL + AddStartURLDelimiter(GetAssetsPath);
+  Result := GetURL(Schema.Web.Assets);
 end;
 
 { TmnwResponse }
@@ -5292,9 +5329,17 @@ begin
   inherited;  
 end;
 
+procedure TmnwResponse.SetHandled;
+begin
+  FResume := False;
+end;
+
 procedure TmnwResponse.SetHandled(const Value: Boolean);
 begin
-  Resume := not Value;
+  if Value and not Resume then
+    SetHandled
+  else  
+    Resume := not Value;
 end;
 
 procedure TmnwResponse.SetSessionID(const Value: string);
@@ -5313,7 +5358,7 @@ begin
   inherited;
 end;
 
-procedure TLoginSchema.DoChildAction(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TLoginSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
   if (AElement.Name = 'login-form') and (AContext.Data <> nil) and (SameText(AContext.Data.Values['execute'], 'true') ) then

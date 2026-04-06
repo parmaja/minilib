@@ -981,7 +981,7 @@ var
 begin
   aModule := Modules.Find<TmodNotFoundModule>;
   if aModule = nil then
-    aModule := TmodNotFoundModule.Create(Modules, 'notfound');
+    TmodNotFoundModule.Create(Modules, 'notfound');
 end;
 
 { TmodCustomWebModules }

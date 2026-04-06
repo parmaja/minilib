@@ -256,7 +256,6 @@ type
     property Route[vIndex: Integer]: string read GetRoute; default;
   end;
 
-
   TmodOptionValue = (ovUndefined, ovNo, ovYes);
 
   //  class operator = (const Source: Boolean): TmodOptionValue;
@@ -545,7 +544,10 @@ type
     property Redirect: string read FRedirect write FRedirect; //Relocation it to another url
     //property Compressed: Boolean read FCompressed write FCompressed;
   public
+    procedure RespondText(S: string);    
+    procedure RespondJSON(S: string);    
     procedure RespondNotFound;
+    procedure RespondForbidden;
     procedure RespondRedirectTo(S: string);
   end;
 
@@ -2141,7 +2143,7 @@ end;
 constructor TmodModule.Create(AModules: TmodModules; const AName: string; const AAliasName: String);
 begin
   Name := AName;
-  FAliasName := AAliasName;
+  FAliasName := AAliasName;   
   FCommands := TmodCommandClasses.Create(True);
   FUse.KeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
   if AModules <> nil then
@@ -3121,7 +3123,6 @@ end;
 
 procedure TwebResponse.DoHeaderReceived;
 var
-  aCompressClass: TmnCompressStreamProxyClass;
   aChunked: Boolean;
 begin
   inherited;
@@ -3143,15 +3144,6 @@ begin
     KeepAlive := SameText(Header['Connection'], 'Keep-Alive');
 
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
-
-  aCompressClass := nil;
-  if Request.Use.AcceptCompressing = ovYes then
-  begin
-    if Header.Field['Content-Encoding'].Have('gzip', [',']) then
-      aCompressClass := TmnGzipStreamProxy
-    else if Header.Field['Content-Encoding'].Have('deflate', [',']) then
-      aCompressClass := TmnDeflateStreamProxy;
-  end;
 
   Request.InitProxies(aChunked);
 end;
@@ -3226,6 +3218,27 @@ begin
   Answer := hrRedirect;
   Redirect := S;
   SendHeader;
+end;
+
+procedure TwebResponse.RespondText(S: string);
+begin
+  Answer := hrOK;
+  ContentType := 'text/plain';
+  SendUTF8String(S);
+end;
+
+procedure TwebResponse.RespondForbidden;
+begin
+  Answer := hrForbidden;
+  ContentType := 'text/plain';
+  SendUTF8String('403 hrForbidden');
+end;
+
+procedure TwebResponse.RespondJSON(S: string);
+begin
+  Answer := hrOK;
+  ContentType := DocumentToContentType('.json');
+  SendUTF8String(S);
 end;
 
 procedure TwebResponse.RespondNotFound;
