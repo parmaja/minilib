@@ -80,6 +80,7 @@ type
     procedure Reset; //call in new fetch
     procedure Clear; //call in start loop
     function Accepted: Boolean;
+    function IsFirst: Boolean;
   end;
 
   TOnRequest = procedure(vCell: TmnrCell) of object;
@@ -3776,6 +3777,11 @@ begin
   AcceptMode := acmAccept;
   FetchMode  := fmFirst;
   Reset;
+end;
+
+function TmnrFetch.IsFirst: Boolean;
+begin
+  Result := FetchMode = fmFirst;
 end;
 
 procedure TmnrFetch.Reset;
