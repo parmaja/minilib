@@ -74,6 +74,7 @@ type
     serveEnabled,
 //    serveUnauthorized, //* if file not exist not to render the schema
     serveIndex,
+    serveIndexRoot, //if it root serve index too not schema TODO
     serveSmart, //
     serveDefault
 //    serveRender
@@ -380,7 +381,6 @@ function WebExpandFile(HomeFolder, Path: string; out Document: string; Smart: Bo
 begin
   HomeFolder := ExcludePathDelimiter(ExpandFile(CorrectPath(HomeFolder)));
   Result := WebFindDocument(HomeFolder, CorrectPath(Path), Document, Smart);
-  Result := Result and StartsStr(HomeFolder, Document); //check if out of root :)
 end;
 
 function WebExpandToRoot(FileName: string; Root: string): string;

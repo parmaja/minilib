@@ -917,15 +917,7 @@ var
   aPostTo: string;
 begin
   e := Scope.Element as THTML.TForm;
-  if e.PostTo.Custom <> '' then
-    aPostTo := e.PostTo.Custom
-  else if e.PostTo.Where = toSchema then
-    aPostTo := Context.GetPath(e.Schema)
-  else if e.PostTo.Where = toElement then
-    aPostTo := Context.GetPath(e)
-  else if e.PostTo.Where = toHome then
-    aPostTo := URLDelimiter;
-  Context.Writer.OpenTag('form', 'method="post"'+ NV('action', aPostTo) + ' enctype="multipart/form-data"' + Scope.GetText);
+  Context.Writer.OpenTag('form', 'method="post"'+ NV('action', Context.GetLocationPath(e.PostTo)) + ' enctype="multipart/form-data"' + Scope.GetText);
   inherited;
   if e.RedirectTo <> '' then
     Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo);

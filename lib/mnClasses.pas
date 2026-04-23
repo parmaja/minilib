@@ -143,7 +143,6 @@ type
     private
       FDicSize: Integer;
       FDic: TDictionary<string, _Object_>;
-
     protected
       procedure Created; override;
       {$ifdef FPC}

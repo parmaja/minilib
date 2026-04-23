@@ -309,10 +309,10 @@ type
     {$endif}
   end;
 
-function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload; deprecated;
-function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload; deprecated;
-function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload; deprecated;
-function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_UTF8): string; overload; deprecated;
+function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload; 
+function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload; 
+function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload; 
+function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_UTF8): string; overload; 
 
 function StringOfUTF8(const Value: PByte; Size: Integer): string;
 
@@ -474,7 +474,7 @@ begin
     if Index > 0 then
     begin
       e := 1;
-      if Path[1] in ['\', '/'] then
+      if CharInSet(Path[1], ['\', '/']) then
       begin
         dec(l);
         inc(e);
@@ -483,7 +483,7 @@ begin
     else
     begin
       e := l;
-      if Path[l] in ['\', '/'] then
+      if CharInSet(Path[l], ['\', '/']) then
       begin
         dec(l);
         dec(e);
@@ -1941,7 +1941,7 @@ begin
     if Index > 0 then
     begin
       e := 1;
-      if Path[1] in ['\', '/'] then
+      if CharInSet(Path[1], ['\', '/']) then
       begin
         dec(l);
         inc(e);
@@ -1950,7 +1950,7 @@ begin
     else
     begin
       e := l;
-      if Path[l] in ['\', '/'] then
+      if CharInSet(Path[l], ['\', '/']) then
       begin
         dec(l);
         dec(e);
@@ -1960,7 +1960,7 @@ begin
     while l > 0 do
     begin
       C := Path[e];
-      if C in ['\', '/'] then
+      if CharInSet(C, ['\', '/']) then
         Inc(i);
       if (i = Abs(Index)) then
         Break;
@@ -2344,7 +2344,7 @@ begin
     end;
 
     //if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not yyStr[1].IsDigit then
-    if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not IsDigit(yyStr[1]) then
+    if not yyStr.StartsWith('-') and not yyStr.StartsWith('+') and not {$ifdef FPC}IsDigit(yyStr[1]){$else}yyStr[1].IsDigit{$endif} then
     begin
       tmpStr := tz;
       tz := yyStr;

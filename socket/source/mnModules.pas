@@ -85,7 +85,7 @@ type
     hrNone,
     hrOK,
     hrNoContent,
-    hrUnauthorized,
+    hrUnauthorized, //401
     hrForbidden, //403
     hrError, //500 Internal Error
     hrRedirect, //302
@@ -161,7 +161,7 @@ type
   TmnwCookies = class(TmnNameValueObjectList<TmnwCookie>)
   public
     procedure SetRequestText(S: string);
-    function GetRequestText: string;
+    function GetRequestText: string;    
   end;
 
   TmnCustomCommand = class;
@@ -246,7 +246,7 @@ type
 
     Command: String;
     Client: String;
-    IsSSL: Boolean;
+    IsSecure: Boolean;
   end;
 
   TmnRoute = class(TStringList)
@@ -354,7 +354,7 @@ type
     //for module
     property Command: String read Info.Command write Info.Command;
     property Client: String read Info.Client write Info.Client;
-    property IsSSL: Boolean read Info.IsSSL write Info.IsSSL;
+    property IsSecure: Boolean read Info.IsSecure write Info.IsSecure;
     property Path: String read FPath write FPath;
 
     property NameSpace: string read FNameSpace write FNameSpace;
@@ -523,9 +523,11 @@ type
   TwebResponse = class(TmodResponse)
   private
     FRedirect: string;
-    FHomeFolder: string; //Document root folder
+    FHomeFolder: string;
+    FIsResponded: Boolean; //Document root folder
     //FCompressed: Boolean;
     function GetRequest: TwebRequest;
+    procedure SetIsResponded(const Value: Boolean);
   protected
     procedure DoPrepareHeader; override; //Called by Server
     procedure DoSendHeader; override;
@@ -542,13 +544,18 @@ type
 
     property Request: TwebRequest read GetRequest;
     property Redirect: string read FRedirect write FRedirect; //Relocation it to another url
-    //property Compressed: Boolean read FCompressed write FCompressed;
   public
+    procedure Responded; overload; virtual; 
+    procedure Responded(AAnswer: TmodAnswer); overload; 
     procedure RespondText(S: string);    
+    procedure RespondHTML(S: string);    
     procedure RespondJSON(S: string);    
+    procedure RespondNoContent;
     procedure RespondNotFound;
     procedure RespondForbidden;
+    procedure RespondUnauthorized;
     procedure RespondRedirectTo(S: string);
+    property IsResponded: Boolean read FIsResponded write SetIsResponded;
   end;
 
   { TwebCommand }
@@ -889,7 +896,7 @@ function GetSubPath(const Path: string): string;
 function DeleteSubPath(const SubKey, Path: string): string;
 function StartsSubPath(const SubKey, Path: string): Boolean;
 
-function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
+function ComposeHttpURL(IsSecure: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 
 function HashWebSocketKey(const key: string): string;
@@ -934,9 +941,9 @@ begin
   Result := FRegisteredModules;
 end;
 
-function ComposeHttpURL(UseSSL: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
+function ComposeHttpURL(IsSecure: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
 begin
-  if UseSSL then
+  if IsSecure then
     Result := ComposeHttpURL('https', DomainName, Port, Directory)
   else
     Result := ComposeHttpURL('http', DomainName, Port, Directory);
@@ -1638,7 +1645,7 @@ begin
   inherited;
   //need support peek :( for check request
   //Stream.Peek(BB, 1)
-  //Result := IsSSL or (BB[1]<>#$16);
+  //Result := IsSecure or (BB[1]<>#$16);
   //EXIT
 
   Stream.ReadUTF8Line(aHead);
@@ -1651,7 +1658,7 @@ begin
       aModule := ModuleServer.Modules.Match(aRequest);
 
       aRequest.Client := RemoteIP;
-      aRequest.IsSSL := IsSSL;
+      aRequest.IsSecure := IsSecure;
       if (aModule = nil) then
         Stream.Disconnect //if failed, or no fallback module
       else
@@ -2686,8 +2693,8 @@ constructor TmodCommunicate.Create(ACommand: TmnCustomCommand);
 begin
   inherited Create;
   FParent := ACommand;
-  FHeader := TmodHeader.Create;
-  FCookies := TmnwCookies.Create;
+  FCookies := TmnwCookies.Create(0);//Do not use dictionary because is miss order of cookies :(
+  FHeader := TmodHeader.Create; 
   //FCookies.Delimiter := ';';
   FStreamControl := TmodCommunicateStreamControl.Create;
   FStreamControl.FCommunicate := Self;
@@ -3195,6 +3202,14 @@ begin
   FAnswer := hrCustom;
 end;
 
+procedure TwebResponse.SetIsResponded(const Value: Boolean);
+begin
+  if Value and not IsResponded then
+    Responded
+  else  
+    FIsResponded := not Value;
+end;
+
 function TwebResponse.StatusCode: Integer;
 var
   s: string;
@@ -3218,6 +3233,7 @@ begin
   Answer := hrRedirect;
   Redirect := S;
   SendHeader;
+  Responded;
 end;
 
 procedure TwebResponse.RespondText(S: string);
@@ -3225,13 +3241,42 @@ begin
   Answer := hrOK;
   ContentType := 'text/plain';
   SendUTF8String(S);
+  Responded;
+end;
+
+procedure TwebResponse.RespondUnauthorized;
+begin
+  Answer := hrUnauthorized;
+  ContentType := 'text/plain';
+  SendUTF8String('401 Unauthorized');
+  Responded;
+end;
+
+procedure TwebResponse.Responded;
+begin
+  FIsResponded := True;
+end;
+
+procedure TwebResponse.Responded(AAnswer: TmodAnswer);
+begin
+  Answer := AAnswer;
+  Responded;
 end;
 
 procedure TwebResponse.RespondForbidden;
 begin
   Answer := hrForbidden;
   ContentType := 'text/plain';
-  SendUTF8String('403 hrForbidden');
+  SendUTF8String('403 hrForbidden');  
+  Responded;
+end;
+
+procedure TwebResponse.RespondHTML(S: string);
+begin
+  Answer := hrOK;
+  ContentType := DocumentToContentType('.html');
+  SendUTF8String(S);
+  Responded;
 end;
 
 procedure TwebResponse.RespondJSON(S: string);
@@ -3239,6 +3284,15 @@ begin
   Answer := hrOK;
   ContentType := DocumentToContentType('.json');
   SendUTF8String(S);
+  Responded;
+end;
+
+procedure TwebResponse.RespondNoContent;
+begin
+  Answer := hrNoContent;
+  ContentLength := 0;
+  //ContentType := 'text/plain';  
+  Responded;
 end;
 
 procedure TwebResponse.RespondNotFound;
@@ -3246,6 +3300,7 @@ begin
   Answer := hrNotFound;
   ContentType := 'text/plain';
   SendUTF8String('404 Not Found');
+  Responded;
 end;
 
 function TwebResponse.GetRequest: TwebRequest;

@@ -26,27 +26,27 @@ GET https://john.doe@www.example.com:123/forum/username/questions/q/10/?tag=netw
 Method                  DomainName                    Path                        Query           Fragment
                                         └──┬──┘└───┬───┘└───┬────┴──┬─┘           └─┬─┘
 WebElement:                             Module  Namespace Schema  Directory       Params
-    └────────────┬──────────────────────┘ ─ ┘           |        |    |
-    |          HomeURL (From Request or Config)         |        |    |
-    └────────────────────────┬──────────────────────────┘        |    |
-    |           ModuleURL/WebURL (WebApp)                        |    |
+    └────────────┬──────────────────────┘ ─ ─ ┘        |         |    |
+    |          HostURL (From Request or Config)        |         |    |
+    └────────────────────────┬─────────────────────────┘         |    |
+    |             HomeURL/URL (WebApp)                           |    |
     └────────────────────────┬───────────────────────────────────┘    |
-    |                    SchemaURL      |                             |
+    |                       URL         |                             |
     └────────────────────────┬────────────────────────────────────────┘
-                          PathURL       |               |        |    |
+                             ?          |               |        |    |
                                         |               |        |    |
                                         └──────────┬────┘        |    |
                                         |       ModulePath       |    |
                                         └──────────┬─────────────┘    |                                        
-                                        |       SchamaPath            |  
+                                        |         Path                |  
                                         └──────────┬──────────────────┘
-                                                  Path
+                                                   ?     
 {
 
     Application
     
-     Document
-
+                    Document
+┌──────────────────────┴──────────────────────┐
 ┌──────┬──────────────────────────────────────┐  ─┐
 │>Logo │ Brand NavBar                      c =│   ├─ Header
 ├──────┴──────────────────────────────────────┤  ─┤
@@ -330,6 +330,7 @@ type
     function GetAssetsURL: string;
     //Folder of HomeFolder of assets
     function GetAssetFolder: string;
+    function GetLocationPath(Location: TLocation): string;
   end;
 
   TmnwObject = class(TmnNamedObject);
@@ -400,12 +401,11 @@ type
   );
 
   TmnwElementKind = (
-//    elRender,
-    elEmbed, //* created by parent
     elNoRender,
     elNoRespond,
-    elInternal, //* we will render it manually
-    elFallback //* if no child have the route name, it take the respond if have a name
+//    elFallback, //* if no child have the route name, it take the respond if have a name
+    elEmbed, //* created by parent
+    elInternal //* we will render it manually
   );
   TmnwElementKinds = set of TmnwElementKind;
 
@@ -494,7 +494,7 @@ type
     procedure Add(O: TmnwElement); overload;
     function Add<O: TmnwElement>(const AID: String = ''; const AName: String = ''): O; overload;
     function Find(const Name: string): TmnwElement;
-    function FindByRoute(const Route: string): TmnwElement;
+    function FindByRoute(const ARoute: string; Level: Integer = 0): TmnwElement;
     function FindByID(const aID: string): TmnwElement;
     function FindByName(const aName: string): TmnwElement;
     function FindParentName(const aName: string): TmnwElement;
@@ -713,7 +713,10 @@ type
   public
     type
 
-    TFileOptions = set of (ftEmbed, ftResource);
+    TFileOptions = set of (
+      ftEmbed, 
+      ftResource
+    );
 
     { TFile }
 
@@ -726,6 +729,14 @@ type
       constructor Create(AParent: TmnwElement; ARoute: string); reintroduce;
     end;
 
+    [TRoute_Extension]
+    TRoute = class(TmnwElement)          
+    protected
+      procedure Created; override;
+    public
+      constructor Create(AParent: TmnwElement; ARoute: string; AKind: TmnwElementKinds = [elNoRespond]); reintroduce; virtual; 
+    end;
+    
     [TID_Extension]
     TFile = class(TmnwElement)
     protected
@@ -844,11 +855,20 @@ type
     property Libraries: TmnwLibraries read FLibraries;
     property Module: TmodWebModule read FModule;
 
-    procedure AddHead(const Context: TmnwContext); virtual; abstract;    
+    procedure AddHead(const Context: TmnwContext); virtual; 
   public
     RendererID: Integer;
   end;
 
+  TmnwPlaneRenderer = class(TmnwRenderer)
+  protected
+    class var Plane_ElementRenderers: TmnwElementRenderers;
+    procedure Created; override;
+  public
+    class function ElementRenderers: TmnwElementRenderers; override;
+    class destructor Destroy;      
+  end;
+  
   { TmnwSchemaItem }
 
   TmnwSchemaItem = class(TmnNamedObject)
@@ -911,7 +931,7 @@ type
     InstanceUID: TGUID;
     InstanceDate: TDateTime;
 
-    IsSSL: Boolean;
+    IsSecure: Boolean;
     Domain: string; //localhost
     Port: string;
     
@@ -1436,7 +1456,7 @@ type
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       public        
         procedure Loop; virtual;
-        constructor Create(AParent: TmnwElement; ARoute: string = ''; ActionProc: TRespondProc = nil); reintroduce;
+        constructor Create(AParent: TmnwElement; AName: string; ARoute: string = ''; ActionProc: TRespondProc = nil); reintroduce; overload;
       end;
 
 			TSpan = class(THTMLElement)
@@ -1621,23 +1641,17 @@ type
   
   TmnwResponse = class(TwebResponse)
   private
-    FResume: Boolean;
     FSession: TmnwCookie;
     function GetSessionID: string;
-    procedure SetSessionID(const Value: string);
-    function GetHandled: Boolean;
-    procedure SetHandled(const Value: Boolean); overload;
+    procedure SetSessionID(const Value: string);    
   protected
     procedure SetAnswer(const Value: TmodAnswer); override;
     procedure DoWriteCookies; override;
     procedure Created; override;
   public
     destructor Destroy; override;
-    procedure SetHandled; overload; virtual; 
     property Session: TmnwCookie read FSession;
     property SessionID: string read GetSessionID write SetSessionID;
-    property Resume: Boolean read FResume write FResume;
-    property Handled: Boolean read GetHandled write SetHandled;
   end;
 
   { TAssetsSchema }
@@ -2736,6 +2750,11 @@ begin
     if (aSchema <> nil) then
     begin
       AContext.Schema := aSchema;      
+
+      AContext.SessionID := AContext.Request.Params.Values['session'];
+      if AContext.SessionID = '' then
+        AContext.SessionID := AContext.Request.Cookies.Values['session'];
+      
       if aSchema.Accept(AContext) then
       begin
         if not (estComposed in aSchema.State) then
@@ -2755,42 +2774,41 @@ begin
           end;
         end;
 
-        //Finding nested element inside Schema
         if (estComposed in aSchema.State) then
         begin                 
-          aElement := aSchema;
+          Element := aSchema;
+          Result := True;
 
-          if aElement <> nil then
+          //Finding nested element inside Schema
+          aElement := aSchema;
+          i := 0;
+          while i < Routes.Count do
           begin
-            Result := True;
-            Element := aElement;
-            i := 0;
-            while i < Routes.Count do
+            aRoute := Routes[i];
+            if aRoute = '' then
             begin
-              aRoute := Routes[i];
-              if aRoute = '' then
+              Result := True;
+              break;
+            end
+            else
+            begin
+              aElement := aElement.FindByRoute(aRoute);
+              if (aElement = nil) then
               begin
-                Result := True;
+                Result := False;
                 break;
               end
               else
               begin
-                aElement := aElement.FindByRoute(aRoute);
-                if aElement = nil then
+//                if not (elNoRespond in aElement.Kind) then                
                 begin
-                  //if elFallback in Element.Kind then
-                  Result := False;
-                  break;
-                end
-                else
-                begin
-                  AContext.Route := DeleteSubPath(aRoute, AContext.Route);
                   Element := aElement;
                   Result := True;
                 end;
+                AContext.Route := DeleteSubPath(aRoute, AContext.Route);
               end;
-              inc(i);
             end;
+            inc(i);
           end;
         end;
       end;
@@ -2812,17 +2830,16 @@ begin
     if aElement <> nil then
     begin
     //aContext.Schema := aSchema;
-      AContext.Element := aElement;
+      AContext.Element := aElement;      
       
-      AResponse.Session.Value := AResponse.Request.GetCookie('', 'session');
+      AResponse.Answer := hrOK;
+      AResponse.Redirect := '';
+      AResponse.SessionID := AResponse.Request.GetCookie('', 'session');
       AResponse.Session.Age := DefaultAge;
       AResponse.Session.Domain := Domain;
       //AResponse.Session.Path := StartURL(Alias, True);
       AResponse.Session.Path := AContext.GetHomePath;
       AResponse.Session.ResetChanged;
-      AResponse.Answer := hrOK;
-      AResponse.Resume := True;
-      AResponse.Redirect := '';
 
       AResponse.Header['access-control-allow-origin'] := '*';
       //AResponse.Header['Access-Control-Allow-Origin'] := '*';
@@ -2830,34 +2847,31 @@ begin
       //AResponse.Header['Access-Control-Allow-Methods'] := 'HEAD,POST,GET,OPTIONS,PUT,DELETE,CONNECT,TRACE,PATCH';
       //AResponse.Header['Access-Control-Expose-Headers'] := ' Content-Encoding, Kuma-Revision';     
 
-      //* If you call schema name without ending by /
-      if (aElement = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.Route = '') then
-      begin
-        AResponse.Resume := False;
-        AResponse.Answer := hrRedirect;
-        AResponse.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)));
-      end
-      else
-        AResponse.ContentType := aElement.GetContentType(AContext.Route);
+      if not AResponse.IsResponded then
+        aElement.RespondInit(AContext, AResponse); //For check Login in header before redirecting if needed
 
-      if AResponse.Resume then
-        aElement.RespondInit(AContext, AResponse);
+      //* If you call schema name without ending by /
+      if not AResponse.IsResponded then
+      begin
+        if (aElement = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.Route = '') then
+          AResponse.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)))
+        else
+          AResponse.ContentType := aElement.GetContentType(AContext.Route);
+      end;
+
       //* Resume maybe come false in action
       //* We will render it now
-      if AResponse.Resume then
+      if not AResponse.IsResponded then
       begin
         aElement.PrepareRenderer(AContext); 
-        if AResponse.Resume then
+        if not AResponse.IsResponded then
           aElement.Respond(AContext, AResponse);
       end;
 
       if not (AResponse.IsHeaderSent) then
       begin
-        if (AResponse.Answer =hrOK) and (AResponse.Resume = False) then
-        begin
-          AResponse.Answer := hrNoContent;
-          AResponse.ContentLength := 0;
-        end
+        if (AResponse.Answer =hrOK) and (not AResponse.IsResponded) then
+          AResponse.RespondNoContent
         else if AResponse.Answer = hrNotFound then
           AResponse.RespondNotFound;
       end;
@@ -2998,7 +3012,7 @@ end;
 
 function TmnwWeb.GetHostURL: string;
 begin
-  Result := ComposeHttpURL(IsSSL, Domain, Port);
+  Result := ComposeHttpURL(IsSecure, Domain, Port);
 end;
 
 function TmnwWeb.CreateSchema(SchemaItem: TmnwSchemaItem): TmnwSchema;
@@ -3380,15 +3394,25 @@ begin
     if not WebExpandFile(HomeFolder, AContext.Route, aDocument, serveSmart in Options) then
     begin
       if (AContext.Route = '') or IsStrInArray(AContext.Route, ['\', '/']) then // Need the Schema
-        Result := False
+      begin
+        if (serveIndexRoot in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then      
+        begin
+          if StartsStr(HomeFolder, aDocument) then //check if out of root :)
+            ServeFolder(aDocument, Options, AContext, AResponse)
+          else
+            AResponse.RespondUnauthorized;                        
+        end
+        else
+          Result := False;
+      end
       else
-        AResponse.Answer := hrUnauthorized
+        Result := False;
     end
     else if ((AContext.Route = '') and not FileExists(aDocument)) or (not EndsDelimiter(aRequestDocument) and DirectoryExists(aRequestDocument)) then
       AResponse.RespondRedirectTo(AResponse.Request.Address)
     else
     begin
-      if (serveDefault in Options) and EndsDelimiter(aDocument) and IsStrInArray(AContext.Route, ['', '/', '\']) {and DirectoryExists(aDocument)} then
+      if (serveDefault in Options) and EndsDelimiter(aDocument) {and IsStrInArray(AContext.Route, ['', '/', '\']) }{and DirectoryExists(aDocument)} then
       begin
         aFile := FindDefaultDocument(aDocument, DefaultDocuments);
         if FileExists(aFile) then
@@ -3396,13 +3420,23 @@ begin
       end;
 
       if (serveIndex in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then
-        ServeFolder(aDocument, Options, AContext, AResponse)
+      begin
+        if StartsStr(HomeFolder, aDocument) then //check if out of root :)
+          ServeFolder(aDocument, Options, AContext, AResponse)
+        else
+          AResponse.RespondUnauthorized;            
+      end
       else
       begin
         if StartsText('.', ExtractFileName(aDocument)) then //no files starts with dots, TODO no folders in path
           AResponse.RespondForbidden //or maybe Result := False
         else if FileExists(aDocument) then
-          AResponse.SendFile(aDocument)
+        begin
+          if StartsStr(HomeFolder, aDocument) then //check if out of root :)
+            AResponse.SendFile(aDocument)
+          else
+            AResponse.RespondUnauthorized;            
+        end
         else 
           Result := False;
       end;
@@ -3938,25 +3972,25 @@ begin
   end;
 end;
 
-function TmnwElement.FindByRoute(const Route: string): TmnwElement;
+function TmnwElement.FindByRoute(const ARoute: string; Level: Integer): TmnwElement;
 var
   i: Integer;
 begin
+  // Find route only on first level, but we ignore the level of route = ''
   Result := nil;
   for i := 0 to Count - 1 do
-  begin
-    if (Items[i].Route <> '') and not (elNoRespond in Items[i].Kind) then
-    begin
-      if SameText(Items[i].Route, Route) then
-        Result := Items[i];
-    end
+  begin    
+    if (Items[i].Route = '') then // Ignoreing level of empty route
+      Result := Items[i].FindByRoute(ARoute, Level + 1)
     else
-      Result := Items[i].FindByRoute(Route);
+    begin
+      if SameText(Items[i].Route, ARoute) then
+        Result := Items[i];
+    end;
+      
     if Result <> nil then
       break;
   end;
-  {if (Result = nil) and (Route <> '') then
-    Result := Self;}
 end;
 
 procedure TmnwElement.DoCompose(const AContext: TmnwContext);
@@ -4110,6 +4144,11 @@ end;
 
 procedure TmnwElement.Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
+  if (Schema <> nil) and (Schema <> Self) then
+    Schema.DoChildRespond(Self, AContext, AResponse);
+  if not AResponse.IsResponded and Assigned(OnRespond) then
+    OnRespond(AContext, AResponse);
+//  if not AResponse.IsResponded then  
   DoRespond(AContext, AResponse);
 end;
 
@@ -4169,10 +4208,6 @@ procedure TmnwElement.RespondInit(const AContext: TmnwContext; AResponse: TmnwRe
 begin
 //  AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
   DoRespondHeader(AContext, AResponse);
-  if (Schema <> nil) and (Schema <> Self) then
-    Schema.DoChildRespond(Self, AContext, AResponse);
-  if AResponse.Resume and Assigned(OnRespond) then
-    OnRespond(AContext, AResponse);
 end;
 
 constructor TmnwWriter.Create(AName: string; AStream: TmnBufferStream);
@@ -4226,6 +4261,10 @@ begin
 end;
 
 { TmnwRenderer }
+
+procedure TmnwRenderer.AddHead(const Context: TmnwContext);
+begin
+end;
 
 procedure TmnwRenderer.BeginRender;
 begin
@@ -4724,9 +4763,10 @@ end;
 
 { THTML.TAction }
 
-constructor THTML.TAction.Create(AParent: TmnwElement; ARoute: string; ActionProc: TRespondProc);
+constructor THTML.TAction.Create(AParent: TmnwElement; AName, ARoute: string; ActionProc: TRespondProc);
 begin
   inherited Create(AParent);
+  Name := ARoute;
   Route := ARoute;
   OnRespond := ActionProc;
 end;
@@ -4861,9 +4901,12 @@ begin
   else
   begin
     aContext.Web := Module.Web;
-    aContext.SessionID := Request.Params.Values['session'];
-    if aContext.SessionID = '' then
-      aContext.SessionID := Request.Cookies.Values['session'];
+    aContext.Renderer := (Module as TmnwWebModule).CreateRenderer;
+    aContext.Renderer.RendererID := RendererID;
+    aContext.Renderer.Libraries.QuickSort;
+    aContext.Writer := TmnwWriter.Create('html', Response.Stream);
+    aContext.Writer.Compact := Module.Web.CompactMode;
+
     aContext.Data := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )
     if Request.ConnectionType = ctFormData then
     begin
@@ -4871,17 +4914,12 @@ begin
       aContext.Data.TempPath := (Module as TmnwWebModule).WorkFolder + 'temp';
       aContext.Data.Read(Request.Stream);
     end;
-    Response.ContentType := DocumentToContentType('html');
-//    Response.PutHeader('Content-Type', DocumentToContentType('html'));
-    Response.Answer := hrOK;
-    aContext.Renderer := (Module as TmnwWebModule).CreateRenderer;
-    aContext.Renderer.RendererID := RendererID;
-    aContext.Renderer.Libraries.QuickSort;
-    aContext.Writer := TmnwWriter.Create('html', Response.Stream);
-    aContext.Writer.Compact := Module.Web.CompactMode;
+    
     try
       aContext.Stamp := Request.Header['If-None-Match'];
 
+      Response.Answer := hrOK;
+      Response.ContentType := DocumentToContentType('html');
       (Module as TmnwWebModule).Web.Respond(aContext, Response);
 
       //SessionID
@@ -4997,7 +5035,10 @@ end;
 
 function TmnwWebModule.CreateRenderer: TmnwRenderer;
 begin
-  Result := Renderers.RendererClass.Create(Self);
+  if Renderers.RendererClass = nil then
+    Result := TmnwPlaneRenderer.Create(Self)
+  else
+    Result := Renderers.RendererClass.Create(Self);
 end;
 
 destructor TmnwWebModule.Destroy;
@@ -5226,7 +5267,7 @@ end;
 
 function TmnwContext.GetPath: string;
 begin
-  Result := GetHomePath + GetPath(Schema);
+  Result := GetPath(Schema);
 end;
 
 function TmnwContext.GetPath(e: TmnwElement): string;
@@ -5260,6 +5301,18 @@ end;
 function TmnwContext.GetHostURL: string;
 begin
   Result := Web.GetHostURL;
+end;
+
+function TmnwContext.GetLocationPath(Location: TLocation): string;
+begin
+  if Location.Custom <> '' then
+    Result := Location.Custom
+  else if Location.Where = toSchema then
+    Result := GetPath(Schema)
+  else if Location.Where = toElement then
+    Result := GetPath(Element)
+  else if Location.Where = toHome then
+    Result := URLDelimiter;
 end;
 
 function TmnwContext.GetURL(e: TmnwElement): string;
@@ -5314,11 +5367,6 @@ begin
   inherited;
 end;
 
-function TmnwResponse.GetHandled: Boolean;
-begin
-  Result := not Resume;
-end;
-
 function TmnwResponse.GetSessionID: string;
 begin
   Result := Session.Value;
@@ -5327,19 +5375,6 @@ end;
 procedure TmnwResponse.SetAnswer(const Value: TmodAnswer);
 begin
   inherited;  
-end;
-
-procedure TmnwResponse.SetHandled;
-begin
-  FResume := False;
-end;
-
-procedure TmnwResponse.SetHandled(const Value: Boolean);
-begin
-  if Value and not Resume then
-    SetHandled
-  else  
-    Resume := not Value;
 end;
 
 procedure TmnwResponse.SetSessionID(const Value: string);
@@ -5372,13 +5407,11 @@ begin
   inherited;
   with Document do
   begin
-    //Name := 'document';
-    //Route := 'document';
     Title := 'Login';
     Direction := dirLeftToRight;
 
-    TAction.Create(This, 'login', DoLogin);
-    TAction.Create(This, 'logout', DoLogout);
+    TAction.Create(This, 'login', 'login', DoLogin);
+    TAction.Create(This, 'logout', 'login', DoLogout);
     
     with Body do
     begin
@@ -5404,7 +5437,6 @@ end;
 
 procedure TLoginSchema.DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
-  AResponse.Answer := hrOK;
   AResponse.SessionID := '';
   AResponse.RespondRedirectTo(AContext.GetHomePath);
 end;
@@ -5496,6 +5528,41 @@ begin
   Result.Name := AName;
   Result.RendererClass := ARendererClass;
   Add(Result);
+end;
+
+{ TmnwPlaneRenderer }
+
+procedure TmnwPlaneRenderer.Created;
+begin
+  inherited;
+  //Libraries.RegisterLibrary(TWebElements_Library, 2000, True);
+end;
+
+class destructor TmnwPlaneRenderer.Destroy;
+begin
+  FreeAndNil(Plane_ElementRenderers);
+end;
+
+class function TmnwPlaneRenderer.ElementRenderers: TmnwElementRenderers;
+begin
+  if Plane_ElementRenderers = nil then
+    Plane_ElementRenderers := TmnwElementRenderers.Create;
+  Result := Plane_ElementRenderers;
+end;
+
+{ TmnwSchema.TRoute }
+
+constructor TmnwSchema.TRoute.Create(AParent: TmnwElement; ARoute: string; AKind: TmnwElementKinds);
+begin
+  inherited Create(AParent, AKind);
+  Name := ARoute;
+  Route := ARoute;
+end;
+
+procedure TmnwSchema.TRoute.Created;
+begin
+  inherited;
+  Kind := Kind + [elNoRespond];
 end;
 
 initialization

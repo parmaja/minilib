@@ -149,7 +149,7 @@ type
 procedure TMyLink.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
-  AResponse.Resume := False;
+  AResponse.Responded;
 end;
 
 procedure TMyLink.DoExecute;
@@ -243,8 +243,8 @@ begin
         Source := '/doc/logo.png';
       end;
 
-      Header.RenderIt := ovYes;
-      Toast.RenderIt := ovYes;
+      Header.RenderIt := True;
+      Toast.RenderIt := True;
 
       with Main do
       begin
@@ -379,9 +379,7 @@ begin
       aUsername := AContext.Data.Values['username'];
       aPassword := AContext.Data.Values['password'];
       AResponse.Session.Value := aUsername +'/'+ aPassword;
-      AResponse.Resume := False;
-      AResponse.Answer := hrRedirect;
-      AResponse.Redirect := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
+      AResponse.RespondRedirectTo(IncludePathDelimiter(AContext.GetPath) + 'dashboard');
     end;
   end;
   inherited;
@@ -404,7 +402,7 @@ begin
 
       with Header do
       begin
-        RenderIt := ovYes;
+        RenderIt := True;
 //        Fixed := fixedTop;
         with NavBar do
         begin
@@ -423,7 +421,7 @@ begin
 
       with SideBar do
       begin
-        RenderIt := ovYes;
+        RenderIt := True;
         with TLink.Create(This, 'http://www.google.com', 'Google') do
         begin
           ClickType := clickNavigate;
@@ -513,9 +511,7 @@ begin
       aUsername := AContext.Data.Values['username'];
       aPassword := AContext.Data.Values['password'];
       AResponse.Session.Value := aUsername +'/'+ aPassword;
-      AResponse.Resume := False;
-      AResponse.Answer := hrRedirect;
-      AResponse.Redirect := IncludePathDelimiter(AContext.GetPath) + 'dashboard';
+      AResponse.RespondRedirectTo(IncludePathDelimiter(AContext.GetPath) + 'dashboard');
     end;
   end;
   inherited;
@@ -539,7 +535,7 @@ begin
 
       with Header do
       begin
-        RenderIt := ovYes;
+        RenderIt := True;
 //        Fixed := fixedTop;
         with NavBar do
         begin
@@ -576,7 +572,7 @@ begin
 
       with SideBar do
       begin
-        RenderIt := ovYes;
+        RenderIt := True;
         with TAccordion.Create(This) do
         begin
           AlwaysOpen := True;
