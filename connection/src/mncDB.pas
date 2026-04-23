@@ -36,7 +36,6 @@ type
 
   TmncEngines = class(TmnObjectList<TmncEngine>)
   private
-    function GetItems(Index: Integer): TmncEngine;
   public
     function ComposeConnectionString(EngineName, Resource, Host, Port, User, Password, Role: string): string; overload;
     function ComposeConnectionString(Connection: TmncConnection): string; overload;
@@ -74,11 +73,6 @@ begin
 end;
 
 { TmncEngines }
-
-function TmncEngines.GetItems(Index: Integer): TmncEngine;
-begin
-  Result := inherited Items[Index] as TmncEngine;
-end;
 
 function TmncEngines.ComposeConnectionString(EngineName, Resource, Host, Port, User, Password, Role: string): string;
 begin

@@ -9,6 +9,7 @@ unit mnConnections;
 
 {$M+}
 {$H+}
+{$WARN OVERLOADING_ARRAY_PROPERTY OFF}
 {$IFDEF FPC}
 {$MODE delphi}
 {$ENDIF}

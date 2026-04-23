@@ -120,7 +120,6 @@ type
     FIsReconnecting: Boolean;
     FDispatchers: TDBDispatchers;
     {$endif}
-    function GetNextID(const vName: string; vStep: Integer): Integer;
   protected
     procedure DoClone(vConn: TmncSQLConnection); virtual;
     function DoGetNextIDSQL(const vName: string; vStep: Integer): string; virtual; deprecated; //TODO move it to dervied class should not be here, wrong place
@@ -133,7 +132,7 @@ type
 
     function CreateTransaction: TmncSQLTransaction;
 
-    property NextID[const vName: string; vStep: Integer]: Integer read GetNextID; //deprecated;
+    function NextID(const vName: string; vStep: Integer): Int64;
 
     function IsDatabaseExists(const vName: string): Boolean; overload; virtual; abstract;
     function IsDatabaseExists: Boolean; overload;
@@ -327,7 +326,7 @@ begin
   Result := '';
 end;
 
-function TmncSQLConnection.GetNextID(const vName: string; vStep: Integer): Integer;
+function TmncSQLConnection.NextID(const vName: string; vStep: Integer): Int64;
 var
   aCmd: TmncSQLCommand;
   aSQL: string;
@@ -342,7 +341,7 @@ begin
       try
         aCmd.SQL.Text := aSQL;
         if aCmd.Execute then
-          Result := aCmd.Fields.Items[0].AsInteger
+          Result := aCmd.Fields.Items[0].AsInt64
         else
           Result := 0;
       finally

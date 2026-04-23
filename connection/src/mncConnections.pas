@@ -10,6 +10,7 @@ unit mncConnections;
 
 {$M+}
 {$H+}
+{$WARN OVERLOADING_ARRAY_PROPERTY OFF}
 {$IFDEF FPC}
 {$MODE delphi}
 {$ENDIF}
@@ -70,7 +71,7 @@ type
     procedure Stop;
   public
     function IsAnyActive: Boolean;
-    property Items[Index: Integer]: TmncTransaction read GetItem write SetItem; default;
+    property Items[Index: Integer]: TmncTransaction read GetItem write SetItem; default; 
   end;
 
   TmncCapability = (

@@ -468,8 +468,6 @@ var
   begin
     Error('Illigal character: `' + Ch + '` '+ IntToHex(ord(Ch)));
   end;
-var
-  SkipObject: TObject;
 begin
   if (@AcquireProc = nil) then
     Error('JSON Parser: Acquire is nil');

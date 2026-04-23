@@ -107,7 +107,7 @@ type
     procedure Listen(const vChannel: string);
     procedure DoInit; override;
 
-    function DoGetNextIDSQL(const vName: string; vStep: Integer): string;//?
+    function DoGetNextIDSQL(const vName: string; vStep: Integer): string; override;
     procedure DoClone(vConn: TmncSQLConnection); override;
 
     function loImport(const vFileName: string): Integer; overload;
@@ -909,7 +909,7 @@ begin
   try
     InternalDisconnect(FHandle);
   except
-    beep; //TODO belal need review some time access violation
+//    beep; //TODO belal need review some time access violation
   end;
 end;
 

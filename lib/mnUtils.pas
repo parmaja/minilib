@@ -493,7 +493,7 @@ begin
     while l > 0 do
     begin
       C := Path[e];
-      if C in ['\', '/'] then
+      if CharInSet(C, ['\', '/']) then
         Inc(i);
       if (i = Abs(Index)) then
         Break;

@@ -240,9 +240,9 @@ function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
 var
   ecp: PEC_KEY;
   ecg: PEC_GROUP;
-  rsa: PRSA;
-  bn: PBIGNUM;
-  sign: PX509_sign;
+//  rsa: PRSA;
+//  bn: PBIGNUM;
+//  sign: PX509_sign;
   bits: Integer;
 begin
   bits := vConfig.ReadInteger('req', 'default_bits', 2048);
