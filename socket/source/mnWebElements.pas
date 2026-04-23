@@ -181,7 +181,7 @@ type
     procedure Append(AAttributes: TmnwAttributes);
   end;
 
-  TDirection = (dirUnkown, dirLeftToRight, dirRightToLeft);
+  TDirection = (dirUndefined, dirLeftToRight, dirRightToLeft);
 
   TLocationRelative = (
     toNone,
@@ -335,32 +335,47 @@ type
 
   TmnwObject = class(TmnNamedObject);
 
+  TLibrarySource = class(TmnNamedObject)
+  public
+    Direction: TDirection;
+    BaseURL: string;
+    Query: string; //Extra add to name like ?v=34545634563
+    Integrity: string;
+  end;
+
+  TLibrarySources = class(TmnNamedObjectList<TLibrarySource>)
+  private
+  public
+    function Add(const BaseURL, FileName: string; Direction: TDirection = dirUndefined; Query: string = ''; Integrity: string = ''): TLibrarySource; overload;
+    function Add(const BaseURL, FileName: string; Query, Integrity: string): TLibrarySource; overload;
+  end;
+  
   TmnwLibrary = class abstract(TmnNamedObject)
   private
     FUsage: Integer;
     FPriority: Integer;
     FEndOfBody: Boolean;
     FDependsOn: TmnwLibrary;
+    FSources: TLibrarySources;
   protected
-    function CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
-    procedure Created; override;     
+    function CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;    
+    procedure Created; override;
   public
-    procedure AddHead(const Context: TmnwContext); virtual; abstract;
+    constructor Create; virtual;
+    destructor Destroy; override;
+     
+    procedure AddHead(const Context: TmnwContext); virtual; 
+    
     procedure IncUsage;
     procedure DecUsage;
     property Usage: Integer read FUsage;
     property EndOfBody: Boolean read FEndOfBody write FEndOfBody;
     property Priority: Integer read FPriority write FPriority;
     property DependsOn: TmnwLibrary read FDependsOn write FDependsOn;
+    property Sources: TLibrarySources read FSources;
   end;
 
   TmnwLibraryClass = class of TmnwLibrary;
-
-  TmnwCustomLibrary = class(TmnwLibrary)
-  public
-    Source: string;
-    procedure AddHead(const Context: TmnwContext); override;
-  end;
 
   { TmnwLibraries }
 
@@ -379,16 +394,16 @@ type
 
   TJQuery_Library = class(TmnwLibrary)
   protected
+    procedure Created; override;     
   public
-    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   { TWebElements_Library }
 
   TWebElements_Library = class(TmnwLibrary)
   protected
+    procedure Created; override;     
   public
-    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   TElementExecute = reference to procedure;
@@ -1002,14 +1017,15 @@ type
     procedure OpenInlineTag(const TagName:string; TagAttributes: string = ''; TagText: string = ''); overload; // keep inline
     procedure CloseTag(const Tag: string; TrailText: string = '');
     procedure AddShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
+    procedure AddComment(const Comment: string);
     procedure AddInlineShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
     procedure AddTag(const TagName, TagAttributes: string); overload;
     procedure AddTag(const TagName, TagAttributes, Value: string); overload;
     procedure AddInlineTag(const TagName, TagAttributes, Value: string); overload;
     procedure ReadFromFile(FileName: string);
 
-    procedure AddHTMLScript(const src: string); 
-    procedure AddHTMLCss(const src: string); 
+    procedure AddHTMLScript(const src: string; Integrity: string = ''); 
+    procedure AddHTMLCss(const src: string; Integrity: string = ''); 
   end;
 
   { THTML }
@@ -1741,6 +1757,7 @@ function DQ(s: string): string; inline;
 function NV(const Name, Value: string): string; overload; inline;
 function NV(const Name, Value, Default: string): string; overload; inline;
 
+function AddIf(const Value: string; Add: string): string; overload; inline;
 function When(const Value: string; const Default: string = ''): string; overload; inline;
 function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
 function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds; overload;
@@ -1750,6 +1767,9 @@ function EndURL(const Path: string): string; inline;
 function NewUUID: string;
 
 function Renderers: TmnwRenderers;
+function Libraries: TmnwLibraries; //TODO
+var
+  GlobalTimeStamp: Int64;
 
 implementation
 
@@ -1817,6 +1837,14 @@ begin
     Result := ' ' + DQ(Name) + '=' + DQ(Value)
   else if Default <> '' then
     Result := ' ' + DQ(Name) + '=' + DQ(Default)
+  else
+    Result := '';
+end;
+
+function AddIf(const Value: string; Add: string): string; overload; inline;
+begin
+  if Value <> '' then
+    Result := Value + Add
   else
     Result := '';
 end;
@@ -1912,12 +1940,20 @@ end;
 var
   //*Should be by base class categoried
   FRenderers: TmnwRenderers = nil;
-
+  FLibraries: TmnwLibraries = nil;
+  
 function Renderers: TmnwRenderers;
 begin
   if FRenderers = nil then
     FRenderers := TmnwRenderers.Create;
   Result := FRenderers;  
+end;
+
+function Libraries: TmnwLibraries;
+begin
+  if FLibraries = nil then
+    FLibraries := TmnwLibraries.Create;
+  Result := FLibraries;  
 end;
   
 {$ifdef rtti_objects}
@@ -3072,14 +3108,23 @@ begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwHTMLWriterHelper.AddHTMLCss(const src: string);
+procedure TmnwHTMLWriterHelper.AddComment(const Comment: string);
 begin
-  AddShortTag('link', 'rel="stylesheet" href="'+src+'"');
+  WriteLn('<!--' + Comment + '-->', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwHTMLWriterHelper.AddHTMLScript(const src: string);
+procedure TmnwHTMLWriterHelper.AddHTMLCss(const src: string; Integrity: string = '');
 begin
-  AddTag('script', 'src="' + src + '" crossorigin="anonymous" defer'); 
+  if Integrity <> '' then
+    Integrity := ' integrity="' + Integrity + '"';
+  AddShortTag('link', 'rel="stylesheet" href="'+src+'"' + Integrity + ' crossorigin="anonymous"');
+end;
+
+procedure TmnwHTMLWriterHelper.AddHTMLScript(const src: string; Integrity: string = '');
+begin
+  if Integrity <> '' then
+    Integrity := ' integrity="' + Integrity + '"';
+  AddTag('script', 'src="' + src + '" crossorigin="anonymous"' + Integrity + ' defer'); 
 end;
 
 procedure TmnwHTMLWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
@@ -4470,18 +4515,61 @@ end;
 
 { TmnwLibrary }
 
+procedure TmnwLibrary.AddHead(const Context: TmnwContext);
+var
+  source: TLibrarySource;
+  filename, ext: string;  
+  aDirection: TDirection;
+begin
+  for source in Sources do
+  begin
+    aDirection := Context.Schema.Direction;
+    if aDirection = dirUndefined then
+      aDirection := dirLeftToRight;      
+    
+    if (source.Direction = dirUndefined) or (source.Direction = aDirection) then
+    begin
+      ext := ExtractFileExt(source.Name);
+      if (source.BaseURL = '') or CheckOffline(Context, source.Name) then
+        filename := EndUrl(Context.GetAssetsURL)
+      else
+      begin
+        filename := source.BaseURL;
+        if not StartsText('http', filename) then
+        begin
+          if Context.Request.IsSecure then
+            filename := 'https://' + filename
+          else
+            filename := 'http://' + filename;
+        end;
+      end;
+      
+      filename := filename + source.Name + source.Query;
+      
+      if SameText(ext, '.css')  then    
+        Context.Writer.AddHTMLCss(filename, source.Integrity)
+      else if SameText(ext, '.js')  then    
+        Context.Writer.AddHTMLScript(filename, source.Integrity);
+    end
+    else
+      Context.Writer.AddComment(source.Name);      
+  end;
+end;
+
 function TmnwLibrary.CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
 begin
   with Context.Schema do
-    Result := (Web.OnlineFiles = olfOffline) or ((Web.OnlineFiles = olfSmart) and FileExists(FileName));
+    Result := (Web.OnlineFiles = olfOffline) or ((Web.OnlineFiles = olfSmart) and FileExists(Context.GetAssetFolder + FileName));
 end;
 
-procedure TmnwLibrary.Created;
+constructor TmnwLibrary.Create;
 var
   i: Integer;
   s: string;
 begin
-  inherited;
+  inherited Create;  
+  
+  FSources := TLibrarySources.Create;
   s := ClassName;
   i:= Pos('_', s);
   if i > 0 then
@@ -4491,9 +4579,20 @@ begin
   Name := s;
 end;
 
+procedure TmnwLibrary.Created;
+begin
+  inherited;
+end;
+
 procedure TmnwLibrary.DecUsage;
 begin
   FUsage := FUsage - 1;
+end;
+
+destructor TmnwLibrary.Destroy;
+begin
+  inherited;
+  FreeAndNil(FSources);
 end;
 
 procedure TmnwLibrary.IncUsage;
@@ -4587,24 +4686,20 @@ end;
 
 { TJQuery_Library }
 
-procedure TJQuery_Library.AddHead(const Context: TmnwContext);
+procedure TJQuery_Library.Created;
 begin
-  if CheckOffline(Context, Context.GetAssetFolder + 'jquery.min.js') then
-    Context.Writer.AddTag('script', 'src="' + EndUrl(Context.GetAssetsPath) + 'jquery.min.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"')
-  else
-    Context.Writer.AddTag('script', 'src="' + 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/' + 'jquery.min.js" crossorigin="anonymous"');
-
-end;
-
-{ TWebElements_Library }
-
-procedure TWebElements_Library.AddHead(const Context: TmnwContext);
-begin
-  Context.Writer.AddTag('script', 'src="' + EndUrl(Context.GetAssetsPath) + 'web-elements.js?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
-  Context.Writer.AddShortTag('link', 'rel="stylesheet" href="' + EndUrl(Context.GetAssetsPath) + 'web-elements.css?v=' + IntToStr(Context.Schema.Web.TimeStamp) + '" crossorigin="anonymous"');
+  inherited;
+  Sources.Add('cdn.jsdelivr.net/npm/jquery@3.7.1/dist/', 'jquery.min.js');
 end;
 
 { THTML }
+
+procedure TWebElements_Library.Created;
+begin
+  inherited;
+  Sources.Add('', 'web-elements.js', '?v=' + IntToStr(GlobalTimeStamp), '');
+  Sources.Add('', 'web-elements.css', '?v=' + IntToStr(GlobalTimeStamp), '');
+end;
 
 { THTML.TImage }
 
@@ -5242,13 +5337,6 @@ begin
   Result := inherited CanRender and (Count>0);
 end;
 
-{ TmnwCustomLibrary }
-
-procedure TmnwCustomLibrary.AddHead(const Context: TmnwContext);
-begin
-  Context.Writer.AddTag('script', 'src="' + Source + '" defer crossorigin="anonymous"');
-end;
-
 { THTML.TSpan }
 
 constructor THTML.TSpan.Create(AParent: TmnwElement; const AText: string);
@@ -5565,7 +5653,27 @@ begin
   Kind := Kind + [elNoRespond];
 end;
 
+{ TLibrarySources }
+
+function TLibrarySources.Add(const BaseURL, FileName: string; Direction: TDirection; Query, Integrity: string): TLibrarySource;
+begin
+  Result := TLibrarySource.Create;
+  Result.Name := FileName;
+  Result.BaseURL := BaseURL;
+  Result.Direction := Direction;
+  Result.Integrity := Integrity;
+  Result.Query := Query;
+  inherited Add(Result);
+end;
+
+function TLibrarySources.Add(const BaseURL, FileName: string; Query, Integrity: string): TLibrarySource;
+begin
+  Result := Add(BaseURL, FileName, dirUndefined, Query, Integrity);
+end;
+
 initialization
+  GlobalTimeStamp := GetTimeStamp;
 finalization
   FreeAndNil(FRenderers);
+  FreeAndNil(FLibraries);
 end.

@@ -448,13 +448,15 @@ type
 end;
 
   TBootstrap_Library = class(TmnwLibrary)
+  protected
+    procedure Created; override;     
   public  
-    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   TBootstrapIcons_Library = class(TmnwLibrary)
+  protected
+    procedure Created; override;     
   public
-    procedure AddHead(const Context: TmnwContext); override;
   end;
 
 function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
@@ -707,7 +709,7 @@ var
 begin
   inherited;
   e := Scope.Element as THTML.TComment;
-  Context.Writer.WriteLn('<!--' + e.Comment + '-->', [woOpenIndent, woCloseIndent]);
+  Context.Writer.AddComment(e.Comment);
 end;
 
 { TBSRenderer.TDocumentHTML }
@@ -1836,35 +1838,22 @@ end;
 
 { TBootstrap_Library }
 
-procedure TBootstrap_Library.AddHead(const Context: TmnwContext);
+procedure TBootstrap_Library.Created;
+const
+  cBaseURL = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/';
 begin
-  if CheckOffline(Context, Context.GetAssetFolder + 'bootstrap.rtl.min.css') then
-  begin
-    if Context.Schema.Direction = dirRightToLeft then
-      Context.Writer.WriteLn('<link rel="stylesheet" href="' + EndURL(Context.GetAssetsURL) + 'bootstrap.rtl.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous">')
-    else
-      Context.Writer.WriteLn('<link rel="stylesheet" href="' + EndURL(Context.GetAssetsURL) + 'bootstrap.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous">');
-    Context.Writer.WriteLn('<script src="' + EndURL(Context.GetAssetsURL) + 'bootstrap.bundle.min.js?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous"></script>');
-  end
-  else
-  begin
-    if Context.Schema.Direction = dirRightToLeft then
-      Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" integrity="sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb" crossorigin="anonymous">')
-    else
-      Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">');
-    Context.Writer.WriteLn('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>');
-  end;
+  inherited;
+  Sources.Add(cBaseURL, 'bootstrap.rtl.min.css', dirRightToLeft, '', 'sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb');
+  Sources.Add(cBaseURL, 'bootstrap.min.css', dirLeftToRight, '', 'sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH');
+  Sources.Add('cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/', 'bootstrap.bundle.min.js', '', 'sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz');
 end;
 
 { TBootstrapIcons_Library }
 
-procedure TBootstrapIcons_Library.AddHead(const Context: TmnwContext);
+procedure TBootstrapIcons_Library.Created;
 begin
   inherited;
-  if CheckOffline(Context, Context.GetAssetFolder + 'bootstrap-icons.min.css') then
-    Context.Writer.WriteLn('<link rel="stylesheet" href="' +EndURL(Context.GetAssetsURL) + 'bootstrap-icons.min.css?v='+IntToStr(Context.Schema.TimeStamp)+'" crossorigin="anonymous">')
-  else
-    Context.Writer.WriteLn('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">');
+  Sources.Add('cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css');
 end;
 
 initialization

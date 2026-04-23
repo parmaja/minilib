@@ -546,7 +546,7 @@ type
     property Redirect: string read FRedirect write FRedirect; //Relocation it to another url
   public
     procedure Responded; overload; virtual; 
-    procedure Responded(AAnswer: TmodAnswer); overload; 
+    procedure Respond(AAnswer: TmodAnswer); overload; 
     procedure RespondText(S: string);    
     procedure RespondHTML(S: string);    
     procedure RespondJSON(S: string);    
@@ -3257,7 +3257,7 @@ begin
   FIsResponded := True;
 end;
 
-procedure TwebResponse.Responded(AAnswer: TmodAnswer);
+procedure TwebResponse.Respond(AAnswer: TmodAnswer);
 begin
   Answer := AAnswer;
   Responded;
