@@ -922,7 +922,7 @@ begin
   Context.Writer.OpenTag('form', 'method="post"'+ NV('action', Context.GetLocationPath(e.PostTo)) + ' enctype="multipart/form-data"' + Scope.GetText);
   inherited;
   if e.RedirectTo <> '' then
-    Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo);
+    Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo + '"');
   Context.Writer.AddShortTag('input', 'type="hidden" name="execute" value="true"');
   Context.Writer.CloseTag('form');
 
@@ -986,7 +986,7 @@ begin
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Scope.Classes.Add('nav-link');
-  Context.Writer.AddTag('a', 'href="'+When(e.LinkTo+'"', '#') + event + Scope.GetText, e.Caption);
+  Context.Writer.AddTag('a', 'href="'+When(e.LinkTo, '#') + '"' + event + Scope.GetText, e.Caption);
   inherited;
 end;
 
@@ -1000,7 +1000,7 @@ begin
   e := Scope.Element as THTML.TMenuItem;
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
-  Context.Writer.AddTag('button', 'role="menu" type="button"' + event + Scope.Attributes.GetText, e.Caption);
+  Context.Writer.AddTag('button', 'role="menu" type="button"' + event + Scope.GetText, e.Caption);
   inherited;
 end;
 
@@ -1042,7 +1042,7 @@ begin
   if Context.Schema.Interactive then
     event := ' onchange="mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')"';
 
-  Context.Writer.AddShortTag('input', event + When(e.Required, 'required') + Scope.GetText); //TODO need to generate less spaces
+  Context.Writer.AddShortTag('input', event + When(e.Required, ' required') + Scope.GetText); //TODO need to generate less spaces
   if e.HelpText <> '' then
     Context.Writer.AddTag('div', 'class="form-text"', e.HelpText);
   inherited;
@@ -1313,8 +1313,14 @@ var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
-  Scope.Classes.Add( BSContentJustifyToStr(e.ContentAlign));
-  Context.Writer.OpenTag('div', 'class="row flex-md-nowrap' + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"');
+  Scope.Classes.Add('row');
+  Scope.Classes.Add('flex-md-nowrap');
+  Scope.Classes.Add(BSContentJustifyToStr(e.ContentAlign, False));
+  if e.Fixed <> fixedDefault then
+    Scope.Classes.Add(BSFixedToStr(e.Fixed, False));
+  if e.Align <> alignDefault then
+    Scope.Classes.Add(BSAlignToStr(e.Align, False));
+  Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -1324,14 +1330,17 @@ end;
 procedure TBSRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TColumn;
-  s: string;
 begin
   e := Scope.Element as THTML.TColumn;
   if e.Size > 0 then
-    s := ' col-'+e.Size.ToString
+    Scope.Classes.Add('col-'+e.Size.ToString)
   else
-    s := 'col';
-  Context.Writer.OpenTag('div', 'class="' + s + BSFixedToStr(e.Fixed) + BSAlignToStr(e.Align) + '"' + Scope.Attributes.GetText);
+    Scope.Classes.Add('col');
+  if e.Fixed <> fixedDefault then
+    Scope.Classes.Add(BSFixedToStr(e.Fixed, False));
+  if e.Align <> alignDefault then
+    Scope.Classes.Add(BSAlignToStr(e.Align, False));
+  Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
 end;
@@ -1403,7 +1412,7 @@ var
 begin
   e := Scope.Element as THTML.TAccordionSection;
   Context.Writer.OpenTag('div', 'class="accordion-item bg-transparent"');
-  Context.Writer.OpenTag('h', 'id="'+e.id+'-header" class="accordion-header"');
+  Context.Writer.OpenTag('h2', 'id="'+e.id+'-header" class="accordion-header"');
   Context.Writer.OpenTag('button ', 'class="accordion-button p-2'+ When(not e.Expanded, ' collapsed')+'" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
   if e.Image.IconClass <> '' then
     Context.Writer.AddTag('span', 'class='+ DQ(e.Image.IconClass))
@@ -1412,7 +1421,7 @@ begin
   if e.Caption <> '' then
     Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('button');
-  Context.Writer.CloseTag('h');
+  Context.Writer.CloseTag('h2');
 
   Scope.Classes.Add('accordion-collapse');
   Scope.Classes.Add('collapse');
@@ -1573,7 +1582,7 @@ begin
   if e.Caption <> '' then
   begin
     if e.AutoHideText then
-      Context.Writer.AddInlineTag('span', 'autohide', e.Caption)
+      Context.Writer.AddInlineTag('span', 'class="autohide"', e.Caption)
     else
       Context.Writer.WriteLn(e.Caption);
   end;
@@ -1616,7 +1625,7 @@ begin
   else
   begin
     src := Context.GetPath(e);
-    Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src)+'?v='+IntToStr(Context.Schema.Web.TimeStamp));
+    Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src+'?v='+IntToStr(Context.Schema.Web.TimeStamp)));
     inherited;
   end;
 end;
@@ -1639,7 +1648,7 @@ begin
   else
   begin
     src := Context.GetPath(e);
-    Context.Writer.AddTag('link', 'rel="stylesheet" href='+ DQ(src) + '?v=' + IntToStr(Context.Schema.Web.TimeStamp));
+    Context.Writer.AddTag('link', 'rel="stylesheet" href='+ DQ(src+'?v='+IntToStr(Context.Schema.Web.TimeStamp)));
     inherited;
   end;
 end;
