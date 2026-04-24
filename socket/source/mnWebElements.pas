@@ -4530,6 +4530,7 @@ var
   source: TLibrarySource;
   filename, ext: string;  
   aDirection: TDirection;
+  local: Boolean;
 begin
   for source in Sources do
   begin
@@ -4541,7 +4542,10 @@ begin
     begin
       ext := ExtractFileExt(source.Name);
       if (source.BaseURL = '') or CheckOffline(Context, source.Name) then
-        filename := EndUrl(Context.GetAssetsURL)
+      begin
+        filename := EndUrl(Context.GetAssetsURL);
+        local := True;
+      end
       else
       begin
         filename := source.BaseURL;
@@ -4552,14 +4556,15 @@ begin
           else
             filename := 'http://' + filename;
         end;
+        local:= False;
       end;
       
       filename := filename + source.Name + source.Query;
       
       if SameText(ext, '.css')  then    
-        Context.Writer.AddHTMLCss(filename, source.Integrity)
+        Context.Writer.AddHTMLCss(filename, When(not local, source.Integrity))
       else if SameText(ext, '.js')  then    
-        Context.Writer.AddHTMLScript(filename, source.Integrity);
+        Context.Writer.AddHTMLScript(filename, When(not local, source.Integrity));
     end
     else
       Context.Writer.AddComment(source.Name);      

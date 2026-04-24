@@ -9,6 +9,7 @@ ref
 *.dcu
 *.local
 *.dsk
+*.bak
 /lib/doc
 /reports/source/delphi
 /pos/delphi/demo
