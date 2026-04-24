@@ -107,7 +107,7 @@ type
     procedure Listen(const vChannel: string);
     procedure DoInit; override;
 
-    function DoGetNextIDSQL(const vName: string; vStep: Integer): string; override;
+    function GetNextIDSQL(const vName: string; vStep: Integer): string; override;
     procedure DoClone(vConn: TmncSQLConnection); override;
 
     function loImport(const vFileName: string): Integer; overload;
@@ -913,7 +913,7 @@ begin
   end;
 end;
 
-function TmncPGConnection.DoGetNextIDSQL(const vName: string; vStep: Integer): string;
+function TmncPGConnection.GetNextIDSQL(const vName: string; vStep: Integer): string;
 var
   n: string;
 begin

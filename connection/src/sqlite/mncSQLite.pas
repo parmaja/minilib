@@ -56,7 +56,7 @@ type
     function GetConnected:Boolean; override;
     procedure CheckError(Error: Integer; const ExtraMsg: string = '');
     procedure DoInit; override;
-    function DoGetNextIDSQL(const vName: string; vStep: Integer): string; override;
+    function GetNextIDSQL(const vName: string; vStep: Integer): string; override;
     procedure DoExecute(const vSQL: string); override;
     function DoCreateTransaction: TmncSQLTransaction; overload; override;
   public
@@ -490,7 +490,7 @@ begin
   {$endif}
 end;
 
-function TmncSQLiteConnection.DoGetNextIDSQL(const vName: string; vStep: Integer): string;
+function TmncSQLiteConnection.GetNextIDSQL(const vName: string; vStep: Integer): string;
 begin
   Result := Format('select max(''%s'')+%d', [vName, vStep]); //belal: check max
 end;

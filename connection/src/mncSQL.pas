@@ -122,7 +122,7 @@ type
     {$endif}
   protected
     procedure DoClone(vConn: TmncSQLConnection); virtual;
-    function DoGetNextIDSQL(const vName: string; vStep: Integer): string; virtual; deprecated; //TODO move it to dervied class should not be here, wrong place
+    function GetNextIDSQL(const vName: string; vStep: Integer): string; virtual; 
     function GetSequenceSQL: string; virtual;
     procedure DoExecute(const vSQL: string); virtual;
     function DoCreateTransaction: TmncSQLTransaction; virtual; abstract;
@@ -170,8 +170,10 @@ type
     function ReceiveNotifications: TStrings; virtual;
     procedure Reconnect; virtual;
     procedure RecoverConnection; virtual;
+    
     procedure StartListen(const vChannel: string); virtual; deprecated;
     procedure StopListen(const vChannel: string); virtual; deprecated;
+    
     property Dispatchers: TDBDispatchers read FDispatchers;
     {$endif}
   end;
@@ -316,7 +318,7 @@ end;
 
 { TmncSQLTransaction }
 
-function TmncSQLConnection.DoGetNextIDSQL(const vName: string; vStep: Integer): string;
+function TmncSQLConnection.GetNextIDSQL(const vName: string; vStep: Integer): string;
 begin
   Result := '';
 end;
@@ -332,7 +334,7 @@ var
   aSQL: string;
   aTR: TmncSQLTransaction;
 begin
-  aSQL := DoGetNextIDSQL(vName, vStep);
+  aSQL := GetNextIDSQL(vName, vStep);
   if aSQL<>'' then
   begin
     aTR := CreateTransaction;
