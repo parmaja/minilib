@@ -385,7 +385,7 @@ end;
 
 procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle);
 begin
-  if (vHandle <> 0) or (vHandle <>  INVALID_SOCKET) then
+  if (vHandle <> 0) and (vHandle <>  INVALID_SOCKET) then
     WinSock2.CloseSocket(vHandle);
   vHandle := INVALID_SOCKET;
 end;
@@ -640,6 +640,12 @@ begin
               if vErr = 0 then
                 vErr := WSAGetLastError;
               FreeSocket(aHandle);
+            end
+            else
+            begin
+              vErr := GetSocketError(aHandle);
+              if vErr <> 0 then
+                FreeSocket(aHandle);
             end;
           end
           else
@@ -647,6 +653,12 @@ begin
         end;
       end;
     end;
+  end;
+
+  if (ConnectTimeout <> -1) and (aHandle <> INVALID_SOCKET) then
+  begin
+    aMode := 0;
+    ioctlsocket(aHandle, Longint(FIONBIO), aMode);
   end;
 
   if aHandle <> INVALID_SOCKET then

@@ -392,17 +392,18 @@ begin
     Result := NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)
   else
     Result := '';
-  Result := '';
 end;
 
 function TmnSocket.GetLocalName: string;
 var
-  s: string;
+  s: AnsiString;
 begin
   CheckActive;
   SetLength(s, 250);
-  s := '';
-  Result := s;
+  if Posix.Unistd.gethostname(PAnsiChar(s), Length(s)) = 0 then
+    Result := string(PAnsiChar(s))
+  else
+    Result := '';
 end;
 
 { TmnWallSocket }
@@ -470,7 +471,7 @@ end;
 
 procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle);
 begin
-  if (vHandle <> 0) or (vHandle <>  INVALID_SOCKET) then
+  if (vHandle <> 0) and (vHandle <>  INVALID_SOCKET) then
     __close(vHandle);
   vHandle := INVALID_SOCKET;
 end;
@@ -626,6 +627,11 @@ begin
   end;
   //aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, IPPROTO_TCP);
   aHandle := Posix.SysSocket.socket(LAddrInfo.ai_family, LAddrInfo.ai_socktype, LAddrInfo.ai_protocol);
+  if LAddrInfo <> nil then
+  begin
+    Posix.NetDB.freeaddrinfo(LAddrInfo);
+    LAddrInfo := nil;
+  end;
 
   if aHandle <> INVALID_SOCKET then
   begin
@@ -673,6 +679,11 @@ begin
             vErr := errno; //GetSocketError(aHandle);
             FreeSocket(aHandle);
           end;
+          if LAddrInfo <> nil then
+          begin
+            Posix.NetDB.freeaddrinfo(LAddrInfo);
+            LAddrInfo := nil;
+          end;
         end;
       end;
 
@@ -696,6 +707,12 @@ begin
             begin
               vErr := errno; //GetSocketError(aHandle);
               FreeSocket(aHandle);
+            end
+            else
+            begin
+              vErr := GetSocketError(aHandle);
+              if vErr <> 0 then
+                FreeSocket(aHandle);
             end;
           end
           else
@@ -703,6 +720,12 @@ begin
         end;
       end;
     end;
+  end;
+
+  if (ConnectTimeout <> -1) and (aHandle <> INVALID_SOCKET) then
+  begin
+    aMode := 0;
+    IOCtl(aHandle, FIONBIO, @aMode);
   end;
 
   if aHandle <> INVALID_SOCKET then

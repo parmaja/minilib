@@ -288,11 +288,11 @@ end;
 
 destructor TmnCustomSocket.Destroy;
 begin
+  if Active then
+    Close;
   SSL.Free;
   if ContextOwned then
     FreeAndNil(Context);
-  if Active then
-    Close;
   inherited;
 end;
 
@@ -336,11 +336,12 @@ end;
 
 procedure TmnCustomSocket.Prepare;
 begin
-  FPrepared := True;
-  if (soSSL in FOptions) then //Listener socket have no OpenSSL
+  if (soSSL in FOptions) then
   begin
     EnableSSL;
   end;
+  FPrepared := True;
+end;
 end;
 
 function TmnCustomSocket.GetConnected: Boolean;
@@ -440,10 +441,10 @@ begin
       ret := SSL.Write(Buffer, Count, WriteSize);
       if ret then
       begin
+        if WriteSize <> Count then
+          raise EmnSocketException.Create('Ops WriteSize <> Count we should care about real size');
         Count := WriteSize;
         Result := erSuccess;
-        if WriteSize <> Count then
-          raise EmnSocketException.Create('Ops WriteSize <> Count we should care about real size')
       end
       else
       begin
@@ -601,7 +602,12 @@ begin
         Result := 0;
       end
       else
-        Result := Count;
+      begin
+        {if err = erTimeout then //TODO AI Added it, not sure if we have count when Timout no result
+          Result := 0
+        else}
+          Result := Count;
+      end;
     end
     else
     begin
