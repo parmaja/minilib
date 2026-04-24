@@ -747,7 +747,7 @@ begin
   inherited;
   Response.Stream.WriteCommand('OK');
   aFileName := Request.Params.Values['FileName'];
-  aFile := TFileStream.Create(Response.HomeFolder + aFileName, fmCreate);
+  aFile := TFileStream.Create(IncludeTrailingPathDelimiter(Response.HomeFolder) + aFileName, fmCreate);
   try
     Response.Stream.ReadStream(aFile, Request.ContentLength);
   finally

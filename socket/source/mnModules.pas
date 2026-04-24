@@ -1217,7 +1217,7 @@ var
   mStream: TMemoryStream;
 //  zStream: {$ifdef FPC}TGZipDecompressionStream;{$else}TDecompressionStream{$endif}
 begin
-  aDecompress := (Request.Use.AcceptCompressing in [ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
+  aDecompress := (Request.Use.AcceptCompressing in [ovYes, ovUndefined]) and (Header.Field['Content-Encoding'].Have('gzip', [',']));
   if aDecompress then
   begin
     mStream := TMemoryStream.Create;//duplicate memory avoid this :(
@@ -1391,12 +1391,8 @@ function TmodResponse.SendString(const s: string): Boolean;
 var
   t: UTF8String;
 begin
-  {$ifdef FPC}
   t := UTF8Encode(s);
-  Result := SendString(t);
-  {$else}
   Result := SendUTF8String(t);
-  {$endif}
 end;
 
 function TmodResponse.SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; FileDispositions: TmodFileDispositions): Boolean;
@@ -1431,14 +1427,15 @@ begin
 
   aMIMEItem := DocumentToMIME(AAlias);
 
-  ContentType := aMIMEItem.ContentType;
-  if Binary in aMIMEItem.Features then
+  if aMIMEItem <> nil then
+    ContentType := aMIMEItem.ContentType;
+  if (aMIMEItem <> nil) and (Binary in aMIMEItem.Features) then
   begin
     if aDisposition = '' then
       aDisposition := 'attachment';
   end;
 
-  if Compressed in aMIMEItem.Features then
+  if (aMIMEItem <> nil) and (Compressed in aMIMEItem.Features) then
     SendOptions := SendOptions + [sndoAlreadyCompressed];
 
   if aDisposition <> '' then
@@ -1519,8 +1516,10 @@ end;
 
 procedure TmodRequest.ResetProxies;
 begin
-  ChunkedProxy.Disable;
-  ProtcolProxy.Disable;
+  if ChunkedProxy <> nil then
+    ChunkedProxy.Disable;
+  if ProtcolProxy <> nil then
+    ProtcolProxy.Disable;
 end;
 
 procedure TmodRequest.SetChunkedProxy(const Value: TmnChunkStreamProxy);
@@ -1662,6 +1661,9 @@ begin
       if (aModule = nil) then
         Stream.Disconnect //if failed, or no fallback module
       else
+      begin
+        Result.Status := [];
+        Result.Timout := 0;
         try
           Result := aModule.Execute(aRequest);
         finally
@@ -1676,6 +1678,7 @@ begin
               Stream.Disconnect;
           end;
         end;
+      end;
     finally
       FreeAndNil(aRequest); //if create command then aRequest change to nil
     end;
@@ -2226,6 +2229,7 @@ begin
 
   if aCommand <> nil then
   begin
+    Result.Status := [];
     try
       if not aCommand.SkipHeader then
         _ReceiveHeader;
@@ -2641,7 +2645,7 @@ begin
     if s <> '' then
     begin
       p := pos('=', s);
-      if p >= 0 then
+      if p > 0 then
       begin
         Name := Copy(s, 1, p - 1);
         Value := DequoteStr(Copy(s, p + 1, MaxInt));
@@ -2951,7 +2955,7 @@ begin
     hrOK: Result := Result + '200 OK';
     hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
     hrNoContent: Result := Result + '204 No Content';
-    hrMovedPermanently: Result := '301 Moved Permanently';
+    hrMovedPermanently: Result := Result + '301 Moved Permanently';
     hrRedirect: Result := Result + '302 Found';
     hrNotModified: Result := Result + '304 Not Modified';
     hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
@@ -3036,7 +3040,7 @@ begin
 
   Cookies.SetRequestText(Header['Cookie']);
 
-  FAccept := Header.ReadString('Connection');
+  FAccept := Header.ReadString('Accept'); //TODO zaher check it
   KeepAlive := (Use.KeepAlive = ovUndefined) and SameText(Header.ReadString('Connection'), 'Keep-Alive');
   KeepAlive := KeepAlive or ((Use.KeepAlive = ovYes) and not SameText(Header.ReadString('Connection'), 'close'));
 
@@ -3206,8 +3210,8 @@ procedure TwebResponse.SetIsResponded(const Value: Boolean);
 begin
   if Value and not IsResponded then
     Responded
-  else  
-    FIsResponded := not Value;
+  else if not Value then
+    FIsResponded := False;
 end;
 
 function TwebResponse.StatusCode: Integer;
@@ -3468,8 +3472,7 @@ procedure TmnPool.Execute;
 var
   aCurrent: TmnPoolObject;
 begin
-  inherited;
-  while not Terminated do
+  while not FTerminated do
   begin
     Lock.Enter;
     try
