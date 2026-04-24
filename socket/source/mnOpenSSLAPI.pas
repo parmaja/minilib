@@ -31,7 +31,7 @@ unit mnOpenSSLAPI;
 interface
 
 uses
-  SysUtils,
+  SysUtils, 
   mnTypes, mnLibraries; // take it from github/parmaja/minilib
 
 type
@@ -87,7 +87,6 @@ type
   PX509V3_CONF_METHOD = PSLLObject;
   PPX509_REQ = ^PX509_REQ;
   PX509_NAME = PSLLObject;
-  PX509_sign = PSLLObject;
   PX509_EXTENSION = PSLLObject;
   PLHASH = PSLLObject;
   PX509_STORE = type PSLLObject;
@@ -98,12 +97,13 @@ type
   PPEC_KEY_METHOD = ^PEC_KEY_METHOD;
 
   PKCS12 = PSLLObject;
+  PPKCS12 = ^PKCS12;
 
   PBIO_METHOD = PSLLObject;
   PPBIO_METHOD = ^PBIO_METHOD;
 
-  Pevp_md_ctx = PSLLObject;
-  PPevp_md_ctx = ^Pevp_md_ctx;
+  PEVP_MD_CTX = PSLLObject;
+  PPEVP_MD_CTX = ^PEVP_MD_CTX;
 
   Ppem_password_cb = Pointer;
 
@@ -119,7 +119,7 @@ type
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
   TCTXInfoCallback = procedure(ssl: PSSL; where: cint; ret: cint); cdecl;
-  TCTXAlpnSelectCallback = function(ssl: PSSL; var outdata: PByte; var outlen: integer; const indata: PByte; inlen: Byte; arg: Pointer): Integer; cdecl;
+  TCTXAlpnSelectCallback = function(ssl: PSSL; var outdata: PByte; var outlen: integer; const indata: PByte; inlen: Byte; arg: Pointer): Integer; cdecl; //TODO check again
 
   { Context specific info }
   //https://abi-laboratory.pro/index.php?view=type_view&l=openssl&v=1.0.2e&obj=c93f7&t=1ede6
@@ -297,11 +297,10 @@ type
     length: NativeUInt;
     data: PUTF8Char;
     max: NativeUInt;
-    flags: Cardinal;
   end;
   PBuf_mem = ^TBuf_mem;
 
-  TAsn1_type = record
+  TASN1_TYPE = record
     &type: Integer;
     value: _anonymous_type_1;
   end;
@@ -360,8 +359,8 @@ type
     procedure Link; override;
   end;
 
-  SSL_set_msg_callback_cb = procedure(write_p: integer; version: integer; content_type: integer; buf: pointer; len: Cardinal; ssl: PSSL; arg: pointer); cdecl;
-  SSL_CTX_set_msg_callback_cb = procedure(write_p: integer; version: integer; content_type: integer; buf: pointer; len: Cardinal; ssl: PSSL; arg: pointer); cdecl;
+  SSL_set_msg_callback_cb = procedure(write_p: integer; version: integer; content_type: integer; buf: pointer; len: NativeUInt; ssl: PSSL; arg: pointer); cdecl;
+  SSL_CTX_set_msg_callback_cb = procedure(write_p: integer; version: integer; content_type: integer; buf: pointer; len: NativeUInt; ssl: PSSL; arg: pointer); cdecl;
 
 var
   OPENSSL_init_ssl: procedure(opts: UInt64; settings: POPENSSL_INIT_SETTINGS); cdecl;
@@ -373,8 +372,8 @@ var
   ERR_load_SSL_strings: procedure(); cdecl;
   ERR_load_CRYPTO_strings: function(): Integer; cdecl;
   ERR_error_string: function(e: culong; bug: PUTF8Char): PUTF8Char; cdecl;
-  ERR_get_error: function(): clong; cdecl;
-  ERR_peek_error: function(): clong; cdecl;
+  ERR_get_error: function(): culong; cdecl;
+  ERR_peek_error: function(): culong; cdecl;
 
   SSL_get_peer_certificate: function(ssl: PSSL): PX509; cdecl;
   SSL_set_cipher_list: function(ssl: PSSL; str: PUTF8Char): Integer; cdecl;
@@ -405,8 +404,8 @@ var
   SSL_state_string_long: function(ssl: PSSL): PUTF8Char; cdecl;
   SSL_alert_type_string_long: function(val: integer): PUTF8Char; cdecl;
   SSL_alert_desc_string_long: function(val: integer): PUTF8Char; cdecl;
-  SSL_select_next_proto: function(var outdata: PUTF8Char; var outlen: Integer; server: PUTF8Char; serverlen: Integer; client: PUTF8Char; clientlen: Integer): Integer; cdecl;
-  SSL_get0_alpn_selected: procedure (ssl: PSSL; var outdata: PUTF8Char; var len: Integer); cdecl;
+  SSL_select_next_proto: function(var outdata: PByte; var outlen: byte; const server: PUTF8Char; serverlen: Cardinal; client: PUTF8Char; clientlen: Cardinal): Integer; cdecl;
+  SSL_get0_alpn_selected: procedure(ssl: PSSL; var outdata: PByte; var len: Cardinal); cdecl;
   SSL_use_certificate_chain_file: function(ssl: PSSL; const afile: PUTF8Char): Integer; cdecl;
 
   SSL_CTX_new: function(Method: PSSL_METHOD): PSSL_CTX; cdecl;
@@ -419,7 +418,7 @@ var
   SSL_CTX_use_certificate: function(ctx: PSSL_CTX; x: PX509): Integer; cdecl;
   SSL_CTX_use_certificate_file: function(ctx: PSSL_CTX; afile: PUTF8Char; atype: Integer): Integer; cdecl;
   SSL_CTX_use_certificate_chain_file: function(ctx: PSSL_CTX; const afile: PUTF8Char): Integer; cdecl;
-  SSL_CTX_use_PrivateKey: function(ctx: PSSL_CTX; const pkey: PEVP_PKEY): Integer; cdecl;
+  SSL_CTX_use_PrivateKey: function(ctx: PSSL_CTX; pkey: PEVP_PKEY): Integer; cdecl; //AI changed
   SSL_CTX_use_PrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
   SSL_CTX_check_private_key: function(ctx: PSSL_CTX): Integer; cdecl;
   SSL_CTX_use_RSAPrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
@@ -439,7 +438,7 @@ var
   X509_new: function(): PX509; cdecl;
   X509_free: procedure(a: PX509); cdecl;
   X509_verify_cert_error_string: function(n: clong): PUTF8Char; cdecl;
-  X509_sign: function(x: PX509; pkey: PEVP_PKEY; md: PEVP_MD): PX509_sign; cdecl;
+  X509_sign: function(x: PX509; pkey: PEVP_PKEY; md: PEVP_MD): Integer; cdecl;
   X509_REQ_new: function(): PX509_REQ; cdecl;
   X509_REQ_get_subject_name: function(req: PX509_REQ): PX509_NAME; cdecl;
   X509_REQ_set_pubkey: function(x: PX509_REQ; pkey: PEVP_PKEY): Integer; cdecl;
@@ -470,10 +469,10 @@ var
   PEM_write_bio_X509_REQ: function(bp: PBIO; x: PX509_REQ): Integer; cdecl;
   PEM_write_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; const enc: PEVP_CIPHER; kstr: PByte; klen: Integer; cb: Ppem_password_cb; u: Pointer): integer; cdecl;
   PEM_write_bio_X509: function(bp: PBIO; x: PX509): Integer; cdecl;
-  PEM_write_X509: function(fh: NativeInt; x: PX509): Integer; cdecl;
+  PEM_write_X509: function(fh: Pointer; x: PX509): Integer; cdecl;
   PEM_write_bio_RSAPublicKey: function(bp: PBIO; x: PRSA): Integer; cdecl;
 
-  PEM_read_bio_X509: function(bp: PBIO; x: PX509; cb: Ppem_password_cb; u: Pointer): PX509; cdecl;
+  PEM_read_bio_X509: function(bp: PBIO; x: PPX509; cb: Ppem_password_cb; u: Pointer): PX509; cdecl;
   PEM_read_bio_PrivateKey: function(bp: PBIO; x: PPEVP_PKEY; cb: Ppem_password_cb; u: Pointer): PEVP_PKEY; cdecl;
   PEM_read_bio_RSAPublicKey: function(bp: PBIO; x: PPRSA; cb: Ppem_password_cb; u: Pointer): PRSA; cdecl;
 
@@ -482,7 +481,7 @@ var
   PEM_X509_INFO_read_bio: function(bp: PBIO; sk: POPENSSL_STACK; cb: Ppem_password_cb; u: Pointer): POPENSSL_STACK; cdecl;
 
   ASN1_INTEGER_set_int64: function(a: PASN1_INTEGER; r: Int64): Integer; cdecl;
-  ASN1_INTEGER_set: function(const a: PASN1_INTEGER; v: Integer): Integer; cdecl;
+  ASN1_INTEGER_set: function(a: PASN1_INTEGER; v: Integer): Integer; cdecl;
 
   X509_get_serialNumber: function(x: PX509): PASN1_INTEGER; cdecl;
   X509_gmtime_adj: function(s: PASN1_TIME; adj: clong): PASN1_TIME; cdecl;
@@ -535,8 +534,8 @@ var
 
   BIO_new: function(typ: PBIO_METHOD): PBIO; cdecl;
   BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
-  BIO_new_fp: function(handle: THandle; close_flag: Integer): PBIO; cdecl; //dosnt work
-  BIO_new_fd: function(handle: THandle; close_flag: Integer): PBIO; cdecl; //idk
+  BIO_new_fp: function(handle: Pointer; close_flag: Integer): PBIO; cdecl; // FILE * //dosnt work
+  BIO_new_fd: function(fd: Integer; close_flag: Integer): PBIO; cdecl; //idk
   BIO_new_file: function(filename: PUTF8Char; Mode: PUTF8Char): PBIO; cdecl;
   BIO_new_mem_buf: function(buf: PByte; len: Integer): PBIO; cdecl;
   BIO_f_base64: function(): PBIO_METHOD; cdecl;
@@ -564,7 +563,7 @@ var
   BIO_ctrl: function(bp: PBIO; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
 
   OPENSSL_sk_new_null: function(): POPENSSL_STACK; cdecl;
-  OPENSSL_sk_push: procedure(sk: POPENSSL_STACK; vData: Pointer); cdecl;
+  OPENSSL_sk_push: function(sk: POPENSSL_STACK; vData: Pointer): Integer; cdecl;
   OPENSSL_sk_num: function(sk: POPENSSL_STACK): Integer; cdecl;
   OPENSSL_sk_value: function(sk: POPENSSL_STACK; idx: integer): Pointer; cdecl;
   OPENSSL_sk_free: procedure(sk: POPENSSL_STACK); cdecl;
@@ -602,7 +601,7 @@ var
   ECDSA_sign: function(&type: Integer; dgst: PByte; dgstlen: Integer; sig: PByte; siglen: PCardinal; eckey: PEC_KEY): Integer; cdecl;
 
   d2i_X509: function(px: PPX509; data: PPointer; size: Integer): PX509; cdecl;
-  d2i_PKCS12_bio: function(bp: PBIO; p: Pointer): PKCS12; cdecl; //return PKCS12
+  d2i_PKCS12_bio: function(bp: PBIO; p: PPKCS12): PKCS12; cdecl; //return PKCS12
 
   PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; out pkey: PEVP_PKEY; out cert: PX509; var ca: PSLLObject): Integer; cdecl;
   PKCS12_free: procedure(a: PKCS12); cdecl;
@@ -660,7 +659,11 @@ implementation
 
 type
   TTimeVal = record
+    {$ifdef MSWINDOWS}
     tv_sec: Longint;
+    {$else}
+    tv_sec: PtrInt;
+    {$endif}
     tv_usec: Longint;
   end;
 
@@ -872,7 +875,7 @@ begin
   ERR_load_SSL_strings := GetAddress('ERR_load_SSL_strings');
 end;
 
-{ TCryptoLibLib }
+{ TmnCryptoLib }
 
 procedure TmnCryptoLib.Link;
 begin
@@ -1042,7 +1045,7 @@ begin
   PKCS12_free := GetAddress('PKCS12_free');
 end;
 
-function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt;
+function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt; inline;
 begin
   Result := BIO_ctrl(b, BIO_CTRL_INFO, 0, @pp);
 end;
