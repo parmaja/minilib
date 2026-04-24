@@ -226,8 +226,10 @@ const
 function alpn_select_cb(ssl: PSSL; var outdata: PByte; var outlen: integer; const indata: PByte; inlen: Byte; arg: Pointer): Integer; cdecl;
 var
   ret: Integer;
+  b: byte; 
 begin
-  ret := SSL_select_next_proto(PUTF8Char(outdata), outlen, PUTF8Char(indata), inlen, PUTF8Char(sALPNProts), Length(sALPNProts));
+  ret := SSL_select_next_proto(outdata, b, PUTF8Char(indata), inlen, PUTF8Char(sALPNProts), Length(sALPNProts));
+  outlen := b;
 
   if ret <> OPENSSL_NPN_NEGOTIATED then
     Result := SSL_TLSEXT_ERR_NOACK
@@ -235,7 +237,7 @@ begin
     Result := SSL_TLSEXT_ERR_OK;
 end;
 
-procedure SSL_CTX_msg_callback(write_p: integer; version: integer; content_type: integer; buf: pointer; len: Cardinal; ssl: PSSL; arg: pointer); cdecl;
+procedure SSL_CTX_msg_callback(write_p: integer; version: integer; content_type: integer; buf: pointer; len: NativeUInt; ssl: PSSL; arg: pointer); cdecl;
 var
   b: TBytes;
   s: string;
@@ -372,7 +374,7 @@ var
   rsa: PRSA;
   name: PX509_NAME;
   bne: PBIGNUM;
-  sign: PX509_sign;
+  sign: Integer;
   res: Integer;
 begin
   x := nil;
@@ -457,7 +459,7 @@ begin
     AddExt(x, NID_subject_key_identifier, 'hash');
 
     sign := X509_sign(x, pk, EVP_sha256());
-    if (sign = nil) then
+    if (sign = 0) then
       exit(False);
     x509p := x;
     pkeyp := pk;

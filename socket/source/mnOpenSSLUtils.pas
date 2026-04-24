@@ -110,7 +110,7 @@ var
   rsa: PRSA;
   name: PX509_NAME;
   bne: PBIGNUM;
-  sign: PX509_sign;
+  sign: Integer;
   res: Integer;
 begin
   x := nil;
@@ -195,7 +195,7 @@ begin
     AddExt(x, NID_subject_key_identifier, 'hash');
 
     sign := X509_sign(x, pk, EVP_sha256());
-    if (sign = nil) then
+    if (sign = 0) then
       exit(False);
     x509p := x;
     pkeyp := pk;
@@ -252,13 +252,17 @@ begin
     ecp := EC_KEY_new();
     ecg := EC_GROUP_new_by_curve_name(NID_secp256k1);
     try
-      if EC_KEY_set_group(ecp,ecg)=0 then raise Exception.Create('Error EC_KEY_set_group');
-      if EC_KEY_generate_key(ecp)=0 then raise Exception.Create('Error EC_KEY_generate_key');
-      if EVP_PKEY_assign_EC_KEY(Result, ecp)=0 then raise Exception.Create('Error EVP_PKEY_assign_EC_KEY');
+      if EC_KEY_set_group(ecp,ecg) = 0 then 
+        raise Exception.Create('Error EC_KEY_set_group');
+      if EC_KEY_generate_key(ecp) = 0 then 
+        raise Exception.Create('Error EC_KEY_generate_key');
+      if EVP_PKEY_assign_EC_KEY(Result, ecp) = 0 then 
+        raise Exception.Create('Error EVP_PKEY_assign_EC_KEY');
 
       X509_set_pubkey(X509, Result);
 
-      if X509_sign(X509, Result, EVP_sha256())=nil then raise Exception.Create('Error X509_sign');
+      if X509_sign(X509, Result, EVP_sha256()) = 0 then 
+        raise Exception.Create('Error X509_sign');
     finally
       //RSA_free(rsa);
       //BN_free(bn);
