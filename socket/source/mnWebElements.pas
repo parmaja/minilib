@@ -2351,19 +2351,25 @@ end;
 procedure TmnwElementRenderer.RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   o: TmnwElement;
+  ParentRenderer: TmnwElementRenderer;
 begin
+  ParentRenderer := Context.ParentRenderer;
   Context.ParentRenderer := Self;
-  for o in Scope.Element do
-    if (priorityStart = o.Priority) and not (elInternal in o.Kind) then
-        o.Render(Context, AResponse);
+  try
+    for o in Scope.Element do
+      if (priorityStart = o.Priority) and not (elInternal in o.Kind) then
+          o.Render(Context, AResponse);
 
-  for o in Scope.Element do
-    if (priorityNormal = o.Priority) and not (elInternal in o.Kind) then
-        o.Render(Context, AResponse);
+    for o in Scope.Element do
+      if (priorityNormal = o.Priority) and not (elInternal in o.Kind) then
+          o.Render(Context, AResponse);
 
-  for o in Scope.Element do
-    if (priorityEnd = o.Priority) and not (elInternal in o.Kind) then
-        o.Render(Context, AResponse);
+    for o in Scope.Element do
+      if (priorityEnd = o.Priority) and not (elInternal in o.Kind) then
+          o.Render(Context, AResponse);
+  finally
+    Context.ParentRenderer := ParentRenderer;
+  end;
 end;
 
 procedure TmnwElementRenderer.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
@@ -2619,9 +2625,9 @@ end;
 
 destructor TmnwWeb.Destroy;
 begin
-  inherited;
   FreeAndNil(FRegistered);
   FreeAndNil(FLock);
+  inherited;
 end;
 
 procedure TmnwWeb.Start;
@@ -2799,11 +2805,12 @@ begin
           try
             try
               aSchema.Compose(AContext); //Compose
-            except
-              aSchema.Lock.Leave;
-              FreeAndNil(aSchema);
-              raise;
-            end;
+        except
+          aSchema.Lock.Leave;
+          AContext.Schema := nil;
+          FreeAndNil(aSchema);
+          raise;
+        end;
           finally
             if aSchema <> nil then
               aSchema.Lock.Leave;
@@ -3424,7 +3431,7 @@ end;
 procedure TmnwElement.SendMessage(AttachmentName: string; AMessage: string);
 begin
   if Schema <> nil then
-    Schema.Attachments.SendMessage('', AMessage);
+    Schema.Attachments.SendMessage(AttachmentName, AMessage);
 end;
 
 function TmnwElement.ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean;
@@ -3884,7 +3891,10 @@ end;
 
 procedure TmnwElement.SetRenderIt(const Value: Boolean);
 begin
-  Kind := Kind - [elNoRender];
+  if Value then
+    Kind := Kind - [elNoRender]
+  else
+    Kind := Kind + [elNoRender];
 end;
 
 procedure TmnwElement.SetState(const AValue: TmnwElementState);
@@ -4011,7 +4021,7 @@ begin
     if SameText(Items[i].Name, aName) then
       Result := Items[i]
     else
-      Result := Items[i].FindByID(aName);
+      Result := Items[i].FindByName(aName);
     if Result <> nil then
       break;
   end;
@@ -4055,11 +4065,11 @@ end;
 
 procedure TmnwElement.DoChanged;
 begin
-  DoChanged;
 end;
 
 procedure TmnwElement.Changed;
 begin
+  DoChanged;
 end;
 
 procedure TmnwElement.Prepare;
@@ -4861,7 +4871,7 @@ end;
 constructor THTML.TAction.Create(AParent: TmnwElement; AName, ARoute: string; ActionProc: TRespondProc);
 begin
   inherited Create(AParent);
-  Name := ARoute;
+  Name := AName;
   Route := ARoute;
   OnRespond := ActionProc;
 end;
@@ -5086,14 +5096,14 @@ begin
   inherited;
   if (ARequest.Route.Count > 0) then
   begin
+	//TODO I do not understand this part?
     if StartsStr('.', ARequest.Route[ARequest.Route.Count - 1]) then
       ARequest.Command := ARequest.Route[ARequest.Route.Count - 1]
     else
-      ARequest.Command := ARequest.Route[1];
+      ARequest.Command := ARequest.Route[0]; //TODO or 1?
   end
   else
     ARequest.Command := '';
-  //ARequest.Path := DeleteSubPath(ARequest.Command, ARequest.Path);
 end;
 
 procedure TmnwWebModule.Start;
@@ -5244,7 +5254,7 @@ var
 begin
   i := A.Find(B);
   if i>=0 then
-    Delete(A.Items,i, 0);
+    Delete(A.Items, i, 1);
   Result := A;
 end;
 
