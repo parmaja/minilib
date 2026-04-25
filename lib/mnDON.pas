@@ -678,8 +678,12 @@ var
   Gernerator: TSerializeGernerator;
 begin
   Gernerator := AGerneratorClass.Create(Self);
-  Gernerator.Generate(AObject, True, 0);
-  Flush;
+  try
+    Gernerator.Generate(AObject, True, 0);
+    Flush;
+  finally
+    Gernerator.Free;
+  end;
 end;
 
 procedure TSerializer.Add(Level: Integer; S: string);
@@ -1009,22 +1013,19 @@ procedure TDON_Array_Value.Add(const Values: array of const);
 var
   i : Integer;
 begin
-  if High(Values) > 0 then
+  for i := 0 to High(Values) do
   begin
-    for i := 0 to High(Values) do
-    begin
-      case Values[i].vType of
-        vtBoolean:
-          Items.Add(TDON_Boolean_Value.Create(Self, Values[i].VBoolean));
-        vtChar:
-          Items.Add(TDON_String_Value.Create(Self, String(Values[i].VChar)));
-        vtString:
-          Items.Add(TDON_String_Value.Create(Self, String(Values[i].VString^)));
-        vtInteger:
-          Items.Add(TDON_Number_Value.Create(Self, Values[i].VInteger));
-        vtExtended:
-          Items.Add(TDON_Number_Value.Create(Self, Values[i].VExtended^));
-      end;
+    case Values[i].vType of
+      vtBoolean:
+        Items.Add(TDON_Boolean_Value.Create(Self, Values[i].VBoolean));
+      vtChar:
+        Items.Add(TDON_String_Value.Create(Self, String(Values[i].VChar)));
+      vtString:
+        Items.Add(TDON_String_Value.Create(Self, String(Values[i].VString^)));
+      vtInteger:
+        Items.Add(TDON_Number_Value.Create(Self, Values[i].VInteger));
+      vtExtended:
+        Items.Add(TDON_Number_Value.Create(Self, Values[i].VExtended^));
     end;
   end;
 end;
@@ -1167,18 +1168,18 @@ procedure TDON_Pair.SetPairValue(AValue: TDON_Element);
 begin
   if FValue <> AValue then
   begin
-    if (AValue.Parent <> nil) and (AValue.Parent <> self) then
+    if (AValue <> nil) and (AValue.Parent <> nil) and (AValue.Parent <> Self) then
       raise Exception.Create('Value have parent we can`t move it to another parent');
     FreeAndNil(FValue);
     FValue := AValue;
-    //FValue.FParent := Self;
+    if FValue <> nil then
+      FValue.FParent := Self;
   end;
 end;
 
 constructor TDON_Pair.Create(AParent: TDON_Object_Value);
 begin
-  //where is inherited zaher :)
-  FParent := AParent;
+  inherited Create(AParent);
 end;
 
 destructor TDON_Pair.Destroy;
@@ -1210,7 +1211,7 @@ begin
   if FValue<>nil then
   begin
     Result := FValue;
-    Result.FParent := Self;
+    Result.FParent := nil;
     FValue := nil;
   end
   else
@@ -1540,7 +1541,10 @@ begin
     end
     else
     begin
-      QuoteChar := Coalesce(jtoSingleQuote in (AObject as TDON_String_Value).StringType.Options, '''', '"');
+      if jtoBackQuote in (AObject as TDON_String_Value).StringType.Options then
+        QuoteChar := '`'
+      else
+        QuoteChar := Coalesce(jtoSingleQuote in (AObject as TDON_String_Value).StringType.Options, '''', '"');
 
     {if (sroModern in Serializer.Options) and (jtoMultiLine in (AObject as TDON_String_Value).StringOptions) then
     begin
@@ -1586,7 +1590,6 @@ end;
 
 procedure TStreamSerializer.Add(const S: string);
 begin
-  inherited;
   if FIsUTF8 then
   begin
     FStream.WriteUTF8String(UTF8Encode(s));
@@ -1601,6 +1604,7 @@ constructor TStreamSerializer.Create(vStream: TStream; vIsUTF8: Boolean);
 begin
   inherited Create;
   FStream := vStream;
+  FIsUTF8 := vIsUTF8;
 end;
 
 destructor TStreamSerializer.Destroy;

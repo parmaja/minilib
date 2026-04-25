@@ -297,7 +297,6 @@ begin
       Error('Expected in Array')
     else
       Error('Expected in Pairs');
-    Error(Result);
   end;
 end;
 
@@ -480,6 +479,10 @@ begin
     exit;
   end;
 
+  if From >= Size then
+    exit;
+
+  Ch := #0;
   Index := From;
   Collector.Started := 0;
   try
@@ -808,7 +811,7 @@ begin
           Next;
         end;
       end;
-    until (Ch=#0) or (Index >= Size);
+    until Index >= Size;
 
     {if Collector.Token > tkNone then //* TODO for chunks
     begin
