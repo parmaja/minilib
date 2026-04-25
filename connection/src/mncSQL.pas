@@ -749,7 +749,7 @@ function TmncSQLCommand.GetProcessedSQL: string;
 var
   i: Integer;
 begin
-  if cmdReplaceParams in Options then
+  if cmoReplaceParams in Options then
   begin
     Result := '';
     for i := 0 to ProcessedSQL.Count -1 do
@@ -926,9 +926,9 @@ begin
                   else if psoGenerateParams in SQLOptions then//if passed ? (ParamChar) without name of params
                   begin
                     sParamName := '_Param_' + IntToStr(iParam);
-                    Inc(iParam);
                     iCurState := DefaultState;
                     Add(iParam, sParamName);
+                    Inc(iParam);
                     sParamName := '';
                   end
                   else
@@ -956,16 +956,15 @@ begin
                   begin
                     Inc(i);
                     iCurState := DefaultState;
-                    if cmdReplaceParams in CMD.Options then
+                    if cmoReplaceParams in CMD.Options then
                     begin
                       //AddToSQL(IntToStr(iParam));
                     end
                     else if psoAddParamsID in SQLOptions then
-                    begin
                       AddToSQL(IntToStr(iParam));
-                      Inc(iParam);
-                    end;
                     Add(iParam, sParamName, Text.Length);
+                    if psoAddParamsID in SQLOptions then
+                      Inc(iParam);
                     sParamName := '';
                   end;
                 end;
@@ -1081,10 +1080,10 @@ begin
   if Count<>0 then
   begin
     st := DB.ReceiveNotifications;
+    if st <> nil then
     try
       if st.Count<>0 then
       begin
-        //for var s: stringex in st do
         while st.Count<>0 do
         begin
           i := st.Count-1;
@@ -1094,16 +1093,19 @@ begin
 
           for var itm in Self do
             if SameText(aName, itm.Channel) then
+            begin
               itm.FEvent(aValue, IntPtr(st.Objects[i]), aHandeled);
-              { TODO : improve: aHandeled := aHandeled or }
+              aHandeled := True;
+            end;
 
           if aHandeled then
           begin
             j := st.Count-1;
             while j>=0 do
             begin
-              if (SubStr(st[i], '=') = aName) then
-                Delete(i);
+              if SameText(st.Names[j], aName) then
+                st.Delete(j);
+              Dec(j);
             end;
           end
           else

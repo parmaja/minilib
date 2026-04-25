@@ -507,7 +507,7 @@ type
 
   //TODO not yet
   TmncCommandOption = (
-    cmdReplaceParams, //replace param in sql text instead pass it to SQL engine
+    cmoReplaceParams, //replace param in sql text instead pass it to SQL engine
     cmoTruncate, //Truncate the string to fit into field size, not recomended if you are strict, you will lose data
     cmoCorrectDate //Correct DateTime fields to be compatiple with SQL and Pascal
   );
@@ -1313,7 +1313,7 @@ end;
 
 procedure TmncTransaction.InternalStop(How: TmncTransactionAction; Retaining: Boolean);
 begin
-  if Connection.IsStrict and (not Active) then //Even if not strict we check if active, because you cant stop Transaction if you not started it!
+  if Connection.IsStrict and (not Active) then //TODO discussion if we need even if not strict we check if active, because you cant stop Transaction if you not started it!
     raise EmncException.Create('Oops you have not started it yet!');
 
   //Links.Close; belal: conceder this case cmd1  begin trans cmd2 end trans => force cmd1 close
@@ -1533,8 +1533,26 @@ begin
 end;
 
 procedure TmncColumns.Assign(Source: TmncColumns);
+var
+  i: Integer;
+  Col: TmncColumn;
 begin
-
+  Clear;
+  for i := 0 to Source.Count - 1 do
+  begin
+    Col := Source[i];
+    with Add(Col.Index, Col.Name, Col.DataType, TmncColumnClass(Col.ClassType)) do
+    begin
+      FullName := Col.FullName;
+      MetaType := Col.MetaType;
+      Size := Col.Size;
+      Scale := Col.Scale;
+      Decimals := Col.Decimals;
+      Options := Col.Options;
+      SubType := Col.SubType;
+      MaxSize := Col.MaxSize;
+    end;
+  end;
 end;
 
 procedure TmncColumns.Clone(FromColumns: TmncColumns; AsDataType: TmnDataType);
@@ -1674,7 +1692,7 @@ end;
 function TmncColumn.GetValue: Variant;
 begin
   Result := null;
-  raise EmncException.Create('Field have no value, You must not use it, try use Fields!') {$ifdef fpc}at get_caller_addr(get_frame){$endif};
+  raise EmncException.Create('Field have no value, You must not use it, try use Fields!') {$ifdef fpc}at get_caller_addr(get_frame){$else}at ReturnAddress{$endif};
 end;
 
 procedure TmncColumn.SetValue(const AValue: Variant);
@@ -1823,7 +1841,7 @@ begin
     if Action in [lnExtracted, lnDeleted] then //Need it in FPC https://forum.lazarus.freepascal.org/index.php/topic,60984.0.html
       FDic.Remove(T(Ptr).GetName.ToLower);//bug in fpc
     {$else}
-    if Action in [cnExtracting, cnRemoved, cnDeleting] then
+    if Action in [cnExtracted, cnRemoved, cnDeleting] then
       FDic.Remove(Value.GetName.ToLower);
     {$endif}
     inherited;
