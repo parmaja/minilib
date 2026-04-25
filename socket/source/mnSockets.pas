@@ -342,7 +342,7 @@ begin
   end;
   FPrepared := True;
 end;
-end;
+
 
 function TmnCustomSocket.GetConnected: Boolean;
 begin
