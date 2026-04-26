@@ -102,9 +102,6 @@ uses
 
 {.$define rtti_objects}
 
-const
-  cIndentSpaces = 2;
-
 type
 {$ifdef FPC}
   THandle = Cardinal;
@@ -115,7 +112,6 @@ type
   TmnwSchema = class;
   TmnwRenderer = class;
   TmnwElement = class;
-  TmnwWriter = class;
   TmnwElementRenderer = class;
   TmnwElementRenderers = class;
   TmnwRendererClass = class of TmnwRenderer;
@@ -295,7 +291,7 @@ type
     Renderer: TmnwRenderer;
     ParentRenderer: TmnwElementRenderer;
 
-    Writer: TmnwWriter;
+    Writer: TmnWriter;
     //
     Data: TmnMultipartData;
     // For
@@ -572,35 +568,6 @@ type
     property Handle: THandle read FHandle;
 
     property TimeStamp: Int64 read FTimeStamp;
-  end;
-
-  { TmnwWriter }
-
-  TmnwWriterOptions = set of (woEndLine, woOpenIndent, woCloseIndent);
-
-  TmnwWriter = class(TmnNamedObject)
-  private
-    Level: Integer;
-    NewLine: Boolean;
-    FStream: TmnBufferStream;
-  public
-    Compact: Boolean;
-    constructor Create(AName: string; AStream: TmnBufferStream);
-    procedure Write(S: string; Options: TmnwWriterOptions = []); virtual;
-    procedure WriteLn(const S: string = ''; Options: TmnwWriterOptions = []);
-    procedure WriteLines(const S: string = ''; Options: TmnwWriterOptions = []);
-    function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload; inline;
-    property Stream: TmnBufferStream read FStream write FStream;
-  end;
-
-  { TmnwOutput }
-
-  TmnwOutput = class(TmnNamedObjectList<TmnwWriter>)
-  private
-  public
-    procedure Write(const Target, S: string; Options: TmnwWriterOptions = []); overload;
-    procedure WriteLn(const Target, S: string; Options: TmnwWriterOptions = []); overload;
-    property Item; default;
   end;
 
   TmnwMessage = class(TObject)
@@ -1007,26 +974,6 @@ type
 {-------------------------------------------------------}
 {-----------------    STANDARD    ----------------------}
 {-------------------------------------------------------}
-
-  { TmnwHTMLWriterHelper }
-
-  TmnwHTMLWriterHelper = class helper for TmnwWriter
-  public
-    procedure OpenTag(const Tag: string); overload;
-    procedure OpenTag(const TagName, TagAttributes: string; TagText: string = ''); overload;
-    procedure OpenInlineTag(const TagName:string; TagAttributes: string = ''; TagText: string = ''); overload; // keep inline
-    procedure CloseTag(const Tag: string; TrailText: string = '');
-    procedure AddShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
-    procedure AddComment(const Comment: string);
-    procedure AddInlineShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
-    procedure AddTag(const TagName, TagAttributes: string); overload;
-    procedure AddTag(const TagName, TagAttributes, Value: string); overload;
-    procedure AddInlineTag(const TagName, TagAttributes, Value: string); overload;
-    procedure ReadFromFile(FileName: string);
-
-    procedure AddHTMLScript(const src: string; Integrity: string = ''); 
-    procedure AddHTMLCss(const src: string; Integrity: string = ''); 
-  end;
 
   { THTML }
 
@@ -1736,8 +1683,6 @@ type
     property Web: TmnwWeb read FWeb;
   end;
 
-function LevelStr(vLevel: Integer): String;
-
 //* You need to compile it by brcc32 mnWebElements.rc or wait another 100 years till Delphi/FPC auto compile it
 {$R 'mnWebElements.res' 'mnWebElements.rc'}
 
@@ -2021,22 +1966,6 @@ begin
       list.Free;
     end;
   end;
-end;
-
-{ TmnwOutput }
-
-procedure TmnwOutput.Write(const Target, S: string; Options: TmnwWriterOptions);
-var
-  Writer: TmnwWriter;
-begin
-  Writer := Find(Target);
-  if Writer <> nil then
-    Writer.Write(S, Options);
-end;
-
-procedure TmnwOutput.WriteLn(const Target, S: string; Options: TmnwWriterOptions);
-begin
-  Write(Target, S, Options + [woEndLine]);
 end;
 
 { TmnwMessages }
@@ -3067,91 +2996,6 @@ begin
     if Started then
       Result.Start;
   end;
-end;
-
-{ TmnwHTMLWriterHelper }
-
-procedure TmnwHTMLWriterHelper.OpenTag(const Tag: string);
-begin
-  WriteLn('<'+Tag+'>', [woOpenIndent])
-end;
-
-procedure TmnwHTMLWriterHelper.OpenTag(const TagName, TagAttributes: string; TagText: string);
-begin
-  WriteLn('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
-end;
-
-procedure TmnwHTMLWriterHelper.ReadFromFile(FileName: string);
-var
-  stream: TmnBufferStream;
-  s: UTF8String;
-begin
-  stream := TmnWrapperStream.Create(TFileStream.Create(FileName, fmShareDenyWrite or fmOpenRead), True);
-  try
-    while not (cloRead in stream.State) do
-    begin
-        if stream.ReadLine(s) then
-        begin
-          WriteLn(s);
-        end;
-    end;
-  finally
-    stream.Free;
-  end;
-end;
-
-procedure TmnwHTMLWriterHelper.OpenInlineTag(const TagName: string; TagAttributes: string; TagText: string);
-begin
-  Write('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
-end;
-
-procedure TmnwHTMLWriterHelper.CloseTag(const Tag: string; TrailText: string);
-begin
-  WriteLn(TrailText + '</'+Tag+'>', [woCloseIndent])
-end;
-
-procedure TmnwHTMLWriterHelper.AddShortTag(const TagName: string; TagAttributes: string);
-begin
-  WriteLn('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
-end;
-
-procedure TmnwHTMLWriterHelper.AddComment(const Comment: string);
-begin
-  WriteLn('<!--' + Comment + '-->', [woOpenIndent, woCloseIndent]);
-end;
-
-procedure TmnwHTMLWriterHelper.AddHTMLCss(const src: string; Integrity: string = '');
-begin
-  if Integrity <> '' then
-    Integrity := ' integrity="' + Integrity + '"';
-  AddShortTag('link', 'rel="stylesheet" href="'+src+'"' + Integrity + ' crossorigin="anonymous"');
-end;
-
-procedure TmnwHTMLWriterHelper.AddHTMLScript(const src: string; Integrity: string = '');
-begin
-  if Integrity <> '' then
-    Integrity := ' integrity="' + Integrity + '"';
-  AddTag('script', 'src="' + src + '" crossorigin="anonymous"' + Integrity + ' defer'); 
-end;
-
-procedure TmnwHTMLWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
-begin
-  Write('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
-end;
-
-procedure TmnwHTMLWriterHelper.AddTag(const TagName, TagAttributes: string);
-begin
-  WriteLn('<'+TagName + ' ' + TagAttributes + '></' + TagName + '>', [woOpenIndent, woCloseIndent]);
-end;
-
-procedure TmnwHTMLWriterHelper.AddTag(const TagName, TagAttributes, Value: string);
-begin
-  WriteLn('<'+TagName + ' ' + TagAttributes + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
-end;
-
-procedure TmnwHTMLWriterHelper.AddInlineTag(const TagName, TagAttributes, Value: string);
-begin
-  Write('<'+TagName + ' ' + TagAttributes + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
 end;
 
 { TLocation }
@@ -4192,11 +4036,6 @@ begin
     end;
 end;
 
-function LevelStr(vLevel: Integer): String;
-begin
-  Result := StringOfChar(' ', vLevel * cIndentSpaces);
-end;
-
 procedure TmnwElement.Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   if (Schema <> nil) and (Schema <> Self) then
@@ -4263,56 +4102,6 @@ procedure TmnwElement.RespondInit(const AContext: TmnwContext; AResponse: TmnwRe
 begin
 //  AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
   DoRespondHeader(AContext, AResponse);
-end;
-
-constructor TmnwWriter.Create(AName: string; AStream: TmnBufferStream);
-begin
-  inherited Create;
-  Name := AName;
-  FStream := AStream;
-end;
-
-procedure TmnwWriter.Write(S: string; Options: TmnwWriterOptions);
-begin
-  if (woCloseIndent in Options) and not (woOpenIndent in Options) then
-    Dec(Level);
-
-  if not Compact then
-  begin
-    if (NewLine) then
-      S := LevelStr(Level) + S;
-  end;
-
-  NewLine := False;
-
-  if (woEndLine in Options) then
-  begin
-    NewLine := True;
-    if not Compact then
-    begin
-      s := S + sWinEndOfLine;
-    end;
-  end;
-
-  FStream.WriteUtf8String(S);
-
-  if (woOpenIndent in Options) and not (woCloseIndent in Options) then
-    Inc(Level);
-end;
-
-procedure TmnwWriter.WriteLn(const S: string; Options: TmnwWriterOptions);
-begin
-  Write(S, Options + [woEndLine]);
-end;
-
-procedure TmnwWriter.WriteLines(const S: string; Options: TmnwWriterOptions);
-begin
-  Write(S, Options + [woEndLine]); //TODO
-end;
-
-function TmnwWriter.WriteStream(AStream: TStream; Count: TFileSize): TFileSize;
-begin
-  Result := Stream.WriteStream(AStream, Count);
 end;
 
 { TmnwRenderer }
@@ -5014,7 +4803,7 @@ begin
     aContext.Renderer := (Module as TmnwWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
     aContext.Renderer.Libraries.QuickSort;
-    aContext.Writer := TmnwWriter.Create('html', Response.Stream);
+    aContext.Writer := TmnWriter.Create('html', Response.Stream);
     aContext.Writer.Compact := Module.Web.CompactMode;
 
     aContext.Data := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )
