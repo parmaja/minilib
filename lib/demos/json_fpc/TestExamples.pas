@@ -106,7 +106,7 @@ begin
         if print_it then
         begin
           //DON := JsonParseFile(S, options);
-          DON := JsonParseFile(aFile, options);
+          DON := LoadJsonFile(aFile, options);
           try
             Writeln('-----------------');
             JsonConsoleSerialize(DON, [sroModern]);
