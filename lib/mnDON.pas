@@ -413,8 +413,10 @@ type
   public
     Compact: Boolean;
     constructor Create(AName: string; AStream: TmnBufferStream);
+    procedure WriteBOM;
     procedure Write(S: string; Options: TmnTidyWriterOptions = []); virtual;
     procedure WriteLn(const S: string = ''; Options: TmnTidyWriterOptions = []);
+    procedure WriteLine(const S: string = ''; Options: TmnTidyWriterOptions = [woEndLine]);
     procedure WriteLines(const S: string = ''; Options: TmnTidyWriterOptions = []);
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload; inline;
     property Stream: TmnBufferStream read FStream write FStream;
@@ -1657,6 +1659,12 @@ begin
   inherited;
 end;
 
+(*
+Source - https://stackoverflow.com/a/2971923
+Posted by da-soft, modified by community. See post 'Timeline' for change history
+Retrieved 2026-04-26, License - CC BY-SA 2.5
+*)
+
 { TmnTidyWriter }
 
 function LevelStr(vLevel: Integer): String; inline;
@@ -1698,9 +1706,21 @@ begin
     Inc(Level);
 end;
 
+procedure TmnTidyWriter.WriteBOM;
+const
+  sLEBom: WORD = $FEFF;
+begin
+  Stream.WriteBuffer(sLEBom, SizeOf(sLEBom))
+end;
+
 procedure TmnTidyWriter.WriteLn(const S: string; Options: TmnTidyWriterOptions);
 begin
   Write(S, Options + [woEndLine]);
+end;
+
+procedure TmnTidyWriter.WriteLine(const S: string; Options: TmnTidyWriterOptions);
+begin
+  WriteLn(S, Options);
 end;
 
 procedure TmnTidyWriter.WriteLines(const S: string; Options: TmnTidyWriterOptions);

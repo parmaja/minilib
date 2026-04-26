@@ -53,6 +53,7 @@ type
     Index: Integer; //index of item
     Pos: PChar; //pos in string;
   end;
+  
   TmneReplaceArr = array of TmneReplaceRec;
   TEntityRenderWay = (erwEncode, erwDecode);
 
@@ -199,17 +200,6 @@ end;
 
 procedure TmnXMLFiler.DeclareEntities;
 begin
-  Entities.Add('&amp;', '&'); //must be first //belal add & and ; to name
-  Entities.Add('&lt;', '<');
-  Entities.Add('&gt;', '>');
-  Entities.Add('&quot;', '"');
-//  Entities.Add('&apos;', ''''); //ido
-
-{  Entities.Add('amp', '&'); //must be first
-  Entities.Add('lt', '<');
-  Entities.Add('gt', '>');
-  Entities.Add('apos', '''');
-  Entities.Add('quot', '"');}
 end;
 
 destructor TmnXMLFiler.Destroy;
@@ -301,7 +291,18 @@ end;
 
 constructor TmnXMLEntities.Create(ItemClass: TCollectionItemClass);
 begin
-  inherited Create(ItemClass);
+  inherited;
+  Add('&amp;', '&'); //must be first //belal add & and ; to name
+  Add('&lt;', '<');
+  Add('&gt;', '>');
+  Add('&quot;', '"');
+//  Add('&apos;', ''''); //ido
+
+{  Add('amp', '&'); //must be first
+  Add('lt', '<');
+  Add('gt', '>');
+  Add('apos', '''');
+  Add('quot', '"');}
 end;
 
 function TmnXMLEntities.Decode(const Name: string): string;

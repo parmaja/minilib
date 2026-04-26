@@ -222,6 +222,7 @@ function DescapeString(const S: string; const Esc: string; Chars: array of Char;
 function EscapeStringC(const S: string; QuoteChar: Char = '"'): string;
 function DescapeStringC(const S: string): string;
 function ToUnixPathDelimiter(const S: string): string;
+function HTMLEncode(const Str: string): string;
 
 function ExpandFile(const Name: string): string;
 
@@ -1646,6 +1647,34 @@ begin
       Result := Result + LineBreak;
     Result := Result + Strings[i];
   end;
+end;
+
+//Thanks to https://stackoverflow.com/a/2971923
+
+function HTMLEncode(const Str: string): string;
+var
+  iPos, i: Integer;
+
+  procedure Encode(const AStr: String);
+  begin
+    Move(AStr[1], result[iPos], Length(AStr) * SizeOf(Char));
+    Inc(iPos, Length(AStr));
+  end;
+
+begin
+  SetLength(Result, Length(Str) * 6);
+  iPos := 1;
+  for i := 1 to length(Str) do
+    case Str[i] of
+      '<': Encode('&lt;');
+      '>': Encode('&gt;');
+      '&': Encode('&amp;');
+      '"': Encode('&quot;');
+    else
+      Result[iPos] := Str[i];
+      Inc(iPos);
+    end;
+  SetLength(Result, iPos - 1);
 end;
 
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
