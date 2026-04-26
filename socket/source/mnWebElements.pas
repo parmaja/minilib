@@ -291,7 +291,7 @@ type
     Renderer: TmnwRenderer;
     ParentRenderer: TmnwElementRenderer;
 
-    Writer: TmnWriter;
+    Writer: TmnTidyWriter;
     //
     Data: TmnMultipartData;
     // For
@@ -4803,7 +4803,7 @@ begin
     aContext.Renderer := (Module as TmnwWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
     aContext.Renderer.Libraries.QuickSort;
-    aContext.Writer := TmnWriter.Create('html', Response.Stream);
+    aContext.Writer := TmnTidyWriter.Create('html', Response.Stream);
     aContext.Writer.Compact := Module.Web.CompactMode;
 
     aContext.Data := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )

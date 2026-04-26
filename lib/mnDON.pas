@@ -401,11 +401,11 @@ const
 
 type  
 
-  { TmnWriter }
+  { TmnTidyWriter }
 
-  TmnWriterOptions = set of (woEndLine, woOpenIndent, woCloseIndent);
+  TmnTidyWriterOptions = set of (woEndLine, woOpenIndent, woCloseIndent);
 
-  TmnWriter = class(TmnObject)
+  TmnTidyWriter = class(TmnObject)
   private
     Level: Integer;
     NewLine: Boolean;
@@ -413,16 +413,16 @@ type
   public
     Compact: Boolean;
     constructor Create(AName: string; AStream: TmnBufferStream);
-    procedure Write(S: string; Options: TmnWriterOptions = []); virtual;
-    procedure WriteLn(const S: string = ''; Options: TmnWriterOptions = []);
-    procedure WriteLines(const S: string = ''; Options: TmnWriterOptions = []);
+    procedure Write(S: string; Options: TmnTidyWriterOptions = []); virtual;
+    procedure WriteLn(const S: string = ''; Options: TmnTidyWriterOptions = []);
+    procedure WriteLines(const S: string = ''; Options: TmnTidyWriterOptions = []);
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload; inline;
     property Stream: TmnBufferStream read FStream write FStream;
   end;
 
-  { TmnwXMLWriterHelper }
+  { TmnwXML_TidyWriterHelper }
 
-  TmnwXMLWriterHelper = class helper for TmnWriter
+  TmnwXML_TidyWriterHelper = class helper for TmnTidyWriter
   public
     procedure OpenTag(const Tag: string); overload;
     procedure OpenTag(const TagName, TagAttributes: string; TagText: string = ''); overload;
@@ -1657,20 +1657,20 @@ begin
   inherited;
 end;
 
-{ TmnWriter }
+{ TmnTidyWriter }
 
 function LevelStr(vLevel: Integer): String; inline;
 begin
   Result := StringOfChar(' ', vLevel * cIndentSpaces);
 end;
 
-constructor TmnWriter.Create(AName: string; AStream: TmnBufferStream);
+constructor TmnTidyWriter.Create(AName: string; AStream: TmnBufferStream);
 begin
   inherited Create;
   FStream := AStream;
 end;
 
-procedure TmnWriter.Write(S: string; Options: TmnWriterOptions);
+procedure TmnTidyWriter.Write(S: string; Options: TmnTidyWriterOptions);
 begin
   if (woCloseIndent in Options) and not (woOpenIndent in Options) then
     Dec(Level);
@@ -1698,34 +1698,34 @@ begin
     Inc(Level);
 end;
 
-procedure TmnWriter.WriteLn(const S: string; Options: TmnWriterOptions);
+procedure TmnTidyWriter.WriteLn(const S: string; Options: TmnTidyWriterOptions);
 begin
   Write(S, Options + [woEndLine]);
 end;
 
-procedure TmnWriter.WriteLines(const S: string; Options: TmnWriterOptions);
+procedure TmnTidyWriter.WriteLines(const S: string; Options: TmnTidyWriterOptions);
 begin
   Write(S, Options + [woEndLine]); //TODO
 end;
 
-function TmnWriter.WriteStream(AStream: TStream; Count: TFileSize): TFileSize;
+function TmnTidyWriter.WriteStream(AStream: TStream; Count: TFileSize): TFileSize;
 begin
   Result := Stream.WriteStream(AStream, Count);
 end;
 
-{ TmnwXMLWriterHelper }
+{ TmnwXML_TidyWriterHelper }
 
-procedure TmnwXMLWriterHelper.OpenTag(const Tag: string);
+procedure TmnwXML_TidyWriterHelper.OpenTag(const Tag: string);
 begin
   WriteLn('<'+Tag+'>', [woOpenIndent])
 end;
 
-procedure TmnwXMLWriterHelper.OpenTag(const TagName, TagAttributes: string; TagText: string);
+procedure TmnwXML_TidyWriterHelper.OpenTag(const TagName, TagAttributes: string; TagText: string);
 begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
 end;
 
-procedure TmnwXMLWriterHelper.ReadFromFile(FileName: string);
+procedure TmnwXML_TidyWriterHelper.ReadFromFile(FileName: string);
 var
   stream: TmnBufferStream;
   s: UTF8String;
@@ -1744,56 +1744,56 @@ begin
   end;
 end;
 
-procedure TmnwXMLWriterHelper.OpenInlineTag(const TagName: string; TagAttributes: string; TagText: string);
+procedure TmnwXML_TidyWriterHelper.OpenInlineTag(const TagName: string; TagAttributes: string; TagText: string);
 begin
   Write('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
 end;
 
-procedure TmnwXMLWriterHelper.CloseTag(const Tag: string; TrailText: string);
+procedure TmnwXML_TidyWriterHelper.CloseTag(const Tag: string; TrailText: string);
 begin
   WriteLn(TrailText + '</'+Tag+'>', [woCloseIndent])
 end;
 
-procedure TmnwXMLWriterHelper.AddShortTag(const TagName: string; TagAttributes: string);
+procedure TmnwXML_TidyWriterHelper.AddShortTag(const TagName: string; TagAttributes: string);
 begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwXMLWriterHelper.AddComment(const Comment: string);
+procedure TmnwXML_TidyWriterHelper.AddComment(const Comment: string);
 begin
   WriteLn('<!--' + Comment + '-->', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwXMLWriterHelper.AddHTMLCss(const src: string; Integrity: string = '');
+procedure TmnwXML_TidyWriterHelper.AddHTMLCss(const src: string; Integrity: string = '');
 begin
   if Integrity <> '' then
     Integrity := ' integrity="' + Integrity + '"';
   AddShortTag('link', 'rel="stylesheet" href="'+src+'"' + Integrity + ' crossorigin="anonymous"');
 end;
 
-procedure TmnwXMLWriterHelper.AddHTMLScript(const src: string; Integrity: string = '');
+procedure TmnwXML_TidyWriterHelper.AddHTMLScript(const src: string; Integrity: string = '');
 begin
   if Integrity <> '' then
     Integrity := ' integrity="' + Integrity + '"';
   AddTag('script', 'src="' + src + '" crossorigin="anonymous"' + Integrity + ' defer'); 
 end;
 
-procedure TmnwXMLWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
+procedure TmnwXML_TidyWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
 begin
   Write('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwXMLWriterHelper.AddTag(const TagName, TagAttributes: string);
+procedure TmnwXML_TidyWriterHelper.AddTag(const TagName, TagAttributes: string);
 begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '></' + TagName + '>', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwXMLWriterHelper.AddTag(const TagName, TagAttributes, Value: string);
+procedure TmnwXML_TidyWriterHelper.AddTag(const TagName, TagAttributes, Value: string);
 begin
   WriteLn('<'+TagName + ' ' + TagAttributes + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwXMLWriterHelper.AddInlineTag(const TagName, TagAttributes, Value: string);
+procedure TmnwXML_TidyWriterHelper.AddInlineTag(const TagName, TagAttributes, Value: string);
 begin
   Write('<'+TagName + ' ' + TagAttributes + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
 end;
