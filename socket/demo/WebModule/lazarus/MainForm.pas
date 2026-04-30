@@ -206,7 +206,7 @@ begin
     aHomeModule.HomeFolder := aHomeFolder;
     aHomeModule.WorkFolder := aAppFolder;
 
-    aHomeModule.Web.IsSSL := HttpServer.UseSSL;
+    aHomeModule.Web.IsSecure := HttpServer.UseSSL;
     aHomeModule.Web.AppFolder := Application.Location;
     //aHomeModule.Web.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs-v2.png');
     aHomeModule.Web.Assets.LogoFile := aHomeModule.HomeFolder + 'cs.svg';

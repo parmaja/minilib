@@ -11,7 +11,7 @@ interface
 uses
   Classes, SysUtils, StrUtils, DateUtils,
   mnUtils, mnStreams, mnModules, mnWebModules, mnMultipartData,
-	mnLogs, mnWebElements, mnBootstraps, mnwCalendars, mnwBootstrapTables;
+	mnLogs, mnWebElements, mnBootstraps;
 
 type
 
@@ -756,6 +756,8 @@ end;
 
 // http://localhost:8080/home/info/panel1/test1/test2
 procedure TInfoSchema.DoCompose(const AContext: TmnwContext);
+var
+  aPanel: TPanel;
 begin
   inherited;
   with Document.Body.Main do
@@ -782,7 +784,7 @@ begin
       TCode.Create(This, 'Context.GetHomeURL: ' + AContext.GetHomeURL);
     end;
     
-    var aPanel := TPanel.Create(this);
+    aPanel := TPanel.Create(this);
     with aPanel do    
     begin
       Route := 'panel2'; 

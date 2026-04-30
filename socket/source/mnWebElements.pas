@@ -4320,9 +4320,9 @@ begin
       filename := filename + source.Name + source.Query;
       
       if SameText(ext, '.css')  then    
-        Context.Writer.AddHTMLCss(filename, When(not local, source.Integrity))
-      else if SameText(ext, '.js')  then    
-        Context.Writer.AddHTMLScript(filename, When(not local, source.Integrity));
+        Context.Writer.AddHTMLCss(filename, True, When(not local, source.Integrity))
+      else //if SameText(ext, '.js')  then
+        Context.Writer.AddHTMLScript(filename, False, When(not local, source.Integrity));
     end
     else
       Context.Writer.AddComment(source.Name);      

@@ -438,8 +438,8 @@ type
     procedure AddInlineTag(const TagName, TagAttributes, Value: string); overload;
     procedure ReadFromFile(FileName: string);
 
-    procedure AddHTMLScript(const src: string; Integrity: string = ''); 
-    procedure AddHTMLCss(const src: string; Integrity: string = ''); 
+    procedure AddHTMLScript(const src: string; Cross: Boolean; Integrity: string = '');
+    procedure AddHTMLCss(const src: string; Cross: Boolean; Integrity: string = '');
   end; 
   
 //* Serializer
@@ -1784,18 +1784,30 @@ begin
   WriteLn('<!--' + Comment + '-->', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwXML_TidyWriterHelper.AddHTMLCss(const src: string; Integrity: string = '');
+procedure TmnwXML_TidyWriterHelper.AddHTMLCss(const src: string;
+  Cross: Boolean; Integrity: string);
+var
+  s: string;
 begin
+  s := '';
   if Integrity <> '' then
-    Integrity := ' integrity="' + Integrity + '"';
-  AddShortTag('link', 'rel="stylesheet" href="'+src+'"' + Integrity + ' crossorigin="anonymous"');
+    s := s + ' integrity="' + Integrity + '"';
+  if Cross then
+    s :=s + ' crossorigin="anonymous"';
+  AddShortTag('link', 'rel="stylesheet" href="' + src + '"' + s);
 end;
 
-procedure TmnwXML_TidyWriterHelper.AddHTMLScript(const src: string; Integrity: string = '');
+procedure TmnwXML_TidyWriterHelper.AddHTMLScript(const src: string;
+  Cross: Boolean; Integrity: string);
+var
+  s: string;
 begin
+  s := '';
   if Integrity <> '' then
-    Integrity := ' integrity="' + Integrity + '"';
-  AddTag('script', 'src="' + src + '" crossorigin="anonymous"' + Integrity + ' defer'); 
+    s := s + ' integrity="' + Integrity + '"';
+  if Cross then
+    s :=s + ' crossorigin="anonymous"';
+  AddTag('script', 'src="' + src + '" ' + s + ' defer');
 end;
 
 procedure TmnwXML_TidyWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
