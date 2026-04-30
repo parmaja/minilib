@@ -174,7 +174,7 @@ type
     FBind: string;
     FListener: TmnListener;
     FLogging: Boolean;
-    FUseSSL: Boolean;
+    FIsSecure: Boolean;
     FIdleTick: UInt64;
     FIdleInterval: Int64;
     procedure SetActive(const Value: Boolean);
@@ -227,7 +227,8 @@ type
     property Port: string read FPort write SetPort;
     property Bind: string read FBind write SetBind;
     property Address: string read FBind write SetBind;//Deprecated
-    property UseSSL: Boolean read FUseSSL write FUseSSL;
+    property UseSSL: Boolean read FIsSecure write FIsSecure; //use IsSecure
+    property IsSecure: Boolean read FIsSecure write FIsSecure;
 
     property Active: boolean read FActive write SetActive default False;
     property Started: boolean read FActive write SetActive default False;

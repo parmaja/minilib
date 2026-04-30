@@ -26,7 +26,7 @@ interface
 uses
   SysUtils, Classes, syncobjs, StrUtils, //NetEncoding, Hash,
   DateUtils,
-  mnTypes, mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
+  mnTypes, mnUtils, mnDON, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams, mnMultipartData, mnModules, mnWebModules, mnWebElements;
 
 type
@@ -459,6 +459,13 @@ end;
   public
   end;
 
+  TmnwBSBoundingHelper = record helper for TmnwBounding
+  public
+    function IsUniform: Boolean; inline;
+    function IsUniformSides: Boolean; inline;
+    function ToBSString(prefix: string): string; {$ifndef DEBUG}inline;{$endif}
+  end;
+
 function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
@@ -470,17 +477,11 @@ function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Bo
 implementation
 
 function BSCustomAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean): string; inline;
+const
+  AlignSuffixes: array[TmnwAlign] of string = ('', 'start', 'center', 'streach', 'baseline', 'end');
 begin
-  if Align = alignStart then
-    Result := s + '-start'
-  else if Align = alignCenter then
-    Result := s + '-center'
-  else if Align = alignStreach then
-    Result := s + '-streach'
-  else if Align = alignBaseline then
-    Result := s + '-baseline'
-  else if Align = alignEnd then
-    Result := s + '-end'
+  if (Align >= alignStart) and (Align <= alignEnd) then
+    Result := s + AlignSuffixes[Align]
   else
     Result := '';
   if (Result <> '') and WithSpace then
@@ -503,59 +504,111 @@ begin
 end;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
+const
+  FixedStrs: array[TmnwFixed] of string = ('', 'fixed-top', 'fixed-bottom', 'fixed-start', 'fixed-end',
+    'sticky-top', 'sticky-bottom', 'sticky-start', 'sticky-end');
 begin
-  case Fixed of
-    fixedTop:
-      Result := 'fixed-top';
-    fixedBottom:
-      Result := 'fixed-bottom';
-    fixedStart:
-      Result := 'fixed-start'; // not exists
-    fixedEnd:
-      Result := 'fixed-end'; // not exists
-    stickyTop:
-      Result := 'sticky-top';
-    stickyBottom:
-      Result := 'sticky-bottom';
-    stickyStart:
-      Result := 'sticky-start'; // not exists
-    stickyEnd:
-      Result := 'sticky-end'; // not exists
-    else
-      Result := '';
-  end;
+  Result := FixedStrs[Fixed];
   if (Result <> '') and WithSpace then
     Result := ' ' + Result;
 end;
 
 function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+const
+  SizeStrs: array[TSize] of string = ('', 'xs', 'sm', 'md', 'lg', 'xl', 'parent', 'content');
 begin
-  case Size of
-    szUndefined: Result := '';
-	  szVerySmall: Result := 'xs';
-		szSmall: Result := 'sm';
-		szNormal: Result := 'md';
-		szLarge: Result := 'lg';
-		szVeryLarge: Result := 'xl';
-    else
-      Result := '';
-  end;
+  Result := SizeStrs[Size];
+  if WithSpace and (Result <> '') then
+    Result := ' ' + Result
+  else if not WithSpace then
+    Result := Result;
 end;
 
 function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean): string;
+const
+  StyleNames: array[TItemStyle] of string = ('', 'primary', 'secondary', 'success', 'danger',
+    'warning', 'info', 'light', 'dark', 'link', 'bg-transparent');
 begin
-  case Style of
-    styleUndefined: Result := '';
-    stylePrimary: Result := Prefix + 'primary';
-    styleSecondary: Result := Prefix + 'secondary';
-    styleSuccess: Result := Prefix + 'success';
-    styleDanger: Result := Prefix + 'danger';
-    styleWarning: Result := Prefix + 'warning';
-    styleInfo: Result := Prefix + 'info';
-    styleLight: Result := Prefix + 'light';
-    styleDark: Result := Prefix + 'dark';
-    styleLink: Result := Prefix + 'link';
-    styleNone: Result := 'bg-transparent';
+  if Style = styleNone then
+    Result := StyleNames[Style]
+  else if Style > styleUndefined then
+    Result := Prefix + StyleNames[Style]
+  else
+    Result := '';
+  if WithSpace and (Result <> '') then
+    Result := ' ' + Result;
+end;
+
+function TmnwBSBoundingHelper.IsUniform: Boolean; inline;
+begin
+  Result := (Top = Left) and (Top = Bottom) and (Top = Right);
+end;
+
+function TmnwBSBoundingHelper.IsUniformSides: Boolean; inline;
+begin
+  Result := (Top = Bottom) and (Left = Right);
+end;
+
+function TmnwBSBoundingHelper.ToBSString(prefix: string): string;
+var
+  sb: TStringBuilder;
+begin
+  Result := '';
+
+  if IsUniform then
+  begin
+    if Top >= 0 then
+      Result := prefix + '-' + Top.ToString;
+    Exit;
+  end;
+
+  sb := TStringBuilder.Create;
+  try
+    // Handle Y-axis (Top/Bottom)
+    if Top >= 0 then
+    begin
+      if Top = Bottom then
+        sb.Append(prefix).Append('y-').Append(Top.ToString)
+      else
+      begin
+        sb.Append(prefix).Append('t-').Append(Top.ToString);
+        if Bottom >= 0 then
+        begin
+          sb.Append(' ');
+          sb.Append(prefix).Append('b-').Append(Bottom.ToString);
+        end;
+      end;
+    end
+    else if Bottom >= 0 then
+      sb.Append(prefix).Append('b-').Append(Bottom.ToString);
+
+    // Handle X-axis (Left/Right)
+    if Left >= 0 then
+    begin
+      if sb.Length > 0 then
+        sb.Append(' ');
+      if Left = Right then
+        sb.Append(prefix).Append('x-').Append(Left.ToString)
+      else
+      begin
+        sb.Append(prefix).Append('s-').Append(Left.ToString);
+        if Right >= 0 then
+        begin
+          sb.Append(' ');
+          sb.Append(prefix).Append('e-').Append(Right.ToString);
+        end;
+      end;
+    end
+    else if Right >= 0 then
+    begin
+      if sb.Length > 0 then
+        sb.Append(' ');
+      sb.Append(prefix).Append('e-').Append(Right.ToString);
+    end;
+
+    Result := sb.ToString;
+  finally
+    sb.Free;
   end;
 end;
 
@@ -881,20 +934,17 @@ begin
   if e.Caption <> '' then
   begin
     Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header d-flex"');
-    if e.Caption <> '' then
-      Context.Writer.WriteLn(e.Caption);
+    Context.Writer.WriteLn(e.Caption);
     if e.Collapse then
     begin
       Context.Writer.Write('<span class="ms-auto my-auto icon-animate icon mw-chevron-up"');
-      if e.Collapse then
-          Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-labelledby="' + e.id + '-header" aria-expanded="true" aria-controls="'+e.id+'-body"');
+      Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-labelledby="' + e.id + '-header" aria-expanded="true" aria-controls="'+e.id+'-body"');
       Context.Writer.WriteLn('></span>');
     end;
     Context.Writer.CloseTag('h5');
   end;
 
   Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show" aria-labelledby="'+e.id+'-header"');
-//  collapse
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -1410,11 +1460,34 @@ end;
 procedure TBSRenderer.TAccordionSection.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TAccordionSection;
+  sb: TStringBuilder;
 begin
   e := Scope.Element as THTML.TAccordionSection;
   Context.Writer.OpenTag('div', 'class="accordion-item bg-transparent"');
-  Context.Writer.OpenTag('h2', 'id="'+e.id+'-header" class="accordion-header"');
-  Context.Writer.OpenTag('button ', 'class="accordion-button p-2'+ When(not e.Expanded, ' collapsed')+'" type="button" data-bs-toggle="collapse" data-bs-target="#' + e.ID + '" aria-expanded="'+When(e.Expanded, 'true', 'false')+'" aria-controls="' + e.ID + '"');
+
+  // Build header button attributes with TStringBuilder for efficiency
+  sb := TStringBuilder.Create;
+  try
+    sb.Append('class="accordion-button p-2');
+    if not e.Expanded then
+      sb.Append(' collapsed');
+    sb.Append('" type="button" data-bs-toggle="collapse" data-bs-target="#');
+    sb.Append(e.ID);
+    sb.Append('" aria-expanded="');
+    if e.Expanded then
+      sb.Append('true')
+    else
+      sb.Append('false');
+    sb.Append('" aria-controls="');
+    sb.Append(e.ID);
+    sb.Append('"');
+
+    Context.Writer.OpenTag('h2', 'id="'+e.id+'-header" class="accordion-header"');
+    Context.Writer.OpenTag('button', sb.ToString);
+  finally
+    sb.Free;
+  end;
+
   if e.Image.IconClass <> '' then
     Context.Writer.AddTag('span', 'class='+ DQ(e.Image.IconClass))
   else if e.Image.Path <> '' then
@@ -1424,20 +1497,18 @@ begin
   Context.Writer.CloseTag('button');
   Context.Writer.CloseTag('h2');
 
-  Scope.Classes.Add('accordion-collapse');
-  Scope.Classes.Add('collapse');
+  Scope.Classes.Add('accordion-collapse collapse');
   if e.Expanded then
     Scope.Classes.Add('show');
-  if (e.Parent is THTML.TAccordion) and //* Should be
-    not (e.Parent as THTML.TAccordion).AlwaysOpen then
-      Scope.Attributes.Add('data-bs-parent', '#'+e.Parent.ID);
+  if (e.Parent is THTML.TAccordion) and
+     not (e.Parent as THTML.TAccordion).AlwaysOpen then
+    Scope.Attributes.Add('data-bs-parent', '#'+e.Parent.ID);
   if e.SaveState then
     Scope.Attributes.Add('data-mnw-section', e.ID);
   Context.Writer.OpenTag('div', Scope.ToString + ' aria-labelledby="' + e.ID + '-header"');
   Context.Writer.OpenTag('ul', 'class="accordion-body list-group list-group-flush p-1"');
   inherited;
   Context.Writer.CloseTag('ul');
-
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
 end;
@@ -1705,6 +1776,7 @@ end;
 procedure TBSRenderer.THTMLLayout.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THTMLLayout;
+  MarginPrefix, PaddingPrefix: string;
 begin
   e := Scope.Element as THTML.THTMLLayout;
   inherited;
@@ -1714,15 +1786,21 @@ begin
   Scope.Classes.Add(BSContentJustifyToStr(e.JustifyItems, False));
   if e.Solitary then
     Scope.Classes.Add('mx-auto');
-  if e.Medium then
-    Scope.Classes.Add(e.Margin.ToBSString('m-md'))
-  else
-    Scope.Classes.Add(e.Margin.ToBSString('m'));
 
+  // Optimize margin/padding prefix calculation
   if e.Medium then
-    Scope.Classes.Add(e.Padding.ToBSString('p-md'))
+  begin
+    MarginPrefix := 'm-md';
+    PaddingPrefix := 'p-md';
+  end
   else
-    Scope.Classes.Add(e.Padding.ToBSString('p'));
+  begin
+    MarginPrefix := 'm';
+    PaddingPrefix := 'p';
+  end;
+
+  Scope.Classes.Add(e.Margin.ToBSString(MarginPrefix));
+  Scope.Classes.Add(e.Padding.ToBSString(PaddingPrefix));
 end;
 
 { TBSRenderer.TImageFile }

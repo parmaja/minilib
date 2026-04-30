@@ -243,7 +243,6 @@ type
     class operator Implicit(Source : Double) : TmnwBounding;
     class operator Implicit(Source : TmnwBounding): Double;
     function ToString: string; inline;
-    function ToBSString(prefix: string): string; {$ifndef DEBUG}inline;{$endif}
     class operator Initialize({$ifdef FPC}var{$else}out{$endif}Dest: TmnwBounding);
     procedure SetTopBottom(Value: Double);
     procedure SetLeftRight(Value: Double);
@@ -1829,36 +1828,32 @@ begin
   Result := AddEndURLDelimiter(Path);
 end;
 
-procedure NewID(Element: TmnwElement);
+function ExtractClassName(const ClassName: string; ToLower: Boolean = False): string;
 var
-  s: string;
   p: Integer;
 begin
+  p := ReversePos('.', ClassName);
+  if p > 0 then
+    Result := Copy(ClassName, p + 2, MaxInt) //* skip T
+  else
+    Result := Copy(ClassName, 2, MaxInt); //* skip T
+  if ToLower then
+    Result := LowerCase(Result);
+end;
+
+procedure NewID(Element: TmnwElement);
+begin
   if Element.ID = '' then
-  begin
-    s := Element.ClassName;
-    p := ReversePos('.', s);
-    if p > 0 then
-      s := Copy(s, p + 2, MaxInt) //* skip T
-    else
-      s := Copy(s, 2, MaxInt); //* skip T
-    Element.ID := LowerCase(s + '-' + Element.GenHandle.ToString);
-  end;
+    Element.ID := LowerCase(ExtractClassName(Element.ClassName) + '-' + Element.GenHandle.ToString);
 end;
 
 procedure NewName(Element: TmnwElement; AddNumber: Boolean = True);
 var
   s: string;
-  p: Integer;
 begin
   if Element.Name = '' then
   begin
-    s := Element.ClassName;
-    p := ReversePos('.', s);
-    if p > 0 then
-      s := LowerCase(Copy(s, p + 2, MaxInt)) //* skip T
-    else
-      s := LowerCase(Copy(s, 2, MaxInt)); //* skip T
+    s := ExtractClassName(Element.ClassName, True);
     if AddNumber then
       Element.Name := s + '-' + Element.GenHandle.ToString
     else
@@ -1867,20 +1862,9 @@ begin
 end;
 
 procedure NewRoute(Element: TmnwElement); inline;
-var
-  s: string;
-  p: Integer;
 begin
   if Element.Route = '' then
-  begin
-    s := Element.ClassName;
-    p := ReversePos('.', s);
-    if p > 0 then
-      s := Copy(s, p + 2, MaxInt) //* skip T
-    else
-      s := Copy(s, 2, MaxInt); //* skip T
-    Element.Route := LowerCase(s + '-' + Element.GenHandle.ToString);
-  end;
+    Element.Route := LowerCase(ExtractClassName(Element.ClassName) + '-' + Element.GenHandle.ToString);
 end;
 
 var
@@ -2209,17 +2193,23 @@ function TmnwAttributes.ToString: string;
 var
   a: TmnwAttribute;
   idItem: Integer;
+  sb: TStringBuilder;
 begin
   idItem := IndexOfName('id');
   if (idItem > 0) then
     Move(idItem, 0);
 
-  Result := '';
-  for a in Self do
-  begin
-    if Result <> '' then
-      Result := Result + ' ';
-    Result := Result + a.Name + '='+ QuoteStr(a.Value, '"');
+  sb := TStringBuilder.Create;
+  try
+    for a in Self do
+    begin
+      if sb.Length > 0 then
+        sb.Append(' ');
+      sb.Append(a.Name).Append('=').Append(QuoteStr(a.Value, '"'));
+    end;
+    Result := sb.ToString;
+  finally
+    sb.Free;
   end;
 end;
 
@@ -2282,22 +2272,36 @@ procedure TmnwElementRenderer.RenderChilds(Scope: TmnwScope; Context: TmnwContex
 var
   o: TmnwElement;
   ParentRenderer: TmnwElementRenderer;
+  StartElements, NormalElements, EndElements: TList<TmnwElement>;
 begin
   ParentRenderer := Context.ParentRenderer;
   Context.ParentRenderer := Self;
+  
+  // Single pass to categorize elements
+  StartElements := TList<TmnwElement>.Create;
+  NormalElements := TList<TmnwElement>.Create;
+  EndElements := TList<TmnwElement>.Create;
   try
     for o in Scope.Element do
-      if (priorityStart = o.Priority) and not (elInternal in o.Kind) then
-          o.Render(Context, AResponse);
+      if not (elInternal in o.Kind) then
+        case o.Priority of
+          priorityStart: StartElements.Add(o);
+          priorityEnd: EndElements.Add(o);
+        else
+          NormalElements.Add(o);
+        end;
 
-    for o in Scope.Element do
-      if (priorityNormal = o.Priority) and not (elInternal in o.Kind) then
-          o.Render(Context, AResponse);
-
-    for o in Scope.Element do
-      if (priorityEnd = o.Priority) and not (elInternal in o.Kind) then
-          o.Render(Context, AResponse);
+    // Render in priority order
+    for o in StartElements do
+      o.Render(Context, AResponse);
+    for o in NormalElements do
+      o.Render(Context, AResponse);
+    for o in EndElements do
+      o.Render(Context, AResponse);
   finally
+    EndElements.Free;
+    NormalElements.Free;
+    StartElements.Free;
     Context.ParentRenderer := ParentRenderer;
   end;
 end;
@@ -3111,42 +3115,6 @@ begin
     Result := Top.ToString + ' ' + Left.ToString
   else
     Result := Top.ToString + ' ' + Bottom.ToString + ' ' + Right.ToString + ' ' + Left.ToString
-end;
-
-function TmnwBounding.ToBSString(prefix: string): string;
-begin
-  Result := '';
-  if (Top = Left) and (Top = Bottom) and ((Top = Right)) then
-  begin
-    if Top >= 0 then
-      Result := prefix + '-' + Top.ToString;
-  end
-  else
-  begin
-      if (Top = Bottom) and (Top >= 0) then
-        Result := CollectStrings([Result, prefix+'y-' + Top.ToString], ' ')
-      else
-      begin
-        Result := CollectStrings([
-  			    Result,
-  					When(Top>=0, prefix+'t-' + Top.ToString),
-  					When(Bottom>=0, prefix+'b-' + Bottom.ToString)
-          ], ' '
-  			);
-      end;
-
-      if (Left = Right) and (Left >= 0) then
-        Result := CollectStrings([Result, prefix+'x-' + Left.ToString], ' ')
-      else
-      begin
-        Result := CollectStrings([
-  			    Result,
-  					When(Left>=0, prefix+'s-' + Left.ToString),
-  					When(Right>=0, prefix+'e-' + Right.ToString)
-          ], ' '
-  			)
-      end;
-  end;
 end;
 
 class operator TmnwBounding.Initialize({$ifdef FPC}var{$else}out{$endif}Dest: TmnwBounding);
