@@ -1375,10 +1375,7 @@ begin
 end;
 
 procedure TBSRenderer.TAccordion.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TAccordion;
 begin
-  e := Scope.Element as THTML.TAccordion;
   Scope.Classes.Add('accordion');
   Scope.Classes.Add('col');
   Scope.Classes.Add('accordion-flush');
@@ -1392,9 +1389,13 @@ end;
 procedure TBSRenderer.TAccordionSection.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 var 
   classes: TElementClasses;
+  e: THTML.TAccordionSection;
 begin
+  e := Scope.Element as THTML.TAccordionSection;
   classes.init('list-group-item');
   classes.Add('bg-transparent');
+  if e.SaveState then
+    Scope.Attributes.Add('data-mnw-save-state', '1');
   classes.AddClasses(Scope.WrapClasses);
   Context.Writer.OpenTag('li',classes.ToString);
   inherited;
@@ -1430,6 +1431,8 @@ begin
   if (e.Parent is THTML.TAccordion) and //* Should be
     not (e.Parent as THTML.TAccordion).AlwaysOpen then
       Scope.Attributes.Add('data-bs-parent', '#'+e.Parent.ID);
+  if e.SaveState then
+    Scope.Attributes.Add('data-mnw-section', e.ID);
   Context.Writer.OpenTag('div', Scope.ToString + ' aria-labelledby="' + e.ID + '-header"');
   Context.Writer.OpenTag('ul', 'class="accordion-body list-group list-group-flush p-1"');
   inherited;

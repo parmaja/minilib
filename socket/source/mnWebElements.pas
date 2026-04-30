@@ -1283,6 +1283,7 @@ type
         Image: TImageLocation;
         Caption: string;
         Expanded: Boolean;
+        SaveState: Boolean;
       end;
 
       TAccordionItem = class(TClickable)

@@ -269,6 +269,45 @@ mnw.init_theme = function()
   }
 }
 
+mnw.init_accordions = function()
+{
+  document.querySelectorAll('[data-mnw-save-state]').forEach(function(accordion) {
+    const accordionId = accordion.id;
+    if (!accordionId) return;
+
+    accordion.querySelectorAll('[data-mnw-section]').forEach(function(section) {
+      const sectionId = section.getAttribute('data-mnw-section');
+      const key = 'mnw-accordion-' + accordionId + '-' + sectionId;
+      if (localStorage.getItem(key) === '1') {
+        section.classList.add('show');
+        const header = document.querySelector('[data-bs-target="#' + sectionId + '"]');
+        if (header) {
+          header.classList.remove('collapsed');
+          header.setAttribute('aria-expanded', 'true');
+        }
+      }
+    });
+
+    accordion.addEventListener('shown.bs.collapse', function(ev) {
+      const section = ev.target;
+      const sectionId = section.getAttribute('data-mnw-section');
+      if (sectionId) {
+        const key = 'mnw-accordion-' + accordionId + '-' + sectionId;
+        localStorage.setItem(key, '1');
+      }
+    });
+
+    accordion.addEventListener('hidden.bs.collapse', function(ev) {
+      const section = ev.target;
+      const sectionId = section.getAttribute('data-mnw-section');
+      if (sectionId) {
+        const key = 'mnw-accordion-' + accordionId + '-' + sectionId;
+        localStorage.removeItem(key);
+      }
+    });
+  });
+}
+
 mnw.switch_zoom = function(sender, event)
 {
   let bs_zoom = '';
@@ -334,6 +373,7 @@ function finish()
 
 document.addEventListener('DOMContentLoaded', function() {
   mnw.init_theme();
+  mnw.init_accordions();
 });
 
 window.addEventListener('load', init);
