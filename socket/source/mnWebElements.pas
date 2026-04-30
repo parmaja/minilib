@@ -2489,20 +2489,13 @@ end;
 
 function TmnwElementRenderers.Find(AElementClass: TmnwElementClass): TmnwElementRendererRegister;
 var
-  o: TmnwElementRendererRegister;
   i: Integer;
 begin
+  for i := 0 to Count - 1 do
+    if AElementClass = Items[i].ElementClass then
+      Exit(Items[i]);
   Result := nil;
-  for i:= 0 to Count - 1 do
-  begin
-    o := Items[i];
-    if AElementClass = o.ElementClass then
-    begin
-      Result := o;
-      break;
-    end
-  end;
-{  if (Result <> nil) and (AElementClass <> Result.ElementClass) then  
+{  if (Result <> nil) and (AElementClass <> Result.ElementClass) then
     Log.WriteLn(lglError, '> ' + AElementClass.ClassName + ' with ' + Result.ElementClass.ClassName);}
 end;
 
@@ -2510,23 +2503,22 @@ function TmnwElementRenderers.FindByParents(AElementClass: TmnwElementClass): Tm
 var
   aClass: TmnwElementClass;
 begin
-  Result := Find(AElementClass);
-  if Result = nil then  
+  aClass := AElementClass;
+  while aClass <> nil do
   begin
-    aClass := AElementClass;
-    while aClass <> nil do  
-    begin
-      Result := Find(aClass);
-      if Result <> nil then
-        break
-      else if aClass.ClassParent.InheritsFrom(TmnwElement) then           
-        aClass := TmnwElementClass(aClass.ClassParent)
-      else
-        aClass := nil;
-    end;
+    Result := Find(aClass);
     if Result <> nil then
-      Result := RegisterRenderer(AElementClass, Result.RendererClass);
+    begin
+      if aClass <> AElementClass then
+        Result := RegisterRenderer(AElementClass, Result.RendererClass);
+      Exit;
+    end;
+    if aClass.ClassParent.InheritsFrom(TmnwElement) then
+      aClass := TmnwElementClass(aClass.ClassParent)
+    else
+      aClass := nil;
   end;
+  Result := nil;
 end;
 
 {function TmnwElementRenderers.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
@@ -2855,16 +2847,8 @@ begin
     end
     else
     begin
-      if not (AResponse.IsHeaderSent) then
-      begin
-        if DefaultSchema <> nil then
-        begin            
-          //AResponse.RespondRedirectTo(AContext.GetPath + DefaultSchema.Name);
-          AResponse.RespondNotFound;
-        end
-        else
-          AResponse.RespondNotFound;
-      end;
+      if not AResponse.IsHeaderSent then
+        AResponse.RespondNotFound;
     end;
 
     if AContext.Schema <> nil then
@@ -3250,62 +3234,78 @@ end;
 function TmnwElement.ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean;
 var
   aDocument, aRequestDocument, aFile: string;
+  IsDocument, IsDirectory, Expanded: Boolean;
 begin
-  Result := True; // Result False if we want caller to render page
-  if HomeFolder <> '' then
+  Result := True;
+  if HomeFolder = '' then
   begin
-    WebExpandFile(HomeFolder, AContext.Route, aRequestDocument, False);
+    Result := False;
+    Exit;
+  end;
 
-    if not WebExpandFile(HomeFolder, AContext.Route, aDocument, serveSmart in Options) then
+  WebExpandFile(HomeFolder, AContext.Route, aRequestDocument, False);
+  Expanded := WebExpandFile(HomeFolder, AContext.Route, aDocument, serveSmart in Options);
+
+  if not Expanded then
+  begin
+    if (AContext.Route = '') or IsStrInArray(AContext.Route, ['\', '/']) then
     begin
-      if (AContext.Route = '') or IsStrInArray(AContext.Route, ['\', '/']) then // Need the Schema
+      if (serveIndexRoot in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then
       begin
-        if (serveIndexRoot in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then      
-        begin
-          if StartsStr(HomeFolder, aDocument) then //check if out of root :)
-            ServeFolder(aDocument, Options, AContext, AResponse)
-          else
-            AResponse.RespondUnauthorized;                        
-        end
+        if StartsStr(HomeFolder, aDocument) then
+          ServeFolder(aDocument, Options, AContext, AResponse)
         else
-          Result := False;
+          AResponse.RespondUnauthorized;
       end
       else
         Result := False;
     end
-    else if ((AContext.Route = '') and not FileExists(aDocument)) or (not EndsDelimiter(aRequestDocument) and DirectoryExists(aRequestDocument)) then
-      AResponse.RespondRedirectTo(AResponse.Request.Address)
     else
-    begin
-      if (serveDefault in Options) and EndsDelimiter(aDocument) {and IsStrInArray(AContext.Route, ['', '/', '\']) }{and DirectoryExists(aDocument)} then
-      begin
-        aFile := FindDefaultDocument(aDocument, DefaultDocuments);
-        if FileExists(aFile) then
-          aDocument := aFile;
-      end;
+      Result := False;
+    Exit;
+  end;
 
-      if (serveIndex in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then
+  IsDocument := FileExists(aDocument);
+  IsDirectory := DirectoryExists(aDocument);
+
+  if ((AContext.Route = '') and not IsDocument) or
+     (not EndsDelimiter(aRequestDocument) and IsDirectory) then
+  begin
+    AResponse.RespondRedirectTo(AResponse.Request.Address);
+    Exit;
+  end;
+
+  if EndsDelimiter(aDocument) then
+  begin
+    if serveDefault in Options then
+    begin
+      aFile := FindDefaultDocument(aDocument, DefaultDocuments);
+      IsDocument := FileExists(aFile);
+      if IsDocument then
       begin
-        if StartsStr(HomeFolder, aDocument) then //check if out of root :)
-          ServeFolder(aDocument, Options, AContext, AResponse)
-        else
-          AResponse.RespondUnauthorized;            
-      end
-      else
-      begin
-        if StartsText('.', ExtractFileName(aDocument)) then //no files starts with dots, TODO no folders in path
-          AResponse.RespondForbidden //or maybe Result := False
-        else if FileExists(aDocument) then
-        begin
-          if StartsStr(HomeFolder, aDocument) then //check if out of root :)
-            AResponse.SendFile(aDocument)
-          else
-            AResponse.RespondUnauthorized;            
-        end
-        else 
-          Result := False;
+        aDocument := aFile;
+        IsDirectory := False;
       end;
     end;
+
+    if IsDirectory and (serveIndex in Options) then
+    begin
+      if StartsStr(HomeFolder, aDocument) then
+        ServeFolder(aDocument, Options, AContext, AResponse)
+      else
+        AResponse.RespondUnauthorized;
+      Exit;
+    end;
+  end;
+
+  if StartsText('.', ExtractFileName(aDocument)) then
+    AResponse.RespondForbidden
+  else if IsDocument then
+  begin
+    if StartsText(HomeFolder, aDocument) then
+      AResponse.SendFile(aDocument)
+    else
+      AResponse.RespondUnauthorized;
   end
   else
     Result := False;
@@ -3319,15 +3319,30 @@ end;
 procedure TmnwElement.ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
 var
   Files: TStringList;
-  procedure AddLink(s: string);
+
+  procedure AddLink(const s: string);
   begin
-    AContext.Writer.OpenInlineTag('ui');
-    AContext.Writer.AddInlineTag('a', 'href="' + s + '\"', s);
-    AContext.Writer.AddInlineShortTag('br');
-    AContext.Writer.CloseTag('ui');
+    AContext.Writer.OpenInlineTag('li');
+    AContext.Writer.AddInlineTag('a', 'href="' + s + '"', s);
+    AContext.Writer.CloseTag('li');
   end;
-var
-  s: string;
+
+  procedure WriteSection(const ACaption: string; AFilter: TEnumFilesOptions; const AExtra: string = '');
+  var
+    s: string;
+  begin
+    Files.Clear;
+    EnumFiles(Files, APath, '*.*', AFilter);
+    AContext.Writer.AddTag('h2', '', ACaption);
+    AContext.Writer.OpenTag('ul');
+    if AExtra <> '' then
+      AddLink(AExtra);
+    for s in Files do
+      if not StartsText('.', s) then
+        AddLink(s);
+    AContext.Writer.CloseTag('ul');
+  end;
+
 begin
   AResponse.ContentType := DocumentToContentType('html');
   Files := TStringList.Create;
@@ -3342,29 +3357,9 @@ begin
     AContext.Writer.AddTag('style', '', 'body { font-family: monospace; }');
     AContext.Writer.CloseTag('head');
     AContext.Writer.OpenTag('body');
-    EnumFiles(Files, APath, '*.*', [efDirectory]);
     AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.Route);
-    AContext.Writer.AddTag('h2', '', 'Folders');
-    AContext.Writer.OpenTag('ul', '', '');
-
-    AddLink('..');
-
-    for s in Files do
-    begin
-      if not StartsText('.', s) then
-        AddLink(s);
-    end;
-    AContext.Writer.CloseTag('ul');
-    AContext.Writer.AddTag('h2', '', 'Files');
-    Files.Clear;
-    EnumFiles(Files, APath, '*.*', [efFile]);
-    AContext.Writer.OpenTag('ul', '', '');
-    for s in Files do
-    begin
-      if not StartsText('.', s) then
-        AddLink(s);
-    end;
-    AContext.Writer.CloseTag('ul');
+    WriteSection('Folders', [efDirectory], '..');
+    WriteSection('Files', [efFile]);
     AContext.Writer.CloseTag('body');
     AContext.Writer.CloseTag('html');
   finally
@@ -3739,38 +3734,28 @@ function TmnwElement.Find(const Name: string): TmnwElement;
 var
   i: Integer;
 begin
-  Result := nil;
   for i := 0 to Count - 1 do
-  begin
     if SameText(Items[i].Name, Name) then
-    begin
-      Result := Items[i];
-      break;
-    end;
-  end;
+      Exit(Items[i]);
+  Result := nil;
 end;
 
 function TmnwElement.FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean): TmnwElement;
 var
   o: TmnwElement;
 begin
-  Result := nil;
   for o in Self do
-  begin
-    if (o.InheritsFrom(ObjectClass) and (SameText(o.Name, AName))) then
-    begin
-      Result := o;
-      exit;
-    end;
-  end;
+    if o.InheritsFrom(ObjectClass) and SameText(o.Name, AName) then
+      Exit(o);
   for o in Self do
   begin
     Result := o.FindObject(ObjectClass, AName);
     if Result <> nil then
-      exit;
+      Exit;
   end;
-  if RaiseException and (Result = nil) then
-    raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
+  Result := nil;
+  if RaiseException then
+    raise Exception.Create(ObjectClass.ClassName + ': ' + AName + ' not exists in ' + Name);
 end;
 
 function TmnwElement.FindParentID(const aID: string): TmnwElement;
@@ -3812,32 +3797,30 @@ function TmnwElement.FindByID(const aID: string): TmnwElement;
 var
   i: Integer;
 begin
-  Result := nil;
   for i := 0 to Count - 1 do
   begin
     if SameText(Items[i].ID, aID) then
-      Result := Items[i]
-    else
-      Result := Items[i].FindByID(aID);
+      Exit(Items[i]);
+    Result := Items[i].FindByID(aID);
     if Result <> nil then
-      break;
+      Exit;
   end;
+  Result := nil;
 end;
 
 function TmnwElement.FindByName(const aName: string): TmnwElement;
 var
   i: Integer;
 begin
-  Result := nil;
   for i := 0 to Count - 1 do
   begin
     if SameText(Items[i].Name, aName) then
-      Result := Items[i]
-    else
-      Result := Items[i].FindByName(aName);
+      Exit(Items[i]);
+    Result := Items[i].FindByName(aName);
     if Result <> nil then
-      break;
+      Exit;
   end;
+  Result := nil;
 end;
 
 function TmnwElement.FindByRoute(const ARoute: string; Level: Integer): TmnwElement;
@@ -3845,20 +3828,18 @@ var
   i: Integer;
 begin
   // Find route only on first level, but we ignore the level of route = ''
-  Result := nil;
   for i := 0 to Count - 1 do
-  begin    
-    if (Items[i].Route = '') then // Ignoreing level of empty route
-      Result := Items[i].FindByRoute(ARoute, Level + 1)
-    else
+  begin
+    if Items[i].Route = '' then // Ignoreing level of empty route
     begin
-      if SameText(Items[i].Route, ARoute) then
-        Result := Items[i];
-    end;
-      
-    if Result <> nil then
-      break;
+      Result := Items[i].FindByRoute(ARoute, Level + 1);
+      if Result <> nil then
+        Exit;
+    end
+    else if SameText(Items[i].Route, ARoute) then
+      Exit(Items[i]);
   end;
+  Result := nil;
 end;
 
 procedure TmnwElement.DoCompose(const AContext: TmnwContext);
@@ -3994,15 +3975,11 @@ var
   i: integer;
 begin
   Result := -1;
-  if vName <> '' then
-    for i := 0 to Count - 1 do
-    begin
-      if SameText(Items[i].Name, vName) then
-      begin
-        Result := i;
-        break;
-      end;
-    end;
+  if vName = '' then
+    Exit;
+  for i := 0 to Count - 1 do
+    if SameText(Items[i].Name, vName) then
+      Exit(i);
 end;
 
 procedure TmnwElement.Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
@@ -4322,7 +4299,7 @@ begin
       if SameText(ext, '.css')  then    
         Context.Writer.AddHTMLCss(filename, True, When(not local, source.Integrity))
       else //if SameText(ext, '.js')  then
-        Context.Writer.AddHTMLScript(filename, False, When(not local, source.Integrity));
+        Context.Writer.AddHTMLScript(filename, True, When(not local, source.Integrity));
     end
     else
       Context.Writer.AddComment(source.Name);      

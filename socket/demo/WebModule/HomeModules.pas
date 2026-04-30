@@ -855,6 +855,7 @@ begin
   inherited;
   with Web.Assets do
   begin
+    //Web.OnlineFiles:= olfSmart;
     LogoFile := HomeFolder + 'logo.png';
   end;
 end;
