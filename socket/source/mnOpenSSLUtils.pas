@@ -617,31 +617,54 @@ var
   v: PASN1_OCTET_STRING;
   t: UTF8String;
   i: Integer;
-  x: Integer;
 begin
   vArr := nil;
   Result := OPENSSL_sk_new_null;
-  if Names.Count<>0 then
+  if Names.Count = 0 then
+    Exit;
+
+  SetLength(vArr, Names.Count);
+  i := 0;
+
+  for var s in Names do
   begin
-    i := 0;
-    SetLength(vArr, Names.Count);
+    g := GENERAL_NAME_new;
+    if g = nil then
+      Continue;
 
-    for var s in Names do
+    v := ASN1_OCTET_STRING_new;
+    if v = nil then
     begin
-      g := GENERAL_NAME_new;
-      v := ASN1_OCTET_STRING_new;
-      t := UTF8Encode(s);
+      GENERAL_NAME_free(g);
+      Continue;
+    end;
 
-      x := ASN1_OCTET_STRING_set(v, PByte(t), Length(t));
-      GENERAL_NAME_set0_value(g, AltType, v);
-      OPENSSL_sk_push(Result, g);
+    t := UTF8Encode(s);
 
+    if ASN1_OCTET_STRING_set(v, PByte(t), Length(t)) <= 0 then
+    begin
+      ASN1_OCTET_STRING_free(v);
+      GENERAL_NAME_free(g);
+      Continue;
+    end;
+
+    GENERAL_NAME_set0_value(g, AltType, v);
+    if OPENSSL_sk_push(Result, g) > 0 then
+    begin
       vArr[i].Name := t;
       vArr[i].Gen := g;
       vArr[i].Asn := v;
       Inc(i);
-      Exit;
+    end
+    else
+    begin
+      GENERAL_NAME_free(g);
     end;
+  end;
+
+  // Trim vArr to actual size if some entries failed
+  if i <> Length(vArr) then
+    SetLength(vArr, i);
 
     {Tot := Names.Count;
     if Tot = 0 then Exit;

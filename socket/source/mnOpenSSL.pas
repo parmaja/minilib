@@ -831,6 +831,7 @@ end;
 function TSSL.Read(var Buf; Size: Integer; out ReadSize: Integer): TsslError;
 var
   err, errno: Integer;
+  errStr: PUTF8Char;
 begin
   if not Active then
     raise EmnOpenSSLException.Create('SSL object is not Active');
@@ -841,22 +842,18 @@ begin
     err := SSL_get_error(Handle, ReadSize);
     errno := WallSocket.GetSocketError(FSocket);
 
-    {
-      Here we have a problem some are not real error, Disconnected gracefully, or read time out
-    }
-    if err = SSL_ERROR_ZERO_RETURN then
-      Result := seClosed
-    else if err = SSL_ERROR_SYSCALL then
-    begin
-      Log.WriteLn(lglInfo, 'Read: ' + ERR_error_string(err, nil));
-      Log.WriteLn(lglInfo, 'Read: Socket Error: ' + IntToStr(errno));
-      Result := seInvalid;
-      //check time out
-    end
+    case err of
+      SSL_ERROR_ZERO_RETURN:
+        Result := seClosed;
+      SSL_ERROR_SYSCALL:
+        begin
+          errStr := ERR_error_string(err, nil);
+          Log.WriteLn(lglInfo, 'Read: ' + string(errStr) + ', Socket Error: ' + IntToStr(errno));
+          Result := seInvalid;
+        end;
     else
-    begin
-      Log.WriteLn('Read: ' + ERR_error_string(err, nil));
-      Log.WriteLn('Read: Socket Error: ' + IntToStr(errno));
+      errStr := ERR_error_string(err, nil);
+      Log.WriteLn('Read: ' + string(errStr) + ', Socket Error: ' + IntToStr(errno));
       Result := seInvalid;
     end;
 
@@ -994,7 +991,7 @@ begin
   //o := SSL_OP_ALL or SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_SINGLE_DH_USE or SSL_OP_SINGLE_ECDH_USE or SSL_OP_CIPHER_SERVER_PREFERENCE;
   o := SSL_OP_ALL or SSL_OP_SINGLE_DH_USE or SSL_OP_SINGLE_ECDH_USE;
 
-  o := o + SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION or SSL_MODE_RELEASE_BUFFERS;
+  o := o or SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
 
   if coNoCompressing in Options then
     o := o or SSL_OP_NO_COMPRESSION;
@@ -1002,13 +999,7 @@ begin
   if coServer in Options then
     o := o or SSL_OP_CIPHER_SERVER_PREFERENCE;
 
-  o := o or SSL_OP_NO_SSLv2;
-  o := o or SSL_OP_NO_SSLv3;
-
-  { Set SSL_MODE_RELEASE_BUFFERS. This potentially greatly reduces memory
-       usage for no cost at all. */
-  SSL_CTX_set_mode(self->ctx, SSL_MODE_RELEASE_BUFFERS);
-  }
+  o := o or SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3;
 
   SSL_CTX_set_options(Handle, o);
 
