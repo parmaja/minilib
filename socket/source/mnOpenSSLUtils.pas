@@ -683,7 +683,7 @@ begin
             f_OPENSSL_sk_push(result, Pointer(FAltGenStr[I]));
         end;
     end;}
-  end;
+//  end;
 end;
 
 { TSSLStackHelper }

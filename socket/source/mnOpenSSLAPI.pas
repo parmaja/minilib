@@ -570,11 +570,14 @@ var
 
   ASN1_STRING_set: function(str: PASN1_STRING; data: Pointer; len: Integer): Integer; cdecl;
   ASN1_STRING_new: function(): PASN1_STRING; cdecl;
+  ASN1_STRING_free: procedure(str: PASN1_STRING); cdecl;
   ASN1_OCTET_STRING_new: function():PASN1_OCTET_STRING; cdecl;
   ASN1_OCTET_STRING_set: function(str: PASN1_OCTET_STRING; data: PByte; len: Integer): Integer; cdecl;
+  ASN1_OCTET_STRING_free: procedure(str: PASN1_OCTET_STRING); cdecl;
 
   GENERAL_NAME_new: function(): PGENERAL_NAME; cdecl;
   GENERAL_NAME_set0_value: procedure(a: PGENERAL_NAME; typ: Integer; value: Pointer); cdecl;
+  GENERAL_NAME_free: procedure(a: PGENERAL_NAME); cdecl;
 
   X509_NAME_add_entry_by_NID: function(name: PX509_NAME; nid: Integer; typ: Integer; bytes: PByte; len: Integer; loc: Integer; &set: Integer): Integer; cdecl;
   X509_REQ_add_extensions: function(req: PX509_REQ; sk: Pstack_st_X509_EXTENSION): Integer; cdecl;
@@ -985,10 +988,14 @@ begin
 
   ASN1_STRING_new := GetAddress('ASN1_STRING_new');
   ASN1_STRING_set := GetAddress('ASN1_STRING_set');
-  GENERAL_NAME_new := GetAddress('GENERAL_NAME_new');
-  GENERAL_NAME_set0_value := GetAddress('GENERAL_NAME_set0_value');
+  ASN1_STRING_free := GetAddress('ASN1_STRING_free');
   ASN1_OCTET_STRING_new := GetAddress('ASN1_OCTET_STRING_new');
   ASN1_OCTET_STRING_set := GetAddress('ASN1_OCTET_STRING_set');
+  ASN1_OCTET_STRING_free := GetAddress('ASN1_OCTET_STRING_free');
+
+  GENERAL_NAME_new := GetAddress('GENERAL_NAME_new');
+  GENERAL_NAME_set0_value := GetAddress('GENERAL_NAME_set0_value');
+  GENERAL_NAME_free := GetAddress('GENERAL_NAME_free');
 
   BIO_s_mem := GetAddress('BIO_s_mem');
   HMAC := GetAddress('HMAC');
