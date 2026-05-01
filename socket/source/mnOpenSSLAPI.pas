@@ -567,6 +567,7 @@ var
   OPENSSL_sk_num: function(sk: POPENSSL_STACK): Integer; cdecl;
   OPENSSL_sk_value: function(sk: POPENSSL_STACK; idx: integer): Pointer; cdecl;
   OPENSSL_sk_free: procedure(sk: POPENSSL_STACK); cdecl;
+  OPENSSL_sk_pop_free: procedure(st: POPENSSL_STACK; free_func: Pointer); cdecl;
 
   ASN1_STRING_set: function(str: PASN1_STRING; data: Pointer; len: Integer): Integer; cdecl;
   ASN1_STRING_new: function(): PASN1_STRING; cdecl;
@@ -595,6 +596,7 @@ var
   EC_KEY_free: procedure(key: PEC_KEY); cdecl;
 
   EC_GROUP_new_by_curve_name: function(nid: Integer): PEC_GROUP; cdecl;
+  EC_GROUP_free: procedure(group: PEC_GROUP); cdecl;
   EC_KEY_set_group: function(key: PEC_KEY; group: PEC_GROUP): Integer; cdecl;
   EC_KEY_generate_key: function(key: PEC_KEY): Integer; cdecl;
 
@@ -982,6 +984,7 @@ begin
   OPENSSL_sk_num := GetAddress('OPENSSL_sk_num');
   OPENSSL_sk_value := GetAddress('OPENSSL_sk_value');
   OPENSSL_sk_free := GetAddress('OPENSSL_sk_free');
+  OPENSSL_sk_pop_free := GetAddress('OPENSSL_sk_pop_free');
 
   //sk_X509_num := GetAddress('sk_X509_num');
   //sk_X509_value := GetAddress('sk_X509_value');
@@ -1038,6 +1041,7 @@ begin
   EC_KEY_free := GetAddress('EC_KEY_free');
 
   EC_GROUP_new_by_curve_name := GetAddress('EC_GROUP_new_by_curve_name');
+  EC_GROUP_free := GetAddress('EC_GROUP_free');
   EC_KEY_set_group := GetAddress('EC_KEY_set_group');
   EC_KEY_generate_key := GetAddress('EC_KEY_generate_key');
 

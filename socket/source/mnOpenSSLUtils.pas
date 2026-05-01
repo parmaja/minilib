@@ -115,34 +115,30 @@ var
 begin
   x := nil;
   pk := nil;
-//  name := nil;
-//  bne := nil;
-//  sign := nil;
   Result := False;
   try
     InitOpenSSLLibrary;
-  	if (pkeyp = nil) then
+    if (pkeyp = nil) then
     begin
       pk := EVP_PKEY_new();
-  		if (pk = nil) then
+      if (pk = nil) then
       begin
-  			exit(False);
+        exit(False);
       end
     end
-  	else
+    else
       pk := pkeyp;
 
-  	if (x509p = nil) then
+    if (x509p = nil) then
     begin
       x := X509_new();
-  		if (x = nil) then
+      if (x = nil) then
         exit(False);
     end
-  	else
-  		x := x509p;
+    else
+      x := x509p;
 
     rsa := RSA_new();
-
     if (rsa = nil) then
       exit(False);
 
@@ -152,7 +148,8 @@ begin
 
     BN_set_word(bne, RSA_F4);
 
-    res := RSA_generate_key_ex(rsa, bits, bne, nil);
+    res := RSA_generate_key_ex(rsa, Bits, bne, nil);
+    BN_free(bne);
 
     if (res = 0) then
       exit(False);
@@ -174,13 +171,13 @@ begin
      * correct utf8string type and performing checks on its length.
      *)
     if CN <> '' then
-      X509_NAME_add_entry_by_txt(name, 'CN', MBSTRING_ASC, PByte(CN), -1, -1, 0);
+      X509_NAME_add_entry_by_txt(name, 'CN', MBSTRING_UTF8, PByte(CN), -1, -1, 0);
     if O <> '' then
-      X509_NAME_add_entry_by_txt(name, 'O', MBSTRING_ASC, PByte(O), -1, -1, 0);
+      X509_NAME_add_entry_by_txt(name, 'O', MBSTRING_UTF8, PByte(O), -1, -1, 0);
     if C <> '' then
-   	  X509_NAME_add_entry_by_txt(name, 'C', MBSTRING_ASC, PByte(C), -1, -1, 0);
+      X509_NAME_add_entry_by_txt(name, 'C', MBSTRING_UTF8, PByte(C), -1, -1, 0);
     if OU <> '' then
-      X509_NAME_add_entry_by_txt(name, 'OU', MBSTRING_ASC, PByte(OU), -1, -1, 0);
+      X509_NAME_add_entry_by_txt(name, 'OU', MBSTRING_UTF8, PByte(OU), -1, -1, 0);
 
     (* Its self signed so set the issuer name to be the same as the
      * subject.
@@ -213,26 +210,37 @@ end;
 
 function MakeCert2(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
-	x509: PX509;
-	pkey: PEVP_PKEY;
+  x509: PX509;
+  pkey: PEVP_PKEY;
   outbio: PBIO;
 begin
-	x509 :=nil;
-	pkey := nil;
+  x509 := nil;
+  pkey := nil;
+  Result := False;
   try
-    Result := MakeCert2(x509, pkey, CN, O, C, OU, Bits, Serial, Days);
+    if not MakeCert2(x509, pkey, CN, O, C, OU, Bits, Serial, Days) then
+      exit;
+
     outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');
-	  PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
-    BIO_free(outbio);
+    if outbio <> nil then
+    begin
+      PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
+      BIO_free(outbio);
+    end;
 
     outbio := BIO_new_file(PUTF8Char(CertificateFile), 'w');
-	  PEM_write_bio_X509(outbio, x509);
-    BIO_free(outbio);
+    if outbio <> nil then
+    begin
+      PEM_write_bio_X509(outbio, x509);
+      BIO_free(outbio);
+    end;
+
+    Result := True;
   finally
     if x509 <> nil then
-  	  X509_free(x509);
+      X509_free(x509);
     if pkey <> nil then
-  	  EVP_PKEY_free(pkey);
+      EVP_PKEY_free(pkey);
   end;
 end;
 
@@ -240,59 +248,42 @@ function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
 var
   ecp: PEC_KEY;
   ecg: PEC_GROUP;
-//  rsa: PRSA;
-//  bn: PBIGNUM;
-//  sign: PX509_sign;
   bits: Integer;
 begin
   bits := vConfig.ReadInteger('req', 'default_bits', 2048);
 
   Result := EVP_PKEY_new();
+  if Result = nil then
+    raise Exception.Create('Error EVP_PKEY_new');
+
   try
     ecp := EC_KEY_new();
+    if ecp = nil then
+      raise Exception.Create('Error EC_KEY_new');
+
     ecg := EC_GROUP_new_by_curve_name(NID_secp256k1);
+    if ecg = nil then
+      raise Exception.Create('Error EC_GROUP_new_by_curve_name');
+
     try
-      if EC_KEY_set_group(ecp,ecg) = 0 then 
+      if EC_KEY_set_group(ecp, ecg) = 0 then
         raise Exception.Create('Error EC_KEY_set_group');
-      if EC_KEY_generate_key(ecp) = 0 then 
+      if EC_KEY_generate_key(ecp) = 0 then
         raise Exception.Create('Error EC_KEY_generate_key');
-      if EVP_PKEY_assign_EC_KEY(Result, ecp) = 0 then 
+      if EVP_PKEY_assign_EC_KEY(Result, ecp) = 0 then
         raise Exception.Create('Error EVP_PKEY_assign_EC_KEY');
 
       X509_set_pubkey(X509, Result);
 
-      if X509_sign(X509, Result, EVP_sha256()) = 0 then 
+      if X509_sign(X509, Result, EVP_sha256()) = 0 then
         raise Exception.Create('Error X509_sign');
     finally
-      //RSA_free(rsa);
-      //BN_free(bn);
+      EC_GROUP_free(ecg);
     end;
   except
     EVP_PKEY_free(Result);
     Result := nil;
   end;
-
-  {Result := EVP_PKEY_new();
-  try
-    rsa := RSA_new();
-    bn := BN_new();
-    try
-      BN_set_word(bn, RSA_F4);
-
-      if RSA_generate_key_ex(rsa, bits, bn, nil)=0 then raise Exception.Create('Error RSA_generate_key_ex');
-      if EVP_PKEY_assign_RSA(Result, rsa)=0 then raise Exception.Create('Error EVP_PKEY_assign_RSA');
-
-      X509_set_pubkey(X509, Result);
-
-      if X509_sign(X509, Result, EVP_sha256())=nil then raise Exception.Create('Error X509_sign');
-    finally
-      //RSA_free(rsa);
-      //BN_free(bn);
-    end;
-  except
-    EVP_PKEY_free(Result);
-    Result := nil;
-  end;}
 end;
 
 function MakeX509(vConfig: TsslConfig): PX509;
@@ -326,17 +317,16 @@ begin
     end;
 
     n := vConfig.ReadString('req', 'req_extensions', '');
-    if n<>'' then
+    if n <> '' then
     begin
       Result.SetExt(NID_basic_constraints, vConfig.ReadString(n, SN_basic_constraints, ''));
       Result.SetExt(NID_key_usage, vConfig.ReadString(n, SN_key_usage, ''));
       Result.SetExt(NID_subject_key_identifier, 'hash');
-
-      Result.SetExt(NID_key_usage, vConfig.ReadString(n, SN_key_usage, ''));
     end;
 
   except
-    FreeAndNil(Result);
+    X509_free(Result);
+    Result := nil;
   end;
 end;
 
@@ -347,7 +337,6 @@ var
 
   s: TStrings;
   sk: POPENSSL_STACK;
-  res: Integer;
 begin
   //C:\temp\openssl-master\apps\req.c
 
@@ -389,7 +378,7 @@ begin
 
       X509_REQ_add_extensions(req, sk);
     finally
-      OPENSSL_sk_free(sk);
+      OPENSSL_sk_pop_free(sk, @X509_EXTENSION_free);
     end;
 
 
@@ -397,7 +386,7 @@ begin
     X509_REQ_sign(req, pk, EVP_sha256);
 
     vConfig.WriteString('Result', 'Csr', px.BIOstr(procedure(bio: PBIO)
-    begin
+    begin                                
       PEM_write_bio_X509_REQ(bio, req);
     end));
   finally
@@ -453,8 +442,6 @@ function MakeCertReq(const vName: string; vConfig: TsslConfig): Boolean; overloa
     end;
   end;
 
-var
-  cn, rn, pn, vn: string;
 begin
   Result := MakeCertReq(vConfig);
   if Result then
@@ -564,7 +551,7 @@ begin
     f := UTF8Encode(vField);
     d := UTF8Encode(vData);
 
-    X509_NAME_add_entry_by_txt(n, PUTF8Char(f), MBSTRING_ASC, PByte(d), -1, -1, 0);
+    X509_NAME_add_entry_by_txt(n, PUTF8Char(f), MBSTRING_UTF8, PByte(d), -1, -1, 0);
   end;
 end;
 
@@ -574,22 +561,22 @@ var
   ctx: TX509V3_CTX;
   d: UTF8String;
 begin
-  if vData<>'' then
+  Result := 0;
+  if vData <> '' then
   begin
     d := UTF8Encode(vData);
 
     X509V3_set_ctx_nodb(@ctx);
     X509V3_set_ctx(@ctx, Self, Self, nil, nil, 0);
 
-    ex := X509V3_EXT_conf_nid(nil, @ctx, nid, putf8char(d));
+    ex := X509V3_EXT_conf_nid(nil, @ctx, NID, PUTF8Char(d));
+    if ex <> nil then
     try
       Result := X509_add_ext(Self, ex, -1);
     finally
       X509_EXTENSION_free(ex);
     end;
-  end
-  else
-    Result := 0;
+  end;
 end;
 
 procedure TPX509Helper.SetSerial(vSerial: Integer);
@@ -607,7 +594,7 @@ begin
     n := X509_get_subject_name(Self);
     d := UTF8Encode(vData);
 
-    X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_ASC, PByte(d), -1, -1, 0);
+    X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_UTF8, PByte(d), -1, -1, 0);
   end;
 end;
 
@@ -620,7 +607,7 @@ var
 begin
   vArr := nil;
   Result := OPENSSL_sk_new_null;
-  if Names.Count = 0 then
+  if (Names = nil) or (Names.Count = 0) then
     Exit;
 
   SetLength(vArr, Names.Count);
@@ -665,40 +652,27 @@ begin
   // Trim vArr to actual size if some entries failed
   if i <> Length(vArr) then
     SetLength(vArr, i);
-
-    {Tot := Names.Count;
-    if Tot = 0 then Exit;
-    SetLength (FAltAnsiStr, Tot);
-    SetLength (FAltIa5Str, Tot);
-    SetLength (FAltGenStr, Tot);
-    for I := 0 to Tot - 1 do begin
-        FAltGenStr[I] := f_GENERAL_NAME_new;
-        if NOT Assigned(FAltGenStr[I]) then Exit;
-        FAltIa5Str[I] := f_ASN1_STRING_new;
-        if NOT Assigned(FAltIa5Str[I]) then Exit;
-        FAltAnsiStr[I] := AnsiString(trim(Names[I]));
-        if FAltAnsiStr[I] <> '' then begin
-            f_ASN1_STRING_set(FAltIa5Str[I], PAnsiChar(FAltAnsiStr[I]), Length(FAltAnsiStr[I]));
-            f_GENERAL_NAME_set0_value(FAltGenStr[I], AltType, FAltIa5Str[I]);
-            f_OPENSSL_sk_push(result, Pointer(FAltGenStr[I]));
-        end;
-    end;}
-//  end;
 end;
 
 { TSSLStackHelper }
 
 function TSSLStackHelper.SetExt(NID: Integer; const vData: string): Integer;
 var
-  Ext : PX509_EXTENSION;
+  Ext: PX509_EXTENSION;
   d: UTF8String;
 begin
   Result := 0;
-  if vData<>'' then
+  if vData <> '' then
   begin
     d := UTF8Encode(vData);
     Ext := X509V3_EXT_conf_nid(nil, nil, NID, PUTF8Char(d));
-    OPENSSL_sk_push(Self, ext);
+    if Ext <> nil then
+    begin
+      if OPENSSL_sk_push(Self, Ext) > 0 then
+        Result := 1
+      else
+        X509_EXTENSION_free(Ext);
+    end;
   end;
 end;
 
@@ -709,25 +683,28 @@ var
   n, d: UTF8String;
   nid: Integer;
 begin
-  if vData<>'' then
+  Result := 0;
+  if vData <> '' then
   begin
     n := UTF8Encode(vName);
     d := UTF8Encode(vData);
 
     X509V3_set_ctx_nodb(@ctx);
-    X509V3_set_ctx(@ctx, nil, nil, Self, nil, 0);
+    X509V3_set_ctx(@ctx, nil, nil, req, nil, 0);
     nid := OBJ_txt2nid(PUTF8Char(n));
 
-
-    ex := X509V3_EXT_conf_nid(nil, @ctx, nid, putf8char(d));
-    try
-      Result := X509_REQ_add_extensions_nid(req, Self, nid);
-    finally
-      X509_EXTENSION_free(ex);
+    ex := X509V3_EXT_conf_nid(nil, @ctx, nid, PUTF8Char(d));
+    if ex <> nil then
+    begin
+      if OPENSSL_sk_push(Self, ex) > 0 then
+      begin
+        if X509_REQ_add_extensions_nid(req, Self, nid) > 0 then
+          Result := 1;
+      end
+      else
+        X509_EXTENSION_free(ex);
     end;
-  end
-  else
-    Result := 0;
+  end;
 end;
 
 function TSSLStackHelper.SetStack(typ: Integer; const vData: TStrings): Integer;
@@ -739,7 +716,7 @@ begin
   try
     Result := X509V3_add1_i2d(Self, NID_subject_alt_name, sk, 0, X509V3_ADD_REPLACE);
   finally
-    OPENSSL_sk_free(sk);
+    OPENSSL_sk_pop_free(sk, @GENERAL_NAME_free);
   end;
 end;
 
@@ -754,7 +731,7 @@ var
   nid: Integer;
 begin
   Result := 0;
-  if vData<>'' then
+  if vData <> '' then
   begin
     n := UTF8Encode(vName);
     d := UTF8Encode(vData);
@@ -763,13 +740,13 @@ begin
     X509V3_set_ctx(@ctx, nil, nil, Self, nil, 0);
     nid := OBJ_txt2nid(PUTF8Char(n));
 
-
-    ex := X509V3_EXT_conf_nid(nil, @ctx, nid, putf8char(d));
-    try
-      OPENSSL_sk_push(sk, ex);
-      //Result := X509_REQ_add_extensions_nid(Self, sk, nid);
-    finally
-      //X509_EXTENSION_free(ex);
+    ex := X509V3_EXT_conf_nid(nil, @ctx, nid, PUTF8Char(d));
+    if ex <> nil then
+    begin
+      if OPENSSL_sk_push(sk, ex) > 0 then
+        Result := 1
+      else
+        X509_EXTENSION_free(ex);
     end;
   end;
 end;
@@ -784,7 +761,7 @@ begin
     n := X509_REQ_get_subject_name(Self);
     d := UTF8Encode(vData);
 
-    X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_ASC, PByte(d), -1, -1, 0);
+    X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_UTF8, PByte(d), -1, -1, 0);
   end;
 end;
 
@@ -799,7 +776,7 @@ begin
     f := UTF8Encode(vField);
     d := UTF8Encode(vData);
 
-    X509_NAME_add_entry_by_txt(n, PUTF8Char(f), MBSTRING_ASC, PByte(d), -1, -1, 0);
+    X509_NAME_add_entry_by_txt(n, PUTF8Char(f), MBSTRING_UTF8, PByte(d), -1, -1, 0);
   end;
 end;
 
