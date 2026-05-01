@@ -270,8 +270,8 @@ type
       TAccordionSection = class(THTMLElement)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TAccordionItem }
@@ -539,12 +539,12 @@ begin
     Result := ' ' + Result;
 end;
 
-function TmnwBSBoundingHelper.IsUniform: Boolean; inline;
+function TmnwBSBoundingHelper.IsUniform: Boolean; 
 begin
   Result := (Top = Left) and (Top = Bottom) and (Top = Right);
 end;
 
-function TmnwBSBoundingHelper.IsUniformSides: Boolean; inline;
+function TmnwBSBoundingHelper.IsUniformSides: Boolean; 
 begin
   Result := (Top = Bottom) and (Left = Right);
 end;
@@ -1439,13 +1439,9 @@ end;
 procedure TBSRenderer.TAccordionSection.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 var 
   classes: TElementClasses;
-  e: THTML.TAccordionSection;
 begin
-  e := Scope.Element as THTML.TAccordionSection;
   classes.init('list-group-item');
   classes.Add('bg-transparent');
-  if e.SaveState then
-    Scope.Attributes.Add('data-mnw-save-state', '1');
   classes.AddClasses(Scope.WrapClasses);
   Context.Writer.OpenTag('li',classes.ToString);
   inherited;
@@ -1461,9 +1457,11 @@ procedure TBSRenderer.TAccordionSection.DoInnerRender(Scope: TmnwScope; Context:
 var
   e: THTML.TAccordionSection;
   sb: TStringBuilder;
+  idIndex: Integer;
+  idStr: string;  
 begin
   e := Scope.Element as THTML.TAccordionSection;
-  Context.Writer.OpenTag('div', 'class="accordion-item bg-transparent"');
+  Context.Writer.OpenTag('div', 'class="accordion-item bg-transparent"' + When(e.SaveState, ' data-mnw-save-state="1"'));
 
   // Build header button attributes with TStringBuilder for efficiency
   sb := TStringBuilder.Create;

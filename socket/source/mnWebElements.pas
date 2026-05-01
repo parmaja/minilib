@@ -2406,22 +2406,18 @@ var
   er: TmnwElementRenderer;
 begin
   if CanRender then
-  begin
+  begin    
     er := CreateRenderer(Context);
     if er <> nil then
-    begin
+    try
       try
-        try
-          er.Render(Self, Context, AResponse);
-        except
-          on E: Exception do
-          begin
-            raise Exception.Create('Error in '+ ClassName +': ' + E.Message);
-          end;
-        end;
-      finally
-        er.Free;
+        er.Render(Self, Context, AResponse);
+      except
+        on E: Exception do
+          raise Exception.Create('Error in '+ ClassName +': ' + E.Message);
       end;
+    finally
+      er.Free;
     end;
   end;
 end;
