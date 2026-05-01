@@ -717,7 +717,7 @@ type
     function Match(ARequest: TmodRequest): TmodModule; virtual;
     property DefaultProtocol: String read FDefaultProtocol write FDefaultProtocol;
 
-    function UseSSL: Boolean;
+    function IsSecure: Boolean;
 
     function Find<T: Class>: T; overload;
     function Find<T: Class>(const AName: string): T; overload;
@@ -2313,10 +2313,10 @@ begin
   Result := inherited Add(AModule);
 end;
 
-function TmodModules.UseSSL: Boolean;
+function TmodModules.IsSecure: Boolean;
 begin
   if Server <> nil then
-    Result := Server.UseSSL
+    Result := Server.IsSecure
   else
     Result := False;
 end;

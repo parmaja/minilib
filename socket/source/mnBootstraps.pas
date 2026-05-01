@@ -78,21 +78,6 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
-      { TDocument }
-
-      TDocument = class(THTMLElement)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
-      { TBody }
-
-      TBody = class(THTMLElement)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
 
       { TFile }
 
@@ -127,6 +112,46 @@ type
       TIntervalCompose = class(TDynamicCompose)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TImage }
+
+      TImage = class(THTMLComponent)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TImageFile }
+
+      TImageFile = class(THTMLComponent)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TImageMemory }
+
+      TImageMemory = class(THTMLComponent)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+      
+      { TDocument }
+
+      TDocument = class(THTMLElement)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TBody }
+
+      TBody = class(THTMLElement)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { THeader }
@@ -418,30 +443,6 @@ type
       end;
 
       TInputPassword = class(TInput)
-      end;
-
-      { TImage }
-
-      TImage = class(THTMLComponent)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
-      { TImageFile }
-
-      TImageFile = class(THTMLComponent)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
-      { TImageMemory }
-
-      TImageMemory = class(THTMLComponent)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
   public
     procedure AddHead(const Context: TmnwContext); override;
@@ -1928,12 +1929,13 @@ end;
 
 procedure TBootstrap_Library.Created;
 const
-  cBaseURL = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/';
+  cssBaseURL = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/';
+  jsBaseURL = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/';
 begin
   inherited;
-  Sources.Add(cBaseURL, 'bootstrap.rtl.min.css', dirRightToLeft, '', 'sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb');
-  Sources.Add(cBaseURL, 'bootstrap.min.css', dirLeftToRight, '', 'sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH');
-  Sources.Add('cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/', 'bootstrap.bundle.min.js', '', 'sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz');
+  Sources.Add(cssBaseURL, 'bootstrap.rtl.min.css', dirRightToLeft, '', 'sha384-CfCrinSRH2IR6a4e6fy2q6ioOX7O6Mtm1L9vRvFZ1trBncWmMePhzvafv7oIcWiW');
+  Sources.Add(cssBaseURL, 'bootstrap.min.css', dirLeftToRight, '', 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB');
+  Sources.Add(jsBaseURL, 'bootstrap.bundle.min.js', '', 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI');
 end;
 
 { TBootstrapIcons_Library }

@@ -266,6 +266,10 @@ function IncludeURLDelimiter(const S: string): string; //deprecated 'AddEndURLDe
 function IsURLDelimiter(const S: string): Boolean;
 
 //If empty do not add
+function AddStartDelimiter(const Path: string; Delimiter: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
+function AddEndDelimiter(const Path: string; Delimiter: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
+
+//If empty do not add
 function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 function AddEndURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 
@@ -2057,9 +2061,19 @@ end;
 
 function AddStartURLDelimiter(const Path: string; Force: Boolean): string;
 begin
+  Result := AddStartDelimiter(Path, URLDelimiter, Force);
+end;
+
+function AddEndURLDelimiter(const Path: string; Force: Boolean): string;
+begin
+  Result := AddEndDelimiter(Path, URLDelimiter, Force);
+end;
+
+function AddStartDelimiter(const Path: string; Delimiter: string; Force: Boolean): string;
+begin
   if Force or (Path <> '') then
   begin
-    if (Path = '') or not StartsStr(URLDelimiter, Path) then
+    if (Path = '') or not StartsStr(Delimiter, Path) then
       Result := URLDelimiter + Path
     else
       Result := Path
@@ -2068,11 +2082,11 @@ begin
     Result := Path
 end;
 
-function AddEndURLDelimiter(const Path: string; Force: Boolean): string;
+function AddEndDelimiter(const Path: string; Delimiter: string; Force: Boolean): string;
 begin
   if Force or (Path <> '') then
   begin
-    if (Path = '') or not EndsStr(URLDelimiter, Path) then
+    if (Path = '') or not EndsStr(Delimiter, Path) then
       Result := Path + URLDelimiter
     else
       Result := Path

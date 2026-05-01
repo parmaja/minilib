@@ -105,8 +105,8 @@ begin
 
   HttpServer.Bind := BindEdit.Text;
   HttpServer.Port := PortEdit.Text;
-  HttpServer.UseSSL := UseSSLChk.Checked;
-  if HttpServer.UseSSL then
+  HttpServer.IsSecure := UseSSLChk.Checked;
+  if HttpServer.IsSecure then
   begin
     HttpServer.CertificateFile := 'HttpServer.crt';
     HttpServer.PrivateKeyFile := 'HttpServer.private.key';

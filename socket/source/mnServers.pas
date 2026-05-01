@@ -227,7 +227,6 @@ type
     property Port: string read FPort write SetPort;
     property Bind: string read FBind write SetBind;
     property Address: string read FBind write SetBind;//Deprecated
-    property UseSSL: Boolean read FIsSecure write FIsSecure; //use IsSecure
     property IsSecure: Boolean read FIsSecure write FIsSecure;
 
     property Active: boolean read FActive write SetActive default False;
@@ -533,7 +532,7 @@ end;
 function TmnListener.AcceptSocket(Socket: TmnCustomSocket): TmnServerConnection;
 begin
   //check to make this in new thread
-  if Socket=nil then
+  if Socket = nil then
     raise EmnStreamException.CreateFmt('socket is null', []);
 
   try
@@ -615,7 +614,7 @@ begin
   Result := TmnSocketStream.Create(vSocket);
   //TmnSocketStream(Result).Options := TmnSocketStream(Result).Options + Options;
   TmnSocketStream(Result).Options := Options;
-  if FServer.UseSSL then
+  if FServer.IsSecure then
     TmnSocketStream(Result).Options := TmnSocketStream(Result).Options + [soSSL]; //TODO i think it should in listener options too
 end;
 
@@ -955,14 +954,14 @@ begin
   begin
     DoBeforeOpen; //* Init/read/load config values
     DoStarting; //* more init values from read config
-    if UseSSL then
+    if IsSecure then
       InitOpenSSL;
     FListener := CreateListener;
     try
       FListener.FServer := Self;
       FListener.FPort := FPort;
       FListener.FAddress := FBind;
-      if UseSSL then
+      if IsSecure then
         FListener.FOptions := FListener.FOptions + [soSSL, soWaitBeforeRead];
       FListener.CertificateFile := CertificateFile;
       FListener.CertPassword := CertPassword;

@@ -330,19 +330,26 @@ type
 
   TmnwObject = class(TmnNamedObject);
 
+  TLibraryOption = (libDefer, libCross);
+  
+  TLibraryOptions = set of TLibraryOption;
+  
   TLibrarySource = class(TmnNamedObject)
-  public
+  public    
     Direction: TDirection;
     BaseURL: string;
     Query: string; //Extra add to name like ?v=34545634563
     Integrity: string;
+    Options: TLibraryOptions;
+    constructor Create; virtual;
   end;
 
   TLibrarySources = class(TmnNamedObjectList<TLibrarySource>)
   private
   public
-    function Add(const BaseURL, FileName: string; Direction: TDirection = dirUndefined; Query: string = ''; Integrity: string = ''): TLibrarySource; overload;
-    function Add(const BaseURL, FileName: string; Query, Integrity: string): TLibrarySource; overload;
+    function Add(const BaseURL, FileName: string): TLibrarySource; overload;
+    function Add(const BaseURL, FileName: string; Direction: TDirection; Query: string = ''; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
+    function Add(const BaseURL, FileName: string; Query: string; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
   end;
   
   TmnwLibrary = class abstract(TmnNamedObject)
@@ -916,7 +923,7 @@ type
     Domain: string; //localhost
     Port: string;
     
-    Module: string; //Module Name
+    ModuleName: string; //Module Name
 
     CompactMode: Boolean;
     DefaultAge: Integer;
@@ -4285,22 +4292,23 @@ begin
       else
       begin
         filename := source.BaseURL;
-        if not StartsText('http', filename) then
-        begin
-          if Context.Request.IsSecure then
-            filename := 'https://' + filename
-          else
-            filename := 'http://' + filename;
-        end;
         local:= False;
       end;
+
+      if not StartsText('http', filename) then
+      begin
+        if Context.Request.IsSecure then
+          filename := 'https://' + filename
+        else
+          filename := 'http://' + filename;
+      end;
       
-      filename := IncludeURLDelimiter(filename) + source.Name + source.Query;
+      filename := IncludeURLDelimiter(filename) + source.Name + AddStartDelimiter(source.Query, '?');
       
       if SameText(ext, '.css')  then    
-        Context.Writer.AddHTMLCss(filename, True, When(not local, source.Integrity))
+        Context.Writer.AddHTMLCss(filename, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options)
       else //if SameText(ext, '.js')  then
-        Context.Writer.AddHTMLScript(filename, True, When(not local, source.Integrity));
+        Context.Writer.AddHTMLScript(filename, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options)
     end
     else
       Context.Writer.AddComment(source.Name);      
@@ -4448,8 +4456,8 @@ end;
 procedure TWebElements_Library.Created;
 begin
   inherited;
-  Sources.Add('', 'web-elements.js', '?v=' + IntToStr(GlobalTimeStamp), '');
-  Sources.Add('', 'web-elements.css', '?v=' + IntToStr(GlobalTimeStamp), '');
+  Sources.Add('', 'web-elements.js', '?v=' + IntToStr(GlobalTimeStamp));
+  Sources.Add('', 'web-elements.css', '?v=' + IntToStr(GlobalTimeStamp));
 end;
 
 { THTML.TImage }
@@ -4859,10 +4867,10 @@ begin
     Web.Port := Port;
   if Web.WorkFolder = '' then
     Web.WorkFolder := WorkFolder;
-  if Web.Module = '' then
-    Web.Module := AliasName;
-
+  if Web.ModuleName = '' then
+    Web.ModuleName := AliasName;
   //Web.Assets.HomeFolder := Web.HomeFolder;
+  Web.IsSecure := Modules.IsSecure;
 
   Web.Start;
 end;
@@ -5129,7 +5137,7 @@ end;
 
 function TmnwContext.GetHomePath: string;
 begin
-  Result := StartURL(Schema.Web.Module + StartURL(Request.NameSpace));
+  Result := StartURL(Schema.Web.ModuleName + StartURL(Request.NameSpace));
 end;
 
 function TmnwContext.GetHomeURL: string;
@@ -5440,7 +5448,7 @@ end;
 
 { TLibrarySources }
 
-function TLibrarySources.Add(const BaseURL, FileName: string; Direction: TDirection; Query, Integrity: string): TLibrarySource;
+function TLibrarySources.Add(const BaseURL, FileName: string; Direction: TDirection; Query, Integrity: string; Options: TLibraryOptions): TLibrarySource;
 begin
   Result := TLibrarySource.Create;
   Result.Name := FileName;
@@ -5448,12 +5456,26 @@ begin
   Result.Direction := Direction;
   Result.Integrity := Integrity;
   Result.Query := Query;
+  Result.Options := Options;
   inherited Add(Result);
 end;
 
-function TLibrarySources.Add(const BaseURL, FileName: string; Query, Integrity: string): TLibrarySource;
+function TLibrarySources.Add(const BaseURL, FileName: string; Query, Integrity: string; Options: TLibraryOptions): TLibrarySource;
 begin
-  Result := Add(BaseURL, FileName, dirUndefined, Query, Integrity);
+  Result := Add(BaseURL, FileName, dirUndefined, Query, Integrity, Options);
+end;
+
+function TLibrarySources.Add(const BaseURL, FileName: string): TLibrarySource;
+begin
+  Result := Add(BaseURL, FileName, dirUndefined, '', '');
+end;
+
+{ TLibrarySource }
+
+constructor TLibrarySource.Create;
+begin
+  inherited;
+  Options := [libDefer, libCross];
 end;
 
 initialization
