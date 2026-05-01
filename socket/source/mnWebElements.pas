@@ -1596,10 +1596,15 @@ type
     RendererClass: TmnwRendererClass;
   end;  
   
-  TmnwRenderers = class(TmnObjectList<TmnwRendererRegister>)
+  TmnwRenderers = class(TmnNamedObjectList<TmnwRendererRegister>)
+  private
+    FCurrent: TmnwRendererRegister;
   public
-    RendererClass: TmnwRendererClass; //* Default, TODO
     function RegisterRenderer(AName: string; ARendererClass: TmnwRendererClass): TmnwRendererRegister; overload;
+    function FindBy(ARendererClass: TmnwRendererClass): TmnwRendererRegister; overload;
+    procedure Switch(AName: string); overload;
+    procedure Switch(ARendererClass: TmnwRendererClass); overload;
+    property Current: TmnwRendererRegister read FCurrent;
   end;
   
   TmnwResponse = class(TwebResponse)
@@ -4876,10 +4881,10 @@ end;
 
 function TmnwWebModule.CreateRenderer: TmnwRenderer;
 begin
-  if Renderers.RendererClass = nil then
+  if Renderers.Current = nil then
     Result := TmnwPlaneRenderer.Create(Self)
   else
-    Result := Renderers.RendererClass.Create(Self);
+    Result := Renderers.Current.RendererClass.Create(Self);
 end;
 
 destructor TmnwWebModule.Destroy;
@@ -5354,14 +5359,48 @@ end;
 
 { TmnwRenderers }
 
+function TmnwRenderers.FindBy(ARendererClass: TmnwRendererClass): TmnwRendererRegister;
+var
+ i: Integer;
+begin
+  for i := 0 to Count-1 do
+  begin
+    if Items[i].RendererClass = ARendererClass then
+      exit(Items[i]);
+  end;
+  Result := nil;
+end;
+
 function TmnwRenderers.RegisterRenderer(AName: string; ARendererClass: TmnwRendererClass): TmnwRendererRegister;
 begin
-  if RendererClass = nil then  
-    RendererClass := ARendererClass;
+  if ARendererClass = nil then
+    raise Exception.Create('RendererClass is null to register');
   Result := TmnwRendererRegister.Create;
   Result.Name := AName;
   Result.RendererClass := ARendererClass;
   Add(Result);
+  if FCurrent = nil then  
+    FCurrent := Result;
+end;
+
+procedure TmnwRenderers.Switch(AName: string);
+var
+  itm: TmnwRendererRegister;
+begin
+  itm := Find(AName);
+  if itm = nil then
+    raise Exception.Create('Renderer ' + AName + ' not exists');
+  FCurrent := itm;
+end;
+
+procedure TmnwRenderers.Switch(ARendererClass: TmnwRendererClass);
+var
+  itm: TmnwRendererRegister;
+begin
+  itm := FindBy(ARendererClass);
+  if itm = nil then
+    raise Exception.Create('Renderer ' + ARendererClass.ClassName + ' not registered');
+  FCurrent := itm;
 end;
 
 { TmnwPlaneRenderer }

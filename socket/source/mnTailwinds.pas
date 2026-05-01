@@ -539,12 +539,12 @@ begin
     Result := ' ' + Result;
 end;
 
-function TmnwTWBoundingHelper.IsUniform: Boolean; inline;
+function TmnwTWBoundingHelper.IsUniform: Boolean; 
 begin
   Result := (Top = Left) and (Top = Bottom) and (Top = Right);
 end;
 
-function TmnwTWBoundingHelper.IsUniformSides: Boolean; inline;
+function TmnwTWBoundingHelper.IsUniformSides: Boolean; 
 begin
   Result := (Top = Bottom) and (Left = Right);
 end;

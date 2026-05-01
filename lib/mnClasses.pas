@@ -156,7 +156,7 @@ type
       constructor Create(ADicSize: Integer = 1024; FreeObjects : boolean = True); overload;
       destructor Destroy; override;
       procedure AfterConstruction; override;
-      function Find(const Name: string): _Object_;
+      function Find(const Name: string): _Object_; overload;
       function IndexOfName(vName: string): Integer;
       {$ifdef FPC} //not now
       procedure Clear; override;
