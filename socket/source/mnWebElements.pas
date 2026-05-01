@@ -4295,7 +4295,7 @@ begin
         local:= False;
       end;
       
-      filename := filename + source.Name + source.Query;
+      filename := IncludeURLDelimiter(filename) + source.Name + source.Query;
       
       if SameText(ext, '.css')  then    
         Context.Writer.AddHTMLCss(filename, True, When(not local, source.Integrity))

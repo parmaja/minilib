@@ -30,7 +30,7 @@ uses
   mnFields, mnParams, mnMultipartData, mnModules, mnWebModules, mnWebElements;
 
 type
-  { TmnwHTMLRenderer }
+  { TBSRenderer }
 
   TBSRenderer = class(TmnwRenderer)
   protected
