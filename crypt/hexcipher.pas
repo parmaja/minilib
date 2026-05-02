@@ -35,6 +35,8 @@ type
 
   TExHexCipher = class(TExStreamCipher)
   protected
+    procedure Encrypt(var ReadCount, WriteCount: Integer); overload; override;
+    procedure Decrypt(var ReadCount, WriteCount: Integer); overload; override;
     function Encrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; override;
     function Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; override;
   end;
@@ -292,6 +294,20 @@ end;
 
 { TExHexCipher }
 
+procedure TExHexCipher.Encrypt(var ReadCount, WriteCount: Integer);
+begin
+  // Buffer-based overload is used by the framework; this overload is not called
+  ReadCount := 0;
+  WriteCount := 0;
+end;
+
+procedure TExHexCipher.Decrypt(var ReadCount, WriteCount: Integer);
+begin
+  // Buffer-based overload is used by the framework; this overload is not called
+  ReadCount := 0;
+  WriteCount := 0;
+end;
+
 function TExHexCipher.Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint;
 var
   iP, oP: PByte;
@@ -302,7 +318,7 @@ begin
   OutBuffer.Grow(c);
   iP := InBuffer.Start;
   oP := OutBuffer.Position;
-  HexToBin(ip, op, Result);
+  HexToBin(ip, op, c); // c = output byte count, not input hex char count
   OutBuffer.Seek(c, soFromCurrent);
 end;
 

@@ -386,7 +386,7 @@ end;
 
 function TExCipher.Read(var vBuffer; vCount: Longint): Longint;
 var
-  p: PChar;
+  p: PByte;
   i, c: Integer;
 begin
   Result := 0;
@@ -396,7 +396,7 @@ begin
   begin
     c := OutBuffer.ReadBuffer(p^, i);
     if c=0 then Break;
-    
+
     Inc(Result, c);
     Dec(i, c);
     Inc(p, c);
@@ -447,9 +447,23 @@ begin
   AddData(vBuffer, vCount);
   UpdateBuffer;
   InternalWrite(OutBuffer.Start^, OutBuffer.Count);
-  OutBuffer.Clear;
+    OutBuffer.Clear;
   Result := vCount;
 end;
+
+{function TExCipher.Write(const vBuffer; vCount: Longint): Longint;
+var
+  Written: Longint;
+begin
+  AddData(vBuffer, vCount);
+  UpdateBuffer;
+  Written := InternalWrite(OutBuffer.Start^, OutBuffer.Count);
+  if Written < OutBuffer.Count then
+    OutBuffer.DeleteReaded(Written) // preserve unwritten data
+  else
+    OutBuffer.Clear;
+  Result := vCount;
+end};
 
 { TExStreamCipher }
 
@@ -557,13 +571,15 @@ procedure TCipherBuffer.DeleteReaded(vCount: Integer);
 var
   t: PByte;
 begin
-  if vCount=Count then
+  if vCount <= 0 then
+    Exit;
+  if vCount >= Count then
     FPosition := FStart
-  else if vCount<>0 then
+  else
   begin
     t := Start;
     Inc(t, vCount);
-    Move(t^, Start^, Position-t);
+    Move(t^, Start^, Count - vCount);
     Dec(FPosition, vCount);
   end;
 end;
@@ -576,8 +592,9 @@ end;
 
 function TCipherBuffer.GetAsString: string;
 begin
-  //SetString(Result, Start, EOS - Start);
-
+  SetLength(Result, Count);
+  if Count > 0 then
+    Move(Start^, Result[1], Count);
 end;
 
 procedure TCipherBuffer.Grow(vCount: Integer);
@@ -647,6 +664,10 @@ begin
     soFromCurrent: FPosition := FPosition + Offset;
     soFromEnd: FPosition := FEOS - Offset;
   end;
+  if FPosition < FStart then
+    FPosition := FStart;
+  if FPosition > FEOS then
+    FPosition := FEOS;
   Result := FPosition - FStart;
 end;
 
@@ -682,10 +703,13 @@ end;
 
 procedure TCipherBuffer.Clear;
 begin
-  FreeMem(FStart, Size);
-  FStart := nil;
-  FEOS := nil;
-  FPosition := nil;
+  if FStart <> nil then
+  begin
+    FreeMem(FStart, Size);
+    FStart := nil;
+    FEOS := nil;
+    FPosition := nil;
+  end;
 end;
 
 function TCipherBuffer.Count: Integer;

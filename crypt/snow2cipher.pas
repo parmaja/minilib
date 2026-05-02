@@ -214,10 +214,10 @@ end;
 
 function TSnow2Cipher.GetKeyStream: u32;
 begin
-  Inc(Index);
   if Index > 15 then
     LoadBlock;
   Result := Block[Index];
+  Inc(Index);
 end;
 
 procedure TSnow2Cipher.LoadBlock;
@@ -301,17 +301,17 @@ end;
 
 procedure TExSnow2Cipher.Decrypt(var ReadCount, WriteCount: Integer);
 begin
-  ReadCount := OutBuffer.Count;
+  ReadCount := InBuffer.Count;
   WriteCount := ReadCount;
-  InBuffer.Grow(WriteCount);
+  OutBuffer.Grow(WriteCount);
   StreamBlock;
 end;
 
 procedure TExSnow2Cipher.Encrypt(var ReadCount, WriteCount: Integer);
 begin
-  ReadCount := OutBuffer.Count;
+  ReadCount := InBuffer.Count;
   WriteCount := ReadCount;
-  InBuffer.Grow(WriteCount);
+  OutBuffer.Grow(WriteCount);
   StreamBlock;
 end;
 
