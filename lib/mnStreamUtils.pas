@@ -567,7 +567,7 @@ constructor TmnDeflateStreamProxy.Create(ACompress: TmnStreamCompress; Level: Tm
 begin
   inherited Create(ACompress, Level);
   //FBufSize := 16384;
-  FBufSize := 4096;
+  FBufSize := 65536;
   FLevel := Level;
   FCompress := ACompress;
   FGZip := False;
@@ -656,13 +656,13 @@ end;
 
 function TmnChunkStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
 const
-  sEOL = #13#10;
+  sEOL: array[0..1] of AnsiChar = (#13, #10);
 
 var
   t: Integer;
   r, e: LongInt;
   b: PByte;
-  s: UTF8String;
+  s: ShortString;
 begin
   { TODO : support chunk write }
 
@@ -673,20 +673,19 @@ begin
 
   while True do
   begin
-    if Count>FrameSize then
+    if Count > FrameSize then
       t := FrameSize
     else
       t := Count;
 
-    s := UTF8Encode(IntToHex(t, 1))+sEOL;
+    s := ShortString(IntToHex(t, 1)) + ShortString(sEOL);
 
-    Over.Write(PUtf8Char(s)^, Length(s), r, e);
+    Over.Write(s[1], Length(s), r, e);
     Result := Over.Write(b^, t, r, e);
-    Over.Write(PUtf8Char(sEOL)^, Length(sEOL), r, e);
+    Over.Write(sEOL, SizeOf(sEOL), r, e);
     Inc(b, t);
-    //Result := Over.Write(#13#10, t, r, e);
-    Count := Count-t;
-    if Count<=0 then
+    Count := Count - t;
+    if Count <= 0 then
       break;
   end;
 end;
@@ -696,16 +695,16 @@ var
   b: Byte;
   r, c: LongInt;
 begin
-  Over.Read(b, 1, r, c); //skip $A
+  Over.Read(b, 1, r, c); //read first char (CR or LF)
   if b = 13 then
-    Over.Read(b, 1, r, c); //skip $A
+    Over.Read(b, 1, r, c); //skip LF
 end;
 
 function TmnChunkStreamProxy.ReadSize: Integer;
 var
   b: Byte;
   r, c: LongInt;
-  s: string;
+  s: ShortString;
   t: Boolean;
 begin
   Result := -1;
@@ -714,18 +713,19 @@ begin
   while True do
   begin
     t := Over.Read(b, 1, r, c);
-    if t and (r<>0) then
+    if t and (r <> 0) then
     begin
       case b of
         13, 10:
         begin
-          Result := StrToIntDef('$'+s, 0);
-          if b=13 then
-            Over.Read(b, 1, r, c); //skip $A
+          Result := StrToIntDef('$' + string(s), 0);
+          if b = 13 then
+            Over.Read(b, 1, r, c); //skip LF
           break;
         end;
         else
-          s := s + Chr(b);
+          if Length(s) < 255 then
+            s := s + Chr(b);
       end;
     end
     else
@@ -838,7 +838,7 @@ end;
 
 procedure TWebsocketPayloadHeader.SetInteralSize(const Value: Byte);
 begin
-  Byte2 := Byte2 or (Value and (not $80));
+  Byte2 := (Byte2 and $80) or (Value and $7F);
 end;
 
 procedure TWSMask.Clear;
@@ -867,21 +867,45 @@ end;
 
 procedure TmnWebSocket13StreamProxy.MaskData(const FromData; var ToData; ASize: Integer);
 var
-  aIndex: longint;
   fp, tp: PByte;
+  Count: Integer;
+  MaskVal: Cardinal;
 begin
-  aIndex := 0;
   fp := @FromData;
   tp := @ToData;
-  while aIndex < aSize do
+  Count := ASize;
+
+  // Process in 32-bit chunks for better throughput
+  if Count >= 4 then
+  begin
+    // Rotate mask to align with current FMaskIndex
+    case FMaskIndex of
+      1: MaskVal := (FMask.Key shr 8) or (FMask.Key shl 24);
+      2: MaskVal := (FMask.Key shr 16) or (FMask.Key shl 16);
+      3: MaskVal := (FMask.Key shr 24) or (FMask.Key shl 8);
+    else
+      MaskVal := FMask.Key;
+    end;
+
+    while Count >= 4 do
+    begin
+      PCardinal(tp)^ := PCardinal(fp)^ xor MaskVal;
+      Inc(fp, 4);
+      Inc(tp, 4);
+      Dec(Count, 4);
+    end;
+  end;
+
+  // Process remaining bytes
+  while Count > 0 do
   begin
     tp^ := fp^ xor FMask.Mask[FMaskIndex];
     Inc(FMaskIndex);
-    if FMaskIndex>=Length(FMask.Mask) then
+    if FMaskIndex > 3 then
       FMaskIndex := 0;
-    Inc(aIndex);
     Inc(fp);
     Inc(tp);
+    Dec(Count);
   end;
 end;
 
@@ -999,6 +1023,7 @@ var
   Q: Int64;
   W: Word;
   aBuffer: Pointer;
+  StackBuf: array[0..4095] of Byte;
 begin
   aHeader.Finished := True;
   if Binary then
@@ -1035,10 +1060,21 @@ begin
   if Masked then
   begin
     Over.Write(Mask.Mask, SizeOf(Mask.Mask), ResultCount, RealCount);
-    GetMem(aBuffer, Count);
-    MaskData(Buffer, aBuffer^, Count);
-    Result := Over.Write(aBuffer^, Count, ResultCount, RealCount);
-    FreeMem(aBuffer);
+    if Count <= SizeOf(StackBuf) then
+    begin
+      MaskData(Buffer, StackBuf, Count);
+      Result := Over.Write(StackBuf, Count, ResultCount, RealCount);
+    end
+    else
+    begin
+      GetMem(aBuffer, Count);
+      try
+        MaskData(Buffer, aBuffer^, Count);
+        Result := Over.Write(aBuffer^, Count, ResultCount, RealCount);
+      finally
+        FreeMem(aBuffer);
+      end;
+    end;
   end
   else
     Result := Over.Write(Buffer, Count, ResultCount, RealCount);
