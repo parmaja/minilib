@@ -58,7 +58,7 @@ type
     LastAccess: TDateTime;
   end;
 
-function GPSDecimalToDMS(Value: Extended; D, M, S:string): string; overload;//you can call with (v, '°','''','"')
+function GPSDecimalToDMS(Value: Extended; D, M, S:string): string; overload;//you can call with (v, 'ï¿½','''','"')
 function GPSDecimalToDMS(Value: Extended): string; overload;
 function GPSDecimalToDM(Value: Extended; D, M:string): string; overload;
 function GPSDecimalToDM(Value: Extended): string; overload;
@@ -73,13 +73,13 @@ var
   t: Integer;
 begin
   t := Trunc(Value);
-  Result := IntToStr(t) + ' ';
+  Result := IntToStr(t) + D;
   Value := (Value - t) * 60;
 
   t := Trunc(Value);
-  Result := Result + IntToStr(t) + ' ';
+  Result := Result + IntToStr(t) + M;
   Value := (Value - t) * 60;
-  Result := Result + FormatFloat('0.0000', Value);
+  Result := Result + FormatFloat('0.0000', Value) + S;
 end;
 
 function GPSDecimalToDMS(Value:Extended):string;
@@ -103,19 +103,20 @@ begin
   Result := GPSDecimalToDM(Value, ' ', '');
 end;
 
-function GPSToMAP(Latitude: Extended; Longitude: Extended) :string; overload;
+function GPSToMAP(Latitude: Extended; Longitude: Extended) :string;
+var
+  SLat, SLon: string;
 begin
+  SLat := FormatFloat('0.000000', Abs(Latitude));
+  SLon := FormatFloat('0.000000', Abs(Longitude));
   if Latitude < 0 then
     Result := '-'
   else
     Result := '+';
-  Result := Result + FormatFloat('0.000000', Abs(Latitude));
-  Result := Result + ',';
   if Longitude < 0 then
-    Result := Result + '-'
+    Result := Result + SLat + ',-' + SLon
   else
-    Result := Result + '+';
-  Result := Result + FormatFloat('0.000000', Abs(Longitude));
+    Result := Result + SLat + ',+' + SLon;
 end;
 
 function GPSToMAP(Info: TGPSDecimalInfo):string;
@@ -125,51 +126,63 @@ end;
 
 function GPSPrase(Command:string; var Info:TGPSInfo):Boolean;
 var
-  P: Integer;
-  CS:string;
-  D, M: string;
-  Params:TStringList;
-  CMD: string;
+  P, I, Start, FieldIndex: Integer;
+  CS, CMD: string;
+  Params: array[0..5] of string;
 begin
   Result := False;
   Command := Trim(Command);
-  if LeftStr(Command, 3) = '$GP' then //is it GPS command?
+  if (Length(Command) >= 3) and (Copy(Command, 1, 3) = '$GP') then //is it GPS command?
   begin
-    Command := Copy(Command, 4, MaxInt);//remove '$GP'
-    P := AnsiPos('*', Command);
+    Delete(Command, 1, 3);//remove '$GP'
+    P := Pos('*', Command);
     if P > 0 then // not bad for now
     begin
-      CS := Copy(Command, P + 1, MaxInt);
-      Command := Copy(Command, 1, P - 1);
-      Params := TStringList.Create;
-      try
-        ExtractStrings([','], [], PChar(Command), Params);
+      CS := Copy(Command, P + 1, Length(Command));
+      SetLength(Command, P - 1);
+
+      // Lightweight CSV parser, extract first 6 fields
+      Start := 1;
+      FieldIndex := 0;
+      for I := 1 to Length(Command) + 1 do
+      begin
+        if (I > Length(Command)) or (Command[I] = ',') then
+        begin
+          if FieldIndex <= 5 then
+          begin
+            Params[FieldIndex] := Copy(Command, Start, I - Start);
+            Inc(FieldIndex);
+          end;
+          Start := I + 1;
+          if FieldIndex > 5 then
+            Break;
+        end;
+      end;
+
+      if FieldIndex > 0 then
+      begin
         CMD := Params[0];
         if CMD = 'GSV' then //Satellite info
         else if CMD = 'GSA' then //Fix
         else if CMD = 'GGA' then
         begin
-          Result := True;
-          Info.Source:= Params[3] + Params[2] + ',' + Params[5] + Params[4];
-          D := Copy(Params[2], 1, 2);//3 char for Degree
-          M := Copy(Params[2], 3, MaxInt);
-          Info.Decimal.Latitude := StrToIntDef(D, 0) + (StrToFloatDef(M, 0) / 60);
-          if Params[3] = 'S' then
-            Info.Decimal.Latitude := -Info.Decimal.Latitude;
+          if FieldIndex > 5 then
+          begin
+            Result := True;
+            Info.Source:= Params[3] + Params[2] + ',' + Params[5] + Params[4];
+            Info.Decimal.Latitude := StrToIntDef(Copy(Params[2], 1, 2), 0) + (StrToFloatDef(Copy(Params[2], 3, Length(Params[2])), 0) / 60);
+            if Params[3] = 'S' then
+              Info.Decimal.Latitude := -Info.Decimal.Latitude;
 
-          D := Copy(Params[4], 1, 3);//3 char for Degree
-          M := Copy(Params[4], 4, MaxInt);
-          Info.Decimal.Longitude := StrToIntDef(D, 0) + (StrToFloatDef(M, 0) / 60);
-          if Params[5] = 'W' then
-            Info.Decimal.Longitude := -Info.Decimal.Longitude;
-          Info.LastAccess := Now;
+            Info.Decimal.Longitude := StrToIntDef(Copy(Params[4], 1, 3), 0) + (StrToFloatDef(Copy(Params[4], 4, Length(Params[4])), 0) / 60);
+            if Params[5] = 'W' then
+              Info.Decimal.Longitude := -Info.Decimal.Longitude;
+            Info.LastAccess := Now;
+          end;
         end;
-      finally
-        Params.Free;
       end;
     end;
   end;
 end;
 
 end.
-
