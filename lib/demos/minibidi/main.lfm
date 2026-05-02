@@ -2,27 +2,27 @@ object Form1: TForm1
   Left = 335
   Height = 260
   Top = 160
-  Width = 625
+  Width = 586
   Caption = 'Form1'
   ClientHeight = 260
-  ClientWidth = 625
-  LCLVersion = '2.3.0.0'
+  ClientWidth = 586
+  LCLVersion = '4.99.0.0'
   object Button1: TButton
-    Left = 542
+    Left = 503
     Height = 21
     Top = 228
     Width = 74
     Anchors = [akRight]
     Caption = 'Draw'
     Default = True
-    OnClick = Button1Click
     TabOrder = 1
+    OnClick = Button1Click
   end
   object Panel1: TPanel
     Left = 9
-    Height = 187
+    Height = 185
     Top = 6
-    Width = 607
+    Width = 568
     Anchors = [akTop, akLeft, akRight, akBottom]
     BevelOuter = bvNone
     BorderStyle = bsSingle
@@ -37,9 +37,9 @@ object Form1: TForm1
   end
   object Edit1: TEdit
     Left = 9
-    Height = 23
-    Top = 226
-    Width = 528
+    Height = 25
+    Top = 224
+    Width = 489
     Anchors = [akLeft, akRight, akBottom]
     BidiMode = bdRightToLeft
     ParentBidiMode = False
@@ -48,21 +48,22 @@ object Form1: TForm1
   end
   object TemplatesCbo: TComboBox
     Left = 9
-    Height = 23
-    Top = 203
-    Width = 528
+    Height = 25
+    Top = 196
+    Width = 489
+    Anchors = [akLeft, akRight, akBottom]
     BidiMode = bdRightToLeft
-    ItemHeight = 15
+    ItemHeight = 17
     Items.Strings = (
       'بسم الله الرحمن الرحيم'
       'لا إله إلا الله'
       'أبجد هوز حطي كلمن'
       'محمد زاهر ديركي'
     )
-    OnClick = TemplatesCboClick
-    OnSelect = TemplatesCboSelect
     ParentBidiMode = False
     Style = csDropDownList
     TabOrder = 3
+    OnClick = TemplatesCboClick
+    OnSelect = TemplatesCboSelect
   end
 end

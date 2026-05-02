@@ -301,22 +301,24 @@ begin
   end;
 end;
 
-function GetParagraphLevel(Line: PWideChar; Count: Integer): TLevel;
+function GetParagraphLevel(OrigTypes: PCharacterType; Count: Integer): TLevel;
 var
   i: Integer;
 begin
   Result := 0;
   for i := 0 to Count - 1 do
   begin
-    if (GetType(Line[i]) = ctR) or (GetType(Line[i]) = ctAL) then
-    begin
-      Result := 1;
-      break;
-    end
-    else if (GetType(Line[i]) = ctL) then
-    begin
-      Result := 0;
-      break;
+    case OrigTypes[i] of
+      ctR, ctAL:
+        begin
+          Result := 1;
+          exit;
+        end;
+      ctL:
+        begin
+          Result := 0;
+          exit;
+        end;
     end;
   end;
 end;
@@ -384,48 +386,33 @@ end;
  * Count: number of characters in Line
  *}
 
-function DoShape(Line: PWideChar; var ToLine: PWideChar; From: Integer; Count: Integer; Ligatures: TBidiLigatures): Integer;
+function DoShape(Line: PWideChar; var ToLine: PWideChar; From: Integer; Count: Integer; Ligatures: TBidiLigatures; OrigTypes: PCharacterType): Integer;
 var
   i, j: Integer;
   ligFlag: Boolean;
   prevTemp, nextTemp: TShapeType;
-  nWC: WideChar;//Next wide char
+  nWC: WideChar;
 begin
   ligFlag := False;
-  prevTemp := stSU;
-  nextTemp := stSU;
   i := From;
   while i < Count do
   begin
   { Get Previous and next Characters type }
-    j := i;
-    Dec(j);
-    while (j >= 0) do
-    begin
-      if (GetType(Line[j]) <> ctNSM) then
-      begin
-        prevTemp := ShapeType(Line[j]);
-        break;
-      end;
+    j := i - 1;
+    while (j >= 0) and (OrigTypes[j] = ctNSM) do
       Dec(j);
-    end;
+    if j >= 0 then
+      prevTemp := ShapeType(Line[j])
+    else
+      prevTemp := stSU;
 
-    j := i;
-    Inc(j);
-    while (j < Count) do
-    begin
-      if (GetType(Line[j]) <> ctNSM) then
-      begin
-        nextTemp := ShapeType(Line[j]);
-        break;
-      end
-      else if (j = Count - 1) then
-      begin
-        nextTemp := stSU;
-        break;
-      end;
+    j := i + 1;
+    while (j < Count) and (OrigTypes[j] = ctNSM) do
       Inc(j);
-    end;
+    if j < Count then
+      nextTemp := ShapeType(Line[j])
+    else
+      nextTemp := stSU;
 
     case (ShapeType(Line[i])) of
       stSC, stSU:
@@ -440,17 +427,12 @@ begin
         { Make Ligatures }
           if (Line[i] = #$0644) then //{LAM}
           begin
-            nWC := #0; //TODO check if ctNSM not found
-            j := i;
-            while (j < Count) do
-            begin
+            nWC := #0;
+            j := i + 1;
+            while (j < Count) and (OrigTypes[j] = ctNSM) do
               Inc(j);
-              if (GetType(Line[j]) <> ctNSM) then
-              begin
-                nWC := Line[j];
-                break;
-              end;
-            end;
+            if j < Count then
+              nWC := Line[j];
 
             case (nWC) of
               #$0622: //{ALEF WITH MADDA ABOVE}
@@ -513,7 +495,6 @@ begin
           end;
         end;
     end; //case ShapeType
-    nextTemp := stSU;
     Inc(i);
   end;
   Result := i;
@@ -524,7 +505,7 @@ end;
   returns the length of the string without explicit marks
 }
 
-function DoTypes(Line: PWideChar; ParagraphLevel: TLevel; Types: PCharacterType; Levels: PLevel; Count: Integer; fX: Boolean): Integer;
+function DoTypes(Line: PWideChar; ParagraphLevel: TLevel; Types: PCharacterType; Levels: PLevel; Count: Integer; fX: Boolean; OrigTypes: PCharacterType): Integer;
 var
   tempType: TCharacterType;
   CurrentEmbedding: Integer;
@@ -542,8 +523,7 @@ begin
     j := 0;
     for i := 0 to Count - 1 do
     begin
-      Line[j] := Line[i];
-      tempType := GetType(Line[i]);
+      tempType := OrigTypes[i];
       case tempType of
         ctRLE:
           if (stackTop < MAX_STACK) then
@@ -591,6 +571,8 @@ begin
        { Whitespace is treated as neutral for now }
         ctWS, ctB, ctS:
           begin
+            Line[j] := Line[i];
+            OrigTypes[j] := OrigTypes[i];
             Levels[j] := CurrentEmbedding;
             tempType := ctON;
             if (currentOverride <> ctON) then
@@ -600,6 +582,8 @@ begin
           end;
       else
         begin
+          Line[j] := Line[i];
+          OrigTypes[j] := OrigTypes[i];
           Levels[j] := CurrentEmbedding;
           if (currentOverride <> ctON) then
             tempType := CurrentOverride;
@@ -611,29 +595,21 @@ begin
   end
   else
   begin
-    j := Count;
     for i := 0 to Count - 1 do
     begin
-      tempType := GetType(Line[i]);
-      case tempType of
-        ctWS, ctB, ctS:
-          begin
-            Levels[i] := CurrentEmbedding;
-            tempType := ctON;
-            if (CurrentOverride <> ctON) then
-              tempType := CurrentOverride;
-          end;
-      else
-        begin
-          Levels[i] := CurrentEmbedding;
-          if (CurrentOverride <> ctON) then
-            tempType := CurrentOverride;
-        end;
-      end;
+      tempType := OrigTypes[i];
+      if (tempType = ctWS) or (tempType = ctB) or (tempType = ctS) then
+        tempType := ctON;
+      if (CurrentOverride <> ctON) then
+        tempType := CurrentOverride;
+      Levels[i] := CurrentEmbedding;
       Types[i] := tempType;
     end;
   end;
-  Result := j;
+  if fX then
+    Result := j
+  else
+    Result := Count;
 end;
 
 { Rule (W3) }
@@ -661,6 +637,7 @@ function BidiText(Line: PWideChar; Count: Integer; Options: TBidiOptions; Number
 var
   Types: PCharacterType;
   Levels: PLevel;
+  OrigTypes: PCharacterType;
   ParagraphLevel: TLevel;
   tempType, tempTypeSec: TCharacterType;
   tempLevel: TLevel;
@@ -673,34 +650,45 @@ var
 begin
 //  Result := 0;
 
-  fX := False;
-  fAL := False;
-  fET := False;
-  fNSM := False;
-  for i := 0 to Count - 1 do
+  if Count <= 0 then
   begin
-    case GetType(Line[i]) of
-      ctAL, ctR:
-        fAL := True;
-      ctLRE, ctLRO, ctRLE, ctRLO, ctPDF, ctBN:
-        fX := True;
-      ctET:
-        fET := True;
-      ctNSM:
-        fNSM := True;
-    end
+    Result := 0;
+    exit;
   end;
 
-  if (not fAL) and (not fX) then
-  begin
-    Result := Count;
-    exit; //nothing todo
-  end;
-
-   { Initialize Types, Levels }
-  Types := AllocMem(SizeOf(TCharacterType) * Count);
-  Levels := AllocMem(SizeOf(TLevel) * Count);
+  OrigTypes := AllocMem(SizeOf(TCharacterType) * Count);
   try
+    for i := 0 to Count - 1 do
+      OrigTypes[i] := GetType(Line[i]);
+
+    fX := False;
+    fAL := False;
+    fET := False;
+    fNSM := False;
+    for i := 0 to Count - 1 do
+    begin
+      case OrigTypes[i] of
+        ctAL, ctR:
+          fAL := True;
+        ctLRE, ctLRO, ctRLE, ctRLO, ctPDF, ctBN:
+          fX := True;
+        ctET:
+          fET := True;
+        ctNSM:
+          fNSM := True;
+      end
+    end;
+
+    if (not fAL) and (not fX) then
+    begin
+      Result := Count;
+      exit; //nothing todo
+    end;
+
+     { Initialize Types, Levels }
+    Types := AllocMem(SizeOf(TCharacterType) * Count);
+    Levels := AllocMem(SizeOf(TLevel) * Count);
+    try
 
      { Rule (P1)  NOT IMPLEMENTED
       * P1. Split the text into separate paragraphs. A paragraph separator is
@@ -718,8 +706,8 @@ begin
         ParagraphLevel := 0;
       bdpRightToLeft:
         ParagraphLevel := 1;
-      else
-        ParagraphLevel := GetParagraphLevel(Line, Count);
+        else
+          ParagraphLevel := GetParagraphLevel(OrigTypes, Count);
     end;
 
      { Rule (X1), (X2), (X3), (X4), (X5), (X6), (X7), (X8), (X9)
@@ -745,9 +733,15 @@ begin
       * Here, they're converted to BN.
       }
 
-    NewCount := DoTypes(Line, ParagraphLevel, Types, Levels, Count, fX);
+    NewCount := DoTypes(Line, ParagraphLevel, Types, Levels, Count, fX, OrigTypes);
     if NewCount < Count then
       Count := NewCount;
+
+    if Count = 0 then
+    begin
+      Result := 0;
+      exit;
+    end;
 
      { Rule (W1)
       * W1. Examine each non-spacing mark (NSM) in the level run, and change
@@ -969,41 +963,28 @@ begin
       end
     end;
 
-     { Rule (I1)
-      * I1. For all characters with an even (left-to-right) embedding
-      * direction, those of type R go up one level and those of type AN or
-      * EN go up two Levels.
-      }
-    for i := 0 to Count - 1 do
-    begin
-      if even(Levels[i]) then
+       { Rule (I1) & (I2)
+        * I1. For all characters with an even (left-to-right) embedding
+        * direction, those of type R go up one level and those of type AN or
+        * EN go up two Levels.
+        * I2. For all characters with an odd (right-to-left) embedding direction,
+        * those of type L, EN or AN go up one level.
+        }
+      for i := 0 to Count - 1 do
       begin
-        if (Types[i] = ctR) then
-          Levels[i] := Levels[i] + 1
-        else if ((Types[i] = ctAN) or (Types[i] = ctEN)) then
-          Levels[i] := Levels[i] + 2;
-      end else
-      begin
-        if ((Types[i] = ctL) or
-          (Types[i] = ctEN) or
-          (Types[i] = ctAN)) then
-          Levels[i] := Levels[i] + 1;
-      end
-    end;
-
-     { Rule (I2)
-      * I2. For all characters with an odd (right-to-left) embedding direction,
-      * those of type L, EN or AN go up one level.
-      }
-
-    for i := 0 to Count - 1 do
-    begin
-      if odd(Levels[i]) then
-      begin
-        if (Types[i] = ctL) or (Types[i] = ctEN) or (Types[i] = ctAN) then
-          Levels[i] := Levels[i] + 1;
-      end
-    end;
+        if Odd(Levels[i]) then
+        begin
+          if (Types[i] = ctL) or (Types[i] = ctEN) or (Types[i] = ctAN) then
+            Inc(Levels[i]);
+        end
+        else
+        begin
+          if (Types[i] = ctR) then
+            Inc(Levels[i])
+          else if (Types[i] = ctAN) or (Types[i] = ctEN) then
+            Levels[i] := Levels[i] + 2;
+        end
+      end;
 
      { Rule (L1)
       * L1. On each Line, reset the embedding level of the following characters
@@ -1017,39 +998,34 @@ begin
       * modified by the previous phase.
       }
 
-    j := Count - 1;
-    while (j > 0) and (GetType(Line[j]) = ctWS) do
-      Dec(j);
+      j := Count - 1;
+      while (j > 0) and (OrigTypes[j] = ctWS) do
+        Dec(j);
 
-    if (j < Count - 1) then
-    begin
-      for j := j + 1 to Count - 1 do
-        Levels[j] := ParagraphLevel;
-    end;
-
-    for i := 0 to Count - 1 do
-    begin
-      tempType := GetType(Line[i]);
-      if (tempType = ctWS) then
+      if (j < Count - 1) then
       begin
-        j := i;
-        Inc(j);
-        while ((j < Count) and ((tempType = ctWS) or (tempType = ctRLE))) do
-        begin
-          tempType := GetType(Line[j]);
-          Inc(j);
-        end;
+        for j := j + 1 to Count - 1 do
+          Levels[j] := ParagraphLevel;
+      end;
 
-        if (GetType(Line[j]) = ctB) or (GetType(Line[j]) = ctS) then
+      for i := 0 to Count - 1 do
+      begin
+        tempType := OrigTypes[i];
+        if (tempType = ctWS) then
         begin
-          for j := j - 1 downto i do
+          j := i + 1;
+          while (j < Count) and ((OrigTypes[j] = ctWS) or (OrigTypes[j] = ctRLE)) do
+            Inc(j);
+
+          if (j < Count) and ((OrigTypes[j] = ctB) or (OrigTypes[j] = ctS)) then
           begin
-            Levels[j] := ParagraphLevel;
+            for j := j - 1 downto i do
+              Levels[j] := ParagraphLevel;
           end
         end
-      end else if (tempType = ctB) or (tempType = ctS) then
-        Levels[i] := ParagraphLevel;
-    end;
+        else if (tempType = ctB) or (tempType = ctS) then
+          Levels[i] := ParagraphLevel;
+      end;
 
      { Rule (L4)
       * L4. A character that possesses the mirrored property as specified by
@@ -1078,33 +1054,32 @@ begin
       * odd level.
       }
 
-    if (fNSM and (bdoReorderCombining in Options)) then
-    begin
-      i := 0;
-      while i < Count do
+      if (fNSM and (bdoReorderCombining in Options)) then
       begin
-        if (GetType(Line[i]) = ctNSM) and odd(Levels[i]) then
+        i := 0;
+        while i < Count do
         begin
-          j := i;
-          Inc(j);
-          while ((j < Count) and (GetType(Line[j]) = ctNSM)) do
-            Inc(j);
-          dec(j);
-          dec(i);
-          it := j;
-          while j > i do
+          if (OrigTypes[i] = ctNSM) and odd(Levels[i]) then
           begin
-            temp := Line[i];
-            Line[i] := Line[j];
-            Line[j] := temp;
-            Inc(i);
-            Dec(j);
+            j := i + 1;
+            while (j < Count) and (OrigTypes[j] = ctNSM) do
+              Inc(j);
+            dec(j);
+            dec(i);
+            it := j;
+            while j > i do
+            begin
+              temp := Line[i];
+              Line[i] := Line[j];
+              Line[j] := temp;
+              Inc(i);
+              Dec(j);
+            end;
+            i := it + 1;
           end;
-          i := it + 1;
-        end;
-        Inc(i);
-      end
-    end;
+          Inc(i);
+        end
+      end;
 
   { Shaping
   * Shaping is Applied to each run of Levels separately....
@@ -1121,17 +1096,16 @@ begin
         i := 0;
         while (j < Count) do
         begin
-          if (GetType(Line[j]) = ctAL) then
+          if (OrigTypes[j] = ctAL) then
           begin
-            if (j < Count) and (j >= i) then
+            if (j >= i) then
             begin
               tempLevel := Levels[j];
               i := j;
               while (i < Count) and (Levels[i] = tempLevel) do
                 Inc(i);
-              DoShape(Line, ShapeTo, j, i, Ligatures);
+              DoShape(Line, ShapeTo, j, i, Ligatures, OrigTypes);
               j := i;
-  //            tempLevel := Levels[j]; ????
             end
           end;
           Inc(j);
@@ -1165,35 +1139,42 @@ begin
   * level or higher
   }
 
-  { we flip the character string and leave the level array }
-    i := 0;
-    tempLevel := Levels[0];
-    while (i < Count) do
-    begin
-      if (Levels[i] > tempLevel) then
-        tempLevel := Levels[i];
-      Inc(i);
+    { we flip the character string and leave the level array }
+      if Count > 0 then
+      begin
+        i := 0;
+        tempLevel := Levels[0];
+        while (i < Count) do
+        begin
+          if (Levels[i] > tempLevel) then
+            tempLevel := Levels[i];
+          Inc(i);
+        end;
+
+        while (tempLevel > 0) do { loop from highest level to the least odd, }
+        begin { which i assume is 1 }
+          FlipThisRun(Line, Levels, tempLevel, Count);
+          Dec(tempLevel);
+        end;
+      end;
+
+    {* Rule (L3) NOT IMPLEMENTED
+     * L3. Combining marks applied to a right-to-left base character will at
+     * this point precede their base character. If the rendering engine
+     * expects them to follow the base characters in the final display
+     * process, then the ordering of the marks and the base character must
+     * be reversed.
+     *}
+
+    finally
+      Freemem(Types);
+      Freemem(Levels);
     end;
-
-    while (tempLevel > 0) do { loop from highest level to the least odd, }
-    begin { which i assume is 1 }
-      FlipThisRun(Line, Levels, tempLevel, Count);
-      Dec(tempLevel);
-    end;
-
-  {* Rule (L3) NOT IMPLEMENTED
-   * L3. Combining marks applied to a right-to-left base character will at
-   * this point precede their base character. If the rendering engine
-   * expects them to follow the base characters in the final display
-   * process, then the ordering of the marks and the base character must
-   * be reversed.
-   *}
-
   finally
-    Freemem(Types);
-    Freemem(Levels);
+    Freemem(OrigTypes);
   end;
-  Line[Count] := #0;
+  if Count > 0 then
+    Line[Count] := #0;
   Result := Count;
 end;
 
