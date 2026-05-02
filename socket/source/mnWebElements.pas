@@ -4310,8 +4310,8 @@ begin
       else //if SameText(ext, '.js')  then
         Context.Writer.AddHTMLScript(filename, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options)
     end
-    else
-      Context.Writer.AddComment(source.Name);      
+{    else
+      Context.Writer.AddComment(source.Name);}
   end;
 end;
 

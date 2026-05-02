@@ -170,7 +170,7 @@ begin
   begin
     //HttpServer.CertificateFile := Application.Location + '\acme\fullchain.pem';
     //HttpServer.PrivateKeyFile := Application.Location + '\acme\privkey.pem';
-    HttpServer.UseSSL := True;
+    HttpServer.IsSecure := True;
     HttpServer.CertificateFile := CertFile;
     HttpServer.CertPassword := CertPassword;
     HttpServer.PrivateKeyFile := PrivateKeyFile;
@@ -199,14 +199,14 @@ begin
     aHomeModule.AliasName := HomeAliasEdit.Text;
     aAppFolder := ExtractFilePath(Application.ExeName);
 
-    //aHomeModule.IsSSL := HttpServer.UseSSL;
+    //aHomeModule.IsSSL := HttpServer.IsSecure;
     //aHomeModule.Domain := 'localhost';
     //aHomeModule.Port := HttpServer.Port;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.HomeFolder := aHomeFolder;
     aHomeModule.WorkFolder := aAppFolder;
 
-    aHomeModule.Web.IsSecure := HttpServer.UseSSL;
+    aHomeModule.Web.IsSecure := HttpServer.IsSecure;
     aHomeModule.Web.AppFolder := Application.Location;
     //aHomeModule.Web.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs-v2.png');
     aHomeModule.Web.Assets.LogoFile := aHomeModule.HomeFolder + 'cs.svg';

@@ -1,4 +1,8 @@
-unit GPSUtils;
+unit mnGPSUtils;
+{$M+}{$H+}
+{$IFDEF FPC}
+{$MODE delphi}
+{$ENDIF}
 {**
  *  This file is part of the "MiniLib"
  *
@@ -6,7 +10,6 @@ unit GPSUtils;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
- 
 {
   see
   http://en.wikipedia.org/wiki/Geographic_coordinate_system
@@ -36,17 +39,10 @@ Sample
 
 }
  
-{$M+}
-{$H+}
-{$IFDEF FPC}
-{$MODE delphi}
-{$ENDIF}
-
 interface
 
 uses
-  Classes, SysUtils, SyncObjs,
-  mnStreams, mnCommThreads, mnCommClasses;
+  Classes, SysUtils;
   
 type
   EGPSError = class(Exception);
@@ -69,25 +65,6 @@ function GPSDecimalToDM(Value: Extended): string; overload;
 function GPSToMAP(Info: TGPSDecimalInfo): string; overload;
 function GPSToMAP(Latitude: Extended; Longitude: Extended): string; overload;
 function GPSPrase(Command:string; var Info:TGPSInfo):Boolean;
-
-function GPSInfo: TGPSInfo;
-procedure SetGPSInfo(Info: TGPSInfo);
-function GPSLock: TCriticalSection;
-
-type
-  { TmnGPSThread }
-
-  TmnGPSThread = class(TmnCommThread)
-  private
-    FEndOfLine: string;
-    FBuffer: string;
-  protected
-    procedure StringArrived(S: string); override;
-    procedure Parse(S: string); virtual;
-  public
-    property EndOfLine: string read FEndOfLine write FEndOfLine;
-  end;
-
 
 implementation
 
@@ -194,68 +171,5 @@ begin
   end;
 end;
 
-var
-  FGPSLock : TCriticalSection = nil;
-  FGPSInfo: TGPSInfo;
-
-function GPSLock:TCriticalSection;
-begin
-  if FGPSLock = nil then
-    FGPSLock := TCriticalSection.Create;
-  Result := FGPSLock;
-end;
-
-function GPSInfo: TGPSInfo;
-begin
-  GPSLock.Enter;
-  try
-    Result := FGPSInfo;
-  finally
-    GPSLock.Leave;
-  end;
-end;
-
-procedure SetGPSInfo(Info: TGPSInfo);
-begin
-  GPSLock.Enter;
-  try
-    FGPSInfo := Info;
-  finally
-    GPSLock.Leave;
-  end;
-end;
-
-procedure TmnGPSThread.StringArrived(S: string);
-var
-  P: Integer;
-begin
-  FBuffer := FBuffer + S;
-  P := AnsiPos(FEndOfLine, FBuffer);
-  while P > 0 do
-  begin
-    Parse(Copy(FBuffer, 1, P - 1));
-    FBuffer := Copy(FBuffer, P + 1, MaxInt);
-    P := AnsiPos(FEndOfLine, FBuffer);
-  end;
-end;
-
-procedure TmnGPSThread.Parse(S: string);
-var
-  Info:TGPSInfo;
-begin
-  if GPSPrase(S, Info) then
-  begin
-    SetGPSInfo(Info);
-//    if CommStream.Connected then
-//    begin
-//      FBuffer:='';
-//      CommStream.Purge;//try to clear cache, we need a runtime values from GPS receiver
-//    end;
-  end;
-end;
-
-initialization
-finalization
-  FreeAndNil(FGPSLock);
 end.
 
