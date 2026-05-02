@@ -463,7 +463,7 @@ begin
   else
     OutBuffer.Clear;
   Result := vCount;
-end};
+end}
 
 { TExStreamCipher }
 
