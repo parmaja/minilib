@@ -438,8 +438,10 @@ type
     procedure AddInlineTag(const TagName, TagAttributes, Value: string); overload;
     procedure ReadFromFile(FileName: string);
 
-    procedure AddHTMLScript(const src: string; Integrity: string = ''; Defer: Boolean = True; Cross: Boolean = True);
-    procedure AddHTMLCss(const src: string; Integrity: string = ''; Defer: Boolean = True; Cross: Boolean  = True);
+    procedure AddLinkScript(const src: string; Integrity: string = ''; Defer: Boolean = True; Cross: Boolean = True);
+    procedure AddEmbedScript(const Text: string; Defer: Boolean = True);
+    procedure AddLinkStyle(const src: string; Integrity: string = ''; Defer: Boolean = True; Cross: Boolean  = True);
+    procedure AddEmbedStyle(const Text: string);
   end; 
   
 //* Serializer
@@ -1821,7 +1823,26 @@ begin
   WriteLn('<!--' + Comment + '-->', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwXML_TidyWriterHelper.AddHTMLCss(const src: string; Integrity: string; Defer: Boolean; Cross: Boolean);
+procedure TmnwXML_TidyWriterHelper.AddEmbedScript(const Text: string; Defer: Boolean = True);
+var
+  s: string;
+begin
+  s := '';
+  if Defer then
+    s := s + ' defer';  
+  OpenTag('script' + s);
+  WriteLines(Text);
+  CloseTag('script');
+end;
+
+procedure TmnwXML_TidyWriterHelper.AddEmbedStyle(const Text: string);
+begin
+  OpenTag('style');
+  WriteLines(Text);
+  CloseTag('style');
+end;
+
+procedure TmnwXML_TidyWriterHelper.AddLinkStyle(const src: string; Integrity: string; Defer: Boolean; Cross: Boolean);
 var
   s: string;
 begin
@@ -1835,7 +1856,7 @@ begin
   AddShortTag('link', 'rel="stylesheet" href="' + src + '"' + s);
 end;
 
-procedure TmnwXML_TidyWriterHelper.AddHTMLScript(const src: string; Integrity: string; Defer: Boolean; Cross: Boolean);
+procedure TmnwXML_TidyWriterHelper.AddLinkScript(const src: string; Integrity: string; Defer: Boolean; Cross: Boolean);
 var
   s: string;
 begin

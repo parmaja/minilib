@@ -333,23 +333,41 @@ type
   TLibraryOption = (libDefer, libCross);
   
   TLibraryOptions = set of TLibraryOption;
+
+  TLibrarySourceType = (
+    stStyle, 
+    stScript
+  );
+
+  TLibrarySourceWhere = (
+    stOnline, 
+    stEmbed,
+    stResource
+  );
   
   TLibrarySource = class(TmnNamedObject)
   public    
-    Direction: TDirection;
-    BaseURL: string;
-    Query: string; //Extra add to name like ?v=34545634563
+    SourceType: TLibrarySourceType;
+    Where: TLibrarySourceWhere;
+    Value: string;
+    LocalFileName: string;    
     Integrity: string;
-    Options: TLibraryOptions;
+    Direction: TDirection;
+    Options: TLibraryOptions;    
     constructor Create; virtual;
   end;
 
   TLibrarySources = class(TmnNamedObjectList<TLibrarySource>)
   private
   public
-    function Add(const BaseURL, FileName: string): TLibrarySource; overload;
-    function Add(const BaseURL, FileName: string; Direction: TDirection; Query: string = ''; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
-    function Add(const BaseURL, FileName: string; Query: string; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
+    //LocalFile: from assets, only file name, not with path
+    //OnlineFile: if OnlineFile ended with / LocalFile will added
+    function Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFileName: string; Direction: TDirection; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
+
+    function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string): TLibrarySource; overload;
+    function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string; Integrity: string; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
+
+    function AddStyle(const EmbedText: string; Direction: TDirection = dirUndefined): TLibrarySource; overload;
   end;
   
   TmnwLibrary = class abstract(TmnNamedObject)
@@ -392,6 +410,13 @@ type
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
     function RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False): TmnwLibrary; overload;
     function RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer; UseIt: Boolean = False): TmnwLibrary; overload;
+  end;
+
+  TmnwUsedLibraries = class(TmnNamedObjectList<TmnwLibrary>)
+  public
+    procedure Use(ALibraryClass: TmnwLibraryClass); overload;
+    procedure Use(ALibrary: TmnwLibrary); overload;
+    procedure Use(ALibraryName: string); overload;
   end;
 
   TJQuery_Library = class(TmnwLibrary)
@@ -916,8 +941,6 @@ type
     procedure ClearSchemas;
   public
     Started: Boolean;
-    InstanceUID: TGUID;
-    InstanceDate: TDateTime;
 
     IsSecure: Boolean;
     Domain: string; //localhost
@@ -2971,8 +2994,6 @@ end;
 constructor TmnwWeb.Create;
 begin
   FTimeStamp := GetTimeStamp;
-  InstanceUID := TGUID.NewGuid;
-  FileAge(ParamStr(0), InstanceDate);
   FLock := TCriticalSection.Create;
   FRegistered := TRegisteredSchemas.Create;
   DefaultAge := -1; //Forever
@@ -3640,7 +3661,7 @@ end;
 procedure THTML.TImageMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
-  AResponse.SendStream(Data, Data.Size, FileName, AContext.Schema.Web.InstanceDate);
+  AResponse.SendStream(Data, Data.Size, FileName, InstanceDate);
 end;
 
 procedure THTML.TImageMemory.LoadFromFile(const AFileName: string);
@@ -4138,14 +4159,7 @@ var
 begin
   inherited;
   if ftResource in Options then
-  begin   
-    aStream := TResourceStream.Create(hInstance, ChangeFileExt(FileName, ''), {$ifdef FPC}'RT_RCDATA'{$else}RT_RCDATA{$endif}); //* remove extension
-    try
-      AResponse.SendStream(aStream, aStream.Size, FileName, AContext.Schema.Web.InstanceDate);
-    finally
-      aStream.Free;
-    end;
-  end
+    AResponse.SendResource(FileName)
   else
     AResponse.SendFile(FileName);
 end;
@@ -4271,7 +4285,7 @@ end;
 procedure TmnwLibrary.AddHead(const Context: TmnwContext);
 var
   source: TLibrarySource;
-  filename, ext: string;  
+  url: string;  
   aDirection: TDirection;
   local: Boolean;
 begin
@@ -4283,35 +4297,40 @@ begin
     
     if (source.Direction = dirUndefined) or (source.Direction = aDirection) then
     begin
-      ext := ExtractFileExt(source.Name);
-      if (source.BaseURL = '') or CheckOffline(Context, source.Name) then
+      if source.Where in [stOnline, stResource]  then           
       begin
-        filename := EndUrl(Context.GetAssetsURL);
-        local := True;
+        if (source.Value = '') or (source.Where = stResource) or CheckOffline(Context, source.Name) then
+        begin
+          url := EndUrl(Context.GetAssetsURL) + source.Name;
+          local := True;
+        end
+        else if source.SourceType in [stStyle, stScript] then           
+        begin
+          url := source.Value;
+          local:= False;
+        end;
+
+        if not StartsText('http', url) then
+        begin
+          if Context.Request.IsSecure then
+            url := 'https://' + url
+          else
+            url := 'http://' + url;
+        end;
+        
+        case source.SourceType of
+          stStyle: Context.Writer.AddLinkStyle(url, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options);
+          stScript: Context.Writer.AddLinkScript(url, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options);
+        end;
       end
       else
       begin
-        filename := source.BaseURL;
-        local:= False;
+        case source.SourceType of
+          stStyle: Context.Writer.AddEmbedStyle(source.Value);
+          stScript: Context.Writer.AddEmbedScript(source.Value, libDefer in source.Options);
+        end;
       end;
-
-      if not StartsText('http', filename) then
-      begin
-        if Context.Request.IsSecure then
-          filename := 'https://' + filename
-        else
-          filename := 'http://' + filename;
-      end;
-      
-      filename := IncludeURLDelimiter(filename) + source.Name + AddStartDelimiter(source.Query, '?');
-      
-      if SameText(ext, '.css')  then    
-        Context.Writer.AddHTMLCss(filename, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options)
-      else //if SameText(ext, '.js')  then
-        Context.Writer.AddHTMLScript(filename, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options)
-    end
-{    else
-      Context.Writer.AddComment(source.Name);}
+    end;    
   end;
 end;
 
@@ -4448,7 +4467,7 @@ end;
 procedure TJQuery_Library.Created;
 begin
   inherited;
-  Sources.Add('cdn.jsdelivr.net/npm/jquery@3.7.1/dist/', 'jquery.min.js');
+  Sources.Add(stScript, 'cdn.jsdelivr.net/npm/jquery@3.7.1/dist/', 'jquery.min.js');
 end;
 
 { THTML }
@@ -4456,8 +4475,8 @@ end;
 procedure TWebElements_Library.Created;
 begin
   inherited;
-  Sources.Add('', 'web-elements.js', '?v=' + IntToStr(GlobalTimeStamp));
-  Sources.Add('', 'web-elements.css', '?v=' + IntToStr(GlobalTimeStamp));
+  Sources.Add(stScript, '', 'web-elements.js', '?v=' + IntToStr(GlobalTimeStamp));
+  Sources.Add(stStyle, '', 'web-elements.css', '?v=' + IntToStr(GlobalTimeStamp));
 end;
 
 { THTML.TImage }
@@ -5448,26 +5467,35 @@ end;
 
 { TLibrarySources }
 
-function TLibrarySources.Add(const BaseURL, FileName: string; Direction: TDirection; Query, Integrity: string; Options: TLibraryOptions): TLibrarySource;
+function TLibrarySources.Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFileName: string; Direction: TDirection; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; 
 begin
   Result := TLibrarySource.Create;
-  Result.Name := FileName;
-  Result.BaseURL := BaseURL;
+  Result.Name := LocalFileName;
+  Result.SourceType := SourceType;
+  Result.Where := Where;
+  if EndsDelimiter(OnlineFile) then 
+    Result.Value := OnlineFile + LocalFileName
+  else  
+    Result.Value := OnlineFile;
   Result.Direction := Direction;
   Result.Integrity := Integrity;
-  Result.Query := Query;
   Result.Options := Options;
   inherited Add(Result);
 end;
 
-function TLibrarySources.Add(const BaseURL, FileName: string; Query, Integrity: string; Options: TLibraryOptions): TLibrarySource;
+function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string; Integrity: string; Options: TLibraryOptions): TLibrarySource;
 begin
-  Result := Add(BaseURL, FileName, dirUndefined, Query, Integrity, Options);
+  Result := Add(SourceType, stOnline, OnlineFile, LocalFileName, dirUndefined, Integrity, Options);
 end;
 
-function TLibrarySources.Add(const BaseURL, FileName: string): TLibrarySource;
+function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string): TLibrarySource;
 begin
-  Result := Add(BaseURL, FileName, dirUndefined, '', '');
+  Result := Add(SourceType, stOnline, OnlineFile, LocalFileName, dirUndefined, '');
+end;
+
+function TLibrarySources.AddStyle(const EmbedText: string; Direction: TDirection): TLibrarySource;
+begin
+  Result := Add(stStyle, stEmbed, EmbedText, '', Direction);
 end;
 
 { TLibrarySource }
@@ -5476,6 +5504,39 @@ constructor TLibrarySource.Create;
 begin
   inherited;
   Options := [libDefer, libCross];
+end;
+
+{ TmnwUsedLibraries }
+
+procedure TmnwUsedLibraries.Use(ALibraryClass: TmnwLibraryClass);
+var
+  ALibrary: TmnwLibrary;
+begin
+  ALibrary := Libraries.Find(ALibraryClass);
+  if ALibrary = nil then
+    Libraries.RegisterLibrary(ALibraryClass, True)
+  else
+    Use(ALibrary);
+end;
+
+procedure TmnwUsedLibraries.Use(ALibraryName: string);
+var
+  ALibrary: TmnwLibrary;
+begin
+  ALibrary := Libraries.Find(ALibraryName);
+  if ALibrary <> nil then
+    Use(ALibrary)
+  else
+    raise Exception.Create('There is no library: ' + ALibraryName);
+end;
+
+procedure TmnwUsedLibraries.Use(ALibrary: TmnwLibrary);
+begin
+  if ALibrary <> nil then
+  begin
+  end
+  else
+    raise Exception.Create('library is nil');
 end;
 
 initialization

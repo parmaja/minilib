@@ -446,7 +446,7 @@ type
       end;
   public
     procedure AddHead(const Context: TmnwContext); override;
-end;
+  end;
 
   TBootstrap_Library = class(TmnwLibrary)
   protected
@@ -1933,9 +1933,9 @@ const
   jsBaseURL = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/';
 begin
   inherited;
-  Sources.Add(cssBaseURL, 'bootstrap.rtl.min.css', dirRightToLeft, '', 'sha384-CfCrinSRH2IR6a4e6fy2q6ioOX7O6Mtm1L9vRvFZ1trBncWmMePhzvafv7oIcWiW');
-  Sources.Add(cssBaseURL, 'bootstrap.min.css', dirLeftToRight, '', 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB');
-  Sources.Add(jsBaseURL, 'bootstrap.bundle.min.js', '', 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI');
+  Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.rtl.min.css', dirRightToLeft, 'sha384-CfCrinSRH2IR6a4e6fy2q6ioOX7O6Mtm1L9vRvFZ1trBncWmMePhzvafv7oIcWiW');
+  Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.min.css', dirLeftToRight, 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB');
+  Sources.Add(stScript, stOnline, jsBaseURL, 'bootstrap.bundle.min.js', dirUndefined, 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI');
 end;
 
 { TBootstrapIcons_Library }
@@ -1943,7 +1943,7 @@ end;
 procedure TBootstrapIcons_Library.Created;
 begin
   inherited;
-  Sources.Add('cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css');
+  Sources.Add(stStyle, 'cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css');
 end;
 
 initialization

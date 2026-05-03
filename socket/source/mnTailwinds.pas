@@ -1755,7 +1755,6 @@ end;
 procedure TTWRenderer.TNavDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TNavDropdown;
-  event: string;
   classes: TElementClasses;
 begin
   e := Scope.Element as THTML.TNavDropdown;
@@ -1852,7 +1851,7 @@ procedure TTailwind_Library.Created;
 begin
   inherited;
   //Sources.Add('https://cdn.tailwindcss.com/3.4.17', '');
-  Sources.Add('https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4', '');
+  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4', '');
 end;
 
 initialization

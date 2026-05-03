@@ -426,6 +426,7 @@ type
     function SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
 
+    function SendResource(const ResName: string): Boolean; overload;
     function SendFile(const AFileName: string; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean; overload;
 
     function ReceiveStream(s: TStream): Int64; overload;
@@ -910,6 +911,8 @@ const
 
 var
   DevelopperMode:Boolean = False;
+  InstanceDate: TDateTime = 0;
+  InstanceUID: TGUID;
 
 function OptionValue(Value: TmodOptionValue): Boolean; overload; inline;
 function OptionValue(Value: Boolean): TmodOptionValue; overload; inline;
@@ -1371,6 +1374,18 @@ begin
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
   try
     Result := SendStream(aStream, aSize, Alias, aFileDate, FileDispositions);
+  finally
+    aStream.Free;
+  end;
+end;
+
+function TmodResponse.SendResource(const ResName: string): Boolean;
+var
+  aStream: TResourceStream;
+begin
+  aStream := TResourceStream.Create(hInstance, ChangeFileExt(ResName, ''), {$ifdef FPC}'RT_RCDATA'{$else}RT_RCDATA{$endif}); //* remove extension
+  try
+    SendStream(aStream, aStream.Size, ResName, InstanceDate);
   finally
     aStream.Free;
   end;
@@ -3681,6 +3696,9 @@ begin
 end;
 
 initialization
+  //InstanceDate := Now;
+  FileAge(ParamStr(0), InstanceDate);
+  InstanceUID := TGUID.NewGuid;
 finalization
   FreeAndNil(FRegisteredModules);
 end.
