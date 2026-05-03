@@ -42,18 +42,17 @@ type
   TmnMIME = class(TmnNamedObjectList<TmnMIMEItem>)
   private
     procedure Register;
-  protected
-    procedure Created; override;
   public
-    function Add(Extension, ContentType: string; Description: string = ''; AFeatures: TMIMEFeatures = []): TmnMIMEItem;
+    function Add(const Extension, ContentType: string; const Description: string = ''; AFeatures: TMIMEFeatures = []): TmnMIMEItem;
   end;
 
 //* You can call txt or .txt filename.txt or c:\temp\filename.txt
-function DocumentToContentType(const FileOrExtension: string): string;
+function DocumentToContentType(const FileOrExtension: string): string; inline;
+function ContentTypeOf(const FileOrExtension: string): string;
 //* Always return MIME , default is first one
 function DocumentToMIME(const FileOrExtension: string): TmnMIMEItem;
 
-function MIME: TmnMIME;
+function MIME: TmnMIME; 
 
 implementation
 
@@ -74,33 +73,35 @@ function DocumentToMIME(const FileOrExtension: string): TmnMIMEItem;
 var
   Ext: string;
 begin
-  if Pos('.', FileOrExtension) = 0 then
+  Ext := ExtractFileExt(FileOrExtension);
+  if Ext = '' then
     Ext := FileOrExtension
-  else
-  begin
-    Ext := LowerCase(ExtractFileExt(FileOrExtension));
-    if Length(Ext) > 1 then
-      Ext := Copy(Ext, 2, Length(Ext));
-  end;
-  Result := MIME.Find(Ext);
+  else if Length(Ext) > 1 then
+    Delete(Ext, 1, 1);
+  Result := MIME.Find(LowerCase(Ext));
   if Result = nil then
     Result := MIME[0];
 end;
 
-function DocumentToContentType(const FileOrExtension: string): string;
+function ContentTypeOf(const FileOrExtension: string): string;
 var
-  item: TmnMIMEItem;
+  Item: TmnMIMEItem;
 begin
-  item := DocumentToMIME(FileOrExtension);
-  if item = nil then
+  Item := DocumentToMIME(FileOrExtension);
+  if Item = nil then
     Result := ''
   else
-    Result := item.ContentType;
+    Result := Item.ContentType;
+end;
+
+function DocumentToContentType(const FileOrExtension: string): string;
+begin
+  Result := ContentTypeOf(FileOrExtension);
 end;
 
 { TmnMIME }
 
-function TmnMIME.Add(Extension, ContentType: string; Description: string; AFeatures: TMIMEFeatures): TmnMIMEItem;
+function TmnMIME.Add(const Extension, ContentType: string; const Description: string; AFeatures: TMIMEFeatures): TmnMIMEItem;
 begin
   Result := TmnMIMEItem.Create;
   Result.Name := Extension;
@@ -108,11 +109,6 @@ begin
   Result.Description := Description;
   Result.Features := AFeatures;
   inherited Add(Result);
-end;
-
-procedure TmnMIME.Created;
-begin
-  inherited;
 end;
 
 procedure TmnMIME.Register;
@@ -171,7 +167,7 @@ begin
   Add('tif', 'image/tiff', 'Tagged Image File Format (TIFF)', [Image]);
   Add('tiff', 'image/tiff', 'Tagged Image File Format (TIFF)', [Image]);
   Add('ttf', 'font/ttf', 'TrueType Font');
-	Add('txt', 'text/plain', 'Text', [TEXT]);
+  Add('txt', 'text/plain', 'Text', [TEXT]);
   Add('vsd', 'application/vnd.visio', 'Microsft Visio');
   Add('wav', 'audio/x-wav', 'Waveform Audio Format');
   Add('weba', 'audio/webm', 'WEBM audio', [Compressed]);

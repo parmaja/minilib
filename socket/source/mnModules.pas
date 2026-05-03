@@ -547,6 +547,7 @@ type
   public
     procedure Responded; overload; virtual; 
     procedure Respond(AAnswer: TmodAnswer); overload; 
+    procedure Respond(AAnswer: TmodAnswer; AContentType: string); overload; 
     procedure RespondText(S: string);    
     procedure RespondHTML(S: string);    
     procedure RespondJSON(S: string);    
@@ -3254,6 +3255,12 @@ begin
   ContentType := 'text/plain';
   SendUTF8String('401 Unauthorized');
   Responded;
+end;
+
+procedure TwebResponse.Respond(AAnswer: TmodAnswer; AContentType: string);
+begin
+  ContentType := AContentType;
+  Respond(AAnswer);  
 end;
 
 procedure TwebResponse.Responded;

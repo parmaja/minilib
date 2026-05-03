@@ -173,8 +173,7 @@ end;
 
 procedure TmnMultipartDataItem.SetHeader(const Value: TmnHeader);
 begin
-  if FHeader <> nil then
-    FreeAndNil(FHeader);
+  FreeAndNil(FHeader);
   FHeader := Value;
 end;
 
@@ -375,7 +374,7 @@ begin
   LocalFileName := IncludePathDelimiter(Data.TempPath);
   if LocalFileName <> '' then
     ForceDirectories(LocalFileName);
-  LocalFileName := LocalFileName + FileName;
+  LocalFileName := LocalFileName + ExtractFileName(FileName);
 
   if FileExists(LocalFileName) then
     DeleteFile(LocalFileName);

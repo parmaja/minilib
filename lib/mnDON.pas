@@ -1724,8 +1724,45 @@ begin
 end;
 
 procedure TmnTidyWriter.WriteLines(const S: string; Options: TmnTidyWriterOptions);
+var
+  I, Start: Integer;
+  Line: string;
 begin
-  Write(S, Options + [woEndLine]); //TODO
+  if S = '' then
+  begin
+    WriteLn('', Options);
+    Exit;
+  end;
+
+  I := 1;
+  Start := 1;
+  while I <= Length(S) do
+  begin
+    if S[I] = #13 then
+    begin
+      Line := Copy(S, Start, I - Start);
+      WriteLn(Line, Options);
+      Inc(I);
+      if (I <= Length(S)) and (S[I] = #10) then
+        Inc(I);
+      Start := I;
+    end
+    else if S[I] = #10 then
+    begin
+      Line := Copy(S, Start, I - Start);
+      WriteLn(Line, Options);
+      Inc(I);
+      Start := I;
+    end
+    else
+      Inc(I);
+  end;
+
+  if Start <= Length(S) then
+  begin
+    Line := Copy(S, Start, Length(S) - Start + 1);
+    WriteLn(Line, Options);
+  end;
 end;
 
 function TmnTidyWriter.WriteStream(AStream: TStream; Count: TFileSize): TFileSize;
