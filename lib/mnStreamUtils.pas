@@ -975,9 +975,11 @@ begin
           end
           else if Header.Opcode = wsoClose then
           begin
+            // Consume close payload (control frames are limited to 125 bytes)
+            if aSize > 0 then
+              Over.Read(PayloadBuf, aSize, c, r);
             CloseTransmission;
             break;
-            //Close;
           end;
         end;
       end;

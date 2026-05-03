@@ -1686,6 +1686,7 @@ begin
           if Stream.Connected then
           begin
             if (mrStayConnected in Result.Status) then
+			//if (mrStayConnected in Result.Status) and not (cloTransmission in Stream.State) then
             begin
               Stream.ReadTimeout := Result.Timout;
               //Stream.Close([cloWrite]); need flush ???
