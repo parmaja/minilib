@@ -616,9 +616,8 @@ end;
 procedure TTWRenderer.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary(TJQuery_Library, 1000);
-  Libraries.RegisterLibrary(TWebElements_Library, 2000, True);
-  Libraries.RegisterLibrary(TTailwind_Library, True);
+  Libraries.Use(TWebElements_Library, 2000);
+  Libraries.Use(TTailwind_Library);
 end;
 
 class destructor TTWRenderer.Destroy;
@@ -793,8 +792,7 @@ begin
     //* Library Head
     for aLibrary in Renderer.Libraries do
     begin
-      if (aLibrary.Usage > 0) and not aLibrary.EndOfBody then
-        aLibrary.AddHead(Context);
+      aLibrary.AddHead(Context);
     end;
     //* Renderer Head
     (Renderer as TTWRenderer).AddHead(Context);
@@ -848,13 +846,6 @@ begin
 
   Context.Writer.OpenTag('body', Scope.ToString + GetAttach + s);
   inherited;
-
-  for aLibrary in Renderer.Libraries do
-  begin
-    if (aLibrary.Usage > 0) and aLibrary.EndOfBody then
-      aLibrary.AddHead(Context);
-  end;
-
   Context.Writer.CloseTag('body');
 end;
 

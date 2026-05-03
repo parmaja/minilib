@@ -616,10 +616,10 @@ end;
 procedure TBSRenderer.Created;
 begin
   inherited;
-  Libraries.RegisterLibrary(TJQuery_Library, 1000);
-  Libraries.RegisterLibrary(TWebElements_Library, 2000, True);
-  Libraries.RegisterLibrary(TBootstrap_Library, True);
-  Libraries.RegisterLibrary(TBootstrapIcons_Library);
+  Libraries.Use(TWebElements_Library, 2000);
+  
+  Libraries.Use(TBootstrap_Library);
+  Libraries.Use(TBootstrapIcons_Library);
 end;
 
 class destructor TBSRenderer.Destroy;
@@ -803,8 +803,7 @@ begin
     //* Library Head
     for aLibrary in Renderer.Libraries do
     begin
-      if (aLibrary.Usage > 0) and not aLibrary.EndOfBody then
-        aLibrary.AddHead(Context);
+      aLibrary.AddHead(Context);
     end;
     //* Renderer Head
     (Renderer as TBSRenderer).AddHead(Context);
@@ -1185,12 +1184,6 @@ begin
 
   Context.Writer.OpenTag('body', Scope.ToString + GetAttach + s);
   inherited;
-  
-  for aLibrary in Renderer.Libraries do
-  begin
-    if (aLibrary.Usage > 0) and aLibrary.EndOfBody then
-      aLibrary.AddHead(Context);
-  end;
   
   Context.Writer.CloseTag('body');
 end;

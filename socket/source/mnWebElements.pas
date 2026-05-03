@@ -372,9 +372,7 @@ type
   
   TmnwLibrary = class abstract(TmnNamedObject)
   private
-    FUsage: Integer;
     FPriority: Integer;
-    FEndOfBody: Boolean;
     FDependsOn: TmnwLibrary;
     FSources: TLibrarySources;
   protected
@@ -386,10 +384,6 @@ type
      
     procedure AddHead(const Context: TmnwContext); virtual; 
     
-    procedure IncUsage;
-    procedure DecUsage;
-    property Usage: Integer read FUsage;
-    property EndOfBody: Boolean read FEndOfBody write FEndOfBody;
     property Priority: Integer read FPriority write FPriority;
     property DependsOn: TmnwLibrary read FDependsOn write FDependsOn;
     property Sources: TLibrarySources read FSources;
@@ -400,23 +394,25 @@ type
   { TmnwLibraries }
 
   TmnwLibraries = class(TmnNamedObjectList<TmnwLibrary>)
-  protected
-    function Compare(Item1, Item2: TmnwLibrary): Integer; override;
+  private
+    FLock: TCriticalSection;
   public
-    procedure Use(ALibraryClass: TmnwLibraryClass); overload;
-    procedure Use(ALibrary: TmnwLibrary); overload;
-    procedure Use(ALibraryName: string); overload;
-    function Find(ALibrary: string): TmnwLibrary; overload;
+    constructor Create; virtual;
+    destructor Destroy; override;     
+    function Find(ALibraryName: string): TmnwLibrary; overload;
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
-    function RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False): TmnwLibrary; overload;
-    function RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer; UseIt: Boolean = False): TmnwLibrary; overload;
+    function RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0): TmnwLibrary; overload;
+    property Lock: TCriticalSection read FLock;
   end;
 
   TmnwUsedLibraries = class(TmnNamedObjectList<TmnwLibrary>)
-  public
-    procedure Use(ALibraryClass: TmnwLibraryClass); overload;
-    procedure Use(ALibrary: TmnwLibrary); overload;
-    procedure Use(ALibraryName: string); overload;
+  protected
+    function Compare(Item1, Item2: TmnwLibrary): Integer; override;
+  public    
+    function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
+
+    procedure Use(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0); overload;
+    procedure Use(ALibraryName: string); overload;    
   end;
 
   TJQuery_Library = class(TmnwLibrary)
@@ -842,7 +838,7 @@ type
   TmnwRenderer = class abstract(TmnwObject)
   private
     FModule: TmodWebModule;
-    FLibraries: TmnwLibraries;
+    FLibraries: TmnwUsedLibraries;
     FParams: TmnwAttributes;
   protected
     {$ifdef rtti_objects}
@@ -865,7 +861,7 @@ type
     function CreateRenderer(AObject: TmnwElement): TmnwElementRenderer; overload;
 
     property Params: TmnwAttributes read FParams;
-    property Libraries: TmnwLibraries read FLibraries;
+    property Libraries: TmnwUsedLibraries read FLibraries;
     property Module: TmodWebModule read FModule;
 
     procedure AddHead(const Context: TmnwContext); virtual; 
@@ -4094,7 +4090,7 @@ constructor TmnwRenderer.Create(AModule: TmodWebModule);
 {var
   o: TmnwRenderer.TmnwElementRendererRegister;}
 begin
-  FLibraries := TmnwLibraries.Create;
+  FLibraries := TmnwUsedLibraries.Create(False);
   inherited Create;
   FModule := AModule;
   FParams := TmnwAttributes.Create;
@@ -4154,8 +4150,6 @@ end;
 { THTML.TFile }
 
 procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
-var
-  aStream: TResourceStream;
 begin
   inherited;
   if ftResource in Options then
@@ -4304,7 +4298,7 @@ begin
           url := EndUrl(Context.GetAssetsURL) + source.Name;
           local := True;
         end
-        else if source.SourceType in [stStyle, stScript] then           
+        else 
         begin
           url := source.Value;
           local:= False;
@@ -4362,104 +4356,75 @@ begin
   inherited;
 end;
 
-procedure TmnwLibrary.DecUsage;
-begin
-  FUsage := FUsage - 1;
-end;
-
 destructor TmnwLibrary.Destroy;
 begin
   inherited;
   FreeAndNil(FSources);
 end;
 
-procedure TmnwLibrary.IncUsage;
-begin
-  FUsage := FUsage + 1;
-end;
-
 { TmnwLibraries }
 
-function TmnwLibraries.Find(ALibrary: string): TmnwLibrary;
+function TmnwLibraries.Find(ALibraryName: string): TmnwLibrary;
 var
   i: Integer;
 begin
   Result := nil;
-  for i := 0 to Count - 1 do
-    if (SameText(Items[i].Name, ALibrary)) then
-    begin
-      Result := Items[i];
-      break;
-    end;
+  Lock.Enter;
+  try
+    for i := 0 to Count - 1 do
+      if (SameText(Items[i].Name, ALibraryName)) then
+      begin
+        Result := Items[i];
+        break;
+      end;
+  finally
+    Lock.Leave;
+  end;
 end;
 
-function TmnwLibraries.RegisterLibrary(ALibraryClass: TmnwLibraryClass; UseIt: Boolean = False): TmnwLibrary;
+constructor TmnwLibraries.Create;
 begin
-  Result := ALibraryClass.Create;
-  Add(Result);
-  if UseIt then
-    Use(Result);
+  inherited Create;
+  FLock := TCriticalSection.Create;
 end;
 
-procedure TmnwLibraries.Use(ALibrary: TmnwLibrary);
+destructor TmnwLibraries.Destroy;
 begin
-  if ALibrary <> nil then
-  begin
-    ALibrary.IncUsage;
-//    Move(IndexOf(ALibrary), 0);
-  end
-  else
-    raise Exception.Create('library is nil');
-end;
-
-function TmnwLibraries.Compare(Item1, Item2: TmnwLibrary): Integer;
-begin
-  Result := Item1.Priority - Item2.Priority;
-  //TODO use DependsOn
+  FreeAndNil(FLock);
+  inherited;
 end;
 
 function TmnwLibraries.Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary;
 var
   i: Integer;
 begin
-  Result := nil;
-  for i := 0 to Count - 1 do
-    if Items[i] is ALibraryClass then
-    begin
-      Result := Items[i];
-      break;
-    end;
+  Lock.Enter;
+  try
+    Result := nil;
+    for i := 0 to Count - 1 do
+      if Items[i] is ALibraryClass then
+      begin
+        Result := Items[i];
+        break;
+      end;
+  finally
+    Lock.Leave;
+  end;
 end;
 
-function TmnwLibraries.RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer; UseIt: Boolean): TmnwLibrary;
+function TmnwLibraries.RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer): TmnwLibrary;
 begin
-  Result := ALibraryClass.Create;
-  Result.Priority := Priority;
-  Add(Result);
-  if UseIt then
-    Use(Result);
-end;
-
-procedure TmnwLibraries.Use(ALibraryClass: TmnwLibraryClass);
-var
-  ALibrary: TmnwLibrary;
-begin
-  ALibrary := Find(ALibraryClass);
-  if ALibrary = nil then
-    RegisterLibrary(ALibraryClass, True)
-  else
-    Use(ALibrary)
-end;
-
-procedure TmnwLibraries.Use(ALibraryName: string);
-var
-  ALibrary: TmnwLibrary;
-begin
-  ALibrary := Find(ALibraryName);
-  if ALibrary <> nil then
-    Use(ALibrary)
-  else
-    raise Exception.Create('There is no library: ' + ALibraryName);
+  Lock.Enter;
+  try
+    Result := Find(ALibraryClass);
+    if Result <> nil then
+      raise Exception.Create(ALibraryClass.ClassName + ' is already registered');
+    Result := ALibraryClass.Create;
+    Result.Priority := Priority;
+    Add(Result);
+  finally
+    Lock.Leave;
+  end;
 end;
 
 { TJQuery_Library }
@@ -5508,35 +5473,51 @@ end;
 
 { TmnwUsedLibraries }
 
-procedure TmnwUsedLibraries.Use(ALibraryClass: TmnwLibraryClass);
+procedure TmnwUsedLibraries.Use(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0);
 var
   ALibrary: TmnwLibrary;
 begin
+  ALibrary := Find(ALibraryClass);
+  if ALibrary <> nil then
+    exit; //Already used
   ALibrary := Libraries.Find(ALibraryClass);
   if ALibrary = nil then
-    Libraries.RegisterLibrary(ALibraryClass, True)
+    Libraries.RegisterLibrary(ALibraryClass, Priority)
   else
-    Use(ALibrary);
+    Add(ALibrary);
+end;
+
+function TmnwUsedLibraries.Compare(Item1, Item2: TmnwLibrary): Integer;
+begin
+  Result := Item1.Priority - Item2.Priority;
+  //TODO use DependsOn
+end;
+
+function TmnwUsedLibraries.Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+    if Items[i] is ALibraryClass then
+    begin
+      Result := Items[i];
+      break;
+    end;
 end;
 
 procedure TmnwUsedLibraries.Use(ALibraryName: string);
 var
   ALibrary: TmnwLibrary;
 begin
+  ALibrary := Find(ALibraryName);
+  if ALibrary <> nil then
+    exit; //Already used
   ALibrary := Libraries.Find(ALibraryName);
   if ALibrary <> nil then
-    Use(ALibrary)
+    Add(ALibrary)
   else
-    raise Exception.Create('There is no library: ' + ALibraryName);
-end;
-
-procedure TmnwUsedLibraries.Use(ALibrary: TmnwLibrary);
-begin
-  if ALibrary <> nil then
-  begin
-  end
-  else
-    raise Exception.Create('library is nil');
+    raise Exception.Create('There is no library such: ' + ALibraryName);
 end;
 
 initialization
