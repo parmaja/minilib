@@ -1963,7 +1963,9 @@ begin
         Result.Status := Result.Status + [mrStayConnected];
         Request.Stream.AddProxy(Request.ProtcolProxy);
 
-        //* Do not write raw data after the handshake; the stream is now framed by WebSocket protocol.
+{        if SendHostHeader then
+          Response.Stream.WriteUTF8String('Request served by miniWebModule');        }
+        //* --Do not write raw data after the handshake; the stream is now framed by WebSocket protocol.-- NOPE
         //* https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
       end;
     end;

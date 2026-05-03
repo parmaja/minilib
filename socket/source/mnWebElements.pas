@@ -960,12 +960,12 @@ type
     function CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string): TmnwSchema; overload;
     function CreateSchema(SchemaItem: TmnwSchemaItem): TmnwSchema; overload;
     function ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
-    function GetElement(var AContext: TmnwContext; out Element: TmnwElement): Boolean;
-
+    
+    function GetElement(var AContext: TmnwContext; FindNested: Boolean; out Element: TmnwElement): Boolean;    
     //for HTML
     procedure Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
     //for WebSocket
-    function Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
+    function Attach(var AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
     function GetHostURL: string; virtual;    
 
@@ -2677,7 +2677,7 @@ begin
 end;
 
 //Main
-function TmnwWeb.GetElement(var AContext: TmnwContext; out Element: TmnwElement): Boolean;
+function TmnwWeb.GetElement(var AContext: TmnwContext; FindNested: Boolean; out Element: TmnwElement): Boolean;
 var
   aElement: TmnwElement;
   Routes: TStringList;
@@ -2781,36 +2781,39 @@ begin
           Element := aSchema;
           Result := True;
 
-          //Finding nested element inside Schema
-          aElement := aSchema;
-          i := 0;
-          while i < Routes.Count do
+          if FindNested then
           begin
-            aRoute := Routes[i];
-            if aRoute = '' then
+            //Finding nested element inside Schema
+            aElement := aSchema;
+            i := 0;
+            while i < Routes.Count do
             begin
-              Result := True;
-              break;
-            end
-            else
-            begin
-              aElement := aElement.FindByRoute(aRoute);
-              if (aElement = nil) then
+              aRoute := Routes[i];
+              if aRoute = '' then
               begin
-                Result := False;
+                Result := True;
                 break;
               end
               else
               begin
-//                if not (elNoRespond in aElement.Kind) then                
+                aElement := aElement.FindByRoute(aRoute);
+                if (aElement = nil) then
                 begin
-                  Element := aElement;
-                  Result := True;
+                  Result := False;
+                  break;
+                end
+                else
+                begin
+  //                if not (elNoRespond in aElement.Kind) then                
+                  begin
+                    Element := aElement;
+                    Result := True;
+                  end;
+                  AContext.Route := DeleteSubPath(aRoute, AContext.Route);
                 end;
-                AContext.Route := DeleteSubPath(aRoute, AContext.Route);
               end;
+              inc(i);
             end;
-            inc(i);
           end;
         end;
       end;
@@ -2828,7 +2831,7 @@ begin
     exit;
 
   try
-    GetElement(AContext, aElement);
+    GetElement(AContext, True, aElement);
     if aElement <> nil then
     begin
     //aContext.Schema := aSchema;
@@ -2921,48 +2924,26 @@ begin
   end;
 end;
 
-function TmnwWeb.Attach(const AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
+function TmnwWeb.Attach(var AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 var
-  Routes: TStringList;
-  i: Integer;
-  aRoute: string;
-  aSchema: TmnwSchema;
+  aElement: TmnwElement;
 begin
-  Result := nil;
   if Shutdown then
-    exit(nil);
+    exit;
 
-  aSchema := nil;
-  Routes := TStringList.Create;
-  try
-    i := 0;
-    StrToStrings(AContext.Route, Routes, [URLDelimiter]);
-    if (i < Routes.Count) then
-    begin
-      aRoute := Routes[i];
-      aSchema := FindBy(aRoute, '');
-    end;
-
-    if aSchema = nil then
-      aSchema := First; //* fallback
-
-    if (aSchema <> nil) then
-    begin
-      if aSchema.Interactive or (schemaAttach in aSchema.GetCapabilities) then
-        DeleteSubPath(aRoute, AContext.Route)
-      else
-        exit(nil);
-    end;
-  finally
-    Routes.Free;
-  end;
-
-  if aSchema <> nil then
+  GetElement(AContext, False, aElement);
+  if aElement <> nil then
   begin
-    aSchema.Attach(aRoute, Sender, AStream);
-  end
-  else
-    Result := nil;
+    if AContext.Schema <> nil then
+    begin
+      if AContext.Schema.Interactive or (schemaAttach in AContext.Schema.GetCapabilities) then    
+        AContext.Schema.Attach(AContext.Route, Sender, AStream)
+      else
+        Result := nil;
+    end
+    else
+      Result := nil;
+  end;
 end;
 
 procedure TmnwWeb.SchemaCreated(Schema: TmnwSchema);
@@ -4787,6 +4768,8 @@ end;
 procedure TAssetsSchema.Start;
 var
   minilib: string;
+  {lib: TmnwLibrary;
+  source: TLibrarySource;}
 begin
   inherited;
   Name := 'Assets';
@@ -4817,6 +4800,26 @@ begin
     TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'web-elements.css');
     TFile.Create(This, [ftResource], 'WebElements_JS.js', 'web-elements.js');
   end;
+
+  {// Register resource files from global libraries
+  Libraries.Lock.Enter;
+  try
+    for lib in Libraries do
+    begin
+      for source in lib.Sources do
+      begin
+        if source.Where = stResource then
+        begin
+          if source.Value <> '' then
+            TFile.Create(This, [ftResource], source.Value, source.Name)
+          else
+            TFile.Create(This, [ftResource], source.Name, source.Name);
+        end;
+      end;
+    end;
+  finally
+    Libraries.Lock.Leave;
+  end;}
 end;
 
 class function TAssetsSchema.GetCapabilities: TmnwSchemaCapabilities;

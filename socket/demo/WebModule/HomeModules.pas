@@ -30,10 +30,12 @@ type
     Input1: THTML.TInput;
     Input2: THTML.TInput;
     Input3: THTML.TInput;
+     
+    procedure DoPrepare; override;    
     procedure DoAccept(var AContext: TmnwContext; var Resume: Boolean); override;
     procedure DoCompose(const AContext: TmnwContext); override;
-  public
-    class function GetCapabilities: TmnwSchemaCapabilities; override;
+    procedure AttachedMessage(const s: string); override; 
+  public    
   end;
 
   TWSShema = class(THTML)
@@ -200,6 +202,12 @@ begin
   inherited;
 end;
 
+procedure TWelcomeSchema.AttachedMessage(const s: string);
+begin
+  inherited;
+  Attachments.SendMessage('ECHO: '+s);
+end;
+
 { TWellcomeSchema }
 
 procedure TWelcomeSchema.DoAccept(var AContext: TmnwContext; var Resume: Boolean);
@@ -279,7 +287,7 @@ begin
               Source := IncludeURLDelimiter(Module.HomeURL)+'assets/logo';
           end;}
 
-          with TRow.Create(This) do
+          with TColumn.Create(This) do
           begin
             Input1 := TInput.Create(This);
             with Input1 do
@@ -288,28 +296,28 @@ begin
               id := 'input1';
               Caption := 'Number 1';
             end;
-
+            TBreak.Create(This);
             Input2 := TInput.Create(This);
             with Input2 do
             begin
               Name := 'Input2';
               Caption := 'Number 2';
             end;
-
+            TBreak.Create(This);
             with TMyButton.Create(This) do
             begin
               ID := 'Add';
               Name := 'AddBtn';
               Caption := 'Add';
             end;
-
+            TBreak.Create(This);
             Input3 := TInput.Create(This);
             with Input3 do
             begin
               Name := 'Input3';
               Caption := 'Result';
             end;
-
+            TBreak.Create(This);
           end;
 
 {$ifdef fpc1}
@@ -339,10 +347,10 @@ begin
   end;
 end;
 
-class function TWelcomeSchema.GetCapabilities: TmnwSchemaCapabilities;
+procedure TWelcomeSchema.DoPrepare;
 begin
-  //Result := [schemaInteractive] + Inherited GetCapabilities;
-  Result := Inherited GetCapabilities;
+  inherited;
+
 end;
 
 { TWSEchoGetHomeCommand }
