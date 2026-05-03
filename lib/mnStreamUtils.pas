@@ -915,6 +915,8 @@ var
   W: Word;
   Q: Int64;
   aSize: Int64;
+  PayloadBuf: array[0..125] of Byte;
+  PongHeader: TWebsocketPayloadHeader;
 begin
   Result := Over.Read(Header, SizeOf(Header), c, r);
   if Result then
@@ -955,7 +957,21 @@ begin
           Result := False;
           if Header.Opcode = wsoPing then
           begin
-            //Send pong
+            // Consume ping payload (control frames are limited to 125 bytes)
+            if aSize > 0 then
+              Over.Read(PayloadBuf, aSize, c, r);
+            // Send empty pong frame back (server-to-client is unmasked)
+            FillChar(PongHeader, SizeOf(PongHeader), 0);
+            PongHeader.Opcode := wsoPong;
+            PongHeader.Finished := True;
+            PongHeader.Masked := False;
+            PongHeader.InteralSize := 0;
+            Over.Write(PongHeader, SizeOf(PongHeader), c, r);
+            // Read next frame header and continue
+            Result := Over.Read(Header, SizeOf(Header), c, r);
+            if not Result or (c = 0) then
+              Break;
+            Continue;
           end
           else if Header.Opcode = wsoClose then
           begin

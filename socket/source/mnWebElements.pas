@@ -2113,16 +2113,17 @@ end;
 procedure TmnwAttachments.Terminate;
 var
   Attachment: TmnwAttachment;
+  List: TArray<TmnwAttachment>;
 begin
   Lock.Enter;
   try
     for Attachment in Self do
-    begin
-      Attachment.Terminate;
-    end;
+      List := List + [Attachment];
   finally
     Lock.Leave;
   end;
+  for Attachment in List do
+    Attachment.Terminate;
 end;
 
 procedure TmnwAttachments.SendMessage(const Message: string);
@@ -2153,17 +2154,22 @@ end;
 procedure TmnwAttachments.SendMessage(const AttachmentName, Message: string);
 var
   Attachment: TmnwAttachment;
+  List: TArray<TmnwAttachment>;
 begin
+  // Collect matching attachments while locked, then send outside the lock
+  // to avoid blocking other threads on slow network writes.
   Lock.Enter;
   try
     for Attachment in Self do
     begin
       if (Attachment.Name = '') or SameText(AttachmentName, Attachment.Name) then
-        Attachment.SendMessage(Message);
+        List := List + [Attachment];
     end;
   finally
     Lock.Leave;
   end;
+  for Attachment in List do
+    Attachment.SendMessage(Message);
 end;
 
 { TmnwAttributes }
@@ -3523,12 +3529,8 @@ end;
 
 procedure TmnwSchema.UpdateAttached;
 begin
-  Attachments.Lock.Enter;
-  try
-    FAttached := Attachments.Count > 0;
-  finally
-    Attachments.Lock.Leave;
-  end;
+  // Add/Remove already serialize list access; no need for a separate lock here.
+  FAttached := Attachments.Count > 0;
 end;
 
 {function TmnwSchema.GetDefaultDocument(vRoot: string): string;

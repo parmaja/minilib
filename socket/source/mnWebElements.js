@@ -98,24 +98,31 @@ var reload_elements = [];
 function reloadElements()
 {
   reload_elements.forEach(element => {
-    const tagId = element.id;
     const tagUrl = element.getAttribute('data-mnw-refresh-url');
-    let tagStamp =  element.getAttribute('data-mnw-stamp');
-    /*if (tagStamp == '' && element.firstElementChild)
-      tagStamp = element.firstElementChild.getAttribute('data-mnw-stamp');*/
+    let tagStamp = element.getAttribute('data-mnw-stamp');
 
-    fetch(tagUrl, { headers:{"If-None-Match": tagStamp }})
+    if (element._mnwAbortController)
+      element._mnwAbortController.abort();
+    element._mnwAbortController = new AbortController();
+
+    fetch(tagUrl, { headers:{"If-None-Match": tagStamp }, signal: element._mnwAbortController.signal })
       .then(response => {
+          if (response.status === 304)
+            return null;
           const etag = response.headers.get('ETag');
           const data = response.text();
           return Promise.all([etag, data]);
         }
       )
-      .then(([etag, data]) => {
-        element.setAttribute('data-mnw-stamp', etag);
-        element.innerHTML = data;
-      })
+      .then(result => {
+          if (!result) return;
+          const [etag, data] = result;
+          element.setAttribute('data-mnw-stamp', etag);
+          element.innerHTML = data;
+        }
+      )
       .catch(error => {
+        if (error.name === 'AbortError') return;
         element.innerHTML = 'Error: ' + error.message;
         console.error('Error fetching content:', error);
       });
