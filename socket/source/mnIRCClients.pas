@@ -1534,7 +1534,7 @@ begin
   with Client do
     if Progress = prgActive then
     begin
-      if NickIndex >= Nicks.Count then
+      if NickIndex >= Nicks.Count then //TODO add tries count about 10 times
         Quit('Nick conflict')
       else
       begin
@@ -1790,7 +1790,7 @@ begin
         end;
       end;
     end;
-    if not FStream.Connected and FInternalConnected then
+    if (FStream <> nil) and not FStream.Connected and FInternalConnected then
     begin
       FInternalConnected := False;
       Log('Disconnected');
@@ -1921,7 +1921,7 @@ begin
   Tries := 0;
   if StreamConnected then
     Terminate;
-  Synchronize(Client.PostClosed);
+  Queue(Client.PostClosed);
   FreeAndNil(FStream);
 end;
 
@@ -2110,6 +2110,7 @@ end;
 
 destructor TIRCCommand.Destroy;
 begin
+  inherited;	
   FreeAndNil(FParams);
 end;
 
@@ -2392,8 +2393,8 @@ begin
         end;
       end;
       if not aCMDProcessed then
-      begin
-        SendRaw(Format(UpperCase(m) + ' %s :%s', [vChannel, s]), prgReady);
+      begin        
+        SendRaw(UpperCase(m) + ' ' + vChannel + ' :' + s, prgReady);
         aCMDProcessed := True;
       end;
     end;
