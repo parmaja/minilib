@@ -29,23 +29,17 @@ type
 
   { TTWRenderer }
 
-  TTWRenderer = class(TmnwRenderer)
+  TTWRenderer = class(TmnwHTMLRenderer)
   protected
     class var TW_ElementRenderers: TmnwElementRenderers;
     procedure Created; override;
   public
-    class function ElementRenderers: TmnwElementRenderers; override;
+    class function ElementRenderers: TmnwElementRenderers; override;     
+    class procedure RegisterElements; override;
     class constructor Register;
     class destructor Destroy;
   public
     type
-
-      { TElement }
-
-      THTMLElement = class abstract(TmnwElementRenderer)
-      protected
-        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
-      end;
 
       THTMLLayout = class(THTMLElement)
       protected
@@ -68,62 +62,18 @@ type
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TComment }
-
-      TComment = class(THTMLElement)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
       { TDocument }
 
-      TDocument = class(THTMLElement)
+      TDocument = class(TmnwHTMLRenderer.TDocument)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TBody }
 
-      TBody = class(THTMLElement)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
-      { TFile }
-
-      TFile = class(THTMLElement)
+      TBody = class(TmnwHTMLRenderer.TBody)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
-      { TJSFile }
-
-      TJSFile = class(TFile)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
-      { TCSSFile }
-
-      TCSSFile = class(TFile)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
-      { TDynamicCompose }
-
-      TDynamicCompose = class(THTMLElement)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
-
-      { TIntervalCompose }
-
-      TIntervalCompose = class(TDynamicCompose)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { THeader }
@@ -447,9 +397,9 @@ type
 
   TTailwind_Library = class(TmnwLibrary)
   protected
-    procedure AddHead(const Context: TmnwContext); override;
     procedure Created; override;
   public
+    procedure AddHead(const Context: TmnwContext); override;
   end;
 
   TmnwTWBoundingHelper = record helper for TmnwBounding
@@ -640,17 +590,17 @@ end;
 class constructor TTWRenderer.Register;
 begin
   inherited;
+  RegisterElements;
+end;
+
+class procedure TTWRenderer.RegisterElements;
+begin
+  inherited;
   with ElementRenderers do
   begin
-    RegisterRenderer(THTML.TDynamicCompose, TDynamicCompose);
-    RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
-    RegisterRenderer(THTML.TFile, TFile);
-    RegisterRenderer(THTML.TJSFile, TJSFile);
-    RegisterRenderer(THTML.TCSSFile, TCSSFile);
-
-    RegisterRenderer(THTML.TComment, TComment);
-    RegisterRenderer(THTML.TDocument, TDocument);
-    RegisterRenderer(THTML.TBody, TBody);
+    RegisterRenderer(THTML.TDocument ,TDocument, True);
+    RegisterRenderer(THTML.TBody ,TBody, True);
+    
     RegisterRenderer(THTML.TParagraph, TParagraph);
     RegisterRenderer(THTML.TBreak, TBreak);
     RegisterRenderer(THTML.TNavTools, TNavTools);
@@ -691,21 +641,11 @@ begin
     RegisterRenderer(THTML.TMultilineCode, TMultilineCode);
     RegisterRenderer(THTML.TBar, TBar);
 
-    RegisterRenderer(THTML.THTMLElement, THTMLElement);
     RegisterRenderer(THTML.THTMLComponent, THTMLComponent);
     RegisterRenderer(THTML.THTMLControl, THTMLControl);
 
     RegisterRenderer(THTML.TThemeModeButton, TThemeModeButton);
   end;
-end;
-
-{ TTWRenderer.THTMLElement }
-
-procedure TTWRenderer.THTMLElement.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
-begin
-  if Scope.Element.Comment <> '' then
-    Context.Writer.WriteLn('<!-- ' + Scope.Element.Comment + ' -->');
-  inherited;
 end;
 
 { TTWRenderer.THTMLComponent }
@@ -747,72 +687,7 @@ begin
   inherited;
 end;
 
-{ TTWRenderer.TComment }
-
-procedure TTWRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TComment;
-begin
-  inherited;
-  e := Scope.Element as THTML.TComment;
-  Context.Writer.AddComment(e.Comment);
-end;
-
-{ TTWRenderer.TDocument }
-
-procedure TTWRenderer.TDocument.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TDocument;
-begin
-  e := Scope.Element as THTML.TDocument;
-  if e.Schema.Direction = dirRightToLeft then
-    Scope.Attributes['dir'] := 'rtl'
-  else if e.Schema.Direction = dirLeftToRight then
-    Scope.Attributes['dir'] := 'ltr';
-  Scope.Attributes['lang'] := 'en';
-end;
-
-procedure TTWRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TDocument;
-  aLibrary: TmnwLibrary;
-begin
-  e := Scope.Element as THTML.TDocument;
-  Scope.Attributes.Delete('Name'); //* Not for HTML tag
-  Context.Writer.WriteLn('<!DOCTYPE html>');
-  Context.Writer.OpenTag('html', Scope.ToString);
-  Context.Writer.OpenTag('head');
-  Context.Writer.AddTag('title', '', e.Title);
-  Context.Writer.AddShortTag('link', 'rel="icon" href="data:,"'); //disable call favicon.ico
-  Context.Writer.AddShortTag('meta', 'charset="UTF-8"');
-  Context.Writer.AddShortTag('meta', 'name="viewport" content="width=device-width, initial-scale=1"');
-  if e.Parent <> nil then // Only root have head
-  begin
-    AddHead(Scope, Context);
-    //* Library Head
-    for aLibrary in Renderer.Libraries do
-    begin
-      aLibrary.AddHead(Context);
-    end;
-    //* Renderer Head
-    (Renderer as TTWRenderer).AddHead(Context);
-  end;
-  Context.Writer.CloseTag('head');
-  e.Body.Render(Context, AResponse);
-  Context.Writer.CloseTag('html');
-end;
-
 { TTWRenderer.TBody }
-
-procedure TTWRenderer.TBody.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TBody;
-begin
-  e := Scope.Element as THTML.TBody;
-  inherited;
-  if e.Schema.RefreshInterval <> 1 then //* not default, 0 Disable it
-    Scope.Attributes['data-mnw-refresh-interval'] := e.Schema.RefreshInterval.ToString;
-end;
 
 procedure TTWRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
@@ -825,8 +700,6 @@ var
       Result := ' data-mnw-interactive="true"';
     end;
   end;
-var
-  aLibrary: TmnwLibrary;
 begin
   e := Scope.Element as THTML.TBody;
   Scope.Attributes.Delete('Name'); //* Not for HTML tag
@@ -847,82 +720,6 @@ begin
   Context.Writer.OpenTag('body', Scope.ToString + GetAttach + s);
   inherited;
   Context.Writer.CloseTag('body');
-end;
-
-{ TTWRenderer.TFile }
-
-procedure TTWRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TFile;
-begin
-  e := Scope.Element as THTML.TFile;
-  if ftEmbed in e.Options then
-    Scope.Element.Respond(Context, AResponse);
-  inherited;
-end;
-
-{ TTWRenderer.TJSFile }
-
-procedure TTWRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TJSFile;
-  src: string;
-begin
-  e := Scope.Element as THTML.TJSFile;
-  if ftEmbed in e.Options then
-  begin
-    Context.Writer.OpenTag('script', 'type="text/javascript"' + Scope.GetText);
-    inherited;
-    Context.Writer.WriteLn('');
-    Context.Writer.CloseTag('script');
-  end
-  else
-  begin
-    src := Context.GetPath(e);
-    Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') + ' src=' + DQ(src + '?v=' + IntToStr(Context.Schema.Web.TimeStamp)));
-    inherited;
-  end;
-end;
-
-{ TTWRenderer.TCSSFile }
-
-procedure TTWRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TCSSFile;
-  src: string;
-begin
-  e := Scope.Element as THTML.TCSSFile;
-  if ftEmbed in e.Options then
-  begin
-    Context.Writer.OpenTag('style', 'type="text/css"' + Scope.GetText);
-    inherited;
-    Context.Writer.WriteLn();
-    Context.Writer.CloseTag('style');
-  end
-  else
-  begin
-    src := Context.GetPath(e);
-    Context.Writer.AddTag('link', 'rel="stylesheet" href=' + DQ(src + '?v=' + IntToStr(Context.Schema.Web.TimeStamp)));
-    inherited;
-  end;
-end;
-
-{ TTWRenderer.TDynamicCompose }
-
-procedure TTWRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-begin
-  Context.Writer.OpenTag('div', Scope.Attributes.ToString);
-  inherited;
-  Scope.Element.Respond(Context, AResponse);
-  Context.Writer.CloseTag('div');
-end;
-
-{ TTWRenderer.TIntervalCompose }
-
-procedure TTWRenderer.TIntervalCompose.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-begin
-  inherited;
-  Scope.Attributes['data-mnw-refresh-url'] := Context.GetPath(Scope.Element);
 end;
 
 { TTWRenderer.THeader }
@@ -1107,7 +904,6 @@ end;
 procedure TTWRenderer.TForm.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TForm;
-  aPostTo: string;
 begin
   e := Scope.Element as THTML.TForm;
   Context.Writer.OpenTag('form', 'method="post"' + NV('action', Context.GetLocationPath(e.PostTo)) + ' enctype="multipart/form-data"' + Scope.GetText);
@@ -1281,10 +1077,7 @@ begin
 end;
 
 procedure TTWRenderer.TImageMemory.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TImageMemory;
 begin
-  e := Scope.Element as THTML.TImageMemory;
   Context.Writer.AddShortTag('img', Scope.ToString);
   inherited;
 end;
@@ -1843,6 +1636,13 @@ begin
   inherited;
   //Sources.Add('https://cdn.tailwindcss.com/3.4.17', '');
   Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4', '');
+end;
+
+{ TTWRenderer.TDocument }
+
+procedure TTWRenderer.TDocument.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
 end;
 
 initialization

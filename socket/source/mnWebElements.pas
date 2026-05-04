@@ -845,14 +845,17 @@ type
     procedure RegisterClasses(ASchemaClass: TmnwSchemaClass);
     {$endif}
     procedure DoBeginRender; virtual;
-    procedure DoEndRender; virtual;    
-
+    procedure DoEndRender; virtual; 
+    
+    procedure Created; override;          
   public
     constructor Create(AModule: TmodWebModule); virtual;
     destructor Destroy; override;
 
     class function ElementRenderers: TmnwElementRenderers; virtual; abstract; 
     class function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwElementRendererRegister; 
+
+    class procedure RegisterElements; virtual;
     
     procedure BeginRender;
     procedure EndRender;
@@ -876,6 +879,80 @@ type
   public
     class function ElementRenderers: TmnwElementRenderers; override;
     class destructor Destroy;      
+  end;
+
+  TmnwHTMLRenderer = class(TmnwRenderer)
+  private
+    class constructor Register;
+  protected
+  public
+    type
+      { TElement }
+
+      THTMLElement = class abstract(TmnwElementRenderer)
+      protected
+        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
+      end;
+    
+      { TComment }
+
+      TComment = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+    
+      { TFile }
+
+      TFile = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TJSFile }
+
+      TJSFile = class(TFile)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TCSSFile }
+
+      TCSSFile = class(TFile)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+    
+      { TDynamicCompose }
+
+      TDynamicCompose = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TIntervalCompose }
+
+      TIntervalCompose = class(TDynamicCompose)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+    
+      { TDocument }
+
+      TDocument = class(THTMLElement)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { TBody }
+
+      TBody = class(THTMLElement)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+    
+    class procedure RegisterElements; override;
   end;
   
   { TmnwSchemaItem }
@@ -1613,8 +1690,9 @@ type
   public
     constructor Create;
     function Find(AElementClass: TmnwElementClass): TmnwElementRendererRegister;
+    function Replace(AElementClass: TmnwElementClass; ReplaceWith: TmnwElementRendererRegister): Integer;
     function FindByParents(AElementClass: TmnwElementClass): TmnwElementRendererRegister;
-    function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwElementRendererRegister; overload;
+    function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; ReplaceIfExists: Boolean = False): TmnwElementRendererRegister; overload;
   end;
 
   TmnwRendererRegister = class(TmnNamedObject)  
@@ -2488,7 +2566,14 @@ end;
 
 { TmnwSchema.TmnwElementRenderers }
 
-function TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwElementRendererRegister;
+function TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; ReplaceIfExists: Boolean): TmnwElementRendererRegister;
+  procedure CreateIt;
+  begin
+    Result := TmnwElementRendererRegister.Create;
+    Result.ElementClass := AElementClass;
+    Result.RendererClass := ARendererClass;
+    rttiCollectExtensions(Result.ElementClass, Result.Extensions);
+  end;
 begin
   if not AElementClass.InheritsFrom(TmnwElement) then
     raise Exception.Create('Element should inherited from THTML');
@@ -2499,19 +2584,33 @@ begin
   Result := Find(AElementClass);
   if Result <> nil then
   begin
-    if (Replace) and (AElementClass.InheritsFrom(Result.ElementClass)) then
-      Result.RendererClass := ARendererClass
+    if ReplaceIfExists and (AElementClass = Result.ElementClass) then
+    begin
+      CreateIt;
+      Result.Index := Replace(AElementClass, Result);
+    end
     else
       raise Exception.Create('You can''t re-register same class: ' + AElementClass.ClassName);
-  end
-  else
+  end;
+  
+  if Result = nil then
   begin
-    Result := TmnwElementRendererRegister.Create;
-    Result.ElementClass := AElementClass;
-    Result.RendererClass := ARendererClass;
-    rttiCollectExtensions(Result.ElementClass, Result.Extensions);
+    CreateIt;
     Result.Index := Add(Result);
   end;
+end;
+
+function TmnwElementRenderers.Replace(AElementClass: TmnwElementClass; ReplaceWith: TmnwElementRendererRegister): Integer;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    if AElementClass = Items[i].ElementClass then
+    begin
+      Items[i] := ReplaceWith;
+      Exit(i);
+    end;
+  raise Exception.Create(AElementClass.ClassName + ' with ' + AElementClass.ClassName);
 end;
 
 constructor TmnwElementRenderers.Create;
@@ -2764,12 +2863,12 @@ begin
           try
             try
               aSchema.Compose(AContext); //Compose
-        except
-          aSchema.Lock.Leave;
-          AContext.Schema := nil;
-          FreeAndNil(aSchema);
-          raise;
-        end;
+            except
+              aSchema.Lock.Leave;
+              AContext.Schema := nil;
+              FreeAndNil(aSchema);
+              raise;
+            end;
           finally
             if aSchema <> nil then
               aSchema.Lock.Leave;
@@ -4085,6 +4184,12 @@ begin
     log.WriteLn(o.ObjectClass.ClassName);}
 end;
 
+procedure TmnwRenderer.Created;
+begin
+  inherited;
+  Libraries.Use(TWebElements_Library, 2000);
+end;
+
 destructor TmnwRenderer.Destroy;
 begin
   FreeAndNil(FParams);
@@ -4095,6 +4200,10 @@ end;
 procedure TmnwRenderer.EndRender;
 begin
   DoEndRender;
+end;
+
+class procedure TmnwRenderer.RegisterElements;
+begin
 end;
 
 class function TmnwRenderer.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwElementRendererRegister;
@@ -5405,7 +5514,6 @@ end;
 procedure TmnwPlaneRenderer.Created;
 begin
   inherited;
-  //Libraries.RegisterLibrary(TWebElements_Library, 2000, True);
 end;
 
 class destructor TmnwPlaneRenderer.Destroy;
@@ -5487,9 +5595,11 @@ begin
     exit; //Already used
   ALibrary := Libraries.Find(ALibraryClass);
   if ALibrary = nil then
-    Libraries.RegisterLibrary(ALibraryClass, Priority)
+    ALibrary := Libraries.RegisterLibrary(ALibraryClass, Priority);
+  if ALibrary <> nil then
+    Add(ALibrary)
   else
-    Add(ALibrary);
+    raise Exception.Create('Can''t register library: ' + ALibraryClass.ClassName);
 end;
 
 function TmnwUsedLibraries.Compare(Item1, Item2: TmnwLibrary): Integer;
@@ -5523,6 +5633,211 @@ begin
     Add(ALibrary)
   else
     raise Exception.Create('There is no library such: ' + ALibraryName);
+end;
+
+{ TmnwHTMLRenderer.THTMLElement }
+
+procedure TmnwHTMLRenderer.THTMLElement.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
+begin
+  if Scope.Element.Comment <> '' then
+    Context.Writer.WriteLn('<!-- ' + Scope.Element.Comment + ' -->');
+  inherited;
+end;
+
+
+{ TmnwHTMLRenderer }
+
+class constructor TmnwHTMLRenderer.Register;
+begin
+  //with ElementRenderers do
+  begin 
+    //RegisterRenderer(THTML.THTMLElement, THTMLElement);
+  end;
+end;
+
+class procedure TmnwHTMLRenderer.RegisterElements;
+begin
+  with ElementRenderers do
+  begin
+    RegisterRenderer(THTML.THTMLElement, THTMLElement);
+    RegisterRenderer(THTML.TComment ,TComment);
+
+    RegisterRenderer(THTML.TDocument, TDocument);
+    RegisterRenderer(THTML.TBody, TBody);
+
+    RegisterRenderer(THTML.TDynamicCompose, TDynamicCompose);
+    RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
+    
+    RegisterRenderer(THTML.TFile, TFile);
+    RegisterRenderer(THTML.TJSFile, TJSFile);
+    RegisterRenderer(THTML.TCSSFile, TCSSFile);
+  end;
+end;
+
+{ TmnwHTMLRenderer.TComment }
+
+procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TComment;
+begin
+  inherited;
+  e := Scope.Element as THTML.TComment;
+  Context.Writer.AddComment(e.Comment);
+end;
+
+{ TmnwHTMLRenderer.TFile }
+
+procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TFile;
+begin
+  e := Scope.Element as THTML.TFile;
+  if ftEmbed in e.Options then
+    Scope.Element.Respond(Context, AResponse);
+  inherited;
+end;
+
+{ TmnwHTMLRenderer.TJSFile }
+
+procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TJSFile;
+  src: string;
+begin
+  e := Scope.Element as THTML.TJSFile;
+  if ftEmbed in e.Options then
+  begin
+    Context.Writer.OpenTag('script', 'type="text/javascript"' + Scope.GetText);
+    inherited;
+    Context.Writer.WriteLn('');
+    Context.Writer.CloseTag('script');
+  end
+  else
+  begin
+    src := Context.GetPath(e);
+    Context.Writer.AddTag('script', 'type="text/javascript"' + When(e.Defer, ' defer') +' src='+ DQ(src+'?v='+IntToStr(Context.Schema.Web.TimeStamp)));
+    inherited;
+  end;
+end;
+
+{ TmnwHTMLRenderer.TCSSFile }
+
+procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TCSSFile;
+  src: string;
+begin
+  e := Scope.Element as THTML.TCSSFile;
+  if ftEmbed in e.Options then
+  begin
+    Context.Writer.OpenTag('style', 'type="text/css"'+ Scope.GetText);
+    inherited;
+    Context.Writer.WriteLn();
+    Context.Writer.CloseTag('style');
+  end
+  else
+  begin
+    src := Context.GetPath(e);
+    Context.Writer.AddTag('link', 'rel="stylesheet" href='+ DQ(src+'?v='+IntToStr(Context.Schema.Web.TimeStamp)));
+    inherited;
+  end;
+end;
+
+{ TmnwHTMLRenderer.TDynamicCompose }
+
+procedure TmnwHTMLRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+begin
+  Context.Writer.OpenTag('div', Scope.Attributes.ToString);
+  inherited;
+  Scope.Element.Respond(Context, AResponse);
+  Context.Writer.CloseTag('div');
+end;
+
+{ TmnwHTMLRenderer.TIntervalCompose }
+
+procedure TmnwHTMLRenderer.TIntervalCompose.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Attributes['data-mnw-refresh-url'] := Context.GetPath(Scope.Element);
+end;
+
+{ TmnwHTMLRenderer.TBody }
+
+procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TBody;
+begin
+  e := Scope.Element as THTML.TBody;
+  inherited;
+  if e.Schema.RefreshInterval <> 1 then //* not default, 0 Disable it
+    Scope.Attributes['data-mnw-refresh-interval'] := e.Schema.RefreshInterval.ToString;
+end;
+
+procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+begin
+  inherited;
+end;
+
+{ TmnwHTMLRenderer.TDocument }
+
+procedure TmnwHTMLRenderer.TDocument.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TDocument;
+begin
+  inherited;
+  e := Scope.Element as THTML.TDocument;
+  if e.Schema.Direction = dirRightToLeft then
+    Scope.Attributes['dir'] := 'rtl'
+  else if e.Schema.Direction = dirLeftToRight then
+    Scope.Attributes['dir'] := 'ltr';
+  Scope.Attributes['lang'] := 'en';
+end;
+
+procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TDocument;
+  aLibrary: TmnwLibrary;
+//  o: TmnwElement;
+//  r: THTMLElement;
+begin
+  e := Scope.Element as THTML.TDocument;
+  Scope.Attributes.Delete('Name'); //* Not for HTML tag
+  Context.Writer.WriteLn('<!DOCTYPE html>');
+  Context.Writer.OpenTag('html', Scope.ToString);
+  Context.Writer.OpenTag('head');
+  Context.Writer.AddTag('title', '', e.Title);
+  //Context.Writer.AddShortTag('link', 'rel="shortcut icon" href="#"');
+  Context.Writer.AddShortTag('link', 'rel="icon" href="data:,"'); //disable call favicon.ico
+  Context.Writer.AddShortTag('meta', 'charset="UTF-8"');
+  Context.Writer.AddShortTag('meta', 'name="viewport" content="width=device-width, initial-scale=1"');
+  if e.Parent <> nil then // Only root have head
+  begin
+    AddHead(Scope, Context);
+    //* Library Head
+    for aLibrary in Renderer.Libraries do
+    begin
+      aLibrary.AddHead(Context);
+    end;
+    //* Renderer Head
+    Renderer.AddHead(Context);
+  end;
+
+  //* Collect head from childs
+  {for o in Scope.Element do
+  begin
+    if o is THTML.THTMLElement then
+    begin
+      r := Renderer.CreateRenderer(o) as THTMLElement;
+      try
+        r.AddHeader(o, Context);
+      finally
+        r.free;
+      end;
+    end;
+  end;}
+  Context.Writer.CloseTag('head');
+  e.Body.Render(Context, AResponse);
+  Context.Writer.CloseTag('html');
 end;
 
 initialization
