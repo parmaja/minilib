@@ -1,3 +1,1 @@
-brcc32 mnWebElements.rc
-ren mnWebElements.RES mnWebElements.res
-pause
+brcc32 %~dp0\mnWebElements.rc -fo%~dp0\mnWebElements.res
