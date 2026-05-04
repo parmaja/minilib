@@ -2929,7 +2929,7 @@ var
   aElement: TmnwElement;
 begin
   if Shutdown then
-    exit;
+    exit(nil);
 
   GetElement(AContext, False, aElement);
   if aElement <> nil then

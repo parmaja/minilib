@@ -2,7 +2,7 @@ unit UniDates;
 {-----------------------------------------------------------------------------
  Title: Universal Date utils
  Author:    Zaher <zaherdirkey at yahoo.com>
- Purpose: Similer to DateUtils but more depend on local date system
+ Purpose: Similer to DateUtils but more depends on local date system
  History:
 -----------------------------------------------------------------------------}
 {$IFDEF FPC}

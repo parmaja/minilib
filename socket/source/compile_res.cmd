@@ -1,1 +1,2 @@
-brcc32 %~dp0\mnWebElements.rc -fo%~dp0\mnWebElements.res
+set SCRIPT_DIR=%~dp0
+brcc32 %SCRIPT_DIR%mnWebElements.rc -fo%SCRIPT_DIR%mnWebElements.res
