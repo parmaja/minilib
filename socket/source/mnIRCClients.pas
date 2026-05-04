@@ -841,7 +841,7 @@ begin
   if ScanString(Original, p, c, '!', true) then
   begin
     Nick := MidStr(Original, 1, c);
-    Address := MidStr(Original, c + 1, MaxInt);
+    Address := MidStr(Original, c + 2, MaxInt);
   end;
 end;
 
@@ -1389,7 +1389,7 @@ var
 begin
   ParseUserName(vUser, aNickName, aMode);
   aUser := Find(aNickName);
-  if aUser = nil then
+  if aUser <> nil then
     Remove(aUser);
 end;
 
@@ -1641,8 +1641,9 @@ end;
 
 procedure TWELCOME_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand);
 begin
-  inherited;
-  vCommand.User := vCommand.PullParam;
+  //:server 001 nick :Welcome message
+  vCommand.Target := vCommand.PullParam;
+  vCommand.User := vCommand.Target;
   vCommand.Msg := vCommand.PullParam;
   Client.SetProgress(prgReady);
   Client.FSession.ServerChannel := vCommand.Sender;
@@ -2110,8 +2111,8 @@ end;
 
 destructor TIRCCommand.Destroy;
 begin
-  inherited;	
   FreeAndNil(FParams);
+  inherited;
 end;
 
 procedure TIRCCommand.AddParam(AValue: string);
@@ -2473,23 +2474,19 @@ begin
   aNick := Nicks[0];
   Inc(NickIndex);
 
-  Session.SetNick(aNick);
-  SendRaw(Format('USER %s 0 * :%s', [Username, RealName]));
   if FPassword <> '' then
   begin
     if AuthType = authPass then
-    begin
       SendRaw(Format('PASS %s:%s', [Username, FPassword]));
-      SetNick(aNick);
-    end
-    else if AuthType = authIDENTIFY then
-    begin
-      SetNick(aNick);
+  end;
+  Session.SetNick(aNick);
+  SetNick(aNick);
+  SendRaw(Format('USER %s 0 * :%s', [Username, RealName]));
+  if FPassword <> '' then
+  begin
+    if AuthType = authIDENTIFY then
       SendRaw(Format('NICKSERV IDENTIFY %s %s', [Username, Password]));
-    end
-  end
-  else
-    SetNick(aNick);
+  end;
   JoinChannels;
   DoConnected;
 end;
@@ -2514,7 +2511,7 @@ end;
 
 procedure TmnIRCClient.SetTopic(AChannel: string; const ATopic: string);
 begin
-  SendRaw(Format('TOPIC %s %s', [AChannel, ATopic]));
+  SendRaw(Format('TOPIC %s :%s', [AChannel, ATopic]));
 end;
 
 procedure TmnIRCClient.SetPassword(const Value: string);
