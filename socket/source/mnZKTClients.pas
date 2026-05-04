@@ -454,7 +454,8 @@ var
 begin
   m := TMemoryStream.Create;
   try
-    m.Write(Self[0], Length(Self));
+    if Length(Self) > 0 then
+      m.Write(Self[0], Length(Self));
     m.SaveToFile(vFile);
   finally
     m.Free;
@@ -473,7 +474,10 @@ end;
 
 function TByteHelper.ToString: ansistring;
 begin
-  Result := PAnsiChar(Self);
+  if Length(Self) > 0 then
+    Result := PAnsiChar(@Self[0])
+  else
+    Result := '';
 end;
 
 procedure TByteHelper.Dump;
@@ -619,7 +623,6 @@ begin
         end;
         CMD_ACK_UNAUTH:
         begin
-          CommandData := nil;
           ACommandData := nil;
           ACommandData.Add(GetCommKey(Key, SessionID));
           Packet := CreatePacket(CMD_AUTH, FSessionId, NewReplyID, ACommandData);
@@ -758,7 +761,7 @@ begin
   Temp := Result;
   R[0] := T[0] xor Ticks;
   R[1] := T[1] xor Ticks;
-  R[2] := Ticks;
+  R[2] := T[2] xor Ticks; //TODO was R[2] := Ticks; fixed by AI
   R[3] := T[3] xor Ticks;
 end;
 
@@ -833,12 +836,9 @@ begin
     Result := ExecCommand(CMD_CONNECT, NewReplyID);
     if Result then
     begin
-      if Result then
-      begin
-        CommandData := nil;
-        CommandData := ToBytes('SDKBuild=1'#0);
-        Result := ExecCommand(CMD_OPTIONS_WRQ, NewReplyID, CommandData);
-      end;
+      CommandData := nil;
+      CommandData := ToBytes('SDKBuild=1'#0);
+      Result := ExecCommand(CMD_OPTIONS_WRQ, NewReplyID, CommandData);
     end;
   end;
 end;
@@ -985,7 +985,7 @@ begin
   UserData.UserID := User.UserID;
   {$else}
   StrLCopy(UserData.Name, PAnsiChar(User.Name), SizeOf(UserData.Name));
-  StrLCopy(UserData.Password, PAnsiChar(User.Name), SizeOf(UserData.Password));
+  StrLCopy(UserData.Password, PAnsiChar(User.Password), SizeOf(UserData.Password));
   StrLCopy(UserData.UserID, PAnsiChar(User.UserID), SizeOf(UserData.UserID));
   {$endif}
   UserData.Role := User.Role;
