@@ -36,14 +36,14 @@ requires
 
 contains
   mnSockets in '..\source\mnSockets.pas',
+  mnWinSockets in '..\source\mnWinSockets.pas',
   mnServers in '..\source\mnServers.pas',
   mnConnections in '..\source\mnConnections.pas',
   mnModules in '..\source\mnModules.pas',
+  mnWebModules in '..\source\mnWebModules.pas',
+  mnClients in '..\source\mnClients.pas',
   mnHttpClient in '..\source\mnHttpClient.pas',
   mnIRCClients in '..\source\mnIRCClients.pas',
-  mnZKTClients in '..\source\mnZKTClients.pas',
-  mnWinSockets in '..\source\mnWinSockets.pas',
-  mnWebElements in '..\source\mnWebElements.pas',
-  mnClients in '..\source\mnClients.pas';
+  mnZKTClients in '..\source\mnZKTClients.pas';
 
 end.

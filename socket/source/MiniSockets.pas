@@ -9,7 +9,7 @@ interface
 
 uses
   mnClients, mnConnections, mnServers, mnSockets, mnIRCClients, mnHttpServer, 
-  mnModules, mnWebModules, mnOpenSSLAPI, mnOpenSSL, mnZKTClients, mnHttpClient;
+  mnModules, mnOpenSSLAPI, mnOpenSSL, mnZKTClients, mnHttpClient, mnWebModules;
 
 implementation
 

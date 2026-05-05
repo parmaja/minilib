@@ -59,10 +59,6 @@
         <UnitName Value="mnModules"/>
       </Item>
       <Item>
-        <Filename Value="mnWebModules.pas"/>
-        <UnitName Value="mnWebModules"/>
-      </Item>
-      <Item>
         <Filename Value="mnOpenSSLAPI.pas"/>
         <UnitName Value="mnOpenSSLAPI"/>
       </Item>
@@ -77,6 +73,10 @@
       <Item>
         <Filename Value="mnHttpClient.pas"/>
         <UnitName Value="mnHttpClient"/>
+      </Item>
+      <Item>
+        <Filename Value="mnWebModules.pas"/>
+        <UnitName Value="mnWebModules"/>
       </Item>
     </Files>
     <RequiredPkgs>

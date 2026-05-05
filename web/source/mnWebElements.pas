@@ -926,14 +926,14 @@ type
       end;
     
       { TDocument }
-
+
       TDocument = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
-      { TBody }
+      { TBody }
 
       TBody = class(THTMLElement)
       protected
@@ -1783,7 +1783,11 @@ type
   end;
 
 //* You need to compile it by brcc32 mnWebElements.rc or wait another 100 years till Delphi/FPC auto compile it
+{$ifdef FPC}
+{$R 'mnWebElements.rc'}
+{$else}
 {$R 'mnWebElements.res' 'mnWebElements.rc'}
+{$endif}
 
 const
   woFullTag = [woOpenIndent, woCloseIndent];
