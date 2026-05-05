@@ -1782,10 +1782,10 @@ type
     property Web: TmnwWeb read FWeb;
   end;
 
-//* You need to compile it by brcc32 mnWebElements.rc or wait another 100 years till Delphi/FPC auto compile it
 {$ifdef FPC}
 {$R 'mnWebElements.rc'}
 {$else}
+//* You need to compile it by brcc32 mnWebElements.rc or wait another 100 years till Delphi auto compile it
 {$R 'mnWebElements.res' 'mnWebElements.rc'}
 {$endif}
 
@@ -4879,7 +4879,11 @@ begin
   Route := 'assets';
   //TCSSFile.Create(This, [ftResource], 'mnWebElements.css');
   minilib := GetEnvironmentVariable('minilib');
-  if minilib = '' then
+  if minilib <> '' then //Working in Developer PC
+  begin
+    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/web/source/mnWebElements.js'), 'web-elements.js');
+    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/web/source/mnWebElements.css'), 'web-elements.css');  
+  end;
   begin
     if FileExists(GetHomeFolder + 'mnWebElements.js') then
     begin
@@ -4888,21 +4892,16 @@ begin
     end
     else
     begin
-      TFile.Create(This, [ftResource], 'mnWebElements_css.css', 'web-elements.css');
-      TFile.Create(This, [ftResource], 'mnWebElements_js.js', 'web-elements.js');
+      TFile.Create(This, [ftResource], 'mnWebElements_csss', 'web-elements.css');
+      TFile.Create(This, [ftResource], 'mnWebElements_js', 'web-elements.js');
     end;
-  end
-  else
-  begin
-    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/socket/source/mnWebElements.js'), 'web-elements.js');
-    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/socket/source/mnWebElements.css'), 'web-elements.css');
   end;
 
-  with TElement.Create(This, 'resource') do
+  {with TElement.Create(This, 'resource') do
   begin
-      TFile.Create(This, [ftResource], 'mnWebElements_css.css', 'web-elements.css');
-      TFile.Create(This, [ftResource], 'mnWebElements_js.js', 'web-elements.js');
-  end;
+      TFile.Create(This, [ftResource], 'mnWebElements_css', 'web-elements.css');
+      TFile.Create(This, [ftResource], 'mnWebElements_js', 'web-elements.js');
+  end;}
 
   {// Register resource files from global libraries
   Libraries.Lock.Enter;

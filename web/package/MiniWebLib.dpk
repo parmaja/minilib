@@ -32,11 +32,12 @@ package MiniWebLib;
 requires
   rtl,
   vcl,
-  MiniCommonsLib;
+  MiniCommonsLib,
+  MiniSocketLib;
 
 contains
   mnWebElements in '..\source\mnWebElements.pas',
-  mnBootstraps in '..\source\mnBootstraps.pas'
+  mnBootstraps in '..\source\mnBootstraps.pas',
   mnTailwinds in '..\source\mnTailwinds.pas';
 
 end.
