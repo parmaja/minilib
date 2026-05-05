@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <PathDelim Value="\"/>
+    <Name Value="MiniWebLib"/>
+    <Author Value="Zaher Dirkey"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <IncludeFiles Value="..\source"/>
+        <OtherUnitFiles Value="..\source"/>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+    </CompilerOptions>
+    <Description Value="Mini Web Element, Web Server HTML/Front End Generator"/>
+    <Files>
+      <Item>
+        <Filename Value="..\source\mnBootstraps.pas"/>
+        <UnitName Value="mnBootstraps"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnTailwinds.pas"/>
+        <UnitName Value="mnTailwinds"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnWebElements.css"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnWebElements.js"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnWebElements.pas"/>
+        <AddToUsesPkgSection Value="False"/>
+        <UnitName Value="mnWebElements"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnWebElements.rc"/>
+        <Type Value="Text"/>
+      </Item>
+    </Files>
+    <RequiredPkgs>
+      <Item>
+        <PackageName Value="MiniSockets"/>
+      </Item>
+      <Item>
+        <PackageName Value="MiniLib"/>
+      </Item>
+      <Item>
+        <PackageName Value="FCL"/>
+      </Item>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>
