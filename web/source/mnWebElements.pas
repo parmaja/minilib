@@ -483,6 +483,7 @@ type
     FPrepared: Boolean;
     FIsRoot: Boolean;
     FTimeStamp: Int64;
+    FDataName: String;
     procedure SetState(const AValue: TmnwElementState);
     function GetRespondIt: Boolean;
     function GetRenderIt: Boolean;
@@ -572,6 +573,7 @@ type
 
     property ID: String read FID write FID;
     property Name: String read FName write FName;
+    property DataName: String read FDataName write FDataName;
     property Route: String read FRoute write FRoute; 
     property Style: String read FStyle write FStyle; //* no, it is not css style
     property ElementClass: String read FElementClass write FElementClass;
@@ -1028,7 +1030,7 @@ type
     function CreateSchema(SchemaItem: TmnwSchemaItem): TmnwSchema; overload;
     function ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
     
-    function GetElement(var AContext: TmnwContext; FindNested: Boolean; out Element: TmnwElement): Boolean;    
+    function InquireElement(var AContext: TmnwContext; FindNested: Boolean): Boolean;    
     //for HTML
     procedure Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
     //for WebSocket
@@ -1307,7 +1309,7 @@ type
       protected
         procedure Created; override;
       public
-        Theme: TTheme;
+        Theme: TTheme; //Deprecated
         function CanRender: Boolean; override;
       end;
 
@@ -1724,6 +1726,7 @@ type
   protected
     //FLogo: THTML.TMemory;  
     procedure Created; override;
+    procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;     
   public    
     class function GetCapabilities: TmnwSchemaCapabilities; override;
     procedure Start; override;
@@ -2770,15 +2773,14 @@ begin
 end;
 
 //Main
-function TmnwWeb.GetElement(var AContext: TmnwContext; FindNested: Boolean; out Element: TmnwElement): Boolean;
+function TmnwWeb.InquireElement(var AContext: TmnwContext; FindNested: Boolean): Boolean;
 var
   aElement: TmnwElement;
   Routes: TStringList;
   i: Integer;
   aSchemaName, aRoute: string;
   aSchema: TmnwSchema; 
-begin
-  Element := nil;
+begin  
   aSchema := nil;
   Result := False;
   Routes := TStringList.Create;
@@ -2871,7 +2873,8 @@ begin
 
         if (estComposed in aSchema.State) then
         begin                 
-          Element := aSchema;
+          AContext.Element := aSchema;
+
           Result := True;
 
           if FindNested then
@@ -2897,11 +2900,8 @@ begin
                 end
                 else
                 begin
-  //                if not (elNoRespond in aElement.Kind) then                
-                  begin
-                    Element := aElement;
-                    Result := True;
-                  end;
+                  AContext.Element := aElement;
+                  Result := True;
                   AContext.Route := DeleteSubPath(aRoute, AContext.Route);
                 end;
               end;
@@ -2917,19 +2917,14 @@ begin
 end;
 
 procedure TmnwWeb.Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
-var
-  aElement: TmnwElement;
 begin
   if Shutdown then
     exit;
 
   try
-    GetElement(AContext, True, aElement);
-    if aElement <> nil then
-    begin
-    //aContext.Schema := aSchema;
-      AContext.Element := aElement;      
-      
+    InquireElement(AContext, True);
+    if AContext.Element <> nil then
+    begin      
       AResponse.Answer := hrOK;
       AResponse.Redirect := '';
       AResponse.SessionID := AResponse.Request.GetCookie('', 'session');
@@ -2946,24 +2941,24 @@ begin
       //AResponse.Header['Access-Control-Expose-Headers'] := ' Content-Encoding, Kuma-Revision';     
 
       if not AResponse.IsResponded then
-        aElement.RespondInit(AContext, AResponse); //For check Login in header before redirecting if needed
+        AContext.Element.RespondInit(AContext, AResponse); //For check Login in header before redirecting if needed
 
       //* If you call schema name without ending by /
       if not AResponse.IsResponded then
       begin
-        if (aElement = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.Route = '') then
+        if (AContext.Element = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.Route = '') then
           AResponse.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)))
         else
-          AResponse.ContentType := aElement.GetContentType(AContext.Route);
+          AResponse.ContentType := AContext.Element.GetContentType(AContext.Route);
       end;
 
       //* Resume maybe come false in action
       //* We will render it now
       if not AResponse.IsResponded then
       begin
-        aElement.PrepareRenderer(AContext); 
+        AContext.Element.PrepareRenderer(AContext); 
         if not AResponse.IsResponded then
-          aElement.Respond(AContext, AResponse);
+          AContext.Element.Respond(AContext, AResponse);
       end;
 
       if not (AResponse.IsHeaderSent) then
@@ -3018,25 +3013,18 @@ begin
 end;
 
 function TmnwWeb.Attach(var AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
-var
-  aElement: TmnwElement;
 begin
+  Result := nil;
+  
   if Shutdown then
     exit(nil);
 
-  GetElement(AContext, False, aElement);
-  if aElement <> nil then
+  InquireElement(AContext, False);
+  if AContext.Schema <> nil then
   begin
-    if AContext.Schema <> nil then
-    begin
-      if AContext.Schema.Interactive or (schemaAttach in AContext.Schema.GetCapabilities) then    
-        AContext.Schema.Attach(AContext.Route, Sender, AStream)
-      else
-        Result := nil;
-    end
-    else
-      Result := nil;
-  end;
+    if AContext.Schema.Interactive or (schemaAttach in AContext.Schema.GetCapabilities) then    
+      AContext.Schema.Attach(AContext.Route, Sender, AStream)
+  end
 end;
 
 procedure TmnwWeb.SchemaCreated(Schema: TmnwSchema);
@@ -4924,6 +4912,11 @@ begin
   end;}
 end;
 
+procedure TAssetsSchema.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+begin
+  inherited;
+end;
+
 class function TAssetsSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
   Result := inherited + [schemaStartup, schemaPermanent];
@@ -5162,19 +5155,19 @@ procedure THTML.TZoomButtons.Created;
 begin
   inherited;
   FButtonSmall := TButton.Create(Self, [elEmbed]);
-  FButtonSmall.ID := 'zoom-small';
+  FButtonSmall.DataName := 'zoom-small';
   FButtonSmall.ControlStyle := styleUndefined;
   FButtonSmall.Image.IconClass := 'icon mw-font-small';
   FButtonSmall.JSFunction := 'mnw.switch_zoom';
 
   FButtonNormal := TButton.Create(Self, [elEmbed]);
-  FButtonNormal.ID := 'zoom-normal';
+  FButtonNormal.DataName := 'zoom-normal';
   FButtonNormal.ControlStyle := styleUndefined;
   FButtonNormal.Image.IconClass := 'icon mw-font-normal';
   FButtonNormal.JSFunction := 'mnw.switch_zoom';
 
   FButtonLarge := TButton.Create(Self, [elEmbed]);
-  FButtonLarge.ID := 'zoom-large';
+  FButtonLarge.DataName := 'zoom-large';
   FButtonLarge.ControlStyle := styleUndefined;
   FButtonLarge.Image.IconClass := 'icon mw-font-large';
   FButtonLarge.JSFunction := 'mnw.switch_zoom';
@@ -5763,8 +5756,6 @@ begin
 end;
 
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-var
-  e: THTML.TBody;
 begin
   inherited;
 end;
