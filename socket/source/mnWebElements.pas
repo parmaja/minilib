@@ -822,17 +822,6 @@ type
 
   TmnwElementRendererClass = class of TmnwElementRenderer;
 
-  TmnwElementLibraryItem = class(TmnObject)
-  public
-    Usage: Integer;
-    RendererClass: TmnwElementRendererClass;
-  end;
-  
-  TmnwElementLibrary = class(TmnObjectList<TmnwElementLibraryItem>)
-  public  
-    function Add(ARendererClass: TmnwElementRendererClass): TmnwElementLibraryItem;
-  end;
-
   { TmnwRenderer }
 
   TmnwRenderer = class abstract(TmnwObject)
@@ -949,7 +938,8 @@ type
       TBody = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;        
+        procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;        
       end;
     
     class procedure RegisterElements; override;
@@ -4532,8 +4522,8 @@ end;
 procedure TWebElements_Library.Created;
 begin
   inherited;
-  Sources.Add(stScript, '', 'web-elements.js', '?v=' + IntToStr(GlobalTimeStamp));
-  Sources.Add(stStyle, '', 'web-elements.css', '?v=' + IntToStr(GlobalTimeStamp));
+  Sources.Add(stScript, '', 'web-elements.js?v=' + IntToStr(GlobalTimeStamp));
+  Sources.Add(stStyle, '', 'web-elements.css?v=' + IntToStr(GlobalTimeStamp));
 end;
 
 { THTML.TImage }
@@ -4894,8 +4884,8 @@ begin
     end
     else
     begin
-      TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'web-elements.css');
-      TFile.Create(This, [ftResource], 'WebElements_JS.js', 'web-elements.js');
+      TFile.Create(This, [ftResource], 'mnWebElements_css.css', 'web-elements.css');
+      TFile.Create(This, [ftResource], 'mnWebElements_js.js', 'web-elements.js');
     end;
   end
   else
@@ -4906,8 +4896,8 @@ begin
 
   with TElement.Create(This, 'resource') do
   begin
-    TFile.Create(This, [ftResource], 'WebElements_CSS.css', 'web-elements.css');
-    TFile.Create(This, [ftResource], 'WebElements_JS.js', 'web-elements.js');
+      TFile.Create(This, [ftResource], 'mnWebElements_css.css', 'web-elements.css');
+      TFile.Create(This, [ftResource], 'mnWebElements_js.js', 'web-elements.js');
   end;
 
   {// Register resource files from global libraries
@@ -5445,15 +5435,6 @@ begin
   inherited;
 end;
 
-{ TmnwElementLibrary }
-
-function TmnwElementLibrary.Add(ARendererClass: TmnwElementRendererClass): TmnwElementLibraryItem;
-begin
-  Result := TmnwElementLibraryItem.Create;
-  Result.RendererClass := ARendererClass;
-  inherited Add(Result);
-end;
-
 { THTML.TCode }
 
 constructor THTML.TCode.Create(AParent: TmnwElement; AText, ALanguage: string);
@@ -5769,11 +5750,23 @@ var
 begin
   e := Scope.Element as THTML.TBody;
   inherited;
+  Scope.Attributes.Delete('Name'); //* Not for HTML tag
   if e.Schema.RefreshInterval <> 1 then //* not default, 0 Disable it
     Scope.Attributes['data-mnw-refresh-interval'] := e.Schema.RefreshInterval.ToString;
+  if Context.Schema.Interactive then  
+    Scope.Attributes['data-mnw-interactive'] := 'true';
+  if e.FontName<>'' then
+    Scope.Attributes['style'] := 'font-family: '+SQ(e.FontName)+'!important;';    
 end;
 
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TBody;
+begin
+  inherited;
+end;
+
+procedure TmnwHTMLRenderer.TBody.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;
 end;

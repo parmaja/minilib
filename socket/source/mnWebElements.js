@@ -1,4 +1,4 @@
-/* version 1.5 */
+/* version 1.6 */
 "use strict";
 
 let mnw = {};
@@ -8,6 +8,8 @@ mnw.interactive = false;
 mnw.attached = false;
 mnw.url = "";
 mnw.pool = [];
+
+/* WebSocket Protocol */
 
 mnw.raw_receive = function(msg)
 {
@@ -162,6 +164,8 @@ mnw.action = function(event, url, data)
    return false;
 }
 
+/* Utils functions */
+
 mnw.formPost = function(formElement, event) {
    if (event) {
      event.preventDefault();
@@ -202,31 +206,62 @@ mnw.formPost = function(formElement, event) {
    return false;
 }
 
-function createToastElement(type, content)
+function init()
 {
-  let toastContainer = document.createElement('div');
-  toastContainer.classList.add('toast-container');
+  reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');
+  if (reload_elements.length > 0)
+  {
+    console.log('Interval is ' + document.body.getAttribute('data-mnw-refresh-interval'));
 
-  let toast = document.createElement('div');
-  toast.classList.add('toast');
+    if (document.body.hasAttribute('data-mnw-refresh-interval'))
+        interval = parseInt(document.body.getAttribute('data-mnw-refresh-interval')) * 1000;
 
-  let toastBody = document.createElement('div');
-  toastBody.classList.add('toast-body', type);
-  toastBody.innerText = content;
+    console.log('Interval is ' + interval.toString());
 
-  toast.appendChild(toastBody);
-  toastContainer.appendChild(toast);
-
-  if ($('.wrapping-element').length <= 0) {
-      let wrappingElement = document.createElement('div');
-      wrappingElement.classList.add('wrapping-element');
-      wrappingElement.appendChild(toastContainer);
-      document.body.appendChild(wrappingElement);
+    if (interval > 0)
+    {
+        setInterval(reloadElements, interval);
+        console.log('Interval enabled ' + interval.toString());
+    }
   }
-  else {
-      $('.wrapping-element').append(toastContainer);
+
+  mnw.interactive = document.body.hasAttribute('data-mnw-interactive');
+  if (mnw.interactive)
+    mnw.attach(window.location.href);
+}
+
+function finish()
+{
+/*  if (mnw.ws)
+    mnw.ws.close();*/
+}
+
+window.addEventListener('load', init);
+window.addEventListener("beforeunload", finish);
+
+/* UI functions */
+
+mnw.switch_zoom = function(sender, event)
+{
+  let mnw_zoom = '';
+  if (sender.id == "zoom-large")
+    mnw_zoom = 'large';
+  else if (sender.id == "zoom-small")
+    mnw_zoom = 'small';
+
+  if (mnw_zoom)
+  {
+    document.documentElement.setAttribute('data-mnw-zoom', mnw_zoom);
+    localStorage.setItem('mnw-zoom', mnw_zoom);
+  }
+  else
+  {
+    document.documentElement.removeAttribute('data-mnw-zoom');
+    localStorage.removeItem('mnw-zoom');
   }
 }
+
+/* Bootstrap Functions */
 
 mnw.showToast = function(content, type = "warning")
 {
@@ -259,20 +294,22 @@ mnw.showToast = function(content, type = "warning")
   toast.show();
 }
 
-mnw.init_theme = function()
+mnw.switch_theme = function(sender, event)
 {
-  if (!document.body.getAttribute('data-bs-theme'))
-  {
-    let bs_theme = localStorage.getItem('bs-theme');
-    if (bs_theme)
-      document.body.setAttribute('data-bs-theme', bs_theme);
-  }
+  let bs_theme = 'dark';
+  if (document.body.getAttribute('data-bs-theme') == 'dark')
+    bs_theme = 'light';
+  document.body.setAttribute('data-bs-theme', bs_theme);
+  localStorage.setItem('mnw-theme', bs_theme);
+}
 
-  if (!document.body.getAttribute('data-bs-zoom'))
+mnw.init_zoom = function()
+{
+  if (!document.body.getAttribute('data-mnw-zoom'))
   {
-    let bs_zoom = localStorage.getItem('bs-zoom');
+    let bs_zoom = localStorage.getItem('mnw-zoom');
     if (bs_zoom)
-    document.documentElement.setAttribute('data-bs-zoom', bs_zoom);
+      document.documentElement.setAttribute('data-mnw-zoom', bs_zoom);
   }
 }
 
@@ -315,73 +352,7 @@ mnw.init_accordions = function()
   });
 }
 
-mnw.switch_zoom = function(sender, event)
-{
-  let bs_zoom = '';
-  if (sender.id == "zoom-large")
-    bs_zoom = 'large';
-  else if (sender.id == "zoom-small")
-    bs_zoom = 'small';
-  else
-    bs_zoom = '';
-
-  if (bs_zoom)
-  {
-    document.documentElement.setAttribute('data-bs-zoom', bs_zoom);
-    localStorage.setItem('bs-zoom', bs_zoom);
-  }
-  else
-  {
-    document.documentElement.removeAttribute('data-bs-zoom');
-    localStorage.removeItem('bs-zoom');
-  }
-}
-mnw.switch_theme = function(sender, event)
-{
-  let bs_theme = 'dark';
-  if (document.body.getAttribute('data-bs-theme') == 'dark')
-    bs_theme = 'light';
-
-  document.body.setAttribute('data-bs-theme', bs_theme);
-  localStorage.setItem('bs-theme', bs_theme);
-}
-
-function init()
-{
-  reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');
-  if (reload_elements.length > 0)
-  {
-    console.log('Interval is ' + document.body.getAttribute('data-mnw-refresh-interval'));
-
-    if (document.body.hasAttribute('data-mnw-refresh-interval'))
-        interval = parseInt(document.body.getAttribute('data-mnw-refresh-interval')) * 1000;
-
-    console.log('Interval is ' + interval.toString());
-
-    if (interval > 0)
-    {
-        setInterval(reloadElements, interval);
-        console.log('Interval enabled ' + interval.toString());
-    }
-  }
-
-  mnw.interactive = document.body.hasAttribute('data-mnw-interactive');
-  if (mnw.interactive)
-    mnw.attach(window.location.href);
-
-  // JavaScript to toggle dark mode
-}
-
-function finish()
-{
-/*  if (mnw.ws)
-    mnw.ws.close();*/
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-  mnw.init_theme();
+  mnw.init_zoom();
   mnw.init_accordions();
 });
-
-window.addEventListener('load', init);
-window.addEventListener("beforeunload", finish);

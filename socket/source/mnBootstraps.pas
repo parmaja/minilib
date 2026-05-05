@@ -1022,25 +1022,20 @@ end;
 procedure TBSRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TBody;
-  s: string;
-  function GetAttach: string;
-  begin
-    if Context.Schema.Interactive then
-    begin
-      Result := ' data-mnw-interactive="true"';
-    end;
-  end;
+  aTheme: string;  
 begin
   e := Scope.Element as THTML.TBody;
-  Scope.Attributes.Delete('Name'); //* Not for HTML tag
+  Context.Writer.OpenTag('body', Scope.ToString);  
 
-  if e.FontName<>'' then
-    s := ' style="font-family: '+SQ(e.FontName)+'!important;"'
-  else
-    s := '';
-
-  Context.Writer.OpenTag('body', Scope.ToString + GetAttach + s);
-  inherited;
+  aTheme := 'light';
+  if e.Theme = themeDark then
+    aTheme := 'dark';   
+  Context.Writer.OpenTag('script');
+  Context.Writer.Writeln('const theme = localStorage.getItem("mnw-theme") || "'+aTheme+'";');
+  Context.Writer.Writeln('document.body.setAttribute("data-bs-theme", theme);');
+  Context.Writer.CloseTag('script');
+  
+  inherited;  
   
   Context.Writer.CloseTag('body');
 end;

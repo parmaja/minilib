@@ -1,28 +1,14 @@
-/* version:1.36 */
+/** version:1.37 **/
 
-[data-bs-zoom="large"] {
-    /*zoom: 110%;*/
-    /*--bs-body-font-size: 20px;*/
-    font-size: 125%;*/
-}
+/** Icons */
 
-[data-bs-zoom="small"] {
-    /*zoom: 87.5%;*/
-    /*--bs-body-font-size: 10px;*/
-    font-size: 87.5%;
-}
-/*  For SVG optimize
+/**  For SVG optimize
     Use https://svgomg.net/
     Use MutliPass option or remove `<g> </g>`
     Use Prefer viewBox option or Add `viewBox="0 0 16 16"`
     Remove fill=".... "
-*/
+**/
 :root {
-    --size-unit: 8rem;
-    --gap-unit: 0.25rem;
-    --header-size: 3.2rem;
-    --content-height: calc(100dvh - var(--header-size));
-    --sidebar-size: calc(var(--size-unit) * 2);
 
     --mw-caret-down-fill-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16"><path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>');
     --mw-caret-left-fill-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-left-fill" viewBox="0 0 16 16"><path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z"/></svg>');
@@ -47,56 +33,6 @@
     --mw-font-small-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 423.65"><path fill-rule="nonzero" d="M274.89 336.65H121.85l-29.09 87H0L157.6 0h80.94l158.6 423.65h-92.86l-29.39-87zm70.93-226.22V55.74H512v54.69H345.82zM145.39 265.74h105.96l-53.23-158.69-52.73 158.69z"/></svg>');
 }
 
-/** Max Width */
-
-.max-w-xs {
-    max-width: calc(--size-unit);
-}
-
-.max-w-sm {
-    max-width: calc(var(--size-unit) * 2);
-}
-
-.max-w-md {
-    max-width: calc(var(--size-unit) * 3);
-}
-
-.max-w-lg {
-    max-width: calc(var(--size-unit) * 4.5);
-}
-
-.max-w-xl {
-    max-width: calc(var(--size-unit) * 6);
-}
-
-.max-w-xxl {
-    max-width: calc(var(--size-unit) * 8);
-}
-
-/** Gaps                                     */
-
-.m-childs-1 > * {
-    margin: var(--gap-unit);
-}
-
-.m-childs-2 > * {
-    margin: calc(var(--gap-unit) * 2);
-}
-
-.m-childs-3 > * {
-    margin: calc(var(--gap-unit) * 3);
-}
-
-.m-childs-4 > * {
-    margin: calc(var(--gap-unit) * 4);
-}
-
-.m-childs-5 > * {
-    margin: calc(var(--gap-unit) * 5);
-}
-
-/********************************************/
-
 svg {
     fill: currentColor;
 }
@@ -109,9 +45,9 @@ svg {
     transform: rotate(180deg);
 }
 
-/* Bootstrap Icon */
-/* I copied here to reduce size */
-/* https://www.svgbackgrounds.com/tools/svg-to-css/ */
+/** I copied here to reduce size **/
+
+/** https://www.svgbackgrounds.com/tools/svg-to-css/ **/
 
 .icon{
     background-repeat: no-repeat no-repeat;
@@ -163,15 +99,6 @@ svg {
     background-image: var(--mw-moon-bg);
 }
 
-[data-bs-theme=dark] .icon.mw-theme{
-
-    background-image: var(--mw-moon-bg);
-}
-
-[data-bs-theme=light] .icon.mw-theme{
-    background-image: var(--mw-sun-bg);
-}
-
 .icon.mw-font-large{
     background-image: var(--mw-font-large-bg);
 }
@@ -188,8 +115,12 @@ svg {
     filter: invert(1); /* this is really stupid idea */
 }
 
-[data-bs-theme=dark] .icon {
-    filter: invert(1);
+:root {
+    --size-unit: 8rem;
+    --gap-unit: 0.25rem;
+    --header-size: 3.2rem;
+    --content-height: calc(100dvh - var(--header-size));
+    --sidebar-size: calc(var(--size-unit) * 2);
 }
 
 /** Shadow */
@@ -204,11 +135,90 @@ svg {
     box-shadow: 0px 0px 3px 3px rgba(0,0,0,0.3);
 }
 
-/** Contents                            */
+/** Zoom **/
+
+[data-mnw-zoom="large"] {
+    /*zoom: 110%;*/
+    font-size: 125%;*/
+}
+
+[data-mnw-zoom="normal"] {
+    font-size: 100%;
+}
+
+[data-mnw-zoom="small"] {
+    /*zoom: 87.5%;*/
+    font-size: 87.5%;
+}
+
+/** Max Width */
+
+.max-w-xs {
+    max-width: calc(--size-unit);
+}
+
+.max-w-sm {
+    max-width: calc(var(--size-unit) * 2);
+}
+
+.max-w-md {
+    max-width: calc(var(--size-unit) * 3);
+}
+
+.max-w-lg {
+    max-width: calc(var(--size-unit) * 4.5);
+}
+
+.max-w-xl {
+    max-width: calc(var(--size-unit) * 6);
+}
+
+.max-w-xxl {
+    max-width: calc(var(--size-unit) * 8);
+}
+
+/** Gaps **/
+
+.m-childs-1 > * {
+    margin: var(--gap-unit);
+}
+
+.m-childs-2 > * {
+    margin: calc(var(--gap-unit) * 2);
+}
+
+.m-childs-3 > * {
+    margin: calc(var(--gap-unit) * 3);
+}
+
+.m-childs-4 > * {
+    margin: calc(var(--gap-unit) * 4);
+}
+
+.m-childs-5 > * {
+    margin: calc(var(--gap-unit) * 5);
+}
+
+/** Bootstrap **/
+
+[data-bs-theme=dark] .icon.mw-theme{
+
+    background-image: var(--mw-moon-bg);
+}
+
+[data-bs-theme=light] .icon.mw-theme{
+    background-image: var(--mw-sun-bg);
+}
+
+[data-bs-theme=dark] .icon {
+    filter: invert(1);
+}
+
+/** Contents **/
 
 @media(max-width: 768px) {
     .sidebar {
-/*            	    visibility: collapse; */ /* dosnt work in iphone 6*/
+/* visibility: collapse; */ /* dosnt work in iphone 6*/
         visibility: hidden;
         position: fixed;
     }

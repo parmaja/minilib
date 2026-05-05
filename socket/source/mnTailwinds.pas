@@ -692,22 +692,8 @@ end;
 procedure TTWRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TBody;
-  s: string;
-  function GetAttach: string;
-  begin
-    if Context.Schema.Interactive then
-    begin
-      Result := ' data-mnw-interactive="true"';
-    end;
-  end;
 begin
   e := Scope.Element as THTML.TBody;
-  Scope.Attributes.Delete('Name'); //* Not for HTML tag
-
-  if e.FontName <> '' then
-    s := ' style="font-family: ' + SQ(e.FontName) + '!important;"'
-  else
-    s := '';
 
   // Tailwind: dark mode via class strategy if needed
   if e.Theme = themeDark then
@@ -717,7 +703,7 @@ begin
 
   Scope.Classes.Add('bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100');
 
-  Context.Writer.OpenTag('body', Scope.ToString + GetAttach + s);
+  Context.Writer.OpenTag('body', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('body');
 end;
