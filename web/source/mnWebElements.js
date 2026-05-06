@@ -243,7 +243,7 @@ window.addEventListener("beforeunload", finish);
 
 mnw.switch_zoom = function(sender, event)
 {
-  let mnw_zoom = sender.getAttribute('data-mnw-zoom') || '';
+  let mnw_zoom = sender.getAttribute('data-mnw-value') || '';
   if (mnw_zoom === 'normal')
     mnw_zoom = '';
 
@@ -313,22 +313,12 @@ mnw.init_zoom = function()
 
 mnw.init_accordions = function()
 {
-  document.querySelectorAll('[data-mnw-save-state]').forEach(function(accordion) {
+  document.querySelectorAll('[data-mnw-savestate]').forEach(function(accordion) {
     const accordionId = accordion.id;
     if (!accordionId) return;
 
-    accordion.querySelectorAll('[data-mnw-section]').forEach(function(section) {
-      const sectionId = section.getAttribute('data-mnw-section');
-      const key = 'mnw-accordion-' + accordionId + '-' + sectionId;
-      if (localStorage.getItem(key) === '1') {
-        section.classList.add('show');
-        const header = document.querySelector('[data-bs-target="#' + sectionId + '"]');
-        if (header) {
-          header.classList.remove('collapsed');
-          header.setAttribute('aria-expanded', 'true');
-        }
-      }
-    });
+    //Somthing here will find the control areay to hide it or show
+
 
     accordion.addEventListener('shown.bs.collapse', function(ev) {
       const section = ev.target;

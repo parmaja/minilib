@@ -360,8 +360,6 @@ type
       TZoomButtons = class(TGroupButtons)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TNavItem }
@@ -713,7 +711,7 @@ end;
 
 procedure TBSRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
-  Scope.Classes.AddClasses('header sticky-top d-flex align-items-center navbar-dark bg-black py-0 px-1');
+  Scope.Classes.Append('header sticky-top d-flex align-items-center navbar-dark bg-black py-0 px-1');
   Scope.Attributes.Add('data-bs-theme', 'dark'); //Needed because Header is always darktheme some items/icons not detected it
   Context.Writer.OpenTag('header', Scope.ToString);
   inherited;
@@ -819,7 +817,7 @@ begin
     Context.Writer.WriteLn(e.Caption);
     if e.Collapse then
     begin
-      Context.Writer.Write('<span class="ms-auto my-auto icon-animate icon mw-chevron-up"');
+      Context.Writer.Write('<span class="ms-auto my-auto icon-animate icon mnw-chevron-up"');
       Context.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-labelledby="' + e.id + '-header" aria-expanded="true" aria-controls="'+e.id+'-body"');
       Context.Writer.WriteLn('></span>');
     end;
@@ -1075,7 +1073,7 @@ begin
   Context.Writer.OpenTag('p', 'class="panel d-flex m-0" data-bs-toggle="collapse" role="button" data-bs-target="#'+e.ID+'-text" aria-expanded="false" aria-controls="'+e.ID+'-text"');
   if e.Caption <> '' then
     Context.Writer.WriteLn(e.Caption);
-  Context.Writer.AddTag('span', 'class="ms-auto p-0 align-bottom icon mw-three-dots"');
+  Context.Writer.AddTag('span', 'class="ms-auto p-0 align-bottom icon mnw-three-dots"');
   Context.Writer.CloseTag('p');
   Context.Writer.OpenTag('div', 'id="'+e.ID+'-text" class="panel-body m-0 collapse"');
   inherited;
@@ -1090,7 +1088,7 @@ var
 begin
   e := Scope.Element as THTML.TThemeModeButton;
   Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(this, event)"');
-  Context.Writer.AddTag('span', 'class="icon mw-theme"');
+  Context.Writer.AddTag('span', 'class="icon mnw-theme"');
   inherited;
   Context.Writer.CloseTag('button');
 end;
@@ -1204,18 +1202,7 @@ end;
 
 { TBSRenderer.TZoomButtons }
 
-procedure TBSRenderer.TZoomButtons.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-begin
-  inherited;
-end;
-
 procedure TBSRenderer.TZoomButtons.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
-  Scope.Attributes['data-mnw-zoom'] := Scope.Element.Data;
-end;
-
-procedure TBSRenderer.TZoomButtons.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
 end;
@@ -1307,7 +1294,7 @@ var
 begin
   classes.init('list-group-item');
   classes.Add('bg-transparent');
-  classes.AddClasses(Scope.WrapClasses);
+  classes.Append(Scope.WrapClasses);
   Context.Writer.OpenTag('li',classes.ToString);
   inherited;
 end;
@@ -1321,32 +1308,33 @@ end;
 procedure TBSRenderer.TAccordionSection.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TAccordionSection;
-  sb: TStringBuilder;
+  aScope: TmnwScope;  
 begin
   e := Scope.Element as THTML.TAccordionSection;
-  Context.Writer.OpenTag('div', 'class="accordion-item bg-transparent"' + When(e.SaveState, ' data-mnw-save-state="1"'));
 
-  // Build header button attributes with TStringBuilder for efficiency
-  sb := TStringBuilder.Create;
+  Context.Writer.OpenTag('div', 'class="accordion-item bg-transparent"');
+
+  aScope := TmnwScope.Create(nil);
   try
-    sb.Append('class="accordion-button p-1');
+    // Build header button attributes with TStringBuilder for efficiency
+    aScope.Attributes.Add('id', e.ID + '-button');
+    aScope.Classes.Append('accordion-button p-1');
     if not e.Expanded then
-      sb.Append(' collapsed');
-    sb.Append('" type="button" data-bs-toggle="collapse" data-bs-target="#');
-    sb.Append(e.ID);
-    sb.Append('" aria-expanded="');
-    if e.Expanded then
-      sb.Append('true')
-    else
-      sb.Append('false');
-    sb.Append('" aria-controls="');
-    sb.Append(e.ID);
-    sb.Append('"');
+      aScope.Classes.Add('collapsed');
+    aScope.Attributes.Add('type','button');
+    aScope.Attributes.Add('data-bs-toggle', 'collapse'); 
+    aScope.Attributes.Add('data-bs-target','#'+e.ID);
+    aScope.Attributes.Add('aria-expanded', When(e.Expanded));
+
+    aScope.Attributes.Add('aria-controls', e.ID);  
+  
+    if e.SaveState then
+      aScope.Attributes.Add('data-mnw-savestate', 'true');
 
     Context.Writer.OpenTag('h2', 'id="'+e.id+'-header" class="accordion-header"');
-    Context.Writer.OpenTag('button', sb.ToString);
+    Context.Writer.OpenTag('button', aScope.ToString);
   finally
-    sb.Free;
+    aScope.Free;
   end;
 
   if e.Image.Location = imgSymbol then
@@ -1367,8 +1355,6 @@ begin
   if (e.Parent is THTML.TAccordion) and
      not (e.Parent as THTML.TAccordion).AlwaysOpen then
     Scope.Attributes.Add('data-bs-parent', '#'+e.Parent.ID);
-  if e.SaveState then
-    Scope.Attributes.Add('data-mnw-section', e.ID);
   Context.Writer.OpenTag('div', Scope.ToString + ' aria-labelledby="' + e.ID + '-header"');
   Context.Writer.OpenTag('ul', 'class="accordion-body list-group list-group-flush p-1"');
   inherited;
@@ -1411,7 +1397,7 @@ var
   classes: TElementClasses;
 begin
   classes.Init('nav-item');
-  classes.AddClasses(Scope.WrapClasses);
+  classes.Append(Scope.WrapClasses);
   Context.Writer.OpenTag('li', classes.ToString);
   inherited;
 end;
@@ -1434,7 +1420,7 @@ begin
   Scope.Classes.Add('navbar-expand-md');
   Scope.Classes.Add('navbar-dark');
 //  Scope.Classes.Add('bg-black');
-  Scope.Classes.AddClasses('flex-nowrap w-100 py-0 px-1');
+  Scope.Classes.Append('flex-nowrap w-100 py-0 px-1');
 
   Context.Writer.OpenTag('nav', Scope.ToString);
 
@@ -1442,7 +1428,7 @@ begin
   begin
     sb := (e.Schema as THTML).Document.Body.SideBar;
     Context.Writer.OpenTag('button', 'class="navbar-toggler my-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + sb.id + '-body' + '" aria-controls="' + sb.id + '-items' + '" aria-expanded="false" aria-label="Toggle Sidebar"');
-    Context.Writer.AddTag('span', 'class="icon mw-chevron-right"');
+    Context.Writer.AddTag('span', 'class="icon mnw-chevron-right"');
     Context.Writer.CloseTag('button');
   end;
 
@@ -1462,7 +1448,7 @@ begin
   if e.Count > 0 then
   begin
     Context.Writer.OpenTag('button', 'class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#'+e.ID+'-items'+'" aria-controls="'+e.ID+'-items'+'" aria-expanded="false" aria-label="Toggle navigation"');
-    Context.Writer.AddTag('span', 'class="icon mw-list"');
+    Context.Writer.AddTag('span', 'class="icon mnw-list"');
     Context.Writer.CloseTag('button');
   end;
   Context.Writer.CloseTag('nav');
@@ -1636,8 +1622,8 @@ procedure TBSRenderer.TNavTools.DoEnterChildRender(var Scope: TmnwScope; const C
   classes: TElementClasses;}
 begin
   //classes.Init('nav-item');
-  //classes.AddClasses('align-items-center');
-  //classes.AddClasses(Scope.WrapClasses);
+  //classes.Append('align-items-center');
+  //classes.Append(Scope.WrapClasses);
   //Context.Writer.OpenTag('li', classes.ToString);
   inherited;
 end;

@@ -269,8 +269,8 @@ type
     function Find(const Name: string): Integer;
     function Add(const Name: string): Integer;
     function Remove(const Name: string): Boolean;
-    procedure AddClasses(const S: string); overload;
-    procedure AddClasses(A: TElementClasses); overload;
+    procedure Append(const S: string); overload;
+    procedure Append(A: TElementClasses); overload;
     function ToString: string;
     class operator Add(A: TElementClasses; B: string): TElementClasses;
     class operator Subtract(A: TElementClasses; B: string): TElementClasses;
@@ -291,6 +291,9 @@ type
     WrapClasses: TElementClasses; //WrapClass is a class used of what parent wrapped it
     function ToString: string;
     function GetText: string;
+    
+    constructor Create(AElement: TmnwElement);
+    procedure Free;
   end;
 
   TmnwContext = record
@@ -897,8 +900,9 @@ type
       { TElement }
 
       THTMLElement = class abstract(TmnwElementRenderer)
-      protected
+      protected         
         procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
     
       { TComment }
@@ -1831,6 +1835,7 @@ function NV(const Name, Value, Default: string): string; overload; inline;
 function AddIf(const Value: string; Add: string): string; overload; inline;
 function When(const Value: string; const Default: string = ''): string; overload; inline;
 function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
+function When(Condition: Boolean): string; overload; inline;
 function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds; overload;
 function StartURL(const Path: string): string; inline;
 function EndURL(const Path: string): string; inline;
@@ -1934,6 +1939,14 @@ begin
     Result := Value
   else
     Result := Default;
+end;
+
+function When(Condition: Boolean): string; overload; inline;
+begin
+  if Condition then
+    Result := 'true'
+  else
+    Result := 'false';
 end;
 
 function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds;
@@ -2475,8 +2488,7 @@ procedure TmnwElementRenderer.Render(AElement: TmnwElement; const Context: TmnwC
 var
   aScope: TmnwScope;
 begin
-  aScope.Attributes := TmnwAttributes.Create;
-  aScope.Element := AElement;
+  aScope := TmnwScope.Create(AElement);
   try
     CollectAttributes(aScope, Context);
 
@@ -2491,7 +2503,7 @@ begin
       Context.ParentRenderer.DoLeaveChildRender(aScope, Context);
 
   finally
-    FreeAndNil(aScope.Attributes);
+    aScope.Free;
   end;
 end;
 
@@ -5060,7 +5072,7 @@ begin
   PElementClasses(Sender)^.Add(S);
 end;
 
-procedure TElementClasses.AddClasses(const S: string);
+procedure TElementClasses.Append(const S: string);
 var
   MatchCount: Integer;
 begin
@@ -5085,7 +5097,7 @@ begin
   Result := A;
 end;
 
-procedure TElementClasses.AddClasses(A: TElementClasses);
+procedure TElementClasses.Append(A: TElementClasses);
 var
  itm : String;
 begin
@@ -5098,13 +5110,13 @@ end;
 class operator TElementClasses.Explicit(const Source: string): TElementClasses;
 begin
   InitMemory(Result, SizeOf(Result));
-  Result.AddClasses(Source)
+  Result.Append(Source)
 end;
 
 class operator TElementClasses.Implicit(Source: string): TElementClasses;
 begin
   InitMemory(Result, SizeOf(Result));
-  Result.AddClasses(Source)
+  Result.Append(Source)
 end;
 
 class operator TElementClasses.Implicit(Source: TElementClasses): string;
@@ -5115,7 +5127,7 @@ end;
 procedure TElementClasses.Init(classes: string);
 begin
   InitMemory(Self, SizeOf(Self));
-  AddClasses(classes);
+  Append(classes);
 end;
 
 function TElementClasses.Remove(const Name: string): Boolean;
@@ -5157,11 +5169,26 @@ end;
 
 { TmnwScope }
 
+procedure TmnwScope.Free;
+begin  
+  FreeAndNil(Attributes);
+  Element := nil;
+  Classes := Default(TElementClasses);
+  WrapClasses := Default(TElementClasses);
+end;
+
 function TmnwScope.GetText: string;
 begin
   Result := ToString;
   if (Result <> '') then
     Result := ' ' + Result;
+end;
+
+constructor TmnwScope.Create(AElement: TmnwElement);
+begin
+  Self := Default(TmnwScope);
+  Self.Attributes := TmnwAttributes.Create;
+  Self.Element := AElement;
 end;
 
 function TmnwScope.ToString: string;
@@ -5204,19 +5231,19 @@ begin
   FButtonSmall := TButton.Create(Self, [elEmbed]);
   FButtonSmall.Data := 'small';
   FButtonSmall.ControlStyle := styleUndefined;
-  FButtonSmall.Image.Symbol := 'icon mw-font-small';
+  FButtonSmall.Image.Symbol := 'icon mnw-font-small';
   FButtonSmall.JSFunction := 'mnw.switch_zoom';
 
   FButtonNormal := TButton.Create(Self, [elEmbed]);
   FButtonNormal.Data := 'normal';
   FButtonNormal.ControlStyle := styleUndefined;
-  FButtonNormal.Image.Symbol := 'icon mw-font-normal';
+  FButtonNormal.Image.Symbol := 'icon mnw-font-normal';
   FButtonNormal.JSFunction := 'mnw.switch_zoom';
 
   FButtonLarge := TButton.Create(Self, [elEmbed]);
   FButtonLarge.Data := 'large';
   FButtonLarge.ControlStyle := styleUndefined;
-  FButtonLarge.Image.Symbol := 'icon mw-font-large';
+  FButtonLarge.Image.Symbol := 'icon mnw-font-large';
   FButtonLarge.JSFunction := 'mnw.switch_zoom';
 end;
 
@@ -5673,6 +5700,13 @@ begin
 end;
 
 { TmnwHTMLRenderer.THTMLElement }
+
+procedure TmnwHTMLRenderer.THTMLElement.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  if Scope.Element.Data <> '' then
+    Scope.Attributes['data-mnw-value'] := Scope.Element.Data;
+end;
 
 procedure TmnwHTMLRenderer.THTMLElement.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 begin

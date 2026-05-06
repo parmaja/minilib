@@ -714,7 +714,7 @@ end;
 
 procedure TTWRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
-  Scope.Classes.AddClasses('sticky top-0 z-40 flex items-center bg-gray-900 text-white py-2 px-4 shadow');
+  Scope.Classes.Append('sticky top-0 z-40 flex items-center bg-gray-900 text-white py-2 px-4 shadow');
   Context.Writer.OpenTag('header', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('header');
@@ -871,7 +871,7 @@ var
 begin
   e := Scope.Element as THTML.TThemeModeButton;
   Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0 cursor-pointer" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(this, event)"');
-  Context.Writer.AddTag('span', 'class="icon mw-theme"');
+  Context.Writer.AddTag('span', 'class="icon mnw-theme"');
   inherited;
   Context.Writer.CloseTag('button');
 end;
@@ -1447,7 +1447,7 @@ begin
   Scope.Classes.Add('bg-gray-800');
   if e.Fixed = fixedTop then
     Scope.Classes.Add('fixed top-0 left-0 right-0 z-50');
-  Scope.Classes.AddClasses('flex items-center justify-between py-2 px-4');
+  Scope.Classes.Append('flex items-center justify-between py-2 px-4');
 
   Context.Writer.OpenTag('nav', Scope.ToString);
 
