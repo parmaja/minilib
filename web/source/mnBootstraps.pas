@@ -359,6 +359,7 @@ type
 
       TZoomButtons = class(TGroupButtons)
       protected
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -739,7 +740,7 @@ var
 begin
   e := Scope.Element as THTML.TToast;
   Context.Writer.OpenTag('div', 'aria-live="polite" aria-atomic="true"');
-  Context.Writer.OpenTag('div', 'id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1056;"');
+  Context.Writer.OpenTag('div', 'id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-2" style="z-index:1056;"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -1205,8 +1206,13 @@ end;
 
 procedure TBSRenderer.TZoomButtons.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
-  Scope.Attributes['data-mnw-zoom'] := Scope.Element.DataName;
   inherited;
+end;
+
+procedure TBSRenderer.TZoomButtons.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+begin
+  inherited;
+  Scope.Attributes['data-mnw-zoom'] := Scope.Element.Data;
 end;
 
 procedure TBSRenderer.TZoomButtons.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
@@ -1263,6 +1269,7 @@ begin
   Scope.Classes.Add('bar');
   //Scope.Classes.Add('bg-body');
   Scope.Classes.Add('d-flex');
+  Scope.Classes.Add('p-1');
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
@@ -1322,7 +1329,7 @@ begin
   // Build header button attributes with TStringBuilder for efficiency
   sb := TStringBuilder.Create;
   try
-    sb.Append('class="accordion-button p-2');
+    sb.Append('class="accordion-button p-1');
     if not e.Expanded then
       sb.Append(' collapsed');
     sb.Append('" type="button" data-bs-toggle="collapse" data-bs-target="#');
@@ -1343,9 +1350,9 @@ begin
   end;
 
   if e.Image.Location = imgSymbol then
-    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Symbol))
+    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Symbol + '  p-1'))
   else if e.Image.Location = imgPath then
-    Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
+    Context.Writer.AddShortTag('img', 'class="p-1" src='+ DQ(e.Image.Path) + ' alt=""');
 {  else if e.Image.Location = imgMemory then
     Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');}
 
@@ -1545,7 +1552,7 @@ begin
   end;
   Context.Writer.OpenTag('aside', Scope.ToString);
   Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content' + When((e.Schema as THTML).Document.Body.Header.CanRender, ' min-content-height') + ' fixed"');
-  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas-md offcanvas-start" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
+  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas-md offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" data-bs-keyboard="false" aria-controls="header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');

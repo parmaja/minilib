@@ -300,7 +300,8 @@ aside{
 .sidebar-body {
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-gutter: stable;
+    /*scrollbar-gutter: stable;*/
+    scrollbar-gutter: auto;
     width: var(--sidebar-size) !important;
     padding: 0.25rem;
     background-color: var(--bs-secondary-bg);

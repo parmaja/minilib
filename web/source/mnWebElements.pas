@@ -497,7 +497,7 @@ type
     FPrepared: Boolean;
     FIsRoot: Boolean;
     FTimeStamp: Int64;
-    FDataName: String;
+    FData: String;
     procedure SetState(const AValue: TmnwElementState);
     function GetRespondIt: Boolean;
     function GetRenderIt: Boolean;
@@ -589,7 +589,7 @@ type
 
     property ID: String read FID write FID;
     property Name: String read FName write FName;
-    property DataName: String read FDataName write FDataName;
+    property Data: String read FData write FData;
     property Route: String read GetRoute write FRoute; 
     property Style: String read FStyle write FStyle; //* no, it is not css style
     property ElementClass: String read FElementClass write FElementClass;
@@ -5202,19 +5202,19 @@ procedure THTML.TZoomButtons.Created;
 begin
   inherited;
   FButtonSmall := TButton.Create(Self, [elEmbed]);
-  FButtonSmall.DataName := 'zoom-small';
+  FButtonSmall.Data := 'small';
   FButtonSmall.ControlStyle := styleUndefined;
   FButtonSmall.Image.Symbol := 'icon mw-font-small';
   FButtonSmall.JSFunction := 'mnw.switch_zoom';
 
   FButtonNormal := TButton.Create(Self, [elEmbed]);
-  FButtonNormal.DataName := 'zoom-normal';
+  FButtonNormal.Data := 'normal';
   FButtonNormal.ControlStyle := styleUndefined;
   FButtonNormal.Image.Symbol := 'icon mw-font-normal';
   FButtonNormal.JSFunction := 'mnw.switch_zoom';
 
   FButtonLarge := TButton.Create(Self, [elEmbed]);
-  FButtonLarge.DataName := 'zoom-large';
+  FButtonLarge.Data := 'large';
   FButtonLarge.ControlStyle := styleUndefined;
   FButtonLarge.Image.Symbol := 'icon mw-font-large';
   FButtonLarge.JSFunction := 'mnw.switch_zoom';
