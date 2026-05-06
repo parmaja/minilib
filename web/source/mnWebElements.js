@@ -119,7 +119,7 @@ function reloadElements()
       .then(result => {
           if (!result) return;
           const [etag, data] = result;
-          element.setAttribute('data-mnw-stamp', etag);
+          if (etag) element.setAttribute('data-mnw-stamp', etag);
           element.innerHTML = data;
         }
       )
@@ -147,6 +147,7 @@ mnw.click = function(sender, event)
 
 mnw.action = function(event, url, data)
 {
+  //if (event) event.preventDefault();
   //console.log(JSON.stringify(data));
   fetch(url, {
     method: 'POST',
@@ -264,6 +265,9 @@ mnw.switch_zoom = function(sender, event)
 mnw.showToast = function(content, type = "warning")
 {
   var delay = 15000;
+  var safeContent = String(content).replace(/[&<>"']/g, function(m) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
+  });
   var toastContainer = document.querySelector("#toast-container");
   if (!toastContainer) {
     toastContainer = document.createElement('div');
@@ -277,7 +281,7 @@ mnw.showToast = function(content, type = "warning")
   element.setAttribute('aria-live', 'assertive');
   element.setAttribute('aria-atomic', 'true');
   element.innerHTML = `<div class="d-flex">
-                         <div class="toast-body h6 p-3 m-0">${content}</div>
+                         <div class="toast-body h6 p-3 m-0">${safeContent}</div>
                          <button type="button" class="btn-close btn-close-black me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                        </div>`;
 
@@ -317,26 +321,29 @@ mnw.init_accordions = function()
     const accordionId = accordion.id;
     if (!accordionId) return;
 
-    //Somthing here will find the control areay to hide it or show
-
-
-    accordion.addEventListener('shown.bs.collapse', function(ev) {
-      const section = ev.target;
-      const sectionId = section.getAttribute('data-mnw-section');
-      if (sectionId) {
-        const key = 'mnw-accordion-' + accordionId + '-' + sectionId;
-        localStorage.setItem(key, '1');
+    const targetId = accordion.getAttribute('data-bs-target');
+    const collapseElement = document.querySelector(targetId);
+    if (collapseElement)
+    {
+      const savedState = localStorage.getItem('mnw-accordion-' + accordionId + '-' + collapseElement.id);
+      if (savedState === 'show') {
+        const bsCollapse = new bootstrap.Collapse(collapseElement, { toggle: false });
+        bsCollapse.show();
+      } else if (savedState === 'hide') {
+        const bsCollapse = new bootstrap.Collapse(collapseElement, { toggle: false });
+        bsCollapse.hide();
       }
-    });
 
-    accordion.addEventListener('hidden.bs.collapse', function(ev) {
-      const section = ev.target;
-      const sectionId = section.getAttribute('data-mnw-section');
-      if (sectionId) {
-        const key = 'mnw-accordion-' + accordionId + '-' + sectionId;
-        localStorage.removeItem(key);
-      }
-    });
+      collapseElement.addEventListener('show.bs.collapse', function(event) {
+        const collapseId = event.target.id;
+        localStorage.setItem('mnw-accordion-' + accordionId + '-' + collapseId, 'show');
+      });
+
+      collapseElement.addEventListener('hide.bs.collapse', function(event) {
+        const collapseId = event.target.id;
+        localStorage.setItem('mnw-accordion-' + accordionId + '-' + collapseId, 'hide');
+      });
+    }
   });
 }
 
