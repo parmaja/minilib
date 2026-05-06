@@ -243,11 +243,9 @@ window.addEventListener("beforeunload", finish);
 
 mnw.switch_zoom = function(sender, event)
 {
-  let mnw_zoom = '';
-  if (sender.id == "zoom-large")
-    mnw_zoom = 'large';
-  else if (sender.id == "zoom-small")
-    mnw_zoom = 'small';
+  let mnw_zoom = sender.getAttribute('data-mnw-zoom') || '';
+  if (mnw_zoom === 'normal')
+    mnw_zoom = '';
 
   if (mnw_zoom)
   {

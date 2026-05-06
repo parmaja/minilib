@@ -359,6 +359,7 @@ type
 
       TZoomButtons = class(TGroupButtons)
       protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -689,10 +690,15 @@ end;
 
 procedure TBSRenderer.THTMLControl.RenderImageLocation(const Context: TmnwContext; const Image: TImageLocation);
 begin
-  if Image.IconClass <> '' then
-    Context.Writer.AddTag('span', 'class='+ DQ(Image.IconClass))
-  else if Image.Path <> '' then
-    Context.Writer.AddShortTag('img', 'src='+ DQ(Image.Path) + ' alt=""');
+  if Image.Location = imgSymbol then
+    Context.Writer.AddTag('span', 'class='+ DQ(Image.Symbol))
+  else if Image.Location = imgPath then
+    Context.Writer.AddShortTag('img', 'src='+ DQ(Image.Path) + ' alt=""')
+  else if Image.Location = imgMemory then
+  begin
+{    if Route <> '' then    
+      Context.Writer.AddShortTag('img', 'src='+ DQ(Image.Path) + ' alt=""');}
+  end;
 end;
 
 { TBSRenderer.TDocumentHTML }
@@ -707,7 +713,7 @@ end;
 procedure TBSRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   Scope.Classes.AddClasses('header sticky-top d-flex align-items-center navbar-dark bg-black py-0 px-1');
-  Scope.Attributes.Add('data-bs-theme', 'dark');
+  Scope.Attributes.Add('data-bs-theme', 'dark'); //Needed because Header is always darktheme some items/icons not detected it
   Context.Writer.OpenTag('header', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('header');
@@ -733,7 +739,7 @@ var
 begin
   e := Scope.Element as THTML.TToast;
   Context.Writer.OpenTag('div', 'aria-live="polite" aria-atomic="true"');
-  Context.Writer.OpenTag('div', 'id="toast-container" class ="toast-container position-absolute p-3" style="z-index:9;"');
+  Context.Writer.OpenTag('div', 'id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1056;"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -1197,6 +1203,12 @@ end;
 
 { TBSRenderer.TZoomButtons }
 
+procedure TBSRenderer.TZoomButtons.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  Scope.Attributes['data-mnw-zoom'] := Scope.Element.DataName;
+  inherited;
+end;
+
 procedure TBSRenderer.TZoomButtons.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
@@ -1273,7 +1285,7 @@ end;
 procedure TBSRenderer.TAccordion.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   Scope.Classes.Add('accordion');
-  Scope.Classes.Add('col');
+  //Scope.Classes.Add('col');
   Scope.Classes.Add('accordion-flush');
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
@@ -1330,10 +1342,13 @@ begin
     sb.Free;
   end;
 
-  if e.Image.IconClass <> '' then
-    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.IconClass))
-  else if e.Image.Path <> '' then
+  if e.Image.Location = imgSymbol then
+    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Symbol))
+  else if e.Image.Location = imgPath then
     Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');
+{  else if e.Image.Location = imgMemory then
+    Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');}
+
   if e.Caption <> '' then
     Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('button');
@@ -1377,10 +1392,10 @@ begin
 
 //  if e.Schema.Web.Assets.Logo.Data.Size > 0 then
 //    Context.Writer.AddShortTag('img', 'src="' + Context.GetPath(e.Schema.Web.Assets.Logo)+ '" alt=""');
-  e.Image.Render(Context, AResponse); // Render Image
+  e.Logo.Render(Context, AResponse); // Render Image
 
   if e.Title <> '' then
-    Context.Writer.AddTag('span', 'class="navbar-brand"', e.Title);
+    Context.Writer.AddTag('span', '', e.Title);
   Context.Writer.CloseTag('a');
 end;
 
@@ -1412,7 +1427,7 @@ begin
   Scope.Classes.Add('navbar-expand-md');
   Scope.Classes.Add('navbar-dark');
 //  Scope.Classes.Add('bg-black');
-  Scope.Classes.AddClasses('flex-nowrap navbar-expand-md w-100 py-0 px-1');
+  Scope.Classes.AddClasses('flex-nowrap w-100 py-0 px-1');
 
   Context.Writer.OpenTag('nav', Scope.ToString);
 
@@ -1426,9 +1441,9 @@ begin
 
 	DoRenderBrand(Scope, Context, AResponse);
 
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="keyboard, static" tabindex="-1"');
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="true" data-bs-keyboard="false" tabindex="-1"');
   //Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
-  Context.Writer.OpenTag('ul', 'class="navbar-nav mr-auto m-2 m-md-0"');
+  Context.Writer.OpenTag('ul', 'class="navbar-nav me-auto m-2 m-md-0"');
   inherited;
   Context.Writer.CloseTag('ul');
   Context.Writer.CloseTag('div');
@@ -1513,7 +1528,7 @@ var
 begin
   e := Scope.Element as THTML.TSideBar;
   Scope.Classes.Add('sidebar');
-  Scope.Classes.Add('navbar-expand-md');
+  //Scope.Classes.Add('navbar-expand-md');
   if (e.Schema as THTML).Document.Body.Header.CanRender then
     Scope.Classes.Add('min-content-height');
   Scope.Classes.Add('p-0');
@@ -1529,8 +1544,8 @@ begin
     Scope.Attributes.Add('data-bs-theme', 'light');
   end;
   Context.Writer.OpenTag('aside', Scope.ToString);
-  Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content ' + When((e.Schema as THTML).Document.Body.Header.CanRender, 'min-content-height') + ' fixed"');
-  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
+  Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content' + When((e.Schema as THTML).Document.Body.Header.CanRender, ' min-content-height') + ' fixed"');
+  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas-md offcanvas-start" data-bs-scroll="true" data-bs-backdrop="keyboard, static" aria-controls="header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -1584,9 +1599,12 @@ end;
 { TBSRenderer.TImageFile }
 
 procedure TBSRenderer.TImageFile.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TImageFile;
 begin
+  e := Scope.Element as THTML.TImageFile;
   Scope.Attributes['src'] := Context.GetPath(Scope.Element);
-  Scope.Attributes['alt'] := (Scope.Element as THTML.TImageFile).AltText;
+  Scope.Attributes['alt'] := When(e.AltText, e.Name);
   inherited;
 end;
 
@@ -1712,9 +1730,9 @@ const
   jsBaseURL = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/';
 begin
   inherited;
-  Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.rtl.min.css', dirRightToLeft, 'sha384-CfCrinSRH2IR6a4e6fy2q6ioOX7O6Mtm1L9vRvFZ1trBncWmMePhzvafv7oIcWiW');
-  Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.min.css', dirLeftToRight, 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB');
-  Sources.Add(stScript, stOnline, jsBaseURL, 'bootstrap.bundle.min.js', dirUndefined, 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI');
+  Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.rtl.min.css', dirRightToLeft, 'sha384-CfCrinSRH2IR6a4e6fy2q6ioOX7O6Mtm1L9vRvFZ1trBncWmMePhzvafv7oIcWiW', [libCross]);
+  Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.min.css', dirLeftToRight, 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB', [libCross]);
+  Sources.Add(stScript, stOnline, jsBaseURL, 'bootstrap.bundle.min.js', dirUndefined, 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI', [libDefer, libCross]);
 end;
 
 { TBootstrapIcons_Library }
@@ -1722,7 +1740,7 @@ end;
 procedure TBootstrapIcons_Library.Created;
 begin
   inherited;
-  Sources.Add(stStyle, 'cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css');
+  Sources.Add(stStyle, stOnline, 'cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css', dirUndefined, '', [libCross]);
 end;
 
 initialization

@@ -660,10 +660,12 @@ end;
 
 procedure TTWRenderer.THTMLComponent.RenderImageLocation(const Context: TmnwContext; const Image: TImageLocation);
 begin
-  if Image.IconClass <> '' then
-    Context.Writer.AddTag('span', 'class=' + DQ(Image.IconClass))
-  else if Image.Path <> '' then
-    Context.Writer.AddShortTag('img', 'src=' + DQ(Image.Path) + ' alt=""');
+  if Image.Location = imgSymbol then
+    Context.Writer.AddTag('span', 'class=' + DQ(Image.Symbol))
+  else if Image.Location = imgPath then
+    Context.Writer.AddShortTag('img', 'src=' + DQ(Image.Path) + ' alt=""')
+{  else if Image.Location = imgMemory then
+    Context.Writer.AddShortTag('img', 'src=' + DQ(Image.Path) + ' alt=""');}
 end;
 
 { TTWRenderer.THTMLControl }
@@ -1181,10 +1183,14 @@ begin
   Context.Writer.OpenTag('summary', 'class="flex items-center justify-between px-4 py-3 cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors list-none"');
 
   Context.Writer.OpenTag('span', 'class="flex items-center gap-2 font-medium text-gray-900 dark:text-white"');
-  if e.Image.IconClass <> '' then
-    Context.Writer.AddTag('span', 'class=' + DQ(e.Image.IconClass))
-  else if e.Image.Path <> '' then
+  
+  if e.Image.Location = imgSymbol  then
+    Context.Writer.AddTag('span', 'class=' + DQ(e.Image.Symbol))
+  else if e.Image.Location = imgPath  then
     Context.Writer.AddShortTag('img', 'src=' + DQ(e.Image.Path) + ' alt="" class="w-5 h-5"');
+{  else if e.Image.Location = imgMemory  then
+    Context.Writer.AddShortTag('img', 'src=' + DQ(e.Image.Path) + ' alt="" class="w-5 h-5"');}
+    
   if e.Caption <> '' then
     Context.Writer.WriteLn(e.Caption);
   Context.Writer.CloseTag('span');
@@ -1416,7 +1422,7 @@ var
 begin
   e := Scope.Element as THTML.TNavBar;
   Context.Writer.OpenTag('a', 'class="flex items-center gap-2 text-xl font-bold text-white hover:text-gray-200" href="' + Context.GetPath(e) + '"');
-  e.Image.Render(Context, AResponse);
+  e.Logo.Render(Context, AResponse);
   if e.Title <> '' then
     Context.Writer.WriteLn(e.Title);
   Context.Writer.CloseTag('a');

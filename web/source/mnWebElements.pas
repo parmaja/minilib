@@ -179,14 +179,6 @@ type
 
   TDirection = (dirUndefined, dirLeftToRight, dirRightToLeft);
 
-  TLocationRelative = (
-    toNone,
-    toElement,
-    toSchema,
-    toHome,
-    toCustom
-  );
-
   //Decorate
   TItemStyle = (
     styleUndefined,
@@ -202,6 +194,14 @@ type
     styleNone
   );
 
+  TLocationRelative = (
+    toNone,
+    toElement,
+    toSchema,
+    toHome,
+    toCustom
+  );
+
   { TLocation }
 
   TLocation = record
@@ -214,21 +214,35 @@ type
     function IsDefeined: Boolean;
   end;
 
-  TImageLocationType = (imgIconClass, imgPath);
+  TImageLocationType = (
+    imgSymbol, 
+    imgPath,
+    imgMemory
+  );
 
   { TImageLocation }
 
   TImageLocation = record
   private
-    FLocationType: TImageLocationType;
+    FLocation: TImageLocationType;
     FValue: string;
-    function GetIconClass: string;
+
+    FData: TBytes;
+    FContentType: string;
+    FFileDate: TDateTime;    
+    function GetSymbol: string;
     function GetPath: string;
-    procedure SetIconClass(const AValue: string);
+    procedure SetSymbol(const AValue: string);
     procedure SetPath(const AValue: string);
-  public
+    procedure SetData(const Value: TBytes);
+  public    
+    property Location: TImageLocationType read FLocation;
     property Path: string read GetPath write SetPath;
-    property IconClass: string read GetIconClass write SetIconClass;
+    property Symbol: string read GetSymbol write SetSymbol;
+
+    //TODO, Not rendered yet
+    procedure LoadFromFile(const AFileName: string); 
+    property Data: TBytes read FData write SetData;
   end;
 
   { TmnwBounding }
@@ -489,6 +503,8 @@ type
     function GetRenderIt: Boolean;
     procedure SetRenderIt(const Value: Boolean);
   protected    
+    function GetRoute: String; virtual;
+
     procedure Update; virtual;
     procedure Added(Item: TmnwElement); override;
     procedure Check; virtual;
@@ -574,7 +590,7 @@ type
     property ID: String read FID write FID;
     property Name: String read FName write FName;
     property DataName: String read FDataName write FDataName;
-    property Route: String read FRoute write FRoute; 
+    property Route: String read GetRoute write FRoute; 
     property Style: String read FStyle write FStyle; //* no, it is not css style
     property ElementClass: String read FElementClass write FElementClass;
     property Comment: String read FComment write FComment;
@@ -1261,13 +1277,13 @@ type
       TNavBar = class(THTMLComponent)
       private
         FTools: TNavTools;
-        FImage: TImageFile;
+        FLogo: TImageFile;
       public
         Title: string;
 //        LogoImage: string;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         destructor Destroy; override;
-        property Image: TImageFile read FImage;
+        property Logo: TImageFile read FLogo;
         property Tools: TNavTools read FTools;
       end;
 
@@ -1612,12 +1628,15 @@ type
       [TRoute_Extension]
       TImageFile = class(TCustomImage)
       private
+        FFileName: string;
+        procedure SetFileName(const Value: string);
       protected
+        function GetRoute: String; override;
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
-      public
-        FileName: string;
+      public        
         function CanRender: Boolean; override;
         function GetContentType(Route: string): string; override;
+        property FileName: string read FFileName write SetFileName;
       end;
 
       { TImageMemory }
@@ -1629,6 +1648,7 @@ type
       protected
         procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
       protected
+        function GetRoute: String; override;
         procedure Created; override;
       public
         FileName: string;
@@ -3113,19 +3133,24 @@ procedure TImageLocation.SetPath(const AValue: string);
 begin
   if FValue =AValue then Exit;
   FValue :=AValue;
-  FLocationType := imgPath;
+  FLocation := imgPath;
 end;
 
-procedure TImageLocation.SetIconClass(const AValue: string);
+procedure TImageLocation.SetData(const Value: TBytes);
+begin
+  FData := Value;
+end;
+
+procedure TImageLocation.SetSymbol(const AValue: string);
 begin
   if FValue =AValue then Exit;
   FValue :=AValue;
-  FLocationType := imgIconClass;
+  FLocation := imgSymbol;
 end;
 
-function TImageLocation.GetIconClass: string;
+function TImageLocation.GetSymbol: string;
 begin
-  if FLocationType = imgIconClass then
+  if FLocation = imgSymbol then
     Result := FValue
   else
     Result := '';
@@ -3133,10 +3158,19 @@ end;
 
 function TImageLocation.GetPath: string;
 begin
-  if FLocationType = imgPath then
+  if FLocation = imgPath then
     Result := FValue
   else
     Result := '';
+end;
+
+procedure TImageLocation.LoadFromFile(const AFileName: string);
+begin
+  FValue := AFileName;
+  FileAge(AFileName, FFileDate);
+  FContentType := DocumentToContentType(AFileName);  
+  FData := LoadFileBytes(AFileName);
+  FLocation := imgMemory;
 end;
 
 { TmnwBounding }
@@ -3718,6 +3752,13 @@ begin
   Result := DocumentToContentType(FileName);
 end;
 
+function THTML.TImageMemory.GetRoute: String;
+begin
+  Result := ExtractFileName(FileName);
+  if Result = '' then
+    Result := inherited GetRoute;
+end;
+
 procedure THTML.TImageMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
@@ -3784,6 +3825,11 @@ end;
 function TmnwElement.GetRespondIt: Boolean;
 begin
   Result := not (elNoRespond in Kind);
+end;
+
+function TmnwElement.GetRoute: String;
+begin
+  Result := FRoute;
 end;
 
 procedure TmnwElement.SetRenderIt(const Value: Boolean);
@@ -4387,7 +4433,7 @@ begin
         end;
         
         case source.SourceType of
-          stStyle: Context.Writer.AddLinkStyle(url, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options);
+          stStyle: Context.Writer.AddLinkStyle(url, When(not local, source.Integrity), libCross in source.Options);
           stScript: Context.Writer.AddLinkScript(url, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options);
         end;
       end
@@ -4568,8 +4614,9 @@ end;
 constructor THTML.TNavBar.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
 begin
   inherited;
-  FImage := TImageFile.Create(This, [elInternal, elEmbed]);
-  FImage.FileName := Schema.Web.Assets.LogoFile;
+  FLogo := TImageFile.Create(This, [elInternal, elEmbed]);
+  FLogo.Route := 'logo';
+  FLogo.FileName := Schema.Web.Assets.LogoFile;
   FTools := TNavTools.Create(This, [elInternal, elEmbed]);
 end;
 
@@ -5157,19 +5204,19 @@ begin
   FButtonSmall := TButton.Create(Self, [elEmbed]);
   FButtonSmall.DataName := 'zoom-small';
   FButtonSmall.ControlStyle := styleUndefined;
-  FButtonSmall.Image.IconClass := 'icon mw-font-small';
+  FButtonSmall.Image.Symbol := 'icon mw-font-small';
   FButtonSmall.JSFunction := 'mnw.switch_zoom';
 
   FButtonNormal := TButton.Create(Self, [elEmbed]);
   FButtonNormal.DataName := 'zoom-normal';
   FButtonNormal.ControlStyle := styleUndefined;
-  FButtonNormal.Image.IconClass := 'icon mw-font-normal';
+  FButtonNormal.Image.Symbol := 'icon mw-font-normal';
   FButtonNormal.JSFunction := 'mnw.switch_zoom';
 
   FButtonLarge := TButton.Create(Self, [elEmbed]);
   FButtonLarge.DataName := 'zoom-large';
   FButtonLarge.ControlStyle := styleUndefined;
-  FButtonLarge.Image.IconClass := 'icon mw-font-large';
+  FButtonLarge.Image.Symbol := 'icon mw-font-large';
   FButtonLarge.JSFunction := 'mnw.switch_zoom';
 end;
 
@@ -5388,6 +5435,19 @@ end;
 function THTML.TImageFile.GetContentType(Route: string): string;
 begin
   Result := DocumentToContentType(FileName);
+end;
+
+function THTML.TImageFile.GetRoute: String;
+begin
+  Result := ExtractFileName(FFileName);
+  if Result = '' then
+    Result := inherited GetRoute;
+end;
+
+procedure THTML.TImageFile.SetFileName(const Value: string);
+begin
+  FFileName := Value;
+  //Route := ExtractFileName(FFileName);
 end;
 
 { TLoginElement }
