@@ -346,6 +346,7 @@ function FirstFile(const Path, Files: string): string;
 function DeleteFiles(const Path, Files: string): Integer;
 function GetSizeOfFile(const vFile: string): Int64; //GetFileSize
 function LoadFileString(FileName: string): string;
+function LoadFileBytes(const vFile: TFileName): TBytes; //Thanks to Belal
 
 //mnMulDiv not using windows unit
 function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer; overload;
@@ -2792,6 +2793,29 @@ begin
   finally
     Stream.Free;
   end;
+end;
+
+function LoadFileBytes(const vFile: TFileName): TBytes;
+var
+  aSize: Int64;
+  aStream: TFileStream;
+begin
+  if FileExists(vFile) then
+  begin
+    aStream := TFileStream.Create(vFile, fmOpenRead or fmShareDenyWrite);
+    try
+      aSize := aStream.Size;
+      if aSize>0 then
+      begin
+        SetLength(Result, aSize);
+        aStream.ReadBuffer(Result, aSize);
+      end
+    finally
+      aStream.Free;
+    end;
+  end
+  else
+    Result := nil;
 end;
 
 function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer;
