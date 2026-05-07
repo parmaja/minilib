@@ -422,7 +422,7 @@ function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = True): str
 function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
-function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = True): string;
 function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = True): string;
 
 implementation
@@ -464,15 +464,15 @@ begin
     Result := ' ' + Result;
 end;
 
-function BSSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = True): string;
 const
   SizeStrs: array[TSize] of string = ('', 'xs', 'sm', 'md', 'lg', 'xl', 'parent', 'content');
 begin
   Result := SizeStrs[Size];
+  if Result <> '' then
+    Result := Prefix + Result;  
   if WithSpace and (Result <> '') then
-    Result := ' ' + Result
-  else if not WithSpace then
-    Result := Result;
+    Result := ' ' + Result;
 end;
 
 function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean): string;
@@ -480,12 +480,9 @@ const
   StyleNames: array[TItemStyle] of string = ('', 'primary', 'secondary', 'success', 'danger',
     'warning', 'info', 'light', 'dark', 'link', 'bg-transparent');
 begin
-  if Style = styleNone then
-    Result := StyleNames[Style]
-  else if Style > styleUndefined then
-    Result := Prefix + StyleNames[Style]
-  else
-    Result := '';
+  Result := Prefix + StyleNames[Style];
+  if Result <> '' then
+    Result := Prefix + Result;  
   if WithSpace and (Result <> '') then
     Result := ' ' + Result;
 end;
@@ -678,7 +675,7 @@ begin
     Scope.Attributes['title'] := e.Hint;
   end;
   if e.Size > szUndefined then
-    Scope.Classes.Add('max-w-'+BSSizeToStr(e.Size));
+    Scope.Classes.Add(BSSizeToStr('max-w-', e.Size));
   case e.Shadow of
     shadowLight: Scope.Classes.Add('shadow-sm');
     ShadowHeavy: Scope.Classes.Add('shadow-thin');
@@ -781,6 +778,7 @@ begin
   Context.Writer.OpenTag('main', classes.ToString);
 
   Scope.Classes.Add('main-content');
+  Scope.Classes.Add('m-1');
   if e.Gap > 0 then
     //Scope.Classes.Add('gap-' + e.Gap.ToString);
     Scope.Classes.Add('m-childs-' + e.Gap.ToString);
@@ -1338,7 +1336,7 @@ begin
   end;
 
   if e.Image.Location = imgSymbol then
-    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Symbol + '  p-1'))
+    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Symbol + ' p-1'))
   else if e.Image.Location = imgPath then
     Context.Writer.AddShortTag('img', 'class="p-1" src='+ DQ(e.Image.Path) + ' alt=""');
 {  else if e.Image.Location = imgMemory then
