@@ -337,6 +337,8 @@ type
     //this get path relative requested path /element1/element2
     function GetRelativePath(e: TmnwElement): string; overload;    
 
+    // http://host:80/default_schema/namespace/
+    function GetDefaultPath: string; overload;    
     //Schema URL with http://host:80/assets/namespace/schema
     function GetAssetsPath: string;
     function GetAssetsURL: string;
@@ -967,20 +969,20 @@ type
     class procedure RegisterElements; override;
   end;
   
-  { TmnwSchemaItem }
+  { TmnwRegisterdSchema }
 
-  TmnwSchemaItem = class(TmnNamedObject)
+  TmnwRegisterdSchema = class(TmnNamedObject)
   public
     SchemaClass: TmnwSchemaClass;
     destructor Destroy; override;
   end;
 
-  TRegisteredSchemas = class(TmnNamedObjectList<TmnwSchemaItem>)
+  TRegisteredSchemas = class(TmnNamedObjectList<TmnwRegisterdSchema>)
   end;
 
   { TmnwSchemaObject }
 
-  TmnwSchemaObject = class(TmnwSchemaItem)
+  TmnwSchemaObject = class(TmnwRegisterdSchema)
   private
     FLock: TCriticalSection;
   public
@@ -1014,7 +1016,7 @@ type
     FAppFolder: string;
     FWorkFolder: string;
     FAssets: TAssetsSchema;
-    FDefaultSchema: TmnwSchemaItem;
+    FDefaultSchema: TmnwRegisterdSchema;
     FShutdown: Boolean;
     FLock: TCriticalSection;
     FRegistered: TRegisteredSchemas;
@@ -1047,7 +1049,7 @@ type
     function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
     function CreateSchema(const aSchemaName: string): TmnwSchema; overload;
     function CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string): TmnwSchema; overload;
-    function CreateSchema(SchemaItem: TmnwSchemaItem): TmnwSchema; overload;
+    function CreateSchema(SchemaItem: TmnwRegisterdSchema): TmnwSchema; overload;
     function ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
     
     function InquireElement(var AContext: TmnwContext; FindNested: Boolean): Boolean;    
@@ -1060,7 +1062,7 @@ type
 
     property Lock: TCriticalSection read FLock;
     property Assets: TAssetsSchema read FAssets;
-    property DefaultSchema: TmnwSchemaItem read FDefaultSchema;
+    property DefaultSchema: TmnwRegisterdSchema read FDefaultSchema;
     //Public Web Files
     property HomeFolder: string read FHomeFolder write FHomeFolder;
     //Private Files
@@ -1140,6 +1142,8 @@ type
       protected
         procedure Created; override;
       public
+        Active: Boolean;
+        Disabled: Boolean;
       end;
 
       { THTMLControl }
@@ -1460,7 +1464,7 @@ type
 
       { THTMLGroup }
 
-      THTMLGroup = class(THTMLElement)
+      THTMLGroup = class(THTMLComponent)
       protected
       public
         function CanRender: Boolean; override;
@@ -1480,6 +1484,9 @@ type
       public
       end;
 
+      TGroup = class(THTMLGroup)        
+      end;
+      
       { TForm }
 
       TFormButton = record
@@ -2738,9 +2745,9 @@ end;
 
 function TmnwWeb.RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass; AsDefaultSchema: Boolean = False): TmnwSchema;
 var
-  aSchemaItem: TmnwSchemaItem;
+  aSchemaItem: TmnwRegisterdSchema;
 begin
-  aSchemaItem := TmnwSchemaItem.Create;
+  aSchemaItem := TmnwRegisterdSchema.Create;
   aSchemaItem.Name := AName;
   aSchemaItem.SchemaClass := SchemaClass;
   Registered.Add(aSchemaItem);
@@ -2774,7 +2781,7 @@ end;
 
 function TmnwWeb.CreateSchema(const aSchemaName: string): TmnwSchema;
 var
-  SchemaItem: TmnwSchemaItem;
+  SchemaItem: TmnwRegisterdSchema;
 begin
 	SchemaItem := Registered.Find(aSchemaName);
   if SchemaItem <> nil then
@@ -3101,7 +3108,7 @@ begin
   Result := ComposeHttpURL(IsSecure, Domain, Port);
 end;
 
-function TmnwWeb.CreateSchema(SchemaItem: TmnwSchemaItem): TmnwSchema;
+function TmnwWeb.CreateSchema(SchemaItem: TmnwRegisterdSchema): TmnwSchema;
 begin
   Result := CreateSchema(SchemaItem.SchemaClass, SchemaItem.Name);
   if Result <> nil then
@@ -4259,9 +4266,9 @@ procedure TmnwRenderer.DoEndRender;
 begin
 end;
 
-{ TmnwSchemaItem }
+{ TmnwRegisterdSchema }
 
-destructor TmnwSchemaItem.Destroy;
+destructor TmnwRegisterdSchema.Destroy;
 begin
   inherited;
 end;
@@ -5341,6 +5348,13 @@ end;
 function TmnwContext.GetAssetsURL: string;
 begin
   Result := GetURL(Schema.Web.Assets);
+end;
+
+function TmnwContext.GetDefaultPath: string;
+begin
+  Result := GetHomeURL;
+  if Schema.Web.DefaultSchema <> nil then  
+    Result := Result + StartURL(Schema.Web.DefaultSchema.Name);
 end;
 
 { TmnwResponse }

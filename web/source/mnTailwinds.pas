@@ -264,6 +264,9 @@ type
         procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
+      TGroup = class(THTMLComponent)     
+      end;
+      
       { TDropdownItem }
 
       TDropdownItem = class(TLink)
@@ -622,6 +625,7 @@ begin
     RegisterRenderer(THTML.TNavItem, TNavItem);
     RegisterRenderer(THTML.TMenuItem, TMenuItem);
     RegisterRenderer(THTML.TDropdownItem, TDropdownItem);
+    RegisterRenderer(THTML.TGroup, TGroup);
     RegisterRenderer(THTML.TInput, TInput);
     RegisterRenderer(THTML.TInputPassword, TInputPassword);
     RegisterRenderer(THTML.TImage, TImage);

@@ -294,6 +294,12 @@ type
         procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
+      TGroup = class(THTMLComponent)
+      protected
+        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
       { TDropdownItem }
 
       TDropdownItem = class(TLink)
@@ -632,6 +638,7 @@ begin
     
     RegisterRenderer(THTML.TCard, TCard);
     RegisterRenderer(THTML.TDropdown, TDropdown);
+    RegisterRenderer(THTML.TGroup, TGroup);
     RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
     RegisterRenderer(THTML.TToolbar, TToolbar);
     RegisterRenderer(THTML.TZoomButtons, TZoomButtons);
@@ -1379,7 +1386,7 @@ var
   e: THTML.TNavBar;
 begin
   e := Scope.Element as THTML.TNavBar;
-  Context.Writer.OpenTag('a', 'class="logo navbar-brand align-items-center me-auto" href="' + Context.GetPath(e)+'"');
+  Context.Writer.OpenTag('a', 'class="logo navbar-brand align-items-center me-auto" href="' + EndURL(Context.GetDefaultPath) + '"');
 
 //  if e.Schema.Web.Assets.Logo.Data.Size > 0 then
 //    Context.Writer.AddShortTag('img', 'src="' + Context.GetPath(e.Schema.Web.Assets.Logo)+ '" alt=""');
@@ -1732,6 +1739,39 @@ procedure TBootstrapIcons_Library.Created;
 begin
   inherited;
   Sources.Add(stStyle, stOnline, 'cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css', dirUndefined, '', [libCross]);
+end;
+
+{ TBSRenderer.TGroup }
+
+procedure TBSRenderer.TGroup.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
+var
+  e: THTML.THTMLComponent;
+begin
+  if Scope.Element is THTML.THTMLComponent then  
+    e := Scope.Element as THTML.THTMLComponent
+  else 
+    e := nil;
+  inherited;
+  if (e <> nil) then    
+  begin
+    Scope.Classes.Add('list-group-item');
+    if e.Active then    
+    begin
+      Scope.Attributes.Add('aria-current', 'true');
+      Scope.Classes.Add('active');
+    end;
+  end;
+end;
+
+procedure TBSRenderer.TGroup.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TGroup;
+begin
+  e := Scope.Element as THTML.TGroup;
+  Scope.Classes.Add('list-group');
+  Context.Writer.OpenTag('div', Scope.ToString);
+  inherited;
+  Context.Writer.CloseTag('div');
 end;
 
 initialization
