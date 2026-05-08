@@ -115,6 +115,22 @@ svg {
     filter: invert(1); /* this is really stupid idea */
 }
 
+/** Zoom **/
+
+[data-mnw-zoom="large"] {
+    /*zoom: 110%;*/
+    font-size: 125%;
+}
+
+[data-mnw-zoom="normal"] {
+    font-size: 100%;
+}
+
+[data-mnw-zoom="small"] {
+    /*zoom: 87.5%;*/
+    font-size: 87.5%;
+}
+
 :root {
     --size-unit: 8rem;
     --gap-unit: 0.25rem;
@@ -135,20 +151,19 @@ svg {
     box-shadow: 0px 0px 3px 3px rgba(0,0,0,0.3);
 }
 
-/** Zoom **/
-
-[data-mnw-zoom="large"] {
-    /*zoom: 110%;*/
-    font-size: 125%;
+.shadow-end:dir(ltr)
+{
+    box-shadow: 3px 5px 5px rgba(0,0,0,0.3);
 }
 
-[data-mnw-zoom="normal"] {
-    font-size: 100%;
+.shadow-end:dir(rtl)
+{
+    box-shadow: -3px 5px 5px -2px rgba(0,0,0,0.3);
 }
 
-[data-mnw-zoom="small"] {
-    /*zoom: 87.5%;*/
-    font-size: 87.5%;
+.shadow-bottom
+{
+    box-shadow: 0px 3px 5px -2x rgba(0,0,0,0.3);
 }
 
 /** Max Width */
@@ -304,14 +319,6 @@ aside{
     padding: 0.25rem;
     background-color: var(--bs-secondary-bg);
 }
-
-/*
-.sidebar-body:dir(ltr) {
-}
-
-.sidebar-body:dir(rtl) {
-}
-*/
 
 @media (min-width: 768px) {
     .sidebar-body {

@@ -417,7 +417,7 @@ function TWContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = True): str
 function TWAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 
 function TWFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
-function TWSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+function TWSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = True): string;
 function TWItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = True): string;
 
 implementation
@@ -463,19 +463,21 @@ begin
   else
     Result := '';
   end;
+  
   if (Result <> '') and WithSpace then
     Result := ' ' + Result;
 end;
 
-function TWSizeToStr(Size: TSize; WithSpace: Boolean = True): string;
+function TWSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = True): string;
 const
   SizeStrs: array[TSize] of string = ('', 'xs', 'sm', 'md', 'lg', 'xl', 'parent', 'content');
 begin
   Result := SizeStrs[Size];
+
+  if (Result <> '') and (Size < szVeryLarge) then
+    Result := Prefix + Result;   
   if WithSpace and (Result <> '') then
-    Result := ' ' + Result
-  else if not WithSpace then
-    Result := Result;
+    Result := ' ' + Result;
 end;
 
 function TWItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean): string;
@@ -684,7 +686,7 @@ begin
     Scope.Attributes['title'] := e.Hint;
   end;
   if e.Size > szUndefined then
-    Scope.Classes.Add('max-w-' + TWSizeToStr(e.Size));
+    Scope.Classes.Add(TWSizeToStr('max-w-', e.Size));
   case e.Shadow of
     shadowLight: Scope.Classes.Add('shadow-sm');
     ShadowHeavy: Scope.Classes.Add('shadow-lg');

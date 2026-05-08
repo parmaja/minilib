@@ -1362,21 +1362,11 @@ end;
 function TmodResponse.SendFile(const AFileName: string; Alias: string; FileDispositions: TmodFileDispositions): Boolean;
 var
   aStream: TStream;
-  aFileStamp: string;
   Info: TFileInfo;
 begin
   if not GetFileInfo(AFileName, Info) then
   begin
     Answer := hrNotFound;
-    exit(False);
-  end;
-
-  aFileStamp := GetFileStamp(Info.Size, Info.TimeStamp);
-
-  //By default, web browsers and proxies do not cache content when accessed via an IP address
-  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = aFileStamp) then
-  begin
-    Answer := hrNotModified;
     exit(False);
   end;
 
@@ -1428,13 +1418,13 @@ end;
 function TmodResponse.SendStream(s: TStream; AAlias: string; ASize: Int64; AFileDate: TDateTime; FileDispositions: TmodFileDispositions): Boolean;
 var
   aMIMEItem: TmnMIMEItem;
-  aDisposition, aStamp: string;
+  aDisposition: string;
   aCacheControl: string;
   SendOptions: TmodSendOptions;
 begin
-  aStamp := GetFileStamp(ASize, AFileDate);
+  Stamp := GetFileStamp(ASize, AFileDate);
 
-  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = aStamp) then
+  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = Stamp) then
   begin
     Answer := hrNotModified;
     exit(False);
@@ -1442,14 +1432,6 @@ begin
 
   SendOptions := [];
 
-  Stamp := aStamp;
-
-  //86400 = 24*60*60 = 1 day  
-  if ClientCacheMode then
-    aCacheControl := 'public, max-age=3600, must-revalidate'
-  else
-    aCacheControl := 'public, no-cache'; //This will cache but send request with If-None-Match
-  
   if AFileDate > 0 then
     Header['Last-Modified']  := FormatHTTPDate(AFileDate);
 
@@ -1480,12 +1462,14 @@ begin
     Header['Content-Disposition'] := aDisposition;
   end;
 
+  //86400 = 24*60*60 = 1 day  
+  if ClientCacheMode then
+    aCacheControl := 'public, max-age=3600, must-revalidate'
+  else
+    aCacheControl := 'public, no-cache'; //This will cache but send request with If-None-Match
+
   if aCacheControl <> '' then
-  begin
-    if (aMIMEItem <> nil) and (NoCache in aMIMEItem.Features) then
-      aCacheControl := ConcatString(aCacheControl, ',', 'must-revalidate');
     Header['Cache-Control'] := aCacheControl;
-  end;
   
   if ASize > 0 then  
     Result := SendStream(s, ASize, SendOptions)

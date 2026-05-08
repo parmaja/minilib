@@ -475,7 +475,7 @@ const
   SizeStrs: array[TSize] of string = ('', 'xs', 'sm', 'md', 'lg', 'xl', 'parent', 'content');
 begin
   Result := SizeStrs[Size];
-  if Result <> '' then
+  if (Result <> '') and (Size < szVeryLarge) then
     Result := Prefix + Result;  
   if WithSpace and (Result <> '') then
     Result := ' ' + Result;
@@ -686,6 +686,8 @@ begin
   case e.Shadow of
     shadowLight: Scope.Classes.Add('shadow-sm');
     ShadowHeavy: Scope.Classes.Add('shadow-thin');
+    ShadowEnd: Scope.Classes.Add('shadow-end');
+    ShadowBottom: Scope.Classes.Add('shadow-bottom');
     else ;
   end;
   inherited;
@@ -714,8 +716,9 @@ end;
 { TBSRenderer.THeaderHTML }
 
 procedure TBSRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-begin
-  Scope.Classes.Append('header sticky-top d-flex align-items-center navbar-dark bg-black py-0 px-1');
+begin  
+  Scope.Classes.Append('header sticky-top d-flex align-items-center py-0 px-1');
+  Scope.Classes.Append('navbar-dark bg-black'); //dark theme header
   Scope.Attributes.Add('data-bs-theme', 'dark'); //Needed because Header is always darktheme some items/icons not detected it
   Context.Writer.OpenTag('header', Scope.ToString);
   inherited;
@@ -1541,6 +1544,7 @@ begin
     Scope.Classes.Add('bg-light');
     Scope.Attributes.Add('data-bs-theme', 'light');
   end;
+  
   Context.Writer.OpenTag('aside', Scope.ToString);
   Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content' + When((e.Schema as THTML).Document.Body.Header.CanRender, ' min-content-height') + ' fixed"');
   Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas-md offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" data-bs-keyboard="false" aria-controls="header"');
@@ -1673,6 +1677,7 @@ var
 begin
   e := Scope.Element as THTML.TNavDropdown;
   Scope.Classes.Add('nav-link');
+  
   if dropArraw in e.Options then
     Scope.Classes.Add('dropdown-toggle');
   if dropSplit in e.Options then

@@ -383,7 +383,7 @@ type
     //OnlineFile: if OnlineFile ended with / LocalFile will added
     function Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFileName: string; Direction: TDirection; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
 
-    function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string): TLibrarySource; overload;
+    function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string; Direction: TDirection = dirUndefined): TLibrarySource; overload;
     function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string; Integrity: string; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
 
     function AddStyle(const EmbedText: string; Direction: TDirection = dirUndefined): TLibrarySource; overload;
@@ -470,7 +470,7 @@ type
   TmnwPriority = (priorityNormal, priorityStart, priorityEnd);
 
   TTheme = (themeUndefined, themeLight, themeDark);
-  TmnwShadow = (shadowUndefined, shadowLight, shadowHeavy);
+  TmnwShadow = (shadowUndefined, shadowLight, shadowHeavy, shadowEnd, ShadowBottom);
 
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignBaseline, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
@@ -1077,6 +1077,7 @@ type
 
   TSize = (
 		szUndefined,
+    
 	 	szVerySmall,
 		szSmall,
 		szNormal,
@@ -3498,7 +3499,7 @@ begin
     AContext.Writer.OpenTag('head');
     AContext.Writer.AddTag('title', '', 'Index of ' + APath);
     AContext.Writer.AddShortTag('link', 'rel="icon" href="data:,"'); //disable call favicon.ico
-    AContext.Writer.AddShortTag('meta', 'charset="UTF-8"');
+    AContext.Writer.AddShortTag('meta', 'charset="UTF-8"');   
     AContext.Writer.AddShortTag('meta', 'name="viewport" content="width=device-width, initial-scale=1"');
     AContext.Writer.AddTag('style', '', 'body { font-family: monospace; }');
     AContext.Writer.CloseTag('head');
@@ -3781,7 +3782,7 @@ end;
 procedure THTML.TImageMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
-  AResponse.SendStream(Data, Data.Size, FileName, InstanceDate);
+  AResponse.SendStream(Data, FileName, Data.Size, InstanceDate);
 end;
 
 procedure THTML.TImageMemory.LoadFromFile(const AFileName: string);
@@ -4317,7 +4318,7 @@ end;
 procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
-  AResponse.SendStream(Data, Data.Size, FileName, FileDate);
+  AResponse.SendStream(Data, FileName, Data.Size, FileDate);
 end;
 
 procedure TmnwSchema.TMemory.Created;
@@ -4571,7 +4572,9 @@ end;
 procedure TJQuery_Library.Created;
 begin
   inherited;
-  Sources.Add(stScript, 'cdn.jsdelivr.net/npm/jquery@3.7.1/dist/', 'jquery.min.js');
+//  Sources.Add(stScript, 'cdn.jsdelivr.net/npm/jquery@3.7.1/dist/', 'jquery.min.js');
+  Sources.Add(stScript, 'cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js');
+  //Sources.Add(stScript, 'https://code.jquery.com/jquery-4.0.0.min.js', 'jquery.min.js');
 end;
 
 { THTML }
@@ -4579,8 +4582,10 @@ end;
 procedure TWebElements_Library.Created;
 begin
   inherited;
-  Sources.Add(stScript, '', 'web-elements.js?v=' + IntToStr(GlobalTimeStamp));
-  Sources.Add(stStyle, '', 'web-elements.css?v=' + IntToStr(GlobalTimeStamp));
+//  Sources.Add(stScript, '', 'web-elements.js?v=' + IntToStr(GlobalTimeStamp));
+//  Sources.Add(stStyle, '', 'web-elements.css?v=' + IntToStr(GlobalTimeStamp));
+  Sources.Add(stScript, '', 'web-elements.js');
+  Sources.Add(stStyle, '', 'web-elements.css');
 end;
 
 { THTML.TImage }
@@ -4678,7 +4683,7 @@ end;
 procedure THTML.TSideBar.Created;
 begin
   inherited;
-  Shadow := shadowHeavy;
+  Shadow := shadowEnd;
   Theme := themeUndefined;
 end;
 
@@ -5431,9 +5436,11 @@ begin
 
     TAction.Create(This, 'login', 'login', DoLogin);
     TAction.Create(This, 'logout', 'login', DoLogout);
-    
+
     with Body do
     begin
+      Header.RenderIt := False;
+      
       with Main do
       begin
         with TCard.Create(this) do
@@ -5644,9 +5651,9 @@ begin
   Result := Add(SourceType, stOnline, OnlineFile, LocalFileName, dirUndefined, Integrity, Options);
 end;
 
-function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string): TLibrarySource;
+function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string; Direction: TDirection): TLibrarySource;
 begin
-  Result := Add(SourceType, stOnline, OnlineFile, LocalFileName, dirUndefined, '');
+  Result := Add(SourceType, stOnline, OnlineFile, LocalFileName, Direction, '');
 end;
 
 function TLibrarySources.AddStyle(const EmbedText: string; Direction: TDirection): TLibrarySource;

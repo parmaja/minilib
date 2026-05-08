@@ -24,7 +24,8 @@ type
     Document,
     Embed,
     Hidden,
-    NoCache,
+//    Cache, //Cache it, no hits server
+//    Immutable, //Cache it forever
     Compressed, //already compressed
     Image,
     Executable
