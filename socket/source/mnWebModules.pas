@@ -178,7 +178,7 @@ type
 
   TmodWebModules = class(TmodModules)
   protected
-    function CreateRequest(Astream: TmnBufferStream): TmodRequest; override;
+    function CreateRequest(AStream: TmnBufferStream): TmodRequest; override;
   public
     procedure ParseHead(ARequest: TmodRequest; const RequestLine: string); override;
   end;
@@ -1045,7 +1045,7 @@ begin
     Response.PutHeader('Access-Control-Allow-Origin', Module.Origins.CommaText);
 end;
 
-function TmodWebModules.CreateRequest(Astream: TmnBufferStream): TmodRequest;
+function TmodWebModules.CreateRequest(AStream: TmnBufferStream): TmodRequest;
 begin
   Result := TwebRequest.Create(nil, Astream);
 end;

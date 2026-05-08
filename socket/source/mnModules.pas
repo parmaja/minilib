@@ -422,7 +422,7 @@ type
 
     function SendUTF8String(const s: UTF8String): Boolean; overload;
     function SendString(const s: string): Boolean; overload;
-    function SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; FileDispositions: TmodFileDispositions = []): Boolean; overload;
+    function SendStream(s: TStream; AAlias: string; ASize: Int64; AFileDate: TDateTime; FileDispositions: TmodFileDispositions = []): Boolean; overload;
     function SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
 
@@ -911,6 +911,8 @@ const
 
 var
   DevelopperMode:Boolean = False;
+  ClientCacheMode:Boolean = False; //Move it to Module
+  
   InstanceDate: TDateTime = 0;
   InstanceUID: TGUID;
 
@@ -1337,30 +1339,42 @@ begin
   end;
 end;
 
-function FileStamp(aFileDate: TDateTime; Size: Int64 = 0): string; inline;
+function DoubleToHex(const Value: Double): string; overload;
 begin
-  Result := DateTimeToUnix(aFileDate).ToString;
+  Result := DataToHex(PByte(@Value), SizeOf(Value));
+end;
+
+function GetFileStamp(Size: Int64; aFileDate: TDateTime): string; overload;
+begin
+  Result := DoubleToHex(Double(aFileDate));
   if Size <> 0 then
     Result := Result + '-' + Size.ToString;
+end;
+
+function GetFileStamp(FileName: string): string; overload;
+var
+  Info: TFileInfo;
+begin
+  Info := GetFileInfo(FileName);
+  Result := GetFileStamp(Info.Size, Info.TimeStamp);
 end;
 
 function TmodResponse.SendFile(const AFileName: string; Alias: string; FileDispositions: TmodFileDispositions): Boolean;
 var
   aStream: TStream;
-  aSize: Int64;
-  aFileDate: TDateTime;
+  aFileStamp: string;
+  Info: TFileInfo;
 begin
-  if not FileExists(aFileName) then
+  if not GetFileInfo(AFileName, Info) then
   begin
     Answer := hrNotFound;
     exit(False);
   end;
 
-  FileAge(AFileName, aFileDate);
-  aSize := GetSizeOfFile(AFileName);
+  aFileStamp := GetFileStamp(Info.Size, Info.TimeStamp);
 
   //By default, web browsers and proxies do not cache content when accessed via an IP address
-  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = FileStamp(aFileDate, aSize)) then
+  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = aFileStamp) then
   begin
     Answer := hrNotModified;
     exit(False);
@@ -1373,7 +1387,7 @@ begin
 
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
   try
-    Result := SendStream(aStream, aSize, Alias, aFileDate, FileDispositions);
+    Result := SendStream(aStream, Alias, Info.Size, Info.TimeStamp, FileDispositions);
   finally
     aStream.Free;
   end;
@@ -1385,7 +1399,7 @@ var
 begin
   aStream := TResourceStream.Create(hInstance, ChangeFileExt(ResName, ''), {$ifdef FPC}'RT_RCDATA'{$else}RT_RCDATA{$endif}); //* remove extension
   try
-    SendStream(aStream, aStream.Size, ResName, InstanceDate);
+    Result := SendStream(aStream, ResName, aStream.Size, InstanceDate);
   finally
     aStream.Free;
   end;
@@ -1411,14 +1425,14 @@ begin
   Result := SendUTF8String(t);
 end;
 
-function TmodResponse.SendStream(s: TStream; ASize: Int64; AAlias: string; AFileDate: TDateTime; FileDispositions: TmodFileDispositions): Boolean;
+function TmodResponse.SendStream(s: TStream; AAlias: string; ASize: Int64; AFileDate: TDateTime; FileDispositions: TmodFileDispositions): Boolean;
 var
   aMIMEItem: TmnMIMEItem;
   aDisposition, aStamp: string;
   aCacheControl: string;
   SendOptions: TmodSendOptions;
 begin
-  aStamp := FileStamp(AFileDate, ASize);
+  aStamp := GetFileStamp(ASize, AFileDate);
 
   if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = aStamp) then
   begin
@@ -1430,7 +1444,12 @@ begin
 
   Stamp := aStamp;
 
-  aCacheControl := 'public, max-age=3600'; //86400 = 24*60*60 = 1 day
+  //86400 = 24*60*60 = 1 day  
+  if ClientCacheMode then
+    aCacheControl := 'public, max-age=3600, must-revalidate'
+  else
+    aCacheControl := 'public, no-cache'; //This will cache but send request with If-None-Match
+  
   if AFileDate > 0 then
     Header['Last-Modified']  := FormatHTTPDate(AFileDate);
 
@@ -1467,8 +1486,11 @@ begin
       aCacheControl := ConcatString(aCacheControl, ',', 'must-revalidate');
     Header['Cache-Control'] := aCacheControl;
   end;
-
-  Result := SendStream(s, ASize, SendOptions);
+  
+  if ASize > 0 then  
+    Result := SendStream(s, ASize, SendOptions)
+  else
+    Result := False;
 end;
 
 function TmodResponse.GetStream: TmnBufferStream;
@@ -3182,6 +3204,8 @@ begin
   inherited;
   PutHeader('server', sMiniLibServer);
 
+  PutHeader('Date', FormatHTTPDate(Now));
+
   if (ContentLength > 0) {and (smRespondCompressing in Mode)} then //if we use proxies we cant send content length
     PutHeader('Content-Length', IntToStr(ContentLength));
 
@@ -3191,6 +3215,7 @@ begin
   if (Stamp <> '') then
     PutHeader('ETag', QuoteStr(Stamp));
 
+   
 //    if Compressed then
 //      PutHeader('Content-Encoding', Request.CompressProxy.GetCompressName);
 

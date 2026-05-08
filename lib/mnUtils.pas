@@ -323,9 +323,9 @@ function StringOfUTF8(const Value: PByte; Size: Integer): string;
 
 //TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
-procedure BinToHex(Buffer: PByte; Text: PByte; BufSize: longint); overload;
-function StringToHex(const vData: string): string; overload;
-function StringToHex(const vData: PByte; vCount: Integer): string; overload;
+procedure BinToHex(Buffer: PByte; Output: PByte; BufSize: longint); overload;
+function StringToHex(const vStr: string): string; overload;
+function DataToHex(const vData: PByte; vCount: Integer): UTF8String; overload;
 function HexToString(const vData: string): string; overload;
 function UUIDToString(Guid: TGuid; Hyphen: string = '-'): string;
 
@@ -344,9 +344,21 @@ procedure EnumFiles(FileList: TStrings; const Folder, Filter: string; Options: T
 procedure EnumFiles(Callback: TEnumFilesCallback; AObject: TObject; const Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
 function FirstFile(const Path, Files: string): string;
 function DeleteFiles(const Path, Files: string): Integer;
-function GetSizeOfFile(const vFile: string): Int64; //GetFileSize
+
 function LoadFileString(FileName: string): string;
 function LoadFileBytes(const vFile: TFileName): TBytes; //Thanks to Belal
+
+type
+  TFileInfo = record
+    Exists: Boolean;
+    TimeStamp: TDateTime;
+    Size: Int64;
+  end;
+  
+function GetFileInfo(const vFile: string; out Info: TFileInfo): Boolean; overload;
+function GetFileInfo(const vFile: string): TFileInfo; overload; 
+
+function GetSizeOfFile(const vFile: string): Int64; deprecated; //GetFileSize
 
 //mnMulDiv not using windows unit
 function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer; overload;
@@ -2595,17 +2607,17 @@ begin
     Result := '';
 end;
 
-function StringToHex(const vData: string): string; overload;
+function StringToHex(const vStr: string): string; overload;
 begin
-  if vData<>'' then
-    Result := StringToHex(PByte(vData), ByteLength(vData))
+  if vStr <> '' then
+    Result := DataToHex(PByte(vStr), ByteLength(vStr))
   else
     Result := '';
 end;
 
-function StringToHex(const vData: PByte; vCount: Integer): string;
+function DataToHex(const vData: PByte; vCount: Integer): UTF8String;
 begin
-  SetLength(Result, 2*vCount);
+  SetLength(Result, vCount * 2);
   BinToHex(vData, PByte(Result), vCount);
 end;
 
@@ -2631,20 +2643,18 @@ begin
   Result := BufSize - I;
 end;
 
-procedure BinToHex(Buffer: PByte; Text: PByte; BufSize: longint);
+procedure BinToHex(Buffer: PByte; Output: PByte; BufSize: longint);
 const
   Convert: array[0..15] of Byte = ($30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46) ; //AnsiString('0123456789ABCDEF');
 var
   I: Integer;
-  p: PByte;
 begin
-  p := Text;
   for I := 0 to BufSize - 1 do
   begin
-    p^ := Convert[Buffer[I] shr 4];
-    Inc(p);
-    P^ := Convert[Buffer[I] and $F];
-    Inc(p);
+    Output^ := Convert[Buffer[I] shr 4];
+    Inc(Output);
+    Output^ := Convert[Buffer[I] and $F];
+    Inc(Output);
   end;
 end;
 
@@ -2707,6 +2717,29 @@ begin
   end
   else
     Result := -1;
+end;
+
+function GetFileInfo(const vFile: string; out Info: TFileInfo): Boolean; 
+var
+  R: TSearchRec;
+begin
+  if SysUtils.FindFirst(vFile, faAnyFile, R) = 0 then
+  begin
+    Info.TimeStamp := R.TimeStamp;
+    Info.Size := R.Size;
+    Result := True;
+    SysUtils.FindClose(R);
+  end
+  else
+  begin
+    Info := Default(TFileInfo);
+    Result := False;
+  end;
+end;
+
+function GetFileInfo(const vFile: string): TFileInfo; overload; inline;
+begin
+  GetFileInfo(vFile, Result);
 end;
 
 procedure EnumFiles(Callback: TEnumFilesCallback; AObject: TObject; const Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
