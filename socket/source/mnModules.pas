@@ -3086,7 +3086,7 @@ begin
 
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
 
-  Stamp  := Header.Field['If-None-Match'].AsString;
+  Stamp  := DequoteStr(Header.Field['If-None-Match'].AsString);
 
   {aCompressClass := nil;
   if (Header.Field['Content-Encoding'].IsExists) then
