@@ -1022,6 +1022,8 @@ type
     FRegistered: TRegisteredSchemas;
     FTimeStamp: Int64;
     FOnlineFiles: TOnlineFiles;
+    FLanguage: string;
+    procedure SetLanguage(const Value: string);
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
@@ -1072,6 +1074,7 @@ type
     property Shutdown: Boolean read FShutdown;
     property Options: TmnwAppOptions read FOptions write FOptions;
     property OnlineFiles: TOnlineFiles read FOnlineFiles write FOnlineFiles;
+    property Language: string read FLanguage write SetLanguage;
     property TimeStamp: Int64 read FTimeStamp;
   end;
 
@@ -1082,10 +1085,7 @@ type
 		szSmall,
 		szNormal,
 		szLarge,
-		szVeryLarge,
-
-    szParent,
-    szContent
+		szVeryLarge
 	);
 
 {-------------------------------------------------------}
@@ -3069,6 +3069,11 @@ end;
 
 procedure TmnwWeb.SchemaCreated(Schema: TmnwSchema);
 begin
+end;
+
+procedure TmnwWeb.SetLanguage(const Value: string);
+begin
+  FLanguage := Value;
 end;
 
 procedure TmnwWeb.Created;

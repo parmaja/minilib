@@ -168,20 +168,24 @@ svg {
 
 /** Max Width */
 
-.max-w-xs {
+.max-w-xxs {
     max-width: calc(var(--size-unit));
 }
 
-.max-w-sm {
-    max-width: calc(var(--size-unit) * 2);
+.max-w-xs {
+    max-width: calc(var(--size-unit * 2));
 }
 
-.max-w-md {
+.max-w-sm {
     max-width: calc(var(--size-unit) * 3);
 }
 
+.max-w-md {
+    max-width: calc(var(--size-unit) * 4);
+}
+
 .max-w-lg {
-    max-width: calc(var(--size-unit) * 4.5);
+    max-width: calc(var(--size-unit) * 5);
 }
 
 .max-w-xl {

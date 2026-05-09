@@ -427,8 +427,8 @@ function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
 
-function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
-function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = True): string;
+function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = False): string;
+function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = False): string;
 function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = True): string;
 
 implementation
@@ -460,7 +460,7 @@ begin
   Result := BSCustomAlignToStr('align-items-', Align, WithSpace);
 end;
 
-function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = True): string;
+function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean): string;
 const
   FixedStrs: array[TmnwFixed] of string = ('', 'fixed-top', 'fixed-bottom', 'fixed-start', 'fixed-end',
     'sticky-top', 'sticky-bottom', 'sticky-start', 'sticky-end');
@@ -470,12 +470,12 @@ begin
     Result := ' ' + Result;
 end;
 
-function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = True): string;
+function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean): string;
 const
-  SizeStrs: array[TSize] of string = ('', 'xs', 'sm', 'md', 'lg', 'xl', 'parent', 'content');
+  SizeStrs: array[TSize] of string = ('', 'xs', 'sm', 'md', 'lg', 'xl');
 begin
   Result := SizeStrs[Size];
-  if (Result <> '') and (Size < szVeryLarge) then
+  if (Result <> '') then
     Result := Prefix + Result;  
   if WithSpace and (Result <> '') then
     Result := ' ' + Result;
@@ -1226,9 +1226,9 @@ begin
   Scope.Classes.Add('flex-md-nowrap');
   Scope.Classes.Add(BSContentJustifyToStr(e.ContentAlign, False));
   if e.Fixed <> fixedDefault then
-    Scope.Classes.Add(BSFixedToStr(e.Fixed, False));
+    Scope.Classes.Add(BSFixedToStr(e.Fixed));
   if e.Align <> alignDefault then
-    Scope.Classes.Add(BSAlignToStr(e.Align, False));
+    Scope.Classes.Add(BSAlignToStr(e.Align));
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
@@ -1246,9 +1246,9 @@ begin
   else
     Scope.Classes.Add('col');
   if e.Fixed <> fixedDefault then
-    Scope.Classes.Add(BSFixedToStr(e.Fixed, False));
+    Scope.Classes.Add(BSFixedToStr(e.Fixed));
   if e.Align <> alignDefault then
-    Scope.Classes.Add(BSAlignToStr(e.Align, False));
+    Scope.Classes.Add(BSAlignToStr(e.Align));
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
@@ -1575,8 +1575,8 @@ var
 begin
   e := Scope.Element as THTML.THTMLLayout;
   inherited;
-  Scope.Classes.Add(BSFixedToStr(e.Fixed, False));
-  Scope.Classes.Add(BSAlignToStr(e.Align, False));
+  Scope.Classes.Add(BSFixedToStr(e.Fixed));
+  Scope.Classes.Add(BSAlignToStr(e.Align));
   Scope.Classes.Add(BSAlignItemsToStr(e.AlignItems, False));
   Scope.Classes.Add(BSContentJustifyToStr(e.JustifyItems, False));
   if e.Solitary then

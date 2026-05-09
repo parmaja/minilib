@@ -470,11 +470,11 @@ end;
 
 function TWSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = True): string;
 const
-  SizeStrs: array[TSize] of string = ('', 'xs', 'sm', 'md', 'lg', 'xl', 'parent', 'content');
+  SizeStrs: array[TSize] of string = ('', 'xs', 'sm', 'md', 'lg', 'xl');
 begin
   Result := SizeStrs[Size];
 
-  if (Result <> '') and (Size < szVeryLarge) then
+  if (Result <> '') then
     Result := Prefix + Result;   
   if WithSpace and (Result <> '') then
     Result := ' ' + Result;
