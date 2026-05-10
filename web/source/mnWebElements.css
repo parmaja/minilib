@@ -1,4 +1,5 @@
-/** version:1.37 **/
+/* version:1.80 */
+.version::after { content: " css v1.80"; }
 
 /** Icons */
 
@@ -31,6 +32,17 @@
     --mnw-font-large-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 423.65"><path fill-rule="nonzero" d="M274.89 336.65H121.85l-29.09 87H0L157.6 0h80.94l158.6 423.65h-92.86l-29.39-87zm181.37-226.22v55.74h-54.69v-55.74h-55.75V55.74h55.75V0h54.69v55.74H512v54.69h-55.74zM145.39 265.74h105.96l-53.23-158.69-52.73 158.69z"/></svg>');
     --mnw-font-normal-bg: url('data:image/svg+xml,<svg width="512" height="423.65" xmlns="http://www.w3.org/2000/svg" clip-rule="evenodd" fill-rule="evenodd" image-rendering="optimizeQuality" text-rendering="geometricPrecision" shape-rendering="geometricPrecision"><g><title>Layer 1</title><path id="svg_1" d="m329.89,336.65l-153.04,0l-29.09,87l-92.76,0l157.6,-423.65l80.94,0l158.6,423.65l-92.86,0l-29.39,-87zm-129.5,-70.91l105.96,0l-53.23,-158.69l-52.73,158.69z" fill-rule="nonzero"/></g></svg>');
     --mnw-font-small-bg: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 423.65"><path fill-rule="nonzero" d="M274.89 336.65H121.85l-29.09 87H0L157.6 0h80.94l158.6 423.65h-92.86l-29.39-87zm70.93-226.22V55.74H512v54.69H345.82zM145.39 265.74h105.96l-53.23-158.69-52.73 158.69z"/></svg>');
+}
+
+.version {
+    position: fixed;
+    bottom: 5px;
+    left: 5px;
+    color: light-dark(rgba(0,0,0,0.4), rgba(255,255,255,0.4));
+    font-size: 12px;
+    font-family: monospace;
+    z-index: 9999;
+    pointer-events: none;
 }
 
 svg {

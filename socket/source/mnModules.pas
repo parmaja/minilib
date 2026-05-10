@@ -426,7 +426,7 @@ type
     function SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
 
-    function SendResource(const ResName: string): Boolean; overload;
+    function SendResource(const ResName: string; Alias: string): Boolean; overload;
     function SendFile(const AFileName: string; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean; overload;
 
     function ReceiveStream(s: TStream): Int64; overload;
@@ -1375,21 +1375,32 @@ begin
 
   Answer := hrOK;
 
+  Stamp := GetFileStamp(Info.Size, Info.TimeStamp); //Yes it is repeated in SendStream but we will pass fdResend
+
+  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = Stamp) then
+  begin
+    Answer := hrNotModified;
+    exit(False);
+  end;
+
   aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
   try
-    Result := SendStream(aStream, Alias, Info.Size, Info.TimeStamp, FileDispositions);
+    Result := SendStream(aStream, Alias, Info.Size, Info.TimeStamp, FileDispositions + [fdResend]);
   finally
     aStream.Free;
   end;
 end;
 
-function TmodResponse.SendResource(const ResName: string): Boolean;
+function TmodResponse.SendResource(const ResName: string; Alias: string): Boolean;
 var
   aStream: TResourceStream;
 begin
+  if Alias = '' then
+    Alias := ResName;
+    
   aStream := TResourceStream.Create(hInstance, ChangeFileExt(ResName, ''), {$ifdef FPC}'RT_RCDATA'{$else}RT_RCDATA{$endif}); //* remove extension
   try
-    Result := SendStream(aStream, ResName, aStream.Size, InstanceDate);
+    Result := SendStream(aStream, Alias, aStream.Size, InstanceDate);
   finally
     aStream.Free;
   end;

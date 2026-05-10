@@ -88,6 +88,7 @@ WebElement:                             Module  Namespace Schema  Directory     
 }
 
 {.$define LOG}
+{.$define MINILIB}
 
 interface
 
@@ -100,6 +101,9 @@ uses
   mnUtils, mnClasses, mnStreams, mnLogs, mnMIME, mnParams, mnTypes,
   mnMultipartData, mnModules, mnWebModules;
 
+const
+  cVersion = '1.80.1';  
+  
 {.$define rtti_objects}
 
 type
@@ -311,7 +315,6 @@ type
     //
     Data: TmnMultipartData;
     // For
-    Stamp: string; //IfNone-Match
     Route: string;   
     SessionID: String;
     Session: TObject;
@@ -1023,6 +1026,7 @@ type
     FTimeStamp: Int64;
     FOnlineFiles: TOnlineFiles;
     FLanguage: string;
+    FVersion: string;
     procedure SetLanguage(const Value: string);
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
@@ -1076,6 +1080,7 @@ type
     property OnlineFiles: TOnlineFiles read FOnlineFiles write FOnlineFiles;
     property Language: string read FLanguage write SetLanguage;
     property TimeStamp: Int64 read FTimeStamp;
+    property Version: string read FVersion write FVersion;
   end;
 
   TSize = (
@@ -1227,12 +1232,10 @@ type
       TDocument = class(TAssets)
       private
         FTitle: string;
-        FVersion: integer;
         FBody: TBody;
       protected
         procedure Created; override;
       public
-        property Version: integer read FVersion write FVersion;
         property Title: string read FTitle write FTitle;
         destructor Destroy; override;
         property Body: TBody read FBody;
@@ -4298,9 +4301,9 @@ procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; AResponse: Tmn
 begin
   inherited;
   if ftResource in Options then
-    AResponse.SendResource(FileName)
+    AResponse.SendResource(FileName, Route)
   else
-    AResponse.SendFile(FileName);
+    AResponse.SendFile(FileName, Route);
 end;
 
 constructor TmnwSchema.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string; ARoute: string );
@@ -4904,8 +4907,6 @@ begin
     end;
     
     try
-      aContext.Stamp := Request.Header['If-None-Match'];
-
       Response.Answer := hrOK;
       Response.ContentType := DocumentToContentType('html');
       (Module as TmnwWebModule).Web.Respond(aContext, Response);
@@ -4935,28 +4936,31 @@ end;
 procedure TAssetsSchema.Start;
 var
   minilib: string;
-  {lib: TmnwLibrary;
-  source: TLibrarySource;}
 begin
   inherited;
   Name := 'Assets';
   Route := 'assets';
   //TCSSFile.Create(This, [ftResource], 'mnWebElements.css');
+  {$ifdef MINILIB}  
   minilib := GetEnvironmentVariable('minilib');
   if minilib <> '' then //Working in Developer PC
   begin
     TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/web/source/mnWebElements.js'), 'web-elements.js');
     TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/web/source/mnWebElements.css'), 'web-elements.css');  
-  end;
+  end
+  else
+  {$endif}
   begin
-    if FileExists(GetHomeFolder + 'mnWebElements.js') then
+    if FileExists(GetHomeFolder + 'web-elements.js') then
     begin
+      //Files
       TFile.Create(This, [], GetHomeFolder + 'web-elements.js', 'web-elements.js');
       TFile.Create(This, [], GetHomeFolder + 'web-elements.css', 'web-elements.css');
     end
     else
-    begin
-      TFile.Create(This, [ftResource], 'mnWebElements_csss', 'web-elements.css');
+    begin 
+      //Resources
+      TFile.Create(This, [ftResource], 'mnWebElements_css', 'web-elements.css');
       TFile.Create(This, [ftResource], 'mnWebElements_js', 'web-elements.js');
     end;
   end;
@@ -5877,7 +5881,8 @@ end;
 
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
-  inherited;
+  inherited;  
+  Context.Writer.WriteLn('<div class="version">' + Context.Web.Version + ' web v'+cVersion+'</div>');
 end;
 
 procedure TmnwHTMLRenderer.TBody.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
