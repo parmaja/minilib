@@ -46,31 +46,33 @@ WebElement:                             Module  Namespace Schema  Directory     
     Application
     
                     Document
-┌──────────────────────┴──────────────────────┐
-┌──────┬──────────────────────────────────────┐  ─┐
-│>Logo │ Brand NavBar                      c =│   ├─ Header
-├──────┴──────────────────────────────────────┤  ─┤
-│ MenuBar                                     │   │
-├────────────┬────────────────────────────────┤   │
-│ Sidebar    │ Main                           │   │
-│    ─┬─     │                                │   ├─ Container
-│ Accordion  │ ┌─ TabControl ──────┐ ┌──────┐ │   │
-│            │ │ Tab │    │        │ │ Card │ │   │
-│            │ ├─────┴────┴────────┤ ├──────┤ │   │
-│            │ │ ┌─ Control ────┐  │ │      │ │   │
-│            │ │ └──────────────┘  │ │      │ │   │
-│            │ └───────────────────┘ └──────┘ │   │
-│            │ ┌─ Form ────────────┐ ┌──────┐ │   │
-│            │ │                   │ │ Panel│ │   │
-│            │ │ ┌─ Control ────┐  │ │      │ │   │
-│            │ │ └──────────────┘  │ │      │ │   │
-│            │ │ ┌─ Control ────┐  │ │      │ │   │
-│            │ │ └──────────────┘  │ │      │ │   │
-│            │ └───────────────────┘ └──────┘ │   │
-│            │                                │   │
-├────────────┴── Footer ──────────────────────┤  ─┤
-│                                             │   ├─ Footer
-└─────────────────────────────────────────────┘  ─┘
+┌──────────────────────┴───────────────────────┐
+┌──────┬───────────────────────────────────────┐  ─┐
+│>Logo │ Brand NavBar                       c =│   ├─ Header
+├──────┴───────────────────────────────────────┤  ─┤
+│ MenuBar                                      │   │
+├────────────┬─────────────────────────────────┤   │
+│ Sidebar    │ Main                            │   │
+│    ─┬─     │                                 │   ├─ Container
+│ Accordion  │ ┌─ TabControl ──────┐ ┌───────┐ │   │
+│            │ │ Tab │ Tab │       │ │ Card  │ │   │
+│            │ ├─────┴─────┴───────┤ ├───────┤ │   │
+│            │ │ ┌─ Control ────┐  │ │       │ │   │
+│            │ │ └──────────────┘  │ │       │ │   │
+│            │ └───────────────────┘ └───────┘ │   │
+│            │ ┌─ Form ────────────┐ ┌───────┐ │   │
+│            │ │ ┌─ Control ────┐  │ │ Panel │ │   │
+│            │ │ └──────────────┘  │ │       │ │   │
+│            │ │ ┌─ Control ────┐  │ │       │ │   │
+│            │ │ └──────────────┘  │ │       │ │   │
+│            │ │ ┌──┐┌──┐          │ │       │ │   │
+│            │ │ └──┘└──┘          │ │       │ │   │
+│            │ │                   │ │       │ │   │
+│            │ └───────────────────┘ └───────┘ │   │
+│            │                                 │   │
+├────────────┴── Footer ───────────────────────┤  ─┤
+│                                              │   ├─ Footer
+└──────────────────────────────────────────────┘  ─┘
 
   https://bootstrap.build/app
   https://www.layoutit.com
@@ -87,8 +89,12 @@ WebElement:                             Module  Namespace Schema  Directory     
     https://bootstrapmade.com/demo/templates/NiceAdmin/index.html
 }
 
+{NOTICES
+  NO MARGINE for `main`
+}
+
 {.$define LOG}
-{.$define MINILIB}
+{$define MINILIB}
 
 interface
 
@@ -102,7 +108,7 @@ uses
   mnMultipartData, mnModules, mnWebModules;
 
 const
-  cVersion = '1.80.1';  
+  cVersion = '1.82';  
   
 {.$define rtti_objects}
 
@@ -473,8 +479,7 @@ type
   TmnwPriority = (priorityNormal, priorityStart, priorityEnd);
 
   TTheme = (themeUndefined, themeLight, themeDark);
-  TmnwShadow = (shadowUndefined, shadowLight, shadowHeavy, shadowEnd, ShadowBottom);
-
+  TmnwShadow = (shadowUndefined, shadowThin, shadowThick, shadowEnd, ShadowBottom);
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignBaseline, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
 
@@ -1027,6 +1032,7 @@ type
     FOnlineFiles: TOnlineFiles;
     FLanguage: string;
     FVersion: string;
+    FShowVersion: Boolean;
     procedure SetLanguage(const Value: string);
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
@@ -1081,6 +1087,7 @@ type
     property Language: string read FLanguage write SetLanguage;
     property TimeStamp: Int64 read FTimeStamp;
     property Version: string read FVersion write FVersion;
+    property ShowVersion: Boolean read FShowVersion write FShowVersion;
   end;
 
   TSize = (
@@ -1129,17 +1136,21 @@ type
         Comment: string;
       end;
 
-      THTMLLayout = class abstract(THTMLElement)
+      THTMLContainer = class abstract(THTMLElement)
+      public
+        Medium: Boolean; //Medium or above
+        AlignItems: TmnwAlign;
+        JustifyItems: TmnwAlign;
+        Padding: TmnwBounding; 
+      end;
+      
+      THTMLLayout = class abstract(THTMLContainer)
       public
         Fixed: TmnwFixed;
         Solitary: Boolean; //* Single in Row
         Align: TmnwAlign;
-        AlignItems: TmnwAlign;
-        JustifyItems: TmnwAlign;
 
-        Margin: TmnwBounding;
-        Padding: TmnwBounding;
-        Medium: Boolean; //Medium or above
+        Margin: TmnwBounding; 
       end;
 
       { THTMLComponent }
@@ -1341,7 +1352,7 @@ type
         function CanRender: Boolean; override;
       end;
 
-      TMain = class(THTMLLayout)
+      TMain = class(THTMLComponent)
       protected
         procedure Created; override;
       public
@@ -1468,7 +1479,7 @@ type
 
       { THTMLGroup }
 
-      THTMLGroup = class(THTMLComponent)
+      THTMLGroup = class(THTMLControl)
       protected
       public
         function CanRender: Boolean; override;
@@ -3109,6 +3120,7 @@ begin
   FLock := TCriticalSection.Create;
   FRegistered := TRegisteredSchemas.Create;
   DefaultAge := -1; //Forever
+  FShowVersion := True;
   inherited;
 end;
 
@@ -4303,7 +4315,7 @@ begin
   if ftResource in Options then
     AResponse.SendResource(FileName, Route)
   else
-    AResponse.SendFile(FileName, Route);
+    AResponse.SendFile(FileName);
 end;
 
 constructor TmnwSchema.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string; ARoute: string );
@@ -4676,7 +4688,7 @@ end;
 procedure THTML.THeader.Created;
 begin
   inherited;
-  Shadow := shadowHeavy;
+  Shadow := ShadowBottom;
   if ID = '' then
     ID := 'header';
 end;
@@ -4716,7 +4728,7 @@ end;
 procedure THTML.TCard.Created;
 begin
   inherited;
-  Shadow := shadowLight;
+//  Shadow := shadowThin;
 end;
 
 { THTML.TForm }
@@ -5452,6 +5464,7 @@ begin
       
       with Main do
       begin
+        AlignItems := alignCenter;
         with TCard.Create(this) do
         begin
           Solitary := True;
@@ -5882,7 +5895,8 @@ end;
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;  
-  Context.Writer.WriteLn('<div class="version">' + Context.Web.Version + ' web v'+cVersion+'</div>');
+  if Context.Web.ShowVersion then  
+    Context.Writer.WriteLn('<div class="version">' + Context.Web.Version + ' web v'+cVersion+'</div>');
 end;
 
 procedure TmnwHTMLRenderer.TBody.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);

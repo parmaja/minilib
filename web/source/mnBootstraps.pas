@@ -44,8 +44,12 @@ type
     class destructor Destroy;      
   public
   type
+      THTMLContainer = class(THTMLElement)      
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
   
-      THTMLLayout = class(THTMLElement)
+      THTMLLayout = class(THTMLContainer)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       public
@@ -206,7 +210,7 @@ type
 
       { TMain }
 
-      TMain = class(THTMLLayout)
+      TMain = class(THTMLContainer)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -294,7 +298,7 @@ type
         procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
-      TGroup = class(THTMLComponent)
+      TGroup = class(THTMLControl)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
@@ -684,8 +688,8 @@ begin
   if e.Size > szUndefined then
     Scope.Classes.Add(BSSizeToStr('max-w-', e.Size));
   case e.Shadow of
-    shadowLight: Scope.Classes.Add('shadow-sm');
-    ShadowHeavy: Scope.Classes.Add('shadow-thin');
+    shadowThin: Scope.Classes.Add('shadow-thin');
+    ShadowThick: Scope.Classes.Add('shadow-thick');
     ShadowEnd: Scope.Classes.Add('shadow-end');
     ShadowBottom: Scope.Classes.Add('shadow-bottom');
     else ;
@@ -774,35 +778,20 @@ end;
 procedure TBSRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TMain;
-  classes: TElementClasses;
 begin
   e := Scope.Element as THTML.TMain;
-  //Context.Writer.OpenTag('div', 'class="row"');
-  classes.Init('main');
+  Scope.Classes.Add('main');
   if (e.Schema as THTML).Document.Body.Header.CanRender  then
-    classes.Add('max-content-height');
+    Scope.Classes.Add('max-content-height');
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
-    classes.Add('col-md');
-  classes.Add('p-0');
-  classes.Add('m-0');
-  Context.Writer.OpenTag('main', classes.ToString);
-
-  Scope.Classes.Add('main-content');
-  Scope.Classes.Add('m-1');
+    Scope.Classes.Add('col-md');
   if e.Gap > 0 then
-    //Scope.Classes.Add('gap-' + e.Gap.ToString);
-    Scope.Classes.Add('m-childs-' + e.Gap.ToString);
+    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
+  Scope.Classes.Add('p-1');
+  Scope.Classes.Add('m-0'); //do not change it, keep it 0
 
-  //Scope.Classes.Add('d-flex');
-  //Scope.Classes.Add('flex-column');
-
-  //Scope.Classes.Add('flex-wrap');
-  Scope.Classes.Add('justify-content-center');
-//container-fluid for full width, container not full width
-  Context.Writer.OpenTag('div', Scope.ToString);
+  Context.Writer.OpenTag('main', Scope.Classes.ToString);
   inherited;
-  Context.Writer.CloseTag('div');
-
   Context.Writer.CloseTag('main');
 end;
 
@@ -1577,25 +1566,16 @@ begin
   inherited;
   Scope.Classes.Add(BSFixedToStr(e.Fixed));
   Scope.Classes.Add(BSAlignToStr(e.Align));
-  Scope.Classes.Add(BSAlignItemsToStr(e.AlignItems, False));
-  Scope.Classes.Add(BSContentJustifyToStr(e.JustifyItems, False));
   if e.Solitary then
     Scope.Classes.Add('mx-auto');
 
   // Optimize margin/padding prefix calculation
   if e.Medium then
-  begin
-    MarginPrefix := 'm-md';
-    PaddingPrefix := 'p-md';
-  end
+    MarginPrefix := 'm-md'
   else
-  begin
     MarginPrefix := 'm';
-    PaddingPrefix := 'p';
-  end;
 
   Scope.Classes.Add(e.Margin.ToBSString(MarginPrefix));
-  Scope.Classes.Add(e.Padding.ToBSString(PaddingPrefix));
 end;
 
 { TBSRenderer.TImageFile }
@@ -1777,6 +1757,29 @@ begin
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
+end;
+
+{ TBSRenderer.THTMLContainer }
+
+procedure TBSRenderer.THTMLContainer.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.THTMLContainer;
+  MarginPrefix, PaddingPrefix: string;
+begin
+  e := Scope.Element as THTML.THTMLContainer;
+  inherited;
+  if (e.AlignItems <> alignDefault) or (e.JustifyItems <> alignDefault) then
+    Scope.Classes.Add('d-flex');
+  
+  Scope.Classes.Add(BSAlignItemsToStr(e.AlignItems, False));
+  Scope.Classes.Add(BSContentJustifyToStr(e.JustifyItems, False));
+
+  if e.Medium then
+    PaddingPrefix := 'p-md'
+  else
+    PaddingPrefix := 'p';
+
+  Scope.Classes.Add(e.Padding.ToBSString(PaddingPrefix));
 end;
 
 initialization

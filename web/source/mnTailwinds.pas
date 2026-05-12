@@ -687,9 +687,10 @@ begin
   end;
   if e.Size > szUndefined then
     Scope.Classes.Add(TWSizeToStr('max-w-', e.Size));
+    
   case e.Shadow of
-    shadowLight: Scope.Classes.Add('shadow-sm');
-    ShadowHeavy: Scope.Classes.Add('shadow-lg');
+    shadowThin: Scope.Classes.Add('shadow-thin');
+    ShadowThick: Scope.Classes.Add('shadow-thick');
     else;
   end;
   inherited;
