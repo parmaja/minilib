@@ -297,8 +297,9 @@ type
 
   TConnectionType = (
 	  ctNormal,
+		ctWebSocket,
 		ctFormData,
-		ctWebSocket
+    ctJSONData
 	);
 
   TmodParams = class(TmnFields)
@@ -551,7 +552,7 @@ type
     procedure Respond(AAnswer: TmodAnswer; AContentType: string); overload; 
     procedure RespondText(S: string);    
     procedure RespondHTML(S: string);    
-    procedure RespondJSON(S: string);    
+    procedure RespondJSON(S: string; AAnswer: TmodAnswer = hrOK);
     procedure RespondNoContent;
     procedure RespondNotFound;
     procedure RespondForbidden;
@@ -2002,9 +2003,9 @@ begin
   else
   begin
     if Request.Header.Field['Content-type'].Have('multipart/form-data', [';']) then
-    begin
-      Request.ConnectionType := ctFormData;
-    end;
+      Request.ConnectionType := ctFormData
+    else if Request.Header.Field['Content-type'].Have('application/json', [';']) then
+      Request.ConnectionType := ctJSONData;
     {if not Response.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
     begin
       if Request.CompressProxy <> nil then
@@ -3327,9 +3328,9 @@ begin
   Responded;
 end;
 
-procedure TwebResponse.RespondJSON(S: string);
+procedure TwebResponse.RespondJSON(S: string; AAnswer: TmodAnswer);
 begin
-  Answer := hrOK;
+  Answer := AAnswer;
   ContentType := DocumentToContentType('.json');
   SendUTF8String(S);
   Responded;

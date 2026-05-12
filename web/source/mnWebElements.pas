@@ -1520,6 +1520,7 @@ type
       public
         PostTo: TLocation;
         CancelTo: TLocation;
+        SubmitTo: string;
 
         //RedirectTo: TLocation;
         RedirectTo: string;
@@ -1783,17 +1784,17 @@ type
   end;
 
   //Return error as json if fail with message of error, so we need JS to post
-  TLoginElement = class(THTML.THTMLItem)
+  TAuthElement = class(THTML.THTMLItem)
   protected
     procedure DoCompose(const AContext: TmnwContext); override;
   public
     Form: THTML.TForm;
   end;
 
-  TLoginSchema = class(THTML)
+  TAuthSchema = class(THTML)
   private
   public
-    Login: TLoginElement;
+    Login: TAuthElement;
   protected
     procedure DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
@@ -4922,6 +4923,9 @@ begin
       aContext.Data.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
       aContext.Data.TempPath := (Module as TmnwWebModule).WorkFolder + 'temp';
       aContext.Data.Read(Request.Stream);
+    end
+    else if Request.ConnectionType = ctJSONData then
+    begin
     end;
     
     try
@@ -5349,9 +5353,7 @@ end;
 
 function TmnwContext.GetLocationPath(Location: TLocation): string;
 begin
-  if Location.Custom <> '' then
-    Result := Location.Custom
-  else if Location.Where = toSchema then
+  if Location.Where = toSchema then
     Result := GetPath(Schema)
   else if Location.Where = toElement then
     Result := GetPath(Element)
@@ -5359,6 +5361,12 @@ begin
     Result := GetHomePath
   else if Location.Where = toDefault then
     Result := GetDefaultPath;
+
+  if Location.Where = toCustom then
+    Result := Location.Custom
+  else if Location.Custom <> '' then
+    Result := EndURL(Result) + Location.Custom
+
 end;
 
 function TmnwContext.GetURL(e: TmnwElement): string;
@@ -5435,9 +5443,9 @@ begin
   Session.Value := Value;
 end;
 
-{ TLoginSchema }
+{ TAuthSchema }
 
-procedure TLoginSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   if (AContext.Data <> nil) and SameText(AContext.Data.Values['execute'], 'true') then
   begin
@@ -5446,7 +5454,7 @@ begin
   inherited;
 end;
 
-procedure TLoginSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
   if (AElement.Name = 'login-form') and (AContext.Data <> nil) and (SameText(AContext.Data.Values['execute'], 'true') ) then
@@ -5455,7 +5463,7 @@ begin
   end;
 end;
 
-procedure TLoginSchema.DoCompose(const AContext: TmnwContext);
+procedure TAuthSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   with Document do
@@ -5479,7 +5487,7 @@ begin
           Size := szNormal;
           Caption := 'Login';
 
-          Login := TLoginElement.Create(This);
+          Login := TAuthElement.Create(This);
           Login.Compose(AContext);
         end;
       end;
@@ -5487,12 +5495,12 @@ begin
   end;
 end;
 
-procedure TLoginSchema.DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
 end;
 
-procedure TLoginSchema.DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   AResponse.SessionID := '';
   AResponse.RespondRedirectTo(AContext.GetHomePath);
@@ -5529,9 +5537,9 @@ begin
   //Route := ExtractFileName(FFileName);
 end;
 
-{ TLoginElement }
+{ TAuthElement }
 
-procedure TLoginElement.DoCompose(const AContext: TmnwContext);
+procedure TAuthElement.DoCompose(const AContext: TmnwContext);
 begin
   Solitary := True;
   Size := szNormal;
@@ -5545,6 +5553,9 @@ begin
       Route := 'login';
       Name := 'login-form';
       PostTo.Where := toElement;
+//      PostTo.Custom := 'login';
+
+      SubmitTo := 'return mnw.formPost(this, event)';
 
       with TInput.Create(This) do
       begin

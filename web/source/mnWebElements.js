@@ -168,43 +168,49 @@ mnw.action = function(event, url, data)
 /* Utils functions */
 
 mnw.formPost = function(formElement, event) {
-   if (event) {
-     event.preventDefault();
-   }
-   const formData = new FormData(formElement);
-   const data = {};
-   formData.forEach((value, key) => {
-     data[key] = value;
-   });
-   fetch(formElement.action, {
-     method: 'POST',
-     body: JSON.stringify(data),
-     headers: {
-       'Content-Type': 'application/json'
-     }
-   })
-   .then(response => response.text())
-   .then(text => {
-     let json;
-     try {
-       json = JSON.parse(text);
-     } catch (e) {
-       mnw.showToast('Invalid JSON response', 'danger');
-       return;
-     }
-     if (json.redirect) {
-       window.location.href = json.redirect;
-     } else if (json.message) {
-       mnw.showToast(json.message, 'danger');
-     } else {
-       mnw.showToast('Unknown error', 'danger');
-     }
-   })
-   .catch(error => {
-     console.error('Error in formPost:', error);
-     mnw.showToast('Network error', 'danger');
-   });
-   return false;
+  if (event) {
+    event.preventDefault();
+  }
+  const formData = new FormData(formElement);
+  const data = {};
+  formData.forEach((value, key) => {
+    data[key] = value;
+  });
+  fetch(formElement.action, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    return response.text().then(text => ({ type: response.type, status: response.status, message: text }));
+  })
+  .then(result => {
+    let json;
+    try {
+      json = JSON.parse(result.message);
+    } catch (e) {
+      if (!result.type) {
+        mnw.showToast('Error ' + result.status, 'danger');
+      } else {
+        mnw.showToast('Invalid JSON response', 'danger');
+      }
+      return;
+    }
+    if (json.redirect) {
+      window.location.href = json.redirect;
+    } else if (json.type === 'error' || !result.type) {
+      mnw.showToast(json.message || 'Request failed', 'danger');
+    } else if (json.message) {
+      mnw.showToast(json.message, json.type || 'info');
+    }
+  })
+  .catch(error => {
+    console.error('Error in formPost:', error);
+    mnw.showToast('Network error', 'danger');
+  });
+  return false;
 }
 
 function init()
