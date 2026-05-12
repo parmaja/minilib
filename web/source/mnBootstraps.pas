@@ -854,10 +854,12 @@ begin
 
   if e.Submit.Caption <> '' then
     Context.Writer.AddTag('button', 'class="btn btn-success" type="submit" form="'+e.ID+'" value="Submit"', e.Submit.Caption);
-  if e.Cancel.Caption <> '' then
-    Context.Writer.AddTag('button', 'class="btn btn-primary" type="cancel" form="'+e.ID+'" value="Cancel"', e.Cancel.Caption);
   if e.Reset.Caption <> '' then
-    Context.Writer.AddTag('button', 'class="btn btn-primary" type="reset" form="'+e.ID+'" value="Reset"', e.Reset.Caption);
+    Context.Writer.AddTag('button', 'class="btn btn-secondary" type="reset" form="'+e.ID+'" value="Reset"', e.Reset.Caption);
+  if e.Cancel.Caption <> '' then
+      if e.CancelTo.Where <> toNone then      
+        Context.Writer.AddTag('a', 'class="btn btn-primary" type="cancel" href="' + Context.GetLocationPath(e.CancelTo.Where) + '"', e.Cancel.Caption);
+        //Context.Writer.AddTag('button', 'class="btn btn-primary" type="cancel" onclick="location.href=''' + Context.GetLocationPath(e.CancelTo.Where) + '''"', e.Cancel.Caption);
 end;
 
 { TBSRenderer.TParagraphHTML }
@@ -1039,6 +1041,8 @@ begin
   
   inherited;  
   
+  if Context.Web.ShowVersion then  
+    Context.Writer.WriteLn('<div class="version">' + Context.Web.Version + ' mnw: v'+ cVersion +'</div>');
   Context.Writer.CloseTag('body');
 end;
 

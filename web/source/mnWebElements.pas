@@ -209,6 +209,7 @@ type
     toElement,
     toSchema,
     toHome,
+    toDefault,
     toCustom
   );
 
@@ -1518,13 +1519,14 @@ type
         procedure DoComposed; override;
       public
         PostTo: TLocation;
+        CancelTo: TLocation;
 
         //RedirectTo: TLocation;
         RedirectTo: string;
 
         Submit: TFormButton;
-        Cancel: TFormButton;
         Reset: TFormButton;
+        Cancel: TFormButton;
       end;
 
       TParagraph = class(THTMLElement)
@@ -1785,11 +1787,13 @@ type
   protected
     procedure DoCompose(const AContext: TmnwContext); override;
   public
+    Form: THTML.TForm;
   end;
 
   TLoginSchema = class(THTML)
   private
   public
+    Login: TLoginElement;
   protected
     procedure DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     procedure DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
@@ -3622,10 +3626,7 @@ end;}
 
 procedure TmnwSchema.Compose(const AContext: TmnwContext);
 begin
-  AddState([estComposing]);
   inherited;
-  RemoveState([estComposing]);
-  AddState([estComposed]);
 end;
 
 procedure TmnwSchema.DoPrepare;
@@ -4173,12 +4174,17 @@ var
 begin
 //  Clear; //*Should not clear here
 //  Prepare;
-  DoCompose(AContext);
+  AddState([estComposing]);
+  DoCompose(AContext);  
   UpdateElement(Self);
   for o in Self do
   begin
-    o.Compose(AContext); //Compose
+    if not (estComposed in o.State) then    
+      o.Compose(AContext); //Compose
   end;
+  RemoveState([estComposing]);
+
+  AddState([estComposed]);
   DoComposed;
 end;
 
@@ -5350,7 +5356,9 @@ begin
   else if Location.Where = toElement then
     Result := GetPath(Element)
   else if Location.Where = toHome then
-    Result := URLDelimiter;
+    Result := GetHomePath
+  else if Location.Where = toDefault then
+    Result := GetDefaultPath;
 end;
 
 function TmnwContext.GetURL(e: TmnwElement): string;
@@ -5471,7 +5479,8 @@ begin
           Size := szNormal;
           Caption := 'Login';
 
-          Add(TLoginElement);
+          Login := TLoginElement.Create(This);
+          Login.Compose(AContext);
         end;
       end;
     end;
@@ -5530,7 +5539,8 @@ begin
 
   with THTML, Self do
   begin
-    with THTML.TForm.Create(This) do
+    Form := THTML.TForm.Create(This);
+    with Form do
     begin
       Route := 'login';
       Name := 'login-form';
@@ -5556,6 +5566,7 @@ begin
 
       Submit.Caption := 'Submit';
       Reset.Caption := 'Reset';
+      Cancel.Caption := 'Cancel'; 
     end;
   end;
   inherited;
@@ -5895,8 +5906,6 @@ end;
 procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;  
-  if Context.Web.ShowVersion then  
-    Context.Writer.WriteLn('<div class="version">' + Context.Web.Version + ' web v'+cVersion+'</div>');
 end;
 
 procedure TmnwHTMLRenderer.TBody.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);

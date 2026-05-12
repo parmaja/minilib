@@ -1,5 +1,5 @@
-/* version:1.80 */
 "use strict";
+const version = "1.82";
 
 let mnw = {};
 
@@ -347,7 +347,11 @@ mnw.init_accordions = function()
   });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function()
+{
+  const el = document.querySelector('.version');
+  if (el) el.textContent += ' js: ' + version+'';
+
   mnw.init_zoom();
   mnw.init_accordions();
 });
