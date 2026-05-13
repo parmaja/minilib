@@ -148,6 +148,7 @@ type
     function AddPair(const Name: String; const Value: string): TDON_Element; overload; //Add Pair with string value with this name
 
     property Parent: TDON_Parent read FParent;
+
     property Values[const Index: string]: TDON_Element read GetValues write SetValues; default;
     {$ifndef FPC}
     property Values[const Index: TArray<string>]: TDON_Element read ByPath; default;
@@ -341,9 +342,9 @@ type
 
   TDON_Pair = class(TDON_Parent)
   private
-    FParent: TDON_Object_Value;
     FName: string;
-    FValue: TDON_Element;
+    FValue: TDON_Element;  
+
     procedure SetPairValue(AValue: TDON_Element);
   protected
     function FindItem(const Name: string): TDON_Element; override;
@@ -373,26 +374,38 @@ type
   private
     FPairs: TDON_Pairs;
   protected
+    type
+
+      { TmnObjectListEnumerator }
+
+      TPairsEnumerator = class(TObject)
+      private
+        FList: TDON_Pairs;
+        FIndex: Integer;
+      public
+        constructor Create(AList: TDON_Pairs);
+        function GetCurrent: TDON_Pair; inline;
+        function MoveNext: Boolean; inline;
+        property Current: TDON_Pair read GetCurrent;
+      end;
+      
+     
     function FindItem(const Name: string): TDON_Element; override;
     function GetItem(Index: Integer): TDON_Element; override;
     function GetAsString: string; override;
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
   public
+    function GetEnumerator: TPairsEnumerator; inline;
+
     procedure Created; override;
     destructor Destroy; override;
-    function CreatePair(const PairName: string): TDON_Pair;
+    function CreatePair(const PairName: string; AValue: TDON_Element = nil): TDON_Pair;
     procedure AcquirePair(const AName: string; out AObject: TObject);
     procedure AddPair(Value: TDON_Pair); overload;
     function AddPair(const Name: String; const Value: string): TDON_Element; overload;
     property Pairs: TDON_Pairs read FPairs;
   published
-  end;
-
-  { TDON_Root }
-
-  TDON_Root = class(TDON_Pair)
-  public
   end;
 
 //*---------------------------------------------------------------------------------------------    
@@ -445,17 +458,23 @@ type
   end; 
   
 //* Serializer
-procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList; Options: TSerializerOptions = []);
-procedure JsonConsoleSerialize(Pair: TDON_Pair; Options: TSerializerOptions = []);
+procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList; Options: TSerializerOptions = []); overload;
+procedure JsonConsoleSerialize(Pair: TDON_Pair; Options: TSerializerOptions = []); overload;
+
+procedure JsonSaveStream(Pair: TDON_Pair; AStream: TStream; Options: TSerializerOptions = []); overload;
+procedure JsonSaveFile(Pair: TDON_Pair; FileName: string; Options: TSerializerOptions = []); overload;
+
+procedure JsonSaveStream(Obj: TDON_Object_Value; AStream: TStream; Options: TSerializerOptions = []); overload;
+procedure JsonSaveFile(Obj: TDON_Object_Value; FileName: string; Options: TSerializerOptions = []); overload;
 
 //Loading file line by line
-procedure LoadJsonFile(out Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []); overload;
-procedure LoadJsonFile(out AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
-function LoadJsonFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
+procedure JsonLoadFile(out Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []); overload;
+procedure JsonLoadFile(out AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
+function JsonLoadFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
 
 function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
 //* For testing
-function JsonParseChunks(const Content: string; Options: TJSONParseOptions = []; ChunkSize: Integer = 3): TDON_Root;
+function JsonParseChunks(const Content: string; Options: TJSONParseOptions = []; ChunkSize: Integer = 3): TDON_Pair;
 
 //Loading it as string
 //Useful function to build JSON objects
@@ -470,7 +489,57 @@ procedure JsonParseAcquireCallback(out AObject: TObject; AParentObject: TObject;
 
 implementation
 
-procedure LoadJsonFile(out Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []);
+procedure JsonSaveStream(Pair: TDON_Pair; AStream: TStream; Options: TSerializerOptions = []);
+var
+  Serializer: TStreamSerializer;
+begin
+  Serializer := TStreamSerializer.Create(AStream, True);
+  try
+    Serializer.Options := Options;
+    Serializer.Serialize(TJsonSerializeGernerator, Pair);
+  finally
+    Serializer.Free;
+  end;
+end;
+
+procedure JsonSaveFile(Pair: TDON_Pair; FileName: string; Options: TSerializerOptions = []);
+var
+  AStream: TFileStream;
+begin
+  AStream := TFileStream.Create(FileName, fmOpenWrite or fmCreate);  
+  try
+    JsonSaveStream(Pair, AStream, Options);
+  finally
+    AStream.Free;
+  end;
+end;
+
+procedure JsonSaveStream(Obj: TDON_Object_Value; AStream: TStream; Options: TSerializerOptions = []);
+var
+  Serializer: TStreamSerializer;
+begin
+  Serializer := TStreamSerializer.Create(AStream, True);
+  try
+    Serializer.Options := Options;
+    Serializer.Serialize(TJsonSerializeGernerator, Obj);
+  finally
+    Serializer.Free;
+  end;
+end;
+
+procedure JsonSaveFile(Obj: TDON_Object_Value; FileName: string; Options: TSerializerOptions = []);
+var
+  AStream: TFileStream;
+begin
+  AStream := TFileStream.Create(FileName, fmOpenWrite or fmCreate);  
+  try
+    JsonSaveStream(Obj, AStream, Options);
+  finally
+    AStream.Free;
+  end;
+end;
+
+procedure JsonLoadFile(out Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []);
 var
   Parser: TmnJSONParser;
   w: TmnWrapperStream;
@@ -509,16 +578,16 @@ begin
   end;
 end;
 
-function LoadJsonFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
+function JsonLoadFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
 begin
-  LoadJsonFile(Result, FileName, Options);
+  JsonLoadFile(Result, FileName, Options);
 end;
 
-procedure LoadJsonFile(out AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
+procedure JsonLoadFile(out AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
 var
   Pair: TDON_Pair;
 begin
-  LoadJsonFile(Pair, FileName, Options);
+  JsonLoadFile(Pair, FileName, Options);
   try
     AObject := Pair.ReleaseValue;
   finally
@@ -532,14 +601,13 @@ var
   w: TmnWrapperStream;
   fs: TFileStream;
 begin
-  Result := TDON_Root.Create(nil);
+  Result := TDON_Pair.Create(nil);
   Parser.Init(Result, @JsonParseAcquireCallback, Options);
   Parser.Parse(Content);
   Parser.Finish;
 end;
 
-function JsonParseChunks(const Content: string; Options: TJSONParseOptions;
-  ChunkSize: Integer): TDON_Root;
+function JsonParseChunks(const Content: string; Options: TJSONParseOptions; ChunkSize: Integer): TDON_Pair;
 var
   Parser: TmnJSONParser;
   w: TmnWrapperStream;
@@ -547,7 +615,7 @@ var
   s: string;
   i: Integer;
 begin
-  Result := TDON_Root.Create(nil);
+  Result := TDON_Pair.Create(nil);
   i:=1;
   Parser.Init(Result, @JsonParseAcquireCallback, Options);
   while i < Length(Content) do
@@ -625,7 +693,7 @@ end;
 
 function JsonParseStringPair(const S: utf8string; out Error: string; Options: TJSONParseOptions): TDON_Pair;
 begin
-  Result := TDON_Root.Create(nil);
+  Result := TDON_Pair.Create(nil);
   try
     JsonParseCallback(s, Error, Result, JsonParseAcquireCallback, Options);
   except
@@ -669,8 +737,7 @@ begin
   end;
 end;
 
-procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList;
-  Options: TSerializerOptions);
+procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList; Options: TSerializerOptions);
 var
   Serializer: TStringsSerializer;
 begin
@@ -1153,10 +1220,11 @@ begin
   FPairs := TDON_Pairs.Create;
 end;
 
-function TDON_Object_Value.CreatePair(const PairName: string): TDON_Pair;
+function TDON_Object_Value.CreatePair(const PairName: string; AValue: TDON_Element = nil): TDON_Pair;
 begin
   Result := TDON_Pair.Create(Self);
   Result.FName := PairName;
+  Result.Value := AValue;
   AddPair(Result);
 end;
 
@@ -1182,6 +1250,11 @@ end;
 function TDON_Object_Value.GetAsString: string;
 begin
   Result := '{Object}';
+end;
+
+function TDON_Object_Value.GetEnumerator: TPairsEnumerator;
+begin
+  Result := TPairsEnumerator.Create(FPairs);
 end;
 
 function TDON_Object_Value.GetItem(Index: Integer): TDON_Element;
@@ -1575,25 +1648,25 @@ begin
       Serializer.Add(',');
     Serializer.NewLine;
   end
-  else if AClass = TDON_Root then
-    Generate((AObject as TDON_Root).Value, LastOne, Level)
+  else if AClass = TDON_Pair then
+    Generate((AObject as TDON_Pair).Value, LastOne, Level)
   else if AClass = TDON_String_Value then
   begin
-    if (AObject as TDON_String_Value).StringType.Name <> '' then
+    if jtoBackQuote in (AObject as TDON_String_Value).StringType.Options then
     begin
       QuoteChar := '`';
-      Serializer.Add('`' + (AObject as TDON_String_Value).StringType.Name);
+      if ((AObject as TDON_String_Value).StringType.Name <> '') then
+        Serializer.Add('`' + (AObject as TDON_String_Value).StringType.Name);
       if jtoMultiLine in (AObject as TDON_String_Value).StringType.Options then
-        Serializer.NewLine;
+        Serializer.NewLine
+      else
+        Serializer.Add(' ');
       Serializer.Add((AObject as TDON_String_Value).Value);
       Serializer.Add('`', LastOne, ',');
     end
     else
     begin
-      if jtoBackQuote in (AObject as TDON_String_Value).StringType.Options then
-        QuoteChar := '`'
-      else
-        QuoteChar := Coalesce(jtoSingleQuote in (AObject as TDON_String_Value).StringType.Options, '''', '"');
+      QuoteChar := Coalesce(jtoSingleQuote in (AObject as TDON_String_Value).StringType.Options, '''', '"');
 
     {if (sroModern in Serializer.Options) and (jtoMultiLine in (AObject as TDON_String_Value).StringOptions) then
     begin
@@ -1886,6 +1959,26 @@ end;
 procedure TmnwXML_TidyWriterHelper.AddInlineTag(const TagName, TagAttributes, Value: string);
 begin
   Write('<'+TagName + ' ' + TagAttributes + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
+end;
+
+{ TDON_Object_Value.TPairsEnumerator }
+
+constructor TDON_Object_Value.TPairsEnumerator.Create(AList: TDON_Pairs);
+begin
+  inherited Create;
+  FList := Alist;
+  FIndex := -1;
+end;
+
+function TDON_Object_Value.TPairsEnumerator.GetCurrent: TDON_Pair;
+begin
+  Result := FList[FIndex];
+end;
+
+function TDON_Object_Value.TPairsEnumerator.MoveNext: Boolean;
+begin
+  Inc(FIndex);
+  Result := FIndex < FList.Count;
 end;
 
 initialization

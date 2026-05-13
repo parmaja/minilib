@@ -16,8 +16,8 @@ interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams, mnMultipartData, mnHttpClient, mnWebModules, mnFields, mnHeaders,
-  mnModules,
+  mnTypes, mnUtils, mnStreams, mnHttpClient, mnWebModules, mnFields, mnHeaders,
+  mnModules, mnDON, mnClasses, mnMultipartData, 
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 {$ifdef GUI}
@@ -87,6 +87,7 @@ type
 
     procedure ExampleWriteFormData;
     procedure ExampleReadFormData;
+    procedure ExampleReadFormDataToJSON;
 
     procedure ExampleWriteReadWSFile;
     procedure ExampleWebSocket;
@@ -760,19 +761,18 @@ var
   m: TMemoryStream;
   Stream: TmnBufferStream;
   aFormData: TmnMultipartData;
-  aItm: TmnMultipartDataItem;
+  aItm: TDON_Pair;
 begin
   m := TMemoryStream.Create;
   Stream := TmnWrapperStream.Create(m, False);
   try
-    Stream.EndOfLine := sWinEndOfLine;
-    aFormData := TmnMultipartData.Create;
+    Stream.EndOfLine := sWinEndOfLine;    
+    aFormData := TmnMultipartData.Create(nil);
     try
       aFormData.Boundary := TGUID.NewGuid.ToString;
 //      TmnMultipartDataValue.Create(aFormData).Value := 'test@code.com';
-      TmnMultipartDataFileName.Create(aFormData).FileName := 'image.jpg';
-
-      aFormData.Write(Stream);
+//      TmnMultipartDataFileName.Create(aFormData).FileName := 'image.jpg';
+//      aFormData.Write(Stream);
     finally
       FreeAndNil(aFormData);
     end;
@@ -1062,7 +1062,7 @@ begin
       Writeln('<'+h.GetNameValue);
 
     Writeln('');
-    for h in c.Respond.Header do
+    for h in c.Response.Header do
       Writeln('>'+h.GetNameValue);
     Writeln(s);
 //    Writeln(c.Respond.StatusCode.ToString);
@@ -1098,7 +1098,7 @@ begin
       Writeln('<'+h.GetNameValue);
 
     Writeln('');
-    for h in c.Respond.Header do
+    for h in c.Response.Header do
       Writeln('>'+h.GetNameValue);
 
     Writeln('');
@@ -1138,7 +1138,7 @@ begin
       Writeln('<'+h.GetNameValue);
 
     Writeln('');
-    for h in c.Respond.Header do
+    for h in c.Response.Header do
       Writeln('>'+h.GetNameValue);
 
     Writeln('');
@@ -1154,25 +1154,59 @@ var
   aTextFile: TFileStream;
   Stream: TmnBufferStream;
   aFormData: TmnMultipartData;
-  aItm: TmnMultipartDataItem;
-  h: TmnField;
+  aItm: TDON_Pair;
+  h: TDON_Pair;
 begin
-  aTextFile:=TFileStream.Create(Location + 'test\formdata_noheader.txt', fmOpenRead or fmShareDenyWrite);
+  aTextFile := TFileStream.Create(Location + 'test\formdata_noheader.txt', fmOpenRead or fmShareDenyWrite);
   Stream := TmnWrapperStream.Create(aTextFile, True);
   try
     Stream.EndOfLine := sWinEndOfLine;
-    aFormData := TmnMultipartData.Create;
+    aFormData := TmnMultipartData.Create(nil);
     aFormData.Boundary := '---------------------------9051914041544843365972754266';
     try
       //aFormData.Read(Stream);
       aFormData.Read(Stream);
       for aItm in aFormData do
       begin
-        for h in aItm.Header do
+///        for h in aItm do
+///          Writeln('>'+h.GetNameValue);
+        Writeln(aItm.Name);
+      end;
+
+    finally
+      FreeAndNil(aFormData);
+    end;
+  finally
+    Stream.Free;
+  end;
+end;
+
+procedure TTestStream.ExampleReadFormDataToJSON;
+var
+  aTextFile: TFileStream;
+  Stream: TmnBufferStream;
+  aFormData: TmnMultipartData;
+  aItm: TDON_Pair;
+  h: TmnField;
+begin
+  aTextFile := TFileStream.Create(Location + 'test\formdata_noheader.txt', fmOpenRead or fmShareDenyWrite);
+  Stream := TmnWrapperStream.Create(aTextFile, True);
+  try
+    Stream.EndOfLine := sWinEndOfLine;
+    aFormData := TmnMultipartData.Create(nil);
+    aFormData.OutputPath := Location + 'test\';
+    aFormData.ShortFileNames := True;
+    aFormData.Boundary := '---------------------------9051914041544843365972754266';
+    try
+      aFormData.Read(Stream);
+      for aItm in aFormData do
+      begin
+        for h in (aItm as TDON_MPDItem).Header do
           Writeln('>'+h.GetNameValue);
         Writeln(aItm.Name);
       end;
 
+      JsonSaveFile(aFormData, Location + 'test\formdata-output.json');
     finally
       FreeAndNil(aFormData);
     end;
@@ -1277,7 +1311,7 @@ begin
 
 
     Writeln('');
-    for h in c.Respond.Header do
+    for h in c.Response.Header do
       Writeln('>'+h.GetNameValue);
     Writeln(s);
 
@@ -1731,6 +1765,7 @@ begin
 
       AddProc('[form]Write FormData', ExampleWriteFormData);
       AddProc('[form]Read FormData', ExampleReadFormData);
+      AddProc('[form]Read FormData to JSON', ExampleReadFormDataToJSON);      
 
       AddProc('SmallBuffer: read write line with small buffer', ExampleSmallBuffer);
       AddProc('CopyHexImage: Hex image2 images and read one', ExampleCopyHexImage);
@@ -1857,7 +1892,7 @@ begin
   Writeln('== Respond ==');
   Writeln('');
 
-  for h in Respond.Header do
+  for h in Response.Header do
     Writeln('>'+h.GetNameValue);
 
   Writeln('');
