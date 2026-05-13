@@ -64,7 +64,7 @@ begin
 
     if aFile = '' then
     begin
-      DON := TDON_Root.Create(nil);
+      DON := TDON_Pair.Create(nil);
       try
         Parser.Init(DON, @JsonParseAcquireCallback, options);
         Parser.Parse('{'#13);
@@ -106,7 +106,7 @@ begin
         if print_it then
         begin
           //DON := JsonParseFile(S, options);
-          DON := LoadJsonFile(aFile, options);
+          DON := JsonLoadFile(aFile, options);
           try
             Writeln('-----------------');
             JsonConsoleSerialize(DON, [sroModern]);

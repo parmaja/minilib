@@ -152,7 +152,8 @@ procedure Run;
 var
   Lines: TStringList;
   FileName: string;
-  {$ifdef DON}
+  error: string;
+  {$ifdef DON}  
   i: Integer;
   JSONRoot: TDON_Pair;
   Serializer: TStringsSerializer;
@@ -166,13 +167,13 @@ begin
   try
     Lines := TStringList.Create;
     try
-      JsonLintFile(FileName);
+      JsonLintString(LoadFileString(FileName));
       WriteLn('Loading: ' + FileName);
       Lines.LoadFromFile(FileName);
       var s : UTF8String := Lines.Text;
 
       LogBeginTick;
-      var Json3 := JsonParseStringValue(s);
+      var Json3 := JsonParseStringValue(s, error);
       LogEndTick('Test mnJSON');
       Json3.Free;
 
@@ -232,7 +233,7 @@ begin
       var v := Json3['"books.zaher'].AsString;
       var v := Json3['books']['zaher'].AsString;
 }
-      var Json4 := JsonParseFileValue('test.json', []);
+      var Json4 := JsonParseFileValue('test.json', error, []);
 
       LogBeginTick;
       for i :=0  to 1000000 do

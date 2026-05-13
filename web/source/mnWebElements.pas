@@ -4918,14 +4918,15 @@ begin
     aContext.Writer.Compact := Module.Web.CompactMode;
 
     aContext.Data := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )
+    aContext.Data.OutputPath := (Module as TmnwWebModule).WorkFolder + 'temp';
     if Request.ConnectionType = ctFormData then
     begin
       aContext.Data.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
-      aContext.Data.TempPath := (Module as TmnwWebModule).WorkFolder + 'temp';
       aContext.Data.Read(Request.Stream);
     end
     else if Request.ConnectionType = ctJSONData then
     begin
+      JsonLoadStream(aContext.Data, Request.Stream, []);
     end;
     
     try
@@ -5447,7 +5448,7 @@ end;
 
 procedure TAuthSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
-  if (AContext.Data <> nil) and SameText(AContext.Data.Values['execute'], 'true') then
+  if (AContext.Data <> nil) and SameText(AContext.Data.Values['execute'].AsString, 'true') then
   begin
     DoLogin(AContext, AResponse);
   end;
@@ -5457,7 +5458,7 @@ end;
 procedure TAuthSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   inherited;
-  if (AElement.Name = 'login-form') and (AContext.Data <> nil) and (SameText(AContext.Data.Values['execute'], 'true') ) then
+  if (AElement.Name = 'login-form') and (AContext.Data <> nil) and (SameText(AContext.Data.Values['execute'].AsString, 'true') ) then
   begin
     DoLogin(AContext, AResponse);
   end;

@@ -2005,7 +2005,9 @@ begin
     if Request.Header.Field['Content-type'].Have('multipart/form-data', [';']) then
       Request.ConnectionType := ctFormData
     else if Request.Header.Field['Content-type'].Have('application/json', [';']) then
-      Request.ConnectionType := ctJSONData;
+      if SameText(Request.Header['X-Form-Submit'], 'json') then
+        Request.ConnectionType := ctJSONData;
+      
     {if not Response.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
     begin
       if Request.CompressProxy <> nil then

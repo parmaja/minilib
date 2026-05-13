@@ -21,9 +21,9 @@ uses
 type
   TmnMultipartData = class;
 
-  { TmnMultipartDataItem }
+  { TMPDItem }
 
-  TDON_MPDItem = class abstract(TDON_Pair)
+  TMPDItem = class abstract(TDON_Pair)
   private
     FHeader: TmnHeader;
     procedure SetHeader(const Value: TmnHeader);
@@ -48,14 +48,14 @@ type
 
   { Values }
 
-  TmnMultipartDataString = class(TDON_MPDItem)
+  TMPDString = class(TMPDItem)
   protected
     procedure DoPrepare; override;
     procedure DoRead(const Buffer; Count: Longint); override;
     procedure DoWrite(vStream: TmnBufferStream); override;    
   end;
   
-  TmnMultipartDataFileName = class(TDON_MPDItem)
+  TMPDFile = class(TMPDItem)
   protected
     FFileStream: TFileStream;
     function GetFileName: string;
@@ -67,7 +67,7 @@ type
   public
   end;
 
-  TmnMultipartDataMemory = class(TDON_MPDItem)
+  TMPDMemoy = class(TMPDItem) //Unused
   protected
     procedure DoWrite(vStream: TmnBufferStream); override;
     procedure DoPrepare; override;
@@ -83,9 +83,13 @@ type
     FOutputPath: string;
     FShortFileNames: Boolean;
   protected
-    function DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TDON_MPDItem; virtual;
-    function CreateItem(vStream: TmnBufferStream): TDON_MPDItem;
+    function DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TMPDItem; virtual;
+    function CreateItem(vStream: TmnBufferStream): TMPDItem;
   public
+    constructor Create(AParent: TDON_Parent = nil);
+
+    function Find(AName: string): TMPDItem;
+    
     function Read(vStream: TmnBufferStream): Boolean;
     function Write(vStream: TmnBufferStream): Boolean;
 
@@ -99,31 +103,31 @@ implementation
 uses
   mnMIME;
 
-{ TDON_MPDItem }
+{ TMPDItem }
 
-constructor TDON_MPDItem.Create(AParent: TDON_Object_Value);
+constructor TMPDItem.Create(AParent: TDON_Object_Value);
 begin
   inherited Create(AParent);  
   Header := TmnHeader.Create;
 end;
 
-destructor TDON_MPDItem.Destroy;
+destructor TMPDItem.Destroy;
 begin
   FreeAndNil(FHeader);
   inherited;
 end;
 
-procedure TDON_MPDItem.DoWrite(vStream: TmnBufferStream);
+procedure TMPDItem.DoWrite(vStream: TmnBufferStream);
 begin
 
 end;
 
-procedure TDON_MPDItem.Prepare;
+procedure TMPDItem.Prepare;
 begin
   Header.Values['Content-Disposition'] := Format('form-data; name="%s"', [Name]);
 end;
 
-function TDON_MPDItem.Read(vStream: TmnBufferStream; const vBoundary: utf8string): Boolean;
+function TMPDItem.Read(vStream: TmnBufferStream; const vBoundary: utf8string): Boolean;
 begin
   DoReadPrepare;
   try
@@ -133,34 +137,34 @@ begin
   end;
 end;
 
-procedure TDON_MPDItem.ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
+procedure TMPDItem.ReadUntilCallback(vData: TObject; const Buffer; Count: Longint);
 begin
   DoRead(Buffer, Count);
 end;
 
-procedure TDON_MPDItem.SetHeader(const Value: TmnHeader);
+procedure TMPDItem.SetHeader(const Value: TmnHeader);
 begin
   FreeAndNil(FHeader);
   FHeader := Value;
 end;
 
-procedure TDON_MPDItem.DoPrepare;
+procedure TMPDItem.DoPrepare;
 begin
 end;
 
-procedure TDON_MPDItem.DoRead(const Buffer; Count: Longint);
+procedure TMPDItem.DoRead(const Buffer; Count: Longint);
 begin
 end;
 
-procedure TDON_MPDItem.DoReadPrepare;
+procedure TMPDItem.DoReadPrepare;
 begin
 end;
 
-procedure TDON_MPDItem.DoReadUnPrepare;
+procedure TMPDItem.DoReadUnPrepare;
 begin
 end;
 
-procedure TDON_MPDItem.Write(vStream: TmnBufferStream);
+procedure TMPDItem.Write(vStream: TmnBufferStream);
 begin
   Header.WriteHeader(vStream);
   vStream.WriteUTF8Line('');
@@ -182,7 +186,12 @@ begin
     S := '';
 end;
 
-function TmnMultipartData.CreateItem(vStream: TmnBufferStream): TDON_MPDItem;
+constructor TmnMultipartData.Create(AParent: TDON_Parent);
+begin
+  inherited Create(AParent);
+end;
+
+function TmnMultipartData.CreateItem(vStream: TmnBufferStream): TMPDItem;
 var
   aHeader: TmnHeader;
   aDisposition: string;
@@ -200,19 +209,19 @@ begin
     begin
       if GetSubValue(aDisposition, 'filename', s) and (s <> '') then
       begin
-        Result := TmnMultipartDataFileName.Create(Self);
+        Result := TMPDFile.Create(Self);
         aType.Name := 'filename';
         aType.Options := [];
         if not ShortFileNames then        
           s := IncludePathDelimiter(OutputPath) + s;
-        TmnMultipartDataFileName(Result).Value := TDON_String_Value.Create(Result, s, aType);
+        TMPDFile(Result).Value := TDON_String_Value.Create(Result, s, aType);
       end
       else
       begin
-        Result := TmnMultipartDataString.Create(Self);
+        Result := TMPDString.Create(Self);
         aType.Name := 'string';
         aType.Options := [];        
-        TmnMultipartDataFileName(Result).Value := TDON_String_Value.Create(Result, '', aType);
+        TMPDFile(Result).Value := TDON_String_Value.Create(Result, '', aType);
       end;
     end;
     GetSubValue(aDisposition, 'name', s);
@@ -225,14 +234,19 @@ begin
 
 end;
 
-function TmnMultipartData.DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TDON_MPDItem;
+function TmnMultipartData.DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TMPDItem;
 begin
   Result := nil;
 end;
 
+function TmnMultipartData.Find(AName: string): TMPDItem;
+begin
+  Result := ByPath(AName) as TMPDItem;
+end;
+
 function TmnMultipartData.Read(vStream: TmnBufferStream): Boolean;
 var
-  aItem: TDON_MPDItem;
+  aItem: TMPDItem;
   Matched: Boolean;
   aBoundary: utf8string;
   s: utf8string;
@@ -274,22 +288,22 @@ begin
   for itm in Self do
   begin
     vStream.WriteUTF8Line('--' + Boundary);
-    if itm is TDON_MPDItem then    
-      (itm as TDON_MPDItem).Write(vStream);
+    if itm is TMPDItem then    
+      (itm as TMPDItem).Write(vStream);
   end;
   vStream.WriteUTF8Line('--' + Boundary + '--');
   Result := True;
 end;
 
-{ TmnMultipartDataString }
+{ TMPDString }
 
-procedure TmnMultipartDataString.DoPrepare;
+procedure TMPDString.DoPrepare;
 begin
   inherited;
   Header.Values['Content-Type'] := 'text/plan';
 end;
 
-procedure TmnMultipartDataString.DoRead(const Buffer; Count: Longint);
+procedure TMPDString.DoRead(const Buffer; Count: Longint);
 var
   s: string;
 begin
@@ -300,28 +314,28 @@ begin
     (Value as TDON_String_Value).AsString := (Value as TDON_String_Value).AsString + s;
 end;
 
-procedure TmnMultipartDataString.DoWrite(vStream: TmnBufferStream);
+procedure TMPDString.DoWrite(vStream: TmnBufferStream);
 begin
   inherited;
   vStream.WriteUTF8String(Value.AsString);
 end;
 
-{ TmnMultipartDataFileName }
+{ TMPDFile }
 
-procedure TmnMultipartDataFileName.DoPrepare;
+procedure TMPDFile.DoPrepare;
 begin
   inherited;
   Header.Values['Content-Disposition'] := Format('form-data; name="%s"; filename="%s"', [Name, Value.AsString]);
   Header.Values['Content-Type'] := DocumentToContentType(Value.AsString);
 end;
 
-procedure TmnMultipartDataFileName.DoRead(const Buffer; Count: Longint);
+procedure TMPDFile.DoRead(const Buffer; Count: Longint);
 begin
   if FFileStream <> nil then  
     FFileStream.Write(PByte(Buffer)^, Count);
 end;
 
-procedure TmnMultipartDataFileName.DoReadPrepare;
+procedure TMPDFile.DoReadPrepare;
 var
   aPath, aFile: string;
 begin
@@ -339,12 +353,12 @@ begin
   FFileStream := TFileStream.Create(aFile, fmCreate);
 end;
 
-procedure TmnMultipartDataFileName.DoReadUnPrepare;
+procedure TMPDFile.DoReadUnPrepare;
 begin
   FreeAndNil(FFileStream);
 end;
 
-procedure TmnMultipartDataFileName.DoWrite(vStream: TmnBufferStream);
+procedure TMPDFile.DoWrite(vStream: TmnBufferStream);
 var
   f: TFileStream;
 begin
@@ -358,19 +372,19 @@ begin
 
 end;
 
-function TmnMultipartDataFileName.GetFileName: string;
+function TMPDFile.GetFileName: string;
 begin
 end;
 
-{ TmnMultipartDataMemory }
+{ TMPDMemoy }
 
-procedure TmnMultipartDataMemory.DoPrepare;
+procedure TMPDMemoy.DoPrepare;
 begin
   inherited;
   Header.Values['Content-Type'] := ContentType;
 end;
 
-procedure TmnMultipartDataMemory.DoWrite(vStream: TmnBufferStream);
+procedure TMPDMemoy.DoWrite(vStream: TmnBufferStream);
 begin
   inherited;
   vStream.WriteStream(Memory, Memory.Size);

@@ -150,10 +150,10 @@ type
     property Parent: TDON_Parent read FParent;
 
     property Values[const Index: string]: TDON_Element read GetValues write SetValues; default;
-    {$ifndef FPC}
+	  {$ifndef FPC}
     property Values[const Index: TArray<string>]: TDON_Element read ByPath; default;
     property Values[Index: Integer]: TDON_Element read ByIndex; default;
-    {$endif}
+	  {$endif}
 
     property AsUtf8String;
   published
@@ -388,8 +388,7 @@ type
         function MoveNext: Boolean; inline;
         property Current: TDON_Pair read GetCurrent;
       end;
-      
-     
+          
     function FindItem(const Name: string): TDON_Element; override;
     function GetItem(Index: Integer): TDON_Element; override;
     function GetAsString: string; override;
@@ -461,6 +460,7 @@ type
 procedure JsonSerialize(Pair: TDON_Pair; Strings: TStringList; Options: TSerializerOptions = []); overload;
 procedure JsonConsoleSerialize(Pair: TDON_Pair; Options: TSerializerOptions = []); overload;
 
+// Save
 procedure JsonSaveStream(Pair: TDON_Pair; AStream: TStream; Options: TSerializerOptions = []); overload;
 procedure JsonSaveFile(Pair: TDON_Pair; FileName: string; Options: TSerializerOptions = []); overload;
 
@@ -468,11 +468,16 @@ procedure JsonSaveStream(Obj: TDON_Object_Value; AStream: TStream; Options: TSer
 procedure JsonSaveFile(Obj: TDON_Object_Value; FileName: string; Options: TSerializerOptions = []); overload;
 
 //Loading file line by line
-procedure JsonLoadFile(out Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []); overload;
-procedure JsonLoadFile(out AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
+
+procedure JsonLoadStream(AObject: TDON_Element; Stream: TStream; Options: TJSONParseOptions = []); overload;
+
+procedure JsonLoadFile(Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []); overload;
+procedure JsonLoadFile(AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
+
 function JsonLoadFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
 
 function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
+
 //* For testing
 function JsonParseChunks(const Content: string; Options: TJSONParseOptions = []; ChunkSize: Integer = 3): TDON_Pair;
 
@@ -539,7 +544,37 @@ begin
   end;
 end;
 
-procedure JsonLoadFile(out Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []);
+procedure JsonLoadStream(AObject: TDON_Element; Stream: TStream; Options: TJSONParseOptions = []); overload;
+var
+  Parser: TmnJSONParser;
+  w: TmnWrapperStream;
+  aLine: string;
+begin
+  Parser.Init(AObject, @JsonParseAcquireCallback, Options);
+  w := TmnWrapperStream.Create(Stream, False);
+  try
+    while not (cloRead in w.State) do
+    begin
+      if w.ReadUTF8Line(aLine, False) then
+      begin
+        try
+          Parser.Parse(aLine);
+        except
+          on E: Exception do
+          begin
+            E.Message := E.Message + sLineBreak + 'On line:' + sLineBreak + aLine;
+            raise;
+          end;
+        end;
+      end;
+    end;
+    Parser.Finish;
+  finally
+    w.Free;
+  end;
+end;
+
+procedure JsonLoadFile(Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []);
 var
   Parser: TmnJSONParser;
   w: TmnWrapperStream;
@@ -547,32 +582,11 @@ var
   aLine: string;
 begin
   if not FileExists(FileName) then
-    raise Exception.Create('File not found ' + FileName);
-  Pair := TDON_Pair.Create(nil);
+    raise Exception.Create('File not found ' + FileName);  
   Parser.Init(Pair, @JsonParseAcquireCallback, Options);
   fs := TFileStream.Create(FileName, fmOpenRead);
   try
-    w := TmnWrapperStream.Create(fs, False);
-    try
-      while not (cloRead in w.State) do
-      begin
-        if w.ReadUTF8Line(aLine, False) then
-        begin
-          try
-            Parser.Parse(aLine);
-          except
-            on E: Exception do
-            begin
-              E.Message := E.Message + sLineBreak + 'On line:' + sLineBreak + aLine;
-              raise;
-            end;
-          end;
-        end;
-      end;
-      Parser.Finish;
-    finally
-      w.Free;
-    end;
+    JsonLoadStream(Pair, fs, Options);
   finally
     fs.Free;
   end;
@@ -580,15 +594,17 @@ end;
 
 function JsonLoadFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
 begin
+  Result := TDON_Pair.Create(nil);
   JsonLoadFile(Result, FileName, Options);
 end;
 
-procedure JsonLoadFile(out AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
+procedure JsonLoadFile(AObject: TDON_Element; const FileName: string; Options: TJSONParseOptions = []); overload;
 var
   Pair: TDON_Pair;
 begin
-  JsonLoadFile(Pair, FileName, Options);
+  Pair := TDON_Pair.Create(nil);
   try
+    JsonLoadFile(Pair, FileName, Options);
     AObject := Pair.ReleaseValue;
   finally
     Pair.Free;
@@ -598,8 +614,6 @@ end;
 function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
 var
   Parser: TmnJSONParser;
-  w: TmnWrapperStream;
-  fs: TFileStream;
 begin
   Result := TDON_Pair.Create(nil);
   Parser.Init(Result, @JsonParseAcquireCallback, Options);
@@ -610,8 +624,6 @@ end;
 function JsonParseChunks(const Content: string; Options: TJSONParseOptions; ChunkSize: Integer): TDON_Pair;
 var
   Parser: TmnJSONParser;
-  w: TmnWrapperStream;
-  fs: TFileStream;
   s: string;
   i: Integer;
 begin
@@ -680,11 +692,11 @@ begin
         AObject := CreateObjectValue;
         (AParentObject as TDON_Pair).Value := TDON_Element(AObject);
       end
-      {else if (AParentObject is TDON_Object_Value) then
+      else if (AParentObject is TDON_Object_Value) then
       begin
-        if
-        Result := (AParentObject as TDON_Object_Value).CreatePair(AValue);
-      end}
+        //Fix it here
+        //Result := (AParentObject as TDON_Object_Value).CreatePair(AValue);
+      end
       else
         raise Exception.Create('Value can not be set to:' + AParentObject.ClassName);
     end;
@@ -1576,7 +1588,6 @@ var
 var
   s: string;
   QuoteChar: Char;
-  Strings: TStringList;
 begin
   if AClass = TDON_Comment then
   begin
@@ -1654,7 +1665,6 @@ begin
   begin
     if jtoBackQuote in (AObject as TDON_String_Value).StringType.Options then
     begin
-      QuoteChar := '`';
       if ((AObject as TDON_String_Value).StringType.Name <> '') then
         Serializer.Add('`' + (AObject as TDON_String_Value).StringType.Name);
       if jtoMultiLine in (AObject as TDON_String_Value).StringType.Options then
@@ -1866,9 +1876,9 @@ begin
   try
     while not (cloRead in stream.State) do
     begin
-        if stream.ReadLine(s) then
+        if stream.ReadUTF8Line(s) then
         begin
-          WriteLn(s);
+          WriteLn(UTF8ToString(s));
         end;
     end;
   finally
