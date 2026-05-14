@@ -340,7 +340,8 @@ type
     destructor Destroy; override;
     procedure  Clear; override;
 
-    function ReadString(out s: string; Count: Integer): Boolean;
+    function ReadString(out s: string): Boolean; overload;
+    function ReadString(out s: string; Count: Integer): Boolean; overload;
     function ReadLine(out s: string): Boolean;
 
     property Raw: String read Info.Raw write Info.Raw;
@@ -1541,6 +1542,11 @@ end;
 function TmodRequest.ReadLine(out s: string): Boolean;
 begin
   Result := Stream.ReadUTF8Line(s);
+end;
+
+function TmodRequest.ReadString(out s: string): Boolean;
+begin
+  Result := Stream.ReadUTF8String(s, ContentLength);
 end;
 
 function TmodRequest.ReadString(out s: string; Count: Integer): Boolean;
@@ -3077,7 +3083,6 @@ begin
     ContentLength := Header.Field['Content-Length'].AsInt64
   else
     ContentLength := 0;
-  Stream.Estimated := ContentLength;
 
   Cookies.SetRequestText(Header['Cookie']);
 

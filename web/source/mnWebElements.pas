@@ -104,7 +104,7 @@ uses
   resource, //* for RT_RCDATA
   {$endif}
   syncobjs, mnDON, mnJSON,
-  mnUtils, mnClasses, mnStreams, mnLogs, mnMIME, mnParams, mnTypes,
+  mnUtils, mnClasses, mnStreams, mnStreamUtils, mnLogs, mnMIME, mnParams, mnTypes,
   mnMultipartData, mnModules, mnWebModules;
 
 const
@@ -4866,6 +4866,7 @@ procedure TmnwWebCommand.RespondResult(var Result: TmodRespondResult);
 var
   aContext: TmnwContext;
   aDomain, aPort: string;
+  aContent: string;
 begin
   inherited;
   if (Request.Path = '') and (Request.URI <> '') then
@@ -4925,7 +4926,10 @@ begin
     end
     else if Request.ConnectionType = ctJSONData then
     begin
-      aContext.Data := JsonLoadValueStream(Request.Stream, []);      
+      if aContext.Request.ReadString(aContent) then
+        aContext.Data := JsonParseValueString(aContent, [])
+      else
+        aContext.Data := TDON_Pair.Create(nil);
     end
     else
       aContext.Data := TDON_Pair.Create(nil);

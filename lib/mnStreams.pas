@@ -110,8 +110,8 @@ type
     property Passive: Boolean read FPassive; //Break on timeout(reading count=0)
     function GetConnected: Boolean; virtual; abstract; //Socket or COM ports have Connected and override
     procedure ResetClose;
-    procedure SetCloseFragment;
     procedure CloseTransmission; virtual;
+    procedure SetCloseFragment;
     procedure SetCloseTransmission; 
   public
     //Count = 0 , load until eof, timeout not break the loop
@@ -284,7 +284,7 @@ type
     function GetWriteBufferSize: TFileSize;
 
   private
-    FEstimated: Integer;
+    //FEstimated: Integer;
     function ReadBuffer(var Buffer; Count: Longint; var ResultCount: Longint): Boolean;
     procedure SetControl(const AValue: TmnStreamControl);
     function WriteBuffer(const Buffer; Count: Longint; var ResultCount: Longint): Boolean;
@@ -381,7 +381,7 @@ type
     property WriteBufferSize: TFileSize read GetWriteBufferSize write SetWriteBufferSize; //TODO not yet
 
     property Control: TmnStreamControl read FControl write SetControl;
-    property Estimated: Integer read FEstimated write FEstimated;
+    //property Estimated: Integer read FEstimated write FEstimated;
   end;
 
   { TmnWrapperStream }
@@ -896,7 +896,7 @@ function TmnCustomStream.ReadUTF8String(out s: string; Count: TFileSize): Boolea
 var
   u8: UTF8String;
 begin
-  Result := ReadUTF8String(u8);
+  Result := ReadUTF8String(u8, Count);
   {$ifdef FPC}
   s := u8;
   {$else}
@@ -1546,21 +1546,24 @@ begin
 end;
 
 function TmnBufferStream.InternalRead(var Buffer; Count: Longint): Longint;
-var
-  toRead: Integer;
+{var
+  toRead: Integer;}
 begin
-  if (Estimated > 0) and (Estimated < Count) then
+  {if (Estimated > 0) and (Estimated < Count) then
     toRead := Estimated
   else
     toRead := Count;
-  Result := DoRead(Buffer, toRead);  
-  if (FEstimated > 0) and (Result > 0) then //timeout result -1
+  Result := DoRead(Buffer, toRead);  }
+  Result := DoRead(Buffer, Count);   
+{  if (FEstimated > 0) and (Result > 0) then //timeout result -1
   begin
     FEstimated := FEstimated - Result;
     if FEstimated <= 0 then
-      SetCloseTransmission;
-    FEstimated := 0;
-  end;
+    begin
+      SetCloseFragment;
+      FEstimated := 0;
+    end;
+  end;}
 end;
 
 function TmnBufferStream.Read(var Buffer; Count: Longint): Longint;
@@ -1657,7 +1660,7 @@ begin
   if (Match = nil) or (MatchSize = 0) then
     raise Exception.Create('Match is empty!');
 
-  Result := not (cloRead in State) and not (cloFragment in State);
+  Result := CanRead;
   Matched := False;
 
   ABuffer := nil;
@@ -1787,7 +1790,7 @@ begin
   if (Match = nil) or (MatchSize = 0) then
     raise Exception.Create('Match is empty!');
 
-  Result := not (cloRead in State);
+  Result := CanRead;
   Matched := False;
 
   aCount := 0;
@@ -2124,10 +2127,10 @@ begin
           Continue
         else if (aLoaded = 0) and not Stream.Connected then
           break
-        else if (aLoaded <= 0) and (Stream.TimeoutTries>0) then
+        else if (aLoaded <= 0) then //Timeout
         begin
           Inc(aTry);
-          if aTry>=Stream.TimeoutTries then
+          if aTry >= Stream.TimeoutTries then
             Break;
         end
       end

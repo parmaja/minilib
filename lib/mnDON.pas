@@ -467,7 +467,7 @@ procedure JsonSaveFile(Pair: TDON_Pair; FileName: string; Options: TSerializerOp
 procedure JsonSaveStream(Obj: TDON_Object_Value; AStream: TStream; Options: TSerializerOptions = []); overload;
 procedure JsonSaveFile(Obj: TDON_Object_Value; FileName: string; Options: TSerializerOptions = []); overload;
 
-//Loading file line by line
+//Loading file line by line, for file not socket (timeouts)
 
 procedure JsonLoadStream(Pair: TDON_Pair; Stream: TStream; Options: TJSONParseOptions = []); overload;
 
@@ -477,16 +477,17 @@ function JsonLoadValueStream(Stream: TStream; Options: TJSONParseOptions = []): 
 procedure JsonLoadFile(Pair: TDON_Pair; const FileName: string; Options: TJSONParseOptions = []); overload;
 function JsonLoadFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
 
-function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
+// Loading from String
+procedure JsonParseString(Pair: TDON_Pair; const Content: string; Options: TJSONParseOptions = []); overload;
+function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
+//* {"value": "test1"}
+function JsonParseValueString(const Content: string; Options: TJSONParseOptions = []): TDON_Element; overload;
 
 //* For testing
 function JsonParseChunks(const Content: string; Options: TJSONParseOptions = []; ChunkSize: Integer = 3): TDON_Pair;
-
-//Loading it as string
-//Useful function to build JSON objects
 function JsonParsePairString(const S: utf8string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
-//* {"value": "test1"}
-function JsonParseValueString(const S: utf8string; out Error: string; Options: TJSONParseOptions = []): TDON_Element;
+
+//Load file but parse as string
 function JsonParsePairFile(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
 function JsonParseValueFile(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Element;
 
@@ -554,7 +555,7 @@ begin
   Parser.Init(Pair, @JsonParseAcquireCallback, Options);
   w := TmnWrapperStream.Create(Stream, False);
   try
-    while not w.CanRead do
+    while w.CanRead do
     begin
       if w.ReadUTF8Line(aLine, False) then
       begin
@@ -616,14 +617,34 @@ begin
   JsonLoadFile(Result, FileName, Options);
 end;
 
-function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
+procedure JsonParseString(Pair: TDON_Pair; const Content: string; Options: TJSONParseOptions = []); overload;
 var
   Parser: TmnJSONParser;
-begin
-  Result := TDON_Pair.Create(nil);
-  Parser.Init(Result, @JsonParseAcquireCallback, Options);
+begin  
+  Parser.Init(Pair, @JsonParseAcquireCallback, Options);
   Parser.Parse(Content);
   Parser.Finish;
+end;
+
+function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
+begin
+  Result := TDON_Pair.Create(nil);
+  JsonParseString(Result, Content, Options);
+end;
+
+function JsonParseValueString(const Content: string; Options: TJSONParseOptions = []): TDON_Element; overload;
+var
+  Pair: TDON_Pair;
+begin
+  Pair := JsonParseString(Content, Options);  
+  try
+    if Pair<>nil then
+      Result := Pair.ReleaseValue
+    else
+      Result := nil;
+  finally
+    Pair.Free;
+  end;
 end;
 
 function JsonParseChunks(const Content: string; Options: TJSONParseOptions; ChunkSize: Integer): TDON_Pair;
@@ -721,21 +742,6 @@ begin
       raise;
     end;
   end
-end;
-
-function JsonParseValueString(const S: utf8string; out Error: string; Options: TJSONParseOptions): TDON_Element;
-var
-  Pair: TDON_Pair;
-begin
-  Pair := JsonParsePairString(S, Error, Options);
-  try
-    if Pair<>nil then
-      Result := Pair.ReleaseValue
-    else
-      Result := nil;
-  finally
-    Pair.Free;
-  end;
 end;
 
 function JsonParsePairFile(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
