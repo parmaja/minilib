@@ -112,7 +112,7 @@ function reloadElements()
           if (response.status === 304)
             return null;
           const etag = response.headers.get('ETag');
-          const data = await response.text();
+          const data = response.text();
           return Promise.all([etag, data]);
         }
       )

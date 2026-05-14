@@ -3074,8 +3074,9 @@ begin
   FHost  := Header.Field['Host'].AsString;
 
   if (Header.Field['Content-Length'].IsExists) then
-    ContentLength := Header.Field['Content-Length'].AsInt64;
-
+    ContentLength := Header.Field['Content-Length'].AsInt64
+  else
+    ContentLength := 0;
   Stream.Estimated := ContentLength;
 
   Cookies.SetRequestText(Header['Cookie']);

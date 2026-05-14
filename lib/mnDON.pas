@@ -554,7 +554,7 @@ begin
   Parser.Init(Pair, @JsonParseAcquireCallback, Options);
   w := TmnWrapperStream.Create(Stream, False);
   try
-    while not (cloRead in w.State) do
+    while not w.CanRead do
     begin
       if w.ReadUTF8Line(aLine, False) then
       begin

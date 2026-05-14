@@ -109,8 +109,6 @@ type
     //If Passive like Wrapper to FileStream reading count=0 meant  close, Passive have be in Socket too if you want break reading on timeout
     property Passive: Boolean read FPassive; //Break on timeout(reading count=0)
     function GetConnected: Boolean; virtual; abstract; //Socket or COM ports have Connected and override
-    function CanRead: Boolean; {$ifndef DEBUG}inline;{$endif}
-    function CanWrite: Boolean; inline;
     procedure ResetClose;
     procedure SetCloseFragment;
     procedure CloseTransmission; virtual;
@@ -135,6 +133,9 @@ type
     property Connected: Boolean read GetConnected;
 
     property State: TmnStreamClose read FState;
+    function CanRead: Boolean; {$ifndef DEBUG}inline;{$endif}
+    function CanWrite: Boolean; inline;
+    
     function Read(var Buffer; Count: longint): longint; override;
     function Write(const Buffer; Count: longint): longint; override;
     
@@ -294,6 +295,7 @@ type
     //Override it but do not use it in your code, use ProxyRead or ProxyWrite
     function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
     function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
+    function InternalRead(var Buffer; Count: Longint): Longint; 
     procedure DoFlush; virtual;
     procedure DoCloseRead; virtual;
     procedure DoCloseWrite; virtual;
@@ -1543,6 +1545,24 @@ begin
   Result := FWriteBuffer.Size;
 end;
 
+function TmnBufferStream.InternalRead(var Buffer; Count: Longint): Longint;
+var
+  toRead: Integer;
+begin
+  if (Estimated > 0) and (Estimated < Count) then
+    toRead := Estimated
+  else
+    toRead := Count;
+  Result := DoRead(Buffer, toRead);  
+  if (FEstimated > 0) and (Result > 0) then //timeout result -1
+  begin
+    FEstimated := FEstimated - Result;
+    if FEstimated <= 0 then
+      SetCloseTransmission;
+    FEstimated := 0;
+  end;
+end;
+
 function TmnBufferStream.Read(var Buffer; Count: Longint): Longint;
 var
   RealCount: longint;
@@ -1637,7 +1657,7 @@ begin
   if (Match = nil) or (MatchSize = 0) then
     raise Exception.Create('Match is empty!');
 
-  Result := not (cloRead in State);
+  Result := not (cloRead in State) and not (cloFragment in State);
   Matched := False;
 
   ABuffer := nil;
@@ -2043,7 +2063,7 @@ end;
 
 function TmnReadWriteBuffer.DoRead(var vBuffer; vCount: Longint): Longint;
 begin
-  Result := Stream.DoRead(vBuffer, vCount);
+  Result := Stream.InternalRead(vBuffer, vCount);
   if Stream.Control <> nil then
     Stream.Control.Reading(vCount);
 end;
@@ -2068,11 +2088,13 @@ begin
   if Pos < Stop then
     raise EmnStreamException.Create('Buffer is not empty to load');
   Pos := Buffer;
+ 
   Result := DoRead(Buffer^, Size);
-  if Result > 0 then //-1 not effects here
+  if Result > 0 then //timeout -1 not effects here
     Stop := Pos + Result
   else
     Stop := Pos;
+    
   {if (Result = 0) and ZeroClose then //what if we have Timeout?
     Close([cloRead]);}
 end;
@@ -2102,11 +2124,11 @@ begin
           Continue
         else if (aLoaded = 0) and not Stream.Connected then
           break
-        else if aLoaded<=0 then
+        else if (aLoaded <= 0) and (Stream.TimeoutTries>0) then
         begin
           Inc(aTry);
           if aTry>=Stream.TimeoutTries then
-            Break
+            Break;
         end
       end
       else if c > vCount then // is FReadBuffer enough for Count
