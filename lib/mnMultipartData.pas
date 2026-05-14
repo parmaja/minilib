@@ -86,7 +86,8 @@ type
     function DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TMPDItem; virtual;
     function CreateItem(vStream: TmnBufferStream): TMPDItem;
   public
-    constructor Create(AParent: TDON_Parent = nil);
+    constructor Create(AParent: TDON_Parent = nil); overload;
+    constructor Create(ABoundary: string = ''; AOutputPath: string = ''); overload;
 
     function Find(AName: string): TMPDItem;
     
@@ -189,6 +190,13 @@ end;
 constructor TmnMultipartData.Create(AParent: TDON_Parent);
 begin
   inherited Create(AParent);
+end;
+
+constructor TmnMultipartData.Create(ABoundary, AOutputPath: string);
+begin
+  Create(nil);
+  OutputPath := AOutputPath;
+  Boundary := ABoundary;
 end;
 
 function TmnMultipartData.CreateItem(vStream: TmnBufferStream): TMPDItem;

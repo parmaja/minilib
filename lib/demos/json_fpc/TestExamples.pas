@@ -42,6 +42,7 @@ var
   Files: TStringList;
   print_it: Boolean;
   options: TJSONParseOptions;
+  aObj: TDON_Object_Value;
 begin
   try
     //options := [jsoModern];
@@ -64,6 +65,11 @@ begin
 
     if aFile = '' then
     begin
+      aObj :=TDON_Object_Value.Create(nil);
+      JsonLoadFile(aObj, WorkPath+'object.json', options);
+      JsonConsoleSerialize(aObj, [sroModern]);
+      aObj.Free;
+
       DON := TDON_Pair.Create(nil);
       try
         Parser.Init(DON, @JsonParseAcquireCallback, options);

@@ -320,7 +320,7 @@ type
 
     Writer: TmnTidyWriter;
     //
-    Data: TmnMultipartData;
+    Data: TDON_Element;
     // For
     Route: string;   
     SessionID: String;
@@ -3562,7 +3562,7 @@ var
 begin
   if s.StartsWith('{') then
   begin
-    Json := JsonParseStringPair(s, Error, [jsoSafe]);
+    Json := JsonParsePairString(s, Error, [jsoSafe]);
     try
       elementID := Json['element'].AsString;
       element := FindByID(elementID);
@@ -4917,17 +4917,18 @@ begin
     aContext.Writer := TmnTidyWriter.Create('html', Response.Stream);
     aContext.Writer.Compact := Module.Web.CompactMode;
 
-    aContext.Data := TmnMultipartData.Create; //yes always created, i maybe pass params that come from Query (after ? )
-    aContext.Data.OutputPath := (Module as TmnwWebModule).WorkFolder + 'temp';
+    //yes always created, i maybe pass params that come from Query (after ? )
     if Request.ConnectionType = ctFormData then
     begin
-      aContext.Data.Boundary := Request.Header.Field['Content-Type'].SubValue('boundary');
-      aContext.Data.Read(Request.Stream);
+      aContext.Data := TmnMultipartData.Create(Request.Header.Field['Content-Type'].SubValue('boundary'), (Module as TmnwWebModule).WorkFolder + 'temp'); 
+      (aContext.Data as TmnMultipartData).Read(Request.Stream);
     end
     else if Request.ConnectionType = ctJSONData then
     begin
-      JsonLoadStream(aContext.Data, Request.Stream, []);
-    end;
+      aContext.Data := JsonLoadValueStream(Request.Stream, []);      
+    end
+    else
+      aContext.Data := TDON_Pair.Create(nil);
     
     try
       Response.Answer := hrOK;
