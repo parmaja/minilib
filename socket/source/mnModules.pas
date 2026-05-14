@@ -3076,6 +3076,8 @@ begin
   if (Header.Field['Content-Length'].IsExists) then
     ContentLength := Header.Field['Content-Length'].AsInt64;
 
+  Stream.Estimated := ContentLength;
+
   Cookies.SetRequestText(Header['Cookie']);
 
   FAccept := Header.ReadString('Accept'); //TODO zaher check it

@@ -113,7 +113,8 @@ type
     function CanWrite: Boolean; inline;
     procedure ResetClose;
     procedure SetCloseFragment;
-    procedure SetCloseTransmission;
+    procedure CloseTransmission; virtual;
+    procedure SetCloseTransmission; 
   public
     //Count = 0 , load until eof, timeout not break the loop
     function ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
@@ -132,11 +133,11 @@ type
     function CopyFromStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline;
 
     property Connected: Boolean read GetConnected;
-//    property Done: TmnStreamClose read FState; {$ifdef FPC}deprecated;{$endif}
-    property State: TmnStreamClose read FState;
 
+    property State: TmnStreamClose read FState;
     function Read(var Buffer; Count: longint): longint; override;
     function Write(const Buffer; Count: longint): longint; override;
+    
   end;
 
   TmnStreamOverProxy = class;
@@ -282,6 +283,7 @@ type
     function GetWriteBufferSize: TFileSize;
 
   private
+    FEstimated: Integer;
     function ReadBuffer(var Buffer; Count: Longint; var ResultCount: Longint): Boolean;
     procedure SetControl(const AValue: TmnStreamControl);
     function WriteBuffer(const Buffer; Count: Longint; var ResultCount: Longint): Boolean;
@@ -377,6 +379,7 @@ type
     property WriteBufferSize: TFileSize read GetWriteBufferSize write SetWriteBufferSize; //TODO not yet
 
     property Control: TmnStreamControl read FControl write SetControl;
+    property Estimated: Integer read FEstimated write FEstimated;
   end;
 
   { TmnWrapperStream }
@@ -925,6 +928,10 @@ begin
   Result := ([cloFragment, cloTransmission, cloWrite] * State = []);
 end;
 
+procedure TmnCustomStream.CloseTransmission;
+begin
+end;
+
 procedure TmnCustomStream.ResetClose;
 begin
   FState := FState - [cloFragment, cloTransmission];
@@ -938,6 +945,7 @@ end;
 procedure TmnCustomStream.SetCloseTransmission;
 begin
   FState := FState + [cloFragment, cloTransmission];
+  CloseTransmission;
 end;
 
 function TmnCustomStream.CopyFromStream(AStream: TStream; Count: TFileSize): TFileSize;
@@ -989,9 +997,9 @@ end;
 
 function TmnCustomStream.Read(var Buffer; Count: longint): longint;
 begin
-  ResetClose;
+  ResetClose;  
   Result := inherited Read(Buffer, Count);
-end;
+  end;
 
 function TmnCustomStream.ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize;
 var

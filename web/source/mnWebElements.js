@@ -70,7 +70,7 @@ mnw.connect = function()
   this.ws.onclose  = function(ev)
   {
     mnw.attached = false;
-    console.log("Connection closed, deattached");
+    console.log("Connection closed, detached");
     if (mnw.interactive)
     {
       console.log("Error, trying in 5s")
@@ -112,7 +112,7 @@ function reloadElements()
           if (response.status === 304)
             return null;
           const etag = response.headers.get('ETag');
-          const data = response.text();
+          const data = await response.text();
           return Promise.all([etag, data]);
         }
       )
