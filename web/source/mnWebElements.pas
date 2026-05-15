@@ -1784,7 +1784,7 @@ type
   end;
 
   //Return error as json if fail with message of error, so we need JS to post
-  TAuthElement = class(THTML.THTMLItem)
+  TAuthForm = class(THTML.THTMLItem)
   protected
     procedure DoCompose(const AContext: TmnwContext); override;
   public
@@ -1794,10 +1794,14 @@ type
   TAuthSchema = class(THTML)
   private
   public
-    Login: TAuthElement;
+    AuthForm: TAuthForm;
   protected
-    procedure DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
+    procedure UserLogin(const AContext: TmnwContext; AResponse: TmnwResponse);     
+    procedure UserLogout(const AContext: TmnwContext; AResponse: TmnwResponse); 
+    
+    procedure DoLogin(const AContext: TmnwContext; out Success: Boolean; out Message: string; out SessionID: string); virtual;
     procedure DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
+    
     procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoCompose(const AContext: TmnwContext); override;
@@ -2993,8 +2997,10 @@ begin
       AResponse.Session.Path := AContext.GetHomePath;
       AResponse.Session.ResetChanged;
 
+//      AResponse.Header['access-control-allow-origin'] := AResponse.Request.Host;
       AResponse.Header['access-control-allow-origin'] := '*';
-      //AResponse.Header['Access-Control-Allow-Origin'] := '*';
+      AResponse.PutHeader('Access-Control-Allow-Headers', 'Location, Content-Type, Authorization, Accept, Origin, X-PINGOTHER'); 
+
       //AResponse.Header['Access-Control-Allow-Headers'] := ' X-PINGOTHER, Content-Type';
       //AResponse.Header['Access-Control-Allow-Methods'] := 'HEAD,POST,GET,OPTIONS,PUT,DELETE,CONNECT,TRACE,PATCH';
       //AResponse.Header['Access-Control-Expose-Headers'] := ' Content-Encoding, Kuma-Revision';     
@@ -4903,7 +4909,7 @@ begin
   if (aDomain='') and Request.Connected then
     raise Exception.Create('Domain is not defined');
 
-  if Request.ConnectionType = ctWebSocket then
+  if Request.RequestType = rtWebSocket then
   begin
     //Serve the websocket
     if (Module as TmnwWebModule).Web.Attach(aContext, Self, Response.Stream) = nil then
@@ -4919,12 +4925,12 @@ begin
     aContext.Writer.Compact := Module.Web.CompactMode;
 
     //yes always created, i maybe pass params that come from Query (after ? )
-    if Request.ConnectionType = ctFormData then
+    if Request.RequestType = rtFormData then
     begin
       aContext.Data := TmnMultipartData.Create(Request.Header.Field['Content-Type'].SubValue('boundary'), (Module as TmnwWebModule).WorkFolder + 'temp'); 
       (aContext.Data as TmnMultipartData).Read(Request.Stream);
     end
-    else if Request.ConnectionType = ctJSONData then
+    else if Request.RequestType = rtJSONData then
     begin
       if aContext.Request.ReadString(aContent) then
         aContext.Data := JsonParseValueString(aContent, [])
@@ -5451,11 +5457,41 @@ end;
 
 { TAuthSchema }
 
+procedure TAuthSchema.UserLogin(const AContext: TmnwContext; AResponse: TmnwResponse);
+var
+  Success: Boolean;
+  Message: string;
+  SessionID: string;
+begin
+  Success := False;
+  SessionID := '';
+  Message := '';
+  DoLogin(AContext, Success, Message, SessionID);
+
+  if Success then
+  begin
+    if AResponse.Request.RequestType = rtJSONData then    
+       AResponse.RespondJSON('{"type": "success", "state": "200", "message": "Login successed.", "redirect": "'+AContext.GetDefaultPath+'" }')
+    else
+      AResponse.RespondRedirectTo(AContext.GetDefaultPath);
+  end
+  else
+  begin
+    AResponse.RespondJSON('{"type": "error", "state": "301", "message": "'+Message+'" }', hrUnauthorized);
+  end;    
+end;
+
+procedure TAuthSchema.UserLogout(const AContext: TmnwContext; AResponse: TmnwResponse);
+begin
+  AResponse.SessionID := '';
+  AResponse.RespondRedirectTo(AContext.GetDefaultPath);
+end;
+
 procedure TAuthSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   if (AContext.Data <> nil) and SameText(AContext.Data.Values['execute'].AsString, 'true') then
   begin
-    DoLogin(AContext, AResponse);
+    UserLogin(AContext, AResponse);
   end;
   inherited;
 end;
@@ -5465,7 +5501,7 @@ begin
   inherited;
   if (AElement.Name = 'login-form') and (AContext.Data <> nil) and (SameText(AContext.Data.Values['execute'].AsString, 'true') ) then
   begin
-    DoLogin(AContext, AResponse);
+    UserLogin(AContext, AResponse);
   end;
 end;
 
@@ -5477,8 +5513,8 @@ begin
     Title := 'Login';
     Direction := dirLeftToRight;
 
-    TAction.Create(This, 'login', 'login', DoLogin);
-    TAction.Create(This, 'logout', 'login', DoLogout);
+    TAction.Create(This, 'login', 'login', UserLogin);
+    TAction.Create(This, 'logout', 'logout', UserLogout);
 
     with Body do
     begin
@@ -5493,23 +5529,21 @@ begin
           Size := szNormal;
           Caption := 'Login';
 
-          Login := TAuthElement.Create(This);
-          Login.Compose(AContext);
+          AuthForm := TAuthForm.Create(This);
+          AuthForm.Compose(AContext);
+          AuthForm.Form.CancelTo := toDefault;          
         end;
       end;
     end;
   end;
 end;
 
-procedure TAuthSchema.DoLogin(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.DoLogin(const AContext: TmnwContext; out Success: Boolean; out Message: string; out SessionID: string);
 begin
-  inherited;
 end;
 
 procedure TAuthSchema.DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
-  AResponse.SessionID := '';
-  AResponse.RespondRedirectTo(AContext.GetHomePath);
 end;
 
 { THTML.TImageFile }
@@ -5543,9 +5577,9 @@ begin
   //Route := ExtractFileName(FFileName);
 end;
 
-{ TAuthElement }
+{ TAuthForm }
 
-procedure TAuthElement.DoCompose(const AContext: TmnwContext);
+procedure TAuthForm.DoCompose(const AContext: TmnwContext);
 begin
   Solitary := True;
   Size := szNormal;

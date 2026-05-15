@@ -91,7 +91,8 @@ type
     hrRedirect, //302
     hrNotModified,
     hrMovedTemporarily, //307
-    hrMovedPermanently,
+    hrPermanentRedirect, //308
+    hrMovedPermanently, //301
     hrNotFound,
     hrSwitchingProtocols,
     hrServiceUnavailable,
@@ -295,11 +296,11 @@ type
     function AllowCompress: Boolean;
   end;
 
-  TConnectionType = (
-	  ctNormal,
-		ctWebSocket,
-		ctFormData,
-    ctJSONData
+  TRequestType = (
+	  rtNormal,
+		rtWebSocket,
+		rtFormData,
+    rtJSONData
 	);
 
   TmodParams = class(TmnFields)
@@ -311,7 +312,7 @@ type
   private
     FArguments: TmodParams;
     FPath: String;
-    FConnectionType: TConnectionType;
+    FRequestType: TRequestType;
     //FChunked: Boolean;
     FProtcolClass: TmnProtcolStreamProxyClass;
     FProtcolProxy: TmnProtcolStreamProxy;
@@ -374,7 +375,7 @@ type
     //Compress on the fly, now we use deflate
     property Mode: TStreamMode read FMode;// write FMode;
 
-    property ConnectionType: TConnectionType read FConnectionType write FConnectionType;
+    property RequestType: TRequestType read FRequestType write FRequestType;
     //WebSocket
     property ProtcolClass: TmnProtcolStreamProxyClass read FProtcolClass write SetProtcolClass;
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy write FProtcolProxy;
@@ -507,6 +508,7 @@ type
   private
     FAccept: String;
     FHost: string;
+    FOrigin: string;
     FUserAgent: UTF8String;
   protected
     procedure DoPrepareHeader; override; //Called by Client
@@ -517,6 +519,7 @@ type
     procedure Created; override;
   public
     property Host: string read FHost write FHost;
+    property Origin: string read FOrigin write FOrigin;
     property Accept: String read FAccept write FAccept;
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
   end;
@@ -1984,7 +1987,7 @@ begin
         Response.KeepAlive := True;
         Request.ProtcolClass := TmnWebSocket13StreamProxy;
         Request.ProtcolProxy := Request.ProtcolClass.Create;
-        Request.ConnectionType := ctWebSocket;
+        Request.RequestType := rtWebSocket;
         Result.Status := Result.Status + [mrStayConnected];
         Request.Stream.AddProxy(Request.ProtcolProxy);
 
@@ -2003,16 +2006,16 @@ begin
     Response.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Use.KeepAliveTimeOut div 1000) + ', max=100');
   end;
 
-  if Request.ConnectionType = ctWebSocket then
+  if Request.RequestType = rtWebSocket then
   begin
   end
   else
   begin
     if Request.Header.Field['Content-type'].Have('multipart/form-data', [';']) then
-      Request.ConnectionType := ctFormData
+      Request.RequestType := rtFormData
     else if Request.Header.Field['Content-type'].Have('application/json', [';']) then
       if SameText(Request.Header['X-Form-Submit'], 'json') then
-        Request.ConnectionType := ctJSONData;
+        Request.RequestType := rtJSONData;
       
     {if not Response.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
     begin
@@ -2044,10 +2047,7 @@ var
   aParams: TmnParams;
 begin
   inherited;
-  if Request.ConnectionType = ctWebSocket then
-  begin
-  end
-  else
+  if Request.RequestType <> rtWebSocket then
   begin
     // If no content length that mean we cant continue as keep alive, content length is recomended to keep the stream
     if not Response.Header.Exists['Content-Length'] then //TODO see it Zaher,Belal
@@ -2980,7 +2980,8 @@ begin
     301: Self := hrMovedPermanently;
     302: Self := hrRedirect;
     304: Self := hrNotModified;
-    307: Self :=  hrMovedTemporarily;
+    307: Self := hrMovedTemporarily;
+    308: Self := hrPermanentRedirect;
     401: Self := hrUnauthorized;
     403: Self := hrForbidden;
     404: Self := hrNotFound;
@@ -3000,9 +3001,10 @@ begin
     hrSwitchingProtocols: Result := Result + '101 Switching Protocols';
     hrNoContent: Result := Result + '204 No Content';
     hrMovedPermanently: Result := Result + '301 Moved Permanently';
-    hrRedirect: Result := Result + '302 Found';
+    hrRedirect: Result := Result + '302 Found Redirect';
     hrNotModified: Result := Result + '304 Not Modified';
     hrMovedTemporarily: Result := Result + '307 Temporary Redirect';
+    hrPermanentRedirect: Result := Result + '308 Permanent Redirect';
     hrUnauthorized: Result := Result + '401 Unauthorized';
     hrForbidden : Result := Result + '403 Forbidden';
     hrNotFound: Result := Result + '404 NotFound';
@@ -3078,6 +3080,8 @@ begin
   inherited;
 
   FHost  := Header.Field['Host'].AsString;
+  FOrigin  := DequoteStr(Header.Field['Origin'].AsString);
+  Stamp  := DequoteStr(Header.Field['If-None-Match'].AsString);
 
   if (Header.Field['Content-Length'].IsExists) then
     ContentLength := Header.Field['Content-Length'].AsInt64
@@ -3091,8 +3095,6 @@ begin
   KeepAlive := KeepAlive or ((Use.KeepAlive = ovYes) and not SameText(Header.ReadString('Connection'), 'close'));
 
   aChunked := Header.Field['Transfer-Encoding'].Have('chunked', [',']);
-
-  Stamp  := DequoteStr(Header.Field['If-None-Match'].AsString);
 
   {aCompressClass := nil;
   if (Header.Field['Content-Encoding'].IsExists) then

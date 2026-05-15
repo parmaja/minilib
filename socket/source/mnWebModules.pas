@@ -1038,9 +1038,14 @@ begin
 //  PutHeader('Access-Control-Allow-Headers', 'Origin, Accept, Accept-  Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Response-Time, X-PINGOTHER, X-CSRF-Token,Authorization');
 //  PutHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   Response.PutHeader('Access-Control-Allow-Method', 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS');
-  Response.PutHeader('Access-Control-Allow-Headers', 'X-PINGOTHER, Content-Type, Authorization, Accept, Origin');
+  Response.PutHeader('Access-Control-Allow-Headers', 'Location, Content-Type, Authorization, Accept, Origin, X-PINGOTHER');
   if (Module.Origins.Count = 0) then
-    Response.PutHeader('Access-Control-Allow-Origin', '*')
+  begin
+    if Response.Request.Host <> ''  then    
+      Response.PutHeader('Access-Control-Allow-Origin', Response.Request.Host)
+    else
+      Response.PutHeader('Access-Control-Allow-Origin', '*');
+  end
   else
     Response.PutHeader('Access-Control-Allow-Origin', Module.Origins.CommaText);
 end;

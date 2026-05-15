@@ -182,17 +182,32 @@ mnw.formPost = function(formElement, event) {
     headers: {
       'Content-Type': 'application/json',
       'X-Form-Submit': 'json'
-    }
+    },
+    redirect: 'manual'
   })
   .then(response => {
+    if (response.status === 0 || response.type === 'opaque') {
+      console.warn('Opaque response: browser blocked cross-origin redirect header');
+      return Promise.reject(new Error('CORS/Network block'));
+    }
+    else if (response.status === 302 || response.status === 301 || response.status === 307 || response.status === 308) {
+      const location = response.headers.get('Location');
+      if (location) {
+        window.location.href = location;
+      } else {
+        window.location.href = formElement.action || window.location.href;
+      }
+      return Promise.resolve(null);
+    }
     return response.text().then(text => ({ type: response.type, status: response.status, message: text }));
   })
   .then(result => {
+    if (!result) return;
     let json;
     try {
       json = JSON.parse(result.message);
     } catch (e) {
-      if (!result.type) {
+      if (result.type === 'error' || !result.type) {
         mnw.showToast('Error ' + result.status, 'danger');
       } else {
         mnw.showToast('Invalid JSON response', 'danger');
