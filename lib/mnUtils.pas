@@ -2842,13 +2842,14 @@ begin
       begin
         SetLength(Result, aSize);
         aStream.ReadBuffer(Result, aSize);
+        Exit;
       end
     finally
       aStream.Free;
     end;
-  end
-  else
-    Result := nil;
+  end;
+
+  Result := nil;
 end;
 
 function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer;
