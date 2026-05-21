@@ -569,7 +569,7 @@ end;
 function TmnCustomHttpClient.GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
 begin
   if Open(vURL) then
-    Result := ReadStream(OutStream)
+    Result := ReceiveStream(OutStream)
   else
     Result := 0;
 end;

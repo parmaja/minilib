@@ -132,7 +132,7 @@ type
     CancelAfter: Boolean;
     KeepAlive: Boolean;
     WaitBeforeRead: Boolean;
-    UseSSL: Boolean;
+    IsSecure: Boolean;
     QuickAck: Boolean;
     TestTimeOut: Longint;// = -1;
     SocketOptions: TmnsoOptions; //soWaitBeforeRead
@@ -167,7 +167,7 @@ begin
       Stream.Options := Stream.Options + [soKeepAlive];
     if info.QuickAck then
       Stream.Options := Stream.Options + [soQuickAck];
-    if info.UseSSL then
+    if info.IsSecure then
       Stream.Options := Stream.Options + [soSSL];
 
     if info.EndOfLine<>'' then
@@ -218,7 +218,7 @@ begin
       Stream.Options := Stream.Options + [soKeepAlive];
     if info.QuickAck then
       Stream.Options := Stream.Options + [soQuickAck];
-    if info.UseSSL then
+    if info.IsSecure then
       Stream.Options := Stream.Options + [soSSL];
     try
       t := TThread.GetTickCount;
@@ -524,7 +524,7 @@ begin
   Info.KeepAlive := Pos('k', S) > 0;
   Info.QuickAck := Pos('q', S) > 0;
   Info.WaitBeforeRead := Pos('w', S) > 0;
-  Info.UseSSL := Pos('s', S) > 0;
+  Info.IsSecure := Pos('s', S) > 0;
   Info.TestTimeOut := 1000;
   Info.CancelAfter := False;
 
@@ -546,7 +546,7 @@ begin
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.WaitBeforeRead := True;
-  Info.UseSSL := False;
+  Info.IsSecure := False;
   Info.TestTimeOut := 100;
   Info.CancelAfter := False;
 
@@ -567,7 +567,7 @@ begin
   Info.Nagle := False;
   Info.KeepAlive := False;
   Info.QuickAck := False;
-  Info.UseSSL := False;
+  Info.IsSecure := False;
   try
     Stream := TmnClientSocket.Create('c.tile.openstreetmap.org', '443');
     Stream.ReadTimeout := Info.TestTimeOut;
@@ -630,7 +630,7 @@ begin
   Info.Nagle := False;
   Info.KeepAlive := False;
   Info.QuickAck := False;
-  Info.UseSSL := False;
+  Info.IsSecure := False;
   Info.TestTimeOut := 1000;
   Info.CancelAfter := False;
   InternalExampleSocket(true, true);
@@ -641,7 +641,7 @@ begin
   Info.Nagle := False;
   Info.KeepAlive := False;
   Info.QuickAck := False;
-  Info.UseSSL := False;
+  Info.IsSecure := False;
   Info.TestTimeOut := 1000;
   Info.CancelAfter := True;
   InternalExampleSocket(true, true);
@@ -681,7 +681,7 @@ begin
   Info.Nagle := False;
   Info.KeepAlive := False;
   Info.QuickAck := False;
-  Info.UseSSL := False;
+  Info.IsSecure := False;
   try
     Stream := TmnClientSocket.Create('echo.websocket.org', '443');
 //    Stream := TmnClientSocket.Create('localhost', '8080');
@@ -1201,7 +1201,7 @@ begin
       aFormData.Read(Stream);
       for aItm in aFormData do
       begin
-        for h in (aItm as TDON_MPDItem).Header do
+        for h in (aItm as TMPDItem).Header do
           Writeln('>'+h.GetNameValue);
         Writeln(aItm.Name);
       end;
@@ -1484,7 +1484,7 @@ begin
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.WaitBeforeRead := True;
-  Info.UseSSL := False;
+  Info.IsSecure := False;
   Info.TestTimeOut := -1;
   Info.CancelAfter := False;
   Info.EndOfLine := #$D#$A;
@@ -1502,7 +1502,7 @@ begin
   Info.KeepAlive := False;
   Info.QuickAck := False;
   Info.WaitBeforeRead := True;
-  Info.UseSSL := True;
+  Info.IsSecure := True;
   Info.TestTimeOut := -1;
   Info.CancelAfter := False;
   Info.EndOfLine := #$D#$A;

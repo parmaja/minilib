@@ -44,7 +44,7 @@ interface
 
 uses
   SysUtils, Classes, StrUtils, Types, DateUtils, {$ifdef FPC}ZStream,{$else}ZLib,{$endif}
-  Generics.Defaults, mnStreamUtils, SyncObjs,
+  Generics.Defaults, mnStreamUtils, SyncObjs, Math,
   mnClasses, mnStreams, mnFields, mnParams, mnMIME, mnTypes,
   {$ifdef FPC}
   sha1, base64,
