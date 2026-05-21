@@ -383,15 +383,6 @@ type
     property Connected: Boolean read GetConnected;
   end;
 
-  TInterfacedStreamWrapper = class(TInterfacedPersistent, ImnStreamPersist)
-  protected
-    FStream: TStream;
-    procedure SaveToStream(Stream: TStream; Count: Int64); overload;
-    procedure LoadFromStream(Stream: TStream; Count: Int64); overload;
-  public
-    constructor Create(vStream: TStream);
-  end;
-
   TmodFileDisposition = (
     fdResend, //Force send it even match stamp
     fdAttachment,
@@ -1279,11 +1270,95 @@ end;
 
 function TmodResponse.SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions): Boolean;
 var
-  StreamIntf: ImnStreamPersist;
+  aCompress: Boolean;
+  mStream: TMemoryStream;
+  zStream: {$ifdef FPC}TGZipCompressionStream{$else}TZCompressionStream{$endif};
+  Buffer: PByte;
+  BytesRead: Int64;
+  TotalRead: Int64;
+  const
+    BufferSize = 65536; // 64KB buffer
+
+  procedure _SendHeader(ACount: Int64; ACompress: Boolean);
+  begin
+    if not (resHeaderSent in Header.States) then
+    begin
+      ContentLength := ACount;
+      if ACompress then
+        PutHeader('Content-Encoding', 'gzip');
+      SendHeader;
+    end;
+  end;
+
 begin
-  // Use interface reference for automatic memory management
-  StreamIntf := TInterfacedStreamWrapper.Create(s);
-  Result := SendStream(StreamIntf, ASize, AOptions);
+  Result := False;
+
+  if ASize = 0 then
+  begin
+    _SendHeader(0, False);
+    Result := True;
+    Exit;
+  end;
+
+  aCompress := Request.Mode.AllowCompress and not (sndoAlreadyCompressed in AOptions);
+
+  if aCompress then
+  begin
+    mStream := TMemoryStream.Create;
+    try
+      zStream := {$ifdef FPC}TGZipCompressionStream.Create(clDefault, mStream){$else}TZCompressionStream.Create(mStream, zcDefault, GzipBits[True]){$endif};
+      try
+        // Copy from source stream to compression stream in chunks
+        GetMem(Buffer, BufferSize);
+        try
+          TotalRead := 0;
+          while TotalRead < ASize do
+          begin
+            BytesRead := s.Read(Buffer^, Min(BufferSize, ASize - TotalRead));
+            if BytesRead = 0 then Break;
+            zStream.Write(Buffer^, BytesRead);
+            Inc(TotalRead, BytesRead);
+          end;
+        finally
+          FreeMem(Buffer);
+        end;
+      finally
+        zStream.Free;
+      end;
+
+      _SendHeader(mStream.Size, True);
+      Result := Stream.Write(mStream.Memory^, mStream.Size) = mStream.Size;
+    finally
+      mStream.Free;
+    end;
+  end
+  else
+  begin
+    _SendHeader(ASize, False);
+    // Copy from s to Self.Stream using buffer
+    GetMem(Buffer, BufferSize);
+    try
+      TotalRead := 0;
+      Result := True;
+      while TotalRead < ASize do
+      begin
+        BytesRead := s.Read(Buffer^, Min(BufferSize, ASize - TotalRead));
+        if BytesRead = 0 then
+        begin
+          Result := False;
+          Break;
+        end;
+        if Stream.Write(Buffer^, BytesRead) <> BytesRead then
+        begin
+          Result := False;
+          Break;
+        end;
+        Inc(TotalRead, BytesRead);
+      end;
+    finally
+      FreeMem(Buffer);
+    end;
+  end;
 end;
 
 function TmodResponse.SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions): Boolean;
@@ -3652,24 +3727,6 @@ begin
   end;
 
   FWaitEvent.WaitFor;
-end;
-
-{ TInterfacedStreamWrapper }
-
-constructor TInterfacedStreamWrapper.Create(vStream: TStream);
-begin
-  inherited Create;
-  FStream := vStream;
-end;
-
-procedure TInterfacedStreamWrapper.LoadFromStream(Stream: TStream; Count: Int64);
-begin
-  FStream.CopyFrom(Stream,Count);
-end;
-
-procedure TInterfacedStreamWrapper.SaveToStream(Stream: TStream; Count: Int64);
-begin
-  Stream.CopyFrom(FStream, Count);
 end;
 
 { TmnRegisteredModules }
