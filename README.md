@@ -16,9 +16,9 @@ comm: ComPort like COM1 COM2 and serial ports (MiniComm.lpk).
 
 ### Compiler ###
 
-Free Pascal 3.2
+Free Pascal 3.3
 
-Delphi XE 10.4 
+Delphi 13.x
 
 ### Install ###
 
@@ -39,10 +39,6 @@ Usefull Packages
 Optional packages (rarly tested)
 
     MiniComm.lpk
-
-Abandonned packages
-
-    MiniTranslator.lpk
 
 ### Branches ###
 

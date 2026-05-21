@@ -102,3 +102,7 @@ See individual source file headers for exact licensing terms.
 
 - Zaher Dirkey <zaherdirkey>
 - Belal Hamed <belalhamed@gmail.com>
+
+## Competitions
+
+https://github.com/CynicRus/AdvancedHTTPServer

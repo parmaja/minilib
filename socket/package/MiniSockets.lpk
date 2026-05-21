@@ -8,6 +8,7 @@
       <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
+        <OtherUnitFiles Value="..\source"/>
         <UnitOutputDirectory Value="..\units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
@@ -31,16 +32,13 @@
     <Version Major="1" Release="3" Build="7"/>
     <Files>
       <Item>
+        <Filename Value="..\source\mnServers.pas"/>
+        <AddToUsesPkgSection Value="False"/>
+        <UnitName Value="mnServers"/>
+      </Item>
+      <Item>
         <Filename Value="..\source\mnClients.pas"/>
         <UnitName Value="mnClients"/>
-      </Item>
-      <Item>
-        <Filename Value="..\source\mnConnections.pas"/>
-        <UnitName Value="mnConnections"/>
-      </Item>
-      <Item>
-        <Filename Value="..\source\mnServers.pas"/>
-        <UnitName Value="mnServers"/>
       </Item>
       <Item>
         <Filename Value="..\source\mnSockets.pas"/>
@@ -77,6 +75,11 @@
       <Item>
         <Filename Value="..\source\mnWebModules.pas"/>
         <UnitName Value="mnWebModules"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnConnections.pas"/>
+        <AddToUsesPkgSection Value="False"/>
+        <UnitName Value="mnConnections"/>
       </Item>
     </Files>
     <RequiredPkgs>
