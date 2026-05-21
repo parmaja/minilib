@@ -359,7 +359,7 @@ procedure TWSEchoGetHomeCommand.RespondResult(var Result: TmodRespondResult);
 var
   s: string;
 begin
-  if Request.ConnectionType = ctWebSocket then
+  if Request.RequestType = rtWebSocket then
   begin
     //Request.Path := DeleteSubPath(Name, Request.Path);
     while Response.Stream.Connected do
@@ -382,10 +382,10 @@ var
 begin
   if AContext.Data <> nil then
   begin
-    if SameText(AContext.Data.Values['execute'], 'true') then
+    if AContext.Data['execute'].AsBoolean then
     begin
-      aUsername := AContext.Data.Values['username'];
-      aPassword := AContext.Data.Values['password'];
+      aUsername := AContext.Data['username'].AsString;
+      aPassword := AContext.Data['password'].AsString;
       AResponse.Session.Value := aUsername +'/'+ aPassword;
       AResponse.RespondRedirectTo(IncludePathDelimiter(AContext.GetPath) + 'dashboard');
     end;
@@ -514,10 +514,10 @@ var
 begin
   if AContext.Data <> nil then
   begin
-    if SameText(AContext.Data.Values['execute'], 'true') then
+    if AContext.Data['execute'].AsBoolean then
     begin
-      aUsername := AContext.Data.Values['username'];
-      aPassword := AContext.Data.Values['password'];
+      aUsername := AContext.Data['username'].AsString;
+      aPassword := AContext.Data['password'].AsString;
       AResponse.Session.Value := aUsername +'/'+ aPassword;
       AResponse.RespondRedirectTo(IncludePathDelimiter(AContext.GetPath) + 'dashboard');
     end;
@@ -567,7 +567,7 @@ begin
 
             with TDropdown.Create(This) do
             begin
-              Image.IconClass := 'icon mw-font-normal';
+              Image.Symbol := 'icon mw-font-normal';
               Options := Options + [dropEnd];
               with TZoomButtons.Create(This) do
               begin

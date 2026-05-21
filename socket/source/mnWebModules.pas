@@ -591,10 +591,13 @@ end;}
 procedure WebServeFolder(Title, Path: string; Response: TwebResponse; Request: TmodRequest);
 var
   Files: TStringList;
-  procedure AddLink(s: string);
+  procedure AddLink(s: string; IsFolder: Boolean);
   begin
     Response.Stream.WriteUTF8Line('<ui>');
-    Response.Stream.WriteUTF8Line('<a href="' + s + '\">' + s + '</a>');
+    if IsFolder then    
+      Response.Stream.WriteUTF8Line('<a href="' + s + '/">' + s + '</a>')
+    else
+      Response.Stream.WriteUTF8Line('<a href="' + s + '">' + s + '</a>');
     Response.Stream.WriteUTF8Line('<br/>');
     Response.Stream.WriteUTF8Line('</ui>');
   end;
@@ -619,12 +622,12 @@ begin
     Response.Stream.WriteUTF8Line('<h4>Folders</h4>');
     Response.Stream.WriteUTF8Line('<ul>');
 
-    AddLink('..');
+    AddLink('..', True);
 
     for s in Files do
     begin
       if not StartsText('.', s) then
-        AddLink(s);
+        AddLink(s, True);
     end;
     Response.Stream.WriteUTF8Line('</ul>');
     Response.Stream.WriteUTF8Line('<h4>Files</h4>');
@@ -634,7 +637,7 @@ begin
     for s in Files do
     begin
       if not StartsText('.', s) then
-        AddLink(s);
+        AddLink(s, False);
     end;
     Response.Stream.WriteUTF8Line('</ul>');
     Response.Stream.WriteUTF8Line('</body>');
@@ -675,6 +678,9 @@ begin
   '/web/dashbord/index.html' file
 
 *)
+
+//-BUG: http://localhost:8080/doc/laz-logo.png/
+
   aHomeFolder := ExpandFile(CorrectPath(ExcludePathDelimiter(Response.HomeFolder)));
 
   WebExpandFile(aHomeFolder, Request.Path, aRequestDocument, False);

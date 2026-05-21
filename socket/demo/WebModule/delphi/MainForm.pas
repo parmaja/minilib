@@ -112,7 +112,7 @@ begin
     HttpServer.PrivateKeyFile := 'HttpServer.private.key';
   end;
 
-  aDocModule := HttpServer.Modules.Find<TmodWebFileModule>;
+  aDocModule := HttpServer.Module<TmodWebFileModule>;
 
   if aDocModule <> nil then
   begin
@@ -134,7 +134,7 @@ begin
     //HttpServer.SetNotfound;
   end;
 
-  aHomeModule := HttpServer.Modules.Find<THomeModule>;
+  aHomeModule := HttpServer.Module<THomeModule>;
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := HomeAliasEdit.Text;
@@ -311,8 +311,8 @@ begin
   HttpServer.OnLog := HttpServerLog;
   HttpServer.Logging := True;
 
-  HttpServer.Modules.Add(TmodWebFileModule.Create('doc', 'doc'));
-  HttpServer.Modules.Add(THomeModule.Create('home', 'home'));
+  HttpServer.Add(TmodWebFileModule, 'doc', 'doc');
+  THomeModule.Create(HttpServer, 'home', 'home');
 
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
