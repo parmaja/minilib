@@ -2,7 +2,7 @@
 {**
  *  This file is part of the "Mini Library"
  *
- * @license   modifiedLGPL (modified of mod://www.gnu.org/licenses/lgpl.html)
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  * @author    Belal Hamed <belal, belalhamed@gmail.com>
@@ -860,7 +860,7 @@ function TWebServers.AddServer(AName: string; AServer: TmodWebServer;
 var
   item: TWebServerItem;
 begin
-  item := TWebServerItem.Create;;
+  item := TWebServerItem.Create;
   item.Name := AName;
   item.FServer := AServer;
   item.FOwnIt := OwnIt;

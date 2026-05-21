@@ -1653,8 +1653,8 @@ end;
 
 destructor TmodModuleServer.Destroy;
 begin
+  FreeAndNil(FModules);
   inherited;
-  FreeAndNil(FModules); //After Inherited
 end;
 
 destructor TmodModuleConnection.Destroy;
@@ -2343,7 +2343,7 @@ end;
 
 function TmodModule.GetActive: Boolean;
 begin
-  Result := (Server <> nil )and Server.Modules.Active; //todo
+  Result := (Server <> nil) and Server.Modules.Active; //todo
 end;
 
 function TmodModule.RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean): Integer;
@@ -2632,7 +2632,7 @@ end;
 
 function TmnwCookie.GetText: string;
 begin
-  Result := Name + '=' + GenerateValue;;
+  Result := Name + '=' + GenerateValue;
 end;
 
 procedure TmnwCookie.SetAge(const AValue: Integer);
@@ -3323,7 +3323,7 @@ procedure TwebResponse.RespondForbidden;
 begin
   Answer := hrForbidden;
   ContentType := 'text/plain';
-  SendUTF8String('403 hrForbidden');  
+  SendUTF8String('403 Forbidden');  
   Responded;
 end;
 
