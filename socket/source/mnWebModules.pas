@@ -513,6 +513,7 @@ begin
   inherited;
   RegisterCommand('GET', TwebGetPostCommand, True);
   RegisterCommand('POST', TwebGetPostCommand);
+  RegisterCommand('OPTIONS', TwebOptionCommand);
   RegisterCommand('INFO', TmodServerInfoCommand);
 end;
 
@@ -593,13 +594,13 @@ var
   Files: TStringList;
   procedure AddLink(s: string; IsFolder: Boolean);
   begin
-    Response.Stream.WriteUTF8Line('<ui>');
+    Response.Stream.WriteUTF8Line('<li>');
     if IsFolder then    
       Response.Stream.WriteUTF8Line('<a href="' + s + '/">' + s + '</a>')
     else
       Response.Stream.WriteUTF8Line('<a href="' + s + '">' + s + '</a>');
     Response.Stream.WriteUTF8Line('<br/>');
-    Response.Stream.WriteUTF8Line('</ui>');
+    Response.Stream.WriteUTF8Line('</li>');
   end;
 var
   s: string;
@@ -755,8 +756,13 @@ var
   aFileName: string;
 begin
   inherited;
-  Response.Stream.WriteCommand('OK');
   aFileName := Request.Params.Values['FileName'];
+  aFileName := ExtractFileName(aFileName);
+  if aFileName = '' then
+  begin
+    Response.Answer := hrForbidden;
+    exit;
+  end;
   aFile := TFileStream.Create(IncludeTrailingPathDelimiter(Response.HomeFolder) + aFileName, fmCreate);
   try
     Response.Stream.ReadStream(aFile, Request.ContentLength);
@@ -779,9 +785,14 @@ end;
 { TmodForwardHttpsCommand }
 
 procedure TmodForwardHttpsCommand.RespondResult(var Result: TmodRespondResult);
+var
+  aHost: string;
 begin
   inherited;
-  Response.RespondRedirectTo('https://'+Response.Request.Host + Response.Request.URI);
+  aHost := Response.Request.Host;
+  if (Module.Server.Port <> '') and (Module.Server.Port <> '443') then
+    aHost := aHost + ':' + Module.Server.Port;
+  Response.RespondRedirectTo('https://' + aHost + Response.Request.URI);
 end;
 
 { TmodDirCommand }
@@ -816,9 +827,17 @@ end;
 procedure TmodDeleteFileCommand.RespondResult(var Result: TmodRespondResult);
 var
   aFileName: string;
+  aSafeName: string;
 begin
   inherited;
-  aFileName := IncludeTrailingPathDelimiter(Response.HomeFolder) + Request.Path;
+  aFileName := Request.Path;
+  aSafeName := ExtractFileName(aFileName);
+  if (aSafeName = '') or (aSafeName <> aFileName) then
+  begin
+    Response.Answer := hrForbidden;
+    exit;
+  end;
+  aFileName := IncludeTrailingPathDelimiter(Response.HomeFolder) + aSafeName;
   if FileExists(aFileName) then
     DeleteFile(aFileName);
   Response.Stream.WriteCommand('OK');
@@ -993,7 +1012,7 @@ procedure TmodWebModules.ParseHead(ARequest: TmodRequest; const RequestLine: str
 begin
   inherited;
   //ARequest.ParsePath(ARequest.URI); duplicate in parse head :)
-  ARequest.Command := ARequest.Method;
+  ARequest.Command := ARequest.Method; //Default command name of not provided by child class
 end;
 
 {$ifndef FPC}
@@ -1049,6 +1068,8 @@ begin
     else
       Response.PutHeader('Access-Control-Allow-Origin', '*');
   end
+  else if Module.Origins.IndexOf(Response.Request.Header['Origin']) >= 0 then
+    Response.PutHeader('Access-Control-Allow-Origin', Response.Request.Header['Origin'])
   else
     Response.PutHeader('Access-Control-Allow-Origin', Module.Origins.CommaText);
 end;

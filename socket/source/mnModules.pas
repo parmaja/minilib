@@ -905,7 +905,7 @@ const
   sMiniLibServer = 'minilib.server/v1';
 
 var
-  DevelopperMode:Boolean = False;
+  DeveloperMode:Boolean = False;
   ClientCacheMode:Boolean = False; //Move it to Module
   
   InstanceDate: TDateTime = 0;
@@ -954,7 +954,7 @@ function ComposeHttpURL(const Protocol, DomainName: string; const Port: string =
 begin
   Result := Protocol + '://' + DomainName;
 
-  if (Port<>'') and ((Protocol='https') and (Port<>'443'))or((Protocol='http') and (Port<>'80')) then
+  if (Port<>'') and (((Protocol='https') and (Port<>'443')) or ((Protocol='http') and (Port<>'80'))) then
     Result := Result + ':' + Port;
 
   if Directory <> '' then
@@ -974,11 +974,11 @@ begin
   while i <= High(S) do
   begin
     C := S[i];
-    {if C = '+' then
+    if C = '+' then
     begin
       R := R + ' ';
     end
-    else}
+    else
     if C = '%' then
     begin
       D := copy(S, i + 1, 2);
@@ -1456,7 +1456,7 @@ begin
 
   Stamp := GetFileStamp(Info.Size, Info.TimeStamp); //Yes it is repeated in SendStream but we will pass fdResend
 
-  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = Stamp) then
+  if not DeveloperMode and not (fdResend in FileDispositions) and (Request.Stamp = Stamp) then
   begin
     Answer := hrNotModified;
     exit(False);
@@ -1514,7 +1514,7 @@ var
 begin
   Stamp := GetFileStamp(ASize, AFileDate);
 
-  if not DevelopperMode and not (fdResend in FileDispositions) and (Request.Stamp = Stamp) then
+  if not DeveloperMode and not (fdResend in FileDispositions) and (Request.Stamp = Stamp) then
   begin
     Answer := hrNotModified;
     exit(False);
@@ -1548,7 +1548,7 @@ begin
   if aDisposition <> '' then
   begin
     if AAlias <> '' then
-      aDisposition := ConcatString(aDisposition, ';', 'filename="' + AAlias + '"');
+      aDisposition := ConcatString(aDisposition, '; ', 'filename="' + AAlias + '"');
     Header['Content-Disposition'] := aDisposition;
   end;
 
@@ -2072,7 +2072,7 @@ begin
         //Response.AddHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         Response.AddHeader('Connection', 'Upgrade');
         Response.AddHeader('upgrade', 'websocket');
-        Response.AddHeader('date: ', FormatHTTPDate(Now));
+        Response.AddHeader('date', FormatHTTPDate(Now));
         Response.AddHeader('Sec-Websocket-Accept', WSKey);
         if Request.Header['Sec-WebSocket-Protocol'] = 'plain' then
           Response.AddHeader('Sec-WebSocket-Protocol', 'plain');
@@ -2097,7 +2097,7 @@ begin
   begin
     Response.KeepAlive := True;
     Response.AddHeader('Connection', 'Keep-Alive');
-    Response.AddHeader('Keep-Alive', 'timout=' + IntToStr(Request.Use.KeepAliveTimeOut div 1000) + ', max=100');
+    Response.AddHeader('Keep-Alive', 'timeout=' + IntToStr(Request.Use.KeepAliveTimeOut div 1000) + ', max=100');
   end;
 
   if Request.RequestType = rtWebSocket then
@@ -2407,7 +2407,7 @@ end;
 procedure TmodModule.SetProtocols(AValue: TArray<String>);
 begin
   if Active then
-    raise EmodModuleException.Create('You can change protocol while module is active');
+    raise EmodModuleException.Create('You can''t change protocol while module is active');
   FProtocols := AValue;
 end;
 
@@ -3065,7 +3065,7 @@ begin
     hrPermanentRedirect: Result := Result + '308 Permanent Redirect';
     hrUnauthorized: Result := Result + '401 Unauthorized';
     hrForbidden : Result := Result + '403 Forbidden';
-    hrNotFound: Result := Result + '404 NotFound';
+    hrNotFound: Result := Result + '404 Not Found';
     hrError: Result := Result + '500 Internal Server Error';
     hrServiceUnavailable: Result := Result + '503 Service Unavailable';
     hrCustom: Result := '';
@@ -3548,8 +3548,6 @@ begin
   finally
     FPool.Lock.Leave;
   end;
-
-  Free; //<------ Wrong
 end;
 
 procedure TmnPoolObject.Leave;
