@@ -68,7 +68,7 @@ type
 
   TmodHeaderState = (
     resHeaderSending,
-    resHeadSent, //reposnd line, first line before header
+    resHeadSent, //respond line, first line before header
     resHeaderSent,
     //resLatch, //raise exception when writing to stream , i don't like it!
     //resBodySent,
@@ -1279,14 +1279,11 @@ end;
 
 function TmodResponse.SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions): Boolean;
 var
-  stream: TInterfacedStreamWrapper;
+  StreamIntf: ImnStreamPersist;
 begin
-  stream := TInterfacedStreamWrapper.Create(s);
-  try
-    Result := SendStream(stream, ASize, AOptions);
-  finally
-    FreeAndNil(stream);
-  end;
+  // Use interface reference for automatic memory management
+  StreamIntf := TInterfacedStreamWrapper.Create(s);
+  Result := SendStream(StreamIntf, ASize, AOptions);
 end;
 
 function TmodResponse.SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions): Boolean;
@@ -1308,10 +1305,13 @@ var
   mStream: TMemoryStream;
   zStream: {$ifdef FPC}TGZipCompressionStream{$else}TZCompressionStream{$endif};
 begin
-  Result := Count <> 0;
+  Result := False;
 
   if Count = 0 then
-    _SendHeader(0, False)
+  begin
+    _SendHeader(0, False);
+    Result := True;
+  end
   else
   begin
     aCompress := Request.Mode.AllowCompress and not (sndoAlreadyCompressed in AOptions);
@@ -1329,8 +1329,7 @@ begin
 
         _SendHeader(mStream.Size, True);
 
-        Stream.Write(mStream.Memory^, mStream.Size);
-
+        Result := Stream.Write(mStream.Memory^, mStream.Size) = mStream.Size;
       finally
         mStream.Free;
       end;
@@ -1338,7 +1337,8 @@ begin
     else
     begin
       _SendHeader(Count, False);
-      s.SaveToStream(Self.Stream, Count); //Buggy
+      s.SaveToStream(Self.Stream, Count);
+      Result := True;
     end;
   end;
 end;
@@ -2430,8 +2430,6 @@ end;
 
 procedure TmodModules.Added(Item: TmodModule);
 begin
-  if IndexOf(Item) >=0 then
-    raise Exception.Create('Module is already exists');
   inherited Added(Item);
   Item.FServer := Server;
 end;
@@ -2476,23 +2474,13 @@ begin
   ParseHttpHead(AHead, ARequest.Info.Method, ARequest.Info.URI, ARequest.Info.Protocol);
   ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Query);
 
-  //zaher: @zaher,belal, I dont like it
+  // Remove leading slash from Address for Path, unless Address is empty or just '/'
   if (ARequest.Address <> '') and (ARequest.Address <> '/') and StartsText(URLDelimiter, ARequest.Address) then
     ARequest.Path := Copy(ARequest.Address, 2, MaxInt)
   else
     ARequest.Path := ARequest.Address;
 
   StrToStrings(ARequest.Path, ARequest.Route, ['/']);
-
-  //ARequest.Command := ARequest.Method;
-
-{  if (ARequest.Address<>'') and (ARequest.Address<>'/') then
-  begin
-    if StartsText(URLDelimiter, ARequest.Address) then
-      StrToStrings(Copy(ARequest.Address, 2, MaxInt), ARequest.Route, ['/'])
-    else
-      StrToStrings(ARequest.Address, ARequest.Route, ['/']);
-  end;}
 end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;
@@ -3018,12 +3006,10 @@ begin
 end;
 
 function TmodHeader.Domain: string;
-var
-  s: string;
 begin
-  s := Origin;
-  if s <> '*' then
-    Result := ExtractDomain(s)
+  Result := Origin;
+  if Result <> '*' then
+    Result := ExtractDomain(Result)
   else
     Result := '';
 end;
@@ -3542,14 +3528,7 @@ begin
       try
         if not FCurrent.FSkip then
         begin
-          //Sleep(2000);
-          try
-            FCurrent.DoProcess;//
-          except
-            raise;
-{            on E: Exception do
-              Log('Error Pool Object [%s]: %s', [FCurrent.ClassName, E.Message]);}
-          end;
+          FCurrent.DoProcess;
         end;
       finally
         aCurrent := FCurrent;

@@ -793,7 +793,7 @@ begin
   //aPath := IncludeTrailingPathDelimiter(Root);
   if aFilter = '' then
     aFilter := '*.*';
-   aStrings := TStringList.Create;
+  aStrings := TStringList.Create;
   try
     //EnumFileList(aPath + aFilter, aStrings);
     for i := 0 to aStrings.Count - 1 do
