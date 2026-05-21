@@ -46,9 +46,8 @@ type
   type
       THTMLContainer = class(THTMLElement)      
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
-  
+
       THTMLLayout = class(THTMLContainer)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
@@ -58,8 +57,6 @@ type
       { THTMLComponent }
 
       THTMLComponent = class(THTMLLayout)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { THTMLControl }
@@ -97,8 +94,6 @@ type
       { TDocument }
 
       TDocument = class(TmnwHTMLRenderer.TDocument)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TBody }
@@ -117,11 +112,7 @@ type
       end;
 
       TNavTools = class(THTMLComponent)
-      private
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       public
       end;
@@ -151,17 +142,12 @@ type
       { TMenuBar }
 
       TMenuBar = class(THTMLComponent)
-      protected
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { THTMLItem }
 
       THTMLItem = class(THTMLControl)
       protected
-        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       public
       end;
@@ -240,8 +226,6 @@ type
 
       TAccordion = class(THTMLElement)
       protected
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
@@ -257,8 +241,6 @@ type
       { TAccordionItem }
 
       TAccordionItem = class(THTMLControl)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TCard }
@@ -292,10 +274,7 @@ type
       TDropdown = class(THTMLControl)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-
-        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-        procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       TGroup = class(THTMLControl)
@@ -368,8 +347,6 @@ type
       { TZoomButtons }
 
       TZoomButtons = class(TGroupButtons)
-      protected
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TNavItem }
@@ -386,12 +363,9 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
-      { TSubbMenu }
+      { TSubMenu }
 
       TSubMenu = class(THTMLControl)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
       { TInput }
@@ -490,9 +464,9 @@ const
   StyleNames: array[TItemStyle] of string = ('', 'primary', 'secondary', 'success', 'danger',
     'warning', 'info', 'light', 'dark', 'link', 'bg-transparent');
 begin
-  Result := Prefix + StyleNames[Style];
+  Result := StyleNames[Style];
   if Result <> '' then
-    Result := Prefix + Result;  
+    Result := Prefix + Result;
   if WithSpace and (Result <> '') then
     Result := ' ' + Result;
 end;
@@ -662,16 +636,6 @@ begin
   end;
 end;
 
-{ TBSRenderer.THTMLComponent }
-
-procedure TBSRenderer.THTMLComponent.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.THTMLComponent;
-begin
-  e := Scope.Element as THTML.THTMLComponent;
-  inherited;
-end;
-
 { TBSRenderer.THTMLControl }
 
 procedure TBSRenderer.THTMLControl.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
@@ -708,13 +672,6 @@ begin
 {    if Route <> '' then    
       Context.Writer.AddShortTag('img', 'src='+ DQ(Image.Path) + ' alt=""');}
   end;
-end;
-
-{ TBSRenderer.TDocumentHTML }
-
-procedure TBSRenderer.TDocument.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-begin
-  inherited;
 end;
 
 { TBSRenderer.THeaderHTML }
@@ -857,9 +814,9 @@ begin
   if e.Reset.Caption <> '' then
     Context.Writer.AddTag('button', 'class="btn btn-secondary" type="reset" form="'+e.ID+'" value="Reset"', e.Reset.Caption);
   if e.Cancel.Caption <> '' then
-      if e.CancelTo.Where <> toNone then      
-        Context.Writer.AddTag('a', 'class="btn btn-primary" type="cancel" href="' + Context.GetLocationPath(e.CancelTo.Where) + '"', e.Cancel.Caption);
-        //Context.Writer.AddTag('button', 'class="btn btn-primary" type="cancel" onclick="location.href=''' + Context.GetLocationPath(e.CancelTo.Where) + '''"', e.Cancel.Caption);
+      if e.CancelTo.Where <> toNone then
+        Context.Writer.AddTag('a', 'class="btn btn-primary" type="cancel" href="' + Context.GetLocationPath(e.CancelTo) + '"', e.Cancel.Caption);
+        //Context.Writer.AddTag('button', 'class="btn btn-primary" type="cancel" onclick="location.href=''' + Context.GetLocationPath(e.CancelTo) + '''"', e.Cancel.Caption);
 end;
 
 { TBSRenderer.TParagraphHTML }
@@ -929,18 +886,6 @@ begin
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Context.Writer.AddTag('button', 'role="menu" type="button"' + event + Scope.GetText, e.Caption);
-  inherited;
-end;
-
-{ TBSRenderer.TSubbMenu }
-
-procedure TBSRenderer.TSubMenu.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-begin
-  inherited;
-end;
-
-procedure TBSRenderer.TSubMenu.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-begin
   inherited;
 end;
 
@@ -1102,11 +1047,6 @@ begin
   Scope.Classes.Add('dropdown-item');
 end;
 
-procedure TBSRenderer.TDropdown.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
-end;
-
 procedure TBSRenderer.TDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TDropdown;
@@ -1121,7 +1061,7 @@ begin
     Scope.Classes.Add('dropdown-toggle-split');
   if e.ControlStyle <> styleUndefined then
     Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
-	Scope.Attributes.Add('data-bs-toggle', 'dropdown');
+  Scope.Attributes.Add('data-bs-toggle', 'dropdown');
   Scope.Attributes.Add('aria-expanded', 'false');
   Scope.Attributes.Add('type', 'button');
 
@@ -1143,11 +1083,6 @@ begin
   Context.Writer.CloseTag('div');
 
   Context.Writer.CloseTag('div');
-end;
-
-procedure TBSRenderer.TDropdown.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
 end;
 
 { TBSRenderer.TDropdownItem }
@@ -1199,13 +1134,6 @@ begin
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
-end;
-
-{ TBSRenderer.TZoomButtons }
-
-procedure TBSRenderer.TZoomButtons.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
 end;
 
 { TBSRenderer.TRow }
@@ -1265,18 +1193,6 @@ end;
 
 { TBSRenderer.TAccordion }
 
-procedure TBSRenderer.TAccordion.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-begin
-//  Context.Writer.OpenTag('div', 'class="accordion"');
-  inherited;
-end;
-
-procedure TBSRenderer.TAccordion.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
-  //Context.Writer.CloseTag('div');
-end;
-
 procedure TBSRenderer.TAccordion.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 begin
   Scope.Classes.Add('accordion');
@@ -1293,7 +1209,7 @@ procedure TBSRenderer.TAccordionSection.DoEnterChildRender(var Scope: TmnwScope;
 var 
   classes: TElementClasses;
 begin
-  classes.init('list-group-item');
+  classes.Init('list-group-item');
   classes.Add('bg-transparent');
   classes.Append(Scope.WrapClasses);
   Context.Writer.OpenTag('li',classes.ToString);
@@ -1366,15 +1282,6 @@ end;
 
 { TBSRenderer.TAccordionItem }
 
-procedure TBSRenderer.TAccordionItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-{var
-  e: THTML.TAccordionItem;}
-begin
-  //e := Scope.Element as THTML.TAccordionItem;
-  //Scope.Classes.Add('');
-  inherited;
-end;
-
 { TBSRenderer.TNavBar }
 
 procedure TBSRenderer.TNavBar.DoRenderBrand(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
@@ -1433,7 +1340,7 @@ begin
     Context.Writer.CloseTag('button');
   end;
 
-	DoRenderBrand(Scope, Context, AResponse);
+  DoRenderBrand(Scope, Context, AResponse);
 
   Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="true" data-bs-keyboard="false" tabindex="-1"');
   //Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
@@ -1455,29 +1362,7 @@ begin
   Context.Writer.CloseTag('nav');
 end;
 
-{ TBSRenderer.TMenuBar }
-
-procedure TBSRenderer.TMenuBar.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
-end;
-
-procedure TBSRenderer.TMenuBar.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
-end;
-
-procedure TBSRenderer.TMenuBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
-begin
-  inherited;
-end;
-
 { TBSRenderer.THTMLItem }
-
-procedure TBSRenderer.THTMLItem.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
-end;
 
 procedure TBSRenderer.THTMLItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
@@ -1539,8 +1424,8 @@ begin
   end;
   
   Context.Writer.OpenTag('aside', Scope.ToString);
-  Context.Writer.OpenTag('div id="' + e.ID + '-content' + '" class="sidebar-content' + When((e.Schema as THTML).Document.Body.Header.CanRender, ' min-content-height') + ' fixed"');
-  Context.Writer.OpenTag('div id="' + e.ID + '-body" class="sidebar-body offcanvas-md offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" data-bs-keyboard="false" aria-controls="header"');
+  Context.Writer.OpenTag('div', 'id="' + e.ID + '-content' + '" class="sidebar-content' + When((e.Schema as THTML).Document.Body.Header.CanRender, ' min-content-height') + ' fixed"');
+  Context.Writer.OpenTag('div', 'id="' + e.ID + '-body" class="sidebar-body offcanvas-md offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" data-bs-keyboard="false" aria-controls="header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -1564,7 +1449,7 @@ end;
 procedure TBSRenderer.THTMLLayout.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THTMLLayout;
-  MarginPrefix, PaddingPrefix: string;
+  MarginPrefix: string;
 begin
   e := Scope.Element as THTML.THTMLLayout;
   inherited;
@@ -1605,38 +1490,13 @@ end;
 
 { TBSRenderer.TNavTools }
 
-procedure TBSRenderer.TNavTools.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-begin
-  inherited;
-end;
-
-procedure TBSRenderer.TNavTools.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-{var
-  classes: TElementClasses;}
-begin
-  //classes.Init('nav-item');
-  //classes.Append('align-items-center');
-  //classes.Append(Scope.WrapClasses);
-  //Context.Writer.OpenTag('li', classes.ToString);
-  inherited;
-end;
-
 procedure TBSRenderer.TNavTools.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TNavTools;
-//  event: string;
 begin
   e := Scope.Element as THTML.TNavTools;
   Scope.Classes.Add('navbar-nav ms-auto');
-//  Context.Writer.OpenTag('ul', 'class="navbar-nav"');
   inherited;
-//  Context.Writer.CloseTag('ul');
-end;
-
-procedure TBSRenderer.TNavTools.DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext);
-begin
-  inherited;
-//  Context.Writer.CloseTag('li');
 end;
 
 { TBSRenderer.TNavDropdown }
@@ -1656,19 +1516,18 @@ end;
 procedure TBSRenderer.TNavDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
 var
   e: THTML.TNavDropdown;
-  event: string;
   classes: TElementClasses;
 begin
   e := Scope.Element as THTML.TNavDropdown;
   Scope.Classes.Add('nav-link');
-  
+
   if dropArraw in e.Options then
     Scope.Classes.Add('dropdown-toggle');
   if dropSplit in e.Options then
     Scope.Classes.Add('dropdown-toggle-split');
   Scope.Attributes.Add('data-bs-toggle', 'dropdown');
   Scope.Attributes.Add('aria-expanded', 'false');
-  Context.Writer.AddTag('a', 'href="#" ' + event + Scope.GetText, e.Caption);
+  Context.Writer.AddTag('a', 'href="#"' + Scope.GetText, e.Caption);
 
   classes.Init('dropdown-menu');
   if dropEnd in e.Options then
@@ -1692,7 +1551,8 @@ var
 begin
   e := Scope.Element as THTML.TCode;
 //  Scope.Classes.Add('language-'+e.Language);
-  Context.Writer.OpenTag('code', Scope.ToString, e.Text);
+  Context.Writer.OpenTag('code', Scope.ToString);
+  Context.Writer.Write(e.Text);
   inherited;
   Context.Writer.CloseTag('code');
 end;
@@ -1768,7 +1628,7 @@ end;
 procedure TBSRenderer.THTMLContainer.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THTMLContainer;
-  MarginPrefix, PaddingPrefix: string;
+  PaddingPrefix: string;
 begin
   e := Scope.Element as THTML.THTMLContainer;
   inherited;
