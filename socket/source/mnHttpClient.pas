@@ -49,9 +49,9 @@ type
     procedure FreeStream; virtual;
     procedure Receive; virtual;
 
-    procedure SendCommand(Command: string; vData: PByte; vCount: Cardinal);
-    procedure SendPatch(vData: PByte; vCount: Cardinal);
-    procedure SendPost(vData: PByte; vCount: Cardinal);
+    procedure SendCommand(Command: string; vData: PByte; vCount: Integer);
+    procedure SendPatch(vData: PByte; vCount: Integer);
+    procedure SendPost(vData: PByte; vCount: Integer);
     procedure SendGet;
     procedure SendHead;
 
@@ -93,7 +93,7 @@ type
     function GetString(const vURL: UTF8String; var OutString: string): TFileSize;
     function GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
     function GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
-    function GetFileSize(vURL: string; out FileSize: TFileSize): Boolean;
+    function GetFileSize(vURL: UTF8String; out FileSize: TFileSize): Boolean;
     //Please add seek to 0 after getting it
     procedure GetMemoryStream(const vURL: UTF8String; OutStream: TMemoryStream);
     procedure SendFile(const vURL: UTF8String; AFileName: UTF8String);
@@ -143,7 +143,6 @@ type
     function GetConnected: Boolean; override;
 
   public
-    constructor Create;
     destructor Destroy; override;
 
     function WaitToRead(Timeout: Longint): TmnConnectionError; override;
@@ -231,7 +230,10 @@ begin
   d := PUtf8Char(vTo);
   p := vPos;
   e := vPos;
-  Inc(e, vCount - l);
+  if vCount >= l then
+    Inc(e, vCount - l)
+  else
+    e := p;
   aFound := False;
   while p <= e do
   begin
@@ -253,20 +255,6 @@ begin
   end
   else
     Result := '';
-end;
-
-procedure SocketDownloadFile(URL: string; FileName: string);
-var
-  c: TmnCustomHttpClient;
-begin
-  c := TmnHttpClient.Create;
-  try
-    //c.Compressing := True;
-    //m.SaveToFile('c:\temp\1.json');
-    c.GetFile(URL, FileName);
-  finally
-    FreeAndNil(c);
-  end;
 end;
 
 procedure ParseURL(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String);
@@ -322,17 +310,17 @@ begin
   end;
 end;
 
-procedure TmnCustomHttpClient.SendPatch(vData: PByte; vCount: Cardinal);
+procedure TmnCustomHttpClient.SendPatch(vData: PByte; vCount: Integer);
 begin
   SendCommand('PATCH', vData, vCount)
 end;
 
-procedure TmnCustomHttpClient.SendPost(vData: PByte; vCount: Cardinal);
+procedure TmnCustomHttpClient.SendPost(vData: PByte; vCount: Integer);
 begin
   SendCommand('POST', vData, vCount);
 end;
 
-procedure TmnCustomHttpClient.SendCommand(Command: string; vData: PByte; vCount: Cardinal);
+procedure TmnCustomHttpClient.SendCommand(Command: string; vData: PByte; vCount: Integer);
 begin
   Request.Head := Command + ' ' + Path + ' ' + sHTTPProtocol_101;
 
@@ -399,23 +387,17 @@ function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol,
 begin
   Result := DoCreateStream(vURL, vProtocol, vHost, vPort, vParams);
   Request.SetStream(Result, True);
-
-  //need set trigger
-  //Request.SetStream(Result, True);
-  //Response.SetStream(Result, False);
 end;
 
 procedure TmnCustomHttpClient.FreeStream;
 begin
-//  Request.SetTrigger(False);
-//  Request.ChunkedProxy := nil;
-  if Request<>nil then //case of disconnect or destroy
+  if Request<>nil then
   begin
     Request.ProtcolProxy := nil;
     Request.ChunkedProxy := nil;
   end;
 
-  FreeAndNil(FStream); //stream will free proxies
+  FreeAndNil(FStream);
 end;
 
 constructor TmnCustomHttpClient.Create;
@@ -444,7 +426,7 @@ end;
 destructor TmnCustomHttpClient.Destroy;
 begin
   inherited;
-  FreeAndNil(FRequest);
+  FreeAndNil(FRequest); //* After Inherited, We need it here
   FreeStream;
 end;
 
@@ -490,7 +472,6 @@ begin
   if (Stream = nil) or not Stream.Connected then
     raise EmnStreamException.Create('Not connected yet');
   SendPost(vData, vCount);
-  //
   Result := Stream.Connected;
   if Result then
   begin
@@ -622,11 +603,14 @@ begin
   end;
 end;
 
-function TmnCustomHttpClient.GetFileSize(vURL: string; out FileSize: TFileSize): Boolean;
+function TmnCustomHttpClient.GetFileSize(vURL: UTF8String; out FileSize: TFileSize): Boolean;
 var
   aSizeStr: string;
 begin
+  FileSize := 0;
   Result := Open(vURL, False);
+  if not Result then
+    Exit;
   try
     SendHead;
     Receive;
@@ -655,7 +639,7 @@ end;
 
 procedure TmnCustomHttpClient.SendFile(const vURL: UTF8String; AFileName: UTF8String);
 begin
-  //TODO
+  raise EmnStreamException.Create('SendFile not implemented');
 end;
 
 { TmnHttpClient }
@@ -676,7 +660,6 @@ begin
   aStream.Address := vHost;
   aStream.Port := vPort;
 
-  aStream.Options := aStream.Options;
   if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
     aStream.Options := aStream.Options + [soSSL, soWaitBeforeRead]
   else
@@ -693,25 +676,15 @@ var
 begin
   aStream := TmnBIOHttpStream.Create;
 
-  aStream.EndOfLine      := sWinEndOfLine;
+aStream.EndOfLine      := sWinEndOfLine;
   aStream.ReadTimeout    := 5000;
   aStream.ConnectTimeout := 5000;
   aStream.WriteTimeout   := 5000;
-  //aStream.Options := aStream.Options + [soWaitBeforeRead];
 
   ParseURL(vURL, vProtocol, vHost, vPort, FPath);
   aStream.Address := vHost;
   aStream.Port := vPort;
 
-{  aStream.Options := aStream.Options + [soNoDelay];
-  if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
-    aStream.Options := aStream.Options + [soSSL, soWaitBeforeRead]
-  else
-    aStream.Options := aStream.Options - [soSSL];
-
-  if SameText(Protocol, 'ws') or SameText(Protocol, 'wss') then
-    aStream.Options := aStream.Options + [soWebsocket];
- }
   Result := aStream;
 end;
 
@@ -725,11 +698,6 @@ begin
   BIOStream.Connect;
 end;
 
-constructor TmnBIOHttpStream.Create;
-begin
-  inherited Create;
-end;
-
 destructor TmnBIOHttpStream.Destroy;
 begin
   FreeAndNil(BIOStream);
@@ -738,7 +706,8 @@ end;
 
 procedure TmnBIOHttpStream.Disconnect;
 begin
-  BIOStream.Disconnect;
+  if BIOStream <> nil then
+    BIOStream.Disconnect;
   inherited;
 end;
 
@@ -754,28 +723,25 @@ end;
 
 function TmnBIOHttpStream.GetConnected: Boolean;
 begin
-  Result := BIOStream.Connected;
+  Result := (BIOStream <> nil) and BIOStream.Connected;
 end;
 
 function TmnBIOHttpStream.WaitToRead(Timeout: Longint): TmnConnectionError;
 begin
-  Result := cerSuccess;
-  exit;
-
-  if BIOStream.GetSSL.Active then //testing
+  if (BIOStream <> nil) and BIOStream.GetSSL.Active then
   begin
     if BIOStream.GetSSL.Pending then
-    begin
-      Result := cerSuccess;
-      exit;
-    end;
-  end;
+      Result := cerSuccess
+    else
+      Result := cerTimeout;
+  end
+  else
+    Result := cerSuccess;
 end;
 
 function TmnBIOHttpStream.WaitToWrite(Timeout: Longint): TmnConnectionError;
 begin
   Result := cerSuccess;
-  exit;
 end;
 
 end.
