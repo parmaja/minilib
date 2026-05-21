@@ -620,7 +620,8 @@ type
   }
 
   TmodModules = class;
-
+  TmodModuleServer = class;
+  
   { TmodModule }
 
   TmodModule = class(TmnNamedObject)
@@ -628,7 +629,7 @@ type
     FAliasName: String;
     FCommands: TmodCommandClasses;
     FLevel: Integer;
-    FModules: TmodModules;
+    FServer: TmodModuleServer;
     FProtocols: TArray<String>;
     FUse: TmodCommunicateUsing;
     procedure SetAliasName(AValue: String);
@@ -666,8 +667,7 @@ type
   public
     //Default fallback module should have no alias name
     //Protocols all should lowercase
-    constructor Create(AModules: TmodModules; const AName: string; const AAliasName: String = ''); overload; virtual;
-    constructor Create(const AName: string; const AAliasName: String = ''); overload; virtual;
+    constructor Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String = ''); overload; virtual;
     destructor Destroy; override;
     function RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean = False): Integer; overload;
 
@@ -676,7 +676,6 @@ type
 
     property Commands: TmodCommandClasses read FCommands;
     property Active: Boolean read GetActive;
-    property Modules: TmodModules read FModules;
     //* use lower case in Protocols
     property Protocols: TArray<String> read FProtocols write SetProtocols;
     property AliasName: String read FAliasName write SetAliasName;
@@ -689,23 +688,20 @@ type
     property UseKeepAlive: TmodOptionValue read FUse.KeepAlive write FUse.KeepAlive default ovUndefined;
     property UseCompressing: TmodOptionValue read FUse.Compressing write FUse.Compressing;
     property UseWebSocket: Boolean read FUse.WebSocket write FUse.WebSocket;
+
+    property Server: TmodModuleServer read FServer;
   end;
 
   TmodModuleClass = class of TmodModule;
-
-  TmodModuleServer = class;
 
   { TmodModules }
 
   TmodModules = class(TmnNamedObjectList<TmodModule>)
   private
     FActive: Boolean;
-    FEndOfLine: String;
-    FDefaultProtocol: String;
     FDefaultModule: TmodModule;
     FInit: Boolean;
     FServer: TmodModuleServer;
-    procedure SetEndOfLine(AValue: String);
   protected
     function CreateRequest(Astream: TmnBufferStream): TmodRequest; virtual;
     function GetActive: Boolean; virtual;
@@ -716,15 +712,11 @@ type
     procedure Prepare; //Init called from the first connection
     procedure Idle;
     function Compare(Left: TmodModule; Right: TmodModule): Integer; override;
-    property Server: TmodModuleServer read FServer;
     procedure Added(Item: TmodModule); override;
   public
     constructor Create(AServer: TmodModuleServer);
     procedure ParseHead(ARequest: TmodRequest; const AHead: String); virtual;
     function Match(ARequest: TmodRequest): TmodModule; virtual;
-    property DefaultProtocol: String read FDefaultProtocol write FDefaultProtocol;
-
-    function IsSecure: Boolean;
 
     function Find<T: Class>: T; overload;
     function Find<T: Class>(const AName: string): T; overload;
@@ -733,10 +725,10 @@ type
     property DefaultModule: TmodModule read FDefaultModule write FDefaultModule;
 
     function Add(const Name, AliasName: String; AModule: TmodModule): Integer; overload;
-    procedure Log(S: String); virtual;
 
     property Active: Boolean read GetActive;
-    property EndOfLine: String read FEndOfLine write SetEndOfLine; //TODO move to module
+
+    property Server: TmodModuleServer read FServer;
   end;
 
   //--- Server ---
@@ -771,9 +763,12 @@ type
 
   TmodModuleServer = class(TmnEventServer)
   private
+    FEndOfLine: String;
+    FDefaultProtocol: String;
     FEnabled: Boolean;
     FModules: TmodModules;
     FName: string;
+    procedure SetEndOfLine(AValue: String);
     procedure SetEnabled(AValue: Boolean);
   protected
     procedure StreamCreated(AStream: TmnBufferStream); virtual;
@@ -785,13 +780,17 @@ type
     procedure DoIdle; override;
     function CreateModules: TmodModules; virtual;
     procedure Created; override;
+    property Modules: TmodModules read FModules;
   public
     constructor Create; override;
     destructor Destroy; override;
     function Module<T: class>: T;
-    property Modules: TmodModules read FModules;
+    function Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
+    function Add(ModuleClass: TmodModuleClass; const AName: string; const AAliasName: String = ''): TmodModule; overload; 
     property Enabled: Boolean read FEnabled write SetEnabled;
     property Name: string read FName write FName;
+    property EndOfLine: String read FEndOfLine write SetEndOfLine; //TODO move to module
+    property DefaultProtocol: String read FDefaultProtocol write FDefaultProtocol;
   end;
 
   TmodModuleServerClass = class of TmodModuleServer;
@@ -878,7 +877,7 @@ type
   public
     procedure RegisterModule(const AName, AAlias: string; ServerClass: TmodModuleServerClass; ModuleClass: TmodModuleClass); overload;
     procedure RegisterModule(const AName, AAlias: string; ModuleClass: TmodModuleClass); overload;
-    procedure CreateModules(Modules: TmodModules);
+    procedure CreateModules(AServer: TmodModuleServer);
   end;
 
 function RegisteredModules: TmnRegisteredModules;
@@ -1632,6 +1631,12 @@ procedure TmodModuleServer.Created;
 begin
   inherited;
   FModules := CreateModules;
+  FEndOfLine := sWinEndOfLine; //for http protocol
+end;
+
+function TmodModuleServer.Add(ModuleClass: TmodModuleClass; const AName, AAliasName: String): TmodModule;
+begin
+  Result := ModuleClass.Create(Self, AName, AAliasName);
 end;
 
 constructor TmodModuleServer.Create;
@@ -1655,6 +1660,15 @@ end;
 destructor TmodModuleConnection.Destroy;
 begin
   inherited;
+end;
+
+procedure TmodModuleServer.SetEndOfLine(AValue: String);
+begin
+  if FEndOfLine = AValue then
+    Exit;
+{  if Active then
+    raise EmodModuleException.Create('You can''t change EOL while server is active');}
+  FEndOfLine := AValue;
 end;
 
 { TmodModuleConnection }
@@ -1764,6 +1778,11 @@ begin
   inherited;
 end;
 
+function TmodModuleServer.Find(const ModuleClass: TmodModuleClass): TmodModule;
+begin
+  Result := Modules.Find(ModuleClass);
+end;
+
 function TmodModuleServer.Module<T>: T;
 var
   i: Integer;
@@ -1778,14 +1797,14 @@ end;
 
 procedure TmodModuleServer.StreamCreated(AStream: TmnBufferStream);
 begin
-  AStream.EndOfLine := Modules.EndOfLine;
+  AStream.EndOfLine := EndOfLine;
   //AStream.EOFOnError := Modules.EOFOnError;
 end;
 
 procedure TmodModuleServer.DoBeforeOpen;
 begin
   inherited;
-  RegisteredModules.CreateModules(Modules);
+  RegisteredModules.CreateModules(Self);
 end;
 
 procedure TmodModuleServer.DoAfterClose;
@@ -2189,21 +2208,16 @@ begin
   Result := CreateCommand(ARequest.Command, ARequest);
 end;
 
-constructor TmodModule.Create(const AName: string; const AAliasName: String);
-begin
-  Create(nil, AName, AAliasName);
-end;
-
-constructor TmodModule.Create(AModules: TmodModules; const AName: string; const AAliasName: String);
+constructor TmodModule.Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String);
 begin
   Name := AName;
   FAliasName := AAliasName;   
   FCommands := TmodCommandClasses.Create(True);
   FUse.KeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
-  if AModules <> nil then
+  if AServer <> nil then
   begin
-    FModules := AModules;//* nope, Add will assign it
-    FModules.Add(Self);
+    FServer := AServer;//* nope, Add will assign it
+    FServer.Modules.Add(Self);
   end;
   InitItems; //TODO rename to Init
 end;
@@ -2329,7 +2343,7 @@ end;
 
 function TmodModule.GetActive: Boolean;
 begin
-  Result := (Modules <> nil )and Modules.Active; //todo
+  Result := (Server <> nil )and Server.Modules.Active; //todo
 end;
 
 function TmodModule.RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean): Integer;
@@ -2352,17 +2366,11 @@ end;
 
 function TmodModules.Add(const Name, AliasName: String; AModule: TmodModule): Integer;
 begin
+  if Find(Name) <> nil then
+    raise exception.Create('Module ' + Name + ' is already exists');
   AModule.Name := Name;
   AModule.AliasName := AliasName;
   Result := inherited Add(AModule);
-end;
-
-function TmodModules.IsSecure: Boolean;
-begin
-  if Server <> nil then
-    Result := Server.IsSecure
-  else
-    Result := False;
 end;
 
 function TmodModules.Find(const AName: string): TmodModule;
@@ -2378,15 +2386,6 @@ begin
       break;
     end;
   end;
-end;
-
-procedure TmodModules.SetEndOfLine(AValue: String);
-begin
-  if FEndOfLine = AValue then
-    Exit;
-{  if Active then
-    raise EmodModuleException.Create('You can''t change EOL while server is active');}
-  FEndOfLine := AValue;
 end;
 
 procedure TmodModules.Start;
@@ -2431,8 +2430,10 @@ end;
 
 procedure TmodModules.Added(Item: TmodModule);
 begin
+  if IndexOf(Item) >=0 then
+    raise Exception.Create('Module is already exists');
   inherited Added(Item);
-  Item.FModules := Self;
+  Item.FServer := Server;
 end;
 
 procedure TmodModules.Prepare;
@@ -2445,11 +2446,6 @@ begin
     for aModule in Self do
       aModule.Prepare;
   end;
-end;
-
-procedure TmodModules.Log(S: String);
-begin
-  Server.Listener.Log(S);
 end;
 
 function TmodModules.Compare(Left: TmodModule; Right: TmodModule): Integer;
@@ -2466,7 +2462,6 @@ end;
 procedure TmodModules.Created;
 begin
   inherited;
-  FEndOfLine := sWinEndOfLine; //for http protocol
 end;
 
 function TmodModules.CreateRequest(Astream: TmnBufferStream): TmodRequest;
@@ -3712,15 +3707,15 @@ begin
   Add(Item);
 end;
 
-procedure TmnRegisteredModules.CreateModules(Modules: TmodModules);
+procedure TmnRegisteredModules.CreateModules(AServer: TmodModuleServer);
 var
   item: TmnRegisteredModule;
 begin
   for item in Self do
   begin
-    if (item.ServerClass = nil) or (Modules.Server is item.ServerClass) then
+    if (item.ServerClass = nil) or (AServer is item.ServerClass) then
     begin
-      item.ModuleClass.Create(Modules, item.Name, item.Alias);
+      item.ModuleClass.Create(AServer, item.Name, item.Alias);
     end;
   end;
 end;

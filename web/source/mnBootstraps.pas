@@ -991,7 +991,7 @@ begin
   inherited;
 end;
 
-{ TBSRenderer.TMemoryImageHTML }
+{ TBSRenderer.TImageMemory }
 
 procedure TBSRenderer.TImageMemory.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin

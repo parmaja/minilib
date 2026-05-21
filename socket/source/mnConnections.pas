@@ -18,32 +18,9 @@ interface
 
 uses
   Classes, SysUtils, Types, SyncObjs, mnLogs,
-  mnStreams, mnSockets;
+  mnClasses, mnStreams, mnSockets;
 
 type
-
-  { TmnThread }
-
-  TmnThread = class(TThread)
-  protected
-    procedure Execute; override;
-
-  public
-    constructor Create;
-  end;
-
-  { TmnLockThread }
-
-  TmnLockThread = class(TmnThread)
-  private
-    FLock: TCriticalSection;
-  protected
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Enter;
-    procedure Leave;
-  end;
 
   TmnConnection = class;
 
@@ -203,28 +180,6 @@ begin
   end;
 end;
 
-constructor TmnLockThread.Create;
-begin
-  inherited;
-  FLock := TCriticalSection.Create;
-end;
-
-destructor TmnLockThread.Destroy;
-begin
-  inherited;
-  FreeAndNil(FLock); //* it used in other inherited classes
-end;
-
-procedure TmnLockThread.Enter;
-begin
-  FLock.Enter;
-end;
-
-procedure TmnLockThread.Leave;
-begin
-  FLock.Leave;
-end;
-
 procedure TmnConnection.Process;
 begin
 end;
@@ -267,24 +222,6 @@ end;
 
 procedure TmnConnection.Unprepare;
 begin
-end;
-
-{ TmnThread }
-
-constructor TmnThread.Create;
-begin
-  inherited Create(True);
-  FreeOnTerminate := False;
-
-end;
-
-procedure TmnThread.Execute;
-begin
-  //inherited;
-
-  //TThread.NameThreadForDebugging('DelphiCreated_' + ClassName, Self.ThreadID);
-  //i := SetThreadDescription(Self.ThreadID, PChar('DelphiCreated_' + ClassName));
-  //LogWriteln('Thread[%d]: %s', [Self.ThreadID, ClassName]);
 end;
 
 end.

@@ -789,7 +789,7 @@ type
       function GetContentType(Route: string): string; override;
     end;
 
-    { TMemoryImage }
+    { TMemory }
 
     [TID_Extension]
     TMemory = class(TmnwElement)
@@ -1652,7 +1652,7 @@ type
         Source: TLocation;
       end;
 
-      { TMemoryImage }
+      { TImageFile }
 
       [TRoute_Extension]
       TImageFile = class(TCustomImage)
@@ -1796,11 +1796,11 @@ type
   public
     AuthForm: TAuthForm;
   protected
+    procedure DoLogin(const AContext: TmnwContext; out Success: Boolean; out Message: string; out SessionID: string); virtual;
+    procedure DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;   
+
     procedure UserLogin(const AContext: TmnwContext; AResponse: TmnwResponse);     
     procedure UserLogout(const AContext: TmnwContext; AResponse: TmnwResponse); 
-    
-    procedure DoLogin(const AContext: TmnwContext; out Success: Boolean; out Message: string; out SessionID: string); virtual;
-    procedure DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
     
     procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); override;
     procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
@@ -1836,7 +1836,7 @@ type
     procedure Stop; override;
   public
     destructor Destroy; override;
-    constructor Create(AModules: TmodModules; const AName: string; const AAliasName: String); override;
+    constructor Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String); override;
     property Web: TmnwWeb read FWeb;
   end;
 
@@ -4890,7 +4890,7 @@ begin
   if Module.Domain <> '' then
   begin
     aDomain := Module.Domain;
-    aPort := Module.Port;
+    aPort := Module.Server.Port;
   end
   else
     SpliteStr(Request.Header['Host'], ':', aDomain, aPort);
@@ -5062,13 +5062,13 @@ begin
   if Web.Domain = '' then
     Web.Domain := Domain;
   if Web.Port = '' then
-    Web.Port := Port;
+    Web.Port := Server.Port;
   if Web.WorkFolder = '' then
     Web.WorkFolder := WorkFolder;
   if Web.ModuleName = '' then
     Web.ModuleName := AliasName;
   //Web.Assets.HomeFolder := Web.HomeFolder;
-  Web.IsSecure := Modules.IsSecure;
+  Web.IsSecure := Server.IsSecure;
 
   Web.Start;
 end;
@@ -5099,7 +5099,7 @@ begin
   FreeAndNil(FWeb); //keep behind inherited
 end;
 
-constructor TmnwWebModule.Create(AModules: TmodModules; const AName: string; const AAliasName: String);
+constructor TmnwWebModule.Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String);
 begin
   FWeb := TmnwWeb.Create;
   inherited;

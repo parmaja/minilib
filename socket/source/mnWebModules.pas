@@ -113,14 +113,16 @@ type
     //protocol://domain:port/namespace/alias/directory
     //--------HOST URL------/namespace/alias/directory
     //----------HOME URL--------------/directory
-    Domain: string; //localhost
-    Port: string;
+    Domain: string; //localhost    
 
+    function GetDefaultURL: string; virtual;
+    
     property Origins: TStrings read FOrigins write SetOrigins;
     //Public Path
     property HomeFolder: string read FHomeFolder write SetHomeFolder;
     //Private Path
-    property WorkFolder: string read FWorkFolder write FWorkFolder;
+    property WorkFolder: string read FWorkFolder write FWorkFolder;    
+    
   end;
   { TmodWebFileModule }
 
@@ -183,9 +185,9 @@ type
     procedure ParseHead(ARequest: TmodRequest; const RequestLine: string); override;
   end;
 
-  { TmodCustomWebServer }
+  { TmodWebServer }
 
-  TmodCustomWebServer = class(TmodModuleServer)
+  TmodWebServer = class(TmodModuleServer)
   protected
     function CreateModules: TmodModules; override;
   public
@@ -197,12 +199,9 @@ type
     procedure SetNotfound;
   end;
 
-  //*****************************************
+  TmodWebServerClass = class of TmodWebServer;
 
-  TmodWebServer = class(TmodCustomWebServer)
-  protected
-    procedure Created; override;
-  end;
+  //*****************************************
 
   {$ifndef FPC}
   TmodWebEventProc = reference to procedure(vRequest: TmodRequest; vResponse: TwebResponse; var vResult: TmodRespondResult);
@@ -213,7 +212,7 @@ type
     procedure InitItems; override;
   end;
 
-  TmodWebEventServer = class(TmodCustomWebServer)
+  TmodWebEventServer = class(TmodWebServer)
   public
     constructor Create(const vPort: string; vProc: TmodWebEventProc); reintroduce;
   end;
@@ -304,7 +303,7 @@ type
   TWebServerItem = class(TmnNamedObject)
   private
     FOwnIt: Boolean;
-    FServer: TmodCustomWebServer;
+    FServer: TmodWebServer;
     function GetStarted: Boolean;
   public
     constructor Create;
@@ -313,7 +312,7 @@ type
     procedure Start;
     procedure Stop;
 
-    property Server: TmodCustomWebServer read FServer;
+    property Server: TmodWebServer read FServer;
     property Started: Boolean read GetStarted;
   end;
 
@@ -323,7 +322,7 @@ type
   private
     FStarted: Boolean;
   public
-    function AddServer(AName: string; AServer: TmodCustomWebServer; OwnIt: Boolean = True): Integer;
+    function AddServer(AName: string; AServer: TmodWebServer; OwnIt: Boolean = True): Integer;
     procedure Start;
     procedure Stop;
     property Started: Boolean read FStarted;
@@ -471,6 +470,11 @@ begin
   end;
 end;
 
+function TmodWebModule.GetDefaultURL: string;
+begin
+  Result := AddStartURLDelimiter('localhost:' + Server.Port) + AddStartURLDelimiter(AliasName)
+end;
+
 procedure TmodWebModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
 begin
   //inherited;
@@ -494,7 +498,7 @@ end;
 procedure TmodWebModule.Log(S: string);
 begin
   inherited;
-  Modules.Log(S);
+  Server.Log(S);
 end;
 
 { TmodWebFileModule }
@@ -851,7 +855,7 @@ end;
 
 { TWebServers }
 
-function TWebServers.AddServer(AName: string; AServer: TmodCustomWebServer;
+function TWebServers.AddServer(AName: string; AServer: TmodWebServer;
   OwnIt: Boolean): Integer;
 var
   item: TWebServerItem;
@@ -902,21 +906,14 @@ begin
   RegisterCommand('', TmodRedirectCommand, True);
 end;
 
-{ TmodWebServer }
-
-procedure TmodWebServer.Created;
-begin
-  inherited;
-end;
-
 { TmodAcmeChallengeServer }
 
-function TmodCustomWebServer.CreateModules: TmodModules;
+function TmodWebServer.CreateModules: TmodModules;
 begin
   Result := TmodWebModules.Create(Self);
 end;
 
-constructor TmodCustomWebServer.Create;
+constructor TmodWebServer.Create;
 begin
   inherited;
   Port := '80';
@@ -925,12 +922,12 @@ end;
 const
   sAcmeNameFolder = 'well-known';
 
-procedure TmodCustomWebServer.AddChallengeAcme(const AHomeFolder: string);
+procedure TmodWebServer.AddChallengeAcme(const AHomeFolder: string);
 begin
   if Modules.Find(sAcmeNameFolder) = nil then
   begin
     //* http://localhost/.well-known/acme-challenge/index.html
-    with TmodWebFileModule.Create(Modules, sAcmeNameFolder, '.' + sAcmeNameFolder) do
+    with TmodWebFileModule.Create(Self, sAcmeNameFolder, '.' + sAcmeNameFolder) do
     begin
       Level := -1;
       HomeFolder := AHomeFolder;
@@ -942,11 +939,11 @@ end;
 const
   sForwardHttps = 'ForwardHttps';
 
-procedure TmodCustomWebServer.AddFileModule(const Alias: string; const AHomeFolder: string);
+procedure TmodWebServer.AddFileModule(const Alias: string; const AHomeFolder: string);
 begin
   if Modules.Find(Alias) = nil then
   begin
-    with TmodWebFileModule.Create(Modules, Alias, Alias) do
+    with TmodWebFileModule.Create(Self, Alias, Alias) do
     begin
       Level := -1;
       HomeFolder := AHomeFolder;
@@ -954,34 +951,34 @@ begin
   end;
 end;
 
-procedure TmodCustomWebServer.AddRedirectHttps;
+procedure TmodWebServer.AddRedirectHttps;
 begin
   if Modules.Find(sForwardHttps) = nil then
   begin
-    with TmodForwardHttpsModule.Create(Modules, sForwardHttps) do
+    with TmodForwardHttpsModule.Create(Self, sForwardHttps) do
     begin
         //Level := 0;
     end;
   end;
 end;
 
-procedure TmodCustomWebServer.SetFallbackRedirect(ToLocation: string);
+procedure TmodWebServer.SetFallbackRedirect(ToLocation: string);
 var
   aModule: TmodRedirectModule;
 begin
   aModule := Modules.Find<TmodRedirectModule>;
   if aModule = nil then
-    aModule := TmodRedirectModule.Create(Modules, 'redirect');
+    aModule := TmodRedirectModule.Create(Self, 'redirect');
   aModule.RedirectTo := ToLocation;
 end;
 
-procedure TmodCustomWebServer.SetNotfound;
+procedure TmodWebServer.SetNotfound;
 var
   aModule: TmodNotFoundModule;
 begin
   aModule := Modules.Find<TmodNotFoundModule>;
   if aModule = nil then
-    TmodNotFoundModule.Create(Modules, 'notfound');
+    TmodNotFoundModule.Create(Self, 'notfound');
 end;
 
 { TmodCustomWebModules }
@@ -1011,7 +1008,7 @@ var
 begin
   inherited Create;
 
-  aModule := TmodWebEventModule.Create(Modules, 'web', 'doc');
+  aModule := TmodWebEventModule.Create(Self, 'web', 'doc');
   aModule.FProc := vProc;
 
   Port := vPort;

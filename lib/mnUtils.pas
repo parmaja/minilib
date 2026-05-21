@@ -23,7 +23,7 @@ unit mnUtils;
 interface
 
 uses
-  {$ifdef windows}Windows,{$endif}
+  {$ifdef windows}Windows, ShellAPI, {$endif}
   Classes, SysUtils, StrUtils, DateUtils, Types, Character,
   mnTypes;
 
@@ -375,10 +375,12 @@ function SwapBytes(const Source: Int64): Int64; overload;
 //Rect functions
 procedure CenterRect(var R1: TRect; R2: TRect);
 
+procedure OpenURL(URL: string);
+
 var
   SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
   DefFormatSettings : TFormatSettings;
-
+  
 implementation
 
 {$ifdef FPC}
@@ -2957,6 +2959,13 @@ end;
 function SwapBytes(const Source: Int64): Int64; overload;
 begin
   SwapBytes(Source, Result, SizeOf(Result));
+end;
+
+procedure OpenURL(URL: string);
+begin
+  {$ifdef windows}
+  ShellExecute(0, 'Open', PWideChar(URL), nil, nil, 0);
+  {$endif}
 end;
 
 initialization

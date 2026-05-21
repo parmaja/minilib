@@ -66,7 +66,7 @@ begin
     if aFile = '' then
     begin
       aObj :=TDON_Object_Value.Create(nil);
-      JsonLoadFile(aObj, WorkPath+'object.json', options);
+      //JsonLoadFile(aObj, WorkPath+'object.json', options);
       JsonConsoleSerialize(aObj, [sroModern]);
       aObj.Free;
 

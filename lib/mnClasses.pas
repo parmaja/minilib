@@ -17,7 +17,7 @@ unit mnClasses;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, Types, DateUtils,
+  Classes, SysUtils, StrUtils, Types, DateUtils, SyncObjs, 
   Generics.Collections, Contnrs;
 
 type
@@ -211,6 +211,30 @@ type
 
     {$endif}
 
+
+  { TmnThread }
+
+  TmnThread = class(TThread)
+  protected
+    procedure Execute; override;
+
+  public
+    constructor Create;
+  end;
+
+  { TmnLockThread }
+
+  TmnLockThread = class(TmnThread)
+  private
+    FLock: TCriticalSection;
+  protected
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Enter;
+    procedure Leave;
+  end;
+    
 implementation
 
 function TmnObjectList<_Object_>.GetItem(Index: NativeInt): _Object_;
@@ -711,6 +735,46 @@ end;
 procedure TmnInterfacedPersistent.Created;
 begin
 
+end;
+
+{ TmnThread }
+
+constructor TmnThread.Create;
+begin
+  inherited Create(True);
+  FreeOnTerminate := False;
+
+end;
+
+procedure TmnThread.Execute;
+begin
+  //inherited;
+
+  //TThread.NameThreadForDebugging('DelphiCreated_' + ClassName, Self.ThreadID);
+  //i := SetThreadDescription(Self.ThreadID, PChar('DelphiCreated_' + ClassName));
+  //LogWriteln('Thread[%d]: %s', [Self.ThreadID, ClassName]);
+end;
+
+constructor TmnLockThread.Create;
+begin
+  inherited;
+  FLock := TCriticalSection.Create;
+end;
+
+destructor TmnLockThread.Destroy;
+begin
+  inherited;
+  FreeAndNil(FLock); //* it used in other inherited classes
+end;
+
+procedure TmnLockThread.Enter;
+begin
+  FLock.Enter;
+end;
+
+procedure TmnLockThread.Leave;
+begin
+  FLock.Leave;
 end;
 
 end.
