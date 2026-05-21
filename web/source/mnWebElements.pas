@@ -222,7 +222,7 @@ type
     class operator Implicit(Source : string) : TLocation;
     class operator Implicit(Source : TLocation): string;
     class operator Implicit(Source : TLocationRelative) : TLocation;
-    function IsDefeined: Boolean;
+    function IsDefined: Boolean;
   end;
 
   TImageLocationType = (
@@ -577,7 +577,7 @@ type
     //GetPath get path to the schema, not to domain/host
     //Use Contex.GetPath(e) to get path to the module name
     //this get path with schema/element/element/element
-    function GetPath: string; 
+    function GetPath: string;
     //this get path without schema and parent element name, element/element
     function GetPathTo(ToElement: TmnwElement): string; overload;
     //Include Host
@@ -677,7 +677,7 @@ type
     property Lock: TCriticalSection read FLock;
   end;
 
-  TmnwSchamaCapability = (
+  TmnwSchemaCapability = (
     schemaStartup, //* Create it when registered
     schemaSession,
     schemaAttach, //Allow websocket connections, Interactive also allow websocket
@@ -685,7 +685,7 @@ type
     schemaDynamic  //* dynamic, do not add it to the list, not cached, becareful
   );
 
-  TmnwSchemaCapabilities = set of TmnwSchamaCapability;
+  TmnwSchemaCapabilities = set of TmnwSchemaCapability;
 
   TmnwWebModule = class;
 
@@ -1442,7 +1442,7 @@ type
 
       { TLink }
 
-			TLink = class(TClickable)
+      TLink = class(TClickable)
       public
         Location: string;
         NoDecoration: Boolean;
@@ -1562,7 +1562,7 @@ type
         constructor Create(AParent: TmnwElement; AName: string; ARoute: string = ''; ActionProc: TRespondProc = nil); reintroduce; overload;
       end;
 
-			TSpan = class(THTMLElement)
+      TSpan = class(THTMLElement)
       public
         Text: string;
         constructor Create(AParent: TmnwElement; const AText: string); reintroduce;
@@ -2252,17 +2252,22 @@ end;
 procedure TmnwAttachments.Terminate;
 var
   Attachment: TmnwAttachment;
-  List: TArray<TmnwAttachment>;
+  List: TList<TmnwAttachment>;
 begin
-  Lock.Enter;
+  List := TList<TmnwAttachment>.Create;
   try
-    for Attachment in Self do
-      List := List + [Attachment];
+    Lock.Enter;
+    try
+      for Attachment in Self do
+        List.Add(Attachment);
+    finally
+      Lock.Leave;
+    end;
+    for Attachment in List do
+      Attachment.Terminate;
   finally
-    Lock.Leave;
+    List.Free;
   end;
-  for Attachment in List do
-    Attachment.Terminate;
 end;
 
 procedure TmnwAttachments.SendMessage(const Message: string);
@@ -2293,22 +2298,27 @@ end;
 procedure TmnwAttachments.SendMessage(const AttachmentName, Message: string);
 var
   Attachment: TmnwAttachment;
-  List: TArray<TmnwAttachment>;
+  List: TList<TmnwAttachment>;
 begin
   // Collect matching attachments while locked, then send outside the lock
   // to avoid blocking other threads on slow network writes.
-  Lock.Enter;
+  List := TList<TmnwAttachment>.Create;
   try
-    for Attachment in Self do
-    begin
-      if (Attachment.Name = '') or SameText(AttachmentName, Attachment.Name) then
-        List := List + [Attachment];
+    Lock.Enter;
+    try
+      for Attachment in Self do
+      begin
+        if (Attachment.Name = '') or SameText(AttachmentName, Attachment.Name) then
+          List.Add(Attachment);
+      end;
+    finally
+      Lock.Leave;
     end;
+    for Attachment in List do
+      Attachment.SendMessage(Message);
   finally
-    Lock.Leave;
+    List.Free;
   end;
-  for Attachment in List do
-    Attachment.SendMessage(Message);
 end;
 
 { TmnwAttributes }
@@ -2670,7 +2680,7 @@ begin
       Items[i] := ReplaceWith;
       Exit(i);
     end;
-  raise Exception.Create(AElementClass.ClassName + ' with ' + AElementClass.ClassName);
+  raise Exception.Create('Cannot replace renderer for ' + AElementClass.ClassName);
 end;
 
 constructor TmnwElementRenderers.Create;
@@ -2930,7 +2940,7 @@ begin
             end;
           finally
             if aSchema <> nil then
-              aSchema.Lock.Leave;
+                aSchema.Lock.Leave;
           end;
         end;
 
@@ -3168,7 +3178,7 @@ begin
   Result.Custom := Source;
 end;
 
-function TLocation.IsDefeined: Boolean;
+function TLocation.IsDefined: Boolean;
 begin
   Result := (Custom <> '') or (Where <> toNone);
 end;
@@ -3638,7 +3648,7 @@ end;
 
 procedure TmnwSchema.DoPrepare;
 begin
-  inherited;
+  inherited; // hook for descendants
 end;
 
 function TmnwSchema.GetReleased: Boolean;
@@ -3810,7 +3820,7 @@ end;
 procedure THTML.TImageMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
-  AResponse.SendStream(Data, FileName, Data.Size, InstanceDate);
+  AResponse.SendStream(Data, FileName, Data.Size, FileDate);
 end;
 
 procedure THTML.TImageMemory.LoadFromFile(const AFileName: string);
@@ -3835,9 +3845,6 @@ end;
 
 function TmnwElement.GetPath: string;
 begin
-  if Self = nil then
-    exit('');
-
   if (Parent <> nil) then
   begin
     if Route <> '' then
@@ -3938,7 +3945,7 @@ begin
   end;
   Result := nil;
   if RaiseException then
-    raise Exception.Create(ObjectClass.ClassName + ': ' + AName + ' not exists in ' + Name);
+    raise Exception.Create(ObjectClass.ClassName + ': ' + AName + ' does not exist in ' + Name);
 end;
 
 function TmnwElement.FindParentID(const aID: string): TmnwElement;
@@ -4073,11 +4080,9 @@ end;
 
 function TmnwElement.GenHandle: Integer;
 begin
-  if Handle = 0 then
-  begin
-    FHandle := Schema.NewHandle
-  end;
-  Result := Handle;
+  if FHandle = 0 then
+    FHandle := Schema.NewHandle;
+  Result := FHandle;
 end;
 
 function TmnwElement.GenID: string;
@@ -4477,7 +4482,7 @@ begin
           local:= False;
         end;
 
-        if not StartsText('http', url) then
+        if not StartsText('http', url) and not StartsStr('//', url) then
         begin
           if Context.Request.IsSecure then
             url := 'https://' + url
@@ -4504,7 +4509,7 @@ end;
 function TmnwLibrary.CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
 begin
   with Context.Schema do
-    Result := (Web.OnlineFiles = olfOffline) or ((Web.OnlineFiles = olfSmart) and FileExists(Context.GetAssetFolder + FileName));
+    Result := (Web.OnlineFiles = olfOffline) or ((Web.OnlineFiles = olfSmart) and FileExists(IncludePathDelimiter(Context.GetAssetFolder) + FileName));
 end;
 
 constructor TmnwLibrary.Create;
@@ -5043,7 +5048,7 @@ begin
   inherited;
   if (ARequest.Route.Count > 0) then
   begin
-	//TODO I do not understand this part?
+    // Files with extensions are treated as commands (e.g. favicon.ico)
     if StartsStr('.', ARequest.Route[ARequest.Route.Count - 1]) then
       ARequest.Command := ARequest.Route[ARequest.Route.Count - 1]
     else
@@ -5773,7 +5778,12 @@ end;
 
 function TmnwUsedLibraries.Compare(Item1, Item2: TmnwLibrary): Integer;
 begin
-  Result := Item1.Priority - Item2.Priority;
+  if Item1.Priority < Item2.Priority then
+    Result := -1
+  else if Item1.Priority > Item2.Priority then
+    Result := 1
+  else
+    Result := 0;
   //TODO use DependsOn
 end;
 
@@ -5976,7 +5986,7 @@ begin
     Scope.Attributes['dir'] := 'rtl'
   else if e.Schema.Direction = dirLeftToRight then
     Scope.Attributes['dir'] := 'ltr';
-  Scope.Attributes['lang'] := 'en';
+  Scope.Attributes['lang'] := When(Context.Schema.Web.Language <> '', Context.Schema.Web.Language, 'en');
 end;
 
 procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
