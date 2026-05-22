@@ -181,7 +181,16 @@ begin
   if aLine <> '' then
   begin
     case FState of
-      poMsgCtxt, poComment..poPreviousText:
+      poMsgCtxt:
+        begin
+          if CheckAndAssign(poMsgID, False, True, aLine) then
+          else if CheckText(False) then
+          else if LeftStr(aLine, 1) <> '"' then
+            raise ELangException.Create('PO file Malformed at line ' + IntToStr(Number) + ' in ' + Contents.Source)
+          else
+            FLangItem.Context := FLangItem.Context + DescapePOString(DequoteStr(aLine));
+        end;
+      poComment..poPreviousText:
         begin
           if CheckAndAssign(poMsgID, False, True, aLine) then
           else if CheckText(False) then
@@ -345,7 +354,7 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
           end;
         finally
           aStrings.Free;
-        end
+        end;
       end;
     end;
 
@@ -366,7 +375,7 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
           end;
         finally
           aStrings.Free;
-        end
+        end;
       end;
     end;
 

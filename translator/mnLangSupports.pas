@@ -139,6 +139,7 @@ begin
       if (Items[i].Support(AComponent)) then
       begin
         Result := Items[i].Create(AComponent);
+        break;
       end;
     end;
 end;

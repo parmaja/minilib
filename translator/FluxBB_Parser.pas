@@ -98,7 +98,7 @@ begin
         if (aLine <> '') and (aLine[1] = '$') and (RightStr(aLine, Length(sOpenArray)) = sOpenArray) then
         begin
           aGroup := TLangGroup.Create;
-          aGroup.Name := Copy(s, 2, AnsiPos(' ', s) - 2);
+          aGroup.Name := Copy(aLine, 2, AnsiPos(' ', aLine) - 2);
           Contents.Groups.Add(aGroup);
           FRange := rsArray;
         end;

@@ -37,8 +37,8 @@ unit mnLangClasses;
             ID
             Text
 
-  Group is list of contents items usfule when your language in one file have sections like INI languages
-  Group not own its items because it is already owned by the language it is like a index
+  Group is list of contents items useful when your language in one file have sections like INI languages
+  Group not own its items because it is already owned by the language it is like an index
 }
 interface
 
@@ -90,8 +90,8 @@ type
     property Modified: Boolean read FModified write SetModified default False;
 
     property DisplayText: string read GetDisplayText write SetDisplayText;
-    property DisplayID: string read GetDisplayID {write SetDisplayID}; //deprecated;
-    //May be usfule for show it in translator editor
+    property DisplayID: string read GetDisplayID; //deprecated;
+    //May be useful for show it in translator editor
     property Line: Integer read FLine write SetLine;
   end;
 
@@ -223,7 +223,7 @@ type
     function CreateContents: TLangContents;
     function Add(Contents: TLangContents): Integer;
     function AddItem(vContentName, vID, vText: string): TLangItem;
-    //FindText result empty string if ID not founded
+    //FindText result empty string if ID not found
     function FindText(vID: string; var Founded: Boolean; Default: string = ''): string; overload;
     function FindText(vContents, vID: string; var Founded: Boolean; Default: string = ''): string; overload;
     function FindText(vID: string): string; overload;
@@ -287,7 +287,7 @@ type
     function GetText(const vID: string; var vText: string): Boolean; overload;
     function Macro(const S: string): string;
     property Items[Index: Integer]: TLanguage read GetItem write SetItem; default;
-    //if ID not found return the default text fromdefault language
+    //if ID not found return the default text from default language
     property UseDefaultText: Boolean read FUseDefaultText write FUseDefaultText;
     //TestMode all result values of translations return ID
     property TestMode: Boolean read FTestMode write FTestMode;
@@ -324,9 +324,9 @@ type
   TLangParserClass = class of TLangParser;
 
   TLangFilerFlag = (
-    lffDefault, //default filer for its externsion
+    lffDefault, //default filer for its extension
     lffMultiple, //Multiple files
-    lffDirectory, //Mutli file based on directory
+    lffDirectory, //Multi file based on directory
     lffSingle, //not lffDirectory single file
     lffAlone //Single Language there is no Original language
     );
@@ -809,6 +809,8 @@ function TLanguages.NextLanguage: TLanguage;
 var
   i: Integer;
 begin
+  if Count = 0 then
+    raise ELangException.Create('No languages available');
   i := IndexOfLanguage(Current.Name) + 1;
   if i >= Count then
     i := 0;
@@ -819,6 +821,8 @@ function TLanguages.NextLanguageName: string;
 var
   i: Integer;
 begin
+  if Count = 0 then
+    raise ELangException.Create('No languages available');
   i := IndexOfLanguage(Current.Name) + 1;
   if i >= Count then
     i := 0;
@@ -966,8 +970,6 @@ procedure TLangParser.Generate(Strings: TStringList);
 begin
   CheckContents;
   DoGenerate(Strings);
-  if Contents.BOMFlag and (Strings.Count > 0) then //No not here :(
-    Strings[0] := sUTF8BOM + Strings[0];
 end;
 
 { TLangOptions }
@@ -1200,50 +1202,48 @@ begin
       aPath := IncludeTrailingPathDelimiter(vSource);
       if (vFiles <> nil) and (vFiles.Count <> 0) then
       begin
-        try
-          for I := 0 to vFiles.Count -1 do
-          begin
-            aParser := CreateParser;
-            try
-              if FileExists(aPath + vFiles[i]) then
-                ParseLanguageFile(aPath + vFiles[i], vLanguage, aParser);
-            finally
-              aParser.Free;
-            end;
-          end;
-        finally
-        end;
-      end
-      else
-      try
-        I := FindFirst(aPath + '*.' + GetExtension, 0, SearchRec);
-        while I = 0 do
+        for I := 0 to vFiles.Count -1 do
         begin
           aParser := CreateParser;
           try
-            ParseLanguageFile(aPath + SearchRec.Name, vLanguage, aParser);
+            if FileExists(aPath + vFiles[i]) then
+              ParseLanguageFile(aPath + vFiles[i], vLanguage, aParser);
           finally
             aParser.Free;
           end;
-          I := FindNext(SearchRec);
         end;
-      finally
-        FindClose(SearchRec);
+      end
+      else
+      begin
+        I := FindFirst(aPath + '*.' + GetExtension, 0, SearchRec);
+        try
+          while I = 0 do
+          begin
+            if (SearchRec.Name <> '') and (SearchRec.Name[1] <> '.') then
+            begin
+              aParser := CreateParser;
+              try
+                ParseLanguageFile(aPath + SearchRec.Name, vLanguage, aParser);
+              finally
+                aParser.Free;
+              end;
+            end;
+            I := FindNext(SearchRec);
+          end;
+        finally
+          FindClose(SearchRec);
+        end;
       end;
     end
     else
     begin
       aPath := IncludeTrailingPathDelimiter(ExtractFilePath(vSource));
+      Clear;
+      aParser := CreateParser;
       try
-        Clear;
-        aParser := CreateParser;
-        try
-          ParseLanguageFile(vSource, vLanguage, aParser);
-        finally
-          aParser.Free;
-        end;
-      except
-        raise;
+        ParseLanguageFile(vSource, vLanguage, aParser);
+      finally
+        aParser.Free;
       end;
     end;
     Source := aPath;
@@ -1258,34 +1258,27 @@ var
 begin
   with vLanguage do
   begin
-    try
-      for i := 0 to vLanguage.Count - 1 do
-      begin
-        aParser := CreateParser;
-        try
-          if vSource <> '' then
-          begin
-            if IsDirectory then
-              aFileName := GetFileName(IncludeTrailingPathDelimiter(vSource), vLanguage[i].Name)
-            else
-              aFileName := vSource
-          end
+    for i := 0 to vLanguage.Count - 1 do
+    begin
+      aParser := CreateParser;
+      try
+        if vSource <> '' then
+        begin
+          if IsDirectory then
+            aFileName := GetFileName(IncludeTrailingPathDelimiter(vSource), vLanguage[i].Name)
           else
-          begin
-            aFileName := vLanguage[i].Source;
-            if aFileName = '' then
-            begin
-              aFileName := GetFileName(IncludeTrailingPathDelimiter(vLanguage.Source), vLanguage[i].Name);
-//              vLanguage[i].Source := aFileName;
-            end;
-          end;
-          GenerateLanguageFile(aFileName, vLanguage[i], aParser);
-        finally
-          aParser.Free;
+            aFileName := vSource
+        end
+        else
+        begin
+          aFileName := vLanguage[i].Source;
+          if aFileName = '' then
+            aFileName := GetFileName(IncludeTrailingPathDelimiter(vLanguage.Source), vLanguage[i].Name);
         end;
+        GenerateLanguageFile(aFileName, vLanguage[i], aParser);
+      finally
+        aParser.Free;
       end;
-    except
-      raise;
     end;
   end;
 end;
@@ -1380,7 +1373,7 @@ begin
     begin
       Result := Items[i];
       break;
-    end
+    end;
   end;
 end;
 
@@ -1400,7 +1393,7 @@ begin
     begin
       Result := Items[i];
       break;
-    end
+    end;
   end;
 end;
 
@@ -1414,34 +1407,36 @@ var
 begin
   if vFilerClass = nil then
     raise ELangException.Create('FilerClass is nil');
+  if (vModuleName <> '') and (FileExists(vSource + vModuleName)) then
+  begin
+    aFiles := TStringList.Create;
+    aFiles.LoadFromFile(vSource + vModuleName);
+  end
+  else
+    aFiles := nil;
   try
-    if (vModuleName <> '') and (FileExists(vSource + vModuleName)) then
-    begin
-      aFiles := TStringList.Create;
-      aFiles.LoadFromFile(vSource + vModuleName)
-    end
-    else
-      aFiles := nil;
     I := FindFirst(IncludeTrailingPathDelimiter(vSource) + '*.*', faDirectory, SearchRec);
-    while I = 0 do
-    begin
-      if ((SearchRec.Attr and faDirectory) > 0) and (SearchRec.Name[1] <> '.') then
+    try
+      while I = 0 do
       begin
-        aLanguage := TLanguage.Create;
-        Languages.Add(aLanguage);
-        aFiler := vFilerClass.Create;
-        try
-          aFiler.LoadFrom(IncludeTrailingPathDelimiter(vSource) + SearchRec.Name, aLanguage, aFiles);
-        finally
-          aFiler.Free;
+        if ((SearchRec.Attr and faDirectory) > 0) and (SearchRec.Name <> '') and (SearchRec.Name[1] <> '.') then
+        begin
+          aLanguage := TLanguage.Create;
+          Languages.Add(aLanguage);
+          aFiler := vFilerClass.Create;
+          try
+            aFiler.LoadFrom(IncludeTrailingPathDelimiter(vSource) + SearchRec.Name, aLanguage, aFiles);
+          finally
+            aFiler.Free;
+          end;
         end;
+        I := FindNext(SearchRec);
       end;
-      I := FindNext(SearchRec);
+    finally
+      FindClose(SearchRec);
     end;
+  finally
     FreeAndNil(aFiles);
-    FindClose(SearchRec);
-  except
-    raise;
   end;
   Languages.SetDefaultLanguage(vDefaultLanguage);
   Languages.SetCurrentLanguage(vDefaultLanguage);
@@ -1454,8 +1449,7 @@ var
 begin
   if vFilerClass = nil then
     raise ELangException.Create('FilerClass is nil');
-  try
-    for i := 0 to Languages.Count -1 do
+  for i := 0 to Languages.Count -1 do
     if not OnlyModified or Languages[i].Modified then
     begin
       aFiler := vFilerClass.Create;
@@ -1465,9 +1459,6 @@ begin
         aFiler.Free;
       end;
     end;
-  except
-    raise;
-  end;
 end;
 
 function _(const ID: string): string;

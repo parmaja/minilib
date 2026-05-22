@@ -24,8 +24,8 @@ unit INI_Parser;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, 
-  Contnrs, RTLConsts, Dialogs;
+  SysUtils, Variants, Classes,
+  Contnrs, RTLConsts;
 
 type
   TINILangFile = class(TLangFile)
@@ -91,10 +91,10 @@ begin
         end
         else
         begin
-          aWord.Pos := Length(aLine);
+          aWord.Pos := Length(aLine) + 1;
           aWord.Size := 0;
-          aWord.Key := Copy(aLine, 1, P - 1);
-          aWord.Value := Copy(aLine, P + 1, MaxInt);
+          aWord.Key := s;
+          aWord.Value := '';
         end;
       end;
     end;
