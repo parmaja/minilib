@@ -3,8 +3,8 @@ unit mnHttpClient;
   *  This file is part of the "Mini Library"
   *
   * @license   MIT
-  *            See the file COPYING.MLGPL, included in this distribution,
-  * @author    Zaher Dirkey zaherdirkey
+ *            See the file COPYING.MLGPL, included in this distribution.
+ * @author    Zaher Dirkey zaherdirkey
   * @author    Belal Hamed <belal, belalhamed@gmail.com>
   * }
 
@@ -49,7 +49,7 @@ type
     procedure FreeStream; virtual;
     procedure Receive; virtual;
 
-    procedure SendCommand(Command: string; vData: PByte; vCount: Integer);
+    procedure SendCommand(const Command: string; vData: PByte; vCount: Integer);
     procedure SendPatch(vData: PByte; vCount: Integer);
     procedure SendPost(vData: PByte; vCount: Integer);
     procedure SendGet;
@@ -57,7 +57,6 @@ type
 
     function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
     function CreateResponse: TmodResponse; override;
-    procedure Created; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -159,14 +158,14 @@ type
     function DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream; override;
   end;
 
-function HttpDownloadFile(URL: string; FileName: string): TFileSize;
-function HttpGetFileSize(URL: string; out FileSize: TFileSize): Boolean;
+function HttpDownloadFile(const URL, FileName: string): TFileSize;
+function HttpGetFileSize(const URL: string; out FileSize: TFileSize): Boolean;
 
-function BIO_HttpDownloadFile(URL: string; FileName: string): TFileSize;
+function BIO_HttpDownloadFile(const URL, FileName: string): TFileSize;
 
 implementation
 
-function HttpDownloadFile(URL: string; FileName: string): TFileSize;
+function HttpDownloadFile(const URL, FileName: string): TFileSize;
 var
   aHttpClient: TmnCustomHttpClient;
 begin
@@ -178,7 +177,7 @@ begin
   end;
 end;
 
-function BIO_HttpDownloadFile(URL: string; FileName: string): TFileSize;
+function BIO_HttpDownloadFile(const URL, FileName: string): TFileSize;
 var
   aHttpClient: TmnCustomHttpClient;
 begin
@@ -190,7 +189,7 @@ begin
   end;
 end;
 
-function HttpGetFileSize(URL: string; out FileSize: TFileSize): Boolean;
+function HttpGetFileSize(const URL: string; out FileSize: TFileSize): Boolean;
 var
   aHttpClient: TmnCustomHttpClient;
 begin
@@ -312,7 +311,7 @@ end;
 
 procedure TmnCustomHttpClient.SendPatch(vData: PByte; vCount: Integer);
 begin
-  SendCommand('PATCH', vData, vCount)
+  SendCommand('PATCH', vData, vCount);
 end;
 
 procedure TmnCustomHttpClient.SendPost(vData: PByte; vCount: Integer);
@@ -320,7 +319,7 @@ begin
   SendCommand('POST', vData, vCount);
 end;
 
-procedure TmnCustomHttpClient.SendCommand(Command: string; vData: PByte; vCount: Integer);
+procedure TmnCustomHttpClient.SendCommand(const Command: string; vData: PByte; vCount: Integer);
 begin
   Request.Head := Command + ' ' + Path + ' ' + sHTTPProtocol_101;
 
@@ -355,7 +354,7 @@ function TmnHttpStream.Seek(Offset: longint; Origin: Word): Integer;
 {$ifend}
 {$endif}
 begin
-  Result := 0; // for loading from this stream like Image.loadfrom stream
+  Result := 0; // for loading from this stream like TImage.LoadFromStream
 end;
 
 { TmnCustomHttpClient }
@@ -393,6 +392,7 @@ procedure TmnCustomHttpClient.FreeStream;
 begin
   if Request<>nil then
   begin
+    Request.SetStream(nil, False);
     Request.ProtcolProxy := nil;
     Request.ChunkedProxy := nil;
   end;
@@ -405,11 +405,6 @@ begin
   inherited Create;
   FRequest := CreateRequest(nil);
   FResponse := CreateResponse;
-end;
-
-procedure TmnCustomHttpClient.Created;
-begin
-  inherited;
 end;
 
 function TmnCustomHttpClient.CreateRequest(AStream: TmnConnectionStream): TmodRequest;
@@ -434,7 +429,7 @@ end;
 
 function TmnCustomHttpClient.Open(const vURL: UTF8String; SendAndReceive: Boolean): Boolean;
 begin
-  Connect(vUrl);
+  Connect(vURL);
   if SendAndReceive then
   begin
     SendGet;
@@ -447,7 +442,7 @@ end;
 
 function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 begin
-  Connect(vUrl);
+  Connect(vURL);
   Result := Post(vData, vCount);
 end;
 
@@ -481,7 +476,7 @@ end;
 
 function TmnCustomHttpClient.Patch(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 begin
-  Connect(vUrl);
+  Connect(vURL);
   Result := Patch(vData, vCount);
 end;
 
@@ -576,7 +571,7 @@ end;
 
 function TmnCustomHttpClient.Get(const vURL: UTF8String): Boolean;
 begin
-  Connect(vUrl);
+  Connect(vURL);
   Result := Get;
 end;
 
@@ -615,7 +610,7 @@ begin
     SendHead;
     Receive;
     aSizeStr := Response.Header['Content-Length'];
-    FileSize := StrToInt64(aSizeStr);
+    FileSize := StrToInt64Def(aSizeStr, 0);
   finally
     Disconnect;
   end;
@@ -656,12 +651,13 @@ begin
   aStream.WriteTimeout   := 5000;
   aStream.Options := aStream.Options + [soWaitBeforeRead];
 
-  ParseURL(vURL, vProtocol, vHost, vPort, FPath);
+  ParseURL(vURL, vProtocol, vHost, vPort, vParams);
+  FPath := vParams;
   aStream.Address := vHost;
   aStream.Port := vPort;
 
   if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
-    aStream.Options := aStream.Options + [soSSL, soWaitBeforeRead]
+    aStream.Options := aStream.Options + [soSSL]
   else
     aStream.Options := aStream.Options - [soSSL];
 
@@ -676,12 +672,13 @@ var
 begin
   aStream := TmnBIOHttpStream.Create;
 
-aStream.EndOfLine      := sWinEndOfLine;
+  aStream.EndOfLine      := sWinEndOfLine;
   aStream.ReadTimeout    := 5000;
   aStream.ConnectTimeout := 5000;
   aStream.WriteTimeout   := 5000;
 
-  ParseURL(vURL, vProtocol, vHost, vPort, FPath);
+  ParseURL(vURL, vProtocol, vHost, vPort, vParams);
+  FPath := vParams;
   aStream.Address := vHost;
   aStream.Port := vPort;
 
@@ -693,6 +690,7 @@ end;
 procedure TmnBIOHttpStream.Connect;
 begin
   inherited;
+  FreeAndNil(BIOStream);
   BIOStream := TBIOStreamSSL.Create;
   BIOStream.SetHost(Address, Port);
   BIOStream.Connect;

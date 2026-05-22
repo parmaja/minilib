@@ -44,8 +44,10 @@ type
     class destructor Destroy;      
   public
   type
-      THTMLContainer = class(THTMLElement)      
+      THTMLContainer = class(THTMLElement)
+      private
       protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       THTMLLayout = class(THTMLContainer)
@@ -413,7 +415,7 @@ implementation
 
 function BSCustomAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean): string; inline;
 const
-  AlignSuffixes: array[TmnwAlign] of string = ('', 'start', 'center', 'streach', 'baseline', 'end');
+  AlignSuffixes: array[TmnwAlign] of string = ('', 'start', 'center', 'stretch', 'baseline', 'end');
 begin
   if (Align >= alignStart) and (Align <= alignEnd) then
     Result := s + AlignSuffixes[Align]
@@ -1055,7 +1057,7 @@ begin
   e := Scope.Element as THTML.TDropdown;
 
   Scope.Classes.Add('btn');
-  if dropArraw in e.Options then
+  if dropArrow in e.Options then
     Scope.Classes.Add('dropdown-toggle');
   if dropSplit in e.Options then
     Scope.Classes.Add('dropdown-toggle-split');
@@ -1521,7 +1523,7 @@ begin
   e := Scope.Element as THTML.TNavDropdown;
   Scope.Classes.Add('nav-link');
 
-  if dropArraw in e.Options then
+  if dropArrow in e.Options then
     Scope.Classes.Add('dropdown-toggle');
   if dropSplit in e.Options then
     Scope.Classes.Add('dropdown-toggle-split');

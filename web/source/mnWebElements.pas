@@ -1285,7 +1285,7 @@ type
       TNavTools = class(THTMLComponent)
       end;
 
-      TDropdownOptions = set of (dropArraw, dropSplit, dropEnd);
+      TDropdownOptions = set of (dropArrow, dropSplit, dropEnd);
 
       TNavDropdown = class(THTMLComponent)
       protected
@@ -1837,6 +1837,7 @@ type
   public
     destructor Destroy; override;
     constructor Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String); override;
+    function GetDefaultURL: string; override;
     property Web: TmnwWeb read FWeb;
   end;
 
@@ -3820,7 +3821,7 @@ end;
 procedure THTML.TImageMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
 begin
   Data.Seek(0, soBeginning);
-  AResponse.SendStream(Data, FileName, Data.Size, FileDate);
+  AResponse.SendStream(Data, FileName, Data.Size, InstanceDate);
 end;
 
 procedure THTML.TImageMemory.LoadFromFile(const AFileName: string);
@@ -5058,6 +5059,13 @@ begin
     ARequest.Command := '';
 end;
 
+function TmnwWebModule.GetDefaultURL: string;
+begin
+  Result := inherited;
+  if Web.DefaultSchema <> nil then
+     Result := Result+ AddStartURLDelimiter(Web.DefaultSchema.Name);
+end;
+
 procedure TmnwWebModule.Start;
 begin
   inherited;
@@ -5280,7 +5288,7 @@ end;
 procedure THTML.TDropdown.Created;
 begin
   inherited;
-  Options := [dropArraw];
+  Options := [dropArrow];
 end;
 
 { THTML.TZoomButtons }

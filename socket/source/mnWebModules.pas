@@ -471,8 +471,14 @@ begin
 end;
 
 function TmodWebModule.GetDefaultURL: string;
+var
+  url: string;
 begin
-  Result := AddStartURLDelimiter('localhost:' + Server.Port) + AddStartURLDelimiter(AliasName)
+  if Server.IsSecure then
+    Result := 'https://'
+  else
+    Result := 'http://';
+  Result := Result + AddStartURLDelimiter(Domain + ':' + Server.Port) + AddStartURLDelimiter(AliasName);
 end;
 
 procedure TmodWebModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
