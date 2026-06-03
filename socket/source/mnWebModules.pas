@@ -473,12 +473,25 @@ end;
 function TmodWebModule.GetDefaultURL: string;
 var
   url: string;
-begin
-  if Server.IsSecure then
-    Result := 'https://'
+begin   
+  if Domain <> '' then
+    Result := Domain
   else
-    Result := 'http://';
-  Result := Result + AddStartURLDelimiter(Domain + ':' + Server.Port) + AddStartURLDelimiter(AliasName);
+    Result := 'localhost';
+    
+  if Server.IsSecure then
+  begin
+    Result := 'https://' + Result;
+    if Server.Port <> '443' then
+      Result := Result + ':' + Server.Port;    
+  end
+  else
+  begin
+    Result := 'http://' + Result;
+    if Server.Port <> '80' then
+      Result := Result + ':' + Server.Port;    
+  end;    
+  Result := Result + Domain + AddStartURLDelimiter(AliasName);
 end;
 
 procedure TmodWebModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
