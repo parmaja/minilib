@@ -761,7 +761,7 @@ begin
   Temp := Result;
   R[0] := T[0] xor Ticks;
   R[1] := T[1] xor Ticks;
-  R[2] := T[2] xor Ticks; //TODO was R[2] := Ticks; fixed by AI
+  R[2] := Ticks; //Yes not XOR
   R[3] := T[3] xor Ticks;
 end;
 
