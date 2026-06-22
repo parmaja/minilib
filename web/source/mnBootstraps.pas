@@ -279,6 +279,13 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
 
+      { TPopupMenu }
+
+      TPopupMenu = class(THTMLControl)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
       TGroup = class(THTMLControl)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
@@ -318,6 +325,13 @@ type
       { TParagraph }
 
       TParagraph = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+      end;
+
+      { THeading }
+
+      THeading = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
       end;
@@ -589,6 +603,7 @@ begin
     RegisterRenderer(THTML.TBody ,TBody, True);
     
     RegisterRenderer(THTML.TParagraph, TParagraph);
+    RegisterRenderer(THTML.THeading, THeading);
     RegisterRenderer(THTML.TBreak, TBreak);
     RegisterRenderer(THTML.TNavTools, TNavTools);
     RegisterRenderer(THTML.TNavDropdown, TNavDropdown);
@@ -618,6 +633,7 @@ begin
     
     RegisterRenderer(THTML.TCard, TCard);
     RegisterRenderer(THTML.TDropdown, TDropdown);
+    RegisterRenderer(THTML.TPopupMenu, TPopupMenu);
     RegisterRenderer(THTML.TGroup, TGroup);
     RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
     RegisterRenderer(THTML.TToolbar, TToolbar);
@@ -833,6 +849,25 @@ begin
     Context.Writer.Write(e.Text);
   inherited;
   Context.Writer.CloseTag('p');
+end;
+
+{ TBSRenderer.THeading }
+
+procedure TBSRenderer.THeading.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.THeading;
+  Tag: string;
+begin
+  e := Scope.Element as THTML.THeading;
+  if (e.Size >= 1) and (e.Size <= 6) then
+    Tag := 'h' + e.Size.ToString
+  else
+    Tag := 'h3';
+  Context.Writer.OpenTag(Tag, Scope.ToString);
+  if e.Text <> '' then
+    Context.Writer.Write(e.Text);
+  inherited;
+  Context.Writer.CloseTag(Tag);
 end;
 
 { TBSRenderer.TBreakHTML }
@@ -1084,6 +1119,57 @@ begin
   inherited;
   Context.Writer.CloseTag('div');
 
+  Context.Writer.CloseTag('div');
+end;
+
+{ TBSRenderer.TPopupMenu }
+
+procedure TBSRenderer.TPopupMenu.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+var
+  e: THTML.TPopupMenu;
+  Item: string;
+  Classes: string;
+  Event: string;
+  i: Integer;
+begin
+  e := Scope.Element as THTML.TPopupMenu;
+
+  Scope.Classes.Add('btn');
+  Scope.Classes.Add('dropdown-toggle');
+  if e.ControlStyle <> styleUndefined then
+    Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
+  Scope.Attributes.Add('data-bs-toggle', 'dropdown');
+  Scope.Attributes.Add('aria-expanded', 'false');
+  Scope.Attributes.Add('type', 'button');
+
+  Context.Writer.OpenTag('div', 'class="dropdown"');
+
+  //Button
+  Context.Writer.OpenTag('button', Scope.ToString);
+  RenderImageLocation(Context, e.Image);
+  if e.Caption <> '' then
+    Context.Writer.WriteLn(e.Caption);
+  Context.Writer.CloseTag('button');
+
+  Classes := 'dropdown-menu';
+  Context.Writer.OpenTag('ul', 'class="' + Classes + '" aria-labelledby="' + e.ID + '"');
+
+  for i := 0 to e.Items.Count - 1 do
+  begin
+    Item := e.Items[i];
+    if Item = '-' then
+      Context.Writer.WriteLn('<li><hr class="dropdown-divider"></li>')
+    else
+    begin
+      if Context.Schema.Interactive then
+        Event := ' onclick="event.preventDefault(); mnw.send(' + SQ(e.ID) + ', ' + SQ('click') + ', ' + SQ(IntToStr(i)) + ')"'
+      else
+        Event := '';
+      Context.Writer.WriteLn('<li><a class="dropdown-item" href="#"' + Event + '>' + Item + '</a></li>');
+    end;
+  end;
+
+  Context.Writer.CloseTag('ul');
   Context.Writer.CloseTag('div');
 end;
 

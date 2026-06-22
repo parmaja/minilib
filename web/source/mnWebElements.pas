@@ -1472,6 +1472,19 @@ type
         Image: TImageLocation;
       end;
 
+      { TPopupMenu }
+
+      [TID_Extension]
+      TPopupMenu = class(THTMLControl)
+      protected
+        procedure Created; override;
+      public
+        Items: TStringList;
+        Caption: string;
+        Image: TImageLocation;
+        destructor Destroy; override;
+      end;
+
       TDropdownItem = class(TLink)
       private
       protected
@@ -1534,6 +1547,13 @@ type
       public
         Text: string;
         constructor Create(AParent: TmnwElement; AText: string = ''); reintroduce;
+      end;
+
+      THeading = class(THTMLElement)
+      public
+        Size: Integer;
+        Text: string;
+        constructor Create(AParent: TmnwElement; ASize: Integer; AText: string = ''); reintroduce;
       end;
 
       TCode = class(THTMLComponent)
@@ -4783,6 +4803,15 @@ begin
   Text := AText;
 end;
 
+{ THTML.THeading }
+
+constructor THTML.THeading.Create(AParent: TmnwElement; ASize: Integer; AText: string);
+begin
+  inherited Create(AParent);
+  Size := ASize;
+  Text := AText;
+end;
+
 { THTML.TAction }
 
 constructor THTML.TAction.Create(AParent: TmnwElement; AName, ARoute: string; ActionProc: TRespondProc);
@@ -5289,6 +5318,20 @@ procedure THTML.TDropdown.Created;
 begin
   inherited;
   Options := [dropArrow];
+end;
+
+{ THTML.TPopupMenu }
+
+procedure THTML.TPopupMenu.Created;
+begin
+  inherited;
+  Items := TStringList.Create;
+end;
+
+destructor THTML.TPopupMenu.Destroy;
+begin
+  FreeAndNil(Items);
+  inherited;
 end;
 
 { THTML.TZoomButtons }
