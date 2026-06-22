@@ -685,7 +685,6 @@ begin
     Event.SetEvent;
     while Connected and not Terminated do
     begin
-      aSocket := nil;
       try
         if (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated then
         begin

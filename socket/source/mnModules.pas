@@ -1291,8 +1291,6 @@ var
   end;
 
 begin
-  Result := False;
-
   if ASize = 0 then
   begin
     _SendHeader(0, False);
@@ -1380,8 +1378,6 @@ var
   mStream: TMemoryStream;
   zStream: {$ifdef FPC}TGZipCompressionStream{$else}TZCompressionStream{$endif};
 begin
-  Result := False;
-
   if Count = 0 then
   begin
     _SendHeader(0, False);

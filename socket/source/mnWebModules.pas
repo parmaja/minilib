@@ -471,8 +471,6 @@ begin
 end;
 
 function TmodWebModule.GetDefaultURL: string;
-var
-  url: string;
 begin   
   if Domain <> '' then
     Result := Domain
