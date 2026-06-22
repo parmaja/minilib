@@ -605,7 +605,14 @@ begin
     raise Exception.Create('File not found ' + FileName);  
   fs := TFileStream.Create(FileName, fmOpenRead);
   try
-    JsonLoadStream(Pair, fs, Options);
+    try
+      JsonLoadStream(Pair, fs, Options);
+    except
+      on E: Exception do
+      begin
+        raise Exception.Create(E.Message + #13'file: ' + FileName);
+      end;
+    end;
   finally
     fs.Free;
   end;
