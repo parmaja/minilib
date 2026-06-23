@@ -359,7 +359,10 @@ type
 
   TmnwObject = class(TmnNamedObject);
 
-  TLibraryOption = (libDefer, libCross);
+  TLibraryOption = (
+    libDefer, 
+    libCross
+  );
   
   TLibraryOptions = set of TLibraryOption;
 
@@ -4631,9 +4634,7 @@ end;
 procedure TJQuery_Library.Created;
 begin
   inherited;
-//  Sources.Add(stScript, 'cdn.jsdelivr.net/npm/jquery@3.7.1/dist/', 'jquery.min.js');
-  Sources.Add(stScript, 'cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js');
-  //Sources.Add(stScript, 'https://code.jquery.com/jquery-4.0.0.min.js', 'jquery.min.js');
+  Sources.Add(stScript, 'cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js', '', []); //* no Differ
 end;
 
 { THTML }
