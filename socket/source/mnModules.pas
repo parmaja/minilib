@@ -305,7 +305,6 @@ type
 
   TmodParams = class(TmnFields)
   public
-//    property Field; default;
   end;
 
   TmodRequest = class(TmodCommunicate)
