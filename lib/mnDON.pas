@@ -1271,7 +1271,8 @@ var
 begin
   //for speed do not put it in FPairs.Find(Name)
   for i := 0 to FPairs.Count-1 do
-    if FPairs[i].Name = Name then
+    //if FPairs[i].Name = Name then
+    if SameText(FPairs[i].Name, Name) then
     begin
       Exit(FPairs[i].Value);
     end;
