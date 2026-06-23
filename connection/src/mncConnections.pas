@@ -468,6 +468,9 @@ type
     function ParamByName(const vName: string): TmncParam;
     property Items[Index: Integer]: TmncParam read GetItem;
     property Param[const Index: string]: TmncParam read GetParam; default;
+    {$ifndef FPC}
+    property Param[Index: Integer]: TmncParam read GetItem; default;
+    {$endif}
   end;
 
   { TmncParams }
@@ -623,12 +626,17 @@ type
 
     property Parsed: Boolean read FParsed;
     property Prepared: Boolean read FPrepared;
+
     property Columns: TmncColumns read FColumns write SetColumns;
-    property Fields: TmncFields read FFields write SetFields; //Current record loaded in memory, it is nil sometime if no data, do not access it if no data exists
     property Binds: TmncBinds read FBinds; //for Dublicated names when pass the params when execute select * from t1 where f1 = ?p1 and f2 = ?p1 and f3=p2
+    
+    //Current record loaded in memory, it is nil sometime if no data, do not access it if no data exists
+    property Fields: TmncFields read FFields write SetFields; 
     property Field[const Index: string]: TmncField read GetField;
+
     property Params: TmncParams read FParams write SetParams;
     property Param[const Index: string]: TmncParam read GetParam;
+    
     property Values[const Index: string]: Variant read GetValues;
     property Options: TmncCommandOptions read FOptions write FOptions;
     property Index: Int64 read GetIndex; //* RowIndex
