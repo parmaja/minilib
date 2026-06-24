@@ -59,6 +59,8 @@ type
       { THTMLComponent }
 
       THTMLComponent = class(THTMLLayout)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;      
       end;
 
       { THTMLControl }
@@ -1294,7 +1296,7 @@ begin
   classes.Init('list-group-item');
   classes.Add('bg-transparent');
   classes.Append(Scope.WrapClasses);
-  Context.Writer.OpenTag('li',classes.ToString);
+  Context.Writer.OpenTag('li', classes.ToString);  
   inherited;
 end;
 
@@ -1361,8 +1363,6 @@ begin
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
 end;
-
-{ TBSRenderer.TAccordionItem }
 
 { TBSRenderer.TNavBar }
 
@@ -1691,7 +1691,6 @@ begin
     if e.Active then    
     begin
       Scope.Attributes.Add('aria-current', 'true');
-      Scope.Classes.Add('active');
     end;
   end;
 end;
@@ -1728,6 +1727,20 @@ begin
     PaddingPrefix := 'p';
 
   Scope.Classes.Add(e.Padding.ToBSString(PaddingPrefix));
+end;
+
+{ TBSRenderer.THTMLComponent }
+
+procedure TBSRenderer.THTMLComponent.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.THTMLComponent;
+begin
+  e := Scope.Element as THTML.THTMLComponent;
+  if e.Active then    
+  begin
+    Scope.Classes.Add('active');
+  end;
+  inherited;
 end;
 
 initialization
