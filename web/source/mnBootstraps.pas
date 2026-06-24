@@ -1479,7 +1479,6 @@ begin
   Context.Writer.OpenTag('a', 'href="'+When(e.Location, '#') + '"'+ s + Scope.GetText);
   RenderImageLocation(Context, e.Image);  
   Context.Writer.Write(e.Caption);
-  Context.Writer.CloseTag('a');
   inherited;
   Context.Writer.CloseTag('a');
 end;

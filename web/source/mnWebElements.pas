@@ -1882,6 +1882,13 @@ type
   public
   end;
 
+  [TRoute_Extension]
+  TLangDropdown = class(THTML.TDropdown)
+  protected
+    procedure Created; override; 
+    procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoCompose(const AContext: TmnwContext); override;      
+  end;
 
   
 {$ifdef FPC}
@@ -4244,8 +4251,8 @@ begin
 //  Clear; //*Should not clear here
 //  Prepare;
   AddState([estComposing]);
-  DoCompose(AContext);  
   UpdateElement(Self);
+  DoCompose(AContext);  
   for o in Self do
   begin
     if not (estComposed in o.State) then    
@@ -6119,6 +6126,49 @@ begin
   Context.Writer.CloseTag('head');
   e.Body.Render(Context, AResponse);
   Context.Writer.CloseTag('html');
+end;
+
+{ TLangDropdown }
+
+procedure TLangDropdown.Created;
+begin
+  inherited;  
+//  Route := 'LLL';
+end;
+
+procedure TLangDropdown.DoCompose(const AContext: TmnwContext);
+begin
+  inherited;
+  Caption := AContext.Language.ToUpper;
+  with THTML.TDropdownItem.Create(this, AContext.GetURL(Self) + '?lang=ar', 'عربي') do
+    Image.Symbol := 'icon mnw-lang-arabic';              
+  with THTML.TDropdownItem.Create(this, AContext.GetURL(Self) + '?lang=en', 'English') do
+    Image.Symbol := 'icon mnw-lang-english';              
+end;
+
+procedure TLangDropdown.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+var
+  Lang: string;
+  Referer: string;
+  Cookie: TmnwCookie;
+begin
+  Lang := AContext.Request.Params['lang'];
+  if Lang = '' then
+    Lang := AContext.Web.Language;
+
+  Cookie := AResponse.SetCookie('language', Lang);
+  if Cookie <> nil then
+  begin
+    Cookie.Domain := AContext.Web.Domain;
+    Cookie.Path := AContext.GetHomePath;
+    Cookie.Age := 365 * 24 * 60 * 60; // 1 year
+  end;
+
+  Referer := AContext.Request.Header['Referer'];
+  if Referer <> '' then
+    AResponse.RespondRedirectTo(Referer)
+  else
+    AResponse.RespondRedirectTo(AContext.GetURL);
 end;
 
 initialization
