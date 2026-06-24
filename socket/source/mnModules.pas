@@ -2051,7 +2051,7 @@ procedure TwebCommand.Prepare(var Result: TmodRespondResult);
 var
   //aKeepAlive: Boolean;
   WSHash, WSKey: string;
-  SendHostHeader: Boolean;
+  //SendHostHeader: Boolean;
 begin
   if Request.Header.Field['Connection'].Have('Upgrade', [',']) then
   begin
@@ -2060,7 +2060,7 @@ begin
       if Request.Header['Sec-WebSocket-Version'].ToInteger = 13 then
       begin
         WSHash := Request.Header['Sec-WebSocket-Key'];
-        SendHostHeader := Request.Header.ReadBool('X-Send-Server-Hostname', True);
+        //SendHostHeader := Request.Header.ReadBool('X-Send-Server-Hostname', True);
 
         WSKey := HashWebSocketKey(WSHash);
         Response.Answer := hrSwitchingProtocols;

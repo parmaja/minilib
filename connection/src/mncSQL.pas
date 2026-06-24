@@ -171,8 +171,8 @@ type
     procedure Reconnect; virtual;
     procedure RecoverConnection; virtual;
     
-    procedure StartListen(const vChannel: string); virtual; deprecated;
-    procedure StopListen(const vChannel: string); virtual; deprecated;
+    procedure StartListen(const vChannel: string); virtual; //deprecated;
+    procedure StopListen(const vChannel: string); virtual; //deprecated;
     
     property Dispatchers: TDBDispatchers read FDispatchers;
     {$endif}

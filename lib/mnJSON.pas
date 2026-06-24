@@ -160,7 +160,7 @@ type
 
       CommentStarted: Integer;
       CommentBuffer: UTF8String;
-      Comments: array of string;
+      //Comments: array of string;
 
       Index: Integer;
       Options: TJSONParseOptions;

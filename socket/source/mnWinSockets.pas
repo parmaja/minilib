@@ -160,7 +160,7 @@ function TmnSocket.DoShutdown(How: TmnSocketStates): TmnError;
 var
   c: Integer;
   iHow: Integer;
-  errno: longint;
+  //errno: longint;
 begin
   if [sdReceive, sdSend] = How then
     iHow := SD_BOTH
@@ -176,7 +176,7 @@ begin
 
   //CheckActive;
   c := WinSock2.Shutdown(FHandle, iHow);
-  errno := WSAGetLastError;
+  //errno := WSAGetLastError;
   if c = SOCKET_ERROR then
     Result := erInvalid
   else
