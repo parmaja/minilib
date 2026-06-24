@@ -1605,23 +1605,10 @@ type
         JSFunction: string;
       end;
 
-      { TZoomButtons }
-
-      TZoomButtons = class(TGroupButtons)
-      protected
-        FButtonSmall: TButton;
-        FButtonNormal: TButton;
-        FButtonLarge: TButton;
-        procedure Created; override;
-      public
-      end;
-
       TCookieButton = class(TButton)
       public
         Value: string;
-      end;
-      
-      { TZoomButtons }
+      end;     
 
       TCookieButtons = class(TGroupButtons)
       protected
@@ -1880,6 +1867,23 @@ type
     property Web: TmnwWeb read FWeb;
   end;
 
+{ Controls } 
+
+type
+
+  { TZoomButtons }
+
+  TZoomButtons = class(THTML.TGroupButtons)
+  protected
+    FButtonSmall: THTML.TButton;
+    FButtonNormal: THTML.TButton;
+    FButtonLarge: THTML.TButton;
+    procedure Created; override;
+  public
+  end;
+
+
+  
 {$ifdef FPC}
 {$R 'mnWebElements.rc'}
 {$else}
@@ -5364,24 +5368,24 @@ begin
   inherited;
 end;
 
-{ THTML.TZoomButtons }
+{ TZoomButtons }
 
-procedure THTML.TZoomButtons.Created;
+procedure TZoomButtons.Created;
 begin
   inherited;
-  FButtonSmall := TButton.Create(Self, [elEmbed]);
+  FButtonSmall := THTML.TButton.Create(Self, [elEmbed]);
   FButtonSmall.Data := 'small';
   FButtonSmall.ControlStyle := styleUndefined;
   FButtonSmall.Image.Symbol := 'icon mnw-font-small';
   FButtonSmall.JSFunction := 'mnw.switch_zoom';
 
-  FButtonNormal := TButton.Create(Self, [elEmbed]);
+  FButtonNormal := THTML.TButton.Create(Self, [elEmbed]);
   FButtonNormal.Data := 'normal';
   FButtonNormal.ControlStyle := styleUndefined;
   FButtonNormal.Image.Symbol := 'icon mnw-font-normal';
   FButtonNormal.JSFunction := 'mnw.switch_zoom';
 
-  FButtonLarge := TButton.Create(Self, [elEmbed]);
+  FButtonLarge := THTML.TButton.Create(Self, [elEmbed]);
   FButtonLarge.Data := 'large';
   FButtonLarge.ControlStyle := styleUndefined;
   FButtonLarge.Image.Symbol := 'icon mnw-font-large';

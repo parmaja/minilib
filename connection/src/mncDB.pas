@@ -221,7 +221,9 @@ function TmncEngines.CreateConnection(vEngineName: string): TmncConnection;
 var
   P: TmncEngine;
 begin
+  {$ifdef FPC}
   Result := nil;
+  {$endif}
   P := Find(vEngineName);
   if P <> nil then
     Result := P.ConnectionClass.Create
@@ -233,7 +235,9 @@ function TmncEngines.CreateConnection(vORM: TmncORM): TmncConnection;
 var
   P: TmncEngine;
 begin
+  {$ifdef FPC}
   Result := nil;
+  {$endif}
   P := Find(vORM);
   if P <> nil then
     Result := P.ConnectionClass.Create
@@ -245,7 +249,9 @@ function TmncEngines.CreateMeta(vConnection: TmncConnection): TmncMeta;
 var
   P: TmncEngine;
 begin
+  {$ifdef FPC}
   Result := nil;
+  {$endif}
   P := Find(vConnection);
   if (P <> nil) and (P.MetaClass<>nil) then
     Result := P.MetaClass.Create
@@ -257,7 +263,9 @@ function TmncEngines.CreateMeta(vTransaction: TmncTransaction; vOwnTransaction: 
 var
   P: TmncEngine;
 begin
+  {$ifdef FPC}
   Result := nil;
+  {$endif}
   P := Find(vTransaction.Connection);
   if (P <> nil) and (P.MetaClass<>nil) then
   begin
