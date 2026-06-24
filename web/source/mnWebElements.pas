@@ -323,7 +323,11 @@ type
     Data: TDON_Element;
     // For
     Route: string;   
+
+    Language: string;
+    Direction: TDirection;
     SessionID: String;
+    
     Session: TObject;
 
     // http://host:80/
@@ -515,6 +519,7 @@ type
     FIsRoot: Boolean;
     FTimeStamp: Int64;
     FData: String;
+    FEndRoute: Boolean;
     procedure SetState(const AValue: TmnwElementState);
     function GetRespondIt: Boolean;
     function GetRenderIt: Boolean;
@@ -615,10 +620,8 @@ type
     property Visible: Boolean read FVisible write FVisible;
     property Enabled: Boolean read FEnabled write FEnabled;
 
-
     property RespondIt: Boolean read GetRespondIt; // false: do not use respond
     property RenderIt: Boolean read GetRenderIt write SetRenderIt;
-
 
     property Attributes: TmnwAttributes read FAttributes;
     property Kind: TmnwElementKinds read FKind write FKind;
@@ -630,6 +633,8 @@ type
     property Handle: THandle read FHandle;
 
     property TimeStamp: Int64 read FTimeStamp;
+    //* FindRoute stop at this element, NOT TESTED YET
+    property EndRoute: Boolean read FEndRoute write FEndRoute;
   end;
 
   TmnwMessage = class(TObject)
@@ -725,11 +730,10 @@ type
   public
     LastAccess: TDateTime;
     IsManual: Boolean;
-    Direction: TDirection;
     RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
     HomeFolder: string;
     ServeFiles: TmodServeFiles;
-    SessionID: string;
+    SessionID: string; //To find it
     Interactive: Boolean;
     constructor Create(AWeb: TmnwWeb; AName:string; ARoute: string = ''); reintroduce;
     destructor Destroy; override;
@@ -1611,6 +1615,18 @@ type
         procedure Created; override;
       public
       end;
+
+      TCookieButton = class(TButton)
+      public
+        Value: string;
+      end;
+      
+      { TZoomButtons }
+
+      TCookieButtons = class(TGroupButtons)
+      protected
+      public
+      end;      
 
       TNavItem = class(TClickable)
       private
@@ -2944,10 +2960,21 @@ begin
     begin
       AContext.Schema := aSchema;      
 
-      AContext.SessionID := AContext.Request.Params.Values['session'];
+      AContext.SessionID := AContext.Request.Params['session'];
       if AContext.SessionID = '' then
-        AContext.SessionID := AContext.Request.Cookies.Values['session'];
-      
+        AContext.SessionID := AContext.Request.Cookies['session'];
+
+      AContext.Language := AContext.Request.Params['language'];
+      if AContext.Language = '' then
+        AContext.Language := AContext.Request.Cookies['language'];
+      if AContext.Language = '' then
+        AContext.Language := AContext.Web.Language;
+        
+      if SameText(AContext.Language, 'ar') then 
+        AContext.Direction := dirRightToLeft
+      else
+        AContext.Direction := dirLeftToRight;
+
       if aSchema.Accept(AContext) then
       begin
         if not (estComposed in aSchema.State) then
@@ -4041,6 +4068,8 @@ function TmnwElement.FindByRoute(const ARoute: string; Level: Integer): TmnwElem
 var
   i: Integer;
 begin
+  if EndRoute then //Not tested yet
+    exit(self);   
   // Find route only on first level, but we ignore the level of route = ''
   for i := 0 to Count - 1 do
   begin
@@ -4487,7 +4516,7 @@ var
 begin
   for source in Sources do
   begin
-    aDirection := Context.Schema.Direction;
+    aDirection := Context.Direction;
     if aDirection = dirUndefined then
       aDirection := dirLeftToRight;      
     
@@ -5568,7 +5597,7 @@ begin
   with Document do
   begin
     Title := 'Login';
-    Direction := dirLeftToRight;
+    //Direction := dirLeftToRight; We take it from language
 
     TAction.Create(This, 'login', 'login', UserLogin);
     TAction.Create(This, 'logout', 'logout', UserLogout);
@@ -6034,11 +6063,11 @@ var
 begin
   inherited;
   e := Scope.Element as THTML.TDocument;
-  if e.Schema.Direction = dirRightToLeft then
+  if Context.Direction = dirRightToLeft then
     Scope.Attributes['dir'] := 'rtl'
-  else if e.Schema.Direction = dirLeftToRight then
+  else if Context.Direction = dirLeftToRight then
     Scope.Attributes['dir'] := 'ltr';
-  Scope.Attributes['lang'] := When(Context.Schema.Web.Language <> '', Context.Schema.Web.Language, 'en');
+  Scope.Attributes['lang'] := When(Context.Language <> '', Context.Language, 'en');
 end;
 
 procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);

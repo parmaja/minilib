@@ -201,7 +201,7 @@ type
       TMain = class(THTMLContainer)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
-      end;
+      end;        
 
       { TRow }
 
@@ -762,7 +762,7 @@ begin
     Scope.Classes.Add('col-md');
   if e.Gap > 0 then
     Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
-  Scope.Classes.Add('p-1');
+  Scope.Classes.Add('p-0 p-sm-2');
   Scope.Classes.Add('m-0'); //do not change it, keep it 0
 
   Context.Writer.OpenTag('main', Scope.Classes.ToString);
@@ -1482,7 +1482,10 @@ begin
     s :=' target="_blank"';
   if e.NoDecoration then
     Scope.Classes.Add('text-decoration-none');
-  Context.Writer.OpenInlineTag('a', 'href="'+When(e.Location, '#') + '"'+ s + Scope.GetText, e.Caption);
+  Context.Writer.OpenTag('a', 'href="'+When(e.Location, '#') + '"'+ s + Scope.GetText);
+  RenderImageLocation(Context, e.Image);  
+  Context.Writer.Write(e.Caption);
+  Context.Writer.CloseTag('a');
   inherited;
   Context.Writer.CloseTag('a');
 end;
