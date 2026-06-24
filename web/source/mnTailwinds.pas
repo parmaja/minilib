@@ -608,7 +608,6 @@ begin
     RegisterRenderer(THTML.TDropdown, TDropdown);
     RegisterRenderer(THTML.TGroupButtons, TGroupButtons);
     RegisterRenderer(THTML.TToolbar, TToolbar);
-    RegisterRenderer(THTML.TZoomButtons, TZoomButtons);
     RegisterRenderer(THTML.TCollapseCaption, TCollapseCaption);
     RegisterRenderer(THTML.TForm, TForm);
     RegisterRenderer(THTML.TRow, TRow);

@@ -129,23 +129,33 @@ type
   end;
 
   { TmnwCookie }
+  TmnwCookieOption =
+  (
+    Stricted, //SameSite
+    Secured, //HTTPS only
+    HostOnly,
+    HttpOnly //JS script in client cant see it
+  );
+
+  TmnwCookieOptions = set of TmnwCookieOption;
 
   TmnwCookie = class(TmnNameValueObject)
   private
     FDomain: string;
     FPath: string;
     FAge: Integer;
-    FChanged: Boolean;
+    FOptions: TmnwCookieOptions;
+    
     FDeleting: Boolean;
+    FChanged: Boolean;
     procedure SetAge(const AValue: Integer);
     procedure SetDomain(const AValue: string);
     procedure SetPath(const AValue: string);
+    procedure SetOptions(const Value: TmnwCookieOptions);
   protected
     procedure SetValue(const AValue: string); override;
     procedure Created; override;
   public
-    Stricted: Boolean; //SameSite
-    Secured: Boolean; //HTTPS only
     function GetText: string;
     function GenerateValue: string;
     procedure Delete;
@@ -154,6 +164,7 @@ type
     property Path: string read FPath write SetPath;
     property Domain: string read FDomain write SetDomain;
     property Age: Integer read FAge write SetAge;
+    property Options: TmnwCookieOptions read FOptions write SetOptions;
     property Changed: Boolean read FChanged;
   end;
 
@@ -163,7 +174,7 @@ type
   public
     procedure SetRequestText(S: string);
     function GetRequestText: string;    
-    function SetCookie(const Domain, Path: string; const Name: string; const Value: string; Age: Integer = 31536000 {a year}): TmnwCookie;
+    function SetCookie(const Domain, Path: string; const Name: string; const Value: string; Options: TmnwCookieOptions = []; Age: Integer = 31536000 {a year}): TmnwCookie;
   end;
 
   TmnCustomCommand = class;
@@ -192,7 +203,7 @@ type
 
     procedure DoPrepareHeader; virtual;
     procedure DoSendHeader; virtual;
-    procedure DoWriteCookies; virtual;
+    procedure DoSetCookies; virtual;
     procedure DoHeaderSent; virtual;
 
     procedure InitProtocol; virtual;
@@ -2642,7 +2653,7 @@ procedure TmnwCookie.Created;
 begin
   inherited;
   FAge := -1; //Forever
-  Secured := False; //over HTTP and HTTPS
+  FOptions := []; //over HTTP and HTTPS
 end;
 
 procedure TmnwCookie.Delete;
@@ -2665,14 +2676,18 @@ begin
       Result := Result + '; max-age=' + Age.ToString;
   end;
 
-  if Secured then
-    Result := Result + '; Secure';
-
-  if Stricted then
+  if Stricted in Options then
     Result := Result + '; SameSite=Strict'
   else
     Result := Result + '; SameSite=Lax'; //NONE needs https
 
+  if Secured in Options then
+    Result := Result + '; Secure';
+  if HttpOnly in Options then
+    Result := Result + '; HttpOnly';  
+  if HostOnly in Options then
+    Result := Result + '; HostOnly';  
+    
   if Domain <> '' then
     Result := Result + '; Domain=' + Domain.ToLower;
 
@@ -2709,6 +2724,14 @@ begin
     FDomain := AValue;
     SetChanged;
   end;
+end;
+
+procedure TmnwCookie.SetOptions(const Value: TmnwCookieOptions);
+begin
+  if Value = FOptions then  
+    exit;
+  FOptions := Value;
+  FChanged := True;
 end;
 
 procedure TmnwCookie.SetPath(const AValue: string);
@@ -2757,7 +2780,7 @@ begin
   end;
 end;
 
-function TmnwCookies.SetCookie(const Domain, Path: string; const Name: string; const Value: string; Age: Integer): TmnwCookie;
+function TmnwCookies.SetCookie(const Domain, Path: string; const Name: string; const Value: string; Options: TmnwCookieOptions; Age: Integer): TmnwCookie;
 var
   index: Integer;
 begin
@@ -2780,6 +2803,7 @@ begin
     Result.FDomain := Domain; //Yes F for not trigger changed
     Result.FPath := Path;
     Result.FAge := Age;
+    Result.FOptions := Options;
     if not Result.Changed then    
       Result.SetChanged;
   end;
@@ -2900,7 +2924,7 @@ procedure TmodCommunicate.DoSendHeader;
 begin
 end;
 
-procedure TmodCommunicate.DoWriteCookies;
+procedure TmodCommunicate.DoSetCookies;
 begin
 end;
 
@@ -2964,8 +2988,7 @@ begin
   end;
   Stream.WriteUTF8Line(s);}
 
-  DoWriteCookies;
-
+  DoSetCookies;
   DoSendHeader; //enter after
 
   if Parent<> nil then
