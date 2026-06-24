@@ -40,6 +40,10 @@
         <Filename Value="..\source\mnWebElements.rc"/>
         <Type Value="Text"/>
       </Item>
+      <Item>
+        <Filename Value="..\source\mnwControls.pas"/>
+        <UnitName Value="mnwControls"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

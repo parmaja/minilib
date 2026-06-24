@@ -163,6 +163,7 @@ type
   public
     procedure SetRequestText(S: string);
     function GetRequestText: string;    
+    function SetCookie(const Domain, Path: string; const Name: string; const Value: string; Age: Integer = 31536000 {a year}): TmnwCookie;
   end;
 
   TmnCustomCommand = class;
@@ -204,8 +205,7 @@ type
     property Stream: TmnBufferStream read GetStream;
     property Header: TmodHeader read FHeader;
     property Cookies: TmnwCookies read FCookies;
-    procedure SetCookie(const vNameSpace, vName, Value: string); overload;
-    procedure SetCookie(const vName, Value: string); overload;
+    function SetCookie(const vName, Value: string): TmnwCookie; overload;
     function GetCookie(const vNameSpace, vName: string): string;
 
     procedure Reset;
@@ -2671,7 +2671,7 @@ begin
   if Stricted then
     Result := Result + '; SameSite=Strict'
   else
-    Result := Result + '; SameSite=None';
+    Result := Result + '; SameSite=Lax'; //NONE needs https
 
   if Domain <> '' then
     Result := Result + '; Domain=' + Domain.ToLower;
@@ -2754,6 +2754,34 @@ begin
       end;
       (TObject(Sender) as TmnwCookies).Add(Name, Value);
     end;
+  end;
+end;
+
+function TmnwCookies.SetCookie(const Domain, Path: string; const Name: string; const Value: string; Age: Integer): TmnwCookie;
+var
+  index: Integer;
+begin
+  index := IndexOfName(Name);
+  if Value = '' then //Delete it
+  begin
+    if index >= 0 then
+      Delete(index);
+    Result := nil;
+  end
+  else
+  begin
+    if index >= 0 then
+    begin
+      Result := Items[index];
+      Result.Value := Value;
+    end
+    else
+      Result := Add(Name, Value);
+    Result.FDomain := Domain; //Yes F for not trigger changed
+    Result.FPath := Path;
+    Result.FAge := Age;
+    if not Result.Changed then    
+      Result.SetChanged;
   end;
 end;
 
@@ -2876,17 +2904,9 @@ procedure TmodCommunicate.DoWriteCookies;
 begin
 end;
 
-procedure TmodCommunicate.SetCookie(const vNameSpace, vName, Value: string);
+function TmodCommunicate.SetCookie(const vName, Value: string): TmnwCookie;
 begin
-  if vNameSpace<>'' then
-    Cookies.Values[vNameSpace+'.'+vName] := Value
-  else
-    Cookies.Values[vName] := Value;
-end;
-
-procedure TmodCommunicate.SetCookie(const vName, Value: string);
-begin
-  SetCookie('', vName, Value);
+  Result := Cookies.SetCookie('', '', vName, Value);
 end;
 
 procedure TmodCommunicate.SetHead(const Value: string);
