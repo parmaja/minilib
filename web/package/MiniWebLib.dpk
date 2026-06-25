@@ -38,7 +38,7 @@ requires
 contains
   mnWebElements in '..\source\mnWebElements.pas',
   mnBootstraps in '..\source\mnBootstraps.pas',
-  mnTailwinds in '..\source\mnTailwinds.pas',
-  mnwControls in '..\source\mnwControls.pas';
+  mnTailwinds in '..\source\mnTailwinds.pas';
+  //mnwControls in '..\source\mnwControls.pas';
 
 end.
