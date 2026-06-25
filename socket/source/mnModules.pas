@@ -420,7 +420,7 @@ type
     function GetStream: TmnBufferStream; override;
     procedure InitProtocol; override;
   public
-    constructor Create(ARequest: TmodRequest); //need trigger event
+    constructor Create(ARequest: TmodRequest); virtual; //need trigger event
     function WriteString(const s: string): Boolean;
     function WriteLine(const s: string): Boolean;
 
@@ -558,6 +558,7 @@ type
     procedure RespondText(S: string);    
     procedure RespondHTML(S: string);    
     procedure RespondJSON(S: string; AAnswer: TmodAnswer = hrOK);
+    procedure RespondJSONResult(ResultType, State, Message: string; AAnswer: TmodAnswer = hrOK);
     procedure RespondNoContent;
     procedure RespondNotFound;
     procedure RespondForbidden;
@@ -3440,6 +3441,11 @@ begin
   ContentType := DocumentToContentType('.json');
   SendUTF8String(S);
   Responded;
+end;
+
+procedure TwebResponse.RespondJSONResult(ResultType, State, Message: string; AAnswer: TmodAnswer);
+begin
+  RespondJSON('{"type": "' + ResultType + '", "state": "' + State + '", "message": "' + Message + '"}', AAnswer);
 end;
 
 procedure TwebResponse.RespondNoContent;
