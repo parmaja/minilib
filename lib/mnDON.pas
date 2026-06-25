@@ -389,7 +389,8 @@ type
         property Current: TDON_Pair read GetCurrent;
       end;
           
-    function FindItem(const Name: string): TDON_Element; override;
+    function FindItem(const Name: string): TDON_Element; override;  
+   
     function GetItem(Index: Integer): TDON_Element; override;
     function GetAsString: string; override;
     function GetValue: Variant; override;
@@ -403,7 +404,11 @@ type
     procedure AcquirePair(const AName: string; out AObject: TObject);
     procedure AddPair(Value: TDON_Pair); overload;
     function AddPair(const Name: String; const Value: string): TDON_Element; overload;
-    property Pairs: TDON_Pairs read FPairs;
+
+    function FindByValue(const Value: string): TDON_Pair; overload;
+    function FindNameByValue(const Value: string): string;  overload;
+    
+    property Pairs: TDON_Pairs read FPairs;    
   published
   end;
 
@@ -1277,6 +1282,30 @@ begin
       Exit(FPairs[i].Value);
     end;
   Result := nil
+end;
+
+function TDON_Object_Value.FindByValue(const Value: string): TDON_Pair;
+var
+  i: Integer;
+begin
+  for i := 0 to FPairs.Count-1 do
+    if SameText(FPairs[i].Value.AsString, Value) then
+    begin
+      Exit(FPairs[i]);
+    end;
+  Result := nil
+end;
+
+function TDON_Object_Value.FindNameByValue(const Value: string): string;
+var
+  i: Integer;
+begin
+  for i := 0 to FPairs.Count-1 do
+    if SameText(FPairs[i].Value.AsString, Value) then
+    begin
+      Exit(FPairs[i].Name);
+    end;
+  Result := '';
 end;
 
 function TDON_Object_Value.GetAsString: string;
