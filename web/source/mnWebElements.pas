@@ -292,6 +292,31 @@ type
   end;
 
   TmnwWeb = class;
+
+  TmnwSession = class(TObject)
+  private
+    FID: string;
+    FInstance: TObject;
+    FChanged: Boolean;
+    FDomain: string;
+    FPath: string;
+    FAge: Integer;
+    procedure SetID(const Value: string);
+    procedure SetDomain(const Value: string);
+    procedure SetPath(const Value: string);
+    procedure SetAge(const Value: Integer);
+    
+    procedure SetInteralInstance(const Value: TObject);
+  public    
+    procedure Reset;
+    procedure SetInstance(const AInstance: TObject);
+    property ID: string read FID write SetID;
+    property Domain: string read FDomain write SetDomain;
+    property Path: string read FPath write SetPath;
+    property Age: Integer read FAge write SetAge;
+    property Instance: TObject read FInstance write SetInteralInstance;
+    property Changed: Boolean read FChanged;
+  end;
   
   { TmnwScope }
 
@@ -314,6 +339,7 @@ type
     FWeb: TmnwWeb;
     FRenderer: TmnwRenderer;
     FWriter: TmnTidyWriter;
+    function GetSession: TmnwSession;
   public
     Sender: TObject;
 
@@ -361,6 +387,7 @@ type
     
     property Request: TmodRequest read FRequest;
     property Response: TmnwResponse read FResponse;
+    property Session: TmnwSession read GetSession;
     property Web: TmnwWeb read FWeb;
     property Renderer: TmnwRenderer read FRenderer;
     property Writer: TmnTidyWriter read FWriter;
@@ -1783,38 +1810,17 @@ type
     property Current: TmnwRendererRegister read FCurrent;
   end;
   
-  TmnwSession = record
-  private
-    FID: string;
-    FInstance: TObject;
-    FChanged: Boolean;
-    FDomain: string;
-    FPath: string;
-    FAge: Integer;
-    procedure SetID(const Value: string);
-    procedure SetDomain(const Value: string);
-    procedure SetPath(const Value: string);
-    procedure SetAge(const Value: Integer);
-    
-    procedure SetInteralInstance(const Value: TObject);
-  public    
-    procedure Reset;
-    procedure SetInstance(const AInstance: TObject);
-    property ID: string read FID write SetID;
-    property Domain: string read FDomain write SetDomain;
-    property Path: string read FPath write SetPath;
-    property Age: Integer read FAge write SetAge;
-    property Instance: TObject read FInstance write SetInteralInstance;
-    property Changed: Boolean read FChanged;
-  end;
-  
   TmnwResponse = class(TwebResponse)
   private
+    FSession: TmnwSession;
   protected
     procedure DoSetCookies; override;     
     procedure DoSendHeader; override;     
-  public
-    Session: TmnwSession;
+    
+  public    
+    constructor Create(ARequest: TmodRequest); override;
+    destructor Destroy; override;     
+    property Session: TmnwSession read FSession;
   end;
 
   { TAssetsSchema }
@@ -2942,7 +2948,7 @@ begin
     //Find already exists Schema
     Lock.Enter;
     try
-      aSchema := FindBy(aSchemaName, AContext.Response.Session.ID);
+      aSchema := FindBy(aSchemaName, AContext.Session.ID);
     finally
       Lock.Leave;
     end;
@@ -2954,7 +2960,7 @@ begin
       begin
         Lock.Enter;
         try
-          aSchema := FindBy('', AContext.Response.Session.ID);
+          aSchema := FindBy('', AContext.Session.ID);
         finally
           Lock.Leave;
         end;
@@ -2967,7 +2973,7 @@ begin
       end;
 
       if (aSchema <> nil) and (schemaSession in aSchema.GetCapabilities) then
-        aSchema.Reference := AContext.Response.Session.ID;
+        aSchema.Reference := AContext.Session.ID;
     end;
 
 {
@@ -2995,14 +3001,14 @@ begin
     begin
       AContext.Schema := aSchema;      
 
-      AContext.Response.Session.ID := AContext.Request.Params['session'];
-      if AContext.Response.Session.ID = '' then
-        AContext.Response.Session.ID := AContext.Request.Cookies['session'];
-      AContext.Response.Session.Age := DefaultAge;      
-      AContext.Response.Session.Domain := Domain;
-      AContext.Response.Session.Path := AContext.GetHomePath;
+      AContext.Session.ID := AContext.Request.Params['session'];
+      if AContext.Session.ID = '' then
+        AContext.Session.ID := AContext.Request.Cookies['session'];
+      AContext.Session.Age := DefaultAge;      
+      AContext.Session.Domain := Domain;
+      AContext.Session.Path := AContext.GetHomePath;
       //AResponse.Session.Path := StartURL(Alias, True);
-      AContext.Response.Session.Reset;
+      AContext.Session.Reset;
       
       AContext.Language := AContext.Request.Params['language'];
       if AContext.Language = '' then
@@ -4200,7 +4206,7 @@ end;
 
 procedure TmnwElement.DoRespondHeader(const AContext: TmnwContext);
 begin
-  AContext.Response.Session.ID := '';
+  AContext.Session.ID := '';
 end;
 
 constructor TmnwElement.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
@@ -5463,6 +5469,13 @@ begin
     Result := e.GetPathTo(Element);
 end;
 
+function TmnwContext.GetSession: TmnwSession;
+begin
+  if Response <> nil then
+    exit(Response.Session);
+  Result := nil;  
+end;
+
 function TmnwContext.GetURL: string;
 begin
   Result := GetURL(Schema);
@@ -5548,7 +5561,7 @@ begin
 
   if aSuccess then
   begin
-    AContext.Response.Session.ID := aSessionID;
+    AContext.Session.ID := aSessionID;
     if AContext.Request.RequestType = rtJSONData then    
        AContext.Response.RespondJSON('{"type": "success", "state": "200", "message": "Login successed.", "redirect": "'+AContext.GetDefaultPath+'" }')
     else
@@ -5562,7 +5575,7 @@ end;
 
 procedure TAuthSchema.UserLogout(const AContext: TmnwContext);
 begin
-  AContext.Response.Session.ID := '';
+  AContext.Session.ID := '';
   AContext.Response.RespondRedirectTo(AContext.GetDefaultPath);
 end;
 
@@ -6203,6 +6216,18 @@ begin
 end;
 
 { TmnwResponse }
+
+constructor TmnwResponse.Create(ARequest: TmodRequest);
+begin
+  inherited;
+  FSession := TmnwSession.Create;
+end;
+
+destructor TmnwResponse.Destroy;
+begin
+  FreeAndNil(FSession);
+  inherited;
+end;
 
 procedure TmnwResponse.DoSendHeader;
 begin

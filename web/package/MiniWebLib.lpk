@@ -20,10 +20,6 @@
         <UnitName Value="mnBootstraps"/>
       </Item>
       <Item>
-        <Filename Value="..\source\mnTailwinds.pas"/>
-        <UnitName Value="mnTailwinds"/>
-      </Item>
-      <Item>
         <Filename Value="..\source\mnWebElements.css"/>
         <Type Value="Text"/>
       </Item>
