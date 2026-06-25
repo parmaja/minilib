@@ -70,37 +70,37 @@ TDocument = class(TmnwHTMLRenderer.TDocument)
 
       TBody = class(TmnwHTMLRenderer.TBody)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { THeader }
 
       THeader = class(THTMLControl)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-TNavTools = class(THTMLComponent)
+      TNavTools = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       public
       end;
 
-TNavDropdown = class(THTMLComponent)
+      TNavDropdown = class(THTMLComponent)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       public
       end;
 
       { TNavBar }
 
-TNavBar = class(THTMLComponent)
+      TNavBar = class(THTMLComponent)
       protected
-        procedure DoRenderBrand(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); virtual;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoRenderBrand(Scope: TmnwScope; Context: TmnwContext); virtual;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       public
       end;
 
@@ -113,7 +113,7 @@ TMenuBar = class(THTMLComponent)
 
 THTMLItem = class(THTMLControl)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       public
       end;
 
@@ -121,84 +121,84 @@ THTMLItem = class(THTMLControl)
 
       TLink = class(THTMLControl)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TSpan }
 
       TSpan = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TFooter }
 
       TFooter = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TToast }
 
       TToast = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TContent }
 
       TContent = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TSideBar }
 
       TSideBar = class(THTMLControl)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TMain }
 
       TMain = class(THTMLLayout)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TRow }
 
       TRow = class(THTMLLayout)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TColumn }
 
       TColumn = class(THTMLLayout)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TBar }
 
       TBar = class(THTMLLayout)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TAccordion }
 
 TAccordion = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TAccordionSection }
 
 TAccordionSection = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TAccordionItem }
@@ -210,26 +210,26 @@ TAccordionItem = class(THTMLControl)
 
       TCard = class(THTMLControl)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       TPanel = class(THTMLControl)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TCollapseCaption }
 
       TCollapseCaption = class(THTMLControl)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TThemeModeButton }
 
       TThemeModeButton = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TDropdown }
@@ -237,7 +237,7 @@ TAccordionItem = class(THTMLControl)
 TDropdown = class(THTMLControl)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       TGroup = class(THTMLComponent)     
@@ -247,21 +247,21 @@ TDropdown = class(THTMLControl)
 
       TDropdownItem = class(TLink)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TGroupButtons }
 
       TGroupButtons = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TToolbar }
 
       TToolbar = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TForm }
@@ -270,38 +270,38 @@ TDropdown = class(THTMLControl)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TParagraph }
 
       TParagraph = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       TCode = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       TMultilineCode = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TBreak }
 
       TBreak = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TButton }
 
       TButton = class(THTMLItem)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TZoomButtons }
@@ -313,14 +313,14 @@ TZoomButtons = class(TGroupButtons)
 
       TNavItem = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TMenuItem }
 
       TMenuItem = class(THTMLComponent)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TSubMenu }
@@ -333,7 +333,7 @@ TSubMenu = class(THTMLControl)
       TInput = class(THTMLComponent)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       TInputPassword = class(TInput)
@@ -344,7 +344,7 @@ TSubMenu = class(THTMLControl)
       TImage = class(THTMLComponent)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TImageFile }
@@ -352,7 +352,7 @@ TSubMenu = class(THTMLControl)
       TImageFile = class(THTMLComponent)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TImageMemory }
@@ -360,7 +360,7 @@ TSubMenu = class(THTMLControl)
       TImageMemory = class(THTMLComponent)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
     public
@@ -660,7 +660,7 @@ end;
 
 { TTWRenderer.TBody }
 
-procedure TTWRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TBody;
 begin
@@ -681,7 +681,7 @@ end;
 
 { TTWRenderer.THeader }
 
-procedure TTWRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Scope.Classes.Append('sticky top-0 z-40 flex items-center bg-gray-900 text-white py-2 px-4 shadow');
   Context.Writer.OpenTag('header', Scope.ToString);
@@ -691,7 +691,7 @@ end;
 
 { TTWRenderer.TFooter }
 
-procedure TTWRenderer.TFooter.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TFooter.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Scope.Classes.Add('text-center py-4 text-gray-600 dark:text-gray-400');
   Context.Writer.OpenTag('footer', Scope.ToString);
@@ -701,7 +701,7 @@ end;
 
 { TTWRenderer.TToast }
 
-procedure TTWRenderer.TToast.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TToast.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e:TmnwElement;
 begin
@@ -715,7 +715,7 @@ end;
 
 { TTWRenderer.TContent }
 
-procedure TTWRenderer.TContent.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TContent.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TContent;
 begin
@@ -733,7 +733,7 @@ end;
 
 { TTWRenderer.TMain }
 
-procedure TTWRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TMain.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TMain;
   classes: TElementClasses;
@@ -765,7 +765,7 @@ end;
 
 { TTWRenderer.TCard }
 
-procedure TTWRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TCard;
 begin
@@ -796,7 +796,7 @@ end;
 
 { TTWRenderer.TPanel }
 
-procedure TTWRenderer.TPanel.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TPanel.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TPanel;
 begin
@@ -815,7 +815,7 @@ end;
 
 { TTWRenderer.TCollapseCaption }
 
-procedure TTWRenderer.TCollapseCaption.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TCollapseCaption.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TCollapseCaption;
 begin
@@ -831,7 +831,7 @@ end;
 
 { TTWRenderer.TThemeModeButton }
 
-procedure TTWRenderer.TThemeModeButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TThemeModeButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TThemeModeButton;
 begin
@@ -855,7 +855,7 @@ begin
   inherited;
 end;
 
-procedure TTWRenderer.TForm.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TForm.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TForm;
 begin
@@ -878,7 +878,7 @@ end;
 
 { TTWRenderer.TParagraph }
 
-procedure TTWRenderer.TParagraph.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TParagraph.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TParagraph;
 begin
@@ -892,14 +892,14 @@ end;
 
 { TTWRenderer.TBreak }
 
-procedure TTWRenderer.TBreak.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TBreak.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Writer.AddShortTag('br');
 end;
 
 { TTWRenderer.TButton }
 
-procedure TTWRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TButton;
   event: string;
@@ -935,7 +935,7 @@ end;
 
 { TTWRenderer.TNavItem }
 
-procedure TTWRenderer.TNavItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TNavItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TNavItem;
   event: string;
@@ -950,7 +950,7 @@ end;
 
 { TTWRenderer.TMenuItem }
 
-procedure TTWRenderer.TMenuItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TMenuItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TMenuItem;
   event: string;
@@ -972,7 +972,7 @@ begin
   inherited;
 end;
 
-procedure TTWRenderer.TInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TInput;
   event: string;
@@ -1004,7 +1004,7 @@ begin
   inherited;
 end;
 
-procedure TTWRenderer.TImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TImage.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Writer.AddShortTag('img', Scope.ToString);
   inherited;
@@ -1019,7 +1019,7 @@ begin
   inherited;
 end;
 
-procedure TTWRenderer.TImageMemory.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TImageMemory.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Writer.AddShortTag('img', Scope.ToString);
   inherited;
@@ -1034,7 +1034,7 @@ begin
   inherited;
 end;
 
-procedure TTWRenderer.TImageFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TImageFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TImageFile;
 begin
@@ -1045,7 +1045,7 @@ end;
 
 { TTWRenderer.TRow }
 
-procedure TTWRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TRow;
 begin
@@ -1063,7 +1063,7 @@ end;
 
 { TTWRenderer.TColumn }
 
-procedure TTWRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TColumn;
 begin
@@ -1083,7 +1083,7 @@ end;
 
 { TTWRenderer.TBar }
 
-procedure TTWRenderer.TBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TBar;
 begin
@@ -1096,7 +1096,7 @@ end;
 
 { TTWRenderer.TAccordion }
 
-procedure TTWRenderer.TAccordion.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TAccordion.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Scope.Classes.Add('border border-gray-200 dark:border-gray-700 rounded-md divide-y divide-gray-200 dark:divide-gray-700');
   Context.Writer.OpenTag('div', Scope.ToString);
@@ -1106,7 +1106,7 @@ end;
 
 { TTWRenderer.TAccordionSection }
 
-procedure TTWRenderer.TAccordionSection.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TAccordionSection.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TAccordionSection;
 begin
@@ -1153,7 +1153,7 @@ begin
   Scope.Classes.Add('block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700');
 end;
 
-procedure TTWRenderer.TDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TDropdown;
   classes: string;
@@ -1193,7 +1193,7 @@ end;
 
 { TTWRenderer.TDropdownItem }
 
-procedure TTWRenderer.TDropdownItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TDropdownItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TDropdownItem;
 begin
@@ -1212,7 +1212,7 @@ end;
 
 { TTWRenderer.TGroupButtons }
 
-procedure TTWRenderer.TGroupButtons.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TGroupButtons.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TGroupButtons;
 begin
@@ -1227,7 +1227,7 @@ end;
 
 { TTWRenderer.TToolbar }
 
-procedure TTWRenderer.TToolbar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TToolbar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TToolbar;
 begin
@@ -1242,7 +1242,7 @@ end;
 
 { TTWRenderer.TLink }
 
-procedure TTWRenderer.TLink.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TLink.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TLink;
   s: string;
@@ -1261,7 +1261,7 @@ end;
 
 { TTWRenderer.TSpan }
 
-procedure TTWRenderer.TSpan.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TSpan.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TSpan;
 begin
@@ -1304,7 +1304,7 @@ end;
 
 { TTWRenderer.THTMLItem }
 
-procedure TTWRenderer.THTMLItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.THTMLItem.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THTMLItem;
 begin
@@ -1322,19 +1322,19 @@ end;
 
 { TTWRenderer.TNavBar }
 
-procedure TTWRenderer.TNavBar.DoRenderBrand(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TNavBar.DoRenderBrand(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TNavBar;
 begin
   e := Scope.Element as THTML.TNavBar;
   Context.Writer.OpenTag('a', 'class="flex items-center gap-2 text-xl font-bold text-white hover:text-gray-200" href="' + Context.GetPath(e) + '"');
-  e.Logo.Render(Context, AResponse);
+  e.Logo.Render(Context);
   if e.Title <> '' then
     Context.Writer.WriteLn(e.Title);
   Context.Writer.CloseTag('a');
 end;
 
-procedure TTWRenderer.TNavBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TNavBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TNavBar;
   sb: THTML.TSideBar;
@@ -1355,21 +1355,21 @@ begin
     Context.Writer.CloseTag('button');
   end;
 
-  DoRenderBrand(Scope, Context, AResponse);
+  DoRenderBrand(Scope, Context);
 
   Context.Writer.OpenTag('div', 'class="hidden md:flex items-center space-x-1" id="' + e.id + '-items' + '"');
   inherited;
   Context.Writer.CloseTag('div');
 
   if e.Tools.Count > 0 then
-    e.Tools.Render(Context, AResponse);
+    e.Tools.Render(Context);
 
   Context.Writer.CloseTag('nav');
 end;
 
 { TTWRenderer.TNavTools }
 
-procedure TTWRenderer.TNavTools.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TNavTools.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TNavTools;
 begin
@@ -1392,7 +1392,7 @@ begin
   inherited;
 end;
 
-procedure TTWRenderer.TNavDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TNavDropdown.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TNavDropdown;
   classes: TElementClasses;
@@ -1435,7 +1435,7 @@ end;
 
 { TTWRenderer.TSideBar }
 
-procedure TTWRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TSideBar.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TSideBar;
 begin
@@ -1454,7 +1454,7 @@ end;
 
 { TTWRenderer.TCode }
 
-procedure TTWRenderer.TCode.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TCode.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TCode;
 begin
@@ -1467,7 +1467,7 @@ end;
 
 { TTWRenderer.TMultilineCode }
 
-procedure TTWRenderer.TMultilineCode.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TTWRenderer.TMultilineCode.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TCode;
 begin

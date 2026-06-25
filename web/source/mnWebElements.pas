@@ -496,7 +496,7 @@ type
   TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignBaseline, alignEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
 
-  TRespondProc = reference to procedure (const AContext: TmnwContext; AResponse: TmnwResponse);
+  TRespondProc = reference to procedure (const AContext: TmnwContext);
 
   { TmnwElement }
 
@@ -537,9 +537,9 @@ type
     procedure Check; virtual;
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
 
-    procedure ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
-    function ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean; overload;
-    function ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean; overload;
+    procedure ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext);
+    function ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext): Boolean; overload;
+    function ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext): Boolean; overload;
 
     procedure DoPrepareRenderer(const AContext: TmnwContext); virtual;   
     procedure DoPrepare; virtual;
@@ -547,8 +547,8 @@ type
     procedure DoCompose(const AContext: TmnwContext); virtual;
     procedure DoComposed; virtual;
 
-    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
-    procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
+    procedure DoRespondHeader(const AContext: TmnwContext); virtual;
+    procedure DoRespond(const AContext: TmnwContext); virtual;
 
     procedure PrepareRenderer(const AContext: TmnwContext); 
     procedure Prepare; 
@@ -604,11 +604,11 @@ type
 
     function GetContentType(Route: string = ''): string; virtual;
 
-    procedure RespondInit(const AContext: TmnwContext; AResponse: TmnwResponse);
-    procedure Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
+    procedure RespondInit(const AContext: TmnwContext);
+    procedure Respond(const AContext: TmnwContext);
 
     //* Original Render
-    procedure Render(const Context: TmnwContext; AResponse: TmnwResponse); overload;
+    procedure Render(const Context: TmnwContext); overload;
 
     function CanRender: Boolean; virtual;
 
@@ -725,10 +725,10 @@ type
     Usage: Integer;
     procedure UpdateAttached;
     class procedure Registered; virtual;
-    procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoRespond(const AContext: TmnwContext); override;
     procedure DoAccept(var AContext: TmnwContext; var Resume: Boolean); virtual;
     procedure DoPrepare; override;
-    procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); virtual;
+    procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext); virtual;
     procedure AttachedMessage(const s: string); virtual; //from websocket
     procedure InteractiveMessage(const s: string);
     property DefaultDocuments: TStringList read FDefaultDocuments write SetDefaultDocuments;
@@ -793,7 +793,7 @@ type
     [TID_Extension]
     TFile = class(TmnwElement)
     protected
-      procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+      procedure DoRespond(const AContext: TmnwContext); override;
     public
       FileName: string;
       Options: TFileOptions;
@@ -809,7 +809,7 @@ type
       ContentType: string;
       FData: TMemoryStream;
     protected
-      procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+      procedure DoRespond(const AContext: TmnwContext); override;
     protected
       procedure Created; override;
     public
@@ -837,7 +837,7 @@ type
     //* Keep `var`
     procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); virtual;
 
-    procedure RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+    procedure RenderChilds(Scope: TmnwScope; Context: TmnwContext);
 
     //This function called one time
     procedure AddHead(const Scope: TmnwScope; const Context: TmnwContext); virtual;
@@ -853,13 +853,13 @@ type
 
     //* Content render
     procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
-    procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); virtual;
+    procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); virtual;
     procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     property Renderer: TmnwRenderer read FRenderer;
     property RendererRegister: TmnwElementRendererRegister read FRendererRegister;
   public
-    procedure Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TmnwResponse);
+    procedure Render(AElement: TmnwElement; const Context: TmnwContext);
     constructor Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwElementRendererRegister); virtual; //useful for creating it by RendererClass.Create
     procedure CollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
   end;
@@ -932,35 +932,35 @@ type
 
       TComment = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
     
       { TFile }
 
       TFile = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TJSFile }
 
       TJSFile = class(TFile)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TCSSFile }
 
       TCSSFile = class(TFile)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
     
       { TDynamicCompose }
 
       TDynamicCompose = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TIntervalCompose }
@@ -975,7 +975,7 @@ type
       TDocument = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TBody }
@@ -983,7 +983,7 @@ type
       TBody = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse); override;        
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;        
         procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;        
       end;
     
@@ -1079,7 +1079,7 @@ type
     
     function InquireElement(var AContext: TmnwContext; FindNested: Boolean): Boolean;    
     //for HTML
-    procedure Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
+    procedure Respond(var AContext: TmnwContext);
     //for WebSocket
     function Attach(var AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
@@ -1206,7 +1206,7 @@ type
 
       TAssets = class(THTMLElement)
       protected
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoRespond(const AContext: TmnwContext); override;
       public
         HomeFolder: string;
         ServeFiles: TmodServeFiles;
@@ -1215,7 +1215,7 @@ type
 
       TFolder = class(THTMLElement)
       protected
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoRespond(const AContext: TmnwContext); override;
       public
         HomeFolder: string;
         ServeFiles: TmodServeFiles;
@@ -1238,7 +1238,7 @@ type
 
         procedure InnerCompose(Inner: TmnwElement; AResponse: TmnwResponse); virtual;
 
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoRespond(const AContext: TmnwContext); override;
       public
         OnCompose: TComposeProc;
         constructor Create(AParent: TmnwElement; AOnCompose: TComposeProc = nil); reintroduce;
@@ -1539,7 +1539,7 @@ type
       TForm = class(THTMLElement)
       private
       protected
-        procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoRespondHeader(const AContext: TmnwContext); override;
         procedure Created; override;
         procedure DoComposed; override;
       public
@@ -1588,7 +1588,7 @@ type
       [TRoute_Extension]
       TAction = class(THTMLElement)
       protected
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoRespond(const AContext: TmnwContext); override;
       public        
         procedure Loop; virtual;
         constructor Create(AParent: TmnwElement; AName: string; ARoute: string = ''; ActionProc: TRespondProc = nil); reintroduce; overload;
@@ -1692,7 +1692,7 @@ type
         procedure SetFileName(const Value: string);
       protected
         function GetRoute: String; override;
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoRespond(const AContext: TmnwContext); override;
       public        
         function CanRender: Boolean; override;
         function GetContentType(Route: string): string; override;
@@ -1706,7 +1706,7 @@ type
       private
         FData: TMemoryStream;
       protected
-        procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+        procedure DoRespond(const AContext: TmnwContext); override;
       protected
         function GetRoute: String; override;
         procedure Created; override;
@@ -1825,7 +1825,7 @@ type
   protected
     //FLogo: THTML.TMemory;  
     procedure Created; override;
-    procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;     
+    procedure DoRespond(const AContext: TmnwContext); override;     
   public    
     class function GetCapabilities: TmnwSchemaCapabilities; override;
     procedure Start; override;
@@ -1847,13 +1847,13 @@ type
     AuthForm: TAuthForm;
   protected
     procedure DoLogin(const AContext: TmnwContext; var Success: Boolean; var Message: string; var SessionID: string); virtual; //use `var` no `out` because `inherited` reset it
-    procedure DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse); virtual;   
+    procedure DoLogout(const AContext: TmnwContext); virtual;   
 
-    procedure UserLogin(const AContext: TmnwContext; AResponse: TmnwResponse);     
-    procedure UserLogout(const AContext: TmnwContext; AResponse: TmnwResponse); 
+    procedure UserLogin(const AContext: TmnwContext);     
+    procedure UserLogout(const AContext: TmnwContext); 
     
-    procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse); override;
-    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext); override;
+    procedure DoRespondHeader(const AContext: TmnwContext); override;
     procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
@@ -1910,7 +1910,7 @@ type
   TLangDropdown = class(THTML.TDropdown)
   protected
     procedure Created; override; 
-    procedure DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoRespond(const AContext: TmnwContext); override;
     procedure DoCompose(const AContext: TmnwContext); override;      
   end;
 
@@ -2529,7 +2529,7 @@ end;
 
 { TmnwElementRenderer }
 
-procedure TmnwElementRenderer.RenderChilds(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElementRenderer.RenderChilds(Scope: TmnwScope; Context: TmnwContext);
 var
   o: TmnwElement;
   ParentRenderer: TmnwElementRenderer;
@@ -2554,11 +2554,11 @@ begin
 
     // Render in priority order
     for o in StartElements do
-      o.Render(Context, AResponse);
+      o.Render(Context);
     for o in NormalElements do
-      o.Render(Context, AResponse);
+      o.Render(Context);
     for o in EndElements do
-      o.Render(Context, AResponse);
+      o.Render(Context);
   finally
     EndElements.Free;
     NormalElements.Free;
@@ -2575,9 +2575,9 @@ procedure TmnwElementRenderer.DoEnterRender(Scope: TmnwScope; const Context: Tmn
 begin
 end;
 
-procedure TmnwElementRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElementRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
-  RenderChilds(Scope, Context, AResponse);
+  RenderChilds(Scope, Context);
 end;
 
 procedure TmnwElementRenderer.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
@@ -2600,7 +2600,7 @@ procedure TmnwElementRenderer.DoCollectAttributes(var Scope: TmnwScope; Context:
 begin
 end;
 
-procedure TmnwElementRenderer.Render(AElement: TmnwElement; const Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElementRenderer.Render(AElement: TmnwElement; const Context: TmnwContext);
 var
   aScope: TmnwScope;
 begin
@@ -2612,7 +2612,7 @@ begin
       Context.ParentRenderer.DoEnterChildRender(aScope, Context);
 
     DoEnterRender(aScope, Context);
-    DoInnerRender(aScope, Context, AResponse);
+    DoInnerRender(aScope, Context);
     DoLeaveRender(aScope, Context);
 
     if Context.ParentRenderer <> nil then
@@ -2661,7 +2661,7 @@ begin
     StrToStrings(Value, Result, vSeparators, []);
 end;
 
-procedure TmnwElement.Render(const Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.Render(const Context: TmnwContext);
 var
   er: TmnwElementRenderer;
 begin
@@ -2671,7 +2671,7 @@ begin
     if er <> nil then
     try
       try
-        er.Render(Self, Context, AResponse);
+        er.Render(Self, Context);
       except
         on E: Exception do
           raise Exception.Create('Error in '+ ClassName +': ' + E.Message);
@@ -3080,7 +3080,7 @@ begin
   end;
 end;
 
-procedure TmnwWeb.Respond(var AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwWeb.Respond(var AContext: TmnwContext);
 begin
   if Shutdown then
     exit;
@@ -3089,49 +3089,49 @@ begin
     InquireElement(AContext, True);
     if AContext.Element <> nil then
     begin      
-      AResponse.Answer := hrOK;
-      AResponse.Redirect := '';
+      AContext.Response.Answer := hrOK;
+      AContext.Response.Redirect := '';
 //      AResponse.Header['access-control-allow-origin'] := AResponse.Request.Host;
-      AResponse.Header['access-control-allow-origin'] := '*';
-      AResponse.PutHeader('Access-Control-Allow-Headers', 'Location, Content-Type, Authorization, Accept, Origin, X-PINGOTHER'); 
+      AContext.Response.Header['access-control-allow-origin'] := '*';
+      AContext.Response.PutHeader('Access-Control-Allow-Headers', 'Location, Content-Type, Authorization, Accept, Origin, X-PINGOTHER'); 
 
       //AResponse.Header['Access-Control-Allow-Headers'] := ' X-PINGOTHER, Content-Type';
       //AResponse.Header['Access-Control-Allow-Methods'] := 'HEAD,POST,GET,OPTIONS,PUT,DELETE,CONNECT,TRACE,PATCH';
       //AResponse.Header['Access-Control-Expose-Headers'] := ' Content-Encoding, Kuma-Revision';     
 
-      if not AResponse.IsResponded then
-        AContext.Element.RespondInit(AContext, AResponse); //For check Login in header before redirecting if needed
+      if not AContext.Response.IsResponded then
+        AContext.Element.RespondInit(AContext); //For check Login in header before redirecting if needed
 
       //* If you call schema name without ending by /
-      if not AResponse.IsResponded then
+      if not AContext.Response.IsResponded then
       begin
         if (AContext.Element = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.Route = '') then
-          AResponse.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)))
+          AContext.Response.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)))
         else
-          AResponse.ContentType := AContext.Element.GetContentType(AContext.Route);
+          AContext.Response.ContentType := AContext.Element.GetContentType(AContext.Route);
       end;
 
       //* Resume maybe come false in action
       //* We will render it now
-      if not AResponse.IsResponded then
+      if not AContext.Response.IsResponded then
       begin
         AContext.Element.PrepareRenderer(AContext); 
-        if not AResponse.IsResponded then
-          AContext.Element.Respond(AContext, AResponse);
+        if not AContext.Response.IsResponded then
+          AContext.Element.Respond(AContext);
       end;
 
-      if not (AResponse.IsHeaderSent) then
+      if not (AContext.Response.IsHeaderSent) then
       begin
-        if (AResponse.Answer =hrOK) and (not AResponse.IsResponded) then
-          AResponse.RespondNoContent
-        else if AResponse.Answer = hrNotFound then
-          AResponse.RespondNotFound;
+        if (AContext.Response.Answer =hrOK) and (not AContext.Response.IsResponded) then
+          AContext.Response.RespondNoContent
+        else if AContext.Response.Answer = hrNotFound then
+          AContext.Response.RespondNotFound;
       end;
     end
     else
     begin
-      if not AResponse.IsHeaderSent then
-        AResponse.RespondNotFound;
+      if not AContext.Response.IsHeaderSent then
+        AContext.Response.RespondNotFound;
     end;
 
     if AContext.Schema <> nil then
@@ -3158,12 +3158,12 @@ begin
     {$ifdef DEBUG}
     on E: Exception do
     begin
-      if not (AResponse.IsHeaderSent) then
+      if not (AContext.Response.IsHeaderSent) then
       begin
-        AResponse.Answer := hrError;
-        AResponse.ContentType := 'text/html';
+        AContext.Response.Answer := hrError;
+        AContext.Response.ContentType := 'text/html';
       end;
-      AResponse.SendUTF8String('Server Error: ' + E.Message);
+      AContext.Response.SendUTF8String('Server Error: ' + E.Message);
     end;
     {$else}
       raise;
@@ -3504,7 +3504,7 @@ begin
     Schema.Attachments.SendMessage(AttachmentName, AMessage);
 end;
 
-function TmnwElement.ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean;
+function TmnwElement.ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext): Boolean;
 var
   aDocument, aRequestDocument, aFile: string;
   IsDocument, IsDirectory, Expanded: Boolean;
@@ -3526,9 +3526,9 @@ begin
       if (serveIndexRoot in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then
       begin
         if StartsStr(HomeFolder, aDocument) then
-          ServeFolder(aDocument, Options, AContext, AResponse)
+          ServeFolder(aDocument, Options, AContext)
         else
-          AResponse.RespondUnauthorized;
+          AContext.Response.RespondUnauthorized;
       end
       else
         Result := False;
@@ -3544,7 +3544,7 @@ begin
   if ((AContext.Route = '') and not IsDocument) or
      (not EndsDelimiter(aRequestDocument) and IsDirectory) then
   begin
-    AResponse.RespondRedirectTo(AResponse.Request.Address);
+    AContext.Response.RespondRedirectTo(AContext.Request.Address); //TODO short it
     Exit;
   end;
 
@@ -3564,32 +3564,32 @@ begin
     if IsDirectory and (serveIndex in Options) then
     begin
       if StartsStr(HomeFolder, aDocument) then
-        ServeFolder(aDocument, Options, AContext, AResponse)
+        ServeFolder(aDocument, Options, AContext)
       else
-        AResponse.RespondUnauthorized;
+        AContext.Response.RespondUnauthorized;
       Exit;
     end;
   end;
 
   if StartsText('.', ExtractFileName(aDocument)) then
-    AResponse.RespondForbidden
+    AContext.Response.RespondForbidden
   else if IsDocument then
   begin
     if StartsText(HomeFolder, aDocument) then
-      AResponse.SendFile(aDocument)
+      AContext.Response.SendFile(aDocument)
     else
-      AResponse.RespondUnauthorized;
+      AContext.Response.RespondUnauthorized;
   end
   else
     Result := False;
 end;
 
-function TmnwElement.ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse): Boolean;
+function TmnwElement.ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext): Boolean;
 begin
-  Result := ServeFile(HomeFolder, nil, Options, AContext, AResponse);
+  Result := ServeFile(HomeFolder, nil, Options, AContext);
 end;
 
-procedure TmnwElement.ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext);
 var
   Files: TStringList;
 
@@ -3617,7 +3617,7 @@ var
   end;
 
 begin
-  AResponse.ContentType := DocumentToContentType('html');
+  AContext.Response.ContentType := DocumentToContentType('html');
   Files := TStringList.Create;
   try
     AContext.Writer.WriteLn('<!DOCTYPE html>');
@@ -3640,17 +3640,17 @@ begin
   end;
 end;
 
-procedure TmnwSchema.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwSchema.DoRespond(const AContext: TmnwContext);
 begin
-  if not (serveEnabled in ServeFiles) or not ServeFile(GetHomeFolder, DefaultDocuments, ServeFiles, AContext, AResponse) then    
-    Render(AContext, AResponse);
+  if not (serveEnabled in ServeFiles) or not ServeFile(GetHomeFolder, DefaultDocuments, ServeFiles, AContext) then    
+    Render(AContext);
 end;
 
 procedure TmnwSchema.DoAccept(var AContext: TmnwContext; var Resume: Boolean);
 begin
 end;
 
-procedure TmnwSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext);
 begin
 end;
 
@@ -3902,10 +3902,10 @@ begin
     Result := inherited GetRoute;
 end;
 
-procedure THTML.TImageMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure THTML.TImageMemory.DoRespond(const AContext: TmnwContext);
 begin
   Data.Seek(0, soBeginning);
-  AResponse.SendStream(Data, FileName, Data.Size, InstanceDate);
+  AContext.Response.SendStream(Data, FileName, Data.Size, InstanceDate);
 end;
 
 procedure THTML.TImageMemory.LoadFromFile(const AFileName: string);
@@ -4194,11 +4194,11 @@ procedure TmnwElement.DoPrepareRenderer(const AContext: TmnwContext);
 begin
 end;
 
-procedure TmnwElement.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.DoRespond(const AContext: TmnwContext);
 begin
 end;
 
-procedure TmnwElement.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.DoRespondHeader(const AContext: TmnwContext);
 begin
   AContext.Response.Session.ID := '';
 end;
@@ -4258,14 +4258,14 @@ begin
       Exit(i);
 end;
 
-procedure TmnwElement.Respond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.Respond(const AContext: TmnwContext);
 begin
   if (Schema <> nil) and (Schema <> Self) then
-    Schema.DoChildRespond(Self, AContext, AResponse);
-  if not AResponse.IsResponded and Assigned(OnRespond) then
-    OnRespond(AContext, AResponse);
-//  if not AResponse.IsResponded then  
-  DoRespond(AContext, AResponse);
+    Schema.DoChildRespond(Self, AContext);
+  if not AContext.Response.IsResponded and Assigned(OnRespond) then
+    OnRespond(AContext);
+//  if not AContext.Response.IsResponded then  
+  DoRespond(AContext);
 end;
 
 procedure TmnwElement.Compose(const AContext: TmnwContext);
@@ -4325,10 +4325,10 @@ begin
   Result := 'text/html';
 end;
 
-procedure TmnwElement.RespondInit(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwElement.RespondInit(const AContext: TmnwContext);
 begin
-//  AResponse.PutHeader('Content-Type', GetContentType(AContext.Route));
-  DoRespondHeader(AContext, AResponse);
+//  AContext.Response.PutHeader('Content-Type', GetContentType(AContext.Route));
+  DoRespondHeader(AContext);
 end;
 
 { TmnwRenderer }
@@ -4415,13 +4415,13 @@ end;
 
 { THTML.TFile }
 
-procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwSchema.TFile.DoRespond(const AContext: TmnwContext);
 begin
   inherited;
   if ftResource in Options then
-    AResponse.SendResource(FileName, Route)
+    AContext.Response.SendResource(FileName, Route)
   else
-    AResponse.SendFile(FileName);
+    AContext.Response.SendFile(FileName);
 end;
 
 constructor TmnwSchema.TFile.Create(AParent: TmnwElement; AOptions: TFileOptions; AFileName: string; ARoute: string );
@@ -4441,10 +4441,10 @@ begin
   Result := DocumentToContentType(FileName);
 end;
 
-procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwSchema.TMemory.DoRespond(const AContext: TmnwContext);
 begin
   Data.Seek(0, soBeginning);
-  AResponse.SendStream(Data, FileName, Data.Size, FileDate);
+  AContext.Response.SendStream(Data, FileName, Data.Size, FileDate);
 end;
 
 procedure TmnwSchema.TMemory.Created;
@@ -4483,10 +4483,10 @@ end;
 
 { THTML.TAssets }
 
-procedure THTML.TAssets.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure THTML.TAssets.DoRespond(const AContext: TmnwContext);
 begin
   inherited;
-  ServeFile(Schema.GetHomeFolder, [serveDefault], AContext, AResponse);
+  ServeFile(Schema.GetHomeFolder, [serveDefault], AContext);
 end;
 
 function THTML.TAssets.GetContentType(Route: string): string;
@@ -4496,10 +4496,10 @@ end;
 
 { THTML.TFolder }
 
-procedure THTML.TFolder.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure THTML.TFolder.DoRespond(const AContext: TmnwContext);
 begin
   inherited;
-  ServeFile(HomeFolder, ServeFiles, AContext, AResponse);
+  ServeFile(HomeFolder, ServeFiles, AContext);
 end;
 
 function THTML.TFolder.GetContentType(Route: string): string;
@@ -4515,7 +4515,7 @@ begin
   OnCompose := AOnCompose;
 end;
 
-procedure THTML.TDynamicCompose.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure THTML.TDynamicCompose.DoRespond(const AContext: TmnwContext);
 var
   Inner: TInner;
 begin
@@ -4525,12 +4525,12 @@ begin
     Inner.FSchema := Schema;
     Inner.FParent := Self; //Fake Parent do not add it to the list;
     Inner.IsRoot := AContext.Element = Self; // if compused from Schema of parents, or just directly composed
-    InnerCompose(Inner, AResponse);
+    InnerCompose(Inner, AContext.Response);
     if Assigned(OnCompose) then
-      OnCompose(Inner, AResponse);
+      OnCompose(Inner, AContext.Response);
     Inner.Compose(AContext);
 
-    Inner.Render(AContext, AResponse);
+    Inner.Render(AContext);
   finally
     Inner.Free;
   end;
@@ -4837,13 +4837,13 @@ end;
 
 { THTML.TForm }
 
-procedure THTML.TForm.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure THTML.TForm.DoRespondHeader(const AContext: TmnwContext);
 begin
   inherited;
-  if (RedirectTo <> '') and (AResponse.Answer = hrNone) then
+  if (RedirectTo <> '') and (AContext.Response.Answer = hrNone) then
   begin
-    AResponse.Answer := hrRedirect;
-    AResponse.Redirect := RedirectTo;
+    AContext.Response.Answer := hrRedirect;
+    AContext.Response.Redirect := RedirectTo;
   end;
 end;
 
@@ -4887,7 +4887,7 @@ begin
   OnRespond := ActionProc;
 end;
 
-procedure THTML.TAction.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure THTML.TAction.DoRespond(const AContext: TmnwContext);
 begin
   inherited;
   try
@@ -5044,7 +5044,7 @@ begin
     
     try          
 //      Response.ContentType := DocumentToContentType('html');
-      Module.Web.Respond(aContext, Response); //Main
+      Module.Web.Respond(aContext); //Main
     finally
       FreeAndNil(aContext.Writer);
       FreeAndNil(aContext.Renderer);
@@ -5125,7 +5125,7 @@ begin
   end;}
 end;
 
-procedure TAssetsSchema.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAssetsSchema.DoRespond(const AContext: TmnwContext);
 begin
   inherited;
 end;
@@ -5535,7 +5535,7 @@ end;
 
 { TAuthSchema }
 
-procedure TAuthSchema.UserLogin(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.UserLogin(const AContext: TmnwContext);
 var
   aSuccess: Boolean;
   aMessage: string;
@@ -5549,38 +5549,38 @@ begin
   if aSuccess then
   begin
     AContext.Response.Session.ID := aSessionID;
-    if AResponse.Request.RequestType = rtJSONData then    
-       AResponse.RespondJSON('{"type": "success", "state": "200", "message": "Login successed.", "redirect": "'+AContext.GetDefaultPath+'" }')
+    if AContext.Request.RequestType = rtJSONData then    
+       AContext.Response.RespondJSON('{"type": "success", "state": "200", "message": "Login successed.", "redirect": "'+AContext.GetDefaultPath+'" }')
     else
-      AResponse.RespondRedirectTo(AContext.GetDefaultPath);
+      AContext.Response.RespondRedirectTo(AContext.GetDefaultPath);
   end
   else
   begin
-    AResponse.RespondJSON('{"type": "error", "state": "301", "message": "'+aMessage+'" }', hrUnauthorized);
+    AContext.Response.RespondJSON('{"type": "error", "state": "301", "message": "'+aMessage+'" }', hrUnauthorized);
   end;    
 end;
 
-procedure TAuthSchema.UserLogout(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.UserLogout(const AContext: TmnwContext);
 begin
   AContext.Response.Session.ID := '';
-  AResponse.RespondRedirectTo(AContext.GetDefaultPath);
+  AContext.Response.RespondRedirectTo(AContext.GetDefaultPath);
 end;
 
-procedure TAuthSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.DoRespondHeader(const AContext: TmnwContext);
 begin
   if (AContext.Data <> nil) and SameText(AContext.Data.Values['execute'].AsString, 'true') then
   begin
-    UserLogin(AContext, AResponse);
+    UserLogin(AContext);
   end;
   inherited;
 end;
 
-procedure TAuthSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext);
 begin
   inherited;
   if (AElement.Name = 'login-form') and (AContext.Data <> nil) and (SameText(AContext.Data.Values['execute'].AsString, 'true') ) then
   begin
-    UserLogin(AContext, AResponse);
+    UserLogin(AContext);
   end;
 end;
 
@@ -5621,7 +5621,7 @@ procedure TAuthSchema.DoLogin(const AContext: TmnwContext; var Success: Boolean;
 begin
 end;
 
-procedure TAuthSchema.DoLogout(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TAuthSchema.DoLogout(const AContext: TmnwContext);
 begin
 end;
 
@@ -5632,10 +5632,10 @@ begin
   Result := (inherited CanRender) and (FileName <> '');
 end;
 
-procedure THTML.TImageFile.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure THTML.TImageFile.DoRespond(const AContext: TmnwContext);
 begin
   inherited;
-  AResponse.SendFile(FileName);
+  AContext.Response.SendFile(FileName);
 end;
 
 function THTML.TImageFile.GetContentType(Route: string): string;
@@ -5936,7 +5936,7 @@ end;
 
 { TmnwHTMLRenderer.TComment }
 
-procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TComment;
 begin
@@ -5947,19 +5947,19 @@ end;
 
 { TmnwHTMLRenderer.TFile }
 
-procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TFile;
 begin
   e := Scope.Element as THTML.TFile;
   if ftEmbed in e.Options then
-    Scope.Element.Respond(Context, AResponse);
+    Scope.Element.Respond(Context);
   inherited;
 end;
 
 { TmnwHTMLRenderer.TJSFile }
 
-procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TJSFile;
   src: string;
@@ -5982,7 +5982,7 @@ end;
 
 { TmnwHTMLRenderer.TCSSFile }
 
-procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TCSSFile;
   src: string;
@@ -6005,11 +6005,11 @@ end;
 
 { TmnwHTMLRenderer.TDynamicCompose }
 
-procedure TmnwHTMLRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Writer.OpenTag('div', Scope.Attributes.ToString);
   inherited;
-  Scope.Element.Respond(Context, AResponse);
+  Scope.Element.Respond(Context);
   Context.Writer.CloseTag('div');
 end;
 
@@ -6038,7 +6038,7 @@ begin
     Scope.Attributes['style'] := 'font-family: '+SQ(e.FontName)+'!important;';    
 end;
 
-procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;  
 end;
@@ -6063,7 +6063,7 @@ begin
   Scope.Attributes['lang'] := When(Context.Language <> '', Context.Language, 'en');
 end;
 
-procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext; AResponse: TmnwResponse);
+procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TDocument;
   aLibrary: TmnwLibrary;
@@ -6106,7 +6106,7 @@ begin
     end;
   end;}
   Context.Writer.CloseTag('head');
-  e.Body.Render(Context, AResponse);
+  e.Body.Render(Context);
   Context.Writer.CloseTag('html');
 end;
 
@@ -6128,7 +6128,7 @@ begin
     Image.Symbol := 'icon mnw-lang-english';              
 end;
 
-procedure TLangDropdown.DoRespond(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TLangDropdown.DoRespond(const AContext: TmnwContext);
 var
   Lang: string;
   Referer: string;
@@ -6138,7 +6138,7 @@ begin
   if Lang = '' then
     Lang := AContext.Web.Language;
 
-  Cookie := AResponse.SetCookie('language', Lang);
+  Cookie := AContext.Response.SetCookie('language', Lang);
   if Cookie <> nil then
   begin
     Cookie.Domain := AContext.Web.Domain;
@@ -6148,9 +6148,9 @@ begin
 
   Referer := AContext.Request.Header['Referer'];
   if Referer <> '' then
-    AResponse.RespondRedirectTo(Referer)
+    AContext.Response.RespondRedirectTo(Referer)
   else
-    AResponse.RespondRedirectTo(AContext.GetURL);
+    AContext.Response.RespondRedirectTo(AContext.GetURL);
 end;
 
 { TmnwSession }
