@@ -292,7 +292,7 @@ end;
 procedure TmnXMLNode.SetName(Name: String);
 begin
   if (xnoNameSpace in Nodes.Options) and (Pos(':', Name) > 0) then
-    SpliteStr(Name, ':', FNameSpace, FName)
+    SplitStr(Name, ':', FNameSpace, FName)
   else
     FName := Name;
 end;

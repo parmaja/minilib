@@ -57,7 +57,7 @@ function StrToStrings(const Content: string; Strings: TStrings; Separators: TSys
 {
   Example
   StrToStringsExCallback(Memo1.Text, 1, self, @AddString, ['::', ';', #13#10, #13, #10, #0]);
-  HINT: Put longest seperator first ::  befire ;
+  HINT: Put longest Delimiter first ::  befire ;
   Return the count of Parts
 
 }
@@ -130,29 +130,32 @@ function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): str
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer = 1): Boolean;
 function ContainsText(const SubStr, InStr: string): Boolean; deprecated 'Use StrUtils.ContainsText and swap params';
 
-//Same as Copy/MidStr but From To index
-//function CopyStr(const AText: String; const AFromIndex, AToIndex: Integer): String; overload; deprecated;
-function SubStr(const AText: String; AFromIndex, AToIndex: Integer): String; overload;
-{
-  Index started from 0
-}
-function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
-function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
-
 {
   StrHave: test the string if it have Separators
 }
 function HaveChar(S: string; Separators: TSysCharSet): Boolean;
 function IndexOfChar(S: string; Separators: TSysCharSet): Integer;
 
-//if S is same Name variabled passed, it empty it both, so i will use `var` not `out`
-procedure SpliteStr(S, Separator: string; var Name:string; var Value: string); inline;
+//if S is same Left variable passed, it empty it both, so i will use `var` not `out`
+procedure SplitStr(S, Separator: string; var Left: string; var Right: string); inline; overload;
+//You can pass negative Index
+procedure SplitStr(S: string; Index: Integer; Delimiters: TSysCharSet; out Left: string; out Right: string); overload;
 
-function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
+//Same as Copy/MidStr but From To index
+//function CopyStr(const AText: String; const AFromIndex, AToIndex: Integer): String; overload; deprecated;
+function SubStr(const AText: String; AFromIndex, AToIndex: Integer): String; overload;
+
+//Index started from 0
+function SubStr(const S: String; Delimiter: Char; FromIndex, ToIndex: Integer): String; overload;
+
+function SubStr(const S: String; Delimiters: TSysCharSet; Index: Integer = 0): String; overload;
+function SubStr(const S: String; Delimiter: Char; Index: Integer = 0): String; overload;
+
+function FetchStr(var Str: string; const Delimiter: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
 function StrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Integer; overload;
-function IsStrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Boolean; overload;
 function StrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean = False): Integer; overload;
+function IsStrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Boolean; overload;
 function IsStrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean = False): Boolean; overload;
 function CharInArray(const C: Char; const ArrayOfChar : array of Char; CaseInsensitive: Boolean = False) : Boolean;
 function CharArrayToSet(const ArrayOfChar : TArray<Char>) : TSysCharSet;
@@ -190,6 +193,7 @@ type
   TVarReplacesCallbackProc = procedure(Sender: Pointer; Name: string; var Value: string);
 
 function VarReplace(S: string; Values: TStrings; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+function VarEnvReplace(S: string; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -383,7 +387,7 @@ var
   SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
   DefFormatSettings : TFormatSettings;
 
-function Environment: TStrings;
+function EnvironmentValues: TStrings;
   
 implementation
 
@@ -405,7 +409,7 @@ begin
 end;
 
 var
-  FEnvironment: TStrings = nil;
+  FEnvironmentValues: TStrings = nil;
 
 procedure GetEnvironmentList(List: TStrings);
 var
@@ -456,14 +460,14 @@ begin
   end;
 end;
   
-function Environment: TStrings;
+function EnvironmentValues: TStrings;
 begin
-  if FEnvironment = nil then
+  if FEnvironmentValues = nil then
   begin  
-    FEnvironment := TStringList.Create;
-    GetEnvironmentList(FEnvironment);
+    FEnvironmentValues := TStringList.Create;
+    GetEnvironmentList(FEnvironmentValues);
   end;
-  Result := FEnvironment;
+  Result := FEnvironmentValues;
 end;
 
 function HaveChar(S: string; Separators: TSysCharSet): Boolean;
@@ -839,6 +843,11 @@ begin
   if (OpenStart > 0) then
     Check(Index);
   Result := Result + MidStr(S, Start, MaxInt);
+end;
+
+function VarEnvReplace(S: string; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+begin
+  VarReplace(S, EnvironmentValues, Prefix, Suffix, ExtraChar, VarOptions, Sender, ReplacesCallbackProc);
 end;
 
 {
@@ -1844,26 +1853,26 @@ begin
   Result := Copy(AText, AFromIndex, AToIndex - AFromIndex + 1);
 end;
 
-function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String;
+function SubStr(const S: String; Delimiter: Char; FromIndex, ToIndex: Integer): String;
 var
   Index, B, E: Integer;
   C: Char;
 begin
-  if Str='' then
+  if S='' then
     Exit('');
 
   Index := 0;
   B := 0;
   E := 1;
-  for C in Str do
+  for C in S do
   begin
-    if (B = 0) and (Index = vFromIndex) then
+    if (B = 0) and (Index = FromIndex) then
       B := E;
 
-    if C = vSeperator then
+    if C = Delimiter then
       Inc(Index);
 
-    if (Index = vToIndex + 1) then
+    if (Index = ToIndex + 1) then
     begin
       E := E - 1;
       Break;
@@ -1872,59 +1881,123 @@ begin
   end;
 
   if B <> 0 then
-    Result := Copy(Str, B, E - B + 1)
+    Result := Copy(S, B, E - B + 1)
   else
     Result := '';
 end;
 
-function SubStr(const Str: String; vSeperator: Char; vIndex: Integer): String;
+function SubStr(const S: String; Delimiters: TSysCharSet; Index: Integer): String;
+var
+  l, i, c: integer;
+  b, e: Integer; //begin, end
 begin
-  if Str = '' then
-    Result := ''
+  if S = '' then
+    exit('');
+
+  l := Length(S);
+
+  if Index >= 0 then
+  begin
+    i := 1;
+    b := 0;
+    e := l + 1;
+  end
   else
-    Result := SubStr(Str, vSeperator, vIndex, vIndex);
+  begin
+    i := l;
+    b := l + 1;
+    e := 0;
+  end;
+
+  c := 0;
+  while (i >= 1) and (i <= l) do
+  begin
+    if CharInSet(S[i], Delimiters) then
+    begin
+      if (Index < 0) then
+        inc(c);
+      if c = abs(Index) then
+      begin
+        e := i;
+        break;
+      end
+      else
+        b := i;
+      if (Index >=0) then
+        inc(c);
+    end;
+    if Index >= 0 then
+      inc(i)
+    else
+      dec(i);
+  end;
+
+  if Index >= 0 then
+  begin
+    if (c < Index) then
+      exit('');
+    c := e - b - 1;
+    if c <=0 then
+      exit('');
+    Result := Copy(S, b + 1, c)
+  end
+  else
+  begin
+    if (c < (-Index - 1)) then
+      exit('');
+    c := b - e - 1;
+    if c <= 0 then
+      exit('');
+    Result := Copy(S, e + 1, c);
+  end;
 end;
 
-procedure SpliteStr(S, Separator: string; var Name:string; var Value: string);
+function SubStr(const S: String; Delimiter: Char; Index: Integer = 0): String; overload;
+begin
+  Result := SubStr(S, [Delimiter], Index);
+end;
+
+procedure SplitStr(S, Separator: string; var Left: string; var Right: string);
 var
   p: integer;
 begin
   p := Pos(Separator, S);
   if P > 0 then
   begin
-    Name := Copy(s, 1, p - 1);
-    Value := Copy(s, p + 1, MaxInt);
+    Left := Copy(s, 1, p - 1);
+    Right := Copy(s, p + 1, MaxInt);
   end
   else
   begin
-    Name := s;
-    Value := '';
+    Left := s;
+    Right := '';
   end;
 end;
 
-function FetchStr(var AInput: string; const ADelim: string; const ADelete: Boolean; const ACaseSensitive: Boolean): string;
+function FetchStr(var Str: string; const Delimiter: string; const ADelete: Boolean; const ACaseSensitive: Boolean): string;
 var
   LPos: Integer;
 begin
-  if ADelim = #0 then begin
+  if Delimiter = #0 then
+  begin
     // AnsiPos does not work with #0
-    LPos := Pos(ADelim, AInput);
+    LPos := Pos(Delimiter, Str);
   end else begin
-    LPos := Pos(ADelim, AInput);
+    LPos := Pos(Delimiter, Str);
   end;
-  if LPos = 0 then begin
-    Result := AInput;
-    if ADelete then begin
-      AInput := '';    {Do not Localize}
-    end;
+
+  if LPos = 0 then
+  begin
+    Result := Str;
+    if ADelete then
+      Str := '';
   end
-  else begin
-    Result := Copy(AInput, 1, LPos - 1);
-    if ADelete then begin
-      //slower Delete(AInput, 1, LPos + Length(ADelim) - 1); because the
-      //remaining part is larger than the deleted
-      AInput := Copy(AInput, LPos + Length(ADelim), MaxInt);
-    end;
+  else
+  begin
+    Result := Copy(Str, 1, LPos - 1);
+    if ADelete then
+      //Delete(Str, 1, LPos + Length(Delimiter) - 1); Slow, because the remaining part is larger than the deleted
+      Str := Copy(Str, LPos + Length(Delimiter), MaxInt);
   end;
 end;
 
@@ -2038,29 +2111,29 @@ begin
   {$endif MSWINDOWS}
 end;
 
-function SplitPath(Path: string; out Right: string; Index: Integer): string; overload;
+procedure SplitStr(S: string; Index: Integer; Delimiters: TSysCharSet; out Left: string; out Right: string);
 var
   l, i, e: Integer;
   c: Char;
 begin
-  if Path = '' then
+  if S = '' then
   begin
-    Result := '';
+    Left := '';
     Right := '';
   end
   else if Index = 0 then
   begin
-    Result := Path;
+    Left := S;
     Right := '';
   end
   else
   begin
     i := 0;
-    l := Length(Path);
+    l := Length(S);
     if Index > 0 then
     begin
       e := 1;
-      if CharInSet(Path[1], ['\', '/']) then
+      if CharInSet(S[1], Delimiters) then
       begin
         dec(l);
         inc(e);
@@ -2069,7 +2142,7 @@ begin
     else
     begin
       e := l;
-      if CharInSet(Path[l], ['\', '/']) then
+      if CharInSet(S[l], Delimiters) then
       begin
         dec(l);
         dec(e);
@@ -2078,8 +2151,8 @@ begin
 
     while l > 0 do
     begin
-      C := Path[e];
-      if CharInSet(C, ['\', '/']) then
+      C := S[e];
+      if CharInSet(C, Delimiters) then
         Inc(i);
       if (i = Abs(Index)) then
         Break;
@@ -2090,16 +2163,21 @@ begin
         Dec(e);
       Dec(l);
     end;
-    Result := Copy(Path, 1, e);
-    Right := Copy(Path, e + 1, MaxInt);
+    Left := Copy(S, 1, e);
+    Right := Copy(S, e + 1, MaxInt);
   end;
+end;
+
+function SplitPath(Path: string; out Right: string; Index: Integer): string; overload;
+begin
+  SplitStr(Path, Index, ['\', '/'], Result, Right);
 end;
 
 function SplitPath(Path: string; Index: Integer): string; overload;
 var
   t: string;
 begin
-  Result := SplitPath(Path, t, Index);
+  SplitStr(Path, Index, ['\', '/'], Result, t);
 end;
 
 function ExpandFile(const Name: string): string;
@@ -3047,6 +3125,6 @@ initialization
   SystemAnsiCodePage := 1252; //scpAnsi has no meaning in linux, you can change it in your application
   {$endif}
 finalization
-  FreeAndNil(FEnvironment);
+  FreeAndNil(FEnvironmentValues);
 end.
 

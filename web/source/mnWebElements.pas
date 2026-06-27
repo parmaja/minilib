@@ -2240,7 +2240,7 @@ var
     else
       eol := '';
     lCmd := SubStr(s, 1, -eol.Length);
-    SpliteStr(lCmd, ' ', lCmd, lValue);
+    SplitStr(lCmd, ' ', lCmd, lValue);
   end;
 
   procedure MessageIt;
@@ -5003,7 +5003,7 @@ begin
     aPort := Module.Server.Port;
   end
   else
-    SpliteStr(Request.Header['Host'], ':', aDomain, aPort);
+    SplitStr(Request.Header['Host'], ':', aDomain, aPort);
 
   if Module.Web.Domain = '' then
   begin

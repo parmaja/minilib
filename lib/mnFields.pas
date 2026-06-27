@@ -190,7 +190,7 @@ type
     procedure Empty; virtual;//make value empty
     function Memory: TmncFieldMemory;
 
-  {$ifdef FPC}  
+  {$ifdef FPC_NOTYET}  
   public  
     //class operator Implicit (f: TprmustomField): Integer; { TODO : when support by delphi }
     class operator Implicit(a: TmnFieldValue): string;
@@ -305,7 +305,7 @@ implementation
 
 { TmnCustomField }
 
-{$ifdef FPC}  
+{$ifdef FPC_NOTYET}
 class operator TmnCustomField.Implicit(a: TmnCustomField): string;
 begin
   Result := a.AsString;

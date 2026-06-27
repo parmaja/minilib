@@ -22,6 +22,7 @@ type
     Edit1: TEdit;
     Edit2: TEdit;
     Edit3: TEdit;
+    Label1: TLabel;
     ListBox1: TListBox;
     Memo1: TMemo;
     procedure Button1Click(Sender: TObject);
@@ -31,6 +32,7 @@ type
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
   public
   end;
@@ -124,6 +126,11 @@ begin
   edit2.Text := l;
   Memo1.Lines.Add(l);
   Memo1.Lines.Add(r);
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  //c:\temp\dir1\dir2\11.txt
 end;
 
 end.

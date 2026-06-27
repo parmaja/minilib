@@ -167,7 +167,7 @@ begin
   if EMail = '' then
   begin
     EMail := Name;
-    SpliteStr(Email, '@', Name, Address);
+    SplitStr(Email, '@', Name, Address);
   end;
 
   if WithEnclose then
@@ -181,7 +181,7 @@ var
   SMTPClient: TmnSMTPClient;
   aHost, aPort, aUserName, aUserMail: string;
 begin
-  SpliteStr(vHost, ':', aHost, aPort);
+  SplitStr(vHost, ':', aHost, aPort);
   SMTPClient := TmnSMTPClient.Create;
   try
     SMTPClient.Host := aHost;

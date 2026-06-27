@@ -1,50 +1,52 @@
 object Form1: TForm1
   Left = 343
-  Height = 317
+  Height = 336
   Top = 188
   Width = 320
   Caption = 'Strings'
-  ClientHeight = 317
+  ClientHeight = 336
   ClientWidth = 320
   LCLVersion = '4.99.0.0'
+  OnCreate = FormCreate
   object Button1: TButton
     Left = 64
     Height = 25
     Top = 34
     Width = 75
     Caption = 'SubStr'
+    Default = True
     TabOrder = 0
     OnClick = Button1Click
   end
   object Edit1: TEdit
     Left = 8
-    Height = 23
+    Height = 25
     Top = 8
     Width = 304
     Anchors = [akTop, akLeft, akRight]
     TabOrder = 1
-    Text = 'c:\temp\dir1\dir2\11.txt'
+    Text = 'aa,bb,cc,dd'
   end
   object Edit2: TEdit
-    Left = 226
-    Height = 23
-    Top = 36
-    Width = 86
+    Left = 64
+    Height = 25
+    Top = 64
+    Width = 232
     Anchors = [akTop, akLeft, akRight]
     TabOrder = 2
   end
   object Edit3: TEdit
     Left = 8
-    Height = 23
+    Height = 25
     Top = 36
     Width = 50
     TabOrder = 3
-    Text = '2'
+    Text = '-1'
   end
   object Button2: TButton
     Left = 8
     Height = 25
-    Top = 200
+    Top = 220
     Width = 75
     Caption = 'StrToStrings'
     TabOrder = 4
@@ -53,7 +55,7 @@ object Form1: TForm1
   object ListBox1: TListBox
     Left = 8
     Height = 80
-    Top = 230
+    Top = 250
     Width = 304
     Anchors = [akTop, akLeft, akRight]
     ItemHeight = 0
@@ -62,7 +64,7 @@ object Form1: TForm1
   object Button3: TButton
     Left = 88
     Height = 25
-    Top = 200
+    Top = 220
     Width = 75
     Caption = 'StrToStrings'
     TabOrder = 6
@@ -71,7 +73,7 @@ object Form1: TForm1
   object Button4: TButton
     Left = 8
     Height = 25
-    Top = 165
+    Top = 185
     Width = 128
     Caption = 'StrToStringsEx'
     TabOrder = 7
@@ -80,7 +82,7 @@ object Form1: TForm1
   object Memo1: TMemo
     Left = 8
     Height = 77
-    Top = 84
+    Top = 104
     Width = 304
     Anchors = [akTop, akLeft, akRight]
     Lines.Strings = (
@@ -91,7 +93,7 @@ object Form1: TForm1
   object Button5: TButton
     Left = 166
     Height = 25
-    Top = 200
+    Top = 220
     Width = 75
     Caption = 'ScanTo'
     TabOrder = 9
@@ -100,7 +102,7 @@ object Form1: TForm1
   object Button6: TButton
     Left = 242
     Height = 25
-    Top = 200
+    Top = 220
     Width = 71
     Caption = 'Clear'
     TabOrder = 10
@@ -114,5 +116,12 @@ object Form1: TForm1
     Caption = 'SplitPath'
     TabOrder = 11
     OnClick = Button7Click
+  end
+  object Label1: TLabel
+    Left = 11
+    Height = 17
+    Top = 69
+    Width = 35
+    Caption = 'Result'
   end
 end

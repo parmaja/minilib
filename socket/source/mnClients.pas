@@ -328,7 +328,7 @@ constructor TmnClientSocket.Create(const vAddress: string; vOptions: TmnsoOption
 var
   aAddress, aPort: string;
 begin
-  SpliteStr(vAddress, ':', aAddress, aPort);
+  SplitStr(vAddress, ':', aAddress, aPort);
   Create(aAddress, aPort, vOptions);
 end;
 
@@ -336,7 +336,7 @@ constructor TmnClientSocket.CreateBy(const vHost: string; vDefPort: string; vOpt
 var
   aAddress, aPort: string;
 begin
-  SpliteStr(vHost, ':', aAddress, aPort);
+  SplitStr(vHost, ':', aAddress, aPort);
   if aPort = '' then
     aPort := vDefPort;
   Create(aAddress, aPort, vOptions);
