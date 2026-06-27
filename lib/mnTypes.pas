@@ -34,6 +34,9 @@ const
 
   URLDelimiter = '/';
 
+  PathDelimiter  = {$IFDEF MSWINDOWS} '\'; {$ELSE} '/'; {$ENDIF}
+  PathDelimiters = ['\', '/'];
+
 type
   TmnDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig, dtColor {bigint or int64}, dtUUID{, dtEnum, dtSet});
   TmnSubType = (dstBinary, dstText, dstImage, dstXML, dstJSON);
