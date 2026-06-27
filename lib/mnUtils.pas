@@ -189,7 +189,7 @@ type
   );
   TVarReplacesCallbackProc = procedure(Sender: Pointer; Name: string; var Value: string);
 
-function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+function VarReplace(S: string; Values: TStrings; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -377,11 +377,20 @@ procedure CenterRect(var R1: TRect; R2: TRect);
 
 procedure OpenURL(URL: string);
 
+procedure GetEnvironmentList(List: TStrings);
+
 var
   SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
   DefFormatSettings : TFormatSettings;
+
+function Environment: TStrings;
   
 implementation
+
+{$IFDEF POSIX}
+uses
+  Posix.Unistd;
+{$ENDIF}
 
 {$ifdef FPC}
 {$else}
@@ -393,6 +402,68 @@ implementation
 
 procedure Nothing;
 begin
+end;
+
+var
+  FEnvironment: TStrings = nil;
+
+procedure GetEnvironmentList(List: TStrings);
+var
+  {$IFDEF MSWINDOWS}
+  EnvBlock, P: PChar;
+  {$else}
+  EnvVar: PAnsiChar;
+  {$endif}
+  I: Integer;
+begin
+  if not Assigned(List) then
+    Exit;
+
+  List.BeginUpdate;
+  try
+    List.Clear;
+    
+    {$IFDEF MSWINDOWS}
+    EnvBlock := GetEnvironmentStrings;
+    try
+      if EnvBlock = nil then 
+        Exit;
+
+      P := EnvBlock;
+      while P^ <> #0 do
+      begin
+        List.Add(P);        
+        Inc(P, StrLen(P) + 1); 
+      end;
+    finally
+      FreeEnvironmentStrings(EnvBlock);
+    end;
+    {$ELSE}
+    // On POSIX (Linux/macOS), we iterate through the 'environ' global variable
+    I := 0;
+    while True do
+    begin
+      EnvVar := GetEnviron[I];
+      if not Assigned(EnvVar) then
+        Break;
+      
+      List.Add(UTF8ToString(EnvVar));
+      Inc(I);
+    end;
+    {$ENDIF}
+  finally
+    List.EndUpdate;
+  end;
+end;
+  
+function Environment: TStrings;
+begin
+  if FEnvironment = nil then
+  begin  
+    FEnvironment := TStringList.Create;
+    GetEnvironmentList(FEnvironment);
+  end;
+  Result := FEnvironment;
 end;
 
 function HaveChar(S: string; Separators: TSysCharSet): Boolean;
@@ -2975,5 +3046,7 @@ initialization
   {$else}
   SystemAnsiCodePage := 1252; //scpAnsi has no meaning in linux, you can change it in your application
   {$endif}
+finalization
+  FreeAndNil(FEnvironment);
 end.
 
