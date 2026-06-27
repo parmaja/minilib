@@ -94,7 +94,7 @@ WebElement:                             Module  Namespace Schema  Directory     
 }
 
 {.$define LOG}
-{$define MINILIB}
+{.$define LOCAL_RESOURCE}
 
 interface
 
@@ -332,6 +332,8 @@ type
     procedure Free;
   end;
 
+  TmnwLibraryClass = class of TmnwLibrary;
+  
   TmnwContext = record
   private
     FRequest: TmodRequest;
@@ -391,6 +393,8 @@ type
     property Web: TmnwWeb read FWeb;
     property Renderer: TmnwRenderer read FRenderer;
     property Writer: TmnTidyWriter read FWriter;
+  public
+    procedure Use(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0);
   end;
 
   TmnwObject = class(TmnNamedObject);
@@ -413,29 +417,29 @@ type
     stResource
   );
   
-  TLibrarySource = class(TmnNamedObject)
+  TmnwLibrarySource = class(TmnNamedObject)
   public    
     SourceType: TLibrarySourceType;
     Where: TLibrarySourceWhere;
-    Value: string;
-    LocalFileName: string;    
+    OnlineFile: string;
+    LocalFile: string;    
     Integrity: string;
     Direction: TDirection;
     Options: TLibraryOptions;    
     constructor Create; virtual;
   end;
 
-  TLibrarySources = class(TmnNamedObjectList<TLibrarySource>)
+  TLibrarySources = class(TmnNamedObjectList<TmnwLibrarySource>)
   private
   public
     //LocalFile: from assets, only file name, not with path
     //OnlineFile: if OnlineFile ended with / LocalFile will added
-    function Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFileName: string; Direction: TDirection; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
+    function Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFile: string; Direction: TDirection = dirUndefined; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TmnwLibrarySource; overload;
 
-    function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string; Direction: TDirection = dirUndefined): TLibrarySource; overload;
-    function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string; Integrity: string; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; overload;
+    function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Direction: TDirection = dirUndefined): TmnwLibrarySource; overload;
+    function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Integrity: string; Options: TLibraryOptions = [libDefer, libCross]): TmnwLibrarySource; overload;
 
-    function AddStyle(const EmbedText: string; Direction: TDirection = dirUndefined): TLibrarySource; overload;
+    function AddStyle(const EmbedText: string; Direction: TDirection = dirUndefined): TmnwLibrarySource; overload;
   end;
   
   TmnwLibrary = class abstract(TmnNamedObject)
@@ -456,8 +460,6 @@ type
     property DependsOn: TmnwLibrary read FDependsOn write FDependsOn;
     property Sources: TLibrarySources read FSources;
   end;
-
-  TmnwLibraryClass = class of TmnwLibrary;
 
   { TmnwLibraries }
 
@@ -1955,7 +1957,7 @@ function EndURL(const Path: string): string; inline;
 function NewUUID: string;
 
 function Renderers: TmnwRenderers;
-function Libraries: TmnwLibraries; //TODO
+function GlobalLibraries: TmnwLibraries; //TODO
 var
   GlobalTimeStamp: Int64;
 
@@ -2121,7 +2123,7 @@ end;
 var
   //*Should be by base class categoried
   FRenderers: TmnwRenderers = nil;
-  FLibraries: TmnwLibraries = nil;
+  FGlobalLibraries: TmnwLibraries = nil;
   
 function Renderers: TmnwRenderers;
 begin
@@ -2130,11 +2132,11 @@ begin
   Result := FRenderers;  
 end;
 
-function Libraries: TmnwLibraries;
+function GlobalLibraries: TmnwLibraries;
 begin
-  if FLibraries = nil then
-    FLibraries := TmnwLibraries.Create;
-  Result := FLibraries;  
+  if FGlobalLibraries = nil then
+    FGlobalLibraries := TmnwLibraries.Create;
+  Result := FGlobalLibraries;  
 end;
   
 {$ifdef rtti_objects}
@@ -4550,7 +4552,7 @@ end;
 
 procedure TmnwLibrary.AddHead(const Context: TmnwContext);
 var
-  source: TLibrarySource;
+  source: TmnwLibrarySource;
   url: string;  
   aDirection: TDirection;
   local: Boolean;
@@ -4565,14 +4567,14 @@ begin
     begin
       if source.Where in [stOnline, stResource]  then           
       begin
-        if (source.Value = '') or (source.Where = stResource) or CheckOffline(Context, source.Name) then
+        if (source.OnlineFile = '') or (source.Where = stResource) or CheckOffline(Context, source.Name) then
         begin
           url := EndUrl(Context.GetAssetsURL) + source.Name;
           local := True;
         end
         else 
         begin
-          url := source.Value;
+          url := source.OnlineFile;
           local:= False;
         end;
 
@@ -4592,8 +4594,8 @@ begin
       else
       begin
         case source.SourceType of
-          stStyle: Context.Writer.AddEmbedStyle(source.Value);
-          stScript: Context.Writer.AddEmbedScript(source.Value, libDefer in source.Options);
+          stStyle: Context.Writer.AddEmbedStyle(source.OnlineFile);
+          stScript: Context.Writer.AddEmbedScript(source.OnlineFile, libDefer in source.Options);
         end;
       end;
     end;    
@@ -4714,8 +4716,8 @@ begin
   inherited;
 //  Sources.Add(stScript, '', 'web-elements.js?v=' + IntToStr(GlobalTimeStamp));
 //  Sources.Add(stStyle, '', 'web-elements.css?v=' + IntToStr(GlobalTimeStamp));
-  Sources.Add(stScript, '', 'web-elements.js');
-  Sources.Add(stStyle, '', 'web-elements.css');
+  Sources.Add(stScript, stResource, 'web-elements.js', '?minilib\web\source\mnWebElements.js');
+  Sources.Add(stStyle, stResource, 'web-elements.css', '?minilib\web\source\mnWebElements.css');
 end;
 
 { THTML.TImage }
@@ -5075,13 +5077,38 @@ end;
 procedure TAssetsSchema.Start;
 var
   minilib: string;
+  aLibrary: TmnwLibrary;
+  aSource: TmnwLibrarySource;
+  aLocalFile: string;
 begin
   inherited;
   Name := 'Assets';
   Route := 'assets';
-  //TCSSFile.Create(This, [ftResource], 'mnWebElements.css');
-  {$ifdef MINILIB}  
-  minilib := GetEnvironmentVariable('minilib');
+  
+  GlobalLibraries.Lock.Enter;
+  try
+    for aLibrary in GlobalLibraries do
+    begin
+      for aSource in aLibrary.Sources do
+      begin
+        if stResource = aSource.Where then
+        begin    
+          {$ifdef LOCAL_RESOURCE}
+          aLocalFile := ExpandFileName(VarReplace(aSource.LocalFile, Environment, '?'));
+          if FileExists(aLocalFile) then
+            TFile.Create(This, [], aLocalFile, aSource.Name)
+          else
+          {$endif}
+            TFile.Create(This, [ftResource], StringReplace(ExtractFileName(aSource.LocalFile), '.', '_', [rfReplaceAll]), aSource.Name);
+        end;
+      end;
+    end;    
+  finally
+    GlobalLibraries.Lock.Leave;
+  end;
+(*  
+  {$ifdef LOCAL_RESOURCE}  
+  minilib := GetEnvironmentVariable('minilib');  
   if minilib <> '' then //Working in Developer PC
   begin
     TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/web/source/mnWebElements.js'), 'web-elements.js');
@@ -5103,12 +5130,7 @@ begin
       TFile.Create(This, [ftResource], 'mnWebElements_js', 'web-elements.js');
     end;
   end;
-
-  {with TElement.Create(This, 'resource') do
-  begin
-      TFile.Create(This, [ftResource], 'mnWebElements_css', 'web-elements.css');
-      TFile.Create(This, [ftResource], 'mnWebElements_js', 'web-elements.js');
-  end;}
+*)
 
   {// Register resource files from global libraries
   Libraries.Lock.Enter;
@@ -5481,6 +5503,11 @@ begin
   Result := GetURL(Schema);
 end;
 
+procedure TmnwContext.Use(ALibraryClass: TmnwLibraryClass; Priority: Integer);
+begin
+  Renderer.Libraries.Use(ALibraryClass, Priority);
+end;
+
 function TmnwContext.GetHomePath: string;
 begin
   Result := StartURL(Schema.Web.ModuleName + StartURL(Request.NameSpace));
@@ -5806,40 +5833,49 @@ end;
 
 { TLibrarySources }
 
-function TLibrarySources.Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFileName: string; Direction: TDirection; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TLibrarySource; 
+function TLibrarySources.Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFile: string; Direction: TDirection; Integrity: string; Options: TLibraryOptions): TmnwLibrarySource; 
 begin
-  Result := TLibrarySource.Create;
-  Result.Name := LocalFileName;
+  Result := TmnwLibrarySource.Create;
+
+  Result.OnlineFile := OnlineFile;
+  Result.LocalFile := LocalFile;
+ 
+  if EndsDelimiter(OnlineFile) then 
+  begin
+    Result.Name := ExtractFileName(LocalFile);
+    Result.OnlineFile := OnlineFile + Result.Name
+  end
+  else  
+  begin
+    Result.Name := ExtractFileName(OnlineFile);
+  end;
+  
   Result.SourceType := SourceType;
   Result.Where := Where;
-  if EndsDelimiter(OnlineFile) then 
-    Result.Value := OnlineFile + LocalFileName
-  else  
-    Result.Value := OnlineFile;
   Result.Direction := Direction;
   Result.Integrity := Integrity;
   Result.Options := Options;
   inherited Add(Result);
 end;
 
-function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string; Integrity: string; Options: TLibraryOptions): TLibrarySource;
+function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Integrity: string; Options: TLibraryOptions): TmnwLibrarySource;
 begin
-  Result := Add(SourceType, stOnline, OnlineFile, LocalFileName, dirUndefined, Integrity, Options);
+  Result := Add(SourceType, stOnline, OnlineFile, LocalFile, dirUndefined, Integrity, Options);
 end;
 
-function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFileName: string; Direction: TDirection): TLibrarySource;
+function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Direction: TDirection): TmnwLibrarySource;
 begin
-  Result := Add(SourceType, stOnline, OnlineFile, LocalFileName, Direction, '');
+  Result := Add(SourceType, stOnline, OnlineFile, LocalFile, Direction, '');
 end;
 
-function TLibrarySources.AddStyle(const EmbedText: string; Direction: TDirection): TLibrarySource;
+function TLibrarySources.AddStyle(const EmbedText: string; Direction: TDirection): TmnwLibrarySource;
 begin
   Result := Add(stStyle, stEmbed, EmbedText, '', Direction);
 end;
 
-{ TLibrarySource }
+{ TmnwLibrarySource }
 
-constructor TLibrarySource.Create;
+constructor TmnwLibrarySource.Create;
 begin
   inherited;
   Options := [libDefer, libCross];
@@ -5854,9 +5890,9 @@ begin
   ALibrary := Find(ALibraryClass);
   if ALibrary <> nil then
     exit; //Already used
-  ALibrary := Libraries.Find(ALibraryClass);
+  ALibrary := GlobalLibraries.Find(ALibraryClass);
   if ALibrary = nil then
-    ALibrary := Libraries.RegisterLibrary(ALibraryClass, Priority);
+    ALibrary := GlobalLibraries.RegisterLibrary(ALibraryClass, Priority);
   if ALibrary <> nil then
     Add(ALibrary)
   else
@@ -5894,7 +5930,7 @@ begin
   ALibrary := Find(ALibraryName);
   if ALibrary <> nil then
     exit; //Already used
-  ALibrary := Libraries.Find(ALibraryName);
+  ALibrary := GlobalLibraries.Find(ALibraryName);
   if ALibrary <> nil then
     Add(ALibrary)
   else
@@ -6251,8 +6287,9 @@ begin
 end;
 
 initialization
-  GlobalTimeStamp := GetTimeStamp;
+  GlobalTimeStamp := GetTimeStamp;  
+  GlobalLibraries.RegisterLibrary(TWebElements_Library, 2000);
 finalization
   FreeAndNil(FRenderers);
-  FreeAndNil(FLibraries);
+  FreeAndNil(FGlobalLibraries);  
 end.

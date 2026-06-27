@@ -821,7 +821,6 @@ begin
   if e.RedirectTo <> '' then
     Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo + '"');
   Context.Writer.AddShortTag('input', 'type="hidden" name="execute" value="true"');
-  Context.Writer.CloseTag('form');
 
   if e.Submit.Caption <> '' then
     Context.Writer.AddTag('button', 'class="btn btn-success" type="submit" form="'+e.ID+'" value="Submit"', e.Submit.Caption);
@@ -831,6 +830,7 @@ begin
       if e.CancelTo.Where <> toNone then
         Context.Writer.AddTag('a', 'class="btn btn-primary" type="cancel" href="' + Context.GetLocationPath(e.CancelTo) + '"', e.Cancel.Caption);
         //Context.Writer.AddTag('button', 'class="btn btn-primary" type="cancel" onclick="location.href=''' + Context.GetLocationPath(e.CancelTo) + '''"', e.Cancel.Caption);
+  Context.Writer.CloseTag('form');
 end;
 
 { TBSRenderer.TParagraphHTML }
