@@ -5076,10 +5076,8 @@ end;
 
 procedure TAssetsSchema.Start;
 var
-  minilib: string;
   aLibrary: TmnwLibrary;
   aSource: TmnwLibrarySource;
-  aLocalFile: string;
 begin
   inherited;
   Name := 'Assets';
@@ -5099,7 +5097,7 @@ begin
             TFile.Create(This, [], aLocalFile, aSource.Name)
           else
           {$endif}
-            TFile.Create(This, [ftResource], StringReplace(ExtractFileName(aSource.LocalFile), '.', '_', [rfReplaceAll]), aSource.Name);
+            TFile.Create(This, [ftResource], StringReplace(SubPath(aSource.LocalFile, -1), '.', '_', [rfReplaceAll]), aSource.Name);
         end;
       end;
     end;    
@@ -5838,11 +5836,11 @@ begin
   Result := TmnwLibrarySource.Create;
 
   Result.OnlineFile := OnlineFile;
-  Result.LocalFile := LocalFile;
+  Result.LocalFile := VarEnvReplace(LocalFile, [vrPathValues]);
  
   if EndsDelimiter(OnlineFile) then 
   begin
-    Result.Name := ExtractFileName(LocalFile);
+    Result.Name := SubStr(LocalFile, PathDelimiters, -1);
     Result.OnlineFile := OnlineFile + Result.Name
   end
   else  

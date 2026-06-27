@@ -12,30 +12,30 @@ object Form1: TForm1
   Font.Name = 'Segoe UI'
   Font.Style = []
   OnCreate = FormCreate
-  PixelsPerInch = 96
   DesignSize = (
     624
     328)
   TextHeight = 15
   object Memo1: TMemo
-    Left = 21
+    Left = 8
     Top = 20
-    Width = 106
+    Width = 119
     Height = 68
     Lines.Strings = (
       'Value1=Test1'
       'Value2=Test2'
-      'Value 3=Test 3')
+      'Value 3=Test 3'
+      'Value4=Test\')
     ScrollBars = ssVertical
     TabOrder = 0
   end
   object Button1: TButton
     Left = 8
-    Top = 295
-    Width = 75
+    Top = 111
+    Width = 105
     Height = 25
     Anchors = [akLeft, akBottom]
-    Caption = 'Parse'
+    Caption = 'Parse '#39'$'#39
     TabOrder = 1
     OnClick = Button1Click
   end
@@ -43,7 +43,7 @@ object Form1: TForm1
     Left = 133
     Top = 20
     Width = 221
-    Height = 237
+    Height = 271
     Lines.Strings = (
       '$value1$value2'
       '{#value1}{#value2}'
@@ -56,7 +56,9 @@ object Form1: TForm1
       '$value1$value$value2'
       ' $value1,$value2 '
       'test $value1$value2 test'
-      'test $value1,$value2 test')
+      'test $value1,$value2 test'
+      'test $value4\$value2'
+      'test $value4$value2')
     ScrollBars = ssVertical
     TabOrder = 2
   end
@@ -64,13 +66,13 @@ object Form1: TForm1
     Left = 360
     Top = 20
     Width = 257
-    Height = 237
+    Height = 270
     ScrollBars = ssVertical
     TabOrder = 3
   end
   object Button2: TButton
-    Left = 541
-    Top = 265
+    Left = 540
+    Top = 296
     Width = 75
     Height = 25
     Anchors = [akLeft, akBottom]
@@ -79,8 +81,8 @@ object Form1: TForm1
     OnClick = Button2Click
   end
   object InEdit: TEdit
-    Left = 9
-    Top = 266
+    Left = 8
+    Top = 297
     Width = 345
     Height = 23
     Anchors = [akLeft, akBottom]
@@ -88,18 +90,18 @@ object Form1: TForm1
     Text = '$Value1'
   end
   object Button3: TButton
-    Left = 89
-    Top = 295
-    Width = 75
+    Left = 8
+    Top = 142
+    Width = 105
     Height = 25
     Anchors = [akLeft, akBottom]
-    Caption = 'Parse'
+    Caption = 'Parse '#39'{#'#39', '#39'}'#39
     TabOrder = 6
     OnClick = Button3Click
   end
   object PrefixEdit1: TEdit
-    Left = 360
-    Top = 266
+    Left = 359
+    Top = 297
     Width = 81
     Height = 23
     Anchors = [akLeft, akBottom]
@@ -107,8 +109,8 @@ object Form1: TForm1
     Text = '$'
   end
   object SuffixEdit1: TEdit
-    Left = 447
-    Top = 266
+    Left = 446
+    Top = 297
     Width = 89
     Height = 23
     Anchors = [akLeft, akBottom]

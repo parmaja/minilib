@@ -188,12 +188,15 @@ function ReversePos(const SubStr, S: String; const Start: Integer): Integer; ove
 type
   TVarOptions = set of (
     vrSmartLowerCase,
+    vrPathValues, //check if PathDelim is ended or started to not dublicate PathDelim
     vrAllowBrackets //TODO
   );
-  TVarReplacesCallbackProc = procedure(Sender: Pointer; Name: string; var Value: string);
+  TVarReplacesCallbackProc = procedure(Sender: Pointer; const Name: string; var Value: string);
 
-function VarReplace(S: string; Values: TStrings; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+function VarReplace(S: string; List: TStrings; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+function VarReplace(S: string; List: TStrings; VarOptions: TVarOptions; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []): string; overload;
 function VarEnvReplace(S: string; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+function VarEnvReplace(S: string; VarOptions: TVarOptions; Prefix: string = '?'): string; overload;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -254,6 +257,7 @@ function CorrectPath(const Path: string): string;
 //* Split at level depth of folders/directory, ignoring first \ or last one
 function SplitPath(Path: string; out Right: string; Index: Integer): string; overload;
 function SplitPath(Path: string; Index: Integer): string; overload;
+function SubPath(Path: string; Index: Integer): string; overload;
 
 //Remove last subdirectory
 //if lasted by path delimiator remove it
@@ -272,6 +276,7 @@ function IsURLDelimiter(const S: string): Boolean;
 //If empty do not add
 function AddStartDelimiter(const Path: string; Delimiter: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 function AddEndDelimiter(const Path: string; Delimiter: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
+function RemoveEndDelimiter(const Path: string; Delimiter: string): string;
 
 //If empty do not add
 function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
@@ -418,7 +423,6 @@ var
   {$else}
   EnvVar: PAnsiChar;
   {$endif}
-  I: Integer;
 begin
   if not Assigned(List) then
     Exit;
@@ -762,28 +766,41 @@ end;
 *  Use name values in strings
 *}
 
-function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String; ExtraChar: TSysCharSet; VarOptions: TVarOptions; Sender: Pointer; ReplacesCallbackProc: TVarReplacesCallbackProc): string;
+function VarReplace(S: string; List: TStrings; Prefix: string; Suffix: String; ExtraChar: TSysCharSet; VarOptions: TVarOptions; Sender: Pointer; ReplacesCallbackProc: TVarReplacesCallbackProc): string;
 var
   Start: Integer;
   OpenStart: Integer;
   InsideBlock: Boolean;
   InitIndex: Integer;
+  procedure AddIt(Count: Integer);
+  begin
+    if (vrPathValues in VarOptions) and EndsDelimiter(Result) then
+    begin
+      if (Start <= Length(S)) and CharInSet(S[Start], ['\', '/']) then
+        Result := Copy(Result, 1, Length(Result) - 1) + MidStr(S, Start, Count)
+      else        
+        Result := Result + MidStr(S, Start, Count);
+    end    
+    else
+      Result := Result + MidStr(S, Start, Count);
+  end;
+  
   procedure check(Index: Integer);
   var
     Name, Value: string;
   begin
     //* string before variable
-    Result := Result + MidStr(S, Start, OpenStart - Start);
+    AddIt(OpenStart - Start);
     Name := MidStr(S, OpenStart + Length(Prefix), Index - OpenStart + 1 - Length(Prefix) - Length(Suffix));
     if (LeftStr(Name, 1) = '[') and (RightStr(Name, 1) = ']') then
       Name := MidStr(Name, 2, Length(Name) - 2);
     Value := MidStr(S, OpenStart, Index - OpenStart + 1);
-    if Values.IndexOfName(Name) >= 0 then
+    if List.IndexOfName(Name) >= 0 then
     begin
       if (vrSmartLowerCase in VarOptions) and IsAllLowerCase(Name) then //Smart idea, right ^.^
-        Value := LowerCase(Values.Values[Name])
+        Value := LowerCase(List.Values[Name])
       else
-        Value := Values.Values[Name];
+        Value := List.Values[Name];
     end
     else if Assigned(ReplacesCallbackProc) then
       ReplacesCallbackProc(Sender, Name, Value);
@@ -842,12 +859,22 @@ begin
   end;
   if (OpenStart > 0) then
     Check(Index);
-  Result := Result + MidStr(S, Start, MaxInt);
+  AddIt(MaxInt);
+end;
+
+function VarReplace(S: string; List: TStrings; VarOptions: TVarOptions; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []): string; overload;
+begin
+  Result := VarReplace(S, List, Prefix, Suffix, ExtraChar, VarOptions, nil, nil);
 end;
 
 function VarEnvReplace(S: string; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
 begin
-  VarReplace(S, EnvironmentValues, Prefix, Suffix, ExtraChar, VarOptions, Sender, ReplacesCallbackProc);
+  Result := VarReplace(S, EnvironmentValues, Prefix, Suffix, ExtraChar, VarOptions, Sender, ReplacesCallbackProc);
+end;
+
+function VarEnvReplace(S: string; VarOptions: TVarOptions; Prefix: string = '?'): string; overload;
+begin
+  Result := VarReplace(S, EnvironmentValues, Prefix, '', [], VarOptions, nil, nil);
 end;
 
 {
@@ -2180,6 +2207,11 @@ begin
   SplitStr(Path, Index, ['\', '/'], Result, t);
 end;
 
+function SubPath(Path: string; Index: Integer): string; overload;
+begin
+  Result := SubStr(Path, PathDelimiters, Index);
+end;
+
 function ExpandFile(const Name: string): string;
 var
   aEndsDelimiter: Boolean;
@@ -2255,6 +2287,14 @@ begin
     else
       Result := Path
   end
+  else
+    Result := Path
+end;
+
+function RemoveEndDelimiter(const Path: string; Delimiter: string): string;
+begin
+  if EndsStr(Delimiter, Path) then
+    Result := Copy(Path, 1, Length(Path) - 1)
   else
     Result := Path
 end;

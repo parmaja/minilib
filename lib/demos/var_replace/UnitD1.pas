@@ -42,15 +42,22 @@ end;
 procedure TForm1.Run(Prefix: string; Suffix: string);
 var
   i: Integer;
+  aStrings: TStringList;
 begin
-  Memo3.Clear;
-  for i := 0 to Memo2.Lines.Count -1 do
-    Memo3.Lines.Add(VarReplace(Memo2.Lines[i], Memo1.Lines, Prefix, Suffix));
+  aStrings := TStringList.Create;
+  try
+    aStrings.Assign(Memo1.Lines);
+    Memo3.Clear;
+    for i := 0 to Memo2.Lines.Count -1 do
+      Memo3.Lines.Add(VarReplace(Memo2.Lines[i], aStrings, [vrPathValues], Prefix, Suffix));
+  finally
+    aStrings.Free;
+  end;
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-  Memo3.Lines.Add(VarReplace(InEdit.Text, Memo1.Lines, PrefixEdit1.Text, SuffixEdit1.Text));
+  Memo3.Lines.Add(VarReplace(InEdit.Text, Memo1.Lines, [vrPathValues], PrefixEdit1.Text, SuffixEdit1.Text));
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);
@@ -59,7 +66,7 @@ begin
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
-begin
+begin  
   Run('$', '');
 end;
 
