@@ -42,8 +42,8 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, Variants, Contnrs, SyncObjs, Types,
-  Generics.Collections,
-  mnTypes, mnFields, mncCommons;
+  Generics.Collections, 
+  mnTypes, mnUtils, mnFields, mncCommons;
 
 type
   TmncTransaction = class;
@@ -535,6 +535,13 @@ type
       it will send as 2 of params by Binds
   }
   { TmncCommand }
+  TmncFetchOption = (
+    asObject, //Format as object, use Rows name
+    asNames, //Field names as first
+    asIndex //Add index number
+  );
+  
+  TmncFetchOptions = set of TmncFetchOption;
 
   TmncCommand = class(TmncLinkTransaction)
   private
@@ -636,7 +643,10 @@ type
 
     property Params: TmncParams read FParams write SetParams;
     property Param[const Index: string]: TmncParam read GetParam;
-    
+
+    function AsJson(Options: TmncFetchOptions = []; Rows: string = ''): string;
+    function AsCSV(Options: TmncFetchOptions = []; Delimeter: string = ','): string;
+        
     property Values[const Index: string]: Variant read GetValues;
     property Options: TmncCommandOptions read FOptions write FOptions;
     property Index: Int64 read GetIndex; //* RowIndex
@@ -1044,6 +1054,92 @@ end;
 
 procedure TmncCommand.DoUnprepare;
 begin
+end;
+
+function TmncCommand.AsCSV(Options: TmncFetchOptions; Delimeter: string): string;
+var
+  field: TmncField;
+  c, i: Integer;
+begin
+  Result := '';
+  if asNames in Options then
+  begin
+    for field in Fields do
+    begin
+      if Result <> '' then
+        Result := Result + Delimeter;
+      Result := Result + field.GetName;          
+    end;
+    Result := Result + sEndOfLine;      
+  end;
+  
+  c := 0;
+  while not Done do
+  begin
+    if c > 0 then
+      Result := Result + sEndOfLine;      
+    i := 0;  
+    for field in Fields do
+    begin        
+      if i > 0 then
+        Result := Result + Delimeter;        
+      Result := Result + field.AsString;
+      inc(i);      
+    end;
+    inc(c);    
+    Next;
+  end;
+end;
+
+function TmncCommand.AsJson(Options: TmncFetchOptions; Rows: string): string;
+var
+  field: TmncField;
+  c, i: Integer;
+begin
+  if asObject in Options then
+  begin
+    if Rows = '' then
+      Rows := 'rows';
+    Result := '{' + Rows + ': [' + sEndOfLine;
+  end
+  else
+    Result := '[' + sEndOfLine;
+  c := 0;
+  while not Done do
+  begin
+    if c > 0 then
+      Result := Result + ',' + sEndOfLine;      
+
+    if asIndex in Options then
+      Result := Result + '{ "index":' + QuoteStr(c.ToString) + ','
+    else
+      Result := Result + '{';
+    i := 0;  
+    for field in Fields do
+    begin        
+      if i > 0 then
+        Result := Result + ',';
+        
+      Result := Result + QuoteStr(field.GetName) + ':';
+
+      case field.DataType of
+        dtBoolean: Result := Result + field.AsString;
+        dtInteger: Result := Result + field.AsString;
+        dtCurrency: Result := Result + field.AsString;
+        dtFloat: Result := Result + field.AsString;
+        else
+          //TODO Escape
+          Result := Result + QuoteStr(field.AsString);
+      end;
+      inc(i);      
+    end;
+    Result := Result + '}';
+    inc(c);    
+    Next;
+  end;
+  Result := Result + sEndOfLine + ']';
+  if asObject in Options then
+    Result := Result + '}';  
 end;
 
 function TmncCommand.Execute(vNext: Boolean): Boolean;
