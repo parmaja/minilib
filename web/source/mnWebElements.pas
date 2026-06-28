@@ -1953,6 +1953,7 @@ function When(Condition: Boolean): string; overload; inline;
 function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds; overload;
 function StartURL(const Path: string): string; inline;
 function EndURL(const Path: string): string; inline;
+function EscapeAttr(const S: string): string;
 
 function NewUUID: string;
 
@@ -2079,6 +2080,13 @@ end;
 function EndURL(const Path: string): string;
 begin
   Result := AddEndURLDelimiter(Path);
+end;
+
+function EscapeAttr(const S: string): string;
+begin
+  Result := StringReplace(S, '&', '&amp;', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', '&quot;', [rfReplaceAll]);
+  Result := StringReplace(Result, '<', '&lt;', [rfReplaceAll]);
 end;
 
 function ExtractClassName(const ClassName: string; ToLower: Boolean = False): string;

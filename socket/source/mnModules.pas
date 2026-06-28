@@ -314,13 +314,9 @@ type
     rtJSONData
 	);
 
-  TmodParams = class(TmnFields)
-  public
-  end;
-
   TmodRequest = class(TmodCommunicate)
   private
-    FArguments: TmodParams;
+    FParams: TmnFields;
     FPath: String;
     FRequestType: TRequestType;
     //FChunked: Boolean;
@@ -332,9 +328,12 @@ type
     FNameSpace: string;
     FRoute: TmnRoute;
     FDirectory: String;
+    FCharset: string;
+    FContentType: string;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
     function GetConnected: Boolean;
+    function GetParam(Index: string): TmnField;
   protected
     Info: TmodRequestInfo;
     procedure Created; override;
@@ -374,8 +373,8 @@ type
     property Directory: String read FDirectory write FDirectory;
     property Route: TmnRoute read FRoute write FRoute;
     
-    property Params: TmodParams read FArguments; //deprecated 'use Arguments';
-    property Arguments: TmodParams read FArguments; //alias
+    property Params: TmnFields read FParams; 
+    property Param[Index: string]: TmnField read GetParam; default; 
 
     function CollectURI: string;
 
@@ -391,6 +390,9 @@ type
     property ProtcolProxy: TmnProtcolStreamProxy read FProtcolProxy write FProtcolProxy;
 
     property Connected: Boolean read GetConnected;
+  public
+    property ContentType: string read FContentType;
+    property Charset: string read FCharset;
   end;
 
   TmodFileDisposition = (
@@ -413,6 +415,7 @@ type
     FAnswer: TmodAnswer;
     FContentType: String;
     FDispositionFile: string;
+    FCharset: string;
   protected
     FRequest: TmodRequest;
     procedure SetAnswer(const Value: TmodAnswer); virtual;
@@ -438,6 +441,7 @@ type
 
     property Request: TmodRequest read FRequest;
     property ContentType: string read FContentType write FContentType;
+    property Charset: string read FCharset write FCharset;
     property DispositionFile: string read FDispositionFile write FDispositionFile;
     property Answer: TmodAnswer read FAnswer write SetAnswer;
   end;
@@ -558,6 +562,7 @@ type
     procedure RespondText(S: string);    
     procedure RespondHTML(S: string);    
     procedure RespondJSON(S: string; AAnswer: TmodAnswer = hrOK);
+    procedure RespondCSV(S: string; AAnswer: TmodAnswer = hrOK);
     procedure RespondJSONResult(ResultType, State, Message: string; AAnswer: TmodAnswer = hrOK);
     procedure RespondNoContent;
     procedure RespondNotFound;
@@ -972,6 +977,88 @@ begin
     Result := Result + '/' + Directory;
 end;
 
+//Writen by GLM 5.2
+// Helper to manually parse hex characters (avoids string allocations and StrToIntDef)
+function HexCharToByte(C: Byte): Integer; inline;
+begin
+  case C of
+    Ord('0')..Ord('9'): Result := C - Ord('0');
+    Ord('A')..Ord('F'): Result := C - Ord('A') + 10;
+    Ord('a')..Ord('f'): Result := C - Ord('a') + 10;
+  else
+    Result := -1; // Invalid hex character
+  end;
+end;
+
+function URIDecode(const S: UTF8String): UTF8String;
+var
+  i, Len, ByteIdx, V1, V2: Integer;
+  C: Byte;
+  P: PByte;
+begin
+  Len := Length(S);
+  SetLength(Result, Len); // Pre-allocate max possible length
+  if Len = 0 then Exit;
+
+  // Use a PByte pointer to write directly to memory, bypassing all string manager overhead
+  P := PByte(Result);
+  ByteIdx := 0;
+  i := 1;
+
+  while i <= Len do
+  begin
+    C := Ord(S[i]);
+    
+    if C = Ord('+') then
+    begin
+      P[ByteIdx] := Ord(' ');
+      Inc(ByteIdx);
+      Inc(i);
+    end
+    else if C = Ord('%') then
+    begin
+      // Ensure we don't read past the end of the string
+      if i + 2 <= Len then
+      begin
+        V1 := HexCharToByte(Ord(S[i + 1]));
+        V2 := HexCharToByte(Ord(S[i + 2]));
+        
+        // If both are valid hex digits, decode the byte
+        if (V1 >= 0) and (V2 >= 0) then
+        begin
+          P[ByteIdx] := (V1 shl 4) or V2;
+          Inc(ByteIdx);
+          Inc(i, 3);
+        end
+        else
+        begin
+          // Malformed hex (e.g., '%GG'), keep '%' as is
+          P[ByteIdx] := C;
+          Inc(ByteIdx);
+          Inc(i);
+        end;
+      end
+      else
+      begin
+        // Malformed encoding (e.g., '%' at the end), keep '%' as is
+        P[ByteIdx] := C;
+        Inc(ByteIdx);
+        Inc(i);
+      end;
+    end
+    else
+    begin
+      P[ByteIdx] := C;
+      Inc(ByteIdx);
+      Inc(i);
+    end;
+  end;
+
+  // Trim the result to the actual decoded length
+  SetLength(Result, ByteIdx);
+end;
+
+{
 function URIDecode(const S: UTF8String): utf8string;
 var
   c: AnsiChar;
@@ -993,7 +1080,7 @@ begin
     if C = '%' then
     begin
       D := copy(S, i + 1, 2);
-      R := R + AnsiChar(StrToIntDef('$'+D, 0));
+      R := R + WideChar(StrToIntDef('$'+D, 0));
       inc(i, 2);
     end
     else
@@ -1003,7 +1090,7 @@ begin
   //SetCodePage(R, CP_UTF8, False);
   Result := R;
 end;
-
+}
 function ParseHttpHead(const Raw: String; out Method, Params, Protocol: string): Boolean;
 var
   aRequests: TStringList;
@@ -1216,6 +1303,7 @@ constructor TmodResponse.Create(ARequest: TmodRequest);
 begin
   inherited Create(ARequest.Parent);
   FRequest := ARequest;
+  FCharset := 'utf-8';
 end;
 
 procedure TmodResponse.InitProtocol;
@@ -1612,14 +1700,14 @@ begin
   inherited;
   FRoute := TmnRoute.Create;
 //  FNameSpace := TStringList.Create;
-  FArguments := TmodParams.Create;
+  FParams := TmnFields.Create;
 end;
 
 destructor TmodRequest.Destroy;
 begin
   FreeAndNil(FRoute);
 //  FreeAndNil(FNameSpace);
-  FreeAndNil(FArguments);
+  FreeAndNil(FParams);
   inherited Destroy;
 end;
 
@@ -1671,7 +1759,6 @@ end;
 
 procedure TmodRequest.DoHeaderReceived;
 begin
-  //????
 end;
 
 procedure TmodRequest.InitProtocol;
@@ -1683,6 +1770,11 @@ end;
 function TmodRequest.GetConnected: Boolean;
 begin
   Result := (Stream <> nil) and Stream.Connected;
+end;
+
+function TmodRequest.GetParam(Index: string): TmnField;
+begin
+  Result := Params.Field[Index];
 end;
 
 function TmodRequest.GetStream: TmnBufferStream;
@@ -3183,6 +3275,12 @@ begin
   else
     ContentLength := 0;
 
+  if (Header.Field['Content-Type'].IsExists) then
+  begin
+    FContentType  := Header.Field['Content-Type'].SubValue('');
+    FCharset := Header.Field['Content-Type'].SubValue('Charset');
+  end;
+    
   Cookies.SetRequestText(Header['Cookie']);
 
   FAccept := Header.ReadString('Accept'); //TODO zaher check it
@@ -3284,7 +3382,10 @@ begin
     ContentLength := Header.Field['Content-Length'].AsInt64;
 
   if (Header.Field['Content-Type'].IsExists) then
-    ContentType  := Header.Field['Content-Type'].AsString;
+  begin
+    Charset := Header.Field['Content-Type'].SubValue('Charset');
+    ContentType  := Header.Field['Content-Type'].SubValue('');
+  end;
 
   if (Header.Field['Content-Disposition'].IsExists) then
   begin
@@ -3313,7 +3414,12 @@ begin
     PutHeader('Content-Length', IntToStr(ContentLength));
 
   if (ContentType <> '') then
-    PutHeader('Content-Type', ContentType);
+  begin
+    if Charset <> '' then
+      PutHeader('Content-Type', ContentType + '; Charset=' + Charset)
+    else
+      PutHeader('Content-Type', ContentType);
+  end;
 
   if (Stamp <> '') then
     PutHeader('ETag', QuoteStr(Stamp));
@@ -3406,6 +3512,14 @@ procedure TwebResponse.Respond(AAnswer: TmodAnswer; AContentType: string);
 begin
   ContentType := AContentType;
   Respond(AAnswer);  
+end;
+
+procedure TwebResponse.RespondCSV(S: string; AAnswer: TmodAnswer);
+begin
+  Answer := AAnswer;
+  ContentType := DocumentToContentType('.csv');
+  SendUTF8String(S);
+  Responded;
 end;
 
 procedure TwebResponse.Responded;

@@ -1152,7 +1152,7 @@ begin
   r.Name := Name;
   r.Value := Name;
 
-  ParseArgumentsCallback(Content, @GetSubValueCallbackProc, @r, [], [pargDeqoute], Terminals, WhiteSpaces, Quotes, ValueSeperators);
+  ParseArgumentsCallback(Content, @GetSubValueCallbackProc, @r, [], [pargValues, pargDeqoute], Terminals, WhiteSpaces, Quotes, ValueSeperators);
 
   Value := r.Value;
   Result := r.Found;
