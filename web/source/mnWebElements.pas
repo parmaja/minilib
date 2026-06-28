@@ -94,7 +94,9 @@ WebElement:                             Module  Namespace Schema  Directory     
 }
 
 {.$define LOG}
-{.$define LOCAL_RESOURCE}
+{$ifopt D+}
+{$define LOCAL_RESOURCE}
+{$endif}
 
 interface
 
@@ -5086,6 +5088,10 @@ procedure TAssetsSchema.Start;
 var
   aLibrary: TmnwLibrary;
   aSource: TmnwLibrarySource;
+  {$ifdef LOCAL_RESOURCE}
+  aLocalFile: string;
+  {$endif}
+  aName: string;
 begin
   inherited;
   Name := 'Assets';
@@ -5099,13 +5105,21 @@ begin
       begin
         if stResource = aSource.Where then
         begin    
+          aName := SubPath(aSource.LocalFile, -1);
           {$ifdef LOCAL_RESOURCE}
-          aLocalFile := ExpandFileName(VarReplace(aSource.LocalFile, Environment, '?'));
+          //from original source
+          aLocalFile := ExpandFileName(VarEnvReplace(aSource.LocalFile));
           if FileExists(aLocalFile) then
             TFile.Create(This, [], aLocalFile, aSource.Name)
           else
-          {$endif}
-            TFile.Create(This, [ftResource], StringReplace(SubPath(aSource.LocalFile, -1), '.', '_', [rfReplaceAll]), aSource.Name);
+          {$endif}          
+          // From local folder
+          if FileExists(IncludePathDelimiter(HomeFolder) + aName) then          
+          begin
+            TFile.Create(This, [], IncludePathDelimiter(HomeFolder) + aName, aSource.Name)          
+          end
+          else //From resources
+            TFile.Create(This, [ftResource], StringReplace(aName, '.', '_', [rfReplaceAll]), aSource.Name);
         end;
       end;
     end;    
