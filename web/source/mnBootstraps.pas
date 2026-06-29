@@ -859,7 +859,7 @@ begin
     Tag := 'h' + e.Size.ToString
   else
     Tag := 'h3';
-  Context.Writer.OpenTag(Tag, Scope.ToString);
+  Context.Writer.OpenInlineTag(Tag, Scope.ToString);
   if e.Text <> '' then
     Context.Writer.Write(e.Text);
   inherited;

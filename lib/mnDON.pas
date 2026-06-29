@@ -445,7 +445,7 @@ type
   public
     procedure OpenTag(const Tag: string); overload;
     procedure OpenTag(const TagName, TagAttributes: string; TagText: string = ''); overload;
-    procedure OpenInlineTag(const TagName:string; TagAttributes: string = ''; TagText: string = ''); overload; // keep inline
+    procedure OpenInlineTag(const TagName:string; TagAttributes: string = ''; TagText: string = ''); overload; // keep inline, no new line
     procedure CloseTag(const Tag: string; TrailText: string = '');
     procedure AddShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
     procedure AddComment(const Comment: string);
@@ -1913,7 +1913,7 @@ end;
 
 procedure TmnwXML_TidyWriterHelper.OpenTag(const TagName, TagAttributes: string; TagText: string);
 begin
-  WriteLn('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
+  WriteLn('<'+TagName + SpaceIf(TagAttributes) + '>' + TagText, [woOpenIndent])
 end;
 
 procedure TmnwXML_TidyWriterHelper.ReadFromFile(FileName: string);
@@ -1937,7 +1937,7 @@ end;
 
 procedure TmnwXML_TidyWriterHelper.OpenInlineTag(const TagName: string; TagAttributes: string; TagText: string);
 begin
-  Write('<'+TagName + ' ' + TagAttributes + '>' + TagText, [woOpenIndent])
+  Write('<'+TagName + SpaceIf(TagAttributes) + '>' + TagText, [woOpenIndent])
 end;
 
 procedure TmnwXML_TidyWriterHelper.CloseTag(const Tag: string; TrailText: string);
@@ -1947,7 +1947,7 @@ end;
 
 procedure TmnwXML_TidyWriterHelper.AddShortTag(const TagName: string; TagAttributes: string);
 begin
-  WriteLn('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
+  WriteLn('<'+TagName + SpaceIf(TagAttributes) + '>', [woOpenIndent, woCloseIndent]);
 end;
 
 procedure TmnwXML_TidyWriterHelper.AddComment(const Comment: string);
@@ -2002,22 +2002,22 @@ end;
 
 procedure TmnwXML_TidyWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
 begin
-  Write('<'+TagName + ' ' + TagAttributes + '>', [woOpenIndent, woCloseIndent]);
+  Write('<'+TagName + SpaceIf(TagAttributes) + '>', [woOpenIndent, woCloseIndent]);
 end;
 
 procedure TmnwXML_TidyWriterHelper.AddTag(const TagName, TagAttributes: string);
 begin
-  WriteLn('<'+TagName + ' ' + TagAttributes + '></' + TagName + '>', [woOpenIndent, woCloseIndent]);
+  WriteLn('<'+TagName + SpaceIf(TagAttributes) + '></' + TagName + '>', [woOpenIndent, woCloseIndent]);
 end;
 
 procedure TmnwXML_TidyWriterHelper.AddTag(const TagName, TagAttributes, Value: string);
 begin
-  WriteLn('<'+TagName + ' ' + TagAttributes + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
+  WriteLn('<'+TagName + SpaceIf(TagAttributes) + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
 end;
 
 procedure TmnwXML_TidyWriterHelper.AddInlineTag(const TagName, TagAttributes, Value: string);
 begin
-  Write('<'+TagName + ' ' + TagAttributes + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
+  Write('<'+TagName + SpaceIf(TagAttributes) + '>' + Value + '</' + TagName + '>', [woOpenIndent, woCloseIndent]);
 end;
 
 { TDON_Object_Value.TPairsEnumerator }

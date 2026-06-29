@@ -1989,22 +1989,6 @@ begin
     Result := 'ltr';
 end;
 
-function Space(const s: string): string; overload; inline;
-begin
-  if s <> '' then
-    Result := ' ' + s
-  else
-    Result := s;
-end;
-
-function Space(const s1, s2: string): string; overload; inline;
-begin
-  if (s1 <> '') and (s2 <> '') then
-    Result := s1 + ' ' + s2
-  else
-    Result := s1 + s2;
-end;
-
 function SQ(s: string): string; inline;
 begin
   Result := QuoteStr(s, '''');
@@ -5373,7 +5357,7 @@ begin
   end;
 
   if Result <> '' then
-    Result := 'class="'+Result+'"';
+    Result := 'class="' + Result + '"';
 end;
 
 { TmnwScope }
@@ -5405,7 +5389,7 @@ var
   s: string;
 begin
   s := Attributes.ToString;
-  Result := Space(s, Classes.ToString);
+  Result := SpaceIf(s, Classes.ToString);
 end;
 
 { THTML.TLink }

@@ -231,6 +231,17 @@ mnw.formPost = function(formElement, event) {
 
 function init()
 {
+  document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('reset', e => {
+      // setTimeout ensures the DOM values are actually reset before triggering
+      setTimeout(() => {
+        e.target.querySelectorAll('input, select, textarea').forEach(el => {
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+      }, 0);
+    });
+  });
+
   reload_elements = document.querySelectorAll('[data-mnw-refresh-url]');
   if (reload_elements.length > 0)
   {

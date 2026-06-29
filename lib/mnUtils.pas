@@ -169,6 +169,8 @@ function DequoteStr(const Str: string; const QuoteChar: string = #0): string;
 function RepeatString(const Str: string; Count: Integer): string;
 
 function ConcatString(const S1, Delimiter: string; const S2: string = ''): string; overload;
+function SpaceIf(const s: string): string; overload; inline;
+function SpaceIf(const s1, s2: string): string; overload; inline;
 
 //TODO options, to include null
 
@@ -697,6 +699,23 @@ begin
     Result := Result + Delimiter;
   Result := Result + S2;
 end;
+
+function SpaceIf(const s: string): string; overload; inline;
+begin
+  if s <> '' then
+    Result := ' ' + s
+  else
+    Result := s;
+end;
+
+function SpaceIf(const s1, s2: string): string; overload; inline;
+begin
+  if (s1 <> '') and (s2 <> '') then
+    Result := s1 + ' ' + s2
+  else
+    Result := s1 + s2;
+end;
+
 
 function CollectStrings(const Strings: array of string; Delimiter: string; Options: TCollectStringsOptions): string;
 var
