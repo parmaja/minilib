@@ -295,9 +295,9 @@ type
     function RemoveByName(const vName: string): Boolean;
     function ToString: string; override;
     //todo IndexOfName, IndexOf
+    property Exists[const Index: string]: Boolean read IsExists;
     property FieldByName[const Index: string]: TmnField read FindByName;
     property Field[const Index: string]: TmnField read FindField;
-    property Exists[const Index: string]: Boolean read IsExists;
     property Values[const Index: string]: Variant read GetValues write SetValues; default;
   end;
 
