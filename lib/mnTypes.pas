@@ -37,6 +37,15 @@ const
   PathDelimiter  = {$IFDEF MSWINDOWS} '\'; {$ELSE} '/'; {$ENDIF}
   PathDelimiters = ['\', '/'];
 
+  OneMinute = 60;
+  OneHour = 60*60;
+  OneDay = OneHour * 24;
+  OneWeek = OneDay * 7;
+  OneMonth = OneDay * 30;
+  OneYear = OneMonth * 12;
+  OneCentury = 3110400000;
+  //DoomDay = NO ONE KNOWS
+    
 type
   TmnDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig, dtColor {bigint or int64}, dtUUID{, dtEnum, dtSet});
   TmnSubType = (dstBinary, dstText, dstJSON, dstXML, dstImage);

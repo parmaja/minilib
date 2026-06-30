@@ -1482,7 +1482,7 @@ type
       public
         Caption: string;
         Collapse: Boolean;
-        FormFloating: Boolean;
+        LabelFloating: Boolean;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         property Footer: TFooter read FFooter;
       end;

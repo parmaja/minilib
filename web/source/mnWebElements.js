@@ -342,9 +342,9 @@ mnw.init_zoom = function()
 {
   if (!document.body.getAttribute('data-mnw-zoom'))
   {
-    let bs_zoom = localStorage.getItem('mnw-zoom');
-    if (bs_zoom)
-      document.documentElement.setAttribute('data-mnw-zoom', bs_zoom);
+    let mnw_zoom = localStorage.getItem('mnw-zoom');
+    if (mnw_zoom)
+      document.documentElement.setAttribute('data-mnw-zoom', mnw_zoom);
   }
 }
 

@@ -806,7 +806,7 @@ begin
     Context.Writer.CloseTag('h5');
   end;
 
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show' + When(e.FormFloating, ' form-floating')+'" aria-labelledby="'+e.id+'-header"');
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show' + When(e.LabelFloating, ' form-floating')+'" aria-labelledby="'+e.id+'-header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
