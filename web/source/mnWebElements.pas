@@ -280,10 +280,12 @@ type
   TElementClasses = record
     Items: TArray<String>;
     function Find(const Name: string): Integer;
+    //Add one item
     function Add(const Name: string): Integer;
-    function Remove(const Name: string): Boolean;
-    procedure Append(const S: string); overload;
+    //Add multiple items in on string
+    procedure Append(const S: string; Delimiter: string = ' '); overload;
     procedure Append(A: TElementClasses); overload;
+    function Remove(const Name: string): Boolean;
     function ToString: string;
     class operator Add(A: TElementClasses; B: string): TElementClasses;
     class operator Subtract(A: TElementClasses; B: string): TElementClasses;
@@ -5286,11 +5288,11 @@ begin
   PElementClasses(Sender)^.Add(S);
 end;
 
-procedure TElementClasses.Append(const S: string);
+procedure TElementClasses.Append(const S: string; Delimiter: string);
 var
   MatchCount: Integer;
 begin
-  StrToStringsExCallback(S, 0, @Self, [' '], MatchCount, @Classes_StrToStringsExCallbackProc, []);
+  StrToStringsExCallback(S, 0, @Self, [Delimiter, #13], MatchCount, @Classes_StrToStringsExCallbackProc, []);
 end;
 
 function TElementClasses.Find(const Name: string): Integer;
