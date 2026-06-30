@@ -310,6 +310,7 @@ type
     
     procedure SetInteralInstance(const Value: TObject);
   public    
+    constructor Create;
     procedure Reset;
     procedure SetInstance(const AInstance: TObject);
     property ID: string read FID write SetID;
@@ -6207,6 +6208,11 @@ begin
 end;
 
 { TmnwSession }
+
+constructor TmnwSession.Create;
+begin
+  FAge := 86400;
+end;
 
 procedure TmnwSession.Reset;
 begin
