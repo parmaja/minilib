@@ -1468,14 +1468,23 @@ type
       public
       end;
 
+      TCardFooter = class(THTMLControl)      
+      end;
+
       { TCard }
 
       [TID_Extension]
-      TCard = class(THTMLItem)
+      TCard = class(THTMLControl)
+      private 
+        FFooter: TFooter;
       protected
         procedure Created; override;
       public
+        Caption: string;
         Collapse: Boolean;
+        FormFloating: Boolean;
+        constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
+        property Footer: TFooter read FFooter;
       end;
 
       { TPanel }
@@ -1759,6 +1768,11 @@ type
       public
       end;
 
+      THorzLine = class(THTMLElement)
+      private
+      public
+      end;
+      
       //* Custom Tag
       TTag = class(THTMLElement) //TODO
       public
@@ -4831,6 +4845,12 @@ begin
 end;
 
 { THTML.TCard }
+
+constructor THTML.TCard.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
+begin
+  inherited;
+  FFooter := TFooter.Create(Self, [elEmbed, elInternal]);
+end;
 
 procedure THTML.TCard.Created;
 begin

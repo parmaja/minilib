@@ -246,7 +246,7 @@ type
 
       TAccordionItem = class(THTMLControl)
       end;
-
+      
       { TCard }
 
       TCard = class(THTMLControl)
@@ -254,6 +254,11 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      TCardFooter = class(THTMLControl)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+      
       TPanel = class(THTMLControl)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -351,6 +356,13 @@ type
       { TBreak }
 
       TBreak = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { THorzLine }
+
+      THorzLine = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
@@ -602,6 +614,7 @@ begin
     RegisterRenderer(THTML.TParagraph, TParagraph);
     RegisterRenderer(THTML.THeading, THeading);
     RegisterRenderer(THTML.TBreak, TBreak);
+    RegisterRenderer(THTML.THorzLine, THorzLine);
     RegisterRenderer(THTML.TNavTools, TNavTools);
     RegisterRenderer(THTML.TNavDropdown, TNavDropdown);
     RegisterRenderer(THTML.TNavBar, TNavBar);
@@ -629,6 +642,7 @@ begin
     RegisterRenderer(THTML.TImageMemory, TImageMemory);
     
     RegisterRenderer(THTML.TCard, TCard);
+    RegisterRenderer(THTML.TCardFooter, TCardFooter);    
     RegisterRenderer(THTML.TDropdown, TDropdown);
     RegisterRenderer(THTML.TPopupMenu, TPopupMenu);
     RegisterRenderer(THTML.TGroup, TGroup);
@@ -792,7 +806,7 @@ begin
     Context.Writer.CloseTag('h5');
   end;
 
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show" aria-labelledby="'+e.id+'-header"');
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show' + When(e.FormFloating, ' form-floating')+'" aria-labelledby="'+e.id+'-header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -822,6 +836,9 @@ begin
     Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo + '"');
   Context.Writer.AddShortTag('input', 'type="hidden" name="execute" value="true"');
 
+  if (e.Submit.Caption <> '') or (e.Cancel.Caption <> '') or (e.Reset.Caption <> '') then
+    Context.Writer.AddShortTag('hr');  
+  
   if e.Submit.Caption <> '' then
     Context.Writer.AddTag('button', 'class="btn btn-success" type="submit" form="'+e.ID+'" value="Submit"', e.Submit.Caption);
   if e.Reset.Caption <> '' then
@@ -1741,6 +1758,31 @@ begin
     Scope.Classes.Add('active');
   end;
   inherited;
+end;
+
+{ TBSRenderer.TCardFooter }
+
+procedure TBSRenderer.TCardFooter.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TCardFooter;
+begin
+  e := Scope.Element as THTML.TCardFooter;
+  if e.Count > 0 then  
+  begin
+    Scope.Classes.Add('card-footer');
+    Context.Writer.OpenTag('div', Scope.ToString);  
+  end;
+  inherited;
+  if e.Count > 0 then  
+    Context.Writer.CloseTag('div');
+end;
+
+{ TBSRenderer.THorzLine }
+
+procedure TBSRenderer.THorzLine.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Context.Writer.AddShortTag('hr');
 end;
 
 initialization
