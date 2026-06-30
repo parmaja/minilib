@@ -368,6 +368,8 @@ type
     function GetHomePath: string; overload;
     // http://host:80/module/namespace/
     function GetHomeURL: string; overload;
+    // http://host:80/module/namespace/schema
+    function GetSchemaURL: string; overload;
 
     // With Schema
     // /module/namespace/schema
@@ -1651,6 +1653,7 @@ type
         procedure Created; override;
       public
         JSFunction: string;
+        constructor Create(AParent: TmnwElement; const ACaption: string); reintroduce; overload; 
       end;
 
       TCookieButton = class(TButton)
@@ -3125,7 +3128,7 @@ begin
       if not AContext.Response.IsResponded then
       begin
         if (AContext.Element = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.Route = '') then
-          AContext.Response.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)))
+          AContext.Response.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)), True)
         else
           AContext.Response.ContentType := AContext.Element.GetContentType(AContext.Route);
       end;
@@ -5492,6 +5495,12 @@ begin
   Text := AText;
 end;
 
+constructor THTML.TButton.Create(AParent: TmnwElement; const ACaption: string);
+begin
+  inherited Create(AParent);
+  Caption := ACaption;
+end;
+
 procedure THTML.TButton.Created;
 begin
   inherited;
@@ -5516,6 +5525,11 @@ begin
     Result := e.GetPathTo(Schema)
   else
     Result := e.GetPathTo(Element);
+end;
+
+function TmnwContext.GetSchemaURL: string;
+begin
+  Result := Web.GetHostURL + GetPath(Schema);
 end;
 
 function TmnwContext.GetSession: TmnwSession;

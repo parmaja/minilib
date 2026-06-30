@@ -568,7 +568,7 @@ type
     procedure RespondNotFound;
     procedure RespondForbidden;
     procedure RespondUnauthorized;
-    procedure RespondRedirectTo(S: string);
+    procedure RespondRedirectTo(NewURL: string; WithQuery: Boolean = False);
     property IsResponded: Boolean read FIsResponded write SetIsResponded;
   end;
 
@@ -3484,10 +3484,13 @@ begin
   Result := SubStr(Head, ' ', 0);
 end;
 
-procedure TwebResponse.RespondRedirectTo(S: string);
+procedure TwebResponse.RespondRedirectTo(NewURL: string; WithQuery: Boolean);
 begin
   Answer := hrRedirect;
-  Redirect := S;
+  if WithQuery and (Request.Query <> '') then  
+    Redirect := NewURL + '?' + Request.Query
+  else
+    Redirect := NewURL;
   SendHeader;
   Responded;
 end;

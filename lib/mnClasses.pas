@@ -187,6 +187,7 @@ type
       procedure SetValues(Index: string; AValue: string);
     public
       function Add(Name, Value: string): _Object_; overload;
+      function Add(Name: string; Value: Integer): _Object_; overload;
       property Values[Index: string]: string read GetValues write SetValues; default;
       property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     end;
@@ -564,6 +565,11 @@ function TmnObjectList<_Object_>.TmnObjectListEnumerator.MoveNext: Boolean;
 begin
   Inc(FIndex);
   Result := FIndex < FList.Count;
+end;
+
+function TmnNameValueObjectList<_Object_>.Add(Name: string; Value: Integer): _Object_;
+begin
+  Add(Name, Value.ToString);
 end;
 
 { TmnNameValueObjectList }
