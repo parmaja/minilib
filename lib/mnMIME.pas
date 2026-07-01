@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils,
-  mnUtils, mnClasses;
+  SyncObjs, mnUtils, mnClasses;
 
 type
   TMIMEFeatures = set of
@@ -61,7 +61,7 @@ var
   FMIME: TmnMIME = nil;
 
 function MIME: TmnMIME;
-begin
+begin  
   if FMIME = nil then
   begin
     FMIME := TmnMIME.Create;
@@ -189,6 +189,7 @@ begin
 end;
 
 initialization
+  MIME; //Init it
 finalization
   FreeAndNil(FMIME);
 end.

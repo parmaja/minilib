@@ -170,6 +170,13 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      { TSpanButton }
+
+      TSpanButton = class(TSpan)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       { TFooter }
 
       TFooter = class(THTMLComponent)
@@ -205,16 +212,23 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;        
 
+      { TLayout }
+
+      TLayout = class abstract(THTMLLayout)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       { TRow }
 
-      TRow = class(THTMLLayout)
+      TRow = class(TLayout)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TColumn }
 
-      TColumn = class(THTMLLayout)
+      TColumn = class(TLayout)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
@@ -370,7 +384,8 @@ type
       { TButton }
 
       TButton = class(THTMLItem)
-      protected
+      protected        
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -791,6 +806,8 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
+  if e.Gap > 0 then
+    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
 
   Context.Writer.OpenTag('div', Scope.ToString);
   if e.Caption <> '' then
@@ -890,6 +907,12 @@ begin
   Context.Writer.AddShortTag('br');
 end;
 
+procedure TBSRenderer.TButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  Scope.Classes.Add('btn');
+  inherited;  
+end;
+
 { TBSRenderer.TTButton }
 
 procedure TBSRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
@@ -898,9 +921,13 @@ var
   event: string;
 begin
   e := Scope.Element as THTML.TButton;
-  Scope.Classes.Add('btn');
   if e.ControlStyle <> styleUndefined then
-    Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
+  begin
+    if e.Outline then   
+      Scope.Classes.Add(BSItemStyleToStr('btn-outline-', e.ControlStyle))
+    else
+      Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
+  end;
   if e.JSFunction <> '' then
     event := ' onclick="'+e.JSFunction+'(this, event)"'
   else if Context.Schema.Interactive then
@@ -1245,7 +1272,13 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add('row');
-  Scope.Classes.Add('flex-md-nowrap');
+
+  if e.Flex then
+  begin
+    Scope.Classes.Add('flex-row');    
+    if e.NoWrap then        
+      Scope.Classes.Add('flex-md-nowrap');
+  end;
   Scope.Classes.Add(BSContentJustifyToStr(e.ContentAlign, False));
   if e.Fixed <> fixedDefault then
     Scope.Classes.Add(BSFixedToStr(e.Fixed));
@@ -1263,6 +1296,8 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
+  if e.Flex then
+    Scope.Classes.Add('flex-column');
   if e.Size > 0 then
     Scope.Classes.Add('col-'+e.Size.ToString)
   else
@@ -1550,7 +1585,6 @@ end;
 procedure TBSRenderer.THTMLLayout.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THTMLLayout;
-  MarginPrefix: string;
 begin
   e := Scope.Element as THTML.THTMLLayout;
   inherited;
@@ -1560,12 +1594,7 @@ begin
     Scope.Classes.Add('mx-auto');
 
   // Optimize margin/padding prefix calculation
-  if e.Medium then
-    MarginPrefix := 'm-md'
-  else
-    MarginPrefix := 'm';
-
-  Scope.Classes.Add(e.Margin.ToBSString(MarginPrefix));
+  Scope.Classes.Add(e.Margin.ToBSString(When(e.Medium, 'm-md', 'm')));
 end;
 
 { TBSRenderer.TImageFile }
@@ -1783,6 +1812,28 @@ procedure TBSRenderer.THorzLine.DoInnerRender(Scope: TmnwScope; Context: TmnwCon
 begin
   inherited;
   Context.Writer.AddShortTag('hr');
+end;
+
+{ TBSRenderer.TLayout }
+
+procedure TBSRenderer.TLayout.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TLayout;
+begin
+  e := Scope.Element as THTML.TLayout;
+  if e.Flex then  
+    Scope.Classes.Add('d-flex');
+  if e.Gap > 0 then
+    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
+  inherited;
+end;
+
+{ TBSRenderer.TSpanButton }
+
+procedure TBSRenderer.TSpanButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  Scope.Classes.Add('btn');
+  inherited;  
 end;
 
 initialization

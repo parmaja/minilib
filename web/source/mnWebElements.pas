@@ -281,7 +281,8 @@ type
 
   TElementClasses = record
     Items: TArray<String>;
-    function Find(const Name: string): Integer;
+    function IndexOf(const Name: string): Integer;
+    function Exists(const Name: string): Boolean;
     //Add one item
     function Add(const Name: string): Integer;
     //Add multiple items in on string
@@ -875,6 +876,7 @@ type
     //* Keep `var`
     procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); virtual;
 
+    function CanRenderChilds: Boolean; virtual;
     procedure RenderChilds(Scope: TmnwScope; Context: TmnwContext);
 
     //This function called one time
@@ -1403,19 +1405,26 @@ type
         function CanRender: Boolean; override;
       end;
 
-      TMain = class(THTMLComponent)
+      TMain = class(THTMLLayout)
       protected
         procedure Created; override;
       public
         Gap: Integer;
       end;
 
-      TRow = class(THTMLLayout)
+      TLayout = class abstract(THTMLLayout)
       public
+        Flex: Boolean;
+        Gap: Integer;
+      end;
+
+      TRow = class(TLayout)
+      public
+        NoWrap: Boolean;
         ContentAlign: TmnwAlign;
       end;
 
-      TColumn = class(THTMLLayout)
+      TColumn = class(TLayout)
       public
         Size: Integer;
       end;
@@ -1489,6 +1498,7 @@ type
         Caption: string;
         Collapse: Boolean;
         LabelFloating: Boolean;
+        Gap: Integer;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         property Footer: TFooter read FFooter;
       end;
@@ -1647,6 +1657,10 @@ type
         constructor Create(AParent: TmnwElement; const AText: string); reintroduce;
       end;
 
+      TSpanButton = class(TSpan)
+      public
+      end;
+      
       { TButton }
 
       TButton = class(TClickable)
@@ -1655,6 +1669,7 @@ type
         procedure Created; override;
       public
         JSFunction: string;
+        Outline: Boolean;
         constructor Create(AParent: TmnwElement; const ACaption: string); reintroduce; overload; 
       end;
 
@@ -2622,7 +2637,8 @@ end;
 
 procedure TmnwElementRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
-  RenderChilds(Scope, Context);
+  if CanRenderChilds then
+    RenderChilds(Scope, Context);
 end;
 
 procedure TmnwElementRenderer.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
@@ -2677,6 +2693,11 @@ end;
 
 procedure TmnwElementRenderer.AddHead(const Scope: TmnwScope; const Context: TmnwContext);
 begin
+end;
+
+function TmnwElementRenderer.CanRenderChilds: Boolean;
+begin
+  Result := True;
 end;
 
 procedure TmnwElementRenderer.CollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
@@ -2801,7 +2822,7 @@ begin
       Exit(i);
     end;
   raise Exception.Create('Cannot replace renderer for ' + AElementClass.ClassName);
-end;
+end;       
 
 constructor TmnwElementRenderers.Create;
 begin
@@ -4371,7 +4392,6 @@ end;
 
 procedure TmnwElement.RespondInit(const AContext: TmnwContext);
 begin
-//  AContext.Response.PutHeader('Content-Type', GetContentType(AContext.Route));
   DoRespondHeader(AContext);
 end;
 
@@ -5298,7 +5318,7 @@ begin
   if Name = '' then
     exit(-1);
 
-  Result:= Find(Name);
+  Result:= IndexOf(Name);
   if Result < 0 then
   begin
     Items := Items + [Name];
@@ -5320,18 +5340,6 @@ begin
   StrToStringsExCallback(S, 0, @Self, [Delimiter, #13], MatchCount, @Classes_StrToStringsExCallbackProc, []);
 end;
 
-function TElementClasses.Find(const Name: string): Integer;
-var
- i: Integer;
-begin
-  for i := 0 to Length(Items) -1 do
-  begin
-    if SameText(Name, Items[i]) then
-      exit(i)
-  end;
-  Result := -1
-end;
-
 class operator TElementClasses.Add(A: TElementClasses; B: string): TElementClasses;
 begin
   A.Add(B);
@@ -5346,6 +5354,11 @@ begin
   begin
     Add(itm);
   end;
+end;
+
+function TElementClasses.Exists(const Name: string): Boolean;
+begin
+  Result := IndexOf(Name) > 0;
 end;
 
 class operator TElementClasses.Explicit(const Source: string): TElementClasses;
@@ -5365,6 +5378,18 @@ begin
   Result := Source.ToString
 end;
 
+function TElementClasses.IndexOf(const Name: string): Integer;
+var
+ i: Integer;
+begin
+  for i := 0 to Length(Items) -1 do
+  begin
+    if SameText(Name, Items[i]) then
+      exit(i)
+  end;
+  Result := -1
+end;
+
 procedure TElementClasses.Init(classes: string);
 begin
   InitMemory(Self, SizeOf(Self));
@@ -5375,7 +5400,7 @@ function TElementClasses.Remove(const Name: string): Boolean;
 var
   index: integer;
 begin
-  index := Find(Name);
+  index := IndexOf(Name);
   Result := index >= 0;
   if Result then
     Delete(Items, index, 1);
@@ -5385,7 +5410,7 @@ class operator TElementClasses.Subtract(A: TElementClasses; B: string): TElement
 var
   i: Integer;
 begin
-  i := A.Find(B);
+  i := A.IndexOf(B);
   if i>=0 then
     Delete(A.Items, i, 1);
   Result := A;
