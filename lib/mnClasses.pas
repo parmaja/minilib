@@ -569,7 +569,7 @@ end;
 
 function TmnNameValueObjectList<_Object_>.Add(Name: string; Value: Integer): _Object_;
 begin
-  Add(Name, Value.ToString);
+  Result := Add(Name, Value.ToString);
 end;
 
 { TmnNameValueObjectList }

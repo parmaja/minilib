@@ -1,4 +1,5 @@
-﻿unit mnWebElements;
+﻿
+unit mnWebElements;
 {$IFDEF FPC}
 {$mode delphi}
 {$modeswitch prefixedattributes}
@@ -1960,9 +1961,11 @@ function GetTimeStamp: Int64;
 
 //Short functions
 //Single Quote
-function SQ(s: string): string; inline;
+function SQ(const s: string): string; inline;
 //Double Quote
-function DQ(s: string): string; inline;
+function DQ(const s: string): string; inline;
+function Attr(const s: string): string; overload; inline;
+function Attr(Value: Integer): string; overload; inline;
 
 //Name Value with Quote 
 function NV(const Name, Value: string): string; overload; inline;
@@ -2009,14 +2012,24 @@ begin
     Result := 'ltr';
 end;
 
-function SQ(s: string): string; inline;
+function SQ(const s: string): string; inline;
 begin
   Result := QuoteStr(s, '''');
 end;
 
-function DQ(s: string): string; inline;
+function DQ(const s: string): string; inline;
 begin
   Result := QuoteStr(s, '"');
+end;
+
+function Attr(const s: string): string; inline;
+begin
+  Result := DQ(EscapeAttr(s));
+end;
+
+function Attr(Value: Integer): string; inline;
+begin
+  Result := Attr(Value.ToString);
 end;
 
 //return "Name" "Value" if Value not empty
@@ -5484,7 +5497,7 @@ end;
 
 function THTML.THTMLGroup.CanRender: Boolean;
 begin
-  Result := inherited CanRender and (Count>0);
+  Result := inherited CanRender and (Count > 0);
 end;
 
 { THTML.TSpan }
