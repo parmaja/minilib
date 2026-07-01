@@ -328,7 +328,7 @@ mnw.switch_theme = function(sender, event)
 
 mnw.switch_zoom = function(sender, event)
 {
-  let mnw_zoom = sender.getAttribute('data-mnw-zoom') || '';
+  let mnw_zoom = sender.getAttribute('data-mnw-value') || '';
   if (mnw_zoom === 'normal')
     mnw_zoom = '';
 
