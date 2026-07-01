@@ -221,6 +221,7 @@ type
   TLocation = record
     Where: TLocationRelative;
     Custom: string;
+    WithQuery: Boolean;
     class operator Explicit(const Source: string): TLocation;
     class operator Implicit(Source : string) : TLocation;
     class operator Implicit(Source : TLocation): string;
@@ -1098,7 +1099,7 @@ type
     ModuleName: string; //Module Name
 
     CompactMode: Boolean;
-    DefaultAge: Integer;
+    SessionAge: Integer; //* in ms
 
     constructor Create;
     destructor Destroy; override;
@@ -1974,6 +1975,7 @@ function NV(const Name, Value, Default: string): string; overload; inline;
 function AddIf(const Value: string; Add: string): string; overload; inline;
 function When(const Value: string; const Default: string = ''): string; overload; inline;
 function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
+function When(Condition: Boolean; Value: Integer; Default: Integer = 0): Integer; overload; inline;
 function When(Condition: Boolean): string; overload; inline;
 function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds; overload;
 function StartURL(const Path: string): string; inline;
@@ -2068,6 +2070,14 @@ begin
 end;
 
 function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
+begin
+  if Condition then
+    Result := Value
+  else
+    Result := Default;
+end;
+
+function When(Condition: Boolean; Value: Integer; Default: Integer): Integer; overload; inline;
 begin
   if Condition then
     Result := Value
@@ -3033,7 +3043,7 @@ begin
       AContext.Session.ID := AContext.Request.Params['session'];
       if AContext.Session.ID = '' then
         AContext.Session.ID := AContext.Request.Cookies['session'];
-      AContext.Session.Age := DefaultAge;      
+      AContext.Session.Age := SessionAge;      
       AContext.Session.Domain := Domain;
       AContext.Session.Path := AContext.GetHomePath;
       //AResponse.Session.Path := StartURL(Alias, True);
@@ -3259,7 +3269,7 @@ begin
   FTimeStamp := GetTimeStamp;
   FLock := TCriticalSection.Create;
   FRegistered := TRegisteredSchemas.Create;
-  DefaultAge := -1; //Forever
+  SessionAge := msOneHour; //Forever
   FShowVersion := True;
   FLanguage := 'en';
   inherited;
@@ -4235,7 +4245,6 @@ end;
 
 procedure TmnwElement.DoRespondHeader(const AContext: TmnwContext);
 begin
-  AContext.Session.ID := '';
 end;
 
 constructor TmnwElement.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
@@ -5587,12 +5596,14 @@ begin
     Result := GetHomePath
   else if Location.Where = toDefault then
     Result := GetDefaultPath;
-
+    
   if Location.Where = toCustom then
     Result := Location.Custom
   else if Location.Custom <> '' then
-    Result := EndURL(Result) + Location.Custom
-
+    Result := EndURL(Result) + Location.Custom;
+    
+  if Location.WithQuery and (Request.Query <> '') then
+    Result := Result + '?' + Request.Query;
 end;
 
 function TmnwContext.GetURL(e: TmnwElement): string;
@@ -5766,9 +5777,8 @@ begin
       Route := 'login';
       Name := 'login-form';
       PostTo.Where := toElement;
-//      PostTo.Custom := 'login';
 
-      SubmitTo := 'return mnw.formPost(this, event)';
+      SubmitTo := 'return mnw.formPost(event)';
 
       with TInput.Create(This) do
       begin
@@ -5785,8 +5795,6 @@ begin
         Caption := 'Password';
         HelpText := 'You need to use numbers';
       end;
-
-      TBreak.Create(This);
 
       Submit.Caption := 'Submit';
       Reset.Caption := 'Reset';
@@ -6340,7 +6348,7 @@ begin
     if Request.IsSecure then
       aOptions := aOptions + [Secured];
 
-    Cookies.SetCookie(Session.Domain, Session.Path, 'session', Session.ID, aOptions, Session.Age);
+    Cookies.SetCookie(Session.Domain, Session.Path, 'session', Session.ID, aOptions, When(Session.ID <> '', Session.Age, 0));
     Session.Reset;
   end;
 end;

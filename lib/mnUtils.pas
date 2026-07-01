@@ -12,7 +12,6 @@ unit mnUtils;
 {$modeswitch arrayoperators}
 {$ModeSwitch advancedrecords}
 {$ModeSwitch typehelpers}
-{$RangeChecks+}
 {$ENDIF}
 {$M+}{$H+}
 

@@ -2877,29 +2877,21 @@ function TmnwCookies.SetCookie(const Domain, Path: string; const Name: string; c
 var
   index: Integer;
 begin
+  //We dont auto delete of value = '' to set session to delete it in browser
   index := IndexOfName(Name);
-  if Value = '' then //Delete it
+  if index >= 0 then
   begin
-    if index >= 0 then
-      Delete(index);
-    Result := nil;
+    Result := Items[index];
+    Result.Value := Value;
   end
   else
-  begin
-    if index >= 0 then
-    begin
-      Result := Items[index];
-      Result.Value := Value;
-    end
-    else
-      Result := Add(Name, Value);
-    Result.FDomain := Domain; //Yes F for not trigger changed
-    Result.FPath := Path;
-    Result.FAge := Age;
-    Result.FOptions := Options;
-    if not Result.Changed then    
-      Result.SetChanged;
-  end;
+    Result := Add(Name, Value);
+  Result.FDomain := Domain; //Yes F for not trigger changed
+  Result.FPath := Path;
+  Result.FAge := Age;
+  Result.FOptions := Options;
+  if not Result.Changed then    
+    Result.SetChanged;
 end;
 
 procedure TmnwCookies.SetRequestText(S: string);
@@ -3065,6 +3057,8 @@ begin
   if Parent<> nil then
     Parent.DoPrepareHeader(Self);
 
+  DoSetCookies;
+
   SendHead;
 
   for item in Header do
@@ -3081,7 +3075,6 @@ begin
   end;
   Stream.WriteUTF8Line(s);}
 
-  DoSetCookies;
   DoSendHeader; //enter after
 
   if Parent<> nil then
