@@ -929,7 +929,7 @@ begin
       Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
   end;
   if e.JSFunction <> '' then
-    event := ' onclick="'+e.JSFunction+'(this, event)"'
+    event := ' onclick="'+e.JSFunction+'(event)"'
   else if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Context.Writer.OpenTag('button', 'type="button"' + event + Scope.GetText);
@@ -1074,8 +1074,8 @@ procedure TBSRenderer.TPanel.DoInnerRender(Scope: TmnwScope; Context: TmnwContex
 var
   e: THTML.TPanel;
 begin
-  e := Scope.Element as THTML.TPanel;
-  Context.Writer.OpenTag('div', 'class="panel fit-content"');
+  e := Scope.Element as THTML.TPanel; 
+  Context.Writer.OpenTag('div', 'class="panel"'); //fit-content
   if e.Caption <> '' then
     Context.Writer.AddTag('div', 'class="panel-header"', e.Caption);
 
@@ -1110,7 +1110,7 @@ var
   e: THTML.TThemeModeButton;
 begin
   e := Scope.Element as THTML.TThemeModeButton;
-  Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(this, event)"');
+  Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
   Context.Writer.AddTag('span', 'class="icon mnw-theme"');
   inherited;
   Context.Writer.CloseTag('button');
@@ -1523,7 +1523,7 @@ var
 begin
   e := Scope.Element as THTML.TLink;
   if e.ClickType = clickAction then
-    s :=' onclick="mnw.click(this, event)"'
+    s :=' onclick="mnw.click(event)"'
   else if e.ClickType = clickNewWindow then
     s :=' target="_blank"';
   if e.NoDecoration then

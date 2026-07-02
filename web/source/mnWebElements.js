@@ -317,7 +317,7 @@ mnw.showToast = function(content, type = "warning")
 
 /* UI functions */
 
-mnw.switch_theme = function(sender, event)
+mnw.switch_theme = function(e)
 {
   let bs_theme = 'dark';
   if (document.body.getAttribute('data-bs-theme') == 'dark')
@@ -326,9 +326,9 @@ mnw.switch_theme = function(sender, event)
   localStorage.setItem('mnw-theme', bs_theme);
 }
 
-mnw.switch_zoom = function(sender, event)
+mnw.switch_zoom = function(e)
 {
-  let mnw_zoom = sender.getAttribute('data-mnw-value') || '';
+  let mnw_zoom = e.target.getAttribute('data-mnw-value') || '';
   if (mnw_zoom === 'normal')
     mnw_zoom = '';
 

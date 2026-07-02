@@ -973,8 +973,15 @@ type
       TComment = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;   
+
+      { TJSScript }
+
+      TJSScript = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
-    
+
       { TFile }
 
       TFile = class(THTMLElement)
@@ -1189,6 +1196,14 @@ type
         Comment: string;
       end;
 
+      { TJSScript } 
+      
+      TJSScript = class(THTMLElement)
+      public
+        Script: string;
+        constructor Create(AParent: TmnwElement; AScript: string); reintroduce;
+      end;
+      
       THTMLContainer = class abstract(THTMLElement)
       public
         Medium: Boolean; //Medium or above
@@ -6057,6 +6072,7 @@ begin
   begin
     RegisterRenderer(THTML.THTMLElement, THTMLElement);
     RegisterRenderer(THTML.TComment ,TComment);
+    RegisterRenderer(THTML.TJSScript,TJSScript);    
 
     RegisterRenderer(THTML.TDocument, TDocument);
     RegisterRenderer(THTML.TBody, TBody);
@@ -6376,6 +6392,28 @@ begin
     Cookies.SetCookie(Session.Domain, Session.Path, 'session', Session.ID, aOptions, When(Session.ID <> '', Session.Age, 0));
     Session.Reset;
   end;
+end;
+
+{ TmnwHTMLRenderer.TJSScript }
+
+procedure TmnwHTMLRenderer.TJSScript.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TJSScript;
+begin
+  e := Scope.Element as THTML.TJSScript;
+
+  Context.Writer.OpenTag('script', 'type="text/javascript"' + Scope.GetText);
+  inherited;
+  Context.Writer.WriteLines(e.Script);
+  Context.Writer.CloseTag('script');  
+end;
+
+{ THTML.TJSScript }
+
+constructor THTML.TJSScript.Create(AParent: TmnwElement; AScript: string);
+begin
+  inherited Create(AParent);
+  Script := AScript;
 end;
 
 initialization
