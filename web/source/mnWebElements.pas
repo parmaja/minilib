@@ -1686,7 +1686,7 @@ type
       protected
         procedure Created; override;
       public
-        JSFunction: string;
+        CallScript: string;
         Outline: Boolean;
         constructor Create(AParent: TmnwElement; const ACaption: string); reintroduce; overload; 
       end;
@@ -5534,19 +5534,19 @@ begin
   FButtonSmall.Data := 'small';
   FButtonSmall.ControlStyle := styleUndefined;
   FButtonSmall.Image.Symbol := 'icon mnw-font-small';
-  FButtonSmall.JSFunction := 'mnw.switch_zoom';
+  FButtonSmall.CallScript := 'mnw.switch_zoom(e)';
 
   FButtonNormal := THTML.TButton.Create(Self, [elEmbed]);
   FButtonNormal.Data := 'normal';
   FButtonNormal.ControlStyle := styleUndefined;
   FButtonNormal.Image.Symbol := 'icon mnw-font-normal';
-  FButtonNormal.JSFunction := 'mnw.switch_zoom';
+  FButtonNormal.CallScript := 'mnw.switch_zoom(e)';
 
   FButtonLarge := THTML.TButton.Create(Self, [elEmbed]);
   FButtonLarge.Data := 'large';
   FButtonLarge.ControlStyle := styleUndefined;
   FButtonLarge.Image.Symbol := 'icon mnw-font-large';
-  FButtonLarge.JSFunction := 'mnw.switch_zoom';
+  FButtonLarge.CallScript := 'mnw.switch_zoom(e)';
 end;
 
 { THTML.THTMLGroup }

@@ -936,8 +936,8 @@ begin
     else
       Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
   end;
-  if e.JSFunction <> '' then
-    event := ' onclick="'+e.JSFunction+'(event)"'
+  if e.CallScript <> '' then
+    event := ' onclick='''+e.CallScript+''''
   else if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Context.Writer.OpenTag('button', 'type="button"' + event + Scope.GetText);

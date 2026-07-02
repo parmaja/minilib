@@ -18,7 +18,7 @@ interface
 
 uses
   Classes, SysUtils, StrUtils, Types, DateUtils, SyncObjs, 
-  Generics.Collections, Contnrs;
+  Generics.Collections, Contnrs, RTTI;
 
 type
 
@@ -188,6 +188,8 @@ type
     public
       function Add(Name, Value: string): _Object_; overload;
       function Add(Name: string; Value: Integer): _Object_; overload;
+      function Add(Name: string; Value: Boolean): _Object_; overload;
+      function AddIf(Condition: Boolean; Name: string; Value: TValue): _Object_; overload;
       property Values[Index: string]: string read GetValues write SetValues; default;
       property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     end;
@@ -570,6 +572,17 @@ end;
 function TmnNameValueObjectList<_Object_>.Add(Name: string; Value: Integer): _Object_;
 begin
   Result := Add(Name, Value.ToString);
+end;
+
+function TmnNameValueObjectList<_Object_>.Add(Name: string; Value: Boolean): _Object_;
+begin
+  Result := Add(Name, Value.ToString);
+end;
+
+function TmnNameValueObjectList<_Object_>.AddIf(Condition: Boolean; Name: string; Value: TValue): _Object_;
+begin
+  if Condition then
+    Add(Name, Value.ToString);
 end;
 
 { TmnNameValueObjectList }
