@@ -1243,6 +1243,9 @@ type
         ControlStyle: TItemStyle;
       end;
 
+      THTMLFormControl = class abstract(THTMLControl)
+      end;
+
       { TJSFile }
 
       TJSFile = class(TFile)
@@ -1717,10 +1720,10 @@ type
       public
       end;
 
-      { TInput }
+      { TCustomInput }
 
       [TID_Extension]
-      TInput = class(THTMLComponent)
+      TCustomInput = class(THTMLFormControl)
       private
         FCaption: string;
         FValue: string;
@@ -1737,6 +1740,10 @@ type
       public
         property Value: string read FValue write SetValue;
         property Caption: string read FCaption write SetCaption;
+      end;
+
+      TInput = class(TCustomInput)      
+      public
       end;
 
       { TInputPassword }
@@ -3916,9 +3923,9 @@ begin
   inherited;
 end;
 
-{ THTML.TInput }
+{ THTML.TCustomInput }
 
-procedure THTML.TInput.SetValue(const AValue: string);
+procedure THTML.TCustomInput.SetValue(const AValue: string);
 begin
   if FValue =AValue then Exit;
   FValue :=AValue;
@@ -3926,19 +3933,19 @@ begin
     SendInteractive('"command": "change", "content": ' + DQ(Value));
 end;
 
-procedure THTML.TInput.SetCaption(const AValue: string);
+procedure THTML.TCustomInput.SetCaption(const AValue: string);
 begin
   if FCaption =AValue then Exit;
   FCaption :=AValue;
 end;
 
-procedure THTML.TInput.Created;
+procedure THTML.TCustomInput.Created;
 begin
   inherited;
   EditType := 'text';
 end;
 
-procedure THTML.TInput.ReceiveMessage(JSON: TDON_Pair);
+procedure THTML.TCustomInput.ReceiveMessage(JSON: TDON_Pair);
 begin
   if JSON['command'].AsString = 'change' then
   begin
@@ -5373,7 +5380,7 @@ end;
 
 function TElementClasses.Exists(const Name: string): Boolean;
 begin
-  Result := IndexOf(Name) > 0;
+  Result := IndexOf(Name) >= 0;
 end;
 
 class operator TElementClasses.Explicit(const Source: string): TElementClasses;

@@ -58,17 +58,23 @@ type
 
       { THTMLComponent }
 
-      THTMLComponent = class(THTMLLayout)
+      THTMLComponent = class abstract(THTMLLayout)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;      
       end;
 
       { THTMLControl }
 
-      THTMLControl = class(THTMLComponent)
+      THTMLControl = class abstract(THTMLComponent)
       protected
         procedure RenderImageLocation(const Context: TmnwContext; const Image: TImageLocation);
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      THTMLFormControl = class abstract(THTMLControl)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      public      
       end;
 
       { TImage }
@@ -410,7 +416,7 @@ type
 
       { TInput }
 
-      TInput = class(THTMLComponent)
+      TInput = class(THTMLFormControl)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -649,7 +655,7 @@ begin
     RegisterRenderer(THTML.TNavItem, TNavItem);
     RegisterRenderer(THTML.TMenuItem, TMenuItem);
     RegisterRenderer(THTML.TDropdownItem, TDropdownItem);
-    RegisterRenderer(THTML.TInput, TInput);
+    RegisterRenderer(THTML.TInput, TInput); //Yes not TCustomInput
     RegisterRenderer(THTML.TInputPassword, TInputPassword);
     
     RegisterRenderer(THTML.TImage, TImage);
@@ -673,6 +679,7 @@ begin
     RegisterRenderer(THTML.TBar, TBar);
 
     RegisterRenderer(THTML.THTMLComponent, THTMLComponent);
+    RegisterRenderer(THTML.THTMLFormControl, THTMLFormControl);
     RegisterRenderer(THTML.THTMLControl, THTMLControl);
 
     RegisterRenderer(THTML.TThemeModeButton, TThemeModeButton);
@@ -833,7 +840,8 @@ end;
 
 procedure TBSRenderer.TForm.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
-  Scope.Classes.Add('form-control');
+//  if Scope.Element is THTML.THTMLFormControl then //Already added THTMLFormControl
+//    Scope.Classes.Add('form-control');
   inherited;
 end;
 
@@ -1834,6 +1842,14 @@ procedure TBSRenderer.TSpanButton.DoCollectAttributes(var Scope: TmnwScope; Cont
 begin
   Scope.Classes.Add('btn');
   inherited;  
+end;
+
+{ TBSRenderer.THTMLFormControl }
+
+procedure TBSRenderer.THTMLFormControl.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;  
+  Scope.Classes.Add('form-control');
 end;
 
 initialization
