@@ -1252,6 +1252,8 @@ type
       end;
 
       THTMLFormControl = class abstract(THTMLControl)
+      public
+        Required: Boolean;
       end;
 
       { TJSFile }
@@ -1614,7 +1616,7 @@ type
       { TForm }
 
       [TID_Extension]
-      [TName_Extension]
+//      [TName_Extension]
       TForm = class(THTMLElement)
       private
       protected
@@ -1750,7 +1752,6 @@ type
         PlaceHolder: string;
         HelpText: string;
         EditType: string;
-        Required: Boolean;
       public
         property Value: string read FValue write SetValue;
         property Caption: string read FCaption write SetCaption;
@@ -5486,8 +5487,6 @@ begin
 end;
 
 function TmnwScope.ToString(Select: TSelect; WithSpace: Boolean): string;
-var
-  s: string;
 begin
   Result := '';
   if (ssOuter in Select) then  
@@ -5750,7 +5749,7 @@ end;
 
 procedure TAuthSchema.DoRespondHeader(const AContext: TmnwContext);
 begin
-  if (AContext.Data <> nil) and SameText(AContext.Data.Values['execute'].AsString, 'true') then
+  if (AContext.Data <> nil) and AContext.Data.Values['password'].IsExists then
   begin
     UserLogin(AContext);
   end;
@@ -5760,7 +5759,7 @@ end;
 procedure TAuthSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext);
 begin
   inherited;
-  if (AElement.Name = 'login-form') and (AContext.Data <> nil) and (SameText(AContext.Data.Values['execute'].AsString, 'true') ) then
+  if (AElement.Name = 'login-form') and (AContext.Data <> nil) and (AContext.Data.Values['password'].IsExists) then
   begin
     UserLogin(AContext);
   end;
@@ -6240,11 +6239,8 @@ end;
 { TmnwHTMLRenderer.TDocument }
 
 procedure TmnwHTMLRenderer.TDocument.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TDocument;
 begin
   inherited;
-  e := Scope.Element as THTML.TDocument;
   if Context.Direction = dirRightToLeft then
     Scope.Attributes['dir'] := 'rtl'
   else if Context.Direction = dirLeftToRight then

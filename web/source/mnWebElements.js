@@ -174,14 +174,19 @@ mnw.formPost = function(e) {
   // Collect all native inputs (handles checkboxes, radios, files automatically)
   const data = Object.fromEntries(new FormData(formElement));
 
+  /* use form.addEventListener("formdata", function(e) ....
+
   //ONLY process custom controls to avoid duplicating native inputs
   formElement.querySelectorAll('[name]').forEach(el => {
-    if (typeof el.getValue === 'function') {
+    if (typeof el.setJSON === 'function') {
+      el.setJSON(data);
+    }
+    else if (typeof el.getValue === 'function') {
       data[el.getAttribute('name')] = el.getValue();
     }
     // No 'else' block needed! Native inputs are already in 'data' from FormData
   });
-
+  */
   fetch(formElement.action, {
     method: 'POST',
     body: JSON.stringify(data),

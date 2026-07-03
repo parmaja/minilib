@@ -883,7 +883,9 @@ begin
   inherited;
   if e.RedirectTo <> '' then
     Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo + '"');
-  Context.Writer.AddShortTag('input', 'type="hidden" name="execute" value="true"');
+
+  if e.SubmitTo = '' then
+    Context.Writer.AddShortTag('input', 'type="hidden" name="execute" value="true"');
 
   if (e.Submit.Caption <> '') or (e.Cancel.Caption <> '') or (e.Reset.Caption <> '') then
     Context.Writer.AddShortTag('hr');  
@@ -1885,9 +1887,14 @@ end;
 { TBSRenderer.THTMLFormControl }
 
 procedure TBSRenderer.THTMLFormControl.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.THTMLFormControl;
 begin
-  inherited;  
+  e := Scope.Element as THTML.THTMLFormControl;
+  inherited;    
   Scope.Classes.Add('form-control');
+  if e.Required then
+    Scope.Attributes.Add('required', '');
 end;
 
 { TBSRenderer.TSubmit }
