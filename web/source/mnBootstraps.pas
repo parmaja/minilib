@@ -172,7 +172,7 @@ type
       { TSpan }
 
       TSpan = class(THTMLElement)
-      protected
+      protected        
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -720,9 +720,15 @@ end;
 procedure TBSRenderer.THTMLControl.RenderImageLocation(const Context: TmnwContext; const Image: TImageLocation);
 begin
   if Image.Location = imgSymbol then
-    Context.Writer.AddTag('span', 'class='+ DQ(Image.Symbol))
+  begin
+    if Image.Symbol <> '' then    
+      Context.Writer.AddTag('span', 'class='+ DQ(Image.Symbol))
+  end
   else if Image.Location = imgPath then
-    Context.Writer.AddShortTag('img', 'src='+ DQ(Image.Path) + ' alt=""')
+  begin
+    if Image.Path <> '' then    
+      Context.Writer.AddShortTag('img', 'src='+ DQ(Image.Path) + ' alt=""')
+  end
   else if Image.Location = imgMemory then
   begin
 {    if Route <> '' then    
@@ -1407,9 +1413,15 @@ begin
   end;
 
   if e.Image.Location = imgSymbol then
-    Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Symbol + ' p-1'))
+  begin
+    if e.Image.Symbol <> '' then    
+      Context.Writer.AddTag('span', 'class='+ DQ(e.Image.Symbol + ' p-1'));
+  end
   else if e.Image.Location = imgPath then
-    Context.Writer.AddShortTag('img', 'class="p-1" src='+ DQ(e.Image.Path) + ' alt=""');
+  begin
+    if e.Image.Path <> '' then    
+      Context.Writer.AddShortTag('img', 'class="p-1" src='+ DQ(e.Image.Path) + ' alt=""');
+  end;
 {  else if e.Image.Location = imgMemory then
     Context.Writer.AddShortTag('img', 'src='+ DQ(e.Image.Path) + ' alt=""');}
 
@@ -1589,11 +1601,18 @@ end;
 procedure TBSRenderer.TSpan.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TSpan;
+  s: string;
 begin
   e := Scope.Element as THTML.TSpan;
-  Context.Writer.OpenInlineTag('span', Scope.ToString, e.Text);
-  inherited;
-  Context.Writer.CloseTag('span');
+  s := Scope.ToString;
+  if (s <> '') or (e.Text <> '') then  
+  begin
+    Context.Writer.OpenInlineTag('span', Scope.ToString, e.Text);
+    inherited;
+    Context.Writer.CloseTag('span');
+  end
+  else
+    inherited;
 end;
 
 { TBSRenderer.THTMLLayout }
@@ -1865,13 +1884,12 @@ end;
 procedure TBSRenderer.TSubmit.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TSubmit;
-  event: string;
 begin
   e := Scope.Element as THTML.TSubmit;
   inherited;
   Scope.Classes.Add('btn-success');
   Scope.Attributes['type'] := 'submit';
-  if e.FormID <> '' then  
+  if e.FormID <> '' then
     Scope.Attributes['form'] := e.FormID;
 end;
 

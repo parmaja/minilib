@@ -4949,7 +4949,7 @@ procedure THTML.TForm.Created;
 begin
   inherited;
   PostTo.Where := toElement;
-  SubmitTo := 'mnw.formPost(e)';
+  SubmitTo := 'return mnw.formPost(event)';
 end;
 
 procedure THTML.TForm.DoComposed;
@@ -5541,19 +5541,19 @@ begin
   FButtonSmall.Data := 'small';
   FButtonSmall.ControlStyle := styleUndefined;
   FButtonSmall.Image.Symbol := 'icon mnw-font-small';
-  FButtonSmall.CallScript := 'mnw.switch_zoom(e)';
+  FButtonSmall.CallScript := 'mnw.switch_zoom(event)';
 
   FButtonNormal := THTML.TButton.Create(Self, [elEmbed]);
   FButtonNormal.Data := 'normal';
   FButtonNormal.ControlStyle := styleUndefined;
   FButtonNormal.Image.Symbol := 'icon mnw-font-normal';
-  FButtonNormal.CallScript := 'mnw.switch_zoom(e)';
+  FButtonNormal.CallScript := 'mnw.switch_zoom(event)';
 
   FButtonLarge := THTML.TButton.Create(Self, [elEmbed]);
   FButtonLarge.Data := 'large';
   FButtonLarge.ControlStyle := styleUndefined;
   FButtonLarge.Image.Symbol := 'icon mnw-font-large';
-  FButtonLarge.CallScript := 'mnw.switch_zoom(e)';
+  FButtonLarge.CallScript := 'mnw.switch_zoom(event)';
 end;
 
 { THTML.THTMLGroup }
@@ -5643,18 +5643,18 @@ end;
 function TmnwContext.GetLocationPath(Location: TLocation): string;
 begin
   if Location.Where = toSchema then
-    Result := GetPath(Schema)
+    Result := EndURL(GetPath(Schema))
   else if Location.Where = toElement then
-    Result := GetPath(Element)
+    Result := EndURL(GetPath(Element))
   else if Location.Where = toHome then
-    Result := GetHomePath
+    Result := EndURL(GetHomePath)
   else if Location.Where = toDefault then
     Result := GetDefaultPath;
     
   if Location.Where = toCustom then
-    Result := Location.Custom
+    Result := EndURL(Location.Custom)
   else if Location.Custom <> '' then
-    Result := EndURL(Result) + Location.Custom;
+    Result := EndURL(Result) + EndURL(Location.Custom);
     
   if Location.WithQuery and (Request.Query <> '') then
     Result := Result + '?' + Request.Query;
@@ -5832,7 +5832,7 @@ begin
       Name := 'login-form';
       PostTo.Where := toElement;
 
-      SubmitTo := 'return mnw.formPost(e)';
+      SubmitTo := 'return mnw.formPost(event)';
 
       with TInput.Create(This) do
       begin
