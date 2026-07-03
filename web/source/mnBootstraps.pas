@@ -395,6 +395,11 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      TSubmit = class(TButton)
+      protected        
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;        
+      end;
+
       { TNavItem }
 
       TNavItem = class(THTMLComponent)
@@ -652,6 +657,7 @@ begin
     RegisterRenderer(THTML.TLink, TLink);
     RegisterRenderer(THTML.TSpan, TSpan);
     RegisterRenderer(THTML.TButton, TButton);
+    RegisterRenderer(THTML.TSubmit, TSubmit);
     RegisterRenderer(THTML.TNavItem, TNavItem);
     RegisterRenderer(THTML.TMenuItem, TMenuItem);
     RegisterRenderer(THTML.TDropdownItem, TDropdownItem);
@@ -828,11 +834,12 @@ begin
       Context.Writer.WriteLn('></span>');
     end;
     Context.Writer.CloseTag('h5');
-  end;
-
+  end; 
   Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show' + When(e.LabelFloating, ' form-floating')+'" aria-labelledby="'+e.id+'-header"');
   inherited;
   Context.Writer.CloseTag('div');
+  if e.Footer <> nil then
+    e.Footer.Render(Context);
   Context.Writer.CloseTag('div');
 end;
 
@@ -918,6 +925,7 @@ end;
 procedure TBSRenderer.TButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   Scope.Classes.Add('btn');
+  Scope.Attributes['type'] := 'button';
   inherited;  
 end;
 
@@ -940,7 +948,7 @@ begin
     event := ' onclick='''+e.CallScript+''''
   else if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
-  Context.Writer.OpenTag('button', 'type="button"' + event + Scope.GetText);
+  Context.Writer.OpenTag('button', event + Scope.GetText);
   inherited;
   Context.Writer.CloseTag('button');
 end;
@@ -1850,6 +1858,21 @@ procedure TBSRenderer.THTMLFormControl.DoCollectAttributes(var Scope: TmnwScope;
 begin
   inherited;  
   Scope.Classes.Add('form-control');
+end;
+
+{ TBSRenderer.TSubmit }
+
+procedure TBSRenderer.TSubmit.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TSubmit;
+  event: string;
+begin
+  e := Scope.Element as THTML.TSubmit;
+  inherited;
+  Scope.Classes.Add('btn-success');
+  Scope.Attributes['type'] := 'submit';
+  if e.FormID <> '' then  
+    Scope.Attributes['form'] := e.FormID;
 end;
 
 initialization

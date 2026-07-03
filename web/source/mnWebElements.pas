@@ -964,8 +964,8 @@ type
 
       THTMLElement = class abstract(TmnwElementRenderer)
       protected         
-        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
     
       { TComment }
@@ -1509,7 +1509,7 @@ type
       [TID_Extension]
       TCard = class(THTMLControl)
       private 
-        FFooter: TFooter;
+        FFooter: TCardFooter;
       protected
         procedure Created; override;
       public
@@ -1518,7 +1518,7 @@ type
         LabelFloating: Boolean;
         Gap: Integer;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
-        property Footer: TFooter read FFooter;
+        property Footer: TCardFooter read FFooter;
       end;
 
       { TPanel }
@@ -1605,10 +1605,6 @@ type
       
       { TForm }
 
-      TFormButton = record
-        Caption: string;
-      end;
-
       [TID_Extension]
       [TName_Extension]
       TForm = class(THTMLElement)
@@ -1617,6 +1613,11 @@ type
         procedure DoRespondHeader(const AContext: TmnwContext); override;
         procedure Created; override;
         procedure DoComposed; override;
+      public
+        type
+          TFormButton = record
+            Caption: string;
+          end;
       public
         PostTo: TLocation;
         CancelTo: TLocation;
@@ -1689,6 +1690,11 @@ type
         CallScript: string;
         Outline: Boolean;
         constructor Create(AParent: TmnwElement; const ACaption: string); reintroduce; overload; 
+      end;
+      
+      TSubmit = class(TButton)
+      public
+        FormID: string;
       end;
 
       TCookieButton = class(TButton)
@@ -4918,7 +4924,7 @@ end;
 constructor THTML.TCard.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
 begin
   inherited;
-  FFooter := TFooter.Create(Self, [elEmbed, elInternal]);
+  FFooter := TCardFooter.Create(Self, [elEmbed, elInternal]);
 end;
 
 procedure THTML.TCard.Created;
@@ -4943,6 +4949,7 @@ procedure THTML.TForm.Created;
 begin
   inherited;
   PostTo.Where := toElement;
+  SubmitTo := 'mnw.formPost(e)';
 end;
 
 procedure THTML.TForm.DoComposed;
@@ -5825,7 +5832,7 @@ begin
       Name := 'login-form';
       PostTo.Where := toElement;
 
-      SubmitTo := 'return mnw.formPost(event)';
+      SubmitTo := 'return mnw.formPost(e)';
 
       with TInput.Create(This) do
       begin

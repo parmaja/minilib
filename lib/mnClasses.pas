@@ -582,7 +582,9 @@ end;
 function TmnNameValueObjectList<_Object_>.AddIf(Condition: Boolean; Name: string; Value: TValue): _Object_;
 begin
   if Condition then
-    Add(Name, Value.ToString);
+    Result := Add(Name, Value.ToString)
+  else
+    Result := nil;
 end;
 
 { TmnNameValueObjectList }
