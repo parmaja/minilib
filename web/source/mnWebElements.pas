@@ -289,7 +289,9 @@ type
     procedure Append(const S: string; Delimiter: string = ' '); overload;
     procedure Append(A: TElementClasses); overload;
     function Remove(const Name: string): Boolean;
-    function ToString: string;
+    function ToString(const Initial: string = ''): string; overload;
+    function Value: string; overload;
+
     class operator Add(A: TElementClasses; B: string): TElementClasses;
     class operator Subtract(A: TElementClasses; B: string): TElementClasses;
     class operator Explicit(const Source: string): TElementClasses;
@@ -326,15 +328,21 @@ type
     property Changed: Boolean read FChanged;
   end;
   
+  
   { TmnwScope }
-
-  TmnwScope = record
+ 
+  TmnwScope = record  
+  public
     Element: TmnwElement;
     Attributes: TmnwAttributes;
     Classes: TElementClasses;
+    InnerClasses: TElementClasses; //For content classes
     WrapClasses: TElementClasses; //WrapClass is a class used of what parent wrapped it
-    function ToString: string;
-    function GetText: string;
+  public
+    type
+      TSelect = set of (ssAttributes, ssOuter, ssInner);
+    function ToString(Select: TSelect = [ssAttributes, ssOuter, ssInner]; WithSpace: Boolean = False): string; overload;
+    function ToString(WithSpace: Boolean): string; overload;
     
     constructor Create(AElement: TmnwElement);
     procedure Free;
@@ -5445,7 +5453,14 @@ begin
   Result := A;
 end;
 
-function TElementClasses.ToString: string;
+function TElementClasses.ToString(const Initial: string): string;
+begin
+  Result := SpaceIf(Initial, Value);
+  if Result <> '' then
+    Result := 'class="' + Result + '"';
+end;
+
+function TElementClasses.Value: string;
 var
  itm : String;
 begin
@@ -5457,9 +5472,6 @@ begin
     else
       Result := itm;
   end;
-
-  if Result <> '' then
-    Result := 'class="' + Result + '"';
 end;
 
 { TmnwScope }
@@ -5469,13 +5481,27 @@ begin
   FreeAndNil(Attributes);
   Element := nil;
   Classes := Default(TElementClasses);
+  InnerClasses := Default(TElementClasses);
   WrapClasses := Default(TElementClasses);
 end;
 
-function TmnwScope.GetText: string;
+function TmnwScope.ToString(Select: TSelect; WithSpace: Boolean): string;
+var
+  s: string;
 begin
-  Result := ToString;
-  if (Result <> '') then
+  Result := '';
+  if (ssOuter in Select) then  
+    Result := Classes.Value;
+  if ssInner in Select then  
+    Result := SpaceIf(Result, InnerClasses.Value);  
+
+  if Result <> '' then
+    Result := 'class=' + DQ(Result);
+  
+  if ssAttributes in Select then  
+    Result := SpaceIf(Result, Attributes.ToString);    
+    
+  if WithSpace and (Result <> '') then
     Result := ' ' + Result;
 end;
 
@@ -5486,12 +5512,9 @@ begin
   Self.Element := AElement;
 end;
 
-function TmnwScope.ToString: string;
-var
-  s: string;
+function TmnwScope.ToString(WithSpace: Boolean): string;
 begin
-  s := Attributes.ToString;
-  Result := SpaceIf(s, Classes.ToString);
+  Result := ToString([ssAttributes, ssOuter, ssInner], WithSpace);
 end;
 
 { THTML.TLink }
@@ -6133,7 +6156,7 @@ begin
   e := Scope.Element as THTML.TJSFile;
   if ftEmbed in e.Options then
   begin
-    Context.Writer.OpenTag('script', 'type="text/javascript"' + Scope.GetText);
+    Context.Writer.OpenTag('script', 'type="text/javascript"' + Scope.ToString(True));
     inherited;
     Context.Writer.WriteLn('');
     Context.Writer.CloseTag('script');
@@ -6156,7 +6179,7 @@ begin
   e := Scope.Element as THTML.TCSSFile;
   if ftEmbed in e.Options then
   begin
-    Context.Writer.OpenTag('style', 'type="text/css"'+ Scope.GetText);
+    Context.Writer.OpenTag('style', 'type="text/css"'+ Scope.ToString(True));
     inherited;
     Context.Writer.WriteLn();
     Context.Writer.CloseTag('style');
@@ -6416,7 +6439,7 @@ var
 begin
   e := Scope.Element as THTML.TJSScript;
 
-  Context.Writer.OpenTag('script', 'type="text/javascript"' + Scope.GetText);
+  Context.Writer.OpenTag('script', 'type="text/javascript"' + Scope.ToString(True));
   inherited;
   Context.Writer.WriteLines(e.Script);
   Context.Writer.CloseTag('script');  

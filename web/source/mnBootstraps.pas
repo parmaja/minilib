@@ -270,7 +270,8 @@ type
       { TCard }
 
       TCard = class(THTMLControl)
-      protected
+      protected        
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -452,13 +453,13 @@ type
     function ToBSString(prefix: string): string; {$ifndef DEBUG}inline;{$endif}
   end;
 
-function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
-function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
-function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = True): string;
+function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = False): string;
+function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = False): string;
+function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = False): string;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = False): string;
 function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = False): string;
-function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = True): string;
+function BSControlStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = False): string;
 
 implementation
 
@@ -481,7 +482,7 @@ end;
 
 function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean): string;
 begin
-  Result := BSCustomAlignToStr('justify-content', Align, WithSpace);
+  Result := BSCustomAlignToStr('justify-content-', Align, WithSpace);
 end;
 
 function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean): string;
@@ -510,7 +511,7 @@ begin
     Result := ' ' + Result;
 end;
 
-function BSItemStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean): string;
+function BSControlStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean): string;
 const
   StyleNames: array[TItemStyle] of string = ('', 'primary', 'secondary', 'success', 'danger',
     'warning', 'info', 'light', 'dark', 'link', 'bg-transparent');
@@ -809,9 +810,15 @@ begin
   Scope.Classes.Add('p-0 p-sm-2');
   Scope.Classes.Add('m-0'); //do not change it, keep it 0
 
-  Context.Writer.OpenTag('main', Scope.Classes.ToString);
+  Context.Writer.OpenTag('main', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('main');
+end;
+
+procedure TBSRenderer.TCard.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  //Scope.Classes.Remove('align-items-center');
 end;
 
 { TBSRenderer.TCardHTML }
@@ -825,12 +832,11 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
-  if e.Gap > 0 then
-    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
 
-  Context.Writer.OpenTag('div', Scope.ToString);
+  Context.Writer.OpenTag('div', Scope.ToString([ssAttributes, ssOuter]));
   if e.Caption <> '' then
-  begin
+  begin    
+//  BSControlStyleToStr('bg-', e.ControlStyle, True)
     Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header d-flex"');
     Context.Writer.WriteLn(e.Caption);
     if e.Collapse then
@@ -840,8 +846,13 @@ begin
       Context.Writer.WriteLn('></span>');
     end;
     Context.Writer.CloseTag('h5');
-  end; 
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show' + When(e.LabelFloating, ' form-floating')+'" aria-labelledby="'+e.id+'-header"');
+  end;  
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show' 
+    + When(e.LabelFloating, ' form-floating')
+    + When(e.Gap>0, ' m-childs-' + e.Gap.ToString)
+    + SpaceIf(Scope.InnerClasses.Value)
+    +'" aria-labelledby="'+e.id+'-header"'
+    );
   inherited;
   Context.Writer.CloseTag('div');
   if e.Footer <> nil then
@@ -868,7 +879,7 @@ var
   e: THTML.TForm;
 begin
   e := Scope.Element as THTML.TForm;
-  Context.Writer.OpenTag('form', 'method="post"'+ NV('action', Context.GetLocationPath(e.PostTo)) + NV('onsubmit', e.SubmitTo) + ' enctype="multipart/form-data"' + Scope.GetText);
+  Context.Writer.OpenTag('form', 'method="post"'+ NV('action', Context.GetLocationPath(e.PostTo)) + NV('onsubmit', e.SubmitTo) + ' enctype="multipart/form-data"' + Scope.ToString(True));
   inherited;
   if e.RedirectTo <> '' then
     Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo + '"');
@@ -946,15 +957,15 @@ begin
   if e.ControlStyle <> styleUndefined then
   begin
     if e.Outline then   
-      Scope.Classes.Add(BSItemStyleToStr('btn-outline-', e.ControlStyle))
+      Scope.Classes.Add(BSControlStyleToStr('btn-outline-', e.ControlStyle))
     else
-      Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
+      Scope.Classes.Add(BSControlStyleToStr('btn-', e.ControlStyle));
   end;
   if e.CallScript <> '' then
     event := ' onclick='''+e.CallScript+''''
   else if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
-  Context.Writer.OpenTag('button', event + Scope.GetText);
+  Context.Writer.OpenTag('button', event + Scope.ToString(True));
   inherited;
   Context.Writer.CloseTag('button');
 end;
@@ -970,7 +981,7 @@ begin
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
   Scope.Classes.Add('nav-link');
-  Context.Writer.AddTag('a', 'href="'+When(e.LinkTo, '#') + '"' + event + Scope.GetText, e.Caption);
+  Context.Writer.AddTag('a', 'href="'+When(e.LinkTo, '#') + '"' + event + Scope.ToString(True), e.Caption);
   inherited;
 end;
 
@@ -984,7 +995,7 @@ begin
   e := Scope.Element as THTML.TMenuItem;
   if Context.Schema.Interactive then
     event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
-  Context.Writer.AddTag('button', 'role="menu" type="button"' + event + Scope.GetText, e.Caption);
+  Context.Writer.AddTag('button', 'role="menu" type="button"' + event + Scope.ToString(True), e.Caption);
   inherited;
 end;
 
@@ -1014,7 +1025,7 @@ begin
   if Context.Schema.Interactive then
     event := ' onchange="mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')"';
 
-  Context.Writer.AddShortTag('input', event + When(e.Required, ' required') + Scope.GetText); //TODO need to generate less spaces
+  Context.Writer.AddShortTag('input', event + When(e.Required, ' required') + Scope.ToString(True)); //TODO need to generate less spaces
   if e.HelpText <> '' then
     Context.Writer.AddTag('div', 'class="form-text"', e.HelpText);
   inherited;
@@ -1159,7 +1170,7 @@ begin
   if dropSplit in e.Options then
     Scope.Classes.Add('dropdown-toggle-split');
   if e.ControlStyle <> styleUndefined then
-    Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
+    Scope.Classes.Add(BSControlStyleToStr('btn-', e.ControlStyle));
   Scope.Attributes.Add('data-bs-toggle', 'dropdown');
   Scope.Attributes.Add('aria-expanded', 'false');
   Scope.Attributes.Add('type', 'button');
@@ -1199,7 +1210,7 @@ begin
   Scope.Classes.Add('btn');
   Scope.Classes.Add('dropdown-toggle');
   if e.ControlStyle <> styleUndefined then
-    Scope.Classes.Add(BSItemStyleToStr('btn-', e.ControlStyle));
+    Scope.Classes.Add(BSControlStyleToStr('btn-', e.ControlStyle));
   Scope.Attributes.Add('data-bs-toggle', 'dropdown');
   Scope.Attributes.Add('aria-expanded', 'false');
   Scope.Attributes.Add('type', 'button');
@@ -1301,7 +1312,7 @@ begin
     if e.NoWrap then        
       Scope.Classes.Add('flex-md-nowrap');
   end;
-  Scope.Classes.Add(BSContentJustifyToStr(e.ContentAlign, False));
+  Scope.Classes.Add(BSContentJustifyToStr(e.ContentAlign));
   if e.Fixed <> fixedDefault then
     Scope.Classes.Add(BSFixedToStr(e.Fixed));
   if e.Align <> alignDefault then
@@ -1556,7 +1567,7 @@ begin
     s :=' target="_blank"';
   if e.NoDecoration then
     Scope.Classes.Add('text-decoration-none');
-  Context.Writer.OpenTag('a', 'href="'+When(e.Location, '#') + '"'+ s + Scope.GetText);
+  Context.Writer.OpenTag('a', 'href="'+When(e.Location, '#') + '"'+ s + Scope.ToString(True));
   RenderImageLocation(Context, e.Image);  
   Context.Writer.Write(e.Caption);
   inherited;
@@ -1692,7 +1703,7 @@ begin
     Scope.Classes.Add('dropdown-toggle-split');
   Scope.Attributes.Add('data-bs-toggle', 'dropdown');
   Scope.Attributes.Add('aria-expanded', 'false');
-  Context.Writer.AddTag('a', 'href="#"' + Scope.GetText, e.Caption);
+  Context.Writer.AddTag('a', 'href="#"' + Scope.ToString(True), e.Caption);
 
   classes.Init('dropdown-menu');
   if dropEnd in e.Options then
@@ -1797,10 +1808,10 @@ begin
   e := Scope.Element as THTML.THTMLContainer;
   inherited;
   if (e.AlignItems <> alignDefault) or (e.JustifyItems <> alignDefault) then
-    Scope.Classes.Add('d-flex');
+    Scope.InnerClasses.Add('d-flex');
   
-  Scope.Classes.Add(BSAlignItemsToStr(e.AlignItems, False));
-  Scope.Classes.Add(BSContentJustifyToStr(e.JustifyItems, False));
+  Scope.InnerClasses.Add(BSAlignItemsToStr(e.AlignItems));
+  Scope.InnerClasses.Add(BSContentJustifyToStr(e.JustifyItems));
 
   if e.Medium then
     PaddingPrefix := 'p-md'
