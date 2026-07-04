@@ -106,7 +106,7 @@ uses
   {$ifdef FPC}
   resource, //* for RT_RCDATA
   {$endif}
-  syncobjs, mnDON, mnJSON,
+  syncobjs, mnDON, mnJSON, 
   mnUtils, mnClasses, mnStreams, mnStreamUtils, mnLogs, mnMIME, mnParams, mnTypes,
   mnMultipartData, mnModules, mnWebModules;
 
@@ -1766,7 +1766,6 @@ type
       TCustomInput = class(THTMLFormControl)
       private
         FValue: string;
-        procedure SetCaption(const AValue: string);
         procedure SetValue(const AValue: string);
       protected
         procedure Created; override;
@@ -3958,12 +3957,6 @@ begin
   FValue :=AValue;
   if (estComposed in State) and (Schema <> nil) and Schema.Attached then
     SendInteractive('"command": "change", "content": ' + DQ(Value));
-end;
-
-procedure THTML.TCustomInput.SetCaption(const AValue: string);
-begin
-  if FCaption =AValue then Exit;
-  FCaption :=AValue;
 end;
 
 procedure THTML.TCustomInput.Created;

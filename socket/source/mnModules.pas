@@ -561,9 +561,11 @@ type
     procedure Respond(AAnswer: TmodAnswer; AContentType: string); overload; 
     procedure RespondText(S: string);    
     procedure RespondHTML(S: string);    
-    procedure RespondJSON(S: string; AAnswer: TmodAnswer = hrOK);
+    procedure RespondJSON(S: string; AAnswer: TmodAnswer = hrOK); overload;
+    procedure RespondJSON(ResultType, State, Message: string; AAnswer: TmodAnswer = hrOK); overload;
+    procedure RespondJSON(ResultType, State, Message: string; Redirect: string;AAnswer: TmodAnswer = hrOK); overload;
+    
     procedure RespondCSV(S: string; AAnswer: TmodAnswer = hrOK);
-    procedure RespondJSONResult(ResultType, State, Message: string; AAnswer: TmodAnswer = hrOK);
     procedure RespondNoContent;
     procedure RespondNotFound;
     procedure RespondForbidden;
@@ -3554,6 +3556,11 @@ begin
   Responded;
 end;
 
+procedure TwebResponse.RespondJSON(ResultType, State, Message, Redirect: string; AAnswer: TmodAnswer);
+begin
+  RespondJSON('{"type": "' + ResultType + '", "state": "' + State + '", "message": "' + Message + '", "redirect":"'+JsonEscape(Redirect)+'"}', AAnswer);
+end;
+
 procedure TwebResponse.RespondJSON(S: string; AAnswer: TmodAnswer);
 begin
   Answer := AAnswer;
@@ -3562,7 +3569,7 @@ begin
   Responded;
 end;
 
-procedure TwebResponse.RespondJSONResult(ResultType, State, Message: string; AAnswer: TmodAnswer);
+procedure TwebResponse.RespondJSON(ResultType, State, Message: string; AAnswer: TmodAnswer);
 begin
   RespondJSON('{"type": "' + ResultType + '", "state": "' + State + '", "message": "' + Message + '"}', AAnswer);
 end;

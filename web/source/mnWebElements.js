@@ -175,12 +175,19 @@ mnw.action = function(event, url, data)
 
 /* Utils functions */
 
-mnw.formPost = async function(e) {
+mnw.formPost = async function(e, extraJson) {
   if (e) e.preventDefault();
   const formElement = e.target;
 
   // Collect all native inputs as JSON (handles checkboxes, radios, files automatically)
   const data = Object.fromEntries(new FormData(formElement));
+
+  if (extraJson)
+    Object.assign(data, extraJson);
+
+  const action = e.submitter.getAttribute('data-action') || "";
+  if (action)
+    data['action'] = action;
 
   // Hash password fields before submission
   for (const el of formElement.querySelectorAll('input[type="password"]')) {

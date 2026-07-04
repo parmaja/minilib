@@ -687,6 +687,7 @@ begin
     RegisterRenderer(THTML.TButton, TButton);
     RegisterRenderer(THTML.TSubmitForm, TSubmitForm);
     RegisterRenderer(THTML.TResetForm, TResetForm);
+    RegisterRenderer(THTML.TActionForm, TActionForm);
     RegisterRenderer(THTML.TNavItem, TNavItem);
     RegisterRenderer(THTML.TMenuItem, TMenuItem);
     RegisterRenderer(THTML.TDropdownItem, TDropdownItem);
@@ -1050,8 +1051,6 @@ end;
 procedure TBSRenderer.TInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TInput;
-  event: string;
-  isFormChild: Boolean;
 begin
   e := Scope.Element as THTML.TInput;
   Scope.Attributes['value'] := e.Value;
@@ -2019,9 +2018,15 @@ end;
 { TBSRenderer.TActionForm }
 
 procedure TBSRenderer.TActionForm.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TActionForm;
 begin
+  e := Scope.Element as THTML.TActionForm;
   inherited;
-
+  Scope.Attributes['type'] := 'submit';
+  Scope.Attributes['data-action'] := e.Action;  
+  if e.FormID <> '' then
+    Scope.Attributes['form'] := e.FormID;
 end;
 
 initialization
