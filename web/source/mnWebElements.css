@@ -77,7 +77,7 @@ svg {
     vertical-align: middle;
     width: 1.2em;
     height: 1.2em;
-    margin: auto;
+    /* margin: auto; NOPE */
 }
 
 .icon.mnw-caret-down-fill{
@@ -234,8 +234,24 @@ svg {
 
 /** Gaps **/
 
-.m-childs-1 > * {
+.m-childs > * + * {
     margin: var(--gap-unit);
+}
+
+.m-childs.row > * + * {
+    margin: 0 var(--gap-unit);
+}
+.m-childs.column > * + * {
+    margin: var(--gap-unit) 0;
+}
+
+/*
+.m-childs > *:not(:last-child) {
+    margin-bottom: var(--gap-unit);
+  }
+*/
+.m-childs-1 > * {
+    margin: calc(var(--gap-unit) * 2);
 }
 
 .m-childs-2 > * {

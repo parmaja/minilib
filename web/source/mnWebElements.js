@@ -1,6 +1,13 @@
 "use strict";
 const version = "1.82";
 
+async function hashSHA256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 let mnw = {};
 
 mnw.ws = null;
@@ -165,23 +172,34 @@ mnw.action = function(event, url, data)
    return false;
 }
 
+
 /* Utils functions */
 
-mnw.formPost = function(e) {
+mnw.formPost = async function(e) {
   if (e) e.preventDefault();
   const formElement = e.target;
 
-  // Collect all native inputs (handles checkboxes, radios, files automatically)
-  //data is json
+  // Collect all native inputs as JSON (handles checkboxes, radios, files automatically)
   const data = Object.fromEntries(new FormData(formElement));
+
+  // Hash password fields before submission
+  for (const el of formElement.querySelectorAll('input[type="password"]')) {
+    const token = el.getAttribute('data-token') || "";
+    const name = el.getAttribute('name') || "";
+
+    if (token && name) {
+      data[name] = await hashSHA256(el.value + token);
+    }
+  }
 
   /* use form.addEventListener("formdata", function(e) .... */
 
-  formElement.querySelectorAll('[name], [data-field-name]').forEach(el => {
+  formElement.querySelectorAll('[name], [data-name], [data-field-name]').forEach(el => {
     if (typeof el.setJSON === 'function') {
-      el.setJSON(data);
+        el.setJSON(data);
     }
   });
+
   fetch(formElement.action, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -295,7 +313,7 @@ mnw.showToast = function(content, type = "warning")
   }
 
   var element = document.createElement('div');
-  element.className = `toast align-items-center bg-${type} text-black border-black shadow-thin`;
+  element.className = `toast align-items-center bg-${type.toLowerCase()} text-black border-black shadow-thin`;
   element.setAttribute('role', 'alert');
   element.setAttribute('aria-live', 'assertive');
   element.setAttribute('aria-atomic', 'true');
@@ -328,7 +346,7 @@ mnw.switch_theme = function(e)
 
 mnw.switch_zoom = function(e)
 {
-  let mnw_zoom = e.target.getAttribute('data-mnw-value') || '';
+  let mnw_zoom = e.currentTarget.getAttribute('data-mnw-value') || '';
   if (mnw_zoom === 'normal')
     mnw_zoom = '';
 

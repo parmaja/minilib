@@ -172,7 +172,8 @@ type
 
   TmnwAttribute = class(TmnNameValueObject)
   public
-    function CreateSubValues(vSeparators: TSysCharSet = [' ']): TStringList;
+    IsProperty: Boolean; //that dosnt have value
+    function CreateSubValues(vSeparators: TSysCharSet = [' ']): TStringList;    
   end;
 
   { TmnwAttributes }
@@ -187,6 +188,7 @@ type
     function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function UnsetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
+    function AddProp(Name: string): TmnwAttribute;
     procedure Append(AAttributes: TmnwAttributes);
   end;
 
@@ -403,7 +405,7 @@ type
     function GetAssetsURL: string;
     //Folder of HomeFolder of assets
     function GetAssetFolder: string;
-    function GetLocationPath(Location: TLocation): string;
+    function GetLocationPath(AElement: TmnwElement; Location: TLocation): string; overload;
     
     property Request: TmodRequest read FRequest;
     property Response: TmnwResponse read FResponse;
@@ -1117,6 +1119,7 @@ type
 
     CompactMode: Boolean;
     SessionAge: Integer; //* in ms
+    PasswordToken: string;
 
     constructor Create;
     destructor Destroy; override;
@@ -1251,9 +1254,17 @@ type
         ControlStyle: TItemStyle;
       end;
 
+      TmnwLabelLayout = (lfUndefined, lfSide, lfTop, lfFloating);
+
       THTMLFormControl = class abstract(THTMLControl)
+      private
+        FCaption: string;
+        procedure SetCaption(const AValue: string);
       public
+        //* Layout of the caption label: clTop (above input) or clSide (left of input)
+        LabelLayout: TmnwLabelLayout;        
         Required: Boolean;
+        property Caption: string read FCaption write SetCaption;        
       end;
 
       { TJSFile }
@@ -1525,7 +1536,6 @@ type
       public
         Caption: string;
         Collapse: Boolean;
-        LabelFloating: Boolean;
         Gap: Integer;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         property Footer: TCardFooter read FFooter;
@@ -1535,6 +1545,7 @@ type
 
       TPanel = class(THTMLItem)
       public
+        Gap: Integer;
       end;
 
       { TLink }
@@ -1616,7 +1627,7 @@ type
       { TForm }
 
       [TID_Extension]
-//      [TName_Extension]
+      [TRoute_Extension]
       TForm = class(THTMLElement)
       private
       protected
@@ -1629,9 +1640,9 @@ type
             Caption: string;
           end;
       public
-        PostTo: TLocation;
+        Endpoint: TLocation;
         CancelTo: TLocation;
-        SubmitTo: string;
+        CallScript: string;
 
         //RedirectTo: TLocation;
         RedirectTo: string;
@@ -1701,10 +1712,23 @@ type
         Outline: Boolean;
         constructor Create(AParent: TmnwElement; const ACaption: string); reintroduce; overload; 
       end;
-      
-      TSubmit = class(TButton)
+
+      TFormButton = class(TButton)
       public
         FormID: string;
+      end;
+      
+      TSubmitForm = class(TFormButton)
+      public
+      end;
+
+      TResetForm = class(TFormButton)
+      public
+      end;
+
+      TActionForm = class(TFormButton)
+      public
+        Action: string;
       end;
 
       TCookieButton = class(TButton)
@@ -1741,7 +1765,6 @@ type
       [TID_Extension]
       TCustomInput = class(THTMLFormControl)
       private
-        FCaption: string;
         FValue: string;
         procedure SetCaption(const AValue: string);
         procedure SetValue(const AValue: string);
@@ -1754,20 +1777,35 @@ type
         EditType: string;
       public
         property Value: string read FValue write SetValue;
-        property Caption: string read FCaption write SetCaption;
       end;
 
       TInput = class(TCustomInput)      
+      public
+        AutoFocus: Boolean;
+        AutoComplete: Boolean;        
+        constructor Create(AParent: TmnwElement; ACaption: string = ''; AValue: string = ''); reintroduce;      
+      end;
+
+      [TID_Extension]
+      TUsername = class(TInput)
+      protected
+        procedure Created; override;
       public
       end;
 
       { TInputPassword }
 
       [TID_Extension]
-      TInputPassword = class(TInput)
+      TPassword = class(TInput)
       protected
-        procedure Created; override;
+      public
+        Token: string;
       end;
+
+      TNewPassword = class(TPassword)
+      protected
+      public
+      end;      
 
       TCustomImage = class(THTMLComponent)
       public
@@ -1921,7 +1959,7 @@ type
   TAuthForm = class(THTML.THTMLItem)
   protected
     procedure DoCompose(const AContext: TmnwContext); override;
-  public
+  public  
     Form: THTML.TForm;
   end;
 
@@ -2025,11 +2063,8 @@ function NV(const Name, Value: string): string; overload; inline;
 function NV(const Name, Value, Default: string): string; overload; inline;
 
 function AddIf(const Value: string; Add: string): string; overload; inline;
-function When(const Value: string; const Default: string = ''): string; overload; inline;
-function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
-function When(Condition: Boolean; Value: Integer; Default: Integer = 0): Integer; overload; inline;
-function When(Condition: Boolean): string; overload; inline;
 function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds; overload;
+
 function StartURL(const Path: string): string; inline;
 function EndURL(const Path: string): string; inline;
 function EscapeAttr(const S: string): string;
@@ -2111,38 +2146,6 @@ begin
     Result := Value + Add
   else
     Result := '';
-end;
-
-function When(const Value: string; const Default: string = ''): string; overload; inline;
-begin
-  if Value = '' then
-    Result := Default
-  else
-    Result := Value;
-end;
-
-function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
-begin
-  if Condition then
-    Result := Value
-  else
-    Result := Default;
-end;
-
-function When(Condition: Boolean; Value: Integer; Default: Integer): Integer; overload; inline;
-begin
-  if Condition then
-    Result := Value
-  else
-    Result := Default;
-end;
-
-function When(Condition: Boolean): string; overload; inline;
-begin
-  if Condition then
-    Result := 'true'
-  else
-    Result := 'false';
 end;
 
 function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds;
@@ -2563,7 +2566,10 @@ begin
     begin
       if sb.Length > 0 then
         sb.Append(' ');
-      sb.Append(a.Name).Append('=').Append(QuoteStr(a.Value, '"'));
+      if a.IsProperty and (a.Value = '') then
+        sb.Append(a.Name)      
+      else      
+        sb.Append(a.Name).Append('=').Append(DQ(a.Value));
     end;
     Result := sb.ToString;
   finally
@@ -2597,6 +2603,12 @@ begin
       SubValues.Free;
     end;
   end;
+end;
+
+function TmnwAttributes.AddProp(Name: string): TmnwAttribute;
+begin
+  Result := Add(Name);
+  Result.IsProperty := True;  
 end;
 
 procedure TmnwAttributes.Append(AAttributes: TmnwAttributes);
@@ -3971,14 +3983,6 @@ begin
   end;
 end;
 
-{ THTML.TInputPassword }
-
-procedure THTML.TInputPassword.Created;
-begin
-  inherited;
-  EditType := 'password';
-end;
-
 { THTML.TImageMemory }
 
 procedure THTML.TImageMemory.Created;
@@ -4957,14 +4961,14 @@ end;
 procedure THTML.TForm.Created;
 begin
   inherited;
-  PostTo.Where := toElement;
-  SubmitTo := 'return mnw.formPost(event)';
+  Endpoint.Where := toElement;
+  CallScript := 'mnw.formPost(event)';
 end;
 
 procedure THTML.TForm.DoComposed;
 begin
   inherited;
-  if PostTo.Where = toElement then
+  if Endpoint.Where = toElement then
     NewRoute(Self);
 end;
 
@@ -5096,6 +5100,7 @@ begin
   
   aContext.FRequest := Request;
   aContext.FResponse := Response;
+  aContext.FWeb := Module.Web;
 
   if Module.Domain <> '' then
   begin
@@ -5127,7 +5132,6 @@ begin
   end
   else
   begin
-    aContext.FWeb := Module.Web;
     aContext.FRenderer := (Module as TmnwWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
     aContext.Renderer.Libraries.QuickSort;
@@ -5662,12 +5666,12 @@ begin
   Result := Web.GetHostURL;
 end;
 
-function TmnwContext.GetLocationPath(Location: TLocation): string;
+function TmnwContext.GetLocationPath(AElement: TmnwElement; Location: TLocation): string;
 begin
   if Location.Where = toSchema then
     Result := EndURL(GetPath(Schema))
   else if Location.Where = toElement then
-    Result := EndURL(GetPath(Element))
+    Result := EndURL(GetPath(AElement))
   else if Location.Where = toHome then
     Result := EndURL(GetHomePath)
   else if Location.Where = toDefault then
@@ -5852,9 +5856,9 @@ begin
     begin
       Route := 'login';
       Name := 'login-form';
-      PostTo.Where := toElement;
+      Endpoint.Where := toElement;
 
-      SubmitTo := 'return mnw.formPost(event)';
+      CallScript := 'mnw.formPost(event)';
 
       with TInput.Create(This) do
       begin
@@ -5862,14 +5866,17 @@ begin
         Name := 'username';
         Caption := 'Username';
         PlaceHolder := 'Type user name';
+        AutoFocus := True;
+        Required := True;
       end;
 
-      with TInputPassword.Create(This) do
+      with TPassword.Create(This) do
       begin
         ID := 'password';
         Name := 'password';
         Caption := 'Password';
         HelpText := 'You need to use numbers';
+        Token := AContext.Web.PasswordToken;
       end;
 
       Submit.Caption := 'Submit';
@@ -6447,6 +6454,31 @@ constructor THTML.TJSScript.Create(AParent: TmnwElement; AScript: string);
 begin
   inherited Create(AParent);
   Script := AScript;
+end;
+
+{ THTML.TInput }
+
+constructor THTML.TInput.Create(AParent: TmnwElement; ACaption: string; AValue: string);
+begin
+  inherited Create(AParent);
+  Value := AValue;
+  Caption := ACaption;
+end;
+
+{ THTML.THTMLFormControl }
+
+procedure THTML.THTMLFormControl.SetCaption(const AValue: string);
+begin
+  if FCaption =AValue then Exit;
+  FCaption :=AValue;
+end;
+
+{ THTML.TUsername }
+
+procedure THTML.TUsername.Created;
+begin
+  inherited;
+  AutoComplete := True;
 end;
 
 initialization

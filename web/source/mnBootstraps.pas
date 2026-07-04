@@ -13,6 +13,9 @@ unit mnBootstraps;
   https://dev.to/codeply/bootstrap-5-sidebar-examples-38pb
 
   https://bootswatch.com/darkly/
+  
+  Gap
+  https://stackoverflow.com/questions/6507014/how-to-space-the-children-of-a-div-with-css
  *}
 
 {$M+}
@@ -73,7 +76,9 @@ type
 
       THTMLFormControl = class abstract(THTMLControl)
       protected
+        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;
       public      
       end;
 
@@ -346,8 +351,8 @@ type
       TForm = class(THTMLElement)
       protected
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TParagraph }
@@ -396,7 +401,17 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      TSubmit = class(TButton)
+      TSubmitForm = class(TButton)
+      protected        
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;        
+      end;
+
+      TResetForm = class(TButton)
+      protected        
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;        
+      end;
+
+      TActionForm = class(TButton)
       protected        
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;        
       end;
@@ -428,7 +443,19 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      TInputPassword = class(TInput)
+      TUsername = class(TInput)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      TPassword = class(TInput)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;      
+      end;
+      
+      TNewPassword = class(TPassword)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;      
       end;
   public
     procedure AddHead(const Context: TmnwContext); override;
@@ -658,12 +685,15 @@ begin
     RegisterRenderer(THTML.TLink, TLink);
     RegisterRenderer(THTML.TSpan, TSpan);
     RegisterRenderer(THTML.TButton, TButton);
-    RegisterRenderer(THTML.TSubmit, TSubmit);
+    RegisterRenderer(THTML.TSubmitForm, TSubmitForm);
+    RegisterRenderer(THTML.TResetForm, TResetForm);
     RegisterRenderer(THTML.TNavItem, TNavItem);
     RegisterRenderer(THTML.TMenuItem, TMenuItem);
     RegisterRenderer(THTML.TDropdownItem, TDropdownItem);
     RegisterRenderer(THTML.TInput, TInput); //Yes not TCustomInput
-    RegisterRenderer(THTML.TInputPassword, TInputPassword);
+    RegisterRenderer(THTML.TUsername, TUsername);
+    RegisterRenderer(THTML.TPassword, TPassword);
+    RegisterRenderer(THTML.TNewPassword, TNewPassword);
     
     RegisterRenderer(THTML.TImage, TImage);
     RegisterRenderer(THTML.TImageFile, TImageFile);
@@ -806,7 +836,8 @@ begin
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
     Scope.Classes.Add('col-md');
   if e.Gap > 0 then
-    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
+    //Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
+    Scope.Classes.Add('m-childs'); 
   Scope.Classes.Add('p-0 p-sm-2');
   Scope.Classes.Add('m-0'); //do not change it, keep it 0
 
@@ -835,9 +866,8 @@ begin
 
   Context.Writer.OpenTag('div', Scope.ToString([ssAttributes, ssOuter]));
   if e.Caption <> '' then
-  begin    
-//  BSControlStyleToStr('bg-', e.ControlStyle, True)
-    Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header d-flex"');
+  begin      
+    Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header d-flex'+  BSControlStyleToStr('bg-', e.ControlStyle, True)+'"');
     Context.Writer.WriteLn(e.Caption);
     if e.Collapse then
     begin
@@ -848,8 +878,8 @@ begin
     Context.Writer.CloseTag('h5');
   end;  
   Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show' 
-    + When(e.LabelFloating, ' form-floating')
-    + When(e.Gap>0, ' m-childs-' + e.Gap.ToString)
+//    + When(e.Gap>0, ' m-childs-' + e.Gap.ToString)
+    + When(e.Gap>0, ' m-childs')
     + SpaceIf(Scope.InnerClasses.Value)
     +'" aria-labelledby="'+e.id+'-header"'
     );
@@ -864,8 +894,6 @@ end;
 
 procedure TBSRenderer.TForm.DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext);
 begin
-//  if Scope.Element is THTML.THTMLFormControl then //Already added THTMLFormControl
-//    Scope.Classes.Add('form-control');
   inherited;
 end;
 
@@ -879,12 +907,12 @@ var
   e: THTML.TForm;
 begin
   e := Scope.Element as THTML.TForm;
-  Context.Writer.OpenTag('form', 'method="post"'+ NV('action', Context.GetLocationPath(e.PostTo)) + NV('onsubmit', e.SubmitTo) + ' enctype="multipart/form-data"' + Scope.ToString(True));
+  Context.Writer.OpenTag('form', 'method="post"'+ NV('action', Context.GetLocationPath(e, e.Endpoint)) + NV('onsubmit', e.CallScript) + ' enctype="multipart/form-data"' + Scope.ToString(True));
   inherited;
   if e.RedirectTo <> '' then
     Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo + '"');
 
-  if e.SubmitTo = '' then
+  if e.CallScript = '' then
     Context.Writer.AddShortTag('input', 'type="hidden" name="execute" value="true"');
 
   if (e.Submit.Caption <> '') or (e.Cancel.Caption <> '') or (e.Reset.Caption <> '') then
@@ -896,7 +924,7 @@ begin
     Context.Writer.AddTag('button', 'class="btn btn-secondary" type="reset" form="'+e.ID+'" value="Reset"', e.Reset.Caption);
   if e.Cancel.Caption <> '' then
       if e.CancelTo.Where <> toNone then
-        Context.Writer.AddTag('a', 'class="btn btn-primary" type="cancel" href="' + Context.GetLocationPath(e.CancelTo) + '"', e.Cancel.Caption);
+        Context.Writer.AddTag('a', 'class="btn btn-primary" type="cancel" href="' + Context.GetLocationPath(e, e.CancelTo) + '"', e.Cancel.Caption);
         //Context.Writer.AddTag('button', 'class="btn btn-primary" type="cancel" onclick="location.href=''' + Context.GetLocationPath(e.CancelTo) + '''"', e.Cancel.Caption);
   Context.Writer.CloseTag('form');
 end;
@@ -966,8 +994,10 @@ begin
   if e.CallScript <> '' then
     event := ' onclick='''+e.CallScript+''''
   else if Context.Schema.Interactive then
-    event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"';
-  Context.Writer.OpenTag('button', event + Scope.ToString(True));
+    event := ' onclick="mnw.send(' + SQ(e.ID) + ', '+ SQ('click') + ')"'
+  else
+    event := '';
+  Context.Writer.OpenTag('button', Scope.ToString + event);
   inherited;
   Context.Writer.CloseTag('button');
 end;
@@ -1004,9 +1034,16 @@ end;
 { TBSRenderer.TInputHTML }
 
 procedure TBSRenderer.TInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TInput;
 begin
-  Scope.Attributes['placeholder'] := (Scope.Element as THTML.TInput).PlaceHolder;
-  Scope.Attributes['type'] := (Scope.Element as THTML.TInput).EditType;
+  e := Scope.Element as THTML.TInput;
+  Scope.Attributes.AddIf('placeholder', e.PlaceHolder);
+  Scope.Attributes.AddIf('type', e.EditType);
+  if e.AutoFocus then  
+    Scope.Attributes.Add('autofocus');  
+  if not e.AutoComplete then  
+    Scope.Attributes['autocomplete'] := 'off';
   inherited;
 end;
 
@@ -1017,17 +1054,12 @@ var
   isFormChild: Boolean;
 begin
   e := Scope.Element as THTML.TInput;
-  isFormChild := True;
-  if isFormChild then
-    Scope.Classes.Add('form-control');
-
-  if e.Caption <> '' then
-    Context.Writer.AddTag('label', When(isFormChild, 'class="form-label"') + ' for="' + e.ID + '"', e.Caption);
+  Scope.Attributes['value'] := e.Value;
 
   if Context.Schema.Interactive then
-    event := ' onchange="mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')"';
+    Scope.Attributes.Add('onchange', 'mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')');
 
-  Context.Writer.AddShortTag('input', event + When(e.Required, ' required') + Scope.ToString(True)); //TODO need to generate less spaces
+  Context.Writer.AddShortTag('input', Scope.ToString); //TODO need to generate less spaces
   if e.HelpText <> '' then
     Context.Writer.AddTag('div', 'class="form-text"', e.HelpText);
   inherited;
@@ -1115,6 +1147,9 @@ begin
     Context.Writer.AddTag('div', 'class="panel-header"', e.Caption);
 
   Scope.Classes.Add('panel-body');
+  if e.Gap > 0 then
+    Scope.Classes.Add('m-childs'); 
+//    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
@@ -1872,7 +1907,8 @@ begin
   if e.Flex then  
     Scope.Classes.Add('d-flex');
   if e.Gap > 0 then
-    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
+    Scope.Classes.Add('m-childs'); 
+//    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
   inherited;
 end;
 
@@ -1894,21 +1930,98 @@ begin
   inherited;    
   Scope.Classes.Add('form-control');
   if e.Required then
-    Scope.Attributes.Add('required', '');
+    Scope.Attributes.AddProp('required');
 end;
 
-{ TBSRenderer.TSubmit }
-
-procedure TBSRenderer.TSubmit.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+procedure TBSRenderer.THTMLFormControl.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 var
-  e: THTML.TSubmit;
+  e: THTML.THTMLFormControl;
 begin
-  e := Scope.Element as THTML.TSubmit;
+  e := Scope.Element as THTML.THTMLFormControl;
+
+  if e.Caption <> '' then
+  begin
+    if lfFloating = e.LabelLayout then
+      Context.Writer.OpenTag('div', 'class="form-floating"')
+    else if lfTop = e.LabelLayout then
+      Context.Writer.OpenTag('div', 'class="row"');
+    Context.Writer.AddTag('label', 'id=' + DQ(e.ID+'_label') + ' class="form-label" for="' + e.ID + '"', e.Caption);
+  end;    
+  inherited;
+end;
+
+procedure TBSRenderer.THTMLFormControl.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
+var
+  e: THTML.THTMLFormControl;
+begin
+  inherited;
+  e := Scope.Element as THTML.THTMLFormControl;
+  if e.LabelLayout in [lfTop, lfFloating] then
+    Context.Writer.CloseTag('div');
+end;
+
+{ TBSRenderer.TSubmitForm }
+
+procedure TBSRenderer.TSubmitForm.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TSubmitForm;
+begin
+  e := Scope.Element as THTML.TSubmitForm;
   inherited;
   Scope.Classes.Add('btn-success');
   Scope.Attributes['type'] := 'submit';
   if e.FormID <> '' then
     Scope.Attributes['form'] := e.FormID;
+end;
+
+{ TBSRenderer.TResetForm }
+
+procedure TBSRenderer.TResetForm.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TResetForm;
+begin
+  e := Scope.Element as THTML.TResetForm;
+  inherited;
+//  Scope.Classes.Add('btn-success');
+  Scope.Attributes['type'] := 'reset';
+  if e.FormID <> '' then
+    Scope.Attributes['form'] := e.FormID;
+end;
+
+{ TBSRenderer.TPassword }
+
+procedure TBSRenderer.TPassword.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TPassword;
+begin
+  e := Scope.Element as THTML.TPassword;
+  inherited;
+  Scope.Attributes['type'] := 'password';
+  if e.Token <> '' then  
+    Scope.Attributes['data-token'] := e.Token
+end;
+
+{ TBSRenderer.TUsername }
+
+procedure TBSRenderer.TUsername.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+end;
+
+{ TBSRenderer.TNewPassword }
+
+procedure TBSRenderer.TNewPassword.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Attributes['autocomplete'] := 'new-password';
+end;
+
+{ TBSRenderer.TActionForm }
+
+procedure TBSRenderer.TActionForm.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+
 end;
 
 initialization
