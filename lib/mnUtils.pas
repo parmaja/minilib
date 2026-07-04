@@ -236,6 +236,7 @@ function EscapeStringC(const S: string; QuoteChar: Char = '"'): string;
 function DescapeStringC(const S: string): string;
 function ToUnixPathDelimiter(const S: string): string;
 function HTMLEncode(const Str: string): string;
+function JsonEscape(const AStr: string): string;
 
 function ExpandFile(const Name: string): string;
 
@@ -2181,6 +2182,55 @@ end;
 function ToUnixPathDelimiter(const S: string): string;
 begin
   Result := StringReplace(S, '\', '/', [rfReplaceAll]);
+end;
+
+function JsonEscape(const AStr: string): string;
+const 
+  HexChars: array[0..15] of Char = '0123456789ABCDEF';
+var
+  I, J, Len: Integer;
+  C: Char;
+  PSrc, PRes: PChar;
+begin
+  Len := Length(AStr);
+  SetLength(Result, Len * 6); // Pre-allocate worst-case size
+  if Len = 0 then Exit;
+
+  PSrc := PChar(AStr);
+  PRes := PChar(Result);
+  J := 0;
+
+  for I := 0 to Len - 1 do
+  begin
+    C := PSrc[I];
+    case C of
+      '"':  begin PRes[J] := '\'; PRes[J+1] := '"'; Inc(J, 2); end;
+      '\':  begin PRes[J] := '\'; PRes[J+1] := '\'; Inc(J, 2); end;
+      '/':  begin PRes[J] := '\'; PRes[J+1] := '/'; Inc(J, 2); end;
+      #8:   begin PRes[J] := '\'; PRes[J+1] := 'b'; Inc(J, 2); end;
+      #9:   begin PRes[J] := '\'; PRes[J+1] := 't'; Inc(J, 2); end;
+      #10:  begin PRes[J] := '\'; PRes[J+1] := 'n'; Inc(J, 2); end;
+      #12:  begin PRes[J] := '\'; PRes[J+1] := 'f'; Inc(J, 2); end;
+      #13:  begin PRes[J] := '\'; PRes[J+1] := 'r'; Inc(J, 2); end;
+    else
+      if C < #32 then
+      begin
+        PRes[J]   := '\';
+        PRes[J+1] := 'u';
+        PRes[J+2] := '0';
+        PRes[J+3] := '0';
+        PRes[J+4] := HexChars[(Ord(C) shr 4) and $F];
+        PRes[J+5] := HexChars[Ord(C) and $F];
+        Inc(J, 6);
+      end
+      else
+      begin
+        PRes[J] := C;
+        Inc(J);
+      end;
+    end;
+  end;  
+  SetLength(Result, J); // Trim to actual used size
 end;
 
 function CorrectPath(const Path: string): string;
