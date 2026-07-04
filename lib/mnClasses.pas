@@ -186,10 +186,12 @@ type
       function GetValues(Index: string): string;
       procedure SetValues(Index: string; AValue: string);
     public
-      function Add(Name, Value: string): _Object_; overload;
+      function Add(Name: string; Value: string = ''): _Object_; overload;
       function Add(Name: string; Value: Integer): _Object_; overload;
       function Add(Name: string; Value: Boolean): _Object_; overload;
       function AddIf(Condition: Boolean; Name: string; Value: TValue): _Object_; overload;
+      //If Value <> ''
+      function AddIf(Name: string; Value: TValue): _Object_; overload;
       property Values[Index: string]: string read GetValues write SetValues; default;
       property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     end;
@@ -577,6 +579,11 @@ end;
 function TmnNameValueObjectList<_Object_>.Add(Name: string; Value: Boolean): _Object_;
 begin
   Result := Add(Name, Value.ToString);
+end;
+
+function TmnNameValueObjectList<_Object_>.AddIf(Name: string; Value: TValue): _Object_;
+begin
+  Result := AddIf(Value.ToString <> '', Name, Value);  
 end;
 
 function TmnNameValueObjectList<_Object_>.AddIf(Condition: Boolean; Name: string; Value: TValue): _Object_;

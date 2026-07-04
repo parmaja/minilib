@@ -445,6 +445,7 @@ type
   public
     procedure OpenTag(const Tag: string); overload;
     procedure OpenTag(const TagName, TagAttributes: string; TagText: string = ''); overload;
+    procedure OpenTagA(const TagName, Classes: string; Attributes: string; TagText: string = ''); overload;
     procedure OpenInlineTag(const TagName:string; TagAttributes: string = ''; TagText: string = ''); overload; // keep inline, no new line
     procedure CloseTag(const Tag: string; TrailText: string = '');
     procedure AddShortTag(const TagName:string; TagAttributes: string = ''); overload; //* Self closed tag, without </tagname>
@@ -1914,6 +1915,11 @@ end;
 procedure TmnwXML_TidyWriterHelper.OpenTag(const TagName, TagAttributes: string; TagText: string);
 begin
   WriteLn('<'+TagName + SpaceIf(TagAttributes) + '>' + TagText, [woOpenIndent])
+end;
+
+procedure TmnwXML_TidyWriterHelper.OpenTagA(const TagName, Classes: string; Attributes, TagText: string);
+begin
+  WriteLn('<'+TagName + When(Classes <> '', 'class="' + Classes + '"') + SpaceIf(Attributes) + '>' + TagText, [woOpenIndent])
 end;
 
 procedure TmnwXML_TidyWriterHelper.ReadFromFile(FileName: string);

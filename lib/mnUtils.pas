@@ -171,6 +171,11 @@ function ConcatString(const S1, Delimiter: string; const S2: string = ''): strin
 function SpaceIf(const s: string): string; overload; inline;
 function SpaceIf(const s1, s2: string): string; overload; inline;
 
+function When(const Value: string; const Default: string = ''): string; overload; inline;
+function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
+function When(Condition: Boolean; Value: Integer; Default: Integer = 0): Integer; overload; inline;
+function When(Condition: Boolean): string; overload; inline;
+
 //TODO options, to include null
 
 type
@@ -715,6 +720,37 @@ begin
     Result := s1 + s2;
 end;
 
+function When(const Value: string; const Default: string = ''): string; overload; inline;
+begin
+  if Value = '' then
+    Result := Default
+  else
+    Result := Value;
+end;
+
+function When(Condition: Boolean; const Value: string; const Default: string = ''): string; overload; inline;
+begin
+  if Condition then
+    Result := Value
+  else
+    Result := Default;
+end;
+
+function When(Condition: Boolean; Value: Integer; Default: Integer): Integer; overload; inline;
+begin
+  if Condition then
+    Result := Value
+  else
+    Result := Default;
+end;
+
+function When(Condition: Boolean): string; overload; inline;
+begin
+  if Condition then
+    Result := 'true'
+  else
+    Result := 'false';
+end;
 
 function CollectStrings(const Strings: array of string; Delimiter: string; Options: TCollectStringsOptions): string;
 var

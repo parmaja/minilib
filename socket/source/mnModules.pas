@@ -569,6 +569,7 @@ type
     procedure RespondForbidden;
     procedure RespondUnauthorized;
     procedure RespondRedirectTo(NewURL: string; WithQuery: Boolean = False);
+    procedure RespondRedirectBack(FallbackURL: string; WithQuery: Boolean = False);
     property IsResponded: Boolean read FIsResponded write SetIsResponded;
   end;
 
@@ -3475,6 +3476,14 @@ end;
 function TwebResponse.StatusVersion: string;
 begin
   Result := SubStr(Head, ' ', 0);
+end;
+
+procedure TwebResponse.RespondRedirectBack(FallbackURL: string; WithQuery: Boolean);
+var
+  aReferer: string;
+begin
+  aReferer := Request.Header['Referer'];
+  RespondRedirectTo(aReferer);
 end;
 
 procedure TwebResponse.RespondRedirectTo(NewURL: string; WithQuery: Boolean);

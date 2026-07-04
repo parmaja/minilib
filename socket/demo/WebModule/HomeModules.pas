@@ -52,7 +52,7 @@ type
   private
   public
   protected
-    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoRespondHeader(const AContext: TmnwContext); override;
     procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
@@ -63,7 +63,7 @@ type
   private
   public
   protected
-    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoRespondHeader(const AContext: TmnwContext); override;
     procedure DoCompose(const AContext: TmnwContext); override;
   public
   end;
@@ -135,7 +135,7 @@ type
 
   TMyLink = class(THTML.TLink)
   public
-    procedure DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse); override;
+    procedure DoRespondHeader(const AContext: TmnwContext); override;
     procedure DoExecute; override;
   end;
 
@@ -148,10 +148,10 @@ type
 
 { TMyLink }
 
-procedure TMyLink.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TMyLink.DoRespondHeader(const AContext: TmnwContext);
 begin
   inherited;
-  AResponse.Responded;
+  AContext.Response.Responded;
 end;
 
 procedure TMyLink.DoExecute;
@@ -223,7 +223,6 @@ begin
   with Document do
   begin
     Title := 'My Home';
-    Direction := dirLeftToRight;
     with Body do
     begin
       //TJSFile.Create(This, [ftResource], 'WebElements_JS', 'WebElements.js');
@@ -376,7 +375,7 @@ end;
 
 { TLoginSchema }
 
-procedure TLoginSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TLoginSchema.DoRespondHeader(const AContext: TmnwContext);
 var
   aUsername, aPassword: string;
 begin
@@ -386,8 +385,8 @@ begin
     begin
       aUsername := AContext.Data['username'].AsString;
       aPassword := AContext.Data['password'].AsString;
-      AResponse.Session.Value := aUsername +'/'+ aPassword;
-      AResponse.RespondRedirectTo(IncludePathDelimiter(AContext.GetPath) + 'dashboard');
+      AContext.Session.ID := aUsername +'/'+ aPassword;
+      AContext.Response.RespondRedirectTo(IncludePathDelimiter(AContext.GetPath) + 'dashboard');
     end;
   end;
   inherited;
@@ -400,8 +399,7 @@ begin
   begin
     //Name := 'document';
     //Route := 'document';
-    Title := 'MyHome';
-    Direction := dirLeftToRight;
+    Title := 'MyHome';    
 
     with Body do
     begin
@@ -485,7 +483,7 @@ begin
                 PlaceHolder := 'Type user name';
               end;
 
-              with TInputPassword.Create(This) do
+              with TPassword.Create(This) do
               begin
                 ID := 'password';
                 Name := 'password';
@@ -508,7 +506,7 @@ end;
 
 { TDemoSchema }
 
-procedure TDemoSchema.DoRespondHeader(const AContext: TmnwContext; AResponse: TmnwResponse);
+procedure TDemoSchema.DoRespondHeader(const AContext: TmnwContext);
 var
   aUsername, aPassword: string;
 begin
@@ -518,8 +516,8 @@ begin
     begin
       aUsername := AContext.Data['username'].AsString;
       aPassword := AContext.Data['password'].AsString;
-      AResponse.Session.Value := aUsername +'/'+ aPassword;
-      AResponse.RespondRedirectTo(IncludePathDelimiter(AContext.GetPath) + 'dashboard');
+      AContext.Session.ID := aUsername +'/'+ aPassword;
+      AContext.Response.RespondRedirectTo(IncludePathDelimiter(AContext.GetPath) + 'dashboard');
     end;
   end;
   inherited;
@@ -532,8 +530,7 @@ begin
   inherited;
   with Document do
   begin
-    Title := 'Demo Title';
-    Direction := dirLeftToRight;
+    Title := 'Demo Title';    
 
     with Body do
     begin
@@ -725,7 +722,7 @@ begin
                 PlaceHolder := 'Type user name';
               end;
 
-              with TInputPassword.Create(This) do
+              with TPassword.Create(This) do
               begin
                 ID := 'password';
                 Name := 'password';
@@ -796,9 +793,9 @@ begin
     with aPanel do    
     begin
       Route := 'panel2'; 
-      OnRespond := procedure (const AContext: TmnwContext; AResponse: TmnwResponse)
+      OnRespond := procedure (const AContext: TmnwContext)
       begin
-        AResponse.RespondText('Hello World'+#13 + AContext.Route);
+        AContext.Response.RespondText('Hello World'+#13 + AContext.Route);
       end;
     end;
   end;
