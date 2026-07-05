@@ -280,7 +280,7 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      TCardFooter = class(THTMLControl)
+      TCardFooter = class(THTMLContainer)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
@@ -789,7 +789,8 @@ var
   e: THTML.TFooter;
 begin
   e := Scope.Element as THTML.TFooter;
-  Context.Writer.OpenTag('footer', 'class="text-center"');
+  Scope.Classes.Add('text-center');
+  Context.Writer.OpenTag('footer', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('footer');
 end;
@@ -852,7 +853,6 @@ end;
 procedure TBSRenderer.TCard.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  //Scope.Classes.Remove('align-items-center');
 end;
 
 { TBSRenderer.TCardHTML }
@@ -866,6 +866,8 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
+  if e.Footer.Fixed then  
+    Scope.Classes.Add('footer-padding');
   //Scope.Classes.Add('d-flex');
   //Scope.Classes.Add('flex-column');
   
@@ -1550,7 +1552,7 @@ begin
   begin
     sb := (e.Schema as THTML).Document.Body.SideBar;
     Context.Writer.OpenTag('button', 'class="navbar-toggler my-0 py-0 px-1 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + sb.id + '-body' + '" aria-controls="' + sb.id + '-items' + '" aria-expanded="false" aria-label="Toggle Sidebar"');
-    Context.Writer.AddTag('span', 'class="icon mnw-chevron-right"');
+    Context.Writer.AddTag('span', 'class="icon mnw-list"'); //mnw-chevron-right
     Context.Writer.CloseTag('button');
   end;
 
@@ -1564,13 +1566,13 @@ begin
   Context.Writer.CloseTag('div');
   //Context.Writer.WriteLn('</div>', [woCloseIndent]);
 
-  if e.Tools.Count>0 then
+  if e.Tools.Count > 0 then
     e.Tools.Render(Context); // Render buttons
 
-  if e.Count > 0 then
+  if e.CountComposed > 0 then
   begin
     Context.Writer.OpenTag('button', 'class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#'+e.ID+'-items'+'" aria-controls="'+e.ID+'-items'+'" aria-expanded="false" aria-label="Toggle navigation"');
-    Context.Writer.AddTag('span', 'class="icon mnw-list"');
+    Context.Writer.AddTag('span', 'class="bi bi-chevron-down"');
     Context.Writer.CloseTag('button');
   end;
   Context.Writer.CloseTag('nav');
@@ -1886,6 +1888,8 @@ begin
   if e.Count > 0 then  
   begin
     Scope.Classes.Add('card-footer');
+    if e.Fixed then
+      Scope.Classes.Add('fixed-card-footer');
     Context.Writer.OpenTag('div', Scope.ToString);  
   end;
   inherited;

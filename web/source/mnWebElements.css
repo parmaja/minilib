@@ -344,6 +344,23 @@ aside{
     position: fixed !important; /* option to stick it without scroll */
 }
 
+/* Targets screens smaller than 768px (Bootstrap md breakpoint) */
+@media (max-width: 767.98px) {
+  .fixed-card-footer {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1030; /* Matches Bootstrap default navbar z-index */
+    border-radius: 0; /* Ensures a flush look on mobile edges */
+    height : var(--header-size);
+  }
+
+  .footer-padding {
+    margin-bottom: var(--header-size);
+  }
+}
+
 /** for header **/
 
 .content-top {
@@ -393,7 +410,7 @@ aside{
     background-color: var(--bs-secondary-bg);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 767.98px) {
     .sidebar-body {
         overflow-y: hidden;
     }
@@ -405,7 +422,7 @@ aside{
 .offcanvas.show, .offcanvas.showing,
 .offcanvas-md.show, .offcanvas-md.showing {
     top: var(--header-size);
-    /*box-shadow: 0px 0px 10px 5px rgba(0,0,0,0.5);*/
+    box-shadow: 0px 0px 5px 2px rgba(0,0,0,0.2);
     border: 0;
 }
 

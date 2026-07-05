@@ -650,6 +650,7 @@ type
     procedure RemoveState(AState: TmnwElementState);
 
     procedure Clear; {$ifdef FPC} override; {$else} virtual; {$endif} //* see TmnObjectList
+    function CountComposed: Integer;
 
     function GetContentType(Route: string = ''): string; virtual;
 
@@ -811,7 +812,7 @@ type
     property Released: Boolean read GetReleased;
     property Phase: TmnwSchemaPhase read FPhase;
     property Lock: TCriticalSection read FLock;
-    property Web: TmnwWeb read FWeb;
+    property Web: TmnwWeb read FWeb;    
   public
     type
 
@@ -1522,7 +1523,9 @@ type
       public
       end;
 
-      TCardFooter = class(THTMLControl)      
+      TCardFooter = class(THTMLContainer)      
+      public
+        Fixed: Boolean;
       end;
 
       { TCard }
@@ -4386,6 +4389,16 @@ begin
 
   AddState([estComposed]);
   DoComposed;
+end;
+
+function TmnwElement.CountComposed: Integer;
+var
+  e: TmnwElement;
+begin
+  Result := 0;
+  for e in Self do
+    if not (elEmbed in e.Kind) then
+      Inc(Result);  
 end;
 
 procedure TmnwElement.DoComposed;
