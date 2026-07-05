@@ -200,36 +200,59 @@ svg {
 
 .max-w-xxs {
     max-width: calc(var(--size-unit));
-    width: calc(var(--size-unit));
 }
 
 .max-w-xs {
     max-width: calc(var(--size-unit) * 2);
-    width: calc(var(--size-unit) * 2);
 }
 
 .max-w-sm {
     max-width: calc(var(--size-unit) * 3);
-    width: calc(var(--size-unit) * 3);
 }
 
 .max-w-md {
     max-width: calc(var(--size-unit) * 4);
-    width: calc(var(--size-unit) * 4);
 }
 
 .max-w-lg {
     max-width: calc(var(--size-unit) * 5);
-    width: calc(var(--size-unit) * 5);
 }
 
 .max-w-xl {
     max-width: calc(var(--size-unit) * 6);
-    width: calc(var(--size-unit) * 6);
 }
 
 .max-w-xxl {
     max-width: calc(var(--size-unit) * 8);
+}
+
+/** Width */
+
+.w-xxs {
+    width: calc(var(--size-unit));
+}
+
+.w-xs {
+    width: calc(var(--size-unit) * 2);
+}
+
+.w-sm {
+    width: calc(var(--size-unit) * 3);
+}
+
+.w-md {
+    width: calc(var(--size-unit) * 4);
+}
+
+.w-lg {
+    width: calc(var(--size-unit) * 5);
+}
+
+.w-xl {
+    width: calc(var(--size-unit) * 6);
+}
+
+.w-xxl {
     width: calc(var(--size-unit) * 8);
 }
 

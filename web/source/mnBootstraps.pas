@@ -737,8 +737,10 @@ begin
     Scope.Attributes['data-bs-placement'] := 'top';
     Scope.Attributes['title'] := e.Hint;
   end;
-  if e.Size > szUndefined then
-    Scope.Classes.Add(BSSizeToStr('max-w-', e.Size));
+  if e.MaxSize > szUndefined then
+    Scope.Classes.Add(BSSizeToStr('max-w-', e.MaxSize));
+  if e.MinSize > szUndefined then
+    Scope.Classes.Add(BSSizeToStr('w-', e.MaxSize));
   case e.Shadow of
     shadowThin: Scope.Classes.Add('shadow-thin');
     ShadowThick: Scope.Classes.Add('shadow-thick');
@@ -864,6 +866,9 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
+  //Scope.Classes.Add('d-flex');
+  //Scope.Classes.Add('flex-column');
+  
 
   Context.Writer.OpenTag('div', Scope.ToString([ssAttributes, ssOuter]));
   if e.Caption <> '' then

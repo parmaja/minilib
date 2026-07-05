@@ -1162,9 +1162,8 @@ type
   end;
 
   TSize = (
-        szUndefined,
-    
-         szVerySmall,
+        szUndefined,    
+        szVerySmall,
         szSmall,
         szNormal,
         szLarge,
@@ -1248,7 +1247,8 @@ type
       protected
         procedure Created; override;
       public
-        Size: TSize; //Max Width
+        MaxSize: TSize; //Max Width
+        MinSize: TSize; //Max Width
         Shadow: TmnwShadow;
         Hint: string;
         ControlStyle: TItemStyle;
@@ -3536,7 +3536,8 @@ end;
 procedure THTML.THTMLControl.Created;
 begin
   inherited;
-  Size := szUndefined;
+  MinSize := szUndefined;
+  MaxSize := szUndefined;
 end;
 
 { TmnwElementRendererRegister }
@@ -4936,6 +4937,8 @@ end;
 procedure THTML.TCard.Created;
 begin
   inherited;
+//  MinSize := szSmall;
+  MaxSize := szNormal;
 //  Shadow := shadowThin;
 end;
 
@@ -5783,7 +5786,8 @@ begin
         with TCard.Create(this) do
         begin
           Solitary := True;
-          Size := szNormal;
+          MinSize := szVerySmall;
+          MaxSize := szNormal;
           Caption := 'Login';
 
           AuthForm := TAuthForm.Create(This);
@@ -5839,7 +5843,6 @@ end;
 procedure TAuthForm.DoCompose(const AContext: TmnwContext);
 begin
   Solitary := True;
-  Size := szNormal;
   Caption := 'Login';
 
   with THTML, Self do
