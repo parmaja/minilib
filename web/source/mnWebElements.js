@@ -1,5 +1,5 @@
 "use strict";
-const version = "1.82";
+const version = "1.84";
 
 async function hashSHA256(message) {
   const msgBuffer = new TextEncoder().encode(message);

@@ -111,7 +111,7 @@ uses
   mnMultipartData, mnModules, mnWebModules;
 
 const
-  cVersion = '1.82';  
+  cVersion = '1.84';
   
 {.$define rtti_objects}
 
@@ -277,7 +277,7 @@ type
     class operator Initialize({$ifdef FPC}var{$else}out{$endif}Dest: TmnwBounding);
     procedure SetTopBottom(Value: Double);
     procedure SetLeftRight(Value: Double);
-	end;
+    end;
 
   { TElementClasses }
 
@@ -755,7 +755,7 @@ type
     scmpNew,
     scmpNormal,
     scmpReleased
-	);
+    );
 
   { TmnwSchema }
 
@@ -1162,14 +1162,14 @@ type
   end;
 
   TSize = (
-		szUndefined,
+        szUndefined,
     
-	 	szVerySmall,
-		szSmall,
-		szNormal,
-		szLarge,
-		szVeryLarge
-	);
+         szVerySmall,
+        szSmall,
+        szNormal,
+        szLarge,
+        szVeryLarge
+    );
 
 {-------------------------------------------------------}
 {-----------------    STANDARD    ----------------------}
@@ -3006,7 +3006,7 @@ function TmnwWeb.CreateSchema(const aSchemaName: string): TmnwSchema;
 var
   SchemaItem: TmnwRegisterdSchema;
 begin
-	SchemaItem := Registered.Find(aSchemaName);
+    SchemaItem := Registered.Find(aSchemaName);
   if SchemaItem <> nil then
   begin
     Result := CreateSchema(SchemaItem);

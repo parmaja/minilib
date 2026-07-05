@@ -839,7 +839,7 @@ begin
   if e.Gap > 0 then
     //Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
     Scope.Classes.Add('m-childs'); 
-  Scope.Classes.Add('p-0 p-sm-2');
+  Scope.Classes.Add('p-1 p-sm-2'); 
   Scope.Classes.Add('m-0'); //do not change it, keep it 0
 
   Context.Writer.OpenTag('main', Scope.ToString);
