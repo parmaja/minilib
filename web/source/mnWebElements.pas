@@ -1230,7 +1230,7 @@ type
         Fixed: TmnwFixed;
         Solitary: Boolean; //* Single in Row
         //Padding: TmnwBounding; 
-        Margin: TmnwBounding; 
+        //Margin: TmnwBounding; 
       end;
 
       { THTMLComponent }
@@ -5806,7 +5806,6 @@ begin
       
       with Main do
       begin
-//        AlignItems := alignCenter;
         with TCard.Create(this) do
         begin
           Solitary := True;

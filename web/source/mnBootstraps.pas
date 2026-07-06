@@ -867,10 +867,15 @@ var
   e: THTML.TCard;
 begin
   e := Scope.Element as THTML.TCard;
+  Scope.InnerClasses.Add('d-flex');
   if e.NoWrap then        
     Scope.InnerClasses.Add('flex-md-nowrap');
+    
+  if e.JustifyItems = jstDefault then
+    Scope.InnerClasses.Add('flex-column')
+  else 
+    Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));      
   Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
-  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));      
   inherited;
 end;
 
@@ -1378,6 +1383,7 @@ begin
   Scope.Classes.Add('row');
   Scope.Classes.Add('d-flex');    
   Scope.Classes.Add('flex-row');    
+  Scope.Classes.Add('m-0');    
 
   Scope.Classes.Add(BSFixedToStr(e.Fixed));
 {  if e.Align <> alignDefault then
@@ -1402,6 +1408,7 @@ begin
     Scope.Classes.Add('col-'+e.Size.ToString)
   else
     Scope.Classes.Add('col');    
+  Scope.Classes.Add('m-0');    
   //Scope.Classes.Add(BSColumnAlignToStr('', e.ContentAlign));    
   if e.Fixed <> fixedDefault then
     Scope.Classes.Add(BSFixedToStr(e.Fixed));
@@ -1705,10 +1712,13 @@ begin
   Scope.Classes.Add(BSFixedToStr(e.Fixed));
   //Scope.Classes.Add(BSAlignToStr(e.Align));
   if e.Solitary then
+  begin
     Scope.Classes.Add('mx-auto');
+    Scope.Classes.Add('my-auto');
+  end;
 
   // Optimize margin/padding prefix calculation
-  Scope.Classes.Add(e.Margin.ToBSString(When(e.Medium, 'm-md', 'm')));
+//  Scope.Classes.Add(e.Margin.ToBSString(When(e.Medium, 'm-md', 'm')));
 //  Scope.Classes.Add(e.Padding.ToBSString('p')));
 end;
 
