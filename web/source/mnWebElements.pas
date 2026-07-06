@@ -358,6 +358,8 @@ type
     FWeb: TmnwWeb;
     FRenderer: TmnwRenderer;
     FWriter: TmnTidyWriter;
+    function GetDomain: string;
+    function GetPort: string;
     function GetSession: TmnwSession;
     function GetRequest: TwebRequest;
   public
@@ -374,6 +376,9 @@ type
 
     Language: string;
     Direction: TDirection;    
+
+    property Domain: string read GetDomain;
+    property Port: string read GetPort;
 
     // http://host:80/
     function GetHostURL: string; overload;
@@ -1141,8 +1146,6 @@ type
     procedure Respond(var AContext: TmnwContext);
     //for WebSocket
     function Attach(var AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
-
-    function GetHostURL: string; virtual;    
 
     property Lock: TCriticalSection read FLock;
     property Assets: TAssetsSchema read FAssets;
@@ -3118,7 +3121,7 @@ begin
       if AContext.Session.ID = '' then
         AContext.Session.ID := AContext.Request.Cookies['session'];
       AContext.Session.Age := SessionAge;      
-      AContext.Session.Domain := Domain;
+      AContext.Session.Domain := AContext.Request.Domain;
       AContext.Session.Path := AContext.GetHomePath;
       //AResponse.Session.Path := StartURL(Alias, True);
       AContext.Session.Reset;
@@ -3347,11 +3350,6 @@ begin
   FShowVersion := True;
   FLanguage := 'en';
   inherited;
-end;
-
-function TmnwWeb.GetHostURL: string;
-begin
-  Result := ComposeHttpURL(IsSecure, Domain, Port);
 end;
 
 function TmnwWeb.CreateSchema(SchemaItem: TmnwRegisterdSchema): TmnwSchema;
@@ -5120,17 +5118,6 @@ begin
   else
     SplitStr(Request.Header['Host'], ':', aDomain, aPort);
 
-  if Module.Web.Domain = '' then
-  begin
-    Module.Web.Lock.Enter; //smart huh, first connection will setup the domain name, i don't like it
-    try
-      Module.Web.Domain := aDomain;
-      Module.Web.Port := aPort;
-    finally
-      Module.Web.Lock.Leave;
-    end;
-  end;
-
   if (aDomain='') and Request.Connected then
     raise Exception.Create('Domain is not defined');
 
@@ -5631,6 +5618,13 @@ begin
   Result := GetHomePath + StartURL(e.GetPath);
 end;
 
+function TmnwContext.GetPort: string;
+begin
+  Result := Web.Port;
+  if Result = '' then
+    Result := Request.Port;
+end;
+
 function TmnwContext.GetRelativePath(e: TmnwElement): string;
 begin
   if Element = nil then  
@@ -5646,7 +5640,7 @@ end;
 
 function TmnwContext.GetSchemaURL: string;
 begin
-  Result := Web.GetHostURL + GetPath(Schema);
+  Result := GetHostURL + GetPath(Schema);
 end;
 
 function TmnwContext.GetSession: TmnwSession;
@@ -5672,23 +5666,13 @@ begin
 end;
 
 function TmnwContext.GetHomeURL: string;
-var
-  aDomain: string;
-  aPort: string;
 begin
-  Result := Web.GetHostURL + GetHomePath;
-  exit;
-  aDomain := Web.Domain;
-  if aDomain = '' then
-    SplitStr(Request.Host, ':', aDomain, aPort)
-  else
-    aPort := Web.Port;
-  Result := ComposeHttpURL(Web.IsSecure, aDomain, aPort);
+  Result := GetHostURL + GetHomePath;
 end;
 
 function TmnwContext.GetHostURL: string;
 begin
-  Result := Web.GetHostURL;
+  Result := ComposeHttpURL(Request.IsSecure, Domain, Port);
 end;
 
 function TmnwContext.GetLocationPath(AElement: TmnwElement; Location: TLocation): string;
@@ -5741,7 +5725,12 @@ begin
     Result := Result + StartURL(Schema.Web.DefaultSchema.Name);
 end;
 
-{ TmnwResponse }
+function TmnwContext.GetDomain: string;
+begin
+  Result := Web.Domain;
+  if Result = '' then
+    Result := Request.Domain;
+end;
 
 { TAuthSchema }
 
@@ -6358,7 +6347,7 @@ begin
   Cookie := AContext.Response.SetCookie('language', Lang);
   if Cookie <> nil then
   begin
-    Cookie.Domain := AContext.Web.Domain;
+    Cookie.Domain := AContext.Domain;
     Cookie.Path := AContext.GetHomePath;
     Cookie.Age := 365 * 24 * 60 * 60; // 1 year
   end;

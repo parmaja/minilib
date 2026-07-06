@@ -515,6 +515,8 @@ type
     FHost: string;
     FOrigin: string;
     FUserAgent: UTF8String;
+    FDomain: string;
+    FPort: string;
   protected
     procedure DoPrepareHeader; override; //Called by Client
     procedure DoSendHeader; override;
@@ -527,6 +529,8 @@ type
     property Origin: string read FOrigin write FOrigin;
     property Accept: String read FAccept write FAccept;
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
+    property Domain: string read FDomain;
+    property Port: string read FPort;
   end;
 
   { TwebResponse }
@@ -3263,6 +3267,7 @@ begin
   inherited;
 
   FHost  := Header.Field['Host'].AsString;
+  SplitStr(FHost, ':', FDomain, FPort);
   FOrigin  := DequoteStr(Header.Field['Origin'].AsString);
   Stamp  := DequoteStr(Header.Field['If-None-Match'].AsString);
 
