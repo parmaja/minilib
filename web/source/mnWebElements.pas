@@ -547,7 +547,9 @@ type
 
   TTheme = (themeUndefined, themeLight, themeDark);
   TmnwShadow = (shadowUndefined, shadowThin, shadowThick, shadowEnd, ShadowBottom);
-  TmnwAlign = (alignDefault, alignStart, alignCenter, alignStreach, alignBaseline, alignEnd);
+  TmnwRowAlign = (ralDefault, ralStart, ralCenter, ralStreach, ralBaseline, ralEnd);
+  TmnwJustify = (jstDefault, jstStart, jstCenter, ralBetween, jstAround, jstEvenly, jstEnd);
+  TmnwColumnAlign = (calDefault, calTop, calCenter, calStreach, calBottom);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
 
   TRespondProc = reference to procedure (const AContext: TmnwContext);
@@ -1220,20 +1222,12 @@ type
         constructor Create(AParent: TmnwElement; AScript: string); reintroduce;
       end;
       
-      THTMLContainer = class abstract(THTMLElement)
+      THTMLLayout = class abstract(THTMLElement)
       public
         Medium: Boolean; //Medium or above
-        AlignItems: TmnwAlign;
-        JustifyItems: TmnwAlign;
-        Padding: TmnwBounding; 
-      end;
-      
-      THTMLLayout = class abstract(THTMLContainer)
-      public
         Fixed: TmnwFixed;
         Solitary: Boolean; //* Single in Row
-        Align: TmnwAlign;
-
+        //Padding: TmnwBounding; 
         Margin: TmnwBounding; 
       end;
 
@@ -1457,21 +1451,17 @@ type
         Gap: Integer;
       end;
 
-      TLayout = class abstract(THTMLLayout)
-      public
-        Flex: Boolean;
-        Gap: Integer;
-      end;
-
-      TRow = class(TLayout)
+      TRow = class(THTMLLayout)
       public
         NoWrap: Boolean;
-        ContentAlign: TmnwAlign;
+        AlignItems: TmnwRowAlign;
+        JustifyItems: TmnwJustify;
       end;
 
-      TColumn = class(TLayout)
+      TColumn = class(THTMLLayout)
       public
         Size: Integer;
+        Reverse: Boolean;
       end;
 
       { TBar }
@@ -1529,8 +1519,15 @@ type
       TAccordionItem = class(TClickable)
       public
       end;
-
-      TCardFooter = class(THTMLContainer)      
+      
+      {THTMLContainer = class abstract(THTMLElement)
+      public
+        AlignItems1: TmnwAlign;
+        JustifyItems1: TmnwAlign;
+        Padding: TmnwBounding; 
+      end;}
+      
+      TCardFooter = class(THTMLLayout)      
       public
         Fixed: Boolean;
       end;
@@ -1546,6 +1543,10 @@ type
       public
         Caption: string;
         Collapse: Boolean;
+        
+        AlignItems: TmnwRowAlign;
+        JustifyItems: TmnwJustify;
+        NoWrap: Boolean;
         Gap: Integer;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         property Footer: TCardFooter read FFooter;

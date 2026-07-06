@@ -444,9 +444,7 @@ begin
       end;
 
       with Main do
-      begin
-        Padding := 1;
-
+      begin        
         {with TNavBar.Create(This) do
         begin
           Caption := 'Nav2';
@@ -468,12 +466,11 @@ begin
           with TCard.Create(This) do
           begin
             Solitary := True;
-            Size := szNormal;
             Caption := 'Login';
 
             with TForm.Create(This) do
             begin
-              PostTo.Where := toElement;
+              Endpoint.Where := toElement;
 
               with TInput.Create(This) do
               begin
@@ -582,8 +579,7 @@ begin
         begin
           AlwaysOpen := True;
           with TBar.Create(This) do
-          begin
-            Padding := 2;
+          begin            
             with TThemeModeButton.Create(This) do
             begin
               Caption := 'Mode';
@@ -632,8 +628,6 @@ begin
 
       with Main do
       begin
-        Padding := 1;
-
         {with TNavBar.Create(This) do
         begin
           Caption := 'Nav2';
@@ -706,13 +700,12 @@ begin
           with TCard.Create(This) do
           begin
             Collapse := True;
-            Size := szNormal;
             Caption := 'Login';
             Solitary := True;
 
             with TForm.Create(This) do
             begin
-              PostTo.Where := toElement;
+              Endpoint.Where := toElement;
 
               with TInput.Create(This) do
               begin

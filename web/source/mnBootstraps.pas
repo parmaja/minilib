@@ -16,6 +16,11 @@ unit mnBootstraps;
   
   Gap
   https://stackoverflow.com/questions/6507014/how-to-space-the-children-of-a-div-with-css
+
+
+  //https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
+  //https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
+  
  *}
 
 {$M+}
@@ -47,13 +52,13 @@ type
     class destructor Destroy;      
   public
   type
-      THTMLContainer = class(THTMLElement)
+{      THTMLContainer = class(THTMLElement)
       private
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-      end;
+      end;}
 
-      THTMLLayout = class(THTMLContainer)
+      THTMLLayout = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       public
@@ -218,28 +223,22 @@ type
 
       { TMain }
 
-      TMain = class(THTMLContainer)
+      TMain = class(THTMLLayout)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;        
 
-      { TLayout }
-
-      TLayout = class abstract(THTMLLayout)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-      end;
-
       { TRow }
 
-      TRow = class(TLayout)
+      TRow = class(THTMLLayout)
       protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TColumn }
 
-      TColumn = class(TLayout)
+      TColumn = class(THTMLLayout)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
@@ -280,7 +279,7 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      TCardFooter = class(THTMLContainer)
+      TCardFooter = class(THTMLLayout)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
@@ -480,9 +479,9 @@ type
     function ToBSString(prefix: string): string; {$ifndef DEBUG}inline;{$endif}
   end;
 
-function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean = False): string;
-function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean = False): string;
-function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean = False): string;
+function BSJustifyToStr(const s: string; Align: TmnwJustify; WithSpace: Boolean = False): string; 
+function BSRowAlignToStr(const s: string; Align: TmnwRowAlign; WithSpace: Boolean = False): string; 
+function BSColumnAlignToStr(const s: string; Align: TmnwColumnAlign; WithSpace: Boolean = False): string;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = False): string;
 function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = False): string;
@@ -490,31 +489,40 @@ function BSControlStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace:
 
 implementation
 
-function BSCustomAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean): string; inline;
+function BSRowAlignToStr(const s: string; Align: TmnwRowAlign; WithSpace: Boolean): string; 
 const
-  AlignSuffixes: array[TmnwAlign] of string = ('', 'start', 'center', 'stretch', 'baseline', 'end');
+  sSuffixes: array[TmnwRowAlign] of string = ('', 'start', 'center', 'stretch', 'baseline', 'end');
 begin
-  if (Align >= alignStart) and (Align <= alignEnd) then
-    Result := s + AlignSuffixes[Align]
+  if (Align >= ralStart) and (Align <= ralEnd) then
+    Result := s + sSuffixes[Align]
   else
     Result := '';
   if (Result <> '') and WithSpace then
     Result := ' ' + Result;
 end;
 
-function BSAlignToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+function BSJustifyToStr(const s: string; Align: TmnwJustify; WithSpace: Boolean): string; 
+const
+  sSuffixes: array[TmnwJustify] of string = ('', 'start', 'center', 'between', 'around', 'evenly', 'end');
 begin
-  Result := BSCustomAlignToStr('align-self', Align, WithSpace);
+  if (Align >= jstStart) and (Align <= jstEnd) then
+    Result := s + sSuffixes[Align]
+  else
+    Result := '';
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
 end;
 
-function BSContentJustifyToStr(Align: TmnwAlign; WithSpace: Boolean): string;
+function BSColumnAlignToStr(const s: string; Align: TmnwColumnAlign; WithSpace: Boolean = False): string;
+const
+  sSuffixes: array[TmnwColumnAlign] of string = ('', 'top', 'center', 'stretch', 'bottom');
 begin
-  Result := BSCustomAlignToStr('justify-content-', Align, WithSpace);
-end;
-
-function BSAlignItemsToStr(Align: TmnwAlign; WithSpace: Boolean): string;
-begin
-  Result := BSCustomAlignToStr('align-items-', Align, WithSpace);
+  if (Align >= calTop) and (Align <= calBottom) then
+    Result := s + sSuffixes[Align]
+  else
+    Result := '';
+  if (Result <> '') and WithSpace then
+    Result := ' ' + Result;
 end;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean): string;
@@ -855,14 +863,18 @@ begin
 end;
 
 procedure TBSRenderer.TCard.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TCard;
 begin
+  e := Scope.Element as THTML.TCard;
+  if e.NoWrap then        
+    Scope.InnerClasses.Add('flex-md-nowrap');
+  Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
+  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));      
   inherited;
 end;
 
 { TBSRenderer.TCardHTML }
-
-//https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
-//https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
 
 procedure TBSRenderer.TCard.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
@@ -1346,24 +1358,30 @@ end;
 
 { TBSRenderer.TRow }
 
+procedure TBSRenderer.TRow.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TRow;
+begin
+  e := Scope.Element as THTML.TRow;
+  if e.NoWrap then        
+    Scope.InnerClasses.Add('flex-md-nowrap');
+  Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
+  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));      
+  inherited;
+end;
+
 procedure TBSRenderer.TRow.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add('row');
+  Scope.Classes.Add('d-flex');    
+  Scope.Classes.Add('flex-row');    
 
-  if e.Flex then
-  begin
-    Scope.Classes.Add('flex-row');    
-    if e.NoWrap then        
-      Scope.Classes.Add('flex-md-nowrap');
-  end;
-  Scope.Classes.Add(BSContentJustifyToStr(e.ContentAlign));
-  if e.Fixed <> fixedDefault then
-    Scope.Classes.Add(BSFixedToStr(e.Fixed));
-  if e.Align <> alignDefault then
-    Scope.Classes.Add(BSAlignToStr(e.Align));
+  Scope.Classes.Add(BSFixedToStr(e.Fixed));
+{  if e.Align <> alignDefault then
+    Scope.Classes.Add(BSAlignToStr(e.Align));}
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
@@ -1376,16 +1394,19 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  if e.Flex then
+  Scope.Classes.Add('d-flex');
+  if e.Reverse then  
+    Scope.Classes.Add('flex-column-reverse');
     Scope.Classes.Add('flex-column');
   if e.Size > 0 then
     Scope.Classes.Add('col-'+e.Size.ToString)
   else
-    Scope.Classes.Add('col');
+    Scope.Classes.Add('col');    
+  //Scope.Classes.Add(BSColumnAlignToStr('', e.ContentAlign));    
   if e.Fixed <> fixedDefault then
     Scope.Classes.Add(BSFixedToStr(e.Fixed));
-  if e.Align <> alignDefault then
-    Scope.Classes.Add(BSAlignToStr(e.Align));
+{  if e.Align <> alignDefault then
+    Scope.Classes.Add(BSAlignToStr(e.Align));}
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
@@ -1682,12 +1703,13 @@ begin
   e := Scope.Element as THTML.THTMLLayout;
   inherited;
   Scope.Classes.Add(BSFixedToStr(e.Fixed));
-  Scope.Classes.Add(BSAlignToStr(e.Align));
+  //Scope.Classes.Add(BSAlignToStr(e.Align));
   if e.Solitary then
     Scope.Classes.Add('mx-auto');
 
   // Optimize margin/padding prefix calculation
   Scope.Classes.Add(e.Margin.ToBSString(When(e.Medium, 'm-md', 'm')));
+//  Scope.Classes.Add(e.Padding.ToBSString('p')));
 end;
 
 { TBSRenderer.TImageFile }
@@ -1846,7 +1868,7 @@ begin
 end;
 
 { TBSRenderer.THTMLContainer }
-
+{
 procedure TBSRenderer.THTMLContainer.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.THTMLContainer;
@@ -1854,11 +1876,11 @@ var
 begin
   e := Scope.Element as THTML.THTMLContainer;
   inherited;
-  if (e.AlignItems <> alignDefault) or (e.JustifyItems <> alignDefault) then
+  if (e.AlignItems1 <> alignDefault) or (e.JustifyItems1 <> alignDefault) then
     Scope.InnerClasses.Add('d-flex');
   
-  Scope.InnerClasses.Add(BSAlignItemsToStr(e.AlignItems));
-  Scope.InnerClasses.Add(BSContentJustifyToStr(e.JustifyItems));
+  Scope.InnerClasses.Add(BSAlignItemsToStr(e.AlignItems1));
+  Scope.InnerClasses.Add(BSContentJustifyToStr(e.JustifyItems1));
 
   if e.Medium then
     PaddingPrefix := 'p-md'
@@ -1867,7 +1889,7 @@ begin
 
   Scope.Classes.Add(e.Padding.ToBSString(PaddingPrefix));
 end;
-
+}
 { TBSRenderer.THTMLComponent }
 
 procedure TBSRenderer.THTMLComponent.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
@@ -1907,21 +1929,6 @@ procedure TBSRenderer.THorzLine.DoInnerRender(Scope: TmnwScope; Context: TmnwCon
 begin
   inherited;
   Context.Writer.AddShortTag('hr');
-end;
-
-{ TBSRenderer.TLayout }
-
-procedure TBSRenderer.TLayout.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TLayout;
-begin
-  e := Scope.Element as THTML.TLayout;
-  if e.Flex then  
-    Scope.Classes.Add('d-flex');
-  if e.Gap > 0 then
-    Scope.Classes.Add('m-childs'); 
-//    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
-  inherited;
 end;
 
 { TBSRenderer.TSpanButton }
