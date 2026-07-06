@@ -354,12 +354,12 @@ type
   
   TmnwContext = record
   private
-    FRequest: TmodRequest;
     FResponse: TmnwResponse;
     FWeb: TmnwWeb;
     FRenderer: TmnwRenderer;
     FWriter: TmnTidyWriter;
     function GetSession: TmnwSession;
+    function GetRequest: TwebRequest;
   public
     Sender: TObject;
 
@@ -407,7 +407,7 @@ type
     function GetAssetFolder: string;
     function GetLocationPath(AElement: TmnwElement; Location: TLocation): string; overload;
     
-    property Request: TmodRequest read FRequest;
+    property Request: TwebRequest read GetRequest;
     property Response: TmnwResponse read FResponse;
     property Session: TmnwSession read GetSession;
     property Web: TmnwWeb read FWeb;
@@ -1512,11 +1512,13 @@ type
 
       [TID_Extension]
       TAccordionSection = class(THTMLLayout)
+      protected
       public
         Image: TImageLocation;
         Caption: string;
         Expanded: Boolean;
         SaveState: Boolean;
+        function CanRender: Boolean; override;
       end;
 
       TAccordionItem = class(TClickable)
@@ -5106,8 +5108,7 @@ begin
 
   aContext.Route := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
-  
-  aContext.FRequest := Request;
+
   aContext.FResponse := Response;
   aContext.FWeb := Module.Web;
 
@@ -5638,6 +5639,11 @@ begin
     Result := e.GetPathTo(Element);
 end;
 
+function TmnwContext.GetRequest: TwebRequest;
+begin
+  Result := Response.Request;
+end;
+
 function TmnwContext.GetSchemaURL: string;
 begin
   Result := Web.GetHostURL + GetPath(Schema);
@@ -5666,8 +5672,18 @@ begin
 end;
 
 function TmnwContext.GetHomeURL: string;
+var
+  aDomain: string;
+  aPort: string;
 begin
   Result := Web.GetHostURL + GetHomePath;
+  exit;
+  aDomain := Web.Domain;
+  if aDomain = '' then
+    SplitStr(Request.Host, ':', aDomain, aPort)
+  else
+    aPort := Web.Port;
+  Result := ComposeHttpURL(Web.IsSecure, aDomain, aPort);
 end;
 
 function TmnwContext.GetHostURL: string;
@@ -6488,6 +6504,13 @@ procedure THTML.TUsername.Created;
 begin
   inherited;
   AutoComplete := True;
+end;
+
+{ THTML.TAccordionSection }
+
+function THTML.TAccordionSection.CanRender: Boolean;
+begin
+  Result := Count > 0;
 end;
 
 initialization
