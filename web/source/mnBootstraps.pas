@@ -1806,7 +1806,7 @@ end;
 procedure TBootstrapIcons_Library.Created;
 begin
   inherited;
-  Sources.Add(stStyle, stOnline, 'cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css', dirUndefined, '', [libCross]);
+  Sources.Add(stStyle, stOnline, 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css', dirUndefined, '', [libCross]);
 end;
 
 { TBSRenderer.TGroup }

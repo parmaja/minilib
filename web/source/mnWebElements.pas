@@ -4810,7 +4810,7 @@ end;
 procedure TJQuery_Library.Created;
 begin
   inherited;
-  Sources.Add(stScript, 'cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js', '', []); //* no Differ
+  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js', '', []); //* no Differ  
 end;
 
 { THTML }
@@ -4818,6 +4818,7 @@ end;
 procedure TWebElements_Library.Created;
 begin
   inherited;
+  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/js-sha256@0.11.1/src/', 'sha256.min.js', '', []);
 //  Sources.Add(stScript, '', 'web-elements.js?v=' + IntToStr(GlobalTimeStamp));
 //  Sources.Add(stStyle, '', 'web-elements.css?v=' + IntToStr(GlobalTimeStamp));
   Sources.Add(stScript, stResource, 'web-elements.js', '?minilib\web\source\mnWebElements.js');
@@ -6327,7 +6328,13 @@ end;
 procedure TLangDropdown.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
-  Caption := AContext.Language.ToUpper;
+  if AContext.Language = 'ar' then
+    Image.Symbol := 'icon mnw-lang-arabic'             
+  else
+    Image.Symbol := 'icon mnw-lang-english';              
+//  Caption := AContext.Language.ToUpper;
+//  Hint := AContext.Language.ToUpper;    TODO fix it
+
   with THTML.TDropdownItem.Create(this, AContext.GetURL(Self) + '?lang=ar', 'عربي') do
     Image.Symbol := 'icon mnw-lang-arabic';              
   with THTML.TDropdownItem.Create(this, AContext.GetURL(Self) + '?lang=en', 'English') do

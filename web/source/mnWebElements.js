@@ -1,12 +1,6 @@
 "use strict";
 const version = "1.84";
-
-async function hashSHA256(message) {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+//used <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.11.0/src/sha256.min.js"></script>
 
 let mnw = {};
 
@@ -195,7 +189,7 @@ mnw.formPost = async function(e, extraJson) {
     const name = el.getAttribute('name') || "";
 
     if (token && name) {
-      data[name] = await hashSHA256(el.value + token);
+      data[name] = await sha256(el.value + token);
     }
   }
 
