@@ -448,6 +448,7 @@ type
     Where: TLibrarySourceWhere;
     OnlineFile: string;
     LocalFile: string;    
+    Text: string; //For Embed
     Integrity: string;
     Direction: TDirection;
     Options: TLibraryOptions;    
@@ -460,11 +461,12 @@ type
     //LocalFile: from assets, only file name, not with path
     //OnlineFile: if OnlineFile ended with / LocalFile will added
     function Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFile: string; Direction: TDirection = dirUndefined; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TmnwLibrarySource; overload;
+    function AddEmbed(const SourceType: TLibrarySourceType; const AName: string; const EmbedText: string; Direction: TDirection): TmnwLibrarySource; overload;
 
     function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Direction: TDirection = dirUndefined): TmnwLibrarySource; overload;
     function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Integrity: string; Options: TLibraryOptions = [libDefer, libCross]): TmnwLibrarySource; overload;
 
-    function AddStyle(const EmbedText: string; Direction: TDirection = dirUndefined): TmnwLibrarySource; overload;
+    function AddStyle(const EmbedText: string; AName: string; Direction: TDirection = dirUndefined): TmnwLibrarySource; overload;
   end;
   
   TmnwLibrary = class abstract(TmnNamedObject)
@@ -4701,8 +4703,8 @@ begin
       else
       begin
         case source.SourceType of
-          stStyle: Context.Writer.AddEmbedStyle(source.OnlineFile);
-          stScript: Context.Writer.AddEmbedScript(source.OnlineFile, libDefer in source.Options);
+          stStyle: Context.Writer.AddEmbedStyle(source.Text);
+          stScript: Context.Writer.AddEmbedScript(source.Text, libDefer in source.Options);
         end;
       end;
     end;    
@@ -6000,18 +6002,38 @@ function TLibrarySources.Add(SourceType: TLibrarySourceType; Where: TLibrarySour
 begin
   Result := TmnwLibrarySource.Create;
 
+{
+  online = 'min.file.js', local='file.min.js'
+
+  online = 'https://online.com/min.file.js', local='file.min.js'
+  
+  online = 'https://online.com/', local='file.min.js'
+  
+  online = '', local='file.min.js'
+
+  online = 'https://online.com/file.js', local=''
+  
+  online = 'https://online.com/file.js', local='c:\assets\file.min.js'
+}
   Result.OnlineFile := OnlineFile;
-  Result.LocalFile := VarEnvReplace(LocalFile, [vrPathValues]);
+  Result.LocalFile := CorrectPath(VarEnvReplace(LocalFile, [vrPathValues]));
  
-  if EndsDelimiter(OnlineFile) then 
+  if not (OnlineFile = '') and (Result.LocalFile = '') then 
+    Raise Exception.Create('Library: We Local or Online are empty')
+  else if not EndsDelimiter(OnlineFile) and EndsDelimiter(Result.LocalFile) then 
+    Raise Exception.Create('Library: We need filename at least in Local or Online')
+  else if EndsDelimiter(OnlineFile) and (Result.LocalFile <> '') then 
   begin
     Result.Name := SubStr(LocalFile, PathDelimiters, -1);
-    Result.OnlineFile := OnlineFile + Result.Name
+    Result.OnlineFile := OnlineFile + Result.Name; //Fix online to full url
+  end
+  else if not EndsDelimiter(OnlineFile) and (Result.LocalFile = '') then 
+  begin
+    Result.Name := SubStr(OnlineFile, PathDelimiters, -1);
+    Result.LocalFile := Result.Name; //Fix local file
   end
   else  
-  begin
-    Result.Name := ExtractFileName(OnlineFile);
-  end;
+    Result.Name := SubStr(OnlineFile, PathDelimiters, -1);
   
   Result.SourceType := SourceType;
   Result.Where := Where;
@@ -6026,14 +6048,26 @@ begin
   Result := Add(SourceType, stOnline, OnlineFile, LocalFile, dirUndefined, Integrity, Options);
 end;
 
+function TLibrarySources.AddEmbed(const SourceType: TLibrarySourceType; const AName: string; const EmbedText: string; Direction: TDirection): TmnwLibrarySource;
+begin
+  Result := TmnwLibrarySource.Create;
+  Result.Name := AName;
+  Result.Text := EmbedText;
+ 
+  Result.SourceType := SourceType;
+  Result.Where := stEmbed;
+  Result.Direction := Direction;
+  inherited Add(Result);
+end;
+
 function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Direction: TDirection): TmnwLibrarySource;
 begin
   Result := Add(SourceType, stOnline, OnlineFile, LocalFile, Direction, '');
 end;
 
-function TLibrarySources.AddStyle(const EmbedText: string; Direction: TDirection): TmnwLibrarySource;
+function TLibrarySources.AddStyle(const EmbedText: string; AName: string; Direction: TDirection): TmnwLibrarySource;
 begin
-  Result := Add(stStyle, stEmbed, EmbedText, '', Direction);
+  Result := AddEmbed(stStyle, AName, EmbedText, Direction);
 end;
 
 { TmnwLibrarySource }

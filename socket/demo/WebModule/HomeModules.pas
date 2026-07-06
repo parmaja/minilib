@@ -692,11 +692,9 @@ begin
               Collapse := True;
               Size := szVeryLarge;
               Caption := 'Empty';
-              //Solitary := True;
             end;
           end;
 
-         // ContentAlign := alignCenter;
           with TCard.Create(This) do
           begin
             Collapse := True;
