@@ -529,7 +529,7 @@ end;
 
 function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean): string;
 const
-  SizeStrs: array[TSize] of string = ('', 'xs', 'sm', 'md', 'lg', 'xl');
+  SizeStrs: array[TSize] of string = ('', 'xxs', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl');
 begin
   Result := SizeStrs[Size];
   if (Result <> '') then
@@ -737,10 +737,10 @@ begin
     Scope.Attributes['data-bs-placement'] := 'top';
     Scope.Attributes['title'] := e.Hint;
   end;
-  if e.MaxSize > szUndefined then
-    Scope.Classes.Add(BSSizeToStr('max-w-', e.MaxSize));
-  if e.MinSize > szUndefined then
-    Scope.Classes.Add(BSSizeToStr('w-', e.MaxSize));
+  if e.Size > szUndefined then
+    Scope.Classes.Add(BSSizeToStr('max-w-', e.Size));
+{  if e.MinSize > szUndefined then
+    Scope.Classes.Add(BSSizeToStr('w-', e.MinSize));}
   case e.Shadow of
     shadowThin: Scope.Classes.Add('shadow-thin');
     ShadowThick: Scope.Classes.Add('shadow-thick');
@@ -835,6 +835,10 @@ var
 begin
   e := Scope.Element as THTML.TMain;
   Scope.Classes.Add('main');
+//  Scope.InnerClasses.Add('d-flex');
+//  Scope.InnerClasses.Add('align-items-start');
+  //Scope.InnerClasses.Add('d-column');
+
   if (e.Schema as THTML).Document.Body.Header.CanRender  then
     Scope.Classes.Add('max-content-height');
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then

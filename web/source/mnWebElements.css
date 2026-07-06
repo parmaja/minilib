@@ -226,6 +226,36 @@ svg {
     max-width: calc(var(--size-unit) * 8);
 }
 
+/** min Width */
+
+.min-w-xxs {
+    min-width: calc(var(--size-unit));
+}
+
+.min-w-xs {
+    min-width: calc(var(--size-unit) * 2);
+}
+
+.min-w-sm {
+    min-width: calc(var(--size-unit) * 3);
+}
+
+.min-w-md {
+    min-width: calc(var(--size-unit) * 4);
+}
+
+.min-w-lg {
+    min-width: calc(var(--size-unit) * 5);
+}
+
+.min-w-xl {
+    min-width: calc(var(--size-unit) * 6);
+}
+
+.min-w-xxl {
+    min-width: calc(var(--size-unit) * 8);
+}
+
 /** Width */
 
 .w-xxs {

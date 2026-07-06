@@ -1167,11 +1167,13 @@ type
 
   TSize = (
         szUndefined,    
+        szVeryVerySmall,
         szVerySmall,
         szSmall,
-        szNormal,
+        szMedium,
         szLarge,
-        szVeryLarge
+        szVeryLarge,
+        szVeryVeryLarge
     );
 
 {-------------------------------------------------------}
@@ -1251,7 +1253,7 @@ type
       protected
         procedure Created; override;
       public
-        MaxSize: TSize; //Max Width
+        Size: TSize; //Max Width
         MinSize: TSize; //Max Width
         Shadow: TmnwShadow;
         Hint: string;
@@ -3540,7 +3542,7 @@ procedure THTML.THTMLControl.Created;
 begin
   inherited;
   MinSize := szUndefined;
-  MaxSize := szUndefined;
+  Size := szUndefined;
 end;
 
 { TmnwElementRendererRegister }
@@ -4952,7 +4954,7 @@ procedure THTML.TCard.Created;
 begin
   inherited;
 //  MinSize := szSmall;
-  MaxSize := szNormal;
+  Size := szMedium;
 //  Shadow := shadowThin;
 end;
 
@@ -5801,12 +5803,12 @@ begin
       
       with Main do
       begin
-        AlignItems := alignCenter;
+//        AlignItems := alignCenter;
         with TCard.Create(this) do
         begin
           Solitary := True;
-          MinSize := szVerySmall;
-          MaxSize := szNormal;
+          //MinSize := szVerySmall;
+          Size := szMedium;
           Caption := 'Login';
 
           AuthForm := TAuthForm.Create(This);
