@@ -19,31 +19,21 @@
  *}
 
 {
-   Protocol UserInfo       Host      Port
-    ┌─┴─┐   ┌──┴───┐ ┌──────┴────────┬┴┐
-GET https://john.doe@www.example.com:123/forum/username/questions/q/10/?tag=networking&order=newest#top
-└┬┘                  └──────┬──────┘    └───────────────┬─────────────┘└────────────┬─────────────┘└─┬─┘
-Method                  DomainName                    Path                        Query           Fragment
-                                        └──┬──┘└───┬───┘└───┬────┴──┬─┘           └─┬─┘
-WebElement:                             Module  Namespace Schema  Directory       Params
-    └────────────┬──────────────────────┘ ─ ─ ┘        |         |    |
-    |          HostURL (From Request or Config)        |         |    |
-    └────────────────────────┬─────────────────────────┘         |    |
-    |             HomeURL/URL (WebApp)                           |    |
-    └────────────────────────┬───────────────────────────────────┘    |
-    |                       URL         |                             |
-    └────────────────────────┬────────────────────────────────────────┘
-                             ?          |               |        |    |
-                                        |               |        |    |
-                                        └──────────┬────┘        |    |
-                                        |       ModulePath       |    |
-                                        └──────────┬─────────────┘    |                                        
-                                        |         Path                |  
-                                        └──────────┬──────────────────┘
-                                                   ?     
-{
+   Protocol UserInfo       Host                Path
+    ┌─┴─┐   ┌──┴───┐ ┌──────┴──────────┐┌───────┴─────────────────────┐
+GET https://john.doe@www.example.com:123/forum/user/ask/questions/q/10/?tag=networking&order=newest#top
+└┬┘                  └──────┬──────┴─┬─┘└───────────────┬─────────────┘└────────────┬─────────────┘└─┬─┘
+Method                    Domain    Port└──┬──────┘└┬──┘└───┬────┴──┬─┘           Query           Fragment
+                                         BasePath Module   Schema  CurrentPath    └─┬─┘
+WebElement:                              NameSpace                                Params
+    └────────────┬──────────────────────┘ ─ ─ ┘        |              |     
+    |          HostURL (From Request or Config)        |              |     
+    └────────────────────────┬─────────────────────────┘              |     
+    |             HomeURL/URL (WebApp)                                |      
+    └────────────────────────┬────────────────────────────────────────┘     
+                            URL                                      
 
-    Application
+## Application ##
     
                     Document
 ┌──────────────────────┴───────────────────────┐
@@ -381,34 +371,34 @@ type
 
     // http://host:80/
     function GetHostURL: string; overload;
-    // /module/namespace
-    function GetHomePath: string; overload;
-    // http://host:80/module/namespace/
+    // /basepath/module/
+    function GetBasePath: string; overload;
+    // http://host:80/basepath/module/
     function GetHomeURL: string; overload;
-    // http://host:80/module/namespace/schema
+    // http://host:80/basepath/module/schema
     function GetSchemaURL: string; overload;
 
     // With Schema
-    // /module/namespace/schema
+    // /basepath/module/schema
     function GetPath: string; overload;
-    // /module/namespace/schema/element    
+    // /module/basepath/schema/element    
     function GetPath(e: TmnwElement): string; overload;    
 
-    //this get absolute path http://host:80/module/namespace/schema/element
+    //this get absolute path http://host:80/module/basepath/schema/element
     function GetURL(e: TmnwElement): string; overload;
-    //this get absolute path http://host:80/module/namespace/schema
+    //this get absolute path http://host:80/module/basepath/schema
     function GetURL: string; overload;
 
     //this get path relative requested path /element1/element2
     function GetRelativePath(e: TmnwElement): string; overload;    
 
-    // http://host:80/default_schema/namespace/
+    // http://host:80/default_schema/basepath/
     function GetDefaultPath: string; overload;    
-    //Schema URL with http://host:80/assets/namespace/schema
+    //Schema URL with http://host:80/basepath/assets/schema
     function GetAssetsPath: string;
     function GetAssetsURL: string;
-    //Folder of HomeFolder of assets
-    function GetAssetFolder: string;
+    //Dir of HomeDir of assets
+    function GetAssetDir: string;
     function GetLocationPath(AElement: TmnwElement; Location: TLocation): string; overload;
     
     property Request: TwebRequest read GetRequest;
@@ -594,9 +584,9 @@ type
     procedure Check; virtual;
     function FindObject(ObjectClass: TmnwElementClass; AName: string; RaiseException: Boolean = false): TmnwElement;
 
-    procedure ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext);
-    function ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext): Boolean; overload;
-    function ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext): Boolean; overload;
+    procedure ServeDir(APath: string; Options: TmodServeFiles; const AContext: TmnwContext);
+    function ServeFile(HomeDir: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext): Boolean; overload;
+    function ServeFile(HomeDir: string; Options: TmodServeFiles; const AContext: TmnwContext): Boolean; overload;
 
     procedure DoPrepareRenderer(const AContext: TmnwContext); virtual;   
     procedure DoPrepare; virtual;
@@ -796,7 +786,7 @@ type
     LastAccess: TDateTime;
     IsManual: Boolean;
     RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
-    HomeFolder: string;
+    HomeDir: string;
     ServeFiles: TmodServeFiles;
     Interactive: Boolean;
     constructor Create(AWeb: TmnwWeb; AName:string; ARoute: string = ''); reintroduce;
@@ -805,7 +795,7 @@ type
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
     function NewHandle: THandle;
 
-    function GetHomeFolder: string;
+    function GetHomeDir: string;
     //* Attaching cap
     //function Interactive: Boolean;
 
@@ -1100,9 +1090,9 @@ type
   TmnwWeb = class(TmnObjectList<TmnwSchema>)
   private
     FOptions: TmnwAppOptions;
-    FHomeFolder: string;
-    FAppFolder: string;
-    FWorkFolder: string;
+    FHomeDir: string;
+    FAppDir: string;
+    FWorkDir: string;
     FAssets: TAssetsSchema;
     FDefaultSchema: TmnwRegisterdSchema;
     FShutdown: Boolean;
@@ -1158,11 +1148,11 @@ type
     property Assets: TAssetsSchema read FAssets;
     property DefaultSchema: TmnwRegisterdSchema read FDefaultSchema;
     //Public Web Files
-    property HomeFolder: string read FHomeFolder write FHomeFolder;
+    property HomeDir: string read FHomeDir write FHomeDir;
     //Private Files
-    property WorkFolder: string read FWorkFolder write FWorkFolder;
+    property WorkDir: string read FWorkDir write FWorkDir;
     //Exe path
-    property AppFolder: string read FAppFolder write FAppFolder;
+    property AppDir: string read FAppDir write FAppDir;
     property Shutdown: Boolean read FShutdown;
     property Options: TmnwAppOptions read FOptions write FOptions;
     property OnlineFiles: TOnlineFiles read FOnlineFiles write FOnlineFiles;
@@ -1292,7 +1282,7 @@ type
       protected
         procedure DoRespond(const AContext: TmnwContext); override;
       public
-        HomeFolder: string;
+        HomeDir: string;
         ServeFiles: TmodServeFiles;
         function GetContentType(Route: string): string; override;
       end;
@@ -1301,7 +1291,7 @@ type
       protected
         procedure DoRespond(const AContext: TmnwContext); override;
       public
-        HomeFolder: string;
+        HomeDir: string;
         ServeFiles: TmodServeFiles;
         function GetContentType(Route: string): string; override;
       end;
@@ -3138,7 +3128,7 @@ begin
         AContext.Session.ID := AContext.Request.Cookies['session'];
       AContext.Session.Age := SessionAge;      
       AContext.Session.Domain := AContext.Request.Domain;
-      AContext.Session.Path := AContext.GetHomePath;
+      AContext.Session.Path := AContext.GetBasePath;
       //AResponse.Session.Path := StartURL(Alias, True);
       AContext.Session.Reset;
       
@@ -3654,20 +3644,20 @@ begin
     Schema.Attachments.SendMessage(AttachmentName, AMessage);
 end;
 
-function TmnwElement.ServeFile(HomeFolder: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext): Boolean;
+function TmnwElement.ServeFile(HomeDir: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext): Boolean;
 var
   aDocument, aRequestDocument, aFile: string;
   IsDocument, IsDirectory, Expanded: Boolean;
 begin
   Result := True;
-  if HomeFolder = '' then
+  if HomeDir = '' then
   begin
     Result := False;
     Exit;
   end;
 
-  WebExpandFile(HomeFolder, AContext.CurrentPath, aRequestDocument, False);
-  Expanded := WebExpandFile(HomeFolder, AContext.CurrentPath, aDocument, serveSmart in Options);
+  WebExpandFile(HomeDir, AContext.CurrentPath, aRequestDocument, False);
+  Expanded := WebExpandFile(HomeDir, AContext.CurrentPath, aDocument, serveSmart in Options);
 
   if not Expanded then
   begin
@@ -3675,8 +3665,8 @@ begin
     begin
       if (serveIndexRoot in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then
       begin
-        if StartsStr(HomeFolder, aDocument) then
-          ServeFolder(aDocument, Options, AContext)
+        if StartsStr(HomeDir, aDocument) then
+          ServeDir(aDocument, Options, AContext)
         else
           AContext.Response.RespondUnauthorized;
       end
@@ -3691,10 +3681,9 @@ begin
   IsDocument := FileExists(aDocument);
   IsDirectory := DirectoryExists(aDocument);
 
-  if ((AContext.CurrentPath = '') and not IsDocument) or
-     (not EndsDelimiter(aRequestDocument) and IsDirectory) then
+  if ((AContext.CurrentPath = '') and not IsDocument) or (not EndsDelimiter(aRequestDocument) and IsDirectory) then
   begin
-    AContext.Response.RespondRedirectTo(AContext.Request.Path); //TODO short it
+    AContext.Response.RespondRedirectTo(IncludeURLDelimiter(AContext.Request.Path)); //TODO short it
     Exit;
   end;
 
@@ -3713,8 +3702,8 @@ begin
 
     if IsDirectory and (serveIndex in Options) then
     begin
-      if StartsStr(HomeFolder, aDocument) then
-        ServeFolder(aDocument, Options, AContext)
+      if StartsStr(HomeDir, aDocument) then
+        ServeDir(aDocument, Options, AContext)
       else
         AContext.Response.RespondUnauthorized;
       Exit;
@@ -3725,7 +3714,7 @@ begin
     AContext.Response.RespondForbidden
   else if IsDocument then
   begin
-    if StartsText(HomeFolder, aDocument) then
+    if StartsText(HomeDir, aDocument) then
       AContext.Response.SendFile(aDocument)
     else
       AContext.Response.RespondUnauthorized;
@@ -3734,12 +3723,12 @@ begin
     Result := False;
 end;
 
-function TmnwElement.ServeFile(HomeFolder: string; Options: TmodServeFiles; const AContext: TmnwContext): Boolean;
+function TmnwElement.ServeFile(HomeDir: string; Options: TmodServeFiles; const AContext: TmnwContext): Boolean;
 begin
-  Result := ServeFile(HomeFolder, nil, Options, AContext);
+  Result := ServeFile(HomeDir, nil, Options, AContext);
 end;
 
-procedure TmnwElement.ServeFolder(APath: string; Options: TmodServeFiles; const AContext: TmnwContext);
+procedure TmnwElement.ServeDir(APath: string; Options: TmodServeFiles; const AContext: TmnwContext);
 var
   Files: TStringList;
 
@@ -3781,7 +3770,7 @@ begin
     AContext.Writer.CloseTag('head');
     AContext.Writer.OpenTag('body');
     AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.CurrentPath);
-    WriteSection('Folders', [efDirectory], '..');
+    WriteSection('Dirs', [efDirectory], '..');
     WriteSection('Files', [efFile]);
     AContext.Writer.CloseTag('body');
     AContext.Writer.CloseTag('html');
@@ -3792,7 +3781,7 @@ end;
 
 procedure TmnwSchema.DoRespond(const AContext: TmnwContext);
 begin
-  if not (serveEnabled in ServeFiles) or not ServeFile(GetHomeFolder, DefaultDocuments, ServeFiles, AContext) then    
+  if not (serveEnabled in ServeFiles) or not ServeFile(GetHomeDir, DefaultDocuments, ServeFiles, AContext) then    
     Render(AContext);
 end;
 
@@ -3898,8 +3887,8 @@ end;
 
 procedure TmnwSchema.Start;
 begin
-  if (HomeFolder = '') then
-    HomeFolder := Web.HomeFolder;
+  if (HomeDir = '') then
+    HomeDir := Web.HomeDir;
 end;
 
 function TmnwSchema.NewHandle: THandle;
@@ -3908,12 +3897,12 @@ begin
   Result := FNamingLastNumber;
 end;
 
-function TmnwSchema.GetHomeFolder: string;
+function TmnwSchema.GetHomeDir: string;
 begin
-  if HomeFolder = '' then
-    Result := Web.HomeFolder
+  if HomeDir = '' then
+    Result := Web.HomeDir
   else
-    Result := HomeFolder;
+    Result := HomeDir;
 end;
 
 procedure TmnwSchema.UpdateAttached;
@@ -4630,7 +4619,7 @@ end;
 procedure THTML.TAssets.DoRespond(const AContext: TmnwContext);
 begin
   inherited;
-  ServeFile(Schema.GetHomeFolder, [serveDefault], AContext);
+  ServeFile(Schema.GetHomeDir, [serveDefault], AContext);
 end;
 
 function THTML.TAssets.GetContentType(Route: string): string;
@@ -4643,7 +4632,7 @@ end;
 procedure THTML.TFolder.DoRespond(const AContext: TmnwContext);
 begin
   inherited;
-  ServeFile(HomeFolder, ServeFiles, AContext);
+  ServeFile(HomeDir, ServeFiles, AContext);
 end;
 
 function THTML.TFolder.GetContentType(Route: string): string;
@@ -4741,7 +4730,7 @@ end;
 function TmnwLibrary.CheckOffline(const Context: TmnwContext; const FileName: string): Boolean;
 begin
   with Context.Schema do
-    Result := (Web.OnlineFiles = olfOffline) or ((Web.OnlineFiles = olfSmart) and FileExists(IncludePathDelimiter(Context.GetAssetFolder) + FileName));
+    Result := (Web.OnlineFiles = olfOffline) or ((Web.OnlineFiles = olfSmart) and FileExists(IncludePathDelimiter(Context.GetAssetDir) + FileName));
 end;
 
 constructor TmnwLibrary.Create;
@@ -5172,7 +5161,7 @@ begin
     //yes always created, i maybe pass params that come from Query (after ? )
     if Request.RequestType = rtFormData then
     begin
-      aContext.Data := TmnMultipartData.Create(Request.Header.Field['Content-Type'].SubValue('boundary'), (Module as TmnwWebModule).WorkFolder + 'temp'); 
+      aContext.Data := TmnMultipartData.Create(Request.Header.Field['Content-Type'].SubValue('boundary'), (Module as TmnwWebModule).WorkDir + 'temp'); 
       (aContext.Data as TmnMultipartData).Read(Request.Stream);
     end
     else if Request.RequestType = rtJSONData then
@@ -5238,10 +5227,10 @@ begin
             TFile.Create(This, [], aLocalFile, aSource.Name)
           else
           {$endif}          
-          // From local folder
-          if FileExists(IncludePathDelimiter(HomeFolder) + aName) then          
+          // From local Dir
+          if FileExists(IncludePathDelimiter(HomeDir) + aName) then          
           begin
-            TFile.Create(This, [], IncludePathDelimiter(HomeFolder) + aName, aSource.Name)          
+            TFile.Create(This, [], IncludePathDelimiter(HomeDir) + aName, aSource.Name)          
           end
           else //From resources
             TFile.Create(This, [ftResource], StringReplace(aName, '.', '_', [rfReplaceAll]), aSource.Name);
@@ -5262,11 +5251,11 @@ begin
   else
   {$endif}
   begin
-    if FileExists(GetHomeFolder + 'web-elements.js') then
+    if FileExists(GetHomeDir + 'web-elements.js') then
     begin
       //Files
-      TFile.Create(This, [], GetHomeFolder + 'web-elements.js', 'web-elements.js');
-      TFile.Create(This, [], GetHomeFolder + 'web-elements.css', 'web-elements.css');
+      TFile.Create(This, [], GetHomeDir + 'web-elements.js', 'web-elements.js');
+      TFile.Create(This, [], GetHomeDir + 'web-elements.css', 'web-elements.css');
     end
     else
     begin 
@@ -5336,17 +5325,17 @@ procedure TmnwWebModule.Start;
 begin
   inherited;
 //  AssetsURL := '/' + AliasName + '/' + Web.Assets.Route;
-  if Web.HomeFolder = '' then
-    Web.HomeFolder := HomeFolder;
+  if Web.HomeDir = '' then
+    Web.HomeDir := HomeDir;
   if Web.Domain = '' then
     Web.Domain := Domain;
   if Web.Port = '' then
     Web.Port := Server.Port;
-  if Web.WorkFolder = '' then
-    Web.WorkFolder := WorkFolder;
+  if Web.WorkDir = '' then
+    Web.WorkDir := WorkDir;
   if Web.ModuleName = '' then
     Web.ModuleName := AliasName;
-  //Web.Assets.HomeFolder := Web.HomeFolder;
+  //Web.Assets.HomeDir := Web.HomeDir;
   Web.IsSecure := Server.IsSecure;
 
   Web.Start;
@@ -5649,7 +5638,7 @@ end;
 
 function TmnwContext.GetPath(e: TmnwElement): string;
 begin
-  Result := GetHomePath + StartURL(e.GetPath);
+  Result := GetBasePath + StartURL(e.GetPath);
 end;
 
 function TmnwContext.GetPort: string;
@@ -5694,14 +5683,14 @@ begin
   Renderer.Libraries.Use(ALibraryClass, Priority);
 end;
 
-function TmnwContext.GetHomePath: string;
+function TmnwContext.GetBasePath: string;
 begin
-  Result := StartURL(Schema.Web.ModuleName + StartURL(Request.NameSpace));
+  Result := RemoveEndURLDelimiter(StartURL(Request.BasePath));
 end;
 
 function TmnwContext.GetHomeURL: string;
 begin
-  Result := GetHostURL + GetHomePath;
+  Result := GetHostURL + GetBasePath;
 end;
 
 function TmnwContext.GetHostURL: string;
@@ -5716,7 +5705,7 @@ begin
   else if Location.Where = toElement then
     Result := EndURL(GetPath(AElement))
   else if Location.Where = toHome then
-    Result := EndURL(GetHomePath)
+    Result := EndURL(GetBasePath)
   else if Location.Where = toDefault then
     Result := GetDefaultPath;
     
@@ -5734,12 +5723,12 @@ begin
   Result := GetHomeURL + StartURL(e.GetPath);
 end;
 
-function TmnwContext.GetAssetFolder: string;
+function TmnwContext.GetAssetDir: string;
 begin
   if Schema.Web.Assets <> nil then
-    Result := Schema.Web.Assets.HomeFolder
+    Result := Schema.Web.Assets.HomeDir
   else
-    Result := Schema.Web.HomeFolder;
+    Result := Schema.Web.HomeDir;
 end;
 
 function TmnwContext.GetAssetsPath: string;
@@ -6060,7 +6049,7 @@ begin
     Result.LocalFile := Result.Name; //Fix local file
   end
   else  
-    Result.Name := SubStr(OnlineFile, PathDelimiters, -1);
+    Result.Name := SubStr(LocalFile, PathDelimiters, -1);
   
   Result.SourceType := SourceType;
   Result.Where := Where;
@@ -6419,7 +6408,7 @@ begin
   if Cookie <> nil then
   begin
     Cookie.Domain := AContext.Domain;
-    Cookie.Path := AContext.GetHomePath;
+    Cookie.Path := AContext.GetBasePath;
     Cookie.Age := 365 * 24 * 60 * 60; // 1 year
   end;
 

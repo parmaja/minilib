@@ -25,7 +25,7 @@
               ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
   GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top HTTP/1.1
   └┬┘ └────┬─┘└───────────┬──────────────┘└───────┬───────┘ └───────────┬─────────────┘└┬─┘ └───┬──┘
-  method Scheme          Authority          Path/Directory           query         fragment   protocol
+  method Scheme          Authority               Path                Query         Fragment   Protocol
   └┬┘                                                       └───────────┬─────────────┘  
   Command                                                      Arguments/Params
 
@@ -263,10 +263,14 @@ type
 
   TmnRoute = class(TStringList)
   private
-    function GetRoute(vIndex: Integer): string;
+    FIsRooted: Boolean;
+    function GetRoute(vIndex: Integer): string;    
   public
 //    Index: Integer; TODO
-    property Route[vIndex: Integer]: string read GetRoute; default;
+    //is started with / when parsed
+    function ToPath: string;
+    property IsRooted: Boolean read FIsRooted;
+    property Route[vIndex: Integer]: string read GetRoute; default;    
   end;
 
   TmodOptionValue = (ovUndefined, ovNo, ovYes);
@@ -326,11 +330,11 @@ type
     FMode: TStreamMode;
     FNameSpace: string;
     FRoute: TmnRoute;
-    FDirectory: String;
     FCharset: string;
     FContentType: string;
     
     FCurrentPath: String;
+    FBasePath: String;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
     function GetConnected: Boolean;
@@ -371,11 +375,11 @@ type
     property IsSecure: Boolean read Info.IsSecure write Info.IsSecure;
 
     //Current Path is changable while passing it to modules or submodules/schemas/elements
-    property CurrentPath: String read FCurrentPath write FCurrentPath;
+    property CurrentPath: String read FCurrentPath;
+    property BasePath: String read FBasePath;
     property Route: TmnRoute read FRoute write FRoute;
 
     property NameSpace: string read FNameSpace write FNameSpace;
-    property Directory: String read FDirectory write FDirectory;
     
     property Params: TmnFields read FParams; 
     property Param[Index: string]: TmnField read GetParam; default; 
@@ -383,7 +387,7 @@ type
     function CollectURI: string;
     //Delete Route[0] and CurrentPath
     // /p1/p2/   --> /p2/
-    function PopSubPath: string;
+    function PopSubPath(const CheckValue: string = ''): string;
     //
     property ChunkedProxy: TmnChunkStreamProxy read FChunkedProxy write SetChunkedProxy;
 
@@ -544,8 +548,8 @@ type
   TwebResponse = class(TmodResponse)
   private
     FRedirect: string;
-    FHomeFolder: string;
-    FIsResponded: Boolean; //Document root folder
+    FHomeDir: string;
+    FIsResponded: Boolean; //Document root Dir
     //FCompressed: Boolean;
     function GetRequest: TwebRequest;
     procedure SetIsResponded(const Value: Boolean);
@@ -560,8 +564,8 @@ type
     function StatusResult: string;
     function StatusVersion: string;
 
-    //Document root folder
-    property HomeFolder: string read FHomeFolder write FHomeFolder;
+    //Document root Dir
+    property HomeDir: string read FHomeDir write FHomeDir;
 
     property Request: TwebRequest read GetRequest;
     property Redirect: string read FRedirect write FRedirect; //Relocation it to another url
@@ -922,8 +926,8 @@ function GetSubPath(const Path: string): string;
 function DeleteSubPath(const SubKey, Path: string): string;
 function StartsSubPath(const SubKey, Path: string): Boolean;
 
-function ComposeHttpURL(IsSecure: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
-function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
+function ComposeHttpURL(IsSecure: Boolean; const DomainName: string; const Port: string = ''; const Path: string = ''): string; overload;
+function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Path: string = ''): string; overload;
 
 function HashWebSocketKey(const key: string): string;
 
@@ -971,23 +975,23 @@ begin
   Result := FRegisteredModules;
 end;
 
-function ComposeHttpURL(IsSecure: Boolean; const DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
+function ComposeHttpURL(IsSecure: Boolean; const DomainName: string; const Port: string = ''; const Path: string = ''): string; overload;
 begin
   if IsSecure then
-    Result := ComposeHttpURL('https', DomainName, Port, Directory)
+    Result := ComposeHttpURL('https', DomainName, Port, Path)
   else
-    Result := ComposeHttpURL('http', DomainName, Port, Directory);
+    Result := ComposeHttpURL('http', DomainName, Port, Path);
 end;
 
-function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Directory: string = ''): string; overload;
+function ComposeHttpURL(const Protocol, DomainName: string; const Port: string = ''; const Path: string = ''): string; overload;
 begin
   Result := Protocol + '://' + DomainName;
 
   if (Port<>'') and (((Protocol='https') and (Port<>'443')) or ((Protocol='http') and (Port<>'80'))) then
     Result := Result + ':' + Port;
 
-  if Directory <> '' then
-    Result := Result + '/' + Directory;
+  if Path <> '' then
+    Result := Result + '/' + Path;
 end;
 
 //Writen by GLM 5.2
@@ -1280,9 +1284,17 @@ end;
 function DeleteSubPath(const SubKey, Path: string): string;
 begin
   if StartsText(URLDelimiter, Path) then
+  begin
+    if Copy(Path, 2, Length(SubKey)) <> SubKey then
+      raise Exception.Create('Can not DeleteSubPath subkey is not match ' + SubKey);    
     Result := Copy(Path, Length(URLDelimiter) + Length(SubKey) + 1, MaxInt)
+  end
   else
+  begin
+    if Copy(Path, 1, Length(SubKey)) <> SubKey then
+      raise Exception.Create('Can not DeleteSubPath subkey is not match ' + SubKey);    
     Result := Copy(Path, Length(SubKey) + 1, MaxInt);
+  end;
 end;
 
 function StartsSubPath(const SubKey, Path: string): Boolean;
@@ -1716,11 +1728,15 @@ begin
   FParams := TmnFields.Create;
 end;
 
-function TmodRequest.PopSubPath: string;
+function TmodRequest.PopSubPath(const CheckValue: string): string;
 begin
   Result := Route[0];
-  FCurrentPath := DeleteSubPath(Result, FCurrentPath);
+  if (CheckValue <> '') and not SameText(Result, CheckValue) then
+    raise Exception.Create('PopSubPath dosnt match value');  
   Route.Delete(0);
+  Route.FIsRooted := False;
+  FCurrentPath := DeleteSubPath(Result, FCurrentPath);
+  FBasePath := AddEndURLDelimiter(FBasePath) + AddEndURLDelimiter(Result);
 end;
 
 destructor TmodRequest.Destroy;
@@ -2436,7 +2452,8 @@ begin
   ARequest.Command := ARequest.Method; //TODO move to Matched
   if (AliasName <> '') then
   begin
-    ARequest.CurrentPath := DeleteSubPath(ARequest.Route[0], ARequest.CurrentPath);
+//    ARequest.CurrentPath := DeleteSubPath(ARequest.Route[0], ARequest.CurrentPath);
+    ARequest.PopSubPath(AliasName);
     //TODO delete route[0]  or use PopSubPath
   end;    
 end;
@@ -2671,12 +2688,13 @@ begin
   ParseHttpHead(AHead, ARequest.Info.Method, ARequest.Info.URI, ARequest.Info.Protocol);
   ParseURI(ARequest.URI, ARequest.Info.Path, ARequest.Info.Query);
 
+  ARequest.Route.FIsRooted := StartsDelimiter(ARequest.Path);
   // Remove leading slash from Path, unless Path is empty or just '/'
   if (ARequest.Path <> '') and (ARequest.Path <> '/') and StartsText(URLDelimiter, ARequest.Path) then
-    ARequest.CurrentPath := Copy(ARequest.Path, 2, MaxInt)
+    ARequest.FCurrentPath := Copy(ARequest.Path, 2, MaxInt)
   else
-    ARequest.CurrentPath := ARequest.Path;
-  StrToStrings(ARequest.FCurrentPath, ARequest.Route, ['/']);
+    ARequest.FCurrentPath := ARequest.Path;
+  StrToStrings(ARequest.CurrentPath, ARequest.Route, ['/']);
 end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;
@@ -3216,6 +3234,14 @@ begin
     hrServiceUnavailable: Result := Result + '503 Service Unavailable';
     hrCustom: Result := '';
   end;
+end;
+
+function TmnRoute.ToPath: string;
+begin
+  if IsRooted then  
+    Result := AddStartURLDelimiter(DelimitedText)
+  else
+    Result := DelimitedText
 end;
 
 { TmodHeader }

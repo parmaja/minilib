@@ -262,6 +262,7 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
 function CorrectPath(const Path: string): string;
 
 //* Split at level depth of folders/directory, ignoring first \ or last one
+procedure SplitPath(Path: string; out Left: string; out Right: string; Index: Integer); overload;
 function SplitPath(Path: string; out Right: string; Index: Integer): string; overload;
 function SplitPath(Path: string; Index: Integer): string; overload;
 function SubPath(Path: string; Index: Integer): string; overload;
@@ -275,7 +276,7 @@ function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): st
 function IncludePathDelimiter(const S: string; Force: Boolean = False): string;
 function ExcludePathDelimiter(Path: string): string;
 
-//This not check if S = ''
+//This not check if S = '' or use Add...
 function IncludeURLDelimiter(const S: string): string; //deprecated 'AddEndURLDelimiter';
 function IsURLDelimiter(const S: string): Boolean;
 
@@ -2304,6 +2305,11 @@ end;
 function SplitPath(Path: string; out Right: string; Index: Integer): string; overload;
 begin
   SplitStr(Path, Index, ['\', '/'], Result, Right);
+end;
+
+procedure SplitPath(Path: string; out Left: string; out Right: string; Index: Integer); overload;
+begin
+  SplitStr(Path, Index, ['\', '/'], Left, Right);
 end;
 
 function SplitPath(Path: string; Index: Integer): string; overload;
