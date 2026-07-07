@@ -32,7 +32,6 @@ type
     MaxOfThreadsLabel: TLabel;
     NumberOfThreads: TLabel;
     NumberOfThreadsLbl: TLabel;
-    Button1: TButton;
     UseSSLChk: TCheckBox;
     Button2: TButton;
     DocAliasEdit: TEdit;
@@ -52,10 +51,9 @@ type
     procedure StayOnTopChkClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
     procedure OpenBtnClick(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     FMax:Integer;
     HttpServer: TmodWebServer;
@@ -66,6 +64,8 @@ type
     procedure HttpServerAfterClose(Sender: TObject);
     procedure HttpServerChanged(Listener: TmnListener);
     procedure HttpServerLog(const S: string);
+    procedure Cert2;
+    procedure TestImage;
   public
   end;
 
@@ -95,13 +95,13 @@ end;
 
 procedure TMain.HttpServerBeforeOpen(Sender: TObject);
 var
-  aHomePath: string;
+  aHomeDir: string;
   aDocModule: TmodWebModule;
   aHomeModule: THomeModule;
 begin
-  aHomePath := HomePathEdit.Text;
-  if (LeftStr(aHomePath, 2)='.\') or (LeftStr(aHomePath, 2)='./') then
-    aHomePath := ExtractFilePath(Application.ExeName) + Copy(aHomePath, 3, MaxInt);
+  aHomeDir := HomePathEdit.Text;
+  if (LeftStr(aHomeDir, 2)='.\') or (LeftStr(aHomeDir, 2)='./') then
+    aHomeDir := ExtractFilePath(Application.ExeName) + Copy(aHomeDir, 3, MaxInt);
 
   HttpServer.Bind := BindEdit.Text;
   HttpServer.Port := PortEdit.Text;
@@ -116,7 +116,7 @@ begin
 
   if aDocModule <> nil then
   begin
-    aDocModule.HomeFolder := aHomePath;
+    aDocModule.HomeDir := aHomeDir;
     aDocModule.AliasName := DocAliasEdit.Text;
     (aDocModule as TmodWebFileModule).ServeFiles:= [serveEnabled, serveIndex, serveDefault, serveSmart];
 
@@ -138,18 +138,18 @@ begin
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := HomeAliasEdit.Text;
-    aHomeModule.Web.AppFolder := ExtractFilePath(Application.ExeName);
+    aHomeModule.Web.AppDir := ExtractFilePath(Application.ExeName);
 
 
 //    aHomeModule.Domain := 'localhost';
 //    aHomeModule.Port := HttpServer.Port;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
-    aHomeModule.Web.HomeFolder := IncludePathDelimiter(aHomePath);
-    aHomeModule.HomeFolder := IncludePathDelimiter(aHomePath);
-    aHomeModule.WorkFolder := aHomeModule.Web.AppFolder;
+    aHomeModule.Web.HomeDir := IncludePathDelimiter(aHomeDir);
+    aHomeModule.HomeDir := IncludePathDelimiter(aHomeDir);
+    aHomeModule.WorkDir := aHomeModule.Web.AppDir;
     aHomeModule.Web.CompactMode := False;
-    ForceDirectories(aHomeModule.WorkFolder + 'cache');
-    ForceDirectories(aHomeModule.WorkFolder + 'temp');
+    ForceDirectories(aHomeModule.WorkDir + 'cache');
+    ForceDirectories(aHomeModule.WorkDir + 'temp');
 
     if KeepAliveChk.Checked then
       aHomeModule.UseKeepAlive := ovYes
@@ -195,7 +195,8 @@ begin
   Result := False;
 end;
 
-procedure TMain.Button1Click(Sender: TObject);
+
+procedure TMain.Cert2;
 var
   s: TsslConfig;
   aCer, aCsr, aPubKey, aPrvKey: string;
@@ -238,7 +239,7 @@ begin
   end;
 end;
 
-procedure TMain.Button2Click(Sender: TObject);
+procedure TMain.TestImage;
 //var
 //  HttpClient: TmnHttpClient;
 //  MemoryStream: TMemoryStream;
@@ -259,6 +260,14 @@ begin
   end;
   //LogEdit.Lines.Add('Finished');
   *)
+end;
+
+procedure TMain.Button2Click(Sender: TObject);
+begin
+  if UseSSLChk.Checked then
+    ShellExecute(Handle, 'Open', PWideChar('https://localhost:'+PortEdit.Text+'/home/'), nil, nil, 0)
+  else
+    ShellExecute(Handle, 'Open', PWideChar('http://localhost:'+PortEdit.Text+'/home/'), nil, nil, 0);
 end;
 
 procedure TMain.Button4Click(Sender: TObject);

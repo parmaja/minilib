@@ -14,7 +14,6 @@ uses
 	mnLogs, mnWebElements, mnBootstraps;
 
 type
-
   { TmySchema }
 
   TmySchema = class abstract(THTML)
@@ -22,9 +21,18 @@ type
     procedure DoCompose(const AContext: TmnwContext); override;
   end;
 
+  THomeSchema = class(TmySchema)
+  private
+    procedure DoRespondHeader(const AContext: TmnwContext);
+  public
+  protected
+    procedure DoCompose(const AContext: TmnwContext); override;
+  public
+  end;
+  
   { TWelcomeSchema }
 
-  TWelcomeSchema = class(TmySchema)
+  TDemo1Schema = class(TmySchema)
   private
   protected
     Input1: THTML.TInput;
@@ -57,9 +65,9 @@ type
   public
   end;
 
-  { TDemoSchema }
+  { TDemo2Schema }
 
-  TDemoSchema = class(THTML)
+  TDemo2Schema = class(THTML)
   private
   public
   protected
@@ -164,7 +172,7 @@ end;
 procedure TMyButton.DoExecute;
 begin
   inherited;
-  with (Schema as TWelcomeSchema) do
+  with (Schema as TDemo1Schema) do
   begin
     log.WriteLn('Clicked')
   end;
@@ -202,7 +210,7 @@ begin
   inherited;
 end;
 
-procedure TWelcomeSchema.AttachedMessage(const s: string);
+procedure TDemo1Schema.AttachedMessage(const s: string);
 begin
   inherited;
   Attachments.SendMessage('ECHO: '+s);
@@ -210,12 +218,12 @@ end;
 
 { TWellcomeSchema }
 
-procedure TWelcomeSchema.DoAccept(var AContext: TmnwContext; var Resume: Boolean);
+procedure TDemo1Schema.DoAccept(var AContext: TmnwContext; var Resume: Boolean);
 begin
   Resume := True;
 end;
 
-procedure TWelcomeSchema.DoCompose(const AContext: TmnwContext);
+procedure TDemo1Schema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   RefreshInterval := 5;
@@ -276,7 +284,7 @@ begin
           begin
             Name := 'logo';
             Route := 'logo';
-            LoadFromFile(IncludePathDelimiter(Schema.GetHomeFolder) + 'logo.png');
+            LoadFromFile(IncludePathDelimiter(Schema.GetHomeDir) + 'logo.png');
           end;
 
 {          with TImage.Create(This) do
@@ -346,7 +354,7 @@ begin
   end;
 end;
 
-procedure TWelcomeSchema.DoPrepare;
+procedure TDemo1Schema.DoPrepare;
 begin
   inherited;
 
@@ -501,9 +509,9 @@ begin
   end;
 end;
 
-{ TDemoSchema }
+{ TDemo2Schema }
 
-procedure TDemoSchema.DoRespondHeader(const AContext: TmnwContext);
+procedure TDemo2Schema.DoRespondHeader(const AContext: TmnwContext);
 var
   aUsername, aPassword: string;
 begin
@@ -520,7 +528,7 @@ begin
   inherited;
 end;
 
-procedure TDemoSchema.DoCompose(const AContext: TmnwContext);
+procedure TDemo2Schema.DoCompose(const AContext: TmnwContext);
 var
   i: Integer;
 begin
@@ -762,7 +770,17 @@ begin
     with TPanel.Create(this) do    
     begin
       Route := 'panel1';
-      TCode.Create(This, 'Context.Route: ' + AContext.CurrentPath);
+      TCode.Create(This, 'Context.CurrentPath: ' + AContext.CurrentPath);
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.Request.Path: ' + AContext.Request.Path);
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.Request.CurrentPath: ' + AContext.Request.CurrentPath);
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.Request.BasePath: ' + AContext.Request.BasePath);
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.Request.NameSpace: ' + AContext.Request.NameSpace);
+      TBreak.Create(This);
+      TCode.Create(This, 'Context.Request.NameSpace: ' + AContext.Request.NameSpace);
       TBreak.Create(This);
       TCode.Create(This, 'e.GetPath: ' + This.GetPath);
       TBreak.Create(This);
@@ -809,12 +827,12 @@ procedure TFilesSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
-  HomeFolder := IncludePathDelimiter(Web.HomeFolder) + 'files';
+  HomeDir := IncludePathDelimiter(Web.HomeDir) + 'files';
   with TFolder.Create(This) do
   begin
     ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
-    Route := 'folder';
-    HomeFolder := ExpandFileName(Web.HomeFolder+ 'smilies');
+    Route := 'Dir';
+    HomeDir := ExpandFileName(Web.HomeDir+ 'smilies');
   end;
 end;
 
@@ -828,7 +846,7 @@ begin
   with TFile.Create(This) do
   begin
     Route := 'echo';
-    FileName := IncludePathDelimiter(Web.HomeFolder) + 'ws.html';
+    FileName := IncludePathDelimiter(Web.HomeDir) + 'ws.html';
   end;
 end;
 
@@ -837,9 +855,10 @@ end;
 procedure THomeModule.InitItems;
 begin
   inherited;
-  Web.RegisterSchema('', TWelcomeSchema);
+  Web.RegisterSchema('', THomeSchema);
   Web.RegisterSchema('login', TLoginSchema);
-  Web.RegisterSchema('demo', TDemoSchema);
+  Web.RegisterSchema('demo1', TDemo1Schema);
+  Web.RegisterSchema('demo2', TDemo2Schema);
   Web.RegisterSchema('info', TInfoSchema);
   Web.RegisterSchema('files', TFilesSchema);
   Web.RegisterSchema('ws', TWSShema);
@@ -852,8 +871,37 @@ begin
   with Web.Assets do
   begin
     //Web.OnlineFiles:= olfSmart;
-    LogoFile := HomeFolder + 'logo.png';
+    LogoFile := HomeDir + 'logo.png';
   end;
+end;
+
+{ THomeSchema }
+
+procedure THomeSchema.DoCompose(const AContext: TmnwContext);
+begin
+  inherited;
+  with Document.Body.Main do
+  begin
+    with TCard.Create(This) do
+    begin
+      TLink.Create(This, AContext.GetHomeURL + '/login', 'login');
+      TLink.Create(This, AContext.GetHomeURL + '/info', 'info');
+      TLink.Create(This, AContext.GetHomeURL + '/demo1', 'demo1');
+      TLink.Create(This, AContext.GetHomeURL + '/demo2', 'demo2');
+      TLink.Create(This, AContext.GetHomeURL + '/files', 'files');
+      TLink.Create(This, AContext.GetHomeURL + '/info/sub1', 'test params info/sub1');
+      TLink.Create(This, AContext.GetHomeURL + '/info/sub2/', 'test params info/sub2/');
+      TLink.Create(This, AContext.GetHomeURL + '/info/sub1/sub2/', 'test params info/sub1/sub2');
+      TLink.Create(This, AContext.GetHomeURL + '/files/sub1', 'test redirect files/sub1');
+      TLink.Create(This, AContext.GetHomeURL + '/files/sub1/sub2', 'test redirect files/sub1/sub2');
+    end;
+  end;
+end;
+
+procedure THomeSchema.DoRespondHeader(const AContext: TmnwContext);
+begin
+  inherited;
+
 end;
 
 initialization  

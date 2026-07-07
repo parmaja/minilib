@@ -141,7 +141,7 @@ object Main: TMain
       Left = 233
       Top = 6
       Width = 60
-      Height = 26
+      Height = 23
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -166,7 +166,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 13
+      Height = 23
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -179,13 +179,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object Label3: TLabel
       AlignWithMargins = True
       Left = 101
       Top = 6
       Width = 20
-      Height = 13
+      Height = 23
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -198,13 +199,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object MaxOfThreadsLabel: TLabel
       AlignWithMargins = True
       Left = 127
       Top = 6
       Width = 60
-      Height = 26
+      Height = 23
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -229,7 +231,7 @@ object Main: TMain
       Left = 35
       Top = 6
       Width = 60
-      Height = 26
+      Height = 23
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -252,7 +254,7 @@ object Main: TMain
       Left = 3
       Top = 3
       Width = 29
-      Height = 13
+      Height = 29
       Align = alLeft
       Caption = 'Count'
       Color = clBtnFace
@@ -265,18 +267,8 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
-  end
-  object Button1: TButton
-    Left = 299
-    Top = 58
-    Width = 72
-    Height = 22
-    Anchors = [akTop, akRight]
-    Caption = 'MakeCert2'
-    Default = True
-    TabOrder = 10
-    OnClick = Button1Click
   end
   object UseSSLChk: TCheckBox
     Left = 8
@@ -284,17 +276,17 @@ object Main: TMain
     Width = 97
     Height = 17
     Caption = 'Use SSL'
-    TabOrder = 11
+    TabOrder = 10
     OnClick = StayOnTopChkClick
   end
   object Button2: TButton
-    Left = 299
-    Top = 86
-    Width = 72
+    Left = 326
+    Top = 60
+    Width = 123
     Height = 22
     Anchors = [akTop, akRight]
-    Caption = 'Test'
-    TabOrder = 12
+    Caption = 'WebElements'
+    TabOrder = 11
     OnClick = Button2Click
   end
   object DocAliasEdit: TEdit
@@ -314,7 +306,7 @@ object Main: TMain
     Width = 97
     Height = 17
     Caption = 'Keep Alive'
-    TabOrder = 13
+    TabOrder = 12
     OnClick = StayOnTopChkClick
   end
   object CompressChk: TCheckBox
@@ -323,7 +315,7 @@ object Main: TMain
     Width = 97
     Height = 17
     Caption = 'Compress'
-    TabOrder = 14
+    TabOrder = 13
     OnClick = StayOnTopChkClick
   end
   object AutoOpenChk: TCheckBox
@@ -333,7 +325,7 @@ object Main: TMain
     Height = 17
     Anchors = [akTop, akRight]
     Caption = 'Auto Open URL'
-    TabOrder = 15
+    TabOrder = 14
     OnClick = StayOnTopChkClick
   end
   object AutoRunChk: TCheckBox
@@ -342,27 +334,27 @@ object Main: TMain
     Width = 97
     Height = 17
     Caption = 'AutoRun'
-    TabOrder = 16
+    TabOrder = 15
     OnClick = StayOnTopChkClick
   end
   object OpenBtn: TButton
-    Left = 377
+    Left = 326
+    Top = 86
+    Width = 123
+    Height = 22
+    Anchors = [akTop, akRight]
+    Caption = 'Open URL'
+    TabOrder = 16
+    OnClick = OpenBtnClick
+  end
+  object Button4: TButton
+    Left = 248
     Top = 86
     Width = 72
     Height = 22
     Anchors = [akTop, akRight]
-    Caption = 'Open URL'
-    TabOrder = 17
-    OnClick = OpenBtnClick
-  end
-  object Button4: TButton
-    Left = 377
-    Top = 58
-    Width = 72
-    Height = 22
-    Anchors = [akTop, akRight]
     Caption = 'MakeCert'
-    TabOrder = 18
+    TabOrder = 17
     OnClick = Button4Click
   end
   object HomeAliasEdit: TEdit
