@@ -467,7 +467,7 @@ begin
   if (AliasName <> '') then
   begin
     ARequest.Path := DeleteSubPath(ARequest.Route[0], ARequest.Path);
-  end;
+end;
 end;
 
 function TmodWebModule.GetDefaultURL: string;

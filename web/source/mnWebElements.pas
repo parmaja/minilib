@@ -371,7 +371,7 @@ type
     //
     Data: TDON_Element;
     // For
-    RoutePath: string;   
+    CurrentPath: string;   
 
     Language: string;
     Direction: TDirection;    
@@ -3062,7 +3062,7 @@ begin
   Result := False;
   aRoutes := TStringList.Create;
   try
-    StrToStrings(AContext.RoutePath, aRoutes, [URLDelimiter]);
+    StrToStrings(AContext.CurrentPath, aRoutes, [URLDelimiter]);
     if (aRoutes.Count > 0) then
       aSchemaName := aRoutes[0]
     else
@@ -3109,7 +3109,7 @@ begin
       if (aRoutes.Count > 0) then
       begin
         aRoutes.Delete(0);
-        AContext.RoutePath := DeleteSubPath(aSchemaName, AContext.RoutePath);
+        AContext.CurrentPath := DeleteSubPath(aSchemaName, AContext.CurrentPath);
       end;
     end;
 
@@ -3196,7 +3196,7 @@ begin
                 begin
                   AContext.Element := aElement;
                   Result := True;
-                  AContext.RoutePath := DeleteSubPath(aRoute, AContext.RoutePath);
+                  AContext.CurrentPath := DeleteSubPath(aRoute, AContext.CurrentPath);
                 end;
               end;
               inc(i);
@@ -3235,10 +3235,10 @@ begin
       //* If you call schema name without ending by /
       if not AContext.Response.IsResponded then
       begin
-        if (AContext.Element = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.RoutePath = '') then
+        if (AContext.Element = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.CurrentPath = '') then
           AContext.Response.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)), True)
         else
-          AContext.Response.ContentType := AContext.Element.GetContentType(AContext.RoutePath);
+          AContext.Response.ContentType := AContext.Element.GetContentType(AContext.CurrentPath);
       end;
 
       //* Resume maybe come false in action
@@ -3312,7 +3312,7 @@ begin
   if AContext.Schema <> nil then
   begin
     if AContext.Schema.Interactive or (schemaAttach in AContext.Schema.GetCapabilities) then    
-      AContext.Schema.Attach(AContext.RoutePath, Sender, AStream)
+      AContext.Schema.Attach(AContext.CurrentPath, Sender, AStream)
   end
 end;
 
@@ -3642,12 +3642,12 @@ begin
     Exit;
   end;
 
-  WebExpandFile(HomeFolder, AContext.RoutePath, aRequestDocument, False);
-  Expanded := WebExpandFile(HomeFolder, AContext.RoutePath, aDocument, serveSmart in Options);
+  WebExpandFile(HomeFolder, AContext.CurrentPath, aRequestDocument, False);
+  Expanded := WebExpandFile(HomeFolder, AContext.CurrentPath, aDocument, serveSmart in Options);
 
   if not Expanded then
   begin
-    if (AContext.RoutePath = '') or IsStrInArray(AContext.RoutePath, ['\', '/']) then
+    if (AContext.CurrentPath = '') or IsStrInArray(AContext.CurrentPath, ['\', '/']) then
     begin
       if (serveIndexRoot in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then
       begin
@@ -3667,7 +3667,7 @@ begin
   IsDocument := FileExists(aDocument);
   IsDirectory := DirectoryExists(aDocument);
 
-  if ((AContext.RoutePath = '') and not IsDocument) or
+  if ((AContext.CurrentPath = '') and not IsDocument) or
      (not EndsDelimiter(aRequestDocument) and IsDirectory) then
   begin
     AContext.Response.RespondRedirectTo(AContext.Request.Address); //TODO short it
@@ -3756,7 +3756,7 @@ begin
     AContext.Writer.AddTag('style', '', 'body { font-family: monospace; }');
     AContext.Writer.CloseTag('head');
     AContext.Writer.OpenTag('body');
-    AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.RoutePath);
+    AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.CurrentPath);
     WriteSection('Folders', [efDirectory], '..');
     WriteSection('Files', [efFile]);
     AContext.Writer.CloseTag('body');
@@ -5113,7 +5113,7 @@ begin
   AtomicIncrement(RendererID);
   InitMemory(aContext, SizeOf(aContext));
 
-  aContext.RoutePath := DeleteSubPath('', Request.Path);
+  aContext.CurrentPath := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
 
   aContext.FResponse := Response;

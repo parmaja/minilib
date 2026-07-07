@@ -762,7 +762,7 @@ begin
     with TPanel.Create(this) do    
     begin
       Route := 'panel1';
-      TCode.Create(This, 'Context.Route: ' + AContext.Route);
+      TCode.Create(This, 'Context.Route: ' + AContext.CurrentPath);
       TBreak.Create(This);
       TCode.Create(This, 'e.GetPath: ' + This.GetPath);
       TBreak.Create(This);
@@ -786,7 +786,7 @@ begin
       Route := 'panel2'; 
       OnRespond := procedure (const AContext: TmnwContext)
       begin
-        AContext.Response.RespondText('Hello World'+#13 + AContext.Route);
+        AContext.Response.RespondText('Hello World'+#13 + AContext.CurrentPath);
       end;
     end;
   end;
