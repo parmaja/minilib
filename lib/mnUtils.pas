@@ -266,12 +266,11 @@ function SplitPath(Path: string; out Right: string; Index: Integer): string; ove
 function SplitPath(Path: string; Index: Integer): string; overload;
 function SubPath(Path: string; Index: Integer): string; overload;
 
-//Remove last subdirectory
+//Remove last subdirectory /p1/p2/p3 return /p1/p2/
 //if lasted by path delimiator remove it
 function TruncPath(const Path: string; Index: Integer): string; overload;
 
 function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): string;
-
 //IncludePathDelimiter add the Delimiter when S not = ''
 function IncludePathDelimiter(const S: string; Force: Boolean = False): string;
 function ExcludePathDelimiter(Path: string): string;
@@ -280,17 +279,20 @@ function ExcludePathDelimiter(Path: string): string;
 function IncludeURLDelimiter(const S: string): string; //deprecated 'AddEndURLDelimiter';
 function IsURLDelimiter(const S: string): Boolean;
 
+function StartsDelimiter(const vFileName: string): Boolean;
+function EndsDelimiter(const vFileName: string): Boolean;
+
 //If empty do not add
 function AddStartDelimiter(const Path: string; Delimiter: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 function AddEndDelimiter(const Path: string; Delimiter: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 function RemoveEndDelimiter(const Path: string; Delimiter: string): string;
+function RemoveStartDelimiter(const Path: string; Delimiter: string): string;
 
 //If empty do not add
 function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
 function AddEndURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
-
-function StartsDelimiter(const vFileName: string): Boolean;
-function EndsDelimiter(const vFileName: string): Boolean;
+function RemoveEndURLDelimiter(const Path: string): string;
+function RemoveStartURLDelimiter(const Path: string): string;
 
 function EncloseStr(const S, Left, Right: string): string;
 function UncloseStr(const S, Left, Right: string): string;
@@ -2369,6 +2371,22 @@ begin
   Result := AddEndDelimiter(Path, URLDelimiter, Force);
 end;
 
+function RemoveEndURLDelimiter(const Path: string): string;
+begin
+  if EndsDelimiter(Path) then
+    Result := Copy(Path, 1, Length(Path) - 1)
+  else
+    Result := Path
+end;
+
+function RemoveStartURLDelimiter(const Path: string): string;
+begin
+  if StartsDelimiter(Path) then
+    Result := Copy(Path, 2, MaxInt)
+  else
+    Result := Path
+end;
+
 function AddStartDelimiter(const Path: string; Delimiter: string; Force: Boolean): string;
 begin
   if Force or (Path <> '') then
@@ -2399,6 +2417,14 @@ function RemoveEndDelimiter(const Path: string; Delimiter: string): string;
 begin
   if EndsStr(Delimiter, Path) then
     Result := Copy(Path, 1, Length(Path) - 1)
+  else
+    Result := Path
+end;
+
+function RemoveStartDelimiter(const Path: string; Delimiter: string): string;
+begin
+  if StartsStr(Delimiter, Path) then
+    Result := Copy(Path, 2, MaxInt)
   else
     Result := Path
 end;

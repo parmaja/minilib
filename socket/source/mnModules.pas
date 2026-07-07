@@ -250,10 +250,10 @@ type
     //from raw :) raw = Method + URI + Protocol
     Method: string;
     Protocol: string;
-    URI: string;
 
-    //from URI :) URI = Address + Query
-    Address: string;
+    URI: string;
+    //from URI :) URI = Path + Query
+    Path: string;
     Query: string;
 
     Command: String;
@@ -265,6 +265,7 @@ type
   private
     function GetRoute(vIndex: Integer): string;
   public
+//    Index: Integer; TODO
     property Route[vIndex: Integer]: string read GetRoute; default;
   end;
 
@@ -317,9 +318,7 @@ type
   TmodRequest = class(TmodCommunicate)
   private
     FParams: TmnFields;
-    FPath: String;
     FRequestType: TRequestType;
-    //FChunked: Boolean;
     FProtcolClass: TmnProtcolStreamProxyClass;
     FProtcolProxy: TmnProtcolStreamProxy;
     FChunkedProxy: TmnChunkStreamProxy;
@@ -330,7 +329,8 @@ type
     FDirectory: String;
     FCharset: string;
     FContentType: string;
-    FRawPath: string;
+    
+    FCurrentPath: String;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
     function GetConnected: Boolean;
@@ -355,31 +355,34 @@ type
     function ReadString(out s: string; Count: Integer): Boolean; overload;
     function ReadLine(out s: string): Boolean;
 
-    property Raw: String read Info.Raw write Info.Raw;
+    property Raw: String read Info.Raw;
 
     //from raw
-    property Method: string read Info.Method write Info.Method;
-    property URI: string read Info.URI write Info.URI;
-    property Protocol: string read Info.Protocol write Info.Protocol;
-    property Address: string read Info.Address write Info.Address;
-    property Query: string read Info.Query write Info.Query;
+    property Method: string read Info.Method;
+    property URI: string read Info.URI;
+    property Protocol: string read Info.Protocol;
+    //From URI :) URI = Path + Query
+    property Path: string read Info.Path;
+    property Query: string read Info.Query;
 
     //for module
     property Command: String read Info.Command write Info.Command;
     property Client: String read Info.Client write Info.Client;
     property IsSecure: Boolean read Info.IsSecure write Info.IsSecure;
-    property Path: String read FPath write FPath;
-    property RawPath: string read FRawPath;
+
+    //Current Path is changable while passing it to modules or submodules/schemas/elements
+    property CurrentPath: String read FCurrentPath write FCurrentPath;
+    property Route: TmnRoute read FRoute write FRoute;
 
     property NameSpace: string read FNameSpace write FNameSpace;
     property Directory: String read FDirectory write FDirectory;
-    property Route: TmnRoute read FRoute write FRoute;
     
     property Params: TmnFields read FParams; 
     property Param[Index: string]: TmnField read GetParam; default; 
 
     function CollectURI: string;
-    //Delete Path[0]
+    //Delete Route[0] and CurrentPath
+    // /p1/p2/   --> /p2/
     function PopSubPath: string;
     //
     property ChunkedProxy: TmnChunkStreamProxy read FChunkedProxy write SetChunkedProxy;
@@ -905,13 +908,13 @@ function ParseHttpHead(const Raw: String; out Method, Params: string): Boolean; 
 //HTTP/1.1 200 OK
 function ParseAnswerHead(const Raw: String; out Number: Integer; out Protocol, Msg: string): Boolean; overload;
 function ParseAnswerHead(const Raw: String; out Answer: TmodAnswer; Msg: string): Boolean; overload;
-function ParseURI(const URI: String; out Address, Params: string): Boolean;
+function ParseURI(const URI: String; out Path, Params: string): Boolean;
 procedure ParseQuery(const Query: String; mnParams: TmnFields);
 procedure ParseParamsEx(const Params: String; mnParams: TmnParams);
 
-function ParseAddress(const Request: string; out URIPath: string; out URIQuery: string): Boolean; overload;
-function ParseAddress(const Request: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean; overload;
-procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
+//function ParsePath(const Request: string; out URIPath: string; out URIQuery: string): Boolean; overload;
+//function ParsePath(const Request: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean; overload;
+//procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
 function FormatHTTPDate(vDate: TDateTime): string;
 function ExtractDomain(const URI: string): string;
 
@@ -1148,19 +1151,19 @@ begin
   Answer.FromNumber(Number);
 end;
 
-function ParseURI(const URI: String; out Address, Params: string): Boolean;
+function ParseURI(const URI: String; out Path, Params: string): Boolean;
 var
   J: Integer;
 begin
   J := Pos('?', URI);
   if J > 0 then
   begin
-    Address := Copy(URI, 1, J - 1);
+    Path := Copy(URI, 1, J - 1);
     Params := Copy(URI, J + 1, Length(URI));
   end
   else
   begin
-    Address := URI;
+    Path := URI;
     Params := '';
   end;
   Result := True;
@@ -1176,7 +1179,7 @@ begin
   StrToStringsCallback(Query, mnParams, @FieldsCallBack, ['&'], [' ']);
 end;
 
-function ParseAddress(const Request: string; out URIPath: string; out URIQuery: string): Boolean;
+(*function ParsePath(const Request: string; out URIPath: string; out URIQuery: string): Boolean;
 var
   I, J: Integer;
 begin
@@ -1211,23 +1214,23 @@ begin
   begin
     URIQuery := '';
   end;
-end;
+end;*)
 
-function ParseAddress(const Request: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean;
+{function ParsePath(const Request: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams): Boolean;
 begin
-  Result := ParseAddress(Request, URIPath, URIParams);
+  Result := ParsePath(Request, URIPath, URIParams);
   if Result then
     if URIQuery <> nil then
       //ParseParams(aParams, False);
       StrToStringsCallback(URIParams, URIQuery, @FieldsCallBack, ['&'], [' ']);
-end;
+end;}
 
-procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
+{procedure ParsePath(const aRequest: string; out Name: string; out URIPath: string; out URIParams: string; URIQuery: TmnParams);
 begin
   ParseAddress(aRequest, URIPath, URIParams, URIQuery);
   Name := SubStr(URIPath, URLDelimiter, 0);
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
-end;
+end;}
 
 function FormatHTTPDate(vDate: TDateTime): string;
 begin
@@ -1691,7 +1694,7 @@ end;
 
 function TmodRequest.CollectURI: string;
 begin
-  Result := URLDelimiter + Address;
+  Result := URLDelimiter + Path;
   if Query<>'' then
     Result := Result+'?'+Query
 end;
@@ -1716,14 +1719,13 @@ end;
 function TmodRequest.PopSubPath: string;
 begin
   Result := Route[0];
-  Path := DeleteSubPath(Result, Path);
+  FCurrentPath := DeleteSubPath(Result, FCurrentPath);
   Route.Delete(0);
 end;
 
 destructor TmodRequest.Destroy;
 begin
   FreeAndNil(FRoute);
-//  FreeAndNil(FNameSpace);
   FreeAndNil(FParams);
   inherited Destroy;
 end;
@@ -2426,13 +2428,17 @@ end;
 
 procedure TmodModule.DoMatch(ARequest: TmodRequest; var vMatch: Boolean);
 begin
-  vMatch := (AliasName<>'') and (ARequest.Route[0] = AliasName);
+  vMatch := (AliasName <> '') and (ARequest.Route[0] = AliasName);
 end;
 
 procedure TmodModule.DoMatched(ARequest: TmodRequest);
 begin
+  ARequest.Command := ARequest.Method; //TODO move to Matched
   if (AliasName <> '') then
-    ARequest.Path := DeleteSubPath(ARequest.Route[0], ARequest.Path);
+  begin
+    ARequest.CurrentPath := DeleteSubPath(ARequest.Route[0], ARequest.CurrentPath);
+    //TODO delete route[0]  or use PopSubPath
+  end;    
 end;
 
 function TmodModule.Match(ARequest: TmodRequest): Boolean;
@@ -2661,17 +2667,16 @@ end;
 procedure TmodModules.ParseHead(ARequest: TmodRequest; const AHead: String);
 begin
   ARequest.Clear;
-  ARequest.Raw := AHead;
+  ARequest.Info.Raw := AHead;
   ParseHttpHead(AHead, ARequest.Info.Method, ARequest.Info.URI, ARequest.Info.Protocol);
-  ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Query);
+  ParseURI(ARequest.URI, ARequest.Info.Path, ARequest.Info.Query);
 
-  // Remove leading slash from Address for Path, unless Address is empty or just '/'
-  if (ARequest.Address <> '') and (ARequest.Address <> '/') and StartsText(URLDelimiter, ARequest.Address) then
-    ARequest.Path := Copy(ARequest.Address, 2, MaxInt)
+  // Remove leading slash from Path, unless Path is empty or just '/'
+  if (ARequest.Path <> '') and (ARequest.Path <> '/') and StartsText(URLDelimiter, ARequest.Path) then
+    ARequest.CurrentPath := Copy(ARequest.Path, 2, MaxInt)
   else
-    ARequest.Path := ARequest.Address;
-  ARequest.FRawPath := ARequest.Path;
-  StrToStrings(ARequest.Path, ARequest.Route, ['/']);
+    ARequest.CurrentPath := ARequest.Path;
+  StrToStrings(ARequest.FCurrentPath, ARequest.Route, ['/']);
 end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;
@@ -2966,7 +2971,7 @@ end;
 
 function TmodCommunicate.GetCookie(const vNameSpace, vName: string): string;
 begin
-  if vNameSpace<>'' then
+  if vNameSpace <> '' then
     Result := Cookies.Values[vNameSpace+'.'+vName]
   else
     Result := Cookies.Values[vName];

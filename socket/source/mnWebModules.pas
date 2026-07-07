@@ -104,8 +104,6 @@ type
 
     procedure Log(S: string); override;
     procedure InternalError(ARequest: TmodRequest; var Handled: Boolean); override;
-    procedure DoMatch(ARequest: TmodRequest; var vMatch: Boolean); override;
-    procedure DoMatched(ARequest: TmodRequest); override;
   public
     destructor Destroy; override;
     //property SmartURL: Boolean read FSmartURL write FSmartURL;
@@ -460,16 +458,6 @@ begin
   Protocols := [sHTTPProtocol_100, sHTTPProtocol_101];
 end;
 
-procedure TmodWebModule.DoMatched(ARequest: TmodRequest);
-begin
-  //inherited;
-  ARequest.Command := ARequest.Method; //TODO move to Matched
-  if (AliasName <> '') then
-  begin
-    ARequest.Path := DeleteSubPath(ARequest.Route[0], ARequest.Path);
-end;
-end;
-
 function TmodWebModule.GetDefaultURL: string;
 begin   
   if Domain <> '' then
@@ -490,12 +478,6 @@ begin
       Result := Result + ':' + Server.Port;    
   end;    
   Result := Result + Domain + AddStartURLDelimiter(AliasName);
-end;
-
-procedure TmodWebModule.DoMatch(ARequest: TmodRequest; var vMatch: Boolean);
-begin
-  //inherited;
-  vMatch := ARequest.Route[0] = AliasName;
 end;
 
 procedure TmodWebModule.InternalError(ARequest: TmodRequest; var Handled: Boolean);
@@ -701,11 +683,11 @@ begin
 
   aHomeFolder := ExpandFile(CorrectPath(ExcludePathDelimiter(Response.HomeFolder)));
 
-  WebExpandFile(aHomeFolder, Request.Path, aRequestDocument, False);
+  WebExpandFile(aHomeFolder, Request.CurrentPath, aRequestDocument, False);
 
-  if not WebExpandFile(aHomeFolder, Request.Path, aDocument, serveSmart in Options) then
+  if not WebExpandFile(aHomeFolder, Request.CurrentPath, aDocument, serveSmart in Options) then
     Response.Answer := hrUnauthorized
-  else if ((Request.Path = '') and not FileExists(aDocument)) or (not EndsDelimiter(aRequestDocument) and DirectoryExists(aRequestDocument)) then
+  else if ((Request.CurrentPath = '') and not FileExists(aDocument)) or (not EndsDelimiter(aRequestDocument) and DirectoryExists(aRequestDocument)) then
   //                                                                  http://127.0.0.1:81/web  to   http://127.0.0.1:81/web/
   begin
     //http://127.0.0.1:81
@@ -718,7 +700,7 @@ begin
     //Response.SendHead(sHTTPProtocol1 + ' 301 Moved Permanently');
     Response.Answer := hrRedirect;
     //Response.SendHead(sHTTPProtocol1 + ' 307 Temporary Redirect');
-    Response.Redirect := IncludeURLDelimiter(Request.Address);
+    Response.Redirect := IncludeURLDelimiter(Request.Path);
     Response.SendHeader;
   end
   else
@@ -734,7 +716,7 @@ begin
     begin
       Response.Answer := hrOK;
       Response.ContentType := 'text/html';
-      WebServeFolder(Request.Address, aDocument, Response, Request)
+      WebServeFolder(Request.Path, aDocument, Response, Request)
     end
     else
     begin
@@ -847,7 +829,7 @@ var
   aSafeName: string;
 begin
   inherited;
-  aFileName := Request.Path;
+  aFileName := Request.CurrentPath;
   aSafeName := ExtractFileName(aFileName);
   if (aSafeName = '') or (aSafeName <> aFileName) then
   begin

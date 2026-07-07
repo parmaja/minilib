@@ -721,7 +721,8 @@ type
     procedure SendMessage(const Message: string);
   protected
     procedure Loop; virtual;
-    procedure Terminate; virtual;
+    procedure SetTerminated; virtual;
+    procedure Terminate; 
   public
     Schema: TmnwSchema;
     Stream: TmnBufferStream;
@@ -2331,6 +2332,10 @@ begin
 //  Stream.Close([cloData]);
 end;
 
+procedure TmnwAttachment.SetTerminated;
+begin
+end;
+
 procedure TmnwAttachment.Loop;
 var
   s: string;
@@ -2408,8 +2413,9 @@ end;
 
 procedure TmnwAttachment.Terminate;
 begin
-  FTerminated := True;
   Stream.Close;
+  FTerminated := True;
+  SetTerminated;
 end;
 
 destructor TmnwAttachment.Destroy;
@@ -2476,6 +2482,8 @@ end;
 
 procedure TmnwAttachments.Remove(AAttachment: TmnwAttachment);
 begin
+  if Lock = nil then
+    raise Exception.Create('Lock is nil in Attachments');
   Lock.Enter;
   try
     inherited Remove(AAttachment);
@@ -3596,26 +3604,30 @@ begin
   FAttachments.Terminate;
   FAttachments.Clear;
   FreeAndNil(FAttachments);
+  
   FreeAndNil(FLock);
   FreeAndNil(FDefaultDocuments);
   inherited;
 end;
 
+// Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
 procedure TmnwSchema.Attach(Route: string; Sender: TObject; AStream: TmnBufferStream);
 var
-  Attachment: TmnwAttachment;
+  aAttachment: TmnwAttachment;
 begin
-  Attachment := TmnwAttachment.Create;
-  Attachment.Schema := Self;
-  Attachment.Stream := AStream;
-  Attachments.Add(Attachment);
+  if FAttachments = nil then //Maybe shutdowning
+    exit;
+  aAttachment := TmnwAttachment.Create;
+  aAttachment.Schema := Self;
+  aAttachment.Stream := AStream;
+  Attachments.Add(aAttachment);
   UpdateAttached;
   try
-    Attachment.Loop;
-    if not Attachment.Terminated then
-      Attachment.Terminate;
+    aAttachment.Loop;
+    if not aAttachment.Terminated then
+      aAttachment.Terminate;
   finally
-    Attachments.Remove(Attachment);
+    Attachments.Remove(aAttachment);
     UpdateAttached;
   end;
 end;
@@ -3670,7 +3682,7 @@ begin
   if ((AContext.CurrentPath = '') and not IsDocument) or
      (not EndsDelimiter(aRequestDocument) and IsDirectory) then
   begin
-    AContext.Response.RespondRedirectTo(AContext.Request.Address); //TODO short it
+    AContext.Response.RespondRedirectTo(AContext.Request.Path); //TODO short it
     Exit;
   end;
 
@@ -5105,7 +5117,7 @@ var
   aContent: string;
 begin
   inherited;
-  if (Request.Path = '') and (Request.URI <> '') then
+  if (Request.CurrentPath = '') and (Request.URI <> '') then
   begin
     Response.RespondRedirectTo(IncludeURLDelimiter(Request.URI));
     exit;
@@ -5113,7 +5125,8 @@ begin
   AtomicIncrement(RendererID);
   InitMemory(aContext, SizeOf(aContext));
 
-  aContext.CurrentPath := DeleteSubPath('', Request.Path);
+  //Remove leading /
+  aContext.CurrentPath := RemoveStartURLDelimiter(Request.CurrentPath);
   aContext.Sender := Self;
 
   aContext.FResponse := Response;
