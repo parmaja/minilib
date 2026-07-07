@@ -3602,9 +3602,13 @@ end;
 destructor TmnwSchema.Destroy;
 begin
   FAttachments.Terminate;
-  FAttachments.Clear;
-  FreeAndNil(FAttachments);
-  
+  Lock.Enter;
+  try
+    FAttachments.Clear;
+    FreeAndNil(FAttachments);
+  finally
+    Lock.Leave;
+  end;
   FreeAndNil(FLock);
   FreeAndNil(FDefaultDocuments);
   inherited;
@@ -3624,11 +3628,19 @@ begin
   UpdateAttached;
   try
     aAttachment.Loop;
-    if not aAttachment.Terminated then
-      aAttachment.Terminate;
   finally
-    Attachments.Remove(aAttachment);
-    UpdateAttached;
+    Lock.Enter;
+    try
+      if FAttachments <> nil then
+      begin
+        if not aAttachment.Terminated then
+          aAttachment.Terminate;
+        Attachments.Remove(aAttachment);
+        UpdateAttached;
+      end;
+    finally
+      Lock.Leave;
+    end;
   end;
 end;
 
