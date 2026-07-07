@@ -330,6 +330,7 @@ type
     FDirectory: String;
     FCharset: string;
     FContentType: string;
+    FRawPath: string;
     procedure SetChunkedProxy(const Value: TmnChunkStreamProxy);
     procedure SetProtcolClass(const Value: TmnProtcolStreamProxyClass);
     function GetConnected: Boolean;
@@ -368,6 +369,7 @@ type
     property Client: String read Info.Client write Info.Client;
     property IsSecure: Boolean read Info.IsSecure write Info.IsSecure;
     property Path: String read FPath write FPath;
+    property RawPath: string read FRawPath;
 
     property NameSpace: string read FNameSpace write FNameSpace;
     property Directory: String read FDirectory write FDirectory;
@@ -377,7 +379,8 @@ type
     property Param[Index: string]: TmnField read GetParam; default; 
 
     function CollectURI: string;
-
+    //Delete Path[0]
+    function PopSubPath: string;
     //
     property ChunkedProxy: TmnChunkStreamProxy read FChunkedProxy write SetChunkedProxy;
 
@@ -655,11 +658,11 @@ type
     function GetCommandClass(var CommandName: String): TwebCommandClass; virtual;
     procedure Created; override;
     procedure InitItems; virtual; //TODO rename it to Init
-    procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); virtual;
-    procedure DoPrepareRequest(ARequest: TmodRequest); virtual;
+    procedure DoMatch(ARequest: TmodRequest; var vMatch: Boolean); virtual;
+    procedure DoMatched(ARequest: TmodRequest); virtual;
 
-    function Match(const ARequest: TmodRequest): Boolean; virtual;
-    procedure PrepareRequest(ARequest: TmodRequest);
+    function Match(ARequest: TmodRequest): Boolean; 
+    procedure Matched(ARequest: TmodRequest);
     function CreateCommand(CommandName: String; ARequest: TmodRequest): TwebCommand; overload;
 
     function RequestCommand(ARequest: TmodRequest): TwebCommand; virtual;
@@ -1706,8 +1709,15 @@ procedure TmodRequest.Created;
 begin
   inherited;
   FRoute := TmnRoute.Create;
-//  FNameSpace := TStringList.Create;
+  FRoute.Delimiter := URLDelimiter;
   FParams := TmnFields.Create;
+end;
+
+function TmodRequest.PopSubPath: string;
+begin
+  Result := Route[0];
+  Path := DeleteSubPath(Result, Path);
+  Route.Delete(0);
 end;
 
 destructor TmodRequest.Destroy;
@@ -2414,18 +2424,18 @@ begin
 
 end;
 
-procedure TmodModule.DoPrepareRequest(ARequest: TmodRequest);
+procedure TmodModule.DoMatch(ARequest: TmodRequest; var vMatch: Boolean);
+begin
+  vMatch := (AliasName<>'') and (ARequest.Route[0] = AliasName);
+end;
+
+procedure TmodModule.DoMatched(ARequest: TmodRequest);
 begin
   if (AliasName <> '') then
     ARequest.Path := DeleteSubPath(ARequest.Route[0], ARequest.Path);
 end;
 
-procedure TmodModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
-begin
-  vMatch := (AliasName<>'') and (ARequest.Route[0] = AliasName);
-end;
-
-function TmodModule.Match(const ARequest: TmodRequest): Boolean;
+function TmodModule.Match(ARequest: TmodRequest): Boolean;
 begin
   //Result := SameText(AliasName, ARequest.Module) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
   Result := False;
@@ -2433,6 +2443,16 @@ begin
   begin
     DoMatch(ARequest, Result);
   end;
+end;
+
+procedure TmodModule.Matched(ARequest: TmodRequest);
+begin
+  ARequest.Params.Clear;
+  ParseQuery(ARequest.Query, ARequest.Params);
+
+  ARequest.Params['Module'] := AliasName;
+  ARequest.Params['ModuleName'] := Name;
+  DoMatched(ARequest);
 end;
 
 procedure TmodModule.Log(S: String);
@@ -2491,16 +2511,6 @@ begin
         raise EmodModuleException.Create('Can not find command or fallback command: ' + ARequest.Command);
     end;
   end;
-end;
-
-procedure TmodModule.PrepareRequest(ARequest: TmodRequest);
-begin
-  ARequest.Params.Clear;
-  ParseQuery(ARequest.Query, ARequest.Params);
-
-  ARequest.Params['Module'] := AliasName;
-  ARequest.Params['ModuleName'] := Name;
-  DoPrepareRequest(ARequest);
 end;
 
 procedure TmodModule.SetAliasName(AValue: String);
@@ -2660,7 +2670,7 @@ begin
     ARequest.Path := Copy(ARequest.Address, 2, MaxInt)
   else
     ARequest.Path := ARequest.Address;
-
+  ARequest.FRawPath := ARequest.Path;
   StrToStrings(ARequest.Path, ARequest.Route, ['/']);
 end;
 
@@ -2690,8 +2700,8 @@ begin
 
   if aModule <> nil then
   begin
-    //item.PrepareRequest(ARequest); //always have params
-    aModule.PrepareRequest(ARequest);
+    //item.Matched(ARequest); //always have params
+    aModule.Matched(ARequest);
     Result := aModule;
   end;
 end;

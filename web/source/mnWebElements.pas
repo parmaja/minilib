@@ -1,5 +1,4 @@
-﻿
-unit mnWebElements;
+﻿unit mnWebElements;
 {$IFDEF FPC}
 {$mode delphi}
 {$modeswitch prefixedattributes}
@@ -372,7 +371,7 @@ type
     //
     Data: TDON_Element;
     // For
-    Route: string;   
+    RoutePath: string;   
 
     Language: string;
     Direction: TDirection;    
@@ -1130,6 +1129,9 @@ type
     CompactMode: Boolean;
     SessionAge: Integer; //* in ms
     PasswordToken: string;
+
+    //SchameName if root path requested without schema = ''
+    FallbackTo: string;
 
     constructor Create;
     destructor Destroy; override;
@@ -2015,7 +2017,7 @@ type
   protected
     function CreateRenderer: TmnwRenderer; virtual;
     procedure InitItems; override;
-    procedure DoPrepareRequest(ARequest: TmodRequest); override;
+    procedure DoMatched(ARequest: TmodRequest); override;
     procedure Start; override;
     procedure Stop; override;
   public
@@ -3019,7 +3021,7 @@ function TmnwWeb.CreateSchema(const aSchemaName: string): TmnwSchema;
 var
   SchemaItem: TmnwRegisterdSchema;
 begin
-    SchemaItem := Registered.Find(aSchemaName);
+  SchemaItem := Registered.Find(aSchemaName);
   if SchemaItem <> nil then
   begin
     Result := CreateSchema(SchemaItem);
@@ -3051,25 +3053,25 @@ end;
 function TmnwWeb.InquireElement(var AContext: TmnwContext; FindNested: Boolean): Boolean;
 var
   aElement: TmnwElement;
-  Routes: TStringList;
+  aRoutes: TStringList;
   i: Integer;
   aSchemaName, aRoute: string;
   aSchema: TmnwSchema; 
 begin  
   aSchema := nil;
   Result := False;
-  Routes := TStringList.Create;
+  aRoutes := TStringList.Create;
   try
-    StrToStrings(AContext.Route, Routes, [URLDelimiter]);
-    if (Routes.Count > 0) then
-      aSchemaName := Routes[0]
+    StrToStrings(AContext.RoutePath, aRoutes, [URLDelimiter]);
+    if (aRoutes.Count > 0) then
+      aSchemaName := aRoutes[0]
     else
       aSchemaName := '';
 
     //Find already exists Schema
     Lock.Enter;
     try
-      aSchema := FindBy(aSchemaName, AContext.Session.ID);
+       aSchema := FindBy(aSchemaName, AContext.Session.ID);
     finally
       Lock.Leave;
     end;
@@ -3087,8 +3089,13 @@ begin
         end;
         if aSchema = nil then
           aSchema := CreateSchema('');
-{        if Schema = nil then
-          Schema := CreateSchema(DefaultSchema);}
+
+        if (aSchema = nil) and (aSchemaName = '') then
+        begin
+          AContext.Response.RespondRedirectTo(EndURL(FallbackTo));
+          exit;
+        end;
+          
         if aSchema <> nil then
           aSchemaName := '';
       end;
@@ -3097,16 +3104,12 @@ begin
         aSchema.Reference := AContext.Session.ID;
     end;
 
-{
-    if Schema = nil then
-      Schema := First; //* Fallback //taskeej
-}
     if aSchemaName <> '' then
     begin
-      if (Routes.Count > 0) then
+      if (aRoutes.Count > 0) then
       begin
-        Routes.Delete(0);
-        AContext.Route := DeleteSubPath(aSchemaName, AContext.Route);
+        aRoutes.Delete(0);
+        AContext.RoutePath := DeleteSubPath(aSchemaName, AContext.RoutePath);
       end;
     end;
 
@@ -3173,9 +3176,9 @@ begin
             //Finding nested element inside Schema
             aElement := aSchema;
             i := 0;
-            while i < Routes.Count do
+            while i < aRoutes.Count do
             begin
-              aRoute := Routes[i];
+              aRoute := aRoutes[i];
               if aRoute = '' then
               begin
                 Result := True;
@@ -3193,7 +3196,7 @@ begin
                 begin
                   AContext.Element := aElement;
                   Result := True;
-                  AContext.Route := DeleteSubPath(aRoute, AContext.Route);
+                  AContext.RoutePath := DeleteSubPath(aRoute, AContext.RoutePath);
                 end;
               end;
               inc(i);
@@ -3203,7 +3206,7 @@ begin
       end;
     end;
   finally
-    Routes.Free;
+    aRoutes.Free;
   end;
 end;
 
@@ -3232,10 +3235,10 @@ begin
       //* If you call schema name without ending by /
       if not AContext.Response.IsResponded then
       begin
-        if (AContext.Element = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.Route = '') then
+        if (AContext.Element = AContext.Schema) and (AContext.Schema.Name <> '') and (AContext.RoutePath = '') then
           AContext.Response.RespondRedirectTo(IncludeURLDelimiter(AContext.GetPath(AContext.Schema)), True)
         else
-          AContext.Response.ContentType := AContext.Element.GetContentType(AContext.Route);
+          AContext.Response.ContentType := AContext.Element.GetContentType(AContext.RoutePath);
       end;
 
       //* Resume maybe come false in action
@@ -3309,7 +3312,7 @@ begin
   if AContext.Schema <> nil then
   begin
     if AContext.Schema.Interactive or (schemaAttach in AContext.Schema.GetCapabilities) then    
-      AContext.Schema.Attach(AContext.Route, Sender, AStream)
+      AContext.Schema.Attach(AContext.RoutePath, Sender, AStream)
   end
 end;
 
@@ -3639,12 +3642,12 @@ begin
     Exit;
   end;
 
-  WebExpandFile(HomeFolder, AContext.Route, aRequestDocument, False);
-  Expanded := WebExpandFile(HomeFolder, AContext.Route, aDocument, serveSmart in Options);
+  WebExpandFile(HomeFolder, AContext.RoutePath, aRequestDocument, False);
+  Expanded := WebExpandFile(HomeFolder, AContext.RoutePath, aDocument, serveSmart in Options);
 
   if not Expanded then
   begin
-    if (AContext.Route = '') or IsStrInArray(AContext.Route, ['\', '/']) then
+    if (AContext.RoutePath = '') or IsStrInArray(AContext.RoutePath, ['\', '/']) then
     begin
       if (serveIndexRoot in Options) and EndsDelimiter(aDocument) and DirectoryExists(aDocument) then
       begin
@@ -3664,7 +3667,7 @@ begin
   IsDocument := FileExists(aDocument);
   IsDirectory := DirectoryExists(aDocument);
 
-  if ((AContext.Route = '') and not IsDocument) or
+  if ((AContext.RoutePath = '') and not IsDocument) or
      (not EndsDelimiter(aRequestDocument) and IsDirectory) then
   begin
     AContext.Response.RespondRedirectTo(AContext.Request.Address); //TODO short it
@@ -3753,7 +3756,7 @@ begin
     AContext.Writer.AddTag('style', '', 'body { font-family: monospace; }');
     AContext.Writer.CloseTag('head');
     AContext.Writer.OpenTag('body');
-    AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.Route);
+    AContext.Writer.AddTag('h1', '', 'Index of ' + AContext.RoutePath);
     WriteSection('Folders', [efDirectory], '..');
     WriteSection('Files', [efFile]);
     AContext.Writer.CloseTag('body');
@@ -5110,7 +5113,7 @@ begin
   AtomicIncrement(RendererID);
   InitMemory(aContext, SizeOf(aContext));
 
-  aContext.Route := DeleteSubPath('', Request.Path);
+  aContext.RoutePath := DeleteSubPath('', Request.Path);
   aContext.Sender := Self;
 
   aContext.FResponse := Response;
@@ -5282,7 +5285,7 @@ end;
 
 { TmnwWebModule }
 
-procedure TmnwWebModule.DoPrepareRequest(ARequest: TmodRequest);
+procedure TmnwWebModule.DoMatched(ARequest: TmodRequest);
 begin
   inherited;
   if (ARequest.Route.Count > 0) then

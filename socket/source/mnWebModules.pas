@@ -104,8 +104,8 @@ type
 
     procedure Log(S: string); override;
     procedure InternalError(ARequest: TmodRequest; var Handled: Boolean); override;
-    procedure DoMatch(const ARequest: TmodRequest; var vMatch: Boolean); override;
-    procedure DoPrepareRequest(ARequest: TmodRequest); override;
+    procedure DoMatch(ARequest: TmodRequest; var vMatch: Boolean); override;
+    procedure DoMatched(ARequest: TmodRequest); override;
   public
     destructor Destroy; override;
     //property SmartURL: Boolean read FSmartURL write FSmartURL;
@@ -460,10 +460,10 @@ begin
   Protocols := [sHTTPProtocol_100, sHTTPProtocol_101];
 end;
 
-procedure TmodWebModule.DoPrepareRequest(ARequest: TmodRequest);
+procedure TmodWebModule.DoMatched(ARequest: TmodRequest);
 begin
   //inherited;
-  ARequest.Command := ARequest.Method;
+  ARequest.Command := ARequest.Method; //TODO move to Matched
   if (AliasName <> '') then
   begin
     ARequest.Path := DeleteSubPath(ARequest.Route[0], ARequest.Path);
@@ -492,7 +492,7 @@ begin
   Result := Result + Domain + AddStartURLDelimiter(AliasName);
 end;
 
-procedure TmodWebModule.DoMatch(const ARequest: TmodRequest; var vMatch: Boolean);
+procedure TmodWebModule.DoMatch(ARequest: TmodRequest; var vMatch: Boolean);
 begin
   //inherited;
   vMatch := ARequest.Route[0] = AliasName;
