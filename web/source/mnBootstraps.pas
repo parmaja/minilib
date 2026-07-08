@@ -456,6 +456,12 @@ type
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;      
       end;
+
+      THiddenInput = class(THTMLElement)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;      
   public
     procedure AddHead(const Context: TmnwContext); override;
   end;
@@ -703,6 +709,7 @@ begin
     RegisterRenderer(THTML.TUsername, TUsername);
     RegisterRenderer(THTML.TPassword, TPassword);
     RegisterRenderer(THTML.TNewPassword, TNewPassword);
+    RegisterRenderer(THTML.THiddenInput, THiddenInput);
     
     RegisterRenderer(THTML.TImage, TImage);
     RegisterRenderer(THTML.TImageFile, TImageFile);
@@ -2062,6 +2069,27 @@ begin
   Scope.Attributes['data-action'] := e.Action;  
   if e.FormID <> '' then
     Scope.Attributes['form'] := e.FormID;
+end;
+
+{ TBSRenderer.THiddenInput }
+
+procedure TBSRenderer.THiddenInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.THiddenInput;
+begin
+  e := Scope.Element as THTML.THiddenInput;
+  inherited;
+  Scope.Attributes['type'] := 'hidden';
+  Scope.Attributes['value'] := e.Value;
+end;
+
+procedure TBSRenderer.THiddenInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.THiddenInput;
+begin
+  e := Scope.Element as THTML.THiddenInput;
+  Context.Writer.AddShortTag('input', Scope.ToString); 
+  inherited;
 end;
 
 initialization

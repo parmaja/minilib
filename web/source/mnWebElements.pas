@@ -317,8 +317,7 @@ type
     property Age: Integer read FAge write SetAge;
     property Instance: TObject read FInstance write SetInteralInstance;
     property Changed: Boolean read FChanged;
-  end;
-  
+  end;  
   
   { TmnwScope }
  
@@ -1813,6 +1812,14 @@ type
       public
       end;      
 
+      [TName_Extension]
+      THiddenInput = class(THTMLElement)
+      protected
+      public
+        Value: string;
+        constructor Create(AParent: TmnwElement; const AName: string; const AValue: string = ''); reintroduce;
+      end;      
+
       TCustomImage = class(THTMLComponent)
       public
         AltText: string;
@@ -1963,16 +1970,21 @@ type
 
   //Return error as json if fail with message of error, so we need JS to post
   TAuthForm = class(THTML.THTMLItem)
+  private
+    FForm: THTML.TForm;
   protected
     procedure DoCompose(const AContext: TmnwContext); override;
-  public  
-    Form: THTML.TForm;
+    procedure Created; override;     
+  public      
+    JWTMode: Boolean;
+    property Form: THTML.TForm read FForm;
   end;
 
   TAuthSchema = class(THTML)
   private
+    FAuth: TAuthForm;
+    FLoginCard: THTML.TCard;
   public
-    AuthForm: TAuthForm;
   protected
     procedure DoLogin(const AContext: TmnwContext; var Success: Boolean; var Message: string; var SessionID: string); virtual; //use `var` no `out` because `inherited` reset it
     procedure DoLogout(const AContext: TmnwContext); virtual;   
@@ -1983,7 +1995,9 @@ type
     procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext); override;
     procedure DoRespondHeader(const AContext: TmnwContext); override;
     procedure DoCompose(const AContext: TmnwContext); override;
+    procedure Created; override;     
   public
+    property Auth: TAuthForm read FAuth;
   end;
 
   { TmnwWebCommand }
@@ -5798,6 +5812,20 @@ begin
   inherited;
 end;
 
+procedure TAuthSchema.Created;
+begin
+  inherited;
+  with Document.Body.Main do
+  begin
+    FLoginCard := TCard.Create(this);
+    with FLoginCard do
+    begin
+      FAuth := TAuthForm.Create(This);              
+      Auth.Form.CancelTo := toDefault;
+  end;
+  end;
+end;
+
 procedure TAuthSchema.DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext);
 begin
   inherited;
@@ -5824,16 +5852,13 @@ begin
       
       with Main do
       begin
-        with TCard.Create(this) do
+        with FLoginCard do
         begin
           Solitary := True;
           //MinSize := szVerySmall;
           Size := szMedium;
-          Caption := 'Login';
-
-          AuthForm := TAuthForm.Create(This);
-          AuthForm.Compose(AContext);
-          AuthForm.Form.CancelTo := toDefault;          
+          Caption := 'Login';          
+//          Auth.Compose(AContext);
         end;
       end;
     end;
@@ -5881,6 +5906,12 @@ end;
 
 { TAuthForm }
 
+procedure TAuthForm.Created;
+begin
+  inherited;
+  FForm := THTML.TForm.Create(This);
+end;
+
 procedure TAuthForm.DoCompose(const AContext: TmnwContext);
 begin
   Solitary := True;
@@ -5888,7 +5919,6 @@ begin
 
   with THTML, Self do
   begin
-    Form := THTML.TForm.Create(This);
     with Form do
     begin
       Route := 'login';
@@ -5916,6 +5946,11 @@ begin
         Token := AContext.Web.PasswordToken;
       end;
 
+      if JWTMode then
+      begin
+        THiddenInput.Create(This, 'JWTMode', 'True');
+      end;
+      
       Submit.Caption := 'Submit';
       Reset.Caption := 'Reset';
       Cancel.Caption := 'Cancel'; 
@@ -6561,6 +6596,15 @@ end;
 function THTML.TAccordionSection.CanRender: Boolean;
 begin
   Result := Count > 0;
+end;
+
+{ THTML.THiddenInput }
+
+constructor THTML.THiddenInput.Create(AParent: TmnwElement; const AName: string; const AValue: string);
+begin
+  inherited Create(AParent);
+  Name := AName;
+  Value := AValue;
 end;
 
 initialization

@@ -343,6 +343,8 @@ function StringOfUTF8(const Value: PByte; Size: Integer): string;
 //TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
 procedure BinToHex(Buffer: PByte; Output: PByte; BufSize: longint); overload;
+function BytesToHex(const B: TBytes): string;
+function HexToBytes(const Hex: string): TBytes;
 function StringToHex(const vStr: string): string; overload;
 function DataToHex(const vData: PByte; vCount: Integer): UTF8String; overload;
 function HexToString(const vData: string): string; overload;
@@ -350,6 +352,8 @@ function UUIDToString(Guid: TGuid; Hyphen: string = '-'): string;
 
 function ByteToBinStr(Value: Byte): string;
 function DataToBinStr(var Data; Size: Integer; Separator: string = ''): string;
+
+function ConcatBytes(const A, B: TBytes): TBytes;
 
 //Files Utils
 
@@ -2985,6 +2989,25 @@ begin
   end;
 end;
 
+function BytesToHex(const B: TBytes): string;
+var
+  i: Integer;
+begin
+  Result := '';
+  for i := 0 to High(B) do
+    Result := Result + IntToHex(B[i], 2);
+end;
+
+function HexToBytes(const Hex: string): TBytes;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(Hex) div 2);
+  for i := 0 to High(Result) do
+    Result[i] := StrToInt('$' + Copy(Hex, i * 2 + 1, 2));
+end;
+
+
 function ByteToBinStr(Value: Byte): string;
 var
   i: Integer;
@@ -3012,6 +3035,15 @@ begin
       Result := Result + Separator;
     Result := Result + ByteToBinStr(P[Size]);
   end;
+end;
+
+function ConcatBytes(const A, B: TBytes): TBytes;
+begin
+  SetLength(Result, Length(A) + Length(B));
+  if Length(A) > 0 then
+    Move(A[0], Result[0], Length(A));
+  if Length(B) > 0 then
+    Move(B[0], Result[Length(A)], Length(B));
 end;
 
 function IsAllLowerCase(S: string): Boolean;
