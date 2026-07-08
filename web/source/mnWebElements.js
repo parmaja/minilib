@@ -465,14 +465,30 @@ mnw.confirm = function(message) {
 
     var modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
 
-    modalEl.querySelector('[data-mnw-confirm-yes]').onclick = function() {
+    function onDone(result) {
+      modalEl.removeEventListener('keydown', onKeyDown);
       modal.hide();
-      resolve(true);
+      resolve(result);
+    }
+
+    function onKeyDown(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        onDone(true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        onDone(false);
+      }
+    }
+
+    modalEl.addEventListener('keydown', onKeyDown);
+
+    modalEl.querySelector('[data-mnw-confirm-yes]').onclick = function() {
+      onDone(true);
     };
 
     modalEl.querySelector('[data-mnw-confirm-no]').onclick = function() {
-      modal.hide();
-      resolve(false);
+      onDone(false);
     };
 
     modal.show();
