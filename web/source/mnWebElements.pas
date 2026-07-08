@@ -1715,6 +1715,7 @@ type
         procedure Created; override;
       public
         CallScript: string;
+        ConfirmMessage: string;
         Outline: Boolean;
         constructor Create(AParent: TmnwElement; const ACaption: string); reintroduce; overload; 
       end;

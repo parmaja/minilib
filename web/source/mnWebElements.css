@@ -476,3 +476,14 @@ aside{
     padding: 0.2em;
     /* object-fit: contain; /* or 'cover' */
 }
+
+/* Confirm Modal */
+
+#mnw-confirm-modal .modal-body {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+#mnw-confirm-modal .modal-footer .btn {
+    min-width: 5rem;
+}

@@ -413,3 +413,68 @@ document.addEventListener('DOMContentLoaded', function()
   mnw.init_zoom();
   mnw.init_accordions();
 });
+
+/* Confirm Modal */
+
+let _confirming = false;
+
+document.addEventListener('click', async function(e) {
+  if (_confirming) return;
+
+  const confirmEl = e.target.closest('[data-mnw-confirm]');
+  if (!confirmEl) return;
+
+  const message = confirmEl.getAttribute('data-mnw-confirm');
+  if (!message) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+
+  const confirmed = await mnw.confirm(message);
+  if (confirmed) {
+    _confirming = true;
+    confirmEl.click();
+    _confirming = false;
+  }
+}, true);
+
+mnw.confirm = function(message) {
+  return new Promise(function(resolve) {
+    var modalEl = document.getElementById('mnw-confirm-modal');
+    if (!modalEl) {
+      modalEl = document.createElement('div');
+      modalEl.id = 'mnw-confirm-modal';
+      modalEl.className = 'modal fade';
+      modalEl.setAttribute('tabindex', '-1');
+      modalEl.setAttribute('aria-hidden', 'true');
+      modalEl.innerHTML =
+        '<div class="modal-dialog modal-dialog-centered modal-sm">' +
+          '<div class="modal-content">' +
+            '<div class="modal-body h6 p-4 pb-0"></div>' +
+            '<div class="modal-footer border-0 pt-2">' +
+              '<button type="button" class="btn btn-secondary" data-mnw-confirm-no>No</button>' +
+              '<button type="button" class="btn btn-primary" data-mnw-confirm-yes>Yes</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(modalEl);
+    }
+
+    modalEl.querySelector('.modal-body').textContent = message;
+
+    var modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+
+    modalEl.querySelector('[data-mnw-confirm-yes]').onclick = function() {
+      modal.hide();
+      resolve(true);
+    };
+
+    modalEl.querySelector('[data-mnw-confirm-no]').onclick = function() {
+      modal.hide();
+      resolve(false);
+    };
+
+    modal.show();
+  });
+};

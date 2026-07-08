@@ -999,10 +999,15 @@ begin
 end;
 
 procedure TBSRenderer.TButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TButton;
 begin
+  e := Scope.Element as THTML.TButton;
   Scope.Classes.Add('btn');
   Scope.Attributes['type'] := 'button';
-  inherited;  
+  if e.ConfirmMessage <> '' then
+    Scope.Attributes['data-mnw-confirm'] := e.ConfirmMessage;
+  inherited;
 end;
 
 { TBSRenderer.TTButton }
