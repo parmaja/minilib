@@ -1549,7 +1549,7 @@ var
   e: THTML.TNavBar;
 begin
   e := Scope.Element as THTML.TNavBar;
-  Context.Writer.OpenTag('a', 'class="logo navbar-brand align-items-center me-auto" href="' + EndURL(Context.GetDefaultPath) + '"');
+  Context.Writer.OpenTag('a', 'class="logo d-flex navbar-brand align-items-center p-0 me-auto" href="' + EndURL(Context.GetDefaultPath) + '"');
 
 //  if e.Schema.Web.Assets.Logo.Data.Size > 0 then
 //    Context.Writer.AddShortTag('img', 'src="' + Context.GetPath(e.Schema.Web.Assets.Logo)+ '" alt=""');
@@ -1844,9 +1844,11 @@ const
   jsBaseURL = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/';
 begin
   inherited;
-  Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.rtl.min.css', dirRightToLeft, 'sha384-CfCrinSRH2IR6a4e6fy2q6ioOX7O6Mtm1L9vRvFZ1trBncWmMePhzvafv7oIcWiW', [libCross]);
-  Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.min.css', dirLeftToRight, 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB', [libCross]);
-  Sources.Add(stScript, stOnline, jsBaseURL, 'bootstrap.bundle.min.js', dirUndefined, 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI', [libDefer, libCross]);
+  with Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.rtl.min.css', 'sha384-CfCrinSRH2IR6a4e6fy2q6ioOX7O6Mtm1L9vRvFZ1trBncWmMePhzvafv7oIcWiW', [libCross]) do
+    Direction := dirRightToLeft;
+  with Sources.Add(stStyle, stOnline, cssBaseURL, 'bootstrap.min.css', 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB', [libCross]) do
+    Direction := dirLeftToRight;
+  Sources.Add(stScript, stOnline, jsBaseURL, 'bootstrap.bundle.min.js', 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI', [libDefer, libCross]);
 end;
 
 { TBootstrapIcons_Library }
@@ -1854,7 +1856,7 @@ end;
 procedure TBootstrapIcons_Library.Created;
 begin
   inherited;
-  Sources.Add(stStyle, stOnline, 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css', dirUndefined, '', [libCross]);
+  Sources.Add(stStyle, stOnline, 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/', 'bootstrap-icons.min.css', '', [libCross]);
 end;
 
 { TBSRenderer.TGroup }

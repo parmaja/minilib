@@ -91,7 +91,7 @@ WebElement:                              NameSpace                              
 interface
 
 uses
-  Classes, SysUtils, StrUtils, DateUtils, Contnrs, Variants, Types, RTTI,
+  Classes, SysUtils, StrUtils, DateUtils, Contnrs, Variants, Types, RTTI, 
   {$ifdef FPC}
   resource, //* for RT_RCDATA
   {$endif}
@@ -439,6 +439,7 @@ type
     Text: string; //For Embed
     Integrity: string;
     Direction: TDirection;
+    Language: string;
     Options: TLibraryOptions;    
     constructor Create; virtual;
   end;
@@ -448,8 +449,8 @@ type
   public
     //LocalFile: from assets, only file name, not with path
     //OnlineFile: if OnlineFile ended with / LocalFile will added
-    function Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFile: string; Direction: TDirection = dirUndefined; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TmnwLibrarySource; overload;
-    function AddEmbed(const SourceType: TLibrarySourceType; const AName: string; const EmbedText: string; Direction: TDirection): TmnwLibrarySource; overload;
+    function Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFile: string; Integrity: string = ''; Options: TLibraryOptions = [libDefer, libCross]): TmnwLibrarySource; overload;
+    function AddEmbed(const SourceType: TLibrarySourceType; const AName: string; const EmbedText: string): TmnwLibrarySource; overload;
 
     function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Direction: TDirection = dirUndefined): TmnwLibrarySource; overload;
     function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Integrity: string; Options: TLibraryOptions = [libDefer, libCross]): TmnwLibrarySource; overload;
@@ -2094,6 +2095,10 @@ function NewUUID: string;
 
 function Renderers: TmnwRenderers;
 function GlobalLibraries: TmnwLibraries; //TODO
+
+procedure InitLanguages(const APath: string);
+function _(const Key: string; const Lang: string; const Default: string = ''): string;
+
 var
   GlobalTimeStamp: Int64;
 
@@ -2251,7 +2256,54 @@ begin
     FGlobalLibraries := TmnwLibraries.Create;
   Result := FGlobalLibraries;  
 end;
-  
+
+  var
+  Languages: TDictionary<string, TDON_Element> = nil;
+
+procedure InitLanguages(const APath: string);
+var
+  SR: TSearchRec;
+  LangCode: string;
+  LangData: TDON_Element;
+begin
+  if Languages = nil then
+    Languages := TDictionary<string, TDON_Element>.Create
+  else
+    Languages.Clear;
+
+  if FindFirst(APath + '*.json', 0, SR) = 0 then
+  try
+    repeat
+      LangCode := SubStr(SR.Name, '.');
+      LangData := JsonLoadFile(APath + SR.Name, [jsoModern, jsoModernPlus]);
+      if LangData <> nil then
+      begin
+//        Languages.AddOrSetValue(LangCode, LangData);
+        Languages.Add(LangCode, LangData);
+      end;
+    until FindNext(SR) <> 0;
+  finally
+    FindClose(SR);
+  end;
+end;
+
+function _(const Key: string; const Lang: string; const Default: string = ''): string;
+var
+  LangData: TDON_Element;
+begin
+  if Languages = nil then
+    Exit(Default);
+  if Languages.TryGetValue(Lang, LangData) then
+  begin
+    if LangData[Key].IsExists then
+      Result := LangData[Key].AsString
+    else
+      Result := Default;
+  end
+  else
+    Result := Default;
+end;
+
 {$ifdef rtti_objects}
 procedure CacheClasses;
 var
@@ -4703,7 +4755,8 @@ begin
     if aDirection = dirUndefined then
       aDirection := dirLeftToRight;      
     
-    if (source.Direction = dirUndefined) or (source.Direction = aDirection) then
+    if ((source.Direction = dirUndefined) or (source.Direction = aDirection)) and
+       ((Source.Language = '') or (Source.Language = Context.Language)) then    
     begin
       if source.Where in [stOnline, stResource]  then           
       begin
@@ -5855,9 +5908,8 @@ begin
         with FLoginCard do
         begin
           Solitary := True;
-          //MinSize := szVerySmall;
           Size := szMedium;
-          Caption := 'Login';          
+          Caption := _('login', AContext.Language, 'Login');          
 //          Auth.Compose(AContext);
         end;
       end;
@@ -5915,7 +5967,7 @@ end;
 procedure TAuthForm.DoCompose(const AContext: TmnwContext);
 begin
   Solitary := True;
-  Caption := 'Login';
+  Caption := _('login', AContext.Language, 'Login');
 
   with THTML, Self do
   begin
@@ -5931,8 +5983,8 @@ begin
       begin
         ID := 'username';
         Name := 'username';
-        Caption := 'Username';
-        PlaceHolder := 'Type user name';
+        Caption := _('username', AContext.Language, 'Username');
+        PlaceHolder := _('type.user.name', AContext.Language, 'Type user name');
         AutoFocus := True;
         Required := True;
       end;
@@ -5941,8 +5993,8 @@ begin
       begin
         ID := 'password';
         Name := 'password';
-        Caption := 'Password';
-        HelpText := 'You need to use numbers';
+        Caption := _('password', AContext.Language, 'Password');
+        HelpText := _('you.need.numbers', AContext.Language, 'You need to use letters numbers');
         Token := AContext.Web.PasswordToken;
       end;
 
@@ -5951,9 +6003,9 @@ begin
         THiddenInput.Create(This, 'JWTMode', 'True');
       end;
       
-      Submit.Caption := 'Submit';
-      Reset.Caption := 'Reset';
-      Cancel.Caption := 'Cancel'; 
+      Submit.Caption := _('submit',  AContext.Language, 'Submit');
+      Reset.Caption := _('reset',  AContext.Language, 'Reset');
+      Cancel.Caption := _('cancel',  AContext.Language,'Cancel') ; 
     end;
   end;
   inherited;
@@ -6050,7 +6102,7 @@ end;
 
 { TLibrarySources }
 
-function TLibrarySources.Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFile: string; Direction: TDirection; Integrity: string; Options: TLibraryOptions): TmnwLibrarySource; 
+function TLibrarySources.Add(SourceType: TLibrarySourceType; Where: TLibrarySourceWhere; const OnlineFile, LocalFile: string; Integrity: string; Options: TLibraryOptions): TmnwLibrarySource; 
 begin
   Result := TmnwLibrarySource.Create;
 
@@ -6089,7 +6141,6 @@ begin
   
   Result.SourceType := SourceType;
   Result.Where := Where;
-  Result.Direction := Direction;
   Result.Integrity := Integrity;
   Result.Options := Options;
   inherited Add(Result);
@@ -6097,10 +6148,10 @@ end;
 
 function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Integrity: string; Options: TLibraryOptions): TmnwLibrarySource;
 begin
-  Result := Add(SourceType, stOnline, OnlineFile, LocalFile, dirUndefined, Integrity, Options);
+  Result := Add(SourceType, stOnline, OnlineFile, LocalFile, Integrity, Options);
 end;
 
-function TLibrarySources.AddEmbed(const SourceType: TLibrarySourceType; const AName: string; const EmbedText: string; Direction: TDirection): TmnwLibrarySource;
+function TLibrarySources.AddEmbed(const SourceType: TLibrarySourceType; const AName: string; const EmbedText: string): TmnwLibrarySource;
 begin
   Result := TmnwLibrarySource.Create;
   Result.Name := AName;
@@ -6108,18 +6159,18 @@ begin
  
   Result.SourceType := SourceType;
   Result.Where := stEmbed;
-  Result.Direction := Direction;
   inherited Add(Result);
 end;
 
 function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Direction: TDirection): TmnwLibrarySource;
 begin
-  Result := Add(SourceType, stOnline, OnlineFile, LocalFile, Direction, '');
+  Result := Add(SourceType, stOnline, OnlineFile, LocalFile, '');
 end;
 
 function TLibrarySources.AddStyle(const EmbedText: string; AName: string; Direction: TDirection): TmnwLibrarySource;
 begin
-  Result := AddEmbed(stStyle, AName, EmbedText, Direction);
+  Result := AddEmbed(stStyle, AName, EmbedText);
+  Result.Direction := Direction;
 end;
 
 { TmnwLibrarySource }

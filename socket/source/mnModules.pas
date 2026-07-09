@@ -950,7 +950,7 @@ function OptionValue(Value: Boolean): TmodOptionValue; overload; inline;
 implementation
 
 uses
-  mnUtils;
+  mnUtils, mnLogs;
 
 function OptionValue(Value: TmodOptionValue): Boolean;
 begin
@@ -1891,7 +1891,8 @@ procedure TmodModuleConnection.HandleException(E: Exception);
 begin
   inherited;
   if ModuleServer <> nil then  
-    ModuleServer.Log(E.Message);
+      if ModuleServer.Logging then
+        Log.WriteLn(lglError, E.Message);
 end;
 
 procedure TmodModuleConnection.Prepare;
