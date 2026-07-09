@@ -1,0 +1,17 @@
+{
+  "login": "Login",
+  "login.title": "Login",
+  "login.success": "Login successed.",
+  "logout": "Logout",
+  "username": "Username",
+  "type.user.name": "Type user name",
+  "password": "Password",
+  "you.need.numbers": "You need to use letters numbers",
+  "submit": "Submit",
+  "reset": "Reset",
+  "cancel": "Cancel",
+  "index.of": "Index of",
+  "dirs": "Dirs",
+  "files": "Files",
+  "executed": "Executed"
+}
