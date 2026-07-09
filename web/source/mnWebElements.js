@@ -189,7 +189,7 @@ mnw.formPost = async function(e, extraJson) {
     const name = el.getAttribute('name') || "";
 
     if (token && name) {
-      data[name] = await sha256(el.value + token);
+      data[name] = await sha256(el.value + '-' + token);
     }
   }
 

@@ -106,6 +106,7 @@ type
     function ReadAsForeign: Int64;
     procedure WriteAsForeign(const Value: Int64);
     function ReadIsExists: Boolean;
+    function ReadIsEmpty: Boolean;
     function ReadAsAsUID: string;
     procedure WriteAsUID(const Value: string);
   protected
@@ -173,6 +174,7 @@ type
 
     property IsNull: Boolean read ReadIsNull write WriteIsNull;
     property IsExists: Boolean read ReadIsExists;
+    property IsEmpty: Boolean read ReadIsEmpty;
 
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
@@ -804,6 +806,11 @@ end;
 procedure TmnCustomField.SaveToStream(Stream: TStream);
 begin
   raise Exception.Create('Not implemented yet');
+end;
+
+function TmnCustomField.ReadIsEmpty: Boolean;
+begin
+  Result := IsExists or (AsString = '');
 end;
 
 function TmnCustomField.ReadIsExists: Boolean;

@@ -95,13 +95,13 @@ end;
 
 procedure TMain.HttpServerBeforeOpen(Sender: TObject);
 var
-  aHomeDir: string;
+  aPublicPath: string;
   aDocModule: TmodWebModule;
   aHomeModule: THomeModule;
 begin
-  aHomeDir := HomePathEdit.Text;
-  if (LeftStr(aHomeDir, 2)='.\') or (LeftStr(aHomeDir, 2)='./') then
-    aHomeDir := ExtractFilePath(Application.ExeName) + Copy(aHomeDir, 3, MaxInt);
+  aPublicPath := HomePathEdit.Text;
+  if (LeftStr(aPublicPath, 2)='.\') or (LeftStr(aPublicPath, 2)='./') then
+    aPublicPath := ExtractFilePath(Application.ExeName) + Copy(aPublicPath, 3, MaxInt);
 
   HttpServer.Bind := BindEdit.Text;
   HttpServer.Port := PortEdit.Text;
@@ -116,7 +116,7 @@ begin
 
   if aDocModule <> nil then
   begin
-    aDocModule.HomeDir := aHomeDir;
+    aDocModule.PublicPath := aPublicPath;
     aDocModule.AliasName := DocAliasEdit.Text;
     (aDocModule as TmodWebFileModule).ServeFiles:= [serveEnabled, serveIndex, serveDefault, serveSmart];
 
@@ -138,18 +138,18 @@ begin
   if aHomeModule <> nil then
   begin
     aHomeModule.AliasName := HomeAliasEdit.Text;
-    aHomeModule.Web.AppDir := ExtractFilePath(Application.ExeName);
+    aHomeModule.Web.AppPath := ExtractFilePath(Application.ExeName);
 
 
 //    aHomeModule.Domain := 'localhost';
 //    aHomeModule.Port := HttpServer.Port;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
-    aHomeModule.Web.HomeDir := IncludePathDelimiter(aHomeDir);
-    aHomeModule.HomeDir := IncludePathDelimiter(aHomeDir);
-    aHomeModule.WorkDir := aHomeModule.Web.AppDir;
+    aHomeModule.Web.PublicPath := IncludePathDelimiter(aPublicPath);
+    aHomeModule.PublicPath := IncludePathDelimiter(aPublicPath);
+    aHomeModule.PrivatePath := aHomeModule.Web.AppPath;
     aHomeModule.Web.CompactMode := False;
-    ForceDirectories(aHomeModule.WorkDir + 'cache');
-    ForceDirectories(aHomeModule.WorkDir + 'temp');
+    ForceDirectories(aHomeModule.PrivatePath + 'cache');
+    ForceDirectories(aHomeModule.PrivatePath + 'temp');
 
     if KeepAliveChk.Checked then
       aHomeModule.UseKeepAlive := ovYes

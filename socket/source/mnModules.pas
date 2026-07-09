@@ -548,7 +548,7 @@ type
   TwebResponse = class(TmodResponse)
   private
     FRedirect: string;
-    FHomeDir: string;
+    FPublicPath: string;
     FIsResponded: Boolean; //Document root Dir
     //FCompressed: Boolean;
     function GetRequest: TwebRequest;
@@ -565,7 +565,7 @@ type
     function StatusVersion: string;
 
     //Document root Dir
-    property HomeDir: string read FHomeDir write FHomeDir;
+    property PublicPath: string read FPublicPath write FPublicPath;
 
     property Request: TwebRequest read GetRequest;
     property Redirect: string read FRedirect write FRedirect; //Relocation it to another url
@@ -573,7 +573,7 @@ type
     procedure Responded; overload; virtual; 
     procedure Respond(AAnswer: TmodAnswer); overload; 
     procedure Respond(AAnswer: TmodAnswer; AContentType: string); overload; 
-    procedure RespondText(S: string);    
+    procedure RespondText(S: string; AAnswer: TmodAnswer = hrOK);    
     procedure RespondHTML(S: string);    
     procedure RespondJSON(S: string; AAnswer: TmodAnswer = hrOK); overload;
     procedure RespondJSON(ResultType, State, Message: string; AAnswer: TmodAnswer = hrOK); overload;
@@ -1890,7 +1890,8 @@ end;
 procedure TmodModuleConnection.HandleException(E: Exception);
 begin
   inherited;
-  //ModuleServer.Log(E.Message);
+  if ModuleServer <> nil then  
+    ModuleServer.Log(E.Message);
 end;
 
 procedure TmodModuleConnection.Prepare;
@@ -3545,9 +3546,9 @@ begin
   Responded;
 end;
 
-procedure TwebResponse.RespondText(S: string);
+procedure TwebResponse.RespondText(S: string; AAnswer: TmodAnswer);
 begin
-  Answer := hrOK;
+  Answer := AAnswer;
   ContentType := 'text/plain';
   SendUTF8String(S);
   Responded;

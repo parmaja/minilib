@@ -284,7 +284,7 @@ begin
           begin
             Name := 'logo';
             Route := 'logo';
-            LoadFromFile(IncludePathDelimiter(Schema.GetHomeDir) + 'logo.png');
+            LoadFromFile(IncludePathDelimiter(Schema.GetPublicPath) + 'logo.png');
           end;
 
 {          with TImage.Create(This) do
@@ -787,7 +787,7 @@ begin
       TCode.Create(This, 'Context.GetRelativePath: ' + AContext.GetRelativePath(This));
       TBreak.Create(This);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.GetHomePath: ' + AContext.GetHomePath);
+      TCode.Create(This, 'Context.GetDefaultPath: ' + AContext.GetDefaultPath);
       TBreak.Create(This);
       TCode.Create(This, 'Context.GetPath(e): ' + AContext.GetPath(This));
       TBreak.Create(This);
@@ -827,12 +827,12 @@ procedure TFilesSchema.DoCompose(const AContext: TmnwContext);
 begin
   inherited;
   ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
-  HomeDir := IncludePathDelimiter(Web.HomeDir) + 'files';
+  PublicPath := IncludePathDelimiter(Web.PublicPath) + 'files';
   with TFolder.Create(This) do
   begin
     ServeFiles := [serveEnabled, serveSmart, serveDefault, serveIndex];
     Route := 'Dir';
-    HomeDir := ExpandFileName(Web.HomeDir+ 'smilies');
+    PublicPath := ExpandFileName(Web.PublicPath+ 'smilies');
   end;
 end;
 
@@ -846,7 +846,7 @@ begin
   with TFile.Create(This) do
   begin
     Route := 'echo';
-    FileName := IncludePathDelimiter(Web.HomeDir) + 'ws.html';
+    FileName := IncludePathDelimiter(Web.PublicPath) + 'ws.html';
   end;
 end;
 
@@ -871,7 +871,7 @@ begin
   with Web.Assets do
   begin
     //Web.OnlineFiles:= olfSmart;
-    LogoFile := HomeDir + 'logo.png';
+    LogoFile := PublicPath + 'logo.png';
   end;
 end;
 

@@ -91,10 +91,10 @@ type
   TmodWebModule = class abstract(TmodModule)
   private
     FOrigins: TStrings;
-    FHomeDir: string;
-    FWorkDir: string;
+    FPublicPath: string;
+    FPrivatePath: string;
 
-    procedure SetHomeDir(AValue: string);
+    procedure SetPublicPath(AValue: string);
     procedure SetOrigins(AValue: TStrings);
   protected
     procedure Created; override;
@@ -115,9 +115,9 @@ type
     
     property Origins: TStrings read FOrigins write SetOrigins;
     //Public Directory
-    property HomeDir: string read FHomeDir write SetHomeDir;
+    property PublicPath: string read FPublicPath write SetPublicPath;
     //Private Directory
-    property WorkDir: string read FWorkDir write FWorkDir;    
+    property PrivatePath: string read FPrivatePath write FPrivatePath;    
     
   end;
   { TmodWebFileModule }
@@ -331,6 +331,8 @@ function FindDefaultDocument(Root: string; DefaultDocuments: TStringList): strin
 procedure WebServeDir(Title, Path: string; Response: TwebResponse; Request: TmodRequest);
 procedure WebServeFile(Response: TwebResponse; Request: TmodRequest; DefaultDocuments: TStringList; Options: TmodServeFiles);
 
+function IsJWT(const S: string): Boolean;
+
 function WebServers: TWebServers;
 
 implementation
@@ -340,12 +342,17 @@ uses
 
 var
   FWebServers: TWebServers = nil;
-
+ 
 function WebServers: TWebServers;
 begin
   if FWebServers = nil then
     FWebServers := TWebServers.Create;
   Result := FWebServers;
+end;
+
+function IsJWT(const S: string): Boolean;
+begin
+  Result := (Length(S) > 0) and (S.CountChar('.') = 2);
 end;
 
 function WebFindDocument(const HomeDir, Path: string; out Document:string; Smart: Boolean = False): Boolean;
@@ -422,11 +429,11 @@ end;
 
 { TmodWebModule }
 
-procedure TmodWebModule.SetHomeDir(AValue: string);
+procedure TmodWebModule.SetPublicPath(AValue: string);
 begin
-  if FHomeDir = AValue then
+  if FPublicPath = AValue then
 	  exit;
-  FHomeDir := AValue;
+  FPublicPath := AValue;
 end;
 
 procedure TmodWebModule.SetOrigins(AValue: TStrings);
@@ -441,7 +448,7 @@ begin
   UseKeepAlive := ovUndefined;
   UseCompressing := ovNo;
   UseWebSocket := True;
-  FHomeDir := '';
+  FPublicPath := '';
   FOrigins := TStringList.Create;
 end;
 
@@ -528,7 +535,7 @@ end;
 procedure TmodWebFileModule.Started;
 begin
   inherited;
-  if HomeDir = '' then
+  if PublicPath = '' then
     raise Exception.Create('Home path not set!');
 end;
 
@@ -561,7 +568,7 @@ end;
 procedure TwebFileCommand.Prepare(var Result: TmodRespondResult);
 begin
   inherited;
-  Response.HomeDir := Module.HomeDir;
+  Response.PublicPath := Module.PublicPath;
 end;
 
 procedure TwebFileCommand.Created;
@@ -679,7 +686,7 @@ begin
 
 //-BUG: http://localhost:8080/doc/laz-logo.png/
 
-  aHomeDir := ExpandFile(CorrectPath(ExcludePathDelimiter(Response.HomeDir)));
+  aHomeDir := ExpandFile(CorrectPath(ExcludePathDelimiter(Response.PublicPath)));
 
   WebExpandFile(aHomeDir, Request.CurrentPath, aRequestDocument, False);
 
@@ -760,7 +767,7 @@ begin
     Response.Answer := hrForbidden;
     exit;
   end;
-  aFile := TFileStream.Create(IncludeTrailingPathDelimiter(Response.HomeDir) + aFileName, fmCreate);
+  aFile := TFileStream.Create(IncludeTrailingPathDelimiter(Response.PublicPath) + aFileName, fmCreate);
   try
     Response.Stream.ReadStream(aFile, Request.ContentLength);
   finally
@@ -834,7 +841,7 @@ begin
     Response.Answer := hrForbidden;
     exit;
   end;
-  aFileName := IncludeTrailingPathDelimiter(Response.HomeDir) + aSafeName;
+  aFileName := IncludeTrailingPathDelimiter(Response.PublicPath) + aSafeName;
   if FileExists(aFileName) then
     DeleteFile(aFileName);
   Response.Stream.WriteCommand('OK');
@@ -952,7 +959,7 @@ begin
     with TmodWebFileModule.Create(Self, sAcmeNameDir, '.' + sAcmeNameDir) do
     begin
       Level := -1;
-      HomeDir := AHomeDir;
+      PublicPath := AHomeDir;
     end;
     //* use certbot Dir to "Application.Location + 'acme'" because certbot will create Dir .well-known
   end;
@@ -968,7 +975,7 @@ begin
     with TmodWebFileModule.Create(Self, Alias, Alias) do
     begin
       Level := -1;
-      HomeDir := AHomeDir;
+      PublicPath := AHomeDir;
     end;
   end;
 end;
