@@ -1189,6 +1189,8 @@ begin
   if e.Gap > 0 then
     Scope.Classes.Add('m-childs'); 
 //    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
+  if e.Direction <> dirUndefined then
+    Scope.Attributes.Add('dir', DirectionToStr(e.Direction));
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');

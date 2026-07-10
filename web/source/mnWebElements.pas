@@ -1552,6 +1552,7 @@ type
 
       TPanel = class(THTMLItem)
       public
+        Direction: TDirection;
         Gap: Integer;
       end;
 

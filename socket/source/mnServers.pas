@@ -86,6 +86,7 @@ type
     constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
     destructor Destroy; override;
     procedure Disconnect; virtual;
+    procedure Detach;
     property Stream: TmnConnectionStream read FStream;
     property Listener: TmnListener read GetListener;
     property RemoteIP: string read FRemoteIP;
@@ -428,6 +429,11 @@ begin
   Disconnect;
   FreeAndNil(FStream);
   inherited;
+end;
+
+procedure TmnServerConnection.Detach;
+begin
+  FStream := nil;
 end;
 
 function TmnServerConnection.GetListener: TmnListener;

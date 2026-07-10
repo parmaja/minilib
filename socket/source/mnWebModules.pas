@@ -106,10 +106,11 @@ type
   public
     destructor Destroy; override;
   public
-    //protocol://domain:port/namespace/alias/directory
-    //--------HOST URL------/namespace/alias/directory
-    //----------HOME URL--------------/directory
+    //protocol://domain:port/namespace/alias/currentpath
+    //--------HOST URL------/namespace/alias/currentpath
+    //----------HOME URL--------------/currentpath
     Domain: string; //localhost    
+    Namespace: string; //Used it only to create default page, good for open webbrowser
 
     function GetDefaultURL: string; virtual;
     
@@ -482,7 +483,7 @@ begin
     if Server.Port <> '80' then
       Result := Result + ':' + Server.Port;    
   end;    
-  Result := Result + Domain + AddStartURLDelimiter(AliasName);
+  Result := Result + Domain + AddStartURLDelimiter(Namespace) + AddStartURLDelimiter(AliasName);
 end;
 
 procedure TmodWebModule.InternalError(ARequest: TmodRequest; var Handled: Boolean);

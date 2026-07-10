@@ -127,7 +127,7 @@ procedure InstallEventLog(AEvent: TLogEvent; LogLevel: TLogLevel = lglDebug);
 {$ifdef FPC}
 procedure InstallExceptLog(WithIO: Boolean = False);
 {$endif}
-function IsLogInstalled(LogClass: TClass): Boolean;
+function IsLogInstalled(LogClass: TClass = nil): Boolean;
 procedure ChangeLogLevel(LogClass: TClass; vLogLevel: TLogLevel); overload;
 procedure ChangeLogLevel(LogClass: TClass; vEnabled: Boolean); overload;
 
@@ -205,6 +205,8 @@ function IsLogInstalled(LogClass: TClass): Boolean;
 var
   i: Integer;
 begin
+  if LogCLass = nil then
+    exit(log.Count>0);
   for i := 0 to log.Count -1 do
   begin
     if (Log[i] as TLogDispatcherItem).LogObject is LogClass then
