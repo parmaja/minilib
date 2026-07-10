@@ -1125,7 +1125,8 @@ begin
       case field.DataType of
         dtBoolean: Result := Result + field.AsString;
         dtInteger: Result := Result + field.AsString;
-        dtCurrency: Result := Result + field.AsString;
+//        dtCurrency: Result := Result + FormatCurr('$#,##0.00;($#,##0.00);""', Field.AsCurrency);
+        dtCurrency: Result := Result + Field.AsString;
         dtFloat: Result := Result + field.AsString;
         else
           //TODO Escape

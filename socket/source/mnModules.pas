@@ -1890,9 +1890,7 @@ end;
 procedure TmodModuleConnection.HandleException(E: Exception);
 begin
   inherited;
-  if ModuleServer <> nil then  
-      if ModuleServer.Logging then
-        Log.WriteLn(lglError, E.Message);
+  Log.WriteLn(lglError, E.Message);
 end;
 
 procedure TmodModuleConnection.Prepare;

@@ -2098,7 +2098,7 @@ function Renderers: TmnwRenderers;
 function GlobalLibraries: TmnwLibraries; //TODO
 
 procedure InitLanguages(const APath: string);
-function _(const Key: string; const Lang: string; const Default: string = ''): string;
+function _T(const Key: string; const Lang: string; const Default: string = ''): string;
 
 var
   GlobalTimeStamp: Int64;
@@ -2288,7 +2288,7 @@ begin
   end;
 end;
 
-function _(const Key: string; const Lang: string; const Default: string = ''): string;
+function _T(const Key: string; const Lang: string; const Default: string = ''): string;
 var
   LangData: TDON_Element;
 begin
@@ -5910,7 +5910,7 @@ begin
         begin
           Solitary := True;
           Size := szMedium;
-          Caption := _('login', AContext.Language, 'Login');          
+          Caption := _T('login', AContext.Language, 'Login');          
 //          Auth.Compose(AContext);
         end;
       end;
@@ -5968,7 +5968,7 @@ end;
 procedure TAuthForm.DoCompose(const AContext: TmnwContext);
 begin
   Solitary := True;
-  Caption := _('login', AContext.Language, 'Login');
+  Caption := _T('login', AContext.Language, 'Login');
 
   with THTML, Self do
   begin
@@ -5984,8 +5984,8 @@ begin
       begin
         ID := 'username';
         Name := 'username';
-        Caption := _('username', AContext.Language, 'Username');
-        PlaceHolder := _('type.user.name', AContext.Language, 'Type user name');
+        Caption := _T('username', AContext.Language, 'Username');
+        PlaceHolder := _T('type.user.name', AContext.Language, 'Type user name');
         AutoFocus := True;
         Required := True;
       end;
@@ -5994,8 +5994,8 @@ begin
       begin
         ID := 'password';
         Name := 'password';
-        Caption := _('password', AContext.Language, 'Password');
-        HelpText := _('you.need.numbers', AContext.Language, 'You need to use letters numbers');
+        Caption := _T('password', AContext.Language, 'Password');
+        HelpText := _T('you.need.numbers', AContext.Language, 'You need to use letters numbers');
         Token := AContext.Web.PasswordToken;
       end;
 
@@ -6004,9 +6004,9 @@ begin
         THiddenInput.Create(This, 'JWTMode', 'True');
       end;
       
-      Submit.Caption := _('submit',  AContext.Language, 'Submit');
-      Reset.Caption := _('reset',  AContext.Language, 'Reset');
-      Cancel.Caption := _('cancel',  AContext.Language,'Cancel') ; 
+      Submit.Caption := _T('submit',  AContext.Language, 'Submit');
+      Reset.Caption := _T('reset',  AContext.Language, 'Reset');
+      Cancel.Caption := _T('cancel',  AContext.Language,'Cancel') ; 
     end;
   end;
   inherited;

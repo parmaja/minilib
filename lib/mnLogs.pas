@@ -131,7 +131,6 @@ function IsLogInstalled(LogClass: TClass = nil): Boolean;
 procedure ChangeLogLevel(LogClass: TClass; vLogLevel: TLogLevel); overload;
 procedure ChangeLogLevel(LogClass: TClass; vEnabled: Boolean); overload;
 
-
 function Log: TLogDispatcher;
 
 implementation
@@ -508,6 +507,7 @@ begin
 end;
 
 initialization
+  Log; //Init it needed for multithread
 finalization
   FShutdowning := True;
   FreeAndNil(FLog);

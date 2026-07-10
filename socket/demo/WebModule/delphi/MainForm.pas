@@ -317,8 +317,7 @@ begin
   HttpServer.OnAfterOpen := HttpServerAfterOpen;
   HttpServer.OnAfterClose := HttpServerAfterClose;
   HttpServer.OnChanged :=  HttpServerChanged;
-  HttpServer.OnLog := HttpServerLog;
-  HttpServer.Logging := True;
+  HttpServer.OnLog := HttpServerLog;  
 
   HttpServer.Add(TmodWebFileModule, 'doc', 'doc');
   THomeModule.Create(HttpServer, 'home', 'home');

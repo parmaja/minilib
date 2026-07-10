@@ -19,7 +19,7 @@ interface
 
 uses
   Classes, SysUtils, StrUtils,
-  mnUtils, mnOpenSSL, syncobjs, mnClasses,
+  mnUtils, mnOpenSSL, syncobjs, mnClasses, mnLogs,
   mnSockets, mnStreams, mnConnections;
 
 const
@@ -174,7 +174,6 @@ type
     FPort: string;
     FBind: string;
     FListener: TmnListener;
-    FLogging: Boolean;
     FIsSecure: Boolean;
     FIdleTick: UInt64;
     FIdleInterval: Int64;
@@ -232,7 +231,6 @@ type
 
     property Active: boolean read FActive write SetActive default False;
     property Started: boolean read FActive write SetActive default False;
-    property Logging: Boolean read FLogging write FLogging default False;
     property Connected: Boolean read GetConnected;
     property IdleInterval: Int64 read FIdleInterval write FIdleInterval default cIdleInterval;
   end;
@@ -802,7 +800,7 @@ end;
 
 procedure TmnListener.Log(S: string);
 begin
-  if Server.Logging then
+  if mnLogs.Log.Enabled then
   begin
     Enter;
     try
@@ -943,7 +941,7 @@ end;
 
 procedure TmnServer.Log(const S: string);
 begin
-  if Logging then
+  if mnLogs.Log.Enabled then
     DoLog(S);
 end;
 
