@@ -225,11 +225,14 @@ type
     property Listener: TmnListener read FListener;
     property Count: Integer read GetCount;
 
-    property Port: string read FPort write SetPort;
-    property Bind: string read FBind write SetBind;
-    property UsedPort: string read GetUsedPort;
-    property Address: string read FBind write SetBind;//Deprecated
     property IsSecure: Boolean read FIsSecure write FIsSecure;
+    //You set port to '0' to get random port from system
+    property Port: string read FPort write SetPort;
+    //The used port if you set port to '0'
+    property UsedPort: string read GetUsedPort;
+    
+    property Bind: string read FBind write SetBind;
+    property Address: string read FBind write SetBind;//Deprecated
 
     property Active: boolean read FActive write SetActive default False;
     property Started: boolean read FActive write SetActive default False;

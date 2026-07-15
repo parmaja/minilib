@@ -895,10 +895,7 @@ begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
   if e.Footer.Fixed then  
-    Scope.Classes.Add('footer-padding');
-  //Scope.Classes.Add('d-flex');
-  //Scope.Classes.Add('flex-column');
-  
+    Scope.Classes.Add('footer-padding');  
 
   Context.Writer.OpenTag('div', Scope.ToString([ssAttributes, ssOuter]));
   if e.Caption <> '' then
@@ -913,14 +910,22 @@ begin
     end;
     Context.Writer.CloseTag('h5');
   end;  
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body overflow-hidden collapse show' 
+
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body collapse show" aria-labelledby="'+e.id+'-header"');  //removed `overflow-hidden`
+
+  // InnerClasses (d-flex, flex-column, etc.) use !important which overrides
+  // Bootstrap's .collapse:not(.show) { display: none; }. Wrap children in a
+  // flex container so the collapse target div can be hidden properly.
+  
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-panel" class="overflow-hidden' 
 //    + When(e.Gap>0, ' m-childs-' + e.Gap.ToString)
-    + When(e.Gap>0, ' m-childs')
-    + SpaceIf(Scope.InnerClasses.Value)
-    +'" aria-labelledby="'+e.id+'-header"'
+    + When(e.Gap > 0, ' m-childs')
+    + SpaceIf(Scope.InnerClasses.Value)    
+    + '"'
     );
   inherited;
-  Context.Writer.CloseTag('div');
+  Context.Writer.CloseTag('div'); //Panel
+  Context.Writer.CloseTag('div'); //Body
   if e.Footer <> nil then
     e.Footer.Render(Context);
   Context.Writer.CloseTag('div');
