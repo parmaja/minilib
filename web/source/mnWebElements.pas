@@ -366,6 +366,7 @@ type
     Direction: TDirection;    
 
     property Domain: string read GetDomain;
+    //Need to review
     property Port: string read GetPort;
 
     // http://host:80/
@@ -3423,6 +3424,7 @@ begin
   SessionAge := msOneHour; //Forever
   FShowVersion := True;
   FLanguage := 'en';
+  FAppPath := ExtractFilePath(ParamStr(0));
   inherited;
 end;
 
@@ -5205,7 +5207,7 @@ begin
   if Module.Domain <> '' then
   begin
     aDomain := Module.Domain;
-    aPort := Module.Server.Port;
+    aPort := Module.Server.UsedPort;
   end
   else
     SplitStr(Request.Header['Host'], ':', aDomain, aPort);
@@ -5396,10 +5398,6 @@ begin
 //  AssetsURL := '/' + AliasName + '/' + Web.Assets.Route;
   if Web.PublicPath = '' then
     Web.PublicPath := PublicPath;
-  if Web.Domain = '' then
-    Web.Domain := Domain;
-  if Web.Port = '' then
-    Web.Port := Server.Port;
   if Web.PrivatePath = '' then
     Web.PrivatePath := PrivatePath;
   if Web.ModuleName = '' then
@@ -5407,6 +5405,12 @@ begin
   //Web.Assets.PublicPath := Web.PublicPath;
   Web.IsSecure := Server.IsSecure;
 
+//Maybe leave it to extract it from request
+{  if Web.Domain = '' then
+    Web.Domain := Domain;
+  if Web.Port = '' then
+    Web.Port := Server.UsedPort;}
+  
   Web.Start;
 end;
 

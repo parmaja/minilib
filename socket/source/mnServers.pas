@@ -182,6 +182,7 @@ type
     procedure SetPort(const Value: string);
     function GetCount: Integer;
     function GetConnected: Boolean;
+    function GetUsedPort: string;
   protected
     IsDestroying: Boolean;
     IsStopping: Boolean;
@@ -226,6 +227,7 @@ type
 
     property Port: string read FPort write SetPort;
     property Bind: string read FBind write SetBind;
+    property UsedPort: string read GetUsedPort;
     property Address: string read FBind write SetBind;//Deprecated
     property IsSecure: Boolean read FIsSecure write FIsSecure;
 
@@ -516,6 +518,14 @@ begin
   end
   else
     Result := 0;
+end;
+
+function TmnServer.GetUsedPort: string;
+begin
+  if Listener <> nil then  
+    Result := Listener.Port
+  else
+    Result := Port;
 end;
 
 procedure TmnServer.Idle(vListener: TmnListener);

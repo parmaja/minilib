@@ -474,14 +474,14 @@ begin
   if Server.IsSecure then
   begin
     Result := 'https://' + Result;
-    if Server.Port <> '443' then
-      Result := Result + ':' + Server.Port;    
+    if Server.UsedPort <> '443' then
+      Result := Result + ':' + Server.UsedPort;    
   end
   else
   begin
     Result := 'http://' + Result;
     if Server.Port <> '80' then
-      Result := Result + ':' + Server.Port;    
+      Result := Result + ':' + Server.UsedPort;    
   end;    
   Result := Result + Domain + AddStartURLDelimiter(Namespace) + AddStartURLDelimiter(AliasName);
 end;
@@ -749,7 +749,7 @@ begin
   inherited;
   Response.Answer := hrOK;
   Response.SendHeader;
-  //Response.Stream.WriteLine('Server is running on port: ' + Module.Server.Port);
+  //Response.Stream.WriteLine('Server is running on port: ' + Module.Server.UsedPort);
   Response.Stream.WriteLine(Utf8String('the server is: "' + ParamStr(0) + '"'));
 end;
 
@@ -795,8 +795,8 @@ var
 begin
   inherited;
   aHost := Response.Request.Host;
-  if (Module.Server.Port <> '') and (Module.Server.Port <> '443') then
-    aHost := aHost + ':' + Module.Server.Port;
+  if (Module.Server.UsedPort <> '') and (Module.Server.Port <> '443') then
+    aHost := aHost + ':' + Module.Server.UsedPort;
   Response.RespondRedirectTo('https://' + aHost + Response.Request.URI);
 end;
 
