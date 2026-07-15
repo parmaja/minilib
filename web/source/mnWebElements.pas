@@ -5659,19 +5659,19 @@ begin
   FButtonSmall := THTML.TButton.Create(Self, [elEmbed]);
   FButtonSmall.Data := 'small';
   FButtonSmall.ControlStyle := styleUndefined;
-  FButtonSmall.Image.Symbol := 'icon mnw-font-small';
+  FButtonSmall.Image.Symbol := 'icon mnw-scale-down';
   FButtonSmall.CallScript := 'mnw.switch_zoom(event)';
 
   FButtonNormal := THTML.TButton.Create(Self, [elEmbed]);
   FButtonNormal.Data := 'normal';
   FButtonNormal.ControlStyle := styleUndefined;
-  FButtonNormal.Image.Symbol := 'icon mnw-font-normal';
+  FButtonNormal.Image.Symbol := 'icon mnw-scale-reset';
   FButtonNormal.CallScript := 'mnw.switch_zoom(event)';
 
   FButtonLarge := THTML.TButton.Create(Self, [elEmbed]);
   FButtonLarge.Data := 'large';
   FButtonLarge.ControlStyle := styleUndefined;
-  FButtonLarge.Image.Symbol := 'icon mnw-font-large';
+  FButtonLarge.Image.Symbol := 'icon mnw-scale-up';
   FButtonLarge.CallScript := 'mnw.switch_zoom(event)';
 end;
 
