@@ -538,10 +538,10 @@ type
   TmnwPriority = (priorityNormal, priorityStart, priorityEnd);
 
   TTheme = (themeUndefined, themeLight, themeDark);
-  TmnwShadow = (shadowUndefined, shadowThin, shadowThick, shadowEnd, ShadowBottom);
+  TmnwShadow = (shadowUndefined, shadowHairline, shadowThin, shadowThick, shadowEnd, ShadowBottom);
   TmnwRowAlign = (ralDefault, ralStart, ralCenter, ralStreach, ralBaseline, ralEnd);
-  TmnwJustify = (jstDefault, jstStart, jstCenter, ralBetween, jstAround, jstEvenly, jstEnd);
   TmnwColumnAlign = (calDefault, calTop, calCenter, calStreach, calBottom);
+  TmnwJustify = (jstDefault, jstStart, jstCenter, ralBetween, jstAround, jstEvenly, jstEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
 
   TRespondProc = reference to procedure (const AContext: TmnwContext);
@@ -1573,10 +1573,6 @@ type
       public
       end;
 
-      TThemeModeButton = class(THTMLItem)
-      public
-      end;
-
       { TDropdown }
 
       [TID_Extension]
@@ -1710,9 +1706,9 @@ type
       public
       end;
       
-      { TButton }
+      { TCustomButton }
 
-      TButton = class(TClickable)
+      TCustomButton = class(TClickable)
       private
       protected
         procedure Created; override;
@@ -1720,10 +1716,22 @@ type
         CallScript: string;
         ConfirmMessage: string;
         Outline: Boolean;
-        constructor Create(AParent: TmnwElement; const ACaption: string); reintroduce; overload; 
+        constructor Create(AParent: TmnwElement; const ACaption: string); reintroduce; overload;
       end;
 
-      TFormButton = class(TButton)
+      TButton = class(TCustomButton)
+      end;
+
+      TToolButton = class(TButton)
+      end;
+
+      TThemeButton = class(TToolButton)
+      protected
+        procedure Created; override;
+      public
+      end;
+
+      TFormButton = class(TCustomButton)
       public
         FormID: string;
       end;
@@ -1741,7 +1749,7 @@ type
         Action: string;
       end;
 
-      TCookieButton = class(TButton)
+      TCookieButton = class(TCustomButton)
       public
         Value: string;
       end;     
@@ -2045,9 +2053,9 @@ type
 
   TZoomButtons = class(THTML.TGroupButtons)
   protected
-    FButtonSmall: THTML.TButton;
-    FButtonNormal: THTML.TButton;
-    FButtonLarge: THTML.TButton;
+    FButtonSmall: THTML.TToolButton;
+    FButtonNormal: THTML.TToolButton;
+    FButtonLarge: THTML.TToolButton;
     procedure Created; override;
   public
   end;
@@ -5045,6 +5053,7 @@ begin
   inherited;
 //  MinSize := szSmall;
   Size := szMedium;
+  Shadow := shadowHairline;
 //  Shadow := shadowThin;
 end;
 
@@ -5656,19 +5665,19 @@ end;
 procedure TZoomButtons.Created;
 begin
   inherited;
-  FButtonSmall := THTML.TButton.Create(Self, [elEmbed]);
+  FButtonSmall := THTML.TToolButton.Create(Self, [elEmbed]);
   FButtonSmall.Data := 'small';
   FButtonSmall.ControlStyle := styleUndefined;
   FButtonSmall.Image.Symbol := 'icon mnw-scale-down';
   FButtonSmall.CallScript := 'mnw.switch_zoom(event)';
 
-  FButtonNormal := THTML.TButton.Create(Self, [elEmbed]);
+  FButtonNormal := THTML.TToolButton.Create(Self, [elEmbed]);
   FButtonNormal.Data := 'normal';
   FButtonNormal.ControlStyle := styleUndefined;
   FButtonNormal.Image.Symbol := 'icon mnw-scale-reset';
   FButtonNormal.CallScript := 'mnw.switch_zoom(event)';
 
-  FButtonLarge := THTML.TButton.Create(Self, [elEmbed]);
+  FButtonLarge := THTML.TToolButton.Create(Self, [elEmbed]);
   FButtonLarge.Data := 'large';
   FButtonLarge.ControlStyle := styleUndefined;
   FButtonLarge.Image.Symbol := 'icon mnw-scale-up';
@@ -5690,13 +5699,13 @@ begin
   Text := AText;
 end;
 
-constructor THTML.TButton.Create(AParent: TmnwElement; const ACaption: string);
+constructor THTML.TCustomButton.Create(AParent: TmnwElement; const ACaption: string);
 begin
   inherited Create(AParent);
   Caption := ACaption;
 end;
 
-procedure THTML.TButton.Created;
+procedure THTML.TCustomButton.Created;
 begin
   inherited;
   ControlStyle := stylePrimary;
@@ -6661,6 +6670,16 @@ begin
   inherited Create(AParent);
   Name := AName;
   Value := AValue;
+end;
+
+{ THTML.TThemeButton }
+
+procedure THTML.TThemeButton.Created;
+begin
+  inherited;
+  ControlStyle := styleUndefined;
+  Image.Symbol := 'icon mnw-theme';
+  CallScript := 'mnw.switch_theme(event)';
 end;
 
 initialization

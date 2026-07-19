@@ -562,10 +562,7 @@ begin
 
           with Tools do
           begin
-            with TThemeModeButton.Create(This) do
-            begin
-              Caption := 'Mode';
-            end;
+            TThemeButton.Create(This);
 
             with TDropdown.Create(This) do
             begin
@@ -588,10 +585,7 @@ begin
           AlwaysOpen := True;
           with TBar.Create(This) do
           begin            
-            with TThemeModeButton.Create(This) do
-            begin
-              Caption := 'Mode';
-            end;
+            TThemeButton.Create(This);
           end;
 
           with TAccordionSection.Create(This) do

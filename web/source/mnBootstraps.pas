@@ -296,13 +296,6 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TThemeModeButton }
-
-      TThemeModeButton = class(THTMLComponent)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
-      end;
-
       { TDropdown }
 
       TDropdown = class(THTMLControl)
@@ -395,8 +388,21 @@ type
       { TButton }
 
       TButton = class(THTMLItem)
-      protected        
+      protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      TToolButton = class(TButton)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TThemeButton }
+
+      TThemeButton = class(TToolButton)
+      protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -699,6 +705,7 @@ begin
     RegisterRenderer(THTML.TLink, TLink);
     RegisterRenderer(THTML.TSpan, TSpan);
     RegisterRenderer(THTML.TButton, TButton);
+    RegisterRenderer(THTML.TToolButton, TToolButton);
     RegisterRenderer(THTML.TSubmitForm, TSubmitForm);
     RegisterRenderer(THTML.TResetForm, TResetForm);
     RegisterRenderer(THTML.TActionForm, TActionForm);
@@ -735,7 +742,7 @@ begin
     RegisterRenderer(THTML.THTMLFormControl, THTMLFormControl);
     RegisterRenderer(THTML.THTMLControl, THTMLControl);
 
-    RegisterRenderer(THTML.TThemeModeButton, TThemeModeButton);
+    RegisterRenderer(THTML.TThemeButton, TThemeButton);
   end;
 end;
 
@@ -757,6 +764,7 @@ begin
 {  if e.MinSize > szUndefined then
     Scope.Classes.Add(BSSizeToStr('w-', e.MinSize));}
   case e.Shadow of
+    shadowHairline: Scope.Classes.Add('shadow-hairline');
     shadowThin: Scope.Classes.Add('shadow-thin');
     ShadowThick: Scope.Classes.Add('shadow-thick');
     ShadowEnd: Scope.Classes.Add('shadow-end');
@@ -771,7 +779,7 @@ begin
   if Image.Location = imgSymbol then
   begin
     if Image.Symbol <> '' then    
-      Context.Writer.AddTag('span', 'class='+ DQ(Image.Symbol))
+      Context.Writer.AddTag('span', 'class='+ DQ(Image.Symbol))//TODO check d-block?
   end
   else if Image.Location = imgPath then
   begin
@@ -791,7 +799,7 @@ procedure TBSRenderer.THeader.DoInnerRender(Scope: TmnwScope; Context: TmnwConte
 begin  
   Scope.Classes.Append('header sticky-top d-flex align-items-center py-0 px-1');
   Scope.Classes.Append('navbar-dark bg-black'); //dark theme header
-  Scope.Attributes.Add('data-bs-theme', 'dark'); //Needed because Header is always darktheme some items/icons not detected it
+  Scope.Attributes.Add('data-bs-theme', 'dark'); //Needed because our Header is always darktheme some items/icons not detected it
   Context.Writer.OpenTag('header', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('header');
@@ -894,8 +902,8 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
-  if e.Footer.Fixed then  
-    Scope.Classes.Add('footer-padding');  
+  if e.Footer.Fixed then
+    Scope.Classes.Add('footer-padding');
 
   Context.Writer.OpenTag('div', Scope.ToString([ssAttributes, ssOuter]));
   if e.Caption <> '' then
@@ -917,7 +925,7 @@ begin
   // Bootstrap's .collapse:not(.show) { display: none; }. Wrap children in a
   // flex container so the collapse target div can be hidden properly.
   
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-panel" class="overflow-hidden' 
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-panel" class="overflow-hidden p-1' //p-1 needed for highlights inputs
 //    + When(e.Gap>0, ' m-childs-' + e.Gap.ToString)
     + When(e.Gap > 0, ' m-childs')
     + SpaceIf(Scope.InnerClasses.Value)    
@@ -1012,9 +1020,9 @@ end;
 
 procedure TBSRenderer.TButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
-  e: THTML.TButton;
+  e: THTML.TCustomButton;
 begin
-  e := Scope.Element as THTML.TButton;
+  e := Scope.Element as THTML.TCustomButton;
   Scope.Classes.Add('btn');
   Scope.Attributes['type'] := 'button';
   if e.ConfirmMessage <> '' then
@@ -1026,13 +1034,13 @@ end;
 
 procedure TBSRenderer.TButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
-  e: THTML.TButton;
+  e: THTML.TCustomButton;
   event: string;
 begin
-  e := Scope.Element as THTML.TButton;
+  e := Scope.Element as THTML.TCustomButton;
   if e.ControlStyle <> styleUndefined then
   begin
-    if e.Outline then   
+    if e.Outline then
       Scope.Classes.Add(BSControlStyleToStr('btn-outline-', e.ControlStyle))
     else
       Scope.Classes.Add(BSControlStyleToStr('btn-', e.ControlStyle));
@@ -1151,9 +1159,15 @@ begin
   e := Scope.Element as THTML.TBody;
   inherited;
   if e.Theme = themeDark then
-    Scope.Attributes['data-bs-theme'] := 'dark'
+  begin
+    Scope.Attributes['data-bs-theme'] := 'dark';
+    Scope.Attributes['data-theme'] := 'dark';
+  end
   else if e.Theme = themeLight then
+  begin
     Scope.Attributes['data-bs-theme'] := 'light';
+    Scope.Attributes['data-theme'] := 'light';
+  end;
 end;
 
 procedure TBSRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
@@ -1170,6 +1184,7 @@ begin
   Context.Writer.OpenTag('script');
   Context.Writer.Writeln('const theme = localStorage.getItem("mnw-theme") || "'+aTheme+'";');
   Context.Writer.Writeln('document.body.setAttribute("data-bs-theme", theme);');
+  Context.Writer.Writeln('document.body.setAttribute("data-theme", theme);');
   Context.Writer.CloseTag('script');
   
   inherited;  
@@ -1219,17 +1234,17 @@ begin
   Context.Writer.CloseTag('div');
 end;
 
-{ TBSRenderer.TThemeModeButton }
+{ TBSRenderer.TThemeButton }
 
-procedure TBSRenderer.TThemeModeButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TThemeModeButton;
+procedure TBSRenderer.TThemeButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+{var
+  e: THTML.TThemeButton;}
 begin
-  e := Scope.Element as THTML.TThemeModeButton;
+{  e := Scope.Element as THTML.TThemeButton;
   Context.Writer.OpenTag('button', 'class="bg-transparent mx-0 py-0 px-1 border-0" type="button" aria-label="Toggle navigation" onclick="mnw.switch_theme(event)"');
-  Context.Writer.AddTag('span', 'class="icon mnw-theme"');
+  Context.Writer.AddTag('span', 'class="icon mnw-theme"');}
   inherited;
-  Context.Writer.CloseTag('button');
+//  Context.Writer.CloseTag('button');
 end;
 
 { TBSRenderer.TDropdown }
@@ -1449,6 +1464,7 @@ begin
   //Scope.Classes.Add('bg-body');
   Scope.Classes.Add('d-flex');
   Scope.Classes.Add('p-1');
+  Scope.Classes.Add('align-items-center');
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
@@ -2099,6 +2115,22 @@ begin
   e := Scope.Element as THTML.THiddenInput;
   Context.Writer.AddShortTag('input', Scope.ToString); 
   inherited;
+end;
+
+{ TBSRenderer.TToolButton }
+
+procedure TBSRenderer.TToolButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Classes.Add('d-block');
+  Scope.Classes.Add('p-1');
+  Scope.Attributes.Add('aria-label', 'Toggle navigation');
+end;
+
+procedure TBSRenderer.TToolButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+
 end;
 
 initialization

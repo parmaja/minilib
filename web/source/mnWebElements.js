@@ -342,6 +342,7 @@ mnw.switch_theme = function(e)
   if (document.body.getAttribute('data-bs-theme') == 'dark')
     bs_theme = 'light';
   document.body.setAttribute('data-bs-theme', bs_theme);
+  document.body.setAttribute('data-theme', bs_theme); //* Some Addons/Controls may use it like Marked.js
   localStorage.setItem('mnw-theme', bs_theme);
 }
 

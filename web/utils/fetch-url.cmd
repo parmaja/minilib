@@ -1,1 +1,1 @@
-wget -p -k -E --span-hosts -e robots=off -nd  -P test http://localhost:10906/demo/login/
+wget -p -k -E --span-hosts -e robots=off -nd  -P test %1
