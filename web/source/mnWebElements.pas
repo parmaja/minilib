@@ -408,7 +408,7 @@ type
     property Renderer: TmnwRenderer read FRenderer;
     property Writer: TmnTidyWriter read FWriter;
   public
-    procedure Use(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0);
+    procedure Require(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0);
   end;
 
   TmnwObject = class(TmnNamedObject);
@@ -492,7 +492,7 @@ type
     property Lock: TCriticalSection read FLock;
   end;
 
-  TmnwUsedLibraries = class(TmnNamedObjectList<TmnwLibrary>)
+  TmnwRequires = class(TmnNamedObjectList<TmnwLibrary>)
   protected
     function Compare(Item1, Item2: TmnwLibrary): Integer; override;
   public    
@@ -922,7 +922,7 @@ type
   TmnwRenderer = class abstract(TmnwObject)
   private
     FModule: TmodWebModule;
-    FLibraries: TmnwUsedLibraries;
+    FRequires: TmnwRequires;
     FParams: TmnwAttributes;
   protected
     {$ifdef rtti_objects}
@@ -948,9 +948,10 @@ type
     function CreateRenderer(AObject: TmnwElement): TmnwElementRenderer; overload;
 
     property Params: TmnwAttributes read FParams;
-    property Libraries: TmnwUsedLibraries read FLibraries;
+    property Requires: TmnwRequires read FRequires;
     property Module: TmodWebModule read FModule;
 
+    procedure Require(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0); overload;
     procedure AddHead(const Context: TmnwContext); virtual; 
   public
     RendererID: Integer;
@@ -4557,7 +4558,7 @@ constructor TmnwRenderer.Create(AModule: TmodWebModule);
 {var
   o: TmnwRenderer.TmnwElementRendererRegister;}
 begin
-  FLibraries := TmnwUsedLibraries.Create(False);
+  FRequires := TmnwRequires.Create(False);
   inherited Create;
   FModule := AModule;
   FParams := TmnwAttributes.Create;
@@ -4572,13 +4573,13 @@ end;
 procedure TmnwRenderer.Created;
 begin
   inherited;
-  Libraries.Use(TWebElements_Library, 2000);
+  Require(TWebElements_Library, 2000);
 end;
 
 destructor TmnwRenderer.Destroy;
 begin
   FreeAndNil(FParams);
-  FreeAndNil(FLibraries);
+  FreeAndNil(FRequires);
   inherited;
 end;
 
@@ -4594,6 +4595,11 @@ end;
 class function TmnwRenderer.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean): TmnwElementRendererRegister;
 begin
   Result := ElementRenderers.RegisterRenderer(AElementClass, ARendererClass, Replace);
+end;
+
+procedure TmnwRenderer.Require(ALibraryClass: TmnwLibraryClass; Priority: Integer);
+begin
+  Requires.Use(ALibraryClass, Priority);
 end;
 
 procedure TmnwRenderer.DoBeginRender;
@@ -5234,7 +5240,7 @@ begin
   begin
     aContext.FRenderer := (Module as TmnwWebModule).CreateRenderer;
     aContext.Renderer.RendererID := RendererID;
-    aContext.Renderer.Libraries.QuickSort;
+    aContext.Renderer.Requires.QuickSort;
     aContext.FWriter := TmnTidyWriter.Create('html', Response.Stream);
     aContext.Writer.Compact := Module.Web.CompactMode;
 
@@ -5760,9 +5766,9 @@ begin
   Result := GetURL(Schema);
 end;
 
-procedure TmnwContext.Use(ALibraryClass: TmnwLibraryClass; Priority: Integer);
+procedure TmnwContext.Require(ALibraryClass: TmnwLibraryClass; Priority: Integer);
 begin
-  Renderer.Libraries.Use(ALibraryClass, Priority);
+  Renderer.Require(ALibraryClass, Priority);
 end;
 
 function TmnwContext.GetBasePath: string;
@@ -6195,9 +6201,9 @@ begin
   Options := [libDefer, libCross];
 end;
 
-{ TmnwUsedLibraries }
+{ TmnwRequires }
 
-procedure TmnwUsedLibraries.Use(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0);
+procedure TmnwRequires.Use(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0);
 var
   ALibrary: TmnwLibrary;
 begin
@@ -6213,7 +6219,7 @@ begin
     raise Exception.Create('Can''t register library: ' + ALibraryClass.ClassName);
 end;
 
-function TmnwUsedLibraries.Compare(Item1, Item2: TmnwLibrary): Integer;
+function TmnwRequires.Compare(Item1, Item2: TmnwLibrary): Integer;
 begin
   if Item1.Priority < Item2.Priority then
     Result := -1
@@ -6224,7 +6230,7 @@ begin
   //TODO use DependsOn
 end;
 
-function TmnwUsedLibraries.Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary;
+function TmnwRequires.Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary;
 var
   i: Integer;
 begin
@@ -6237,7 +6243,7 @@ begin
     end;
 end;
 
-procedure TmnwUsedLibraries.Use(ALibraryName: string);
+procedure TmnwRequires.Use(ALibraryName: string);
 var
   ALibrary: TmnwLibrary;
 begin
@@ -6445,7 +6451,7 @@ begin
   begin
     AddHead(Scope, Context);
     //* Library Head
-    for aLibrary in Renderer.Libraries do
+    for aLibrary in Renderer.Requires do
     begin
       aLibrary.AddHead(Context);
     end;

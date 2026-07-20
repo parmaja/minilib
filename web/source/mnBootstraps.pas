@@ -646,8 +646,8 @@ end;
 procedure TBSRenderer.Created;
 begin
   inherited;  
-  Libraries.Use(TBootstrap_Library);
-  Libraries.Use(TBootstrapIcons_Library);
+  Require(TBootstrap_Library);
+  Require(TBootstrapIcons_Library);
 end;
 
 class destructor TBSRenderer.Destroy;
@@ -1176,11 +1176,11 @@ var
   aTheme: string;  
 begin
   e := Scope.Element as THTML.TBody;
-  Context.Writer.OpenTag('body', Scope.ToString);  
+  Context.Writer.OpenTag('body', Scope.ToString);
 
   aTheme := 'light';
   if e.Theme = themeDark then
-    aTheme := 'dark';   
+    aTheme := 'dark';
   Context.Writer.OpenTag('script');
   Context.Writer.Writeln('const theme = localStorage.getItem("mnw-theme") || "'+aTheme+'";');
   Context.Writer.Writeln('document.body.setAttribute("data-bs-theme", theme);');

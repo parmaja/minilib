@@ -516,3 +516,9 @@ aside{
 #mnw-confirm-modal .modal-footer .btn {
     min-width: 5rem;
 }
+
+/* override bootstrap variables, move to mnwBootstrap.css
+.card-header {
+    --bs-card-cap-padding-y: 0.3rem;
+}
+    */
