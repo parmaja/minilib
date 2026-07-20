@@ -2134,6 +2134,8 @@ begin
 end;
 
 initialization
+  Libraries.RegisterLibrary(TBootstrap_Library);
+  Libraries.RegisterLibrary(TBootstrapIcons_Library);
   Renderers.RegisterRenderer('Bootstrap', TBSRenderer);
 finalization
 end.

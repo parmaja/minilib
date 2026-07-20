@@ -498,7 +498,7 @@ type
   public    
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
 
-    procedure Use(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0); overload;
+    procedure Use(ALibraryClass: TmnwLibraryClass); overload;
     procedure Use(ALibraryName: string); overload;    
   end;
 
@@ -951,7 +951,7 @@ type
     property Requires: TmnwRequires read FRequires;
     property Module: TmodWebModule read FModule;
 
-    procedure Require(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0); overload;
+    procedure Require(ALibraryClass: TmnwLibraryClass); overload;
     procedure AddHead(const Context: TmnwContext); virtual; 
   public
     RendererID: Integer;
@@ -2105,7 +2105,7 @@ function EscapeAttr(const S: string): string;
 function NewUUID: string;
 
 function Renderers: TmnwRenderers;
-function GlobalLibraries: TmnwLibraries; //TODO
+function Libraries: TmnwLibraries; //TODO
 
 procedure InitLanguages(const APath: string);
 function _T(const Key: string; const Lang: string; const Default: string = ''): string;
@@ -2252,7 +2252,7 @@ end;
 var
   //*Should be by base class categoried
   FRenderers: TmnwRenderers = nil;
-  FGlobalLibraries: TmnwLibraries = nil;
+  FLibraries: TmnwLibraries = nil;
   
 function Renderers: TmnwRenderers;
 begin
@@ -2261,11 +2261,11 @@ begin
   Result := FRenderers;  
 end;
 
-function GlobalLibraries: TmnwLibraries;
+function Libraries: TmnwLibraries;
 begin
-  if FGlobalLibraries = nil then
-    FGlobalLibraries := TmnwLibraries.Create;
-  Result := FGlobalLibraries;  
+  if FLibraries = nil then
+    FLibraries := TmnwLibraries.Create;
+  Result := FLibraries;
 end;
 
   var
@@ -4573,7 +4573,7 @@ end;
 procedure TmnwRenderer.Created;
 begin
   inherited;
-  Require(TWebElements_Library, 2000);
+  Require(TWebElements_Library);
 end;
 
 destructor TmnwRenderer.Destroy;
@@ -4597,9 +4597,9 @@ begin
   Result := ElementRenderers.RegisterRenderer(AElementClass, ARendererClass, Replace);
 end;
 
-procedure TmnwRenderer.Require(ALibraryClass: TmnwLibraryClass; Priority: Integer);
+procedure TmnwRenderer.Require(ALibraryClass: TmnwLibraryClass);
 begin
-  Requires.Use(ALibraryClass, Priority);
+  Requires.Use(ALibraryClass);
 end;
 
 procedure TmnwRenderer.DoBeginRender;
@@ -5297,9 +5297,9 @@ begin
   Name := 'Assets';
   Route := 'assets';
   
-  GlobalLibraries.Lock.Enter;
+  Libraries.Lock.Enter;
   try
-    for aLibrary in GlobalLibraries do
+    for aLibrary in Libraries do
     begin
       for aSource in aLibrary.Sources do
       begin
@@ -5324,7 +5324,7 @@ begin
       end;
     end;    
   finally
-    GlobalLibraries.Lock.Leave;
+    Libraries.Lock.Leave;
   end;
 (*  
   {$ifdef LOCAL_RESOURCE}  
@@ -5768,7 +5768,7 @@ end;
 
 procedure TmnwContext.Require(ALibraryClass: TmnwLibraryClass; Priority: Integer);
 begin
-  Renderer.Require(ALibraryClass, Priority);
+  Renderer.Require(ALibraryClass);
 end;
 
 function TmnwContext.GetBasePath: string;
@@ -6203,16 +6203,16 @@ end;
 
 { TmnwRequires }
 
-procedure TmnwRequires.Use(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0);
+procedure TmnwRequires.Use(ALibraryClass: TmnwLibraryClass);
 var
   ALibrary: TmnwLibrary;
 begin
   ALibrary := Find(ALibraryClass);
   if ALibrary <> nil then
     exit; //Already used
-  ALibrary := GlobalLibraries.Find(ALibraryClass);
+  ALibrary := Libraries.Find(ALibraryClass);
   if ALibrary = nil then
-    ALibrary := GlobalLibraries.RegisterLibrary(ALibraryClass, Priority);
+    ALibrary := Libraries.RegisterLibrary(ALibraryClass);
   if ALibrary <> nil then
     Add(ALibrary)
   else
@@ -6250,7 +6250,7 @@ begin
   ALibrary := Find(ALibraryName);
   if ALibrary <> nil then
     exit; //Already used
-  ALibrary := GlobalLibraries.Find(ALibraryName);
+  ALibrary := Libraries.Find(ALibraryName);
   if ALibrary <> nil then
     Add(ALibrary)
   else
@@ -6690,8 +6690,9 @@ end;
 
 initialization
   GlobalTimeStamp := GetTimeStamp;  
-  GlobalLibraries.RegisterLibrary(TWebElements_Library, 2000);
+  Libraries.RegisterLibrary(TWebElements_Library, 2000);
+  Libraries.RegisterLibrary(TJQuery_Library);
 finalization
   FreeAndNil(FRenderers);
-  FreeAndNil(FGlobalLibraries);  
+  FreeAndNil(FLibraries);
 end.
