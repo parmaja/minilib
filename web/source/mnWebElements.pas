@@ -489,7 +489,6 @@ type
     function Find(ALibraryName: string): TmnwLibrary; overload;
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
     function RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0): TmnwLibrary; overload;
-    procedure DownloadSources(const AFolder: string);
     property Lock: TCriticalSection read FLock;
   end;
 
@@ -3990,8 +3989,6 @@ end;
 
 procedure TmnwSchema.Start;
 begin
-{  if (PublicPath = '') then
-    PublicPath := Web.PublicPath;}
 end;
 
 function TmnwSchema.NewHandle: THandle;
@@ -4935,104 +4932,12 @@ begin
   end;
 end;
 
-{ TmnwLibraries.DownloadSources }
-
-procedure TmnwLibraries.DownloadSources(const AFolder: string);
-var
-  i, j: Integer;
-  Lib: TmnwLibrary;
-  Source: TmnwLibrarySource;
-  DestPath: string;
-  LocalFile: string;
-  Downloaded: Boolean;
-
-  procedure DoDownload(const URL, AFileName, DisplayName: string);
-  var
-    StartTime: Cardinal;
-    LastUpdate: Cardinal;
-    LastPercent: Integer;
-  begin
-    Write('  Downloading ' + DisplayName + ' ...');
-
-    StartTime := TThread.GetTickCount;
-    LastUpdate := StartTime;
-    LastPercent := -1;
-
-    HttpDownloadFileEx(URL, AFileName,
-      procedure(Sender: TObject; const AName: string; ATotal, ADownloaded: Int64; var ACancel: Boolean)
-      var
-        NowTime: Cardinal;
-        ElapsedSec: Double;
-        Speed: Double;
-        Percent: Integer;
-      begin
-        NowTime := TThread.GetTickCount;
-
-        if ATotal > 0 then
-          Percent := (ADownloaded * 100) div ATotal
-        else
-          Percent := 0;
-
-        if (NowTime - LastUpdate >= 200) or (Percent <> LastPercent) or (ADownloaded >= ATotal) then
-        begin
-          ElapsedSec := (NowTime - StartTime) / 1000;
-          if ElapsedSec > 0 then
-            Speed := ADownloaded / ElapsedSec
-          else
-            Speed := 0;
-
-          if ATotal > 0 then
-            Write(#13'  ' + AName + ': ' + IntToStr(ADownloaded) + ' / ' + IntToStr(ATotal) +
-              ' (' + IntToStr(Percent) + '%)  ' + FormatFloat('0.0', Speed / 1024) + ' KB/s' + #32)
-          else
-            Write(#13'  ' + AName + ': ' + IntToStr(ADownloaded) + ' bytes  ' +
-              FormatFloat('0.0', Speed / 1024) + ' KB/s' + #32);
-
-          LastUpdate := NowTime;
-          LastPercent := Percent;
-        end;
-
-        if (ADownloaded >= ATotal) and (ATotal > 0) then
-          WriteLn(' - Done');
-      end
-    );
-
-    WriteLn;
-  end;
-
-begin
-  if AFolder = '' then
-    raise Exception.Create('DownloadSources: Folder path is required');
-
-  DestPath := IncludeTrailingPathDelimiter(AFolder);
-  ForceDirectories(DestPath);
-
-  Downloaded := False;
-  for i := 0 to Count - 1 do
-  begin
-    Lib := Items[i];
-    for j := 0 to Lib.Sources.Count - 1 do
-    begin
-      Source := Lib.Sources[j];
-      if (Source.Where = stOnline) and (Source.OnlineFile <> '') then
-      begin
-        LocalFile := DestPath + Source.Name;
-        DoDownload(Source.OnlineFile, LocalFile, Source.Name);
-        Downloaded := True;
-      end;
-    end;
-  end;
-
-  if not Downloaded then
-    raise Exception.Create('DownloadSources: No online sources found to download');
-end;
-
 { TJQuery_Library }
 
 procedure TJQuery_Library.Created;
 begin
   inherited;
-  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js', '', []); //* no Differ  
+  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js', '', []); //* no Differ
 end;
 
 { THTML }
@@ -5442,51 +5347,6 @@ begin
   finally
     Libraries.Lock.Leave;
   end;
-(*  
-  {$ifdef LOCAL_RESOURCE}  
-  minilib := GetEnvironmentVariable('minilib');  
-  if minilib <> '' then //Working in Developer PC
-  begin
-    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/web/source/mnWebElements.js'), 'web-elements.js');
-    TFile.Create(This, [], ExpandFileName(IncludePathDelimiter(minilib) + '/web/source/mnWebElements.css'), 'web-elements.css');  
-  end
-  else
-  {$endif}
-  begin
-    if FileExists(GetPublicPath + 'web-elements.js') then
-    begin
-      //Files
-      TFile.Create(This, [], GetPublicPath + 'web-elements.js', 'web-elements.js');
-      TFile.Create(This, [], GetPublicPath + 'web-elements.css', 'web-elements.css');
-    end
-    else
-    begin 
-      //Resources
-      TFile.Create(This, [ftResource], 'mnWebElements_css', 'web-elements.css');
-      TFile.Create(This, [ftResource], 'mnWebElements_js', 'web-elements.js');
-    end;
-  end;
-*)
-
-  {// Register resource files from global libraries
-  Libraries.Lock.Enter;
-  try
-    for lib in Libraries do
-    begin
-      for source in lib.Sources do
-      begin
-        if source.Where = stResource then
-        begin
-          if source.Value <> '' then
-            TFile.Create(This, [ftResource], source.Value, source.Name)
-          else
-            TFile.Create(This, [ftResource], source.Name, source.Name);
-        end;
-      end;
-    end;
-  finally
-    Libraries.Lock.Leave;
-  end;}
 end;
 
 procedure TAssetsSchema.DoRespond(const AContext: TmnwContext);
@@ -5534,7 +5394,6 @@ end;
 procedure TmnwWebModule.Start;
 begin
   inherited;
-//  AssetsURL := '/' + AliasName + '/' + Web.Assets.Route;
   if Web.PublicPath = '' then
     Web.PublicPath := PublicPath;
   if Web.PrivatePath = '' then
