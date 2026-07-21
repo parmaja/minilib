@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function()
   const el = document.querySelector('.version');
   if (el) el.textContent += ' js: ' + version+'';
 
-  mnw.init_zoom();
+  //mnw.init_zoom(); moved to html
   mnw.init_accordions();
 });
 

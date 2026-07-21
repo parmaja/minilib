@@ -2081,6 +2081,7 @@ const
   woFullTag = [woOpenIndent, woCloseIndent];
 
 function DirectionToStr(Direction: TDirection): string;
+function ThemeToStr(Theme: TTheme): string;
 function GetTimeStamp: Int64;
 
 //Short functions
@@ -2136,6 +2137,15 @@ begin
     Result := 'rtl'
   else if Direction = dirLeftToRight then
     Result := 'ltr';
+end;
+
+function ThemeToStr(Theme: TTheme): string;
+begin
+  case Theme of
+  themeUndefined: Result := '';
+  themeLight: Result := 'light';
+  themeDark: Result := 'dark';
+  end;
 end;
 
 function SQ(const s: string): string; inline;
@@ -2647,19 +2657,22 @@ var
   idItem: Integer;
   sb: TStringBuilder;
 begin
-  idItem := IndexOfName('id');
-  if (idItem > 0) then
-    Move(idItem, 0);
-
   sb := TStringBuilder.Create;
   try
+    idItem := IndexOfName('id');
+    if (idItem >= 0) then
+    begin
+      a := Items[idItem];
+      sb.Append(a.Name).Append('=').Append(DQ(a.Value));
+    end;
+
     for a in Self do
     begin
       if sb.Length > 0 then
         sb.Append(' ');
       if a.IsProperty and (a.Value = '') then
-        sb.Append(a.Name)      
-      else      
+        sb.Append(a.Name)
+      else if not SameText(a.name, 'id') then           
         sb.Append(a.Name).Append('=').Append(DQ(a.Value));
     end;
     Result := sb.ToString;
@@ -6126,39 +6139,61 @@ function TLibrarySources.Add(SourceType: TLibrarySourceType; Where: TLibrarySour
 begin
   Result := TmnwLibrarySource.Create;
 
-{
+{ From where we get Name
+
   online = 'min.file.js', local='file.min.js'
-
+                  ^
+  online = 'file.js', local='c:\assets\file.min.js'
+               ^
   online = 'https://online.com/min.file.js', local='file.min.js'
-  
+                                                        ^
   online = 'https://online.com/', local='file.min.js'
-  
+                                              ^
   online = '', local='file.min.js'
-
+                            ^
   online = 'https://online.com/file.js', local=''
-  
+                                  ^
   online = 'https://online.com/file.js', local='c:\assets\file.min.js'
+                                  ^
 }
   Result.OnlineFile := OnlineFile;
   Result.LocalFile := CorrectPath(VarEnvReplace(LocalFile, [vrPathValues]));
- 
-  if not (OnlineFile = '') and (Result.LocalFile = '') then 
-    Raise Exception.Create('Library: We Local or Online are empty')
-  else if not EndsDelimiter(OnlineFile) and EndsDelimiter(Result.LocalFile) then 
-    Raise Exception.Create('Library: We need filename at least in Local or Online')
-  else if EndsDelimiter(OnlineFile) and (Result.LocalFile <> '') then 
+
+  //online = 'https://online.com/min.file.js', local=''
+  if (OnlineFile <> '') and (Result.LocalFile = '') then
+  begin
+    Result.Name := SubStr(OnlineFile, PathDelimiters, -1);
+  end
+  //online = '', local='file.min.js'
+  //online = '', local='/path/file.min.js'
+  else if (OnlineFile = '') and (Result.LocalFile <> '') then
+  begin
+    Result.Name := SubStr(LocalFile, PathDelimiters, -1);
+    //Result.OnlineFile := OnlineFile;
+  end
+  //online = 'https://online.com/min.file.js', local='path/to/file/'
+  else if not EndsDelimiter(OnlineFile) and EndsDelimiter(Result.LocalFile) then
+  begin
+    Result.Name := SubStr(OnlineFile, PathDelimiters, -1);
+  end
+  //online = 'https://online.com/path/', local='path/to/file/file.js'
+  else if EndsDelimiter(OnlineFile) and not EndsDelimiter(Result.LocalFile) then
   begin
     Result.Name := SubStr(LocalFile, PathDelimiters, -1);
     Result.OnlineFile := OnlineFile + Result.Name; //Fix online to full url
   end
-  else if not EndsDelimiter(OnlineFile) and (Result.LocalFile = '') then 
+  //online = 'https://online.com/path/file.js', local='path/to/file/file.js'
+  else
   begin
-    Result.Name := SubStr(OnlineFile, PathDelimiters, -1);
-    Result.LocalFile := Result.Name; //Fix local file
-  end
-  else  
-    Result.Name := SubStr(LocalFile, PathDelimiters, -1);
-  
+    if HaveChar(OnlineFile, PathDelimiters) then
+      Result.Name := SubStr(LocalFile, PathDelimiters, -1)
+    else
+      Result.Name := SubStr(OnlineFile, PathDelimiters, -1);
+  end;
+
+  if Result.Name = '' then
+    raise Exception.Create('Library: We need can''t guess alias name of source');
+
   Result.SourceType := SourceType;
   Result.Where := Where;
   Result.Integrity := Integrity;
