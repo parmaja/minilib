@@ -30,6 +30,8 @@ type
 
   TmnCustomHttpClient = class;
 
+  TOnHttpDownloadProgress = reference to procedure(Sender: TObject; const AFileName: string; ATotal, ADownloaded: Int64; var ACancel: Boolean);
+
   { TmnCustomHttpClient }
 
   TmnCustomHttpClient = class abstract(TmnCustomClientCommand)
@@ -39,6 +41,7 @@ type
     FProtocol: UTF8String;
 
     FStream: TmnConnectionStream;
+    FOnProgress: TOnHttpDownloadProgress;
     function GetRequest: TwebRequest;
     function GetResponse: TwebResponse;
   protected
@@ -57,6 +60,7 @@ type
 
     function CreateRequest(AStream: TmnConnectionStream): TmodRequest; override;
     function CreateResponse: TmodResponse; override;
+    procedure DoProgress(const AFileName: string; ATotal, ADownloaded: Int64; var ACancel: Boolean); virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -92,6 +96,7 @@ type
     function GetString(const vURL: UTF8String; var OutString: string): TFileSize;
     function GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
     function GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
+    function GetFileEx(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
     function GetFileSize(vURL: UTF8String; out FileSize: TFileSize): Boolean;
     //Please add seek to 0 after getting it
     procedure GetMemoryStream(const vURL: UTF8String; OutStream: TMemoryStream);
@@ -104,6 +109,7 @@ type
     property Stream: TmnConnectionStream read FStream;
     property Request: TwebRequest read GetRequest;
     property Response: TwebResponse read GetResponse;
+    property OnProgress: TOnHttpDownloadProgress read FOnProgress write FOnProgress;
   end;
 
   { TmnCustomHttpStream }
@@ -159,11 +165,101 @@ type
   end;
 
 function HttpDownloadFile(const URL, FileName: string): TFileSize;
+function HttpDownloadFileEx(const URL, FileName: string; OnProgress: TOnHttpDownloadProgress): TFileSize;
 function HttpGetFileSize(const URL: string; out FileSize: TFileSize): Boolean;
 
 function BIO_HttpDownloadFile(const URL, FileName: string): TFileSize;
 
 implementation
+
+{ TProgressWriteStream }
+
+type
+  TProgressWriteStream = class(TStream)
+  private
+    FTarget: TStream;
+    FTotalSize: Int64;
+    FDownloaded: Int64;
+    FOnProgress: TOnHttpDownloadProgress;
+    FFileName: string;
+    FCancel: Boolean;
+  protected
+    function GetSize: Int64; override;
+  public
+    constructor Create(const AFileName: string; ATarget: TStream; ATotalSize: Int64);
+    function Read(var Buffer; Count: Longint): Longint; override;
+    function Write(const Buffer; Count: Longint): Longint; override;
+    function Seek(Offset: Longint; Origin: Word): Longint; override;
+    property OnProgress: TOnHttpDownloadProgress read FOnProgress write FOnProgress;
+  end;
+
+constructor TProgressWriteStream.Create(const AFileName: string; ATarget: TStream; ATotalSize: Int64);
+begin
+  inherited Create;
+  FFileName := AFileName;
+  FTarget := ATarget;
+  FTotalSize := ATotalSize;
+  FDownloaded := 0;
+  FCancel := False;
+end;
+
+function TProgressWriteStream.GetSize: Int64;
+begin
+  Result := FTotalSize;
+end;
+
+function TProgressWriteStream.Read(var Buffer; Count: Longint): Longint;
+begin
+  Result := 0;
+end;
+
+function TProgressWriteStream.Write(const Buffer; Count: Longint): Longint;
+begin
+  Result := FTarget.Write(Buffer, Count);
+  FDownloaded := FDownloaded + Result;
+  if Assigned(FOnProgress) then
+    FOnProgress(Self, FFileName, FTotalSize, FDownloaded, FCancel);
+end;
+
+function TProgressWriteStream.Seek(Offset: Longint; Origin: Word): Longint;
+begin
+  Result := FTarget.Seek(Offset, Origin);
+end;
+
+{ TmnCustomHttpClient }
+
+procedure TmnCustomHttpClient.DoProgress(const AFileName: string; ATotal, ADownloaded: Int64; var ACancel: Boolean);
+begin
+  if Assigned(FOnProgress) then
+    FOnProgress(Self, AFileName, ATotal, ADownloaded, ACancel);
+end;
+
+function TmnCustomHttpClient.GetFileEx(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
+var
+  f: TFileStream;
+  p: TProgressWriteStream;
+begin
+  if Assigned(FOnProgress) then
+  begin
+    if not Open(vURL) then
+      Exit(0);
+    f := TFileStream.Create(OutFileName, fmCreate or fmShareDenyWrite);
+    try
+      p := TProgressWriteStream.Create(ExtractFileName(OutFileName), f, Response.ContentLength);
+      try
+        p.OnProgress := FOnProgress;
+        Result := Response.ReceiveStream(p);
+      finally
+        p.Free;
+      end;
+    finally
+      f.Free;
+    end;
+    Disconnect;
+  end
+  else
+    Result := GetFile(vURL, OutFileName);
+end;
 
 function HttpDownloadFile(const URL, FileName: string): TFileSize;
 var
@@ -172,6 +268,19 @@ begin
   aHttpClient := TmnHttpClient.Create;
   try
     Result := aHttpClient.GetFile(URL, FileName);
+  finally
+    FreeAndNil(aHttpClient);
+  end;
+end;
+
+function HttpDownloadFileEx(const URL, FileName: string; OnProgress: TOnHttpDownloadProgress): TFileSize;
+var
+  aHttpClient: TmnHttpClient;
+begin
+  aHttpClient := TmnHttpClient.Create;
+  try
+    aHttpClient.OnProgress := OnProgress;
+    Result := aHttpClient.GetFileEx(URL, FileName);
   finally
     FreeAndNil(aHttpClient);
   end;

@@ -4936,6 +4936,61 @@ var
   DestPath: string;
   LocalFile: string;
   Downloaded: Boolean;
+
+  procedure DoDownload(const URL, AFileName, DisplayName: string);
+  var
+    StartTime: Cardinal;
+    LastUpdate: Cardinal;
+    LastPercent: Integer;
+  begin
+    Write('  Downloading ' + DisplayName + ' ...');
+
+    StartTime := TThread.GetTickCount;
+    LastUpdate := StartTime;
+    LastPercent := -1;
+
+    HttpDownloadFileEx(URL, AFileName,
+      procedure(Sender: TObject; const AName: string; ATotal, ADownloaded: Int64; var ACancel: Boolean)
+      var
+        NowTime: Cardinal;
+        ElapsedSec: Double;
+        Speed: Double;
+        Percent: Integer;
+      begin
+        NowTime := TThread.GetTickCount;
+
+        if ATotal > 0 then
+          Percent := (ADownloaded * 100) div ATotal
+        else
+          Percent := 0;
+
+        if (NowTime - LastUpdate >= 200) or (Percent <> LastPercent) or (ADownloaded >= ATotal) then
+        begin
+          ElapsedSec := (NowTime - StartTime) / 1000;
+          if ElapsedSec > 0 then
+            Speed := ADownloaded / ElapsedSec
+          else
+            Speed := 0;
+
+          if ATotal > 0 then
+            Write(#13'  ' + AName + ': ' + IntToStr(ADownloaded) + ' / ' + IntToStr(ATotal) +
+              ' (' + IntToStr(Percent) + '%)  ' + FormatFloat('0.0', Speed / 1024) + ' KB/s' + #32)
+          else
+            Write(#13'  ' + AName + ': ' + IntToStr(ADownloaded) + ' bytes  ' +
+              FormatFloat('0.0', Speed / 1024) + ' KB/s' + #32);
+
+          LastUpdate := NowTime;
+          LastPercent := Percent;
+        end;
+
+        if (ADownloaded >= ATotal) and (ATotal > 0) then
+          WriteLn(' - Done');
+      end
+    );
+
+    WriteLn;
+  end;
+
 begin
   if AFolder = '' then
     raise Exception.Create('DownloadSources: Folder path is required');
@@ -4953,7 +5008,7 @@ begin
       if (Source.Where = stOnline) and (Source.OnlineFile <> '') then
       begin
         LocalFile := DestPath + Source.Name;
-        HttpDownloadFile(Source.OnlineFile, LocalFile);
+        DoDownload(Source.OnlineFile, LocalFile, Source.Name);
         Downloaded := True;
       end;
     end;
