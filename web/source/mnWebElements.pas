@@ -489,6 +489,7 @@ type
     function Find(ALibraryName: string): TmnwLibrary; overload;
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
     function RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0): TmnwLibrary; overload;
+    procedure DownloadSources(const AFolder: string);
     property Lock: TCriticalSection read FLock;
   end;
 
@@ -2117,7 +2118,8 @@ var
 implementation
 
 uses  
-  Generics.Collections;
+  Generics.Collections,
+  mnHttpClient;
 
 function GetTimeStamp: Int64;
 var
@@ -4922,6 +4924,43 @@ begin
   finally
     Lock.Leave;
   end;
+end;
+
+{ TmnwLibraries.DownloadSources }
+
+procedure TmnwLibraries.DownloadSources(const AFolder: string);
+var
+  i, j: Integer;
+  Lib: TmnwLibrary;
+  Source: TmnwLibrarySource;
+  DestPath: string;
+  LocalFile: string;
+  Downloaded: Boolean;
+begin
+  if AFolder = '' then
+    raise Exception.Create('DownloadSources: Folder path is required');
+
+  DestPath := IncludeTrailingPathDelimiter(AFolder);
+  ForceDirectories(DestPath);
+
+  Downloaded := False;
+  for i := 0 to Count - 1 do
+  begin
+    Lib := Items[i];
+    for j := 0 to Lib.Sources.Count - 1 do
+    begin
+      Source := Lib.Sources[j];
+      if (Source.Where = stOnline) and (Source.OnlineFile <> '') then
+      begin
+        LocalFile := DestPath + Source.Name;
+        HttpDownloadFile(Source.OnlineFile, LocalFile);
+        Downloaded := True;
+      end;
+    end;
+  end;
+
+  if not Downloaded then
+    raise Exception.Create('DownloadSources: No online sources found to download');
 end;
 
 { TJQuery_Library }
