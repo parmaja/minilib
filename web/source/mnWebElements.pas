@@ -42,7 +42,7 @@ WebElement:                              NameSpace                              
 ├──────┴───────────────────────────────────────┤  ─┤
 │ MenuBar                                      │   │
 ├────────────┬─────────────────────────────────┤   │
-│ Sidebar    │ Main                            │   │
+│  Sidebar   │ Main                            │   │
 │    ─┬─     │                                 │   ├─ Container
 │ Accordion  │ ┌─ TabControl ──────┐ ┌───────┐ │   │
 │            │ │ Tab │ Tab │       │ │ Card  │ │   │
@@ -589,7 +589,7 @@ type
     function ServeFile(PublicPath: string; DefaultDocuments: TStringList; Options: TmodServeFiles; const AContext: TmnwContext): Boolean; overload;
     function ServeFile(PublicPath: string; Options: TmodServeFiles; const AContext: TmnwContext): Boolean; overload;
 
-    procedure DoPrepareRenderer(const AContext: TmnwContext); virtual;   
+    procedure DoRequired(const AContext: TmnwContext); virtual;
     procedure DoPrepare; virtual;
     
     procedure DoCompose(const AContext: TmnwContext); virtual;
@@ -2892,7 +2892,7 @@ procedure TmnwElement.PrepareRenderer(const AContext: TmnwContext);
 var
   o: TmnwElement;
 begin
-  DoPrepareRenderer(AContext);
+  DoRequired(AContext);
   for o in Self do
   begin
     o.PrepareRenderer(AContext); 
@@ -4394,7 +4394,7 @@ begin
   Result := Name;
 end;
 
-procedure TmnwElement.DoPrepareRenderer(const AContext: TmnwContext);
+procedure TmnwElement.DoRequired(const AContext: TmnwContext);
 begin
 end;
 
