@@ -1173,18 +1173,18 @@ end;
 procedure TBSRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TBody;
-  aTheme: string;  
 begin
   e := Scope.Element as THTML.TBody;
   Context.Writer.OpenTag('body', Scope.ToString);
 
-  aTheme := 'light';
-  if e.Theme = themeDark then
-    aTheme := 'dark';
   Context.Writer.OpenTag('script');
-  Context.Writer.Writeln('const theme = localStorage.getItem("mnw-theme") || "'+aTheme+'";');
+  Context.Writer.Writeln('const theme = localStorage.getItem("mnw-theme") || "'+When(e.Theme = themeDark, ThemeToStr(e.Theme), 'light')+'";');
   Context.Writer.Writeln('document.body.setAttribute("data-bs-theme", theme);');
   Context.Writer.Writeln('document.body.setAttribute("data-theme", theme);');
+
+  Context.Writer.Writeln('let mnw_zoom = localStorage.getItem("mnw-zoom");');
+  Context.Writer.Writeln('if (mnw_zoom) document.documentElement.setAttribute("data-mnw-zoom", mnw_zoom);');
+
   Context.Writer.CloseTag('script');
   
   inherited;  
