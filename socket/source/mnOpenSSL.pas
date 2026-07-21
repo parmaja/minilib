@@ -799,8 +799,7 @@ begin
     Result := False
   else
     Result := True;
-  Log.WriteLn(lglInfo, 'version: ' + SSL_get_version(Handle));
-
+  //Log.WriteLn(lglInfo, 'version: ' + SSL_get_version(Handle));
 end;
 
 function TSSL.ServerHandshake: Boolean;

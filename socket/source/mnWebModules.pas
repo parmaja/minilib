@@ -115,6 +115,7 @@ type
     function GetDefaultURL: string; virtual;
     
     property Origins: TStrings read FOrigins write SetOrigins;
+
     //Public Directory
     property PublicPath: string read FPublicPath write SetPublicPath;
     //Private Directory
@@ -449,7 +450,6 @@ begin
   UseKeepAlive := ovUndefined;
   UseCompressing := ovNo;
   UseWebSocket := True;
-  FPublicPath := '';
   FOrigins := TStringList.Create;
 end;
 

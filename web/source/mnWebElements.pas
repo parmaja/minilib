@@ -770,8 +770,10 @@ type
     FWeb: TmnwWeb;
     FPhase: TmnwSchemaPhase;
     FNamingLastNumber: THandle;
+    FPublicPath: string;
     function GetReleased: Boolean;
     procedure SetDefaultDocuments(AValue: TStringList);
+    procedure SetPublicPath(const Value: string);
   protected
     Usage: Integer;
     procedure UpdateAttached;
@@ -782,13 +784,13 @@ type
     procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext); virtual;
     procedure AttachedMessage(const s: string); virtual; //from websocket
     procedure InteractiveMessage(const s: string);
+    function GetPublicPath: string; virtual;
     property DefaultDocuments: TStringList read FDefaultDocuments write SetDefaultDocuments;
   public
     Reference: string; //To find it
     LastAccess: TDateTime;
     IsManual: Boolean;
     RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
-    PublicPath: string;
     ServeFiles: TmodServeFiles;
     Interactive: Boolean;
     constructor Create(AWeb: TmnwWeb; AName:string; ARoute: string = ''); reintroduce;
@@ -797,7 +799,8 @@ type
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
     function NewHandle: THandle;
 
-    function GetPublicPath: string;
+    property PublicPath: string read GetPublicPath write SetPublicPath;
+
     //* Attaching cap
     //function Interactive: Boolean;
 
@@ -1974,8 +1977,9 @@ type
   protected
     //FLogo: THTML.TMemory;  
     procedure Created; override;
-    procedure DoRespond(const AContext: TmnwContext); override;     
-  public    
+    procedure DoRespond(const AContext: TmnwContext); override;
+    function GetPublicPath: string; override;
+  public
     class function GetCapabilities: TmnwSchemaCapabilities; override;
     procedure Start; override;
     //property Logo: THTML.TMemory read FLogo;
@@ -3979,10 +3983,15 @@ begin
   FDefaultDocuments.Assign(AValue);
 end;
 
+procedure TmnwSchema.SetPublicPath(const Value: string);
+begin
+  FPublicPath := Value;
+end;
+
 procedure TmnwSchema.Start;
 begin
-  if (PublicPath = '') then
-    PublicPath := Web.PublicPath;
+{  if (PublicPath = '') then
+    PublicPath := Web.PublicPath;}
 end;
 
 function TmnwSchema.NewHandle: THandle;
@@ -3993,10 +4002,10 @@ end;
 
 function TmnwSchema.GetPublicPath: string;
 begin
-  if PublicPath = '' then
-    Result := Web.PublicPath
+  if FPublicPath <> '' then
+    Result := FPublicPath
   else
-    Result := PublicPath;
+    Result := Web.PublicPath;
 end;
 
 procedure TmnwSchema.UpdateAttached;
@@ -5488,6 +5497,14 @@ end;
 class function TAssetsSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
   Result := inherited + [schemaStartup, schemaPermanent];
+end;
+
+function TAssetsSchema.GetPublicPath: string;
+begin
+  if FPublicPath <> '' then
+    Result := FPublicPath
+  else
+    Result := IncludePathDelimiter(Web.PublicPath) + Route;
 end;
 
 { TmnwWebModule }
