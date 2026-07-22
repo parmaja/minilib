@@ -340,6 +340,7 @@ function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_
 
 function StringOfUTF8(const Value: PByte; Size: Integer): string;
 
+function NewUUID: string;
 //TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
 procedure BinToHex(Buffer: PByte; Output: PByte; BufSize: longint); overload;
@@ -402,9 +403,18 @@ procedure OpenURL(URL: string);
 
 procedure GetEnvironmentList(List: TStrings);
 
+function GetTimeStamp: Int64;
+
 var
+  DeveloperMode:Boolean = False;
+
+  InstanceDate: TDateTime = 0;
+  InstanceTimeStamp: Int64;
+  InstanceUID: TGUID;
+
   SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
   DefFormatSettings : TFormatSettings;
+  IsService: Boolean; //in Windows now working
 
 function EnvironmentValues: TStrings;
   
@@ -3325,6 +3335,44 @@ begin
   {$endif}
 end;
 
+function IsServiceProcess: Boolean;
+var
+  LSessionID, LSize: Cardinal;
+  LToken: THandle;
+begin
+  Result := False;
+{$ifdef windows}
+  LSize := 0;
+  if not OpenProcessToken(GetCurrentProcess, TOKEN_QUERY, LToken) then
+    Exit;
+
+  try
+    if not GetTokenInformation(LToken, TokenSessionId, @LSessionID, SizeOf(LSessionID), LSize) then
+      Exit;
+
+    if LSize = 0 then
+      Exit;
+
+    Result := LSessionID = 0;
+  finally
+    CloseHandle(LToken);
+  end;
+{$else}
+{$endif}
+end;
+
+function NewUUID: string;
+begin
+  Result := UUIDToString(TGUID.NewGuid);
+end;
+
+function GetTimeStamp: Int64;
+var
+  t: Double absolute Result;
+begin
+  t := Now;
+end;
+
 initialization
   DefFormatSettings := TFormatSettings.Invariant;
   {$ifdef windows}
@@ -3332,7 +3380,11 @@ initialization
   {$else}
   SystemAnsiCodePage := 1252; //scpAnsi has no meaning in linux, you can change it in your application
   {$endif}
+  IsService := IsServiceProcess;
+  //InstanceDate := Now;
+  FileAge(ParamStr(0), InstanceDate);
+  InstanceUID := TGUID.NewGuid;
+  InstanceTimeStamp := GetTimeStamp;
 finalization
   FreeAndNil(FEnvironmentValues);
 end.
-

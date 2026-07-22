@@ -544,7 +544,8 @@ type
   TmnwJustify = (jstDefault, jstStart, jstCenter, ralBetween, jstAround, jstEvenly, jstEnd);
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
 
-  TRespondProc = reference to procedure (const AContext: TmnwContext);
+  //Keep it as DoRespond form
+  TRespondProc = reference to procedure (const Context: TmnwContext);
 
   { TmnwElement }
 
@@ -577,6 +578,7 @@ type
     function GetRespondIt: Boolean;
     function GetRenderIt: Boolean;
     procedure SetRenderIt(const Value: Boolean);
+    procedure SetOnRespond(const Value: TRespondProc);
   protected    
     function GetRoute: String; virtual;
 
@@ -642,6 +644,8 @@ type
     //this get path without schema and parent element name, element/element
     function GetPathTo(ToElement: TmnwElement): string; overload;
     //Include Host
+
+    function GetPathClasses: string;
     
     function CreateRenderer(const Context: TmnwContext): TmnwElementRenderer;
     procedure Compose(const AContext: TmnwContext); virtual;
@@ -683,7 +687,7 @@ type
     property State: TmnwElementState read FState write SetState;
 
     property OnExecute: TElementExecute read FOnExecute write FOnExecute;
-    property OnRespond: TRespondProc read FOnRespond write FOnRespond;
+    property OnRespond: TRespondProc read FOnRespond write SetOnRespond;
     property Handle: THandle read FHandle;
 
     property TimeStamp: Int64 read FTimeStamp;
@@ -741,11 +745,11 @@ type
   end;
 
   TmnwSchemaCapability = (
-    schemaStartup, //* Create it when registered
+    schemaStatic, //* Not deleted when restart server
+    schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
     schemaSession,
-    schemaAttach, //Allow websocket connections, Interactive also allow websocket
-    schemaPermanent, //* Not deleted when restart server
-    schemaDynamic  //* dynamic, do not add it to the list, not cached, becareful
+    schemaStartup, //* Create it when registered
+    schemaAttach //Allow/Accepts websocket connections, Interactive also allow websocket
   );
 
   TmnwSchemaCapabilities = set of TmnwSchemaCapability;
@@ -1112,7 +1116,7 @@ type
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
-    procedure ClearSchemas;
+    procedure CleanSchemas;
   public
     Started: Boolean;
 
@@ -2086,7 +2090,6 @@ const
 
 function DirectionToStr(Direction: TDirection): string;
 function ThemeToStr(Theme: TTheme): string;
-function GetTimeStamp: Int64;
 
 //Short functions
 //Single Quote
@@ -2107,34 +2110,17 @@ function StartURL(const Path: string): string; inline;
 function EndURL(const Path: string): string; inline;
 function EscapeAttr(const S: string): string;
 
-function NewUUID: string;
-
 function Renderers: TmnwRenderers;
 function Libraries: TmnwLibraries; //TODO
 
 procedure InitLanguages(const APath: string);
 function _T(const Key: string; const Lang: string; const Default: string = ''): string;
 
-var
-  GlobalTimeStamp: Int64;
-
 implementation
 
 uses  
   Generics.Collections,
   mnHttpClient;
-
-function GetTimeStamp: Int64;
-var
-  t: Double absolute Result;
-begin
-  t := Now;
-end;
-
-function NewUUID: string;
-begin
-  Result := UUIDToString(TGUID.NewGuid);
-end;
 
 function DirectionToStr(Direction: TDirection): string;
 begin
@@ -3072,7 +3058,7 @@ end;
 procedure TmnwWeb.Stop;
 begin
   FShutdown := True;
-  ClearSchemas;
+  CleanSchemas;
   Started := False;
 end;
 
@@ -3430,14 +3416,14 @@ begin
   Result := SchemaClass.Create(Self, AName, AName);
 end;
 
-procedure TmnwWeb.ClearSchemas;
+procedure TmnwWeb.CleanSchemas;
 var
   i: Integer;
 begin
   i := Count-1;
   while i>=0 do
   begin
-    if not (schemaPermanent in Items[i].GetCapabilities) then
+    if not (schemaStatic in Items[i].GetCapabilities) then
       Delete(i);
     Dec(i);
   end;
@@ -4166,6 +4152,14 @@ begin
     Result := Route;
 end;
 
+function TmnwElement.GetPathClasses: string;
+begin
+  if (Parent <> nil) then
+    Result := AddEndURLDelimiter(Parent.GetPathClasses) + ClassName
+  else
+    Result := ClassName;
+end;
+
 function TmnwElement.GetPathTo(ToElement: TmnwElement): string;
 begin
   if (Self = nil) or (Self = ToElement) then
@@ -4195,6 +4189,15 @@ end;
 function TmnwElement.GetRoute: String;
 begin
   Result := FRoute;
+end;
+
+procedure TmnwElement.SetOnRespond(const Value: TRespondProc);
+begin
+  FOnRespond := Value;
+  {$ifopt D+}
+  if (Schema <> nil) and (schemaDynamic in Schema.GetCapabilities) then
+    log.WriteLn(lglWarning, 'You are using OnRespond in dynamic schema:' + GetPathClasses);
+  {$endif}
 end;
 
 procedure TmnwElement.SetRenderIt(const Value: Boolean);
@@ -4432,7 +4435,7 @@ begin
   inherited Create;
   FTimeStamp := GetTimeStamp;
   FEnabled := True;
-  FVisible := True;  
+  FVisible := True;
   FName := '';
   FAttributes := TmnwAttributes.Create;
   FKind := AKind;
@@ -4442,6 +4445,16 @@ begin
     FSchema:= FParent.FSchema;
     FParent.Add(Self);
   end;
+{$ifopt D+}
+{
+  if (Schema <> nil) and (schemaDynamic in Schema.GetCapabilities) then
+  begin
+    if (Schema <> Self) then
+      if Self.MethodAddress('DoRespond') <> @TmnwElement.DoRespond then
+        log.WriteLn(lglWarning, 'You are using DoRespond in dynamic schema: ' + GetPathClasses);
+  end;
+}
+{$endif}
 end;
 
 destructor TmnwElement.Destroy;
@@ -5356,7 +5369,7 @@ end;
 
 class function TAssetsSchema.GetCapabilities: TmnwSchemaCapabilities;
 begin
-  Result := inherited + [schemaStartup, schemaPermanent];
+  Result := inherited + [schemaStartup, schemaStatic];
 end;
 
 function TAssetsSchema.GetPublicPath: string;
@@ -6694,7 +6707,6 @@ begin
 end;
 
 initialization
-  GlobalTimeStamp := GetTimeStamp;  
   Libraries.RegisterLibrary(TWebElements_Library, 2000);
   Libraries.RegisterLibrary(TJQuery_Library);
 finalization

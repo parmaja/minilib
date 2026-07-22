@@ -938,11 +938,7 @@ const
   sMiniLibServer = 'minilib.server/v1';
 
 var
-  DeveloperMode:Boolean = False;
   ClientCacheMode:Boolean = False; //Move it to Module
-  
-  InstanceDate: TDateTime = 0;
-  InstanceUID: TGUID;
 
 function OptionValue(Value: TmodOptionValue): Boolean; overload; inline;
 function OptionValue(Value: Boolean): TmodOptionValue; overload; inline;
@@ -3976,9 +3972,6 @@ begin
 end;
 
 initialization
-  //InstanceDate := Now;
-  FileAge(ParamStr(0), InstanceDate);
-  InstanceUID := TGUID.NewGuid;
 finalization
   FreeAndNil(FRegisteredModules);
 end.
