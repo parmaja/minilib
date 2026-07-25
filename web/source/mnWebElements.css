@@ -353,6 +353,24 @@ svg {
     margin: calc(var(--gap-unit) * 5);
 }
 
+/* Grid Columns */
+
+.g-columns-sm {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.g-columns-md {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.g-columns-lg {
+    grid-template-columns: repeat(4, 1fr) !important;
+}
+
+.g-columns-xl {
+    grid-template-columns: repeat(6, 1fr) !important;
+}
+
 /** Bootstrap **/
 
 [data-bs-theme=dark] .icon.mnw-theme{

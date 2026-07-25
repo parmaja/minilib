@@ -512,7 +512,13 @@ type
 
   TWebElements_Library = class(TmnwLibrary)
   protected
-    procedure Created; override;     
+    procedure Created; override;
+  public
+  end;
+
+  TDarklyTheme_Library = class(TmnwLibrary)
+  protected
+    procedure Created; override;
   public
   end;
 
@@ -6706,8 +6712,17 @@ begin
   CallScript := 'mnw.switch_theme(event)';
 end;
 
+{ TDarklyTheme_Library }
+
+procedure TDarklyTheme_Library.Created;
+begin
+  inherited;
+  Sources.Add(stStyle, stResource, 'darkly.css', '?minilib\web\source\Darkly.css', '', []);
+end;
+
 initialization
   Libraries.RegisterLibrary(TWebElements_Library, 2000);
+  Libraries.RegisterLibrary(TDarklyTheme_Library, 2000);
   Libraries.RegisterLibrary(TJQuery_Library);
 finalization
   FreeAndNil(FRenderers);
