@@ -943,7 +943,7 @@ end;
 procedure TmnServer.BeforeDestruction;
 begin
   IsDestroying := True;
-  inherited BeforeDestruction;
+  inherited;
 end;
 
 destructor TmnServer.Destroy;

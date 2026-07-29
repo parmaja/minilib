@@ -3173,7 +3173,7 @@ begin
     Lock.BeginRead;
     try
       if aSchema <> nil then
-        Inc(aSchema.Usage);
+        AtomicIncrement(aSchema.Usage);
     finally
       Lock.EndRead;
     end;
@@ -3327,7 +3327,7 @@ begin
       Lock.BeginWrite;
       try
         AContext.Schema.LastAccess := Now;
-        Dec(AContext.Schema.Usage);
+        AtomicDecrement(AContext.Schema.Usage);
         if (AContext.Schema.Usage = 0) and (AContext.Schema.Released) then
           FreeAndNil(AContext.Schema)
         else
@@ -3642,7 +3642,10 @@ begin
   FSchema := Self;
   FIsRoot := True;
   FAttachments := TmnwAttachments.Create;
-  FInternalLock := nil;
+  if schemaDynamic in GetCapabilities then
+    FInternalLock := TCriticalSection.Create
+  else
+    FInternalLock := nil;
   RefreshInterval := 1;
   {$ifdef rtti_objects}
   CacheClasses;
@@ -3650,16 +3653,25 @@ begin
 end;
 
 destructor TmnwSchema.Destroy;
+var
+  LLock: TCriticalSection;
 begin
   FAttachments.Terminate;
-  Enter;
-  try
-    FAttachments.Clear;
-    FreeAndNil(FAttachments);
-  finally
-    Leave;
+
+  // Drain: take the lock away first so any new caller sees nil,
+  // then acquire/release to wait for any thread currently inside.
+  LLock := FInternalLock;
+  FInternalLock := nil;
+  if LLock <> nil then
+  begin
+    LLock.Enter;
+    LLock.Leave;
   end;
-  FreeAndNil(FInternalLock);
+
+  FAttachments.Clear;
+  FreeAndNil(FAttachments);
+
+  FreeAndNil(LLock);
   FreeAndNil(FDefaultDocuments);
   inherited;
 end;
@@ -3839,8 +3851,6 @@ end;
 
 procedure TmnwSchema.Enter;
 begin
-  if (FInternalLock = nil) and (schemaDynamic in GetCapabilities) then
-    FInternalLock := TCriticalSection.Create;
   if FInternalLock <> nil then
     FInternalLock.Enter;
 end;
