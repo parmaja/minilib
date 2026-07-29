@@ -98,6 +98,15 @@ type
   TmnOnLog = procedure(const S: string) of object;
   TmnOnListenerNotify = procedure(Listener: TmnListener) of object;
 
+  TLockStringList = class(TStringList)
+  private
+    FLock: TCriticalSection;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    property Lock: TCriticalSection read FLock write FLock;
+  end;
+
   { TmnListener }
 
   TmnListener = class(TmnConnections) // thread to watch for incoming requests
@@ -105,7 +114,7 @@ type
     FServer: TmnServer;
     FTimeout: Integer;
     FSocket: TmnCustomSocket; //Listner socket waiting by call "select"
-    FLogMessages: TStringList;
+    FLogMessages: TLockStringList;
     FOptions: TmnsoOptions;
     FLastCheck: UInt64;
     FEvent: TEvent;
@@ -117,7 +126,7 @@ type
     function CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream;
     procedure DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket); virtual;
 
-    property LogMessages: TStringList read FLogMessages;
+    property LogMessages: TLockStringList read FLogMessages;
 
   protected //OpenSSL
     Context: TContext;
@@ -605,7 +614,7 @@ begin
   inherited Create;
   FEvent := TEvent.Create(nil, False, False, '');
   FreeOnTerminate := False;
-  FLogMessages := TStringList.Create;
+  FLogMessages := TLockStringList.Create;
   FTimeout := cListenerTimeout;
 end;
 
@@ -647,7 +656,7 @@ var
  begin
   if FServer <> nil then
   repeat
-    Enter;
+    LogMessages.Lock.Enter;
     try
       b := LogMessages.Count > 0;
       if b then
@@ -658,7 +667,7 @@ var
       else
         s := '';
     finally
-      Leave;
+      LogMessages.Lock.Leave;
     end;
     if b then
       FServer.DoLog(s);
@@ -806,8 +815,8 @@ end;
 
 procedure TmnListener.SetOptions(AValue: TmnsoOptions);
 begin
-  if FOptions =AValue then Exit;
-  FOptions :=AValue;
+  if FOptions = AValue then Exit;
+  FOptions := AValue;
   //TODO check if not connected
 end;
 
@@ -815,11 +824,11 @@ procedure TmnListener.Log(S: string);
 begin
   if mnLogs.Log.Enabled then
   begin
-    Enter;
+    LogMessages.Lock.Enter;
     try
       LogMessages.Add(S);
     finally
-      Leave;
+      LogMessages.Lock.Leave;
     end;
     Queue(nil, PostLogs); //nil = queue not linked with this thread "RemoveQueuedEvents"
   end;
@@ -1194,6 +1203,20 @@ end;
 destructor TmnServerSocket.Destroy;
 begin
   inherited Destroy;
+end;
+
+{ TLockStringList }
+
+constructor TLockStringList.Create;
+begin
+  inherited Create;
+  FLock := TCriticalSection.Create;
+end;
+
+destructor TLockStringList.Destroy;
+begin
+  FLock.Free;
+  inherited;
 end;
 
 end.
