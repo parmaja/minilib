@@ -23,6 +23,8 @@ uses
 type
 
   {$IFDEF FPC} //*Temporary, To be compatiple with Delphi
+  TMREWSync = TMultiReadExclusiveWriteSynchronizer; //Short form
+
   TProc = Reference to procedure;
   TProc<T> = reference to procedure (Arg1: T);
   TProc<T1,T2> = reference to procedure (Arg1: T1; Arg2: T2);
@@ -238,6 +240,7 @@ type
     destructor Destroy; override;
     procedure Enter;
     procedure Leave;
+    property Lock: TCriticalSection read FLock;
   end;
     
 implementation

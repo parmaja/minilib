@@ -36,13 +36,13 @@
     </RunParams>
     <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="MiniLib"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniSockets"/>
+        <PackageName Value="MiniXML"/>
       </Item2>
       <Item3>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniSockets"/>
       </Item3>
       <Item4>
         <PackageName Value="LCL"/>
@@ -71,12 +71,13 @@
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>
-        <CStyleMacros Value="True"/>
         <UseAnsiStrings Value="False"/>
+        <CStyleMacros Value="True"/>
       </SyntaxOptions>
     </Parsing>
     <Linking>
       <Debugging>
+        <DebugInfoType Value="dsDwarf3"/>
         <UseValgrind Value="True"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>

@@ -794,7 +794,6 @@ type
     procedure DoChildRespond(AElement: TmnwElement; const AContext: TmnwContext); virtual;
     procedure AttachedMessage(const s: string); virtual; //from websocket
     procedure InteractiveMessage(const s: string);
-    function GetPublicPath: string; virtual;
     property DefaultDocuments: TStringList read FDefaultDocuments write SetDefaultDocuments;
   public
     Reference: string; //To find it
@@ -807,6 +806,7 @@ type
     destructor Destroy; override;
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
+    function GetPublicPath: string; virtual;
     function NewHandle: THandle;
 
     property PublicPath: string read GetPublicPath write SetPublicPath;
@@ -1947,12 +1947,14 @@ type
   TmnwRenderers = class(TmnNamedObjectList<TmnwRendererRegister>)
   private
     FCurrent: TmnwRendererRegister;
+    FStarted: Boolean;
   public
     function RegisterRenderer(AName: string; ARendererClass: TmnwRendererClass): TmnwRendererRegister; overload;
     function FindBy(ARendererClass: TmnwRendererClass): TmnwRendererRegister; overload;
     procedure Switch(AName: string); overload;
     procedure Switch(ARendererClass: TmnwRendererClass); overload;
     property Current: TmnwRendererRegister read FCurrent;
+    property Started: Boolean read FStarted;
   end;
   
   TmnwResponse = class(TwebResponse)
@@ -1977,12 +1979,12 @@ type
     //FLogo: THTML.TMemory;  
     procedure Created; override;
     procedure DoRespond(const AContext: TmnwContext); override;
-    function GetPublicPath: string; override;
   public
     class function GetCapabilities: TmnwSchemaCapabilities; override;
     procedure Start; override;
     //property Logo: THTML.TMemory read FLogo;
     property LogoFile: string read FLogoFile write FLogoFile;
+    function GetPublicPath: string; override;
   end;
 
   //Return error as json if fail with message of error, so we need JS to post
@@ -2107,7 +2109,7 @@ function EndURL(const Path: string): string; inline;
 function EscapeAttr(const S: string): string;
 
 function Renderers: TmnwRenderers;
-function Libraries: TmnwLibraries; //TODO
+function Libraries: TmnwLibraries;
 
 procedure InitLanguages(const APath: string);
 function _T(const Key: string; const Lang: string; const Default: string = ''): string;
@@ -2916,6 +2918,9 @@ function TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; 
     rttiCollectExtensions(Result.ElementClass, Result.Extensions);
   end;
 begin
+  if Renderers.Started then
+    raise Exception.Create('Once web app started you can''t register Renderer');
+
   if not AElementClass.InheritsFrom(TmnwElement) then
     raise Exception.Create('Element should inherited from THTML');
       
@@ -2982,8 +2987,8 @@ begin
     Result := Find(aClass);
     if Result <> nil then
     begin
-      if aClass <> AElementClass then
-        Result := RegisterRenderer(AElementClass, Result.RendererClass);
+      {if aClass <> AElementClass then
+        Result := RegisterRenderer(AElementClass, Result.RendererClass);}
       Exit;
     end;
     if aClass.ClassParent.InheritsFrom(TmnwElement) then
@@ -3334,7 +3339,7 @@ begin
           end;
         end;
       finally
-        Lock.BeginWrite;
+        Lock.EndWrite;
       end;
     end;
   except
@@ -5399,8 +5404,9 @@ begin
     Web.Domain := Domain;
   if Web.Port = '' then
     Web.Port := Server.UsedPort;}
-  
+
   Web.Start;
+  Renderers.FStarted := True;
 end;
 
 procedure TmnwWebModule.Stop;
@@ -6030,6 +6036,9 @@ end;
 
 function TmnwRenderers.RegisterRenderer(AName: string; ARendererClass: TmnwRendererClass): TmnwRendererRegister;
 begin
+  if Started then
+    raise Exception.Create('Once web app started you can''t register Renderer');
+
   if ARendererClass = nil then
     raise Exception.Create('RendererClass is null to register');
   Result := TmnwRendererRegister.Create;

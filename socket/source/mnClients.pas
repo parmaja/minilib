@@ -92,7 +92,6 @@ type
 
   TmnClients = class(TmnConnections) // thread pooling to collect outgoing clients threads
   private
-    FLock: TCriticalSection;
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnCallerNotify;
     procedure Connect;
@@ -110,14 +109,12 @@ type
     destructor Destroy; override;
     procedure Remove(Connection: TmnConnection); override;
     procedure Add(Connection: TmnConnection); override;
-    //procedure Stop; override;
     procedure Log(Connection: TmnConnection; S: string);
     function AddConnection(vPort: string; vAddress: string): TmnClientConnection;
     property Connected: Boolean read GetConnected;
 
     property OnLog: TmnOnLog read FOnLog write FOnLog;
     property OnChanged: TmnOnCallerNotify read FOnChanged write FOnChanged;
-    property Lock: TCriticalSection read FLock;
   end;
 
 implementation
@@ -129,7 +126,7 @@ begin
   if FLock <> nil then
     Result := FLock
   else
-    Result := Owner.FLock;
+    Result := Owner.Lock;
 end;
 
 procedure TmnClient.DoLog(s: string);
@@ -231,14 +228,12 @@ end;
 constructor TmnClients.Create;
 begin
   inherited;
-  FLock := TCriticalSection.Create; //only if have no owner
   //FOptions := [soNoDelay]; //you can use soKeepAlive
   FOptions := [];
 end;
 
 destructor TmnClients.Destroy;
 begin
-  FreeAndNil(FLock);
   inherited;
 end;
 

@@ -844,8 +844,6 @@ type
     procedure Terminate; virtual;
     procedure AfterConstruction; override;
     property Terminated: Boolean read FTerminated;
-    procedure Enter;
-    procedure Leave;
 
     property Name: string read FName;
   end;
@@ -867,7 +865,7 @@ type
   private
     FCurrent: TmnPoolObject;
 
-    FLock: TCriticalSection;
+    FLock: TMREWSync;
     FEvent: TEvent;
     FWaitEvent: TEvent;
 
@@ -883,8 +881,8 @@ type
     constructor Create;
     destructor Destroy; override;
     property PoolList: TPoolList read FPoolList;
-    property Lock: TCriticalSection read FLock;
-    function FindName(vClass: TPoolObjectClass; const vName: string): Boolean;
+    property Lock: TMREWSync read FLock;
+    function IsExists(vClass: TPoolObjectClass; const vName: string): Boolean;
     procedure SkipClass(vClass: TPoolObjectClass);
     procedure TerminateSet; virtual;
     property Terminated: Boolean read FTerminated;
@@ -3746,25 +3744,15 @@ procedure TmnPoolObject.DoUnprepare;
 begin
 end;
 
-procedure TmnPoolObject.Enter;
-begin
-  FPool.Lock.Enter;
-end;
-
 procedure TmnPoolObject.Execute;
 begin
   DoProcess;
-  FPool.Lock.Enter;
+  FPool.Lock.BeginWrite;
   try
     FPool.FTaskList.Extract(Self);
   finally
-    FPool.Lock.Leave;
+    FPool.Lock.EndWrite;
   end;
-end;
-
-procedure TmnPoolObject.Leave;
-begin
-  FPool.Lock.Leave;
 end;
 
 procedure TmnPoolObject.Terminate;
@@ -3797,14 +3785,14 @@ var
 begin
   while not FTerminated do
   begin
-    Lock.Enter;
+    Lock.BeginWrite;
     try
       if PoolList.Count <> 0 then
         FCurrent := PoolList.Extract(PoolList.First) { TODO : try use PoolList as queue }
       else
         FCurrent := nil;
     finally
-      Lock.Leave;
+      Lock.EndWrite;
     end;
 
     if FCurrent <> nil then
@@ -3817,11 +3805,11 @@ begin
         end;
       finally
         aCurrent := FCurrent;
-        Lock.Enter;
+        Lock.BeginWrite;
         try
           FCurrent := nil;
         finally
-          Lock.Leave;
+          Lock.EndWrite;
         end;
         FreeAndNil(aCurrent);
         FWaitEvent.SetEvent;
@@ -3844,15 +3832,14 @@ end;
 
 procedure TmnPool.Add(vPoolObject: TmnPoolObject);
 begin
-  Lock.Enter;
+  Start;
+  Lock.BeginWrite;
   try
-    Start;
-
     PoolList.Add(vPoolObject);
     if PoolList.Count=1 then
       FEvent.SetEvent;
   finally
-    Lock.Leave;
+    Lock.EndWrite;
   end;
 end;
 
@@ -3862,7 +3849,7 @@ begin
   FStarted := False;
   FPoolList := TPoolList.Create;
   FTaskList := TPoolList.Create;
-  FLock := TCriticalSection.Create;
+  FLock := TMREWSync.Create;
   FEvent := TEvent.Create(nil, False, False, '');
   FWaitEvent := TEvent.Create(nil, True, True, '');
 end;
@@ -3879,23 +3866,23 @@ begin
   inherited;
 end;
 
-function TmnPool.FindName(vClass: TPoolObjectClass; const vName: string): Boolean;
+function TmnPool.IsExists(vClass: TPoolObjectClass; const vName: string): Boolean;
 var
   I: Integer;
 begin
   Result := False;
-  Lock.Enter;
+  Lock.BeginRead;
   try
     for I := 0 to PoolList.Count-1 do
     begin
-      if (PoolList[i].ClassType=vClass) and (PoolList[i].Name=vName) then
+      if (PoolList[i].ClassType = vClass) and (PoolList[i].Name = vName) then
       begin
         Result := True;
         Break;
       end;
     end;
   finally
-    Lock.Leave;
+    Lock.EndRead;
   end;
 end;
 
@@ -3918,11 +3905,11 @@ procedure TmnPool.SkipClass(vClass: TPoolObjectClass);
 var
   PoolObject: TmnPoolObject;
 begin
-  Lock.Enter;
+  Lock.BeginRead;
   try
     for PoolObject in PoolList do
     begin
-      if (PoolObject.ClassType=vClass) then
+      if (PoolObject.ClassType = vClass) then
         PoolObject.FSkip := True;
     end;
 
@@ -3933,7 +3920,7 @@ begin
       FCurrent.Terminate;
     end;
   finally
-    Lock.Leave;
+    Lock.EndRead;
   end;
 
   FWaitEvent.WaitFor;

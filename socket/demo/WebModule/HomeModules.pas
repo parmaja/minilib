@@ -23,7 +23,6 @@ type
 
   THomeSchema = class(TmySchema)
   private
-    procedure DoRespondHeader(const AContext: TmnwContext);
   public
   protected
     procedure DoCompose(const AContext: TmnwContext); override;
@@ -890,12 +889,6 @@ begin
       TLink.Create(This, AContext.GetHomeURL + '/files/sub1/sub2', 'test redirect files/sub1/sub2');
     end;
   end;
-end;
-
-procedure THomeSchema.DoRespondHeader(const AContext: TmnwContext);
-begin
-  inherited;
-
 end;
 
 initialization  
