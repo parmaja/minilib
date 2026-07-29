@@ -137,7 +137,12 @@ end;
 
 function TmnConnections.GetCount: Integer;
 begin
-  Result := FList.Count;
+  Enter;
+  try
+    Result := FList.Count;
+  finally
+    Leave;
+  end;
 end;
 
 function TmnConnections.NewID: Int64;

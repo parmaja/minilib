@@ -520,14 +520,7 @@ end;
 function TmnServer.GetCount: Integer;
 begin
   if Listener <> nil then
-  begin
-    Listener.Enter;
-    try
-      Result := Listener.Count;
-    finally
-      Listener.Leave;
-    end;
-  end
+    Result := Listener.Count
   else
     Result := 0;
 end;

@@ -794,8 +794,8 @@ end;
 
 destructor TmnLockThread.Destroy;
 begin
+  FreeAndNil(FLock);
   inherited;
-  FreeAndNil(FLock); //* it used in other inherited classes
 end;
 
 procedure TmnLockThread.Enter;
