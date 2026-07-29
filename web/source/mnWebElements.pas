@@ -482,14 +482,14 @@ type
 
   TmnwLibraries = class(TmnNamedObjectList<TmnwLibrary>)
   private
-    FLock: TCriticalSection;
+    FLock: TMREWSync;
   public
     constructor Create; virtual;
     destructor Destroy; override;     
     function Find(ALibraryName: string): TmnwLibrary; overload;
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
     function RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0): TmnwLibrary; overload;
-    property Lock: TCriticalSection read FLock;
+    property Lock: TMREWSync read FLock;
   end;
 
   TmnwRequires = class(TmnNamedObjectList<TmnwLibrary>)
@@ -736,7 +736,7 @@ type
 
   TmnwAttachments = class(TmnNamedObjectList<TmnwAttachment>)
   private
-    FLock: TCriticalSection;
+    FLock: TMREWSync;
   protected
     procedure Created; override;
   public
@@ -747,7 +747,7 @@ type
     procedure SendMessage(const AttachmentName: string; const Message: string); overload;
     procedure Add(AAttachment: TmnwAttachment);
     procedure Remove(AAttachment: TmnwAttachment);
-    property Lock: TCriticalSection read FLock;
+    property Lock: TMREWSync read FLock;
   end;
 
   TmnwSchemaCapability = (
@@ -775,11 +775,12 @@ type
     FAttached: Boolean;
     FAttachments: TmnwAttachments;
     FDefaultDocuments: TStringList;
-    FLock: TCriticalSection;
     FWeb: TmnwWeb;
     FPhase: TmnwSchemaPhase;
     FNamingLastNumber: THandle;
     FPublicPath: string;
+
+    FInternalLock: TCriticalSection; //Can be nil
     function GetReleased: Boolean;
     procedure SetDefaultDocuments(AValue: TStringList);
     procedure SetPublicPath(const Value: string);
@@ -810,6 +811,9 @@ type
 
     property PublicPath: string read GetPublicPath write SetPublicPath;
 
+    procedure Enter; //Lock if lock not nil (Static)
+    procedure Leave;
+
     //* Attaching cap
     //function Interactive: Boolean;
 
@@ -824,8 +828,7 @@ type
     property Attached: Boolean read FAttached;
     property Released: Boolean read GetReleased;
     property Phase: TmnwSchemaPhase read FPhase;
-    property Lock: TCriticalSection read FLock;
-    property Web: TmnwWeb read FWeb;    
+    property Web: TmnwWeb read FWeb;
   public
     type
 
@@ -1073,19 +1076,6 @@ type
   TRegisteredSchemas = class(TmnNamedObjectList<TmnwRegisterdSchema>)
   end;
 
-  { TmnwSchemaObject }
-
-  TmnwSchemaObject = class(TmnwRegisterdSchema)
-  private
-    FLock: TCriticalSection;
-  public
-    Schema: TmnwSchema;
-    ManualSchema: Boolean; //Schema set from outside not by request
-    constructor Create;
-    destructor Destroy; override;
-    property Lock: TCriticalSection read FLock;
-  end;
-
   TAssetsSchema = class;
 
   TmnwAppOptions = set of (
@@ -1111,7 +1101,7 @@ type
     FAssets: TAssetsSchema;
     FDefaultSchema: TmnwRegisterdSchema;
     FShutdown: Boolean;
-    FLock: TCriticalSection;
+    FLock: TMREWSync;
     FRegistered: TRegisteredSchemas;
     FTimeStamp: Int64;
     FOnlineFiles: TOnlineFiles;
@@ -1160,7 +1150,7 @@ type
     //for WebSocket
     function Attach(var AContext: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
-    property Lock: TCriticalSection read FLock;
+    property Lock: TMREWSync read FLock;
     property Assets: TAssetsSchema read FAssets;
     property DefaultSchema: TmnwRegisterdSchema read FDefaultSchema;
     //Public Web Files
@@ -2275,8 +2265,8 @@ begin
   Result := FLibraries;
 end;
 
-  var
-  Languages: TDictionary<string, TDON_Element> = nil;
+var
+  Languages: TDictionary<string, TDON_Element> = nil; //Move to TmnwWeb
 
 procedure InitLanguages(const APath: string);
 var
@@ -2509,7 +2499,7 @@ end;
 constructor TmnwAttachments.Create;
 begin
   inherited Create;
-  FLock := TCriticalSection.Create;
+  FLock := TMREWSync.Create;
 //  FMessages := TmnwMessages.Create;
 end;
 
@@ -2527,12 +2517,12 @@ var
 begin
   List := TList<TmnwAttachment>.Create;
   try
-    Lock.Enter;
+    Lock.BeginWrite;
     try
       for Attachment in Self do
         List.Add(Attachment);
     finally
-      Lock.Leave;
+      Lock.EndWrite;
     end;
     for Attachment in List do
       Attachment.Terminate;
@@ -2548,11 +2538,11 @@ end;
 
 procedure TmnwAttachments.Add(AAttachment: TmnwAttachment);
 begin
-  Lock.Enter;
+  Lock.BeginWrite;
   try
     inherited Add(AAttachment);
   finally
-    Lock.Leave;
+    Lock.EndWrite;
   end;
 end;
 
@@ -2560,37 +2550,27 @@ procedure TmnwAttachments.Remove(AAttachment: TmnwAttachment);
 begin
   if Lock = nil then
     raise Exception.Create('Lock is nil in Attachments');
-  Lock.Enter;
+  Lock.BeginWrite;
   try
     inherited Remove(AAttachment);
   finally
-    Lock.Leave;
+    Lock.EndWrite;
   end;
 end;
 
 procedure TmnwAttachments.SendMessage(const AttachmentName, Message: string);
 var
   Attachment: TmnwAttachment;
-  List: TList<TmnwAttachment>;
 begin
-  // Collect matching attachments while locked, then send outside the lock
-  // to avoid blocking other threads on slow network writes.
-  List := TList<TmnwAttachment>.Create;
+  Lock.BeginRead;
   try
-    Lock.Enter;
-    try
-      for Attachment in Self do
-      begin
-        if (Attachment.Name = '') or SameText(AttachmentName, Attachment.Name) then
-          List.Add(Attachment);
-      end;
-    finally
-      Lock.Leave;
+    for Attachment in Self do
+    begin
+      if (Attachment.Name = '') or SameText(AttachmentName, Attachment.Name) then
+        Attachment.SendMessage(Message);
     end;
-    for Attachment in List do
-      Attachment.SendMessage(Message);
   finally
-    List.Free;
+    Lock.EndRead;
   end;
 end;
 
@@ -3025,21 +3005,6 @@ begin
     Result := TmnwElementRenderer;
 end;}
 
-{ TmnwSchemaObject }
-
-constructor TmnwSchemaObject.Create;
-begin
-  inherited Create;
-  FLock := TCriticalSection.Create;
-end;
-
-destructor TmnwSchemaObject.Destroy;
-begin
-  FreeAndNil(Schema);
-  FreeAndNil(FLock);
-  inherited;
-end;
-
 { TmnwWeb }
 
 destructor TmnwWeb.Destroy;
@@ -3123,7 +3088,7 @@ end;
 
 function TmnwWeb.ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
 begin
-  Lock.Enter;
+  Lock.BeginWrite;
   try
     Result := FindBy(aSchemaName, aSessionID);
     if Result <> nil then
@@ -3132,7 +3097,7 @@ begin
       Result.FPhase := scmpReleased;
     end;
   finally
-    Lock.Leave
+    Lock.EndWrite
   end;
 end;
 
@@ -3156,11 +3121,11 @@ begin
       aSchemaName := '';
 
     //Find already exists Schema
-    Lock.Enter;
+    Lock.BeginRead;
     try
        aSchema := FindBy(aSchemaName, AContext.Session.ID);
     finally
-      Lock.Leave;
+      Lock.EndRead;
     end;
 
     if aSchema = nil then // Not cached, create it.
@@ -3168,11 +3133,11 @@ begin
       aSchema := CreateSchema(aSchemaName);
       if aSchema = nil then  //* Fallback
       begin
-        Lock.Enter;
+        Lock.BeginRead;
         try
           aSchema := FindBy('', AContext.Session.ID);
         finally
-          Lock.Leave;
+          Lock.EndRead;
         end;
         if aSchema = nil then
           aSchema := CreateSchema('');
@@ -3200,12 +3165,12 @@ begin
       end;
     end;
 
-    Lock.Enter;
+    Lock.BeginRead;
     try
       if aSchema <> nil then
         Inc(aSchema.Usage);
     finally
-      Lock.Leave;
+      Lock.EndRead;
     end;
 
     if (aSchema <> nil) then
@@ -3236,19 +3201,20 @@ begin
       begin
         if not (estComposed in aSchema.State) then
         begin
-          aSchema.Lock.Enter;
+          aSchema.Enter;
           try
+            if not (estComposed in aSchema.State) then //Check again after Enter, while waiting can be composed
             try
               aSchema.Compose(AContext); //Compose
             except
-              aSchema.Lock.Leave;
+              aSchema.Leave;
               AContext.Schema := nil;
               FreeAndNil(aSchema);
               raise;
             end;
           finally
             if aSchema <> nil then
-                aSchema.Lock.Leave;
+                aSchema.Leave;
           end;
         end;
 
@@ -3353,7 +3319,7 @@ begin
 
     if AContext.Schema <> nil then
     begin
-      Lock.Enter;
+      Lock.BeginWrite;
       try
         AContext.Schema.LastAccess := Now;
         Dec(AContext.Schema.Usage);
@@ -3368,7 +3334,7 @@ begin
           end;
         end;
       finally
-        Lock.Leave;
+        Lock.BeginWrite;
       end;
     end;
   except
@@ -3438,7 +3404,7 @@ end;
 constructor TmnwWeb.Create;
 begin
   FTimeStamp := GetTimeStamp;
-  FLock := TCriticalSection.Create;
+  FLock := TMREWSync.Create;
   FRegistered := TRegisteredSchemas.Create;
   SessionAge := msOneHour; //Forever
   FShowVersion := True;
@@ -3671,7 +3637,7 @@ begin
   FSchema := Self;
   FIsRoot := True;
   FAttachments := TmnwAttachments.Create;
-  FLock := TCriticalSection.Create;
+  FInternalLock := nil;
   RefreshInterval := 1;
   {$ifdef rtti_objects}
   CacheClasses;
@@ -3681,14 +3647,14 @@ end;
 destructor TmnwSchema.Destroy;
 begin
   FAttachments.Terminate;
-  Lock.Enter;
+  Enter;
   try
     FAttachments.Clear;
     FreeAndNil(FAttachments);
   finally
-    Lock.Leave;
+    Leave;
   end;
-  FreeAndNil(FLock);
+  FreeAndNil(FInternalLock);
   FreeAndNil(FDefaultDocuments);
   inherited;
 end;
@@ -3705,21 +3671,13 @@ begin
   aAttachment.Stream := AStream;
   Attachments.Add(aAttachment);
   UpdateAttached;
+  if Attachments <> nil then
   try
     aAttachment.Loop;
   finally
-    Lock.Enter;
-    try
-      if FAttachments <> nil then
-      begin
-        if not aAttachment.Terminated then
-          aAttachment.Terminate;
-        Attachments.Remove(aAttachment);
-        UpdateAttached;
-      end;
-    finally
-      Lock.Leave;
-    end;
+    if not aAttachment.Terminated then
+      aAttachment.Terminate;
+    Attachments.Remove(aAttachment);//Already do Lock.BeginWrite
   end;
 end;
 
@@ -3874,6 +3832,14 @@ begin
     Render(AContext);
 end;
 
+procedure TmnwSchema.Enter;
+begin
+  if (FInternalLock = nil) and (schemaDynamic in GetCapabilities) then
+    FInternalLock := TCriticalSection.Create;
+  if FInternalLock <> nil then
+    FInternalLock.Enter;
+end;
+
 procedure TmnwSchema.DoAccept(var AContext: TmnwContext; var Resume: Boolean);
 begin
 end;
@@ -3897,17 +3863,23 @@ begin
       element := FindByID(elementID);
       if element <> nil then
       begin
-        Lock.Enter;
+        Attachments.Lock.BeginRead;
         try
           element.ReceiveMessage(Json);
         finally
-          Lock.Leave;
+          Attachments.Lock.EndRead;
         end;
       end;
     finally
       Json.Free;
     end;
   end
+end;
+
+procedure TmnwSchema.Leave;
+begin
+  if FInternalLock <> nil then
+    FInternalLock.Leave;
 end;
 
 class procedure TmnwSchema.Registered;
@@ -4893,7 +4865,7 @@ var
   i: Integer;
 begin
   Result := nil;
-  Lock.Enter;
+  Lock.BeginRead;
   try
     for i := 0 to Count - 1 do
       if (SameText(Items[i].Name, ALibraryName)) then
@@ -4902,14 +4874,14 @@ begin
         break;
       end;
   finally
-    Lock.Leave;
+    Lock.EndRead;
   end;
 end;
 
 constructor TmnwLibraries.Create;
 begin
   inherited Create;
-  FLock := TCriticalSection.Create;
+  FLock := TMREWSync.Create;
 end;
 
 destructor TmnwLibraries.Destroy;
@@ -4922,7 +4894,7 @@ function TmnwLibraries.Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary;
 var
   i: Integer;
 begin
-  Lock.Enter;
+  Lock.BeginRead;
   try
     Result := nil;
     for i := 0 to Count - 1 do
@@ -4932,13 +4904,13 @@ begin
         break;
       end;
   finally
-    Lock.Leave;
+    Lock.EndRead;
   end;
 end;
 
 function TmnwLibraries.RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer): TmnwLibrary;
 begin
-  Lock.Enter;
+  Lock.BeginWrite;
   try
     Result := Find(ALibraryClass);
     if Result <> nil then
@@ -4947,7 +4919,7 @@ begin
     Result.Priority := Priority;
     Add(Result);
   finally
-    Lock.Leave;
+    Lock.EndWrite;
   end;
 end;
 
@@ -5337,7 +5309,7 @@ begin
   Name := 'Assets';
   Route := 'assets';
   
-  Libraries.Lock.Enter;
+  Libraries.Lock.BeginRead;
   try
     for aLibrary in Libraries do
     begin
@@ -5364,7 +5336,7 @@ begin
       end;
     end;    
   finally
-    Libraries.Lock.Leave;
+    Libraries.Lock.EndRead;
   end;
 end;
 
@@ -6727,4 +6699,5 @@ initialization
 finalization
   FreeAndNil(FRenderers);
   FreeAndNil(FLibraries);
+  FreeAndNil(Languages);
 end.

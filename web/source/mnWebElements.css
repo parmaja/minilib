@@ -343,19 +343,19 @@ svg {
 }
 
 .m-childs-2 > * {
-    margin: calc(var(--gap-unit) * 2);
-}
-
-.m-childs-3 > * {
     margin: calc(var(--gap-unit) * 3);
 }
 
-.m-childs-4 > * {
+.m-childs-3 > * {
     margin: calc(var(--gap-unit) * 4);
 }
 
-.m-childs-5 > * {
+.m-childs-4 > * {
     margin: calc(var(--gap-unit) * 5);
+}
+
+.m-childs-5 > * {
+    margin: calc(var(--gap-unit) * 6);
 }
 
 /* Grid Columns */
