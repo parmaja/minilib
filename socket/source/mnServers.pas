@@ -645,7 +645,10 @@ end;
 
 function TmnListener.Accept: TmnCustomSocket;
 begin
-  Result := Socket.Accept(Options, Timeout);
+  if Socket = nil then
+    Result := nil
+  else
+    Result := Socket.Accept(Options, Timeout);
 end;
 
 procedure TmnListener.PostLogs;
@@ -711,9 +714,13 @@ begin
     while Connected and not Terminated do
     begin
       try
-        if (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated then
+        if (Socket <> nil) and (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated and Connected then
           begin
-            aSocket := Accept;
+            try
+              aSocket := Accept;
+            except
+              aSocket := nil;
+            end;
             if aSocket <> nil then
             begin
               UpdateChanged;

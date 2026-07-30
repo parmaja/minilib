@@ -25,7 +25,7 @@
               ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
   GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top HTTP/1.1
   └┬┘ └────┬─┘└───────────┬──────────────┘└───────┬───────┘ └───────────┬─────────────┘└┬─┘ └───┬──┘
-  method Scheme          Authority               Path                Query         Fragment   Protocol
+  method Scheme          Authority               Path                 Query        Fragment   Protocol
   └┬┘                                                       └───────────┬─────────────┘  
   Command                                                      Arguments/Params
 
