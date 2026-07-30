@@ -37,6 +37,6 @@ requires
 
 contains
   mnWebElements in '..\source\mnWebElements.pas',
-  mnBootstraps in '..\source\mnBootstraps.pas';
-
+  mnBootstraps in '..\source\mnBootstraps.pas',
+  mnwMarkdownIt in '..\source\mnwMarkdownIt';
 end.

@@ -37,8 +37,8 @@
         <Type Value="Text"/>
       </Item>
       <Item>
-        <Filename Value="..\source\mnwControls.pas"/>
-        <UnitName Value="mnwControls"/>
+        <Filename Value="..\source\mnwMarkdownIt.pas"/>
+        <UnitName Value="mnwMarkdownIt"/>
       </Item>
     </Files>
     <RequiredPkgs>
