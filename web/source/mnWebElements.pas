@@ -88,6 +88,8 @@ WebElement:                              NameSpace                              
 {$define LOCAL_RESOURCE}
 {$endif}
 
+{.$define Warn}
+
 interface
 
 uses
@@ -4188,8 +4190,10 @@ procedure TmnwElement.SetOnRespond(const Value: TRespondProc);
 begin
   FOnRespond := Value;
   {$ifopt D+}
+  {$ifdef Warn}
   if (Schema <> nil) and (schemaDynamic in Schema.GetCapabilities) then
     log.WriteLn(lglWarning, 'You are using OnRespond in dynamic schema:' + GetPathClasses);
+  {$endif}
   {$endif}
 end;
 

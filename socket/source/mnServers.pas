@@ -15,6 +15,12 @@ unit mnServers;
 
 {.$define NoLog}
 
+(* test
+
+  curl --parallel --parallel-max 50 -w "%{http_code}\n" http://localhost:10906/demo/home/[1-100]
+
+*)
+
 interface
 
 uses
@@ -706,18 +712,18 @@ begin
     begin
       try
         if (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated then
-        begin
-          aSocket := Accept;
-          if aSocket <> nil then
           begin
-            UpdateChanged;
-            aSocket.Context := Context;
+            aSocket := Accept;
+            if aSocket <> nil then
+            begin
+              UpdateChanged;
+              aSocket.Context := Context;
+            end;
+          end
+          else
+          begin
+            aSocket := nil;
           end;
-        end
-        else
-        begin
-          aSocket := nil;
-        end;
 
         {Enter; //todo remove it;
         try
@@ -736,7 +742,6 @@ begin
 
           if (aSocket = nil) then
           begin
-
             //only if we need retry mode, attempt to connect new socket, for 3 times as example, that if socket disconnected for wiered reason
             {if (not Connected) and (FAttempts > 0) and (FTries > 0) then
             begin
@@ -1026,7 +1031,7 @@ begin
       DoStopping;
       FListener.Terminate;
       FListener.WaitFor;
-      aPort := FListener.Port;
+      aPort := FListener.Port; //for Log below
 
       //to process all queues
       //in case of service ThreadID<>MainThreadID :)

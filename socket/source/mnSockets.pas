@@ -91,6 +91,7 @@ type
     FKind: TSocketKind;
     FHostAddress: string;
 		FHostName: string;
+    FBacklog: Integer;
     function GetConnected: Boolean;
   protected
     FStates: TmnSocketStates;
@@ -142,6 +143,7 @@ type
 
     property HostAddress: string read FHostAddress;
 		property HostName: string read FHostName;
+    property Backlog: Integer read FBacklog write FBacklog default 512;
   end;
 
   { TmnCustomWallSocket }
@@ -284,6 +286,7 @@ begin
   FHandle := AHandle;
   FHostName := AHostName;
   FHostAddress := AHostAddress;
+  FBacklog := 512;
 end;
 
 destructor TmnCustomSocket.Destroy;

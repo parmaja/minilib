@@ -73,7 +73,6 @@ type
 implementation
 
 const
-  cBacklog = 5;
   INVALID_SOCKET: TSocketHandle = TSocketHandle(-1);
   SO_TRUE: Longbool = True;
 //  SO_FALSE:Longbool=False;
@@ -188,7 +187,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := WinSock2.listen(FHandle, cBacklog);
+  c := WinSock2.listen(FHandle, Backlog);
   if c = SOCKET_ERROR then
     Result := erInvalid
   else

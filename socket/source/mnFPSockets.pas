@@ -70,7 +70,6 @@ uses
   netdb, Termio, BaseUnix;
 
 const
-  cBacklog = 5;
   INVALID_SOCKET		= TSocketHandle(NOT(0));
   SOCKET_ERROR			= -1;
   SO_TRUE:Longbool=True;
@@ -176,7 +175,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := fplisten(FHandle, cBacklog);
+  c := fplisten(FHandle, Backlog);
   if c = SOCKET_ERROR then
     Result := erInvalid
   else

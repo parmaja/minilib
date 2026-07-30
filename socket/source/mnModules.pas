@@ -1919,7 +1919,10 @@ begin
       aRequest.Client := RemoteIP;
       aRequest.IsSecure := IsSecure;
       if (aModule = nil) then
-        Stream.Disconnect //if failed, or no fallback module
+      begin
+        Stream.Disconnect; //if failed, or no fallback module
+        Log.Write(lglWarning, 'Disconnected no module found');
+      end
       else
       begin
         Result.Status := [];

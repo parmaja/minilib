@@ -262,7 +262,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := Posix.SysSocket.listen(FHandle, 5);
+  c := Posix.SysSocket.listen(FHandle, Backlog);
   if c = SOCKET_ERROR then
     Result := erInvalid
   else
