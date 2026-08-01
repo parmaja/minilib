@@ -1454,6 +1454,11 @@ type
         Gap: Integer;
       end;
 
+      TBox = class(THTMLLayout)
+      public
+        Gap: Integer;
+      end;
+
       TRow = class(THTMLLayout)
       public
         NoWrap: Boolean;

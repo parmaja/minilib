@@ -232,11 +232,11 @@ const
 function EscapeString(const S: string; const Esc: string; Chars: array of Char; const Escapes: array of string): string;
 function DescapeString(const S: string; const Esc: string; Chars: array of Char; const Escapes: array of string): string;
 
-function EscapeStringC(const S: string; QuoteChar: Char = '"'): string;
-function DescapeStringC(const S: string): string;
+function EscapeCString(const S: string; QuoteChar: Char = '"'): string;
+function DescapeCString(const S: string): string;
 function ToUnixPathDelimiter(const S: string): string;
 function HTMLEncode(const Str: string): string;
-function JsonEscape(const AStr: string): string;
+function EscapeJSONString(const AStr: string): string;
 
 function ExpandFile(const Name: string): string;
 
@@ -2186,12 +2186,12 @@ begin
   Result := false;
 end;
 
-function EscapeStringC(const S: string; QuoteChar: Char = '"'): string;
+function EscapeCString(const S: string; QuoteChar: Char = '"'): string;
 begin
   Result := EscapeString(s, '\', [#8, #9, #10, #13, '\', QuoteChar], ['b', 't', 'n', 'r', '\', QuoteChar]);
 end;
 
-function DescapeStringC(const S: string): string;
+function DescapeCString(const S: string): string;
 begin
   Result := DescapeString(s, '\', [#8, #9, #10, #13, '\', '"'], ['b', 't', 'n', 'r', '\', '"']);
 end;
@@ -2201,7 +2201,7 @@ begin
   Result := StringReplace(S, '\', '/', [rfReplaceAll]);
 end;
 
-function JsonEscape(const AStr: string): string;
+function EscapeJSONString(const AStr: string): string;
 const 
   HexChars: array[0..15] of Char = '0123456789ABCDEF';
 var

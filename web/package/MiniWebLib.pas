@@ -8,7 +8,7 @@ unit MiniWebLib;
 interface
 
 uses
-  mnBootstraps, mnwMarkdownIt;
+  mnBootstraps, mnwMarkdownIt, mnwRapiDoc;
 
 implementation
 

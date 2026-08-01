@@ -1742,7 +1742,7 @@ begin
         end;
     end
     else}
-      Serializer.Add(QuoteStr(EscapeStringC((AObject as TDON_String_Value).Value, QuoteChar), QuoteChar), LastOne, ',');
+      Serializer.Add(QuoteStr(EscapeCString((AObject as TDON_String_Value).Value, QuoteChar), QuoteChar), LastOne, ',');
     end;
     Serializer.NewLine;
   end

@@ -1921,7 +1921,7 @@ begin
       if (aModule = nil) then
       begin
         Stream.Disconnect; //if failed, or no fallback module
-        Log.Write(lglWarning, 'Disconnected no module found');
+        Log.WriteLn(lglWarning, 'Disconnected no module found: ' + aRequest.Info.URI);
       end
       else
       begin
@@ -3601,7 +3601,7 @@ end;
 
 procedure TwebResponse.RespondJSON(ResultType, State, Message, Redirect: string; AAnswer: TmodAnswer);
 begin
-  RespondJSON('{"type": "' + ResultType + '", "state": "' + State + '", "message": "' + Message + '", "redirect":"'+JsonEscape(Redirect)+'"}', AAnswer);
+  RespondJSON('{"type": "' + ResultType + '", "state": "' + State + '", "message": "' + Message + '", "redirect":"'+EscapeJSONString(Redirect)+'"}', AAnswer);
 end;
 
 procedure TwebResponse.RespondJSON(S: string; AAnswer: TmodAnswer);

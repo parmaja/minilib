@@ -226,7 +226,15 @@ type
       TMain = class(THTMLLayout)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
-      end;        
+      end;
+
+      { TRow }
+
+      TBox = class(THTMLLayout)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
 
       { TRow }
 
@@ -731,6 +739,7 @@ begin
     RegisterRenderer(THTML.TToolbar, TToolbar);
     RegisterRenderer(THTML.TCollapseCaption, TCollapseCaption);
     RegisterRenderer(THTML.TForm, TForm);
+    RegisterRenderer(THTML.TBox, TBox);
     RegisterRenderer(THTML.TRow, TRow);
     RegisterRenderer(THTML.TColumn, TColumn);
     RegisterRenderer(THTML.TPanel, TPanel);
@@ -2131,6 +2140,27 @@ procedure TBSRenderer.TToolButton.DoInnerRender(Scope: TmnwScope; Context: TmnwC
 begin
   inherited;
 
+end;
+
+{ TBSRenderer.TBox }
+
+procedure TBSRenderer.TBox.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TBox;
+begin
+  e := Scope.Element as THTML.TBox;
+  Scope.Classes.Add('d-flex');
+  Scope.Classes.Add('m-0');
+  if e.Gap>1 then
+    Scope.Classes.Add('m-childs');
+  inherited;
+end;
+
+procedure TBSRenderer.TBox.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+begin
+  Context.Writer.OpenTag('div', Scope.ToString);
+  inherited;
+  Context.Writer.CloseTag('div');
 end;
 
 initialization

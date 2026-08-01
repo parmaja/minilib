@@ -40,6 +40,10 @@
         <Filename Value="..\source\mnwMarkdownIt.pas"/>
         <UnitName Value="mnwMarkdownIt"/>
       </Item>
+      <Item>
+        <Filename Value="..\source\mnwRapiDoc.pas"/>
+        <UnitName Value="mnwRapiDoc"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>
