@@ -6717,7 +6717,7 @@ end;
 procedure TDarklyTheme_Library.Created;
 begin
   inherited;
-  Sources.Add(stStyle, stResource, 'darkly.css', '?minilib\web\source\Darkly.css', '', []);
+  Sources.Add(stStyle, stResource, 'darkly.css', '?minilib\web\source\bs-darkly.css', '', []);
 end;
 
 initialization

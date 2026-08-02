@@ -1,4 +1,4 @@
-:root {
+[data-bs-theme="dark"] {
     /* Theme */
     --bs-theme: "darkly";
 
@@ -38,7 +38,7 @@
     --bs-min-contrast-ratio: 1.9;
 
     /* Body */
-    --bs-body-bg: var(--bs-gray-900); 
+    --bs-body-bg: var(--bs-gray-900);
     --bs-body-color: var(--bs-white);
 
     /* Links */
