@@ -39,5 +39,5 @@ contains
   mnWebElements in '..\source\mnWebElements.pas',
   mnBootstraps  in '..\source\mnBootstraps.pas',
   mnwRapiDoc    in '..\source\mnwRapiDoc.pas',
-  mnwMarkdownIt in '..\source\mnwMarkdownIt';
+  mnwMarkdownIt in '..\source\mnwMarkdownIt.pas';
 end.
