@@ -90,7 +90,7 @@ type
     FFontSize: string;
   protected
     procedure Created; override;
-    procedure DoRequired(const AContext: TmnwContext); override;
+    procedure DoRequired(const Context: TmnwContext); override;
   public
     //* URL to the OpenAPI/Swagger spec (JSON)
     property SpecURL: string read FSpecURL write FSpecURL;
@@ -141,12 +141,12 @@ begin
   FSchemaExpandLevel := -1; // unlimited
 end;
 
-procedure TRapiDocControl.DoRequired(const AContext: TmnwContext);
+procedure TRapiDocControl.DoRequired(const Context: TmnwContext);
 begin
   inherited;
-  AContext.Require(TBootstrap_Library);
-  AContext.Require(TBootstrapIcons_Library);
-  AContext.Require(TRapiDoc_Library);
+  Context.Require(TBootstrap_Library);
+  Context.Require(TBootstrapIcons_Library);
+  Context.Require(TRapiDoc_Library);
 end;
 
 { TRapiDocRenderer }

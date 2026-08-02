@@ -62,7 +62,7 @@ type
     FOptions: TMarkdownItOptions;
   protected
     procedure Created; override;
-    procedure DoRequired(const AContext: TmnwContext); override;
+    procedure DoRequired(const Context: TmnwContext); override;
   public
     //* The markdown source text to render
     property Source: string read FSource write FSource;
@@ -102,13 +102,13 @@ begin
   FOptions := [mioHTML, mioLinkify, mioSanitize];
 end;
 
-procedure TMarkdownIt.DoRequired(const AContext: TmnwContext);
+procedure TMarkdownIt.DoRequired(const Context: TmnwContext);
 begin
   inherited;
-  AContext.Require(TBootstrap_Library);
-  AContext.Require(TBootstrapIcons_Library);
-  AContext.Require(TMarkdownIt_Library);
-  AContext.Require(THighlightJS_Library);
+  Context.Require(TBootstrap_Library);
+  Context.Require(TBootstrapIcons_Library);
+  Context.Require(TMarkdownIt_Library);
+  Context.Require(THighlightJS_Library);
 end;
 
 { TMarkdownItRenderer }

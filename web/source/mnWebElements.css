@@ -472,7 +472,7 @@ aside{
     opacity: 100%;
     padding: 0;
     width: var(--sidebar-size);
-    background-color: var(--bs-secondary-bg);
+    /*background-color: var(--bs-secondary-bg);*/
 
     /*background-color: color-mix(in srgb, var(--bs-body-bg), black 5%);*/
 }
