@@ -39,7 +39,7 @@ type
     procedure DoRead(const Buffer; Count: Longint); virtual;
     procedure Prepare;
   public
-    constructor Create(AParent: TDON_Object_Value);
+    constructor Create(AParent: TDON_Object);
     destructor Destroy; override;
     procedure Write(vStream: TmnBufferStream);
     function Read(vStream: TmnBufferStream; const vBoundary: utf8string): Boolean;
@@ -77,7 +77,7 @@ type
     Memory: TMemoryStream;
   end;
 
-  TmnMultipartData = class(TDON_Object_Value)
+  TmnMultipartData = class(TDON_Object)
   private
     FBoundary: string;
     FOutputPath: string;
@@ -106,7 +106,7 @@ uses
 
 { TMPDItem }
 
-constructor TMPDItem.Create(AParent: TDON_Object_Value);
+constructor TMPDItem.Create(AParent: TDON_Object);
 begin
   inherited Create(AParent);  
   Header := TmnHeader.Create;
@@ -222,14 +222,14 @@ begin
         aType.Options := [];
         if not ShortFileNames then        
           s := IncludePathDelimiter(OutputPath) + s;
-        TMPDFile(Result).Value := TDON_String_Value.Create(Result, s, aType);
+        TMPDFile(Result).Value := TDON_String.Create(Result, s, aType);
       end
       else
       begin
         Result := TMPDString.Create(Self);
         aType.Name := 'string';
         aType.Options := [];        
-        TMPDFile(Result).Value := TDON_String_Value.Create(Result, '', aType);
+        TMPDFile(Result).Value := TDON_String.Create(Result, '', aType);
       end;
     end;
     GetSubValue(aDisposition, 'name', s);
@@ -317,9 +317,9 @@ var
 begin
   s := StringOfUTF8(PByte(Buffer), Count);
   if Value = nil then
-    Value := TDON_String_Value.Create(Self, s)
+    Value := TDON_String.Create(Self, s)
   else
-    (Value as TDON_String_Value).AsString := (Value as TDON_String_Value).AsString + s;
+    (Value as TDON_String).AsString := (Value as TDON_String).AsString + s;
 end;
 
 procedure TMPDString.DoWrite(vStream: TmnBufferStream);

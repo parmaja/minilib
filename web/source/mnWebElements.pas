@@ -360,7 +360,7 @@ type
     
     ParentRenderer: TmnwElementRenderer;
     //
-    Data: TDON_Element;
+    Data: TDON_Value;
     // For
     CurrentPath: string;   
 
@@ -760,7 +760,7 @@ type
 
   TmnwSchemaCapability = (
     schemaStatic, //* Not deleted when restart server
-    schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
+//    schemaDynamic,  //* dynamic, do not add it to the list, not cached, becareful
     schemaSession,
     schemaStartup, //* Create it when registered
     schemaAttach //Allow/Accepts websocket connections, Interactive also allow websocket
@@ -1310,7 +1310,7 @@ type
         function GetContentType(Route: string): string; override;
       end;
 
-      TComposeProc = reference to procedure(Inner: TmnwElement; AResponse: TmnwResponse);
+      TComposeProc = reference to procedure(Inner: TmnwElement; const Context: TmnwContext);
 
       { TDynamicCompose }
 
@@ -1324,7 +1324,7 @@ type
           public
           end;
 
-        procedure InnerCompose(Inner: TmnwElement; AResponse: TmnwResponse); virtual;
+        procedure InnerCompose(Inner: TmnwElement; const Context: TmnwContext); virtual;
 
         procedure DoRespond(const Context: TmnwContext); override;
       public
@@ -2281,16 +2281,16 @@ begin
 end;
 
 var
-  Languages: TDictionary<string, TDON_Element> = nil; //Move to TmnwWeb
+  Languages: TDictionary<string, TDON_Value> = nil; //Move to TmnwWeb
 
 procedure InitLanguages(const APath: string);
 var
   SR: TSearchRec;
   LangCode: string;
-  LangData: TDON_Element;
+  LangData: TDON_Value;
 begin
   if Languages = nil then
-    Languages := TDictionary<string, TDON_Element>.Create
+    Languages := TDictionary<string, TDON_Value>.Create
   else
     Languages.Clear;
 
@@ -2312,7 +2312,7 @@ end;
 
 function _T(const Key: string; const Lang: string; const Default: string = ''): string;
 var
-  LangData: TDON_Element;
+  LangData: TDON_Value;
 begin
   if Languages = nil then
     Exit(Default);
@@ -3655,7 +3655,7 @@ begin
   FSchema := Self;
   FIsRoot := True;
   FAttachments := TmnwAttachments.Create;
-  if schemaDynamic in GetCapabilities then
+  if schemaStatic in GetCapabilities then
     FInternalLock := TCriticalSection.Create
   else
     FInternalLock := nil;
@@ -3966,7 +3966,7 @@ end;
 
 function TmnwSchema.GetReleased: Boolean;
 begin
-  Result := (FPhase = scmpReleased) or (schemaDynamic in GetCapabilities);
+  Result := (FPhase = scmpReleased) or not (schemaStatic in GetCapabilities);
 end;
 
 procedure TmnwSchema.SetDefaultDocuments(AValue: TStringList);
@@ -4784,9 +4784,9 @@ begin
     Inner.FSchema := Schema;
     Inner.FParent := Self; //Fake Parent do not add it to the list;
     Inner.IsRoot := Context.Element = Self; // if compused from Schema of parents, or just directly composed
-    InnerCompose(Inner, Context.Response);
+    InnerCompose(Inner, Context);
     if Assigned(OnCompose) then
-      OnCompose(Inner, Context.Response);
+      OnCompose(Inner, Context);
     Inner.Compose(Context);
 
     Inner.Render(Context);
@@ -4795,7 +4795,7 @@ begin
   end;
 end;
 
-procedure THTML.TDynamicCompose.InnerCompose(Inner: TmnwElement; AResponse: TmnwResponse);
+procedure THTML.TDynamicCompose.InnerCompose(Inner: TmnwElement; const Context: TmnwContext);
 begin
 end;
 
