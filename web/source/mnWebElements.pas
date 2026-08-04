@@ -562,6 +562,7 @@ type
 
   //Keep it as DoRespond form
   TRespondProc = reference to procedure (const Context: TmnwContext);
+  TRenderProc = reference to procedure(Scope: TmnwScope; const Context: TmnwContext);
 
   { TmnwElement }
 
@@ -963,7 +964,7 @@ type
     destructor Destroy; override;
 
     class function ElementRenderers: TmnwElementRenderers; virtual; abstract; 
-    class function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwElementRendererRegister; 
+    class function RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; Replace: Boolean = False): TmnwElementRendererRegister;
 
     class procedure RegisterElements; virtual;
     
@@ -1040,17 +1041,24 @@ type
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
-    
-      { TDynamicCompose }
 
-      TDynamicCompose = class(THTMLElement)
+      //* Write at render time
+      TOutput = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TCompose }
+
+      //* Dynamic compose at render time with fake parent
+      TCompose = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TIntervalCompose }
 
-      TIntervalCompose = class(TDynamicCompose)
+      TIntervalCompose = class(TCompose)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
@@ -1225,7 +1233,7 @@ type
         Comment: string;
       end;
 
-      { TJSScript } 
+      { TJSScript }
       
       TJSScript = class(THTMLElement)
       public
@@ -1312,11 +1320,21 @@ type
         function GetContentType(Route: string): string; override;
       end;
 
+      { TOutput }
+
+      //* Write at render time
+      TOutput = class(THTMLElement)
+      protected
+      public
+        OnOutput: TRenderProc;
+        constructor Create(AParent: TmnwElement; AOnOutput: TRenderProc = nil); reintroduce;
+      end;
+
       TComposeProc = reference to procedure(Inner: TmnwElement; const Context: TmnwContext);
 
-      { TDynamicCompose }
+      { TCompose }
 
-      TDynamicCompose = class(THTMLElement)
+      TCompose = class(THTMLElement)
       protected
         type
 
@@ -1336,7 +1354,7 @@ type
 
       [TID_Extension]
       [TRoute_Extension]
-      TIntervalCompose = class(TDynamicCompose)
+      TIntervalCompose = class(TCompose)
       public
         Code: string;
       end;
@@ -1842,6 +1860,33 @@ type
       protected
       public
       end;      
+
+      { TIntegerInput }
+
+      [TID_Extension]
+      TIntegerInput = class(TInput)
+      protected
+      public
+      end;
+
+      { TCountInput }
+
+      [TID_Extension]
+      TCountInput = class(TIntegerInput)
+      protected
+        procedure Created; override;
+      public
+        Min: Integer; //Default 0
+        Max: Integer; //Default 100
+      end;
+
+      { TDateInput }
+
+      [TID_Extension]
+      TDateInput = class(TInput)
+      protected
+      public
+      end;
 
       [TName_Extension]
       THiddenInput = class(THTMLElement)
@@ -2879,7 +2924,7 @@ var
   er: TmnwElementRenderer;
 begin
   if CanRender then
-  begin    
+  begin
     er := CreateRenderer(Context);
     if er <> nil then
     try
@@ -4768,15 +4813,15 @@ begin
   Result := DocumentToContentType(Route);
 end;
 
-{ THTML.TDynamicCompose }
+{ THTML.TCompose }
 
-constructor THTML.TDynamicCompose.Create(AParent: TmnwElement; AOnCompose: TComposeProc);
+constructor THTML.TCompose.Create(AParent: TmnwElement; AOnCompose: TComposeProc);
 begin
   inherited Create(AParent);
   OnCompose := AOnCompose;
 end;
 
-procedure THTML.TDynamicCompose.DoRespond(const Context: TmnwContext);
+procedure THTML.TCompose.DoRespond(const Context: TmnwContext);
 var
   Inner: TInner;
 begin
@@ -4797,7 +4842,7 @@ begin
   end;
 end;
 
-procedure THTML.TDynamicCompose.InnerCompose(Inner: TmnwElement; const Context: TmnwContext);
+procedure THTML.TCompose.InnerCompose(Inner: TmnwElement; const Context: TmnwContext);
 begin
 end;
 
@@ -6327,7 +6372,7 @@ begin
     RegisterRenderer(THTML.TDocument, TDocument);
     RegisterRenderer(THTML.TBody, TBody);
 
-    RegisterRenderer(THTML.TDynamicCompose, TDynamicCompose);
+    RegisterRenderer(THTML.TCompose, TCompose);
     RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
     
     RegisterRenderer(THTML.TFile, TFile);
@@ -6405,9 +6450,9 @@ begin
   end;
 end;
 
-{ TmnwHTMLRenderer.TDynamicCompose }
+{ TmnwHTMLRenderer.TCompose }
 
-procedure TmnwHTMLRenderer.TDynamicCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Writer.OpenTag('div', Scope.Attributes.ToString);
   inherited;
@@ -6694,6 +6739,15 @@ begin
   AutoComplete := True;
 end;
 
+{ THTML.TCountInput }
+
+procedure THTML.TCountInput.Created;
+begin
+  inherited;
+  Min := 0; //Defaults
+  Max := 100;
+end;
+
 { THTML.TAccordionSection }
 
 function THTML.TAccordionSection.CanRender: Boolean;
@@ -6736,6 +6790,26 @@ begin
   Sources.Add(stStyle, stResource, 'bs-custom.css', '?minilib\web\source\bs-custom.css', '', []);
 end;
 }
+{ TmnwHTMLRenderer.TOutput }
+
+procedure TmnwHTMLRenderer.TOutput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TOutput;
+begin
+  e := Scope.Element as THTML.TOutput;
+  if Assigned(e.OnOutput) then
+    e.OnOutput(Scope, Context);
+  inherited;
+end;
+
+{ THTML.TOutput }
+
+constructor THTML.TOutput.Create(AParent: TmnwElement; AOnOutput: TRenderProc);
+begin
+  inherited Create(AParent);
+  OnOutput := AOnOutput;
+end;
+
 initialization
   Libraries.RegisterLibrary(TWebElements_Library, 2000);
   Libraries.RegisterLibrary(TDarklyTheme_Library, 2000);

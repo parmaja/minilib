@@ -471,6 +471,27 @@ type
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;      
       end;
 
+      { TIntegerInput }
+
+      TIntegerInput = class(TInput)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TCountInput }
+
+      TCountInput = class(TIntegerInput)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TDateInput }
+
+      TDateInput = class(TInput)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       THiddenInput = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
@@ -724,6 +745,9 @@ begin
     RegisterRenderer(THTML.TUsername, TUsername);
     RegisterRenderer(THTML.TPassword, TPassword);
     RegisterRenderer(THTML.TNewPassword, TNewPassword);
+    RegisterRenderer(THTML.TIntegerInput, TIntegerInput);
+    RegisterRenderer(THTML.TCountInput, TCountInput);
+    RegisterRenderer(THTML.TDateInput, TDateInput);
     RegisterRenderer(THTML.THiddenInput, THiddenInput);
     
     RegisterRenderer(THTML.TImage, TImage);
@@ -891,14 +915,15 @@ var
   e: THTML.TCard;
 begin
   e := Scope.Element as THTML.TCard;
-  Scope.InnerClasses.Add('d-flex');
-  if e.NoWrap then        
-    Scope.InnerClasses.Add('flex-md-nowrap');
-    
-  if e.JustifyItems = jstDefault then
-    Scope.InnerClasses.Add('flex-column')
-  else 
-    Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));      
+
+  if e.JustifyItems > jstDefault then
+  begin
+    Scope.InnerClasses.Add('d-flex');
+    if e.NoWrap then
+      Scope.InnerClasses.Add('flex-md-nowrap');
+  end;
+//    Scope.InnerClasses.Add('flex-column')
+  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));
   Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
   inherited;
 end;
@@ -2090,6 +2115,35 @@ procedure TBSRenderer.TNewPassword.DoCollectAttributes(var Scope: TmnwScope; Con
 begin
   inherited;
   Scope.Attributes['autocomplete'] := 'new-password';
+end;
+
+{ TBSRenderer.TIntegerInput }
+
+procedure TBSRenderer.TIntegerInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Attributes['type'] := 'number';
+  Scope.Attributes['step'] := '1'; //Whole numbers only
+end;
+
+{ TBSRenderer.TCountInput }
+
+procedure TBSRenderer.TCountInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TCountInput;
+begin
+  inherited;
+  e := Scope.Element as THTML.TCountInput;
+  Scope.Attributes['min'] := e.Min.ToString;
+  Scope.Attributes['max'] := e.Max.ToString;
+end;
+
+{ TBSRenderer.TDateInput }
+
+procedure TBSRenderer.TDateInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Attributes['type'] := 'date';
 end;
 
 { TBSRenderer.TActionForm }
