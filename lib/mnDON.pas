@@ -408,6 +408,7 @@ type
     function AddPair(const Name: String; const Value: string): TDON_Value; overload;
 
     function FindPair(const Name: string): TDON_Pair; overload;
+    function PairExists(const Name: string): Boolean; overload;
     function FindByValue(const Value: string): TDON_Pair; overload;
     function FindNameByValue(const Value: string): string;  overload;
     
@@ -1368,6 +1369,11 @@ end;
 function TDON_Object.GetValue: Variant;
 begin
   Result := AsString;
+end;
+
+function TDON_Object.PairExists(const Name: string): Boolean;
+begin
+  Result := FindPair(Name) <> nil;
 end;
 
 procedure TDON_Object.AcquirePair(const AName: string; out AObject: TObject);

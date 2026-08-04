@@ -283,6 +283,37 @@ type
     procedure LoadFromFiles(Strings: TStringList);
   end;
 
+  { TSQLGenerator }
+
+  TSQLGenerator = record
+  private
+    FTable: string;
+    FFields: TArray<string>;
+    FOrder: string;
+    FWhere: string;
+    FJoins: TArray<string>;
+    FGroupBy: string;
+    FConnect: string;
+    FStart: string;
+    FDistinct: Boolean;
+  public
+    function AsSelect: string;
+    procedure Clear;
+    procedure AddField(const Name: string);
+    procedure AddJoin(const Join: string); //TODO TJoin record (table, where, fields)
+    property Table: string read FTable write FTable;
+    property Fields: TArray<string> read FFields;
+    property Joins: TArray<string> read FJoins;
+    property Where: string read FWhere write FWhere;
+    property GroupBy: string read FGroupBy write FGroupBy;
+    property Order: string read FOrder write FOrder;
+    property Connect: string read FConnect write FConnect;
+    property Start: string read FStart write FStart;
+    property Distinct: Boolean read FDistinct write FDistinct;
+  end;
+
+
+
 {$ifndef FPC}
 var
   ReconnectProc: TReconnectProcedure = nil;
@@ -1196,5 +1227,73 @@ begin
   {$endif}
 end;
 {$endif}
+{ TSQLGenerator }
+
+procedure TSQLGenerator.AddField(const Name: string);
+begin
+  FFields := FFields + [Name];
+end;
+
+procedure TSQLGenerator.AddJoin(const Join: string);
+begin
+  FJoins := FJoins + [Join];
+end;
+
+procedure TSQLGenerator.Clear;
+begin
+  FFields := nil;
+  FJoins := nil;
+  FWhere := '';
+  FOrder := '';
+end;
+
+function TSQLGenerator.AsSelect: string;
+var
+  i: Integer;
+  SL: TStrings;
+  S: string;
+begin
+  Result := '';
+  SL := TStringList.Create;
+  try
+    if FDistinct then
+      SL.Text := 'select distinct'
+    else
+      SL.Text := 'select ';
+    for i := 0 to Length(Fields) - 1 do
+    begin
+      S := Fields[i];
+      if i <> (Length(Fields) - 1) then
+        S := S + ',';
+      SL.Add(S);
+    end;
+
+    SL.Add('from ' + Table);
+
+    for i := 0 to Length(Joins) - 1 do
+      SL.Add(Joins[i]);
+
+    if FStart <> '' then
+      SL.Add('start with ' + FStart);
+
+    if FConnect <> '' then
+      // Result := Result + #13'connect by prior ' + FConnect;
+      SL.Add('connect by ' + FConnect);
+
+    if Where <> '' then
+      SL.Add('where ' + Where);
+
+    if GroupBy <> '' then
+      SL.Add('group by ' + GroupBy);
+    if Order <> '' then
+    begin
+      SL.Add('order by ' + Order);
+    end;
+    Result := SL.Text;
+  finally
+    SL.Free;
+  end;
+end;
+
 end.
 

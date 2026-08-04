@@ -1,4 +1,4 @@
-unit mncSQLUtils deprecated;
+unit mncSQLUtils;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -103,6 +103,7 @@ type
     property QuoteNames: Boolean read FQuoteNames write FQuoteNames;
     property Text: string read FText write FText;
   end;
+
 
 implementation
 
