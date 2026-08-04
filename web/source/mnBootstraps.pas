@@ -500,8 +500,8 @@ type
   end;
 
 function BSJustifyToStr(const s: string; Align: TmnwJustify; WithSpace: Boolean = False): string; 
-function BSRowAlignToStr(const s: string; Align: TmnwRowAlign; WithSpace: Boolean = False): string; 
-function BSColumnAlignToStr(const s: string; Align: TmnwColumnAlign; WithSpace: Boolean = False): string;
+function BSRowAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean = False): string;
+function BSColumnAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean = False): string;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = False): string;
 function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = False): string;
@@ -509,11 +509,11 @@ function BSControlStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace:
 
 implementation
 
-function BSRowAlignToStr(const s: string; Align: TmnwRowAlign; WithSpace: Boolean): string; 
+function BSRowAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean): string;
 const
-  sSuffixes: array[TmnwRowAlign] of string = ('', 'start', 'center', 'stretch', 'baseline', 'end');
+  sSuffixes: array[TmnwAlign] of string = ('', 'start', 'center', 'stretch', 'end'); // 'baseline',
 begin
-  if (Align >= ralStart) and (Align <= ralEnd) then
+  if (Align >= alFirst) and (Align <= alLast) then
     Result := s + sSuffixes[Align]
   else
     Result := '';
@@ -521,7 +521,7 @@ begin
     Result := ' ' + Result;
 end;
 
-function BSJustifyToStr(const s: string; Align: TmnwJustify; WithSpace: Boolean): string; 
+function BSJustifyToStr(const s: string; Align: TmnwJustify; WithSpace: Boolean): string;
 const
   sSuffixes: array[TmnwJustify] of string = ('', 'start', 'center', 'between', 'around', 'evenly', 'end');
 begin
@@ -533,11 +533,11 @@ begin
     Result := ' ' + Result;
 end;
 
-function BSColumnAlignToStr(const s: string; Align: TmnwColumnAlign; WithSpace: Boolean = False): string;
+function BSColumnAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean = False): string;
 const
-  sSuffixes: array[TmnwColumnAlign] of string = ('', 'top', 'center', 'stretch', 'bottom');
+  sSuffixes: array[TmnwAlign] of string = ('', 'top', 'center', 'stretch', 'bottom');
 begin
-  if (Align >= calTop) and (Align <= calBottom) then
+  if (Align >= alFirst) and (Align <= alLast) then
     Result := s + sSuffixes[Align]
   else
     Result := '';
@@ -928,7 +928,7 @@ begin
     Context.Writer.CloseTag('h5');
   end;  
 
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body collapse show" aria-labelledby="'+e.id+'-header"');  //removed `overflow-hidden`
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body p-2 collapse show" aria-labelledby="'+e.id+'-header"');  //removed `overflow-hidden`
 
   // InnerClasses (d-flex, flex-column, etc.) use !important which overrides
   // Bootstrap's .collapse:not(.show) { display: none; }. Wrap children in a
@@ -1025,6 +1025,7 @@ end;
 procedure TBSRenderer.TBreak.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
 begin
   Context.Writer.AddShortTag('br');
+  //Context.Writer.AddSpace;
 end;
 
 procedure TBSRenderer.TButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);

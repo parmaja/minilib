@@ -553,10 +553,12 @@ type
 
   TTheme = (themeUndefined, themeLight, themeDark);
   TmnwShadow = (shadowUndefined, shadowHairline, shadowThin, shadowThick, shadowEnd, ShadowBottom);
-  TmnwRowAlign = (ralDefault, ralStart, ralCenter, ralStreach, ralBaseline, ralEnd);
-  TmnwColumnAlign = (calDefault, calTop, calCenter, calStreach, calBottom);
+
+  TmnwAlign = (alDefault, alFirst, alCenter, alStreach, alLast);
   TmnwJustify = (jstDefault, jstStart, jstCenter, ralBetween, jstAround, jstEvenly, jstEnd);
+
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
+
 
   //Keep it as DoRespond form
   TRespondProc = reference to procedure (const Context: TmnwContext);
@@ -1468,7 +1470,7 @@ type
       TRow = class(THTMLLayout)
       public
         NoWrap: Boolean;
-        AlignItems: TmnwRowAlign;
+        AlignItems: TmnwAlign;
         JustifyItems: TmnwJustify;
       end;
 
@@ -1558,7 +1560,7 @@ type
         Caption: string;
         Collapse: Boolean;
         
-        AlignItems: TmnwRowAlign;
+        AlignItems: TmnwAlign;
         JustifyItems: TmnwJustify;
         NoWrap: Boolean;
         Gap: Integer;

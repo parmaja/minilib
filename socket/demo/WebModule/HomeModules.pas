@@ -83,7 +83,6 @@ type
   protected     
     procedure DoCompose(const AContext: TmnwContext); override;
   public
-    class function GetCapabilities: TmnwSchemaCapabilities; override;
   end;
 
   { TFilesSchema }
@@ -124,7 +123,7 @@ type
 
   TClockCompose = class(THTML.TIntervalCompose)
   public
-    procedure InnerCompose(Inner: TmnwElement; AResponse: TmnwResponse); override;
+    procedure InnerCompose(Inner: TmnwElement; const Context: TmnwContext); override;
   end;
 
   TThreadTimer = class(TThread)
@@ -188,7 +187,7 @@ end;
 
 { TClockComposer }
 
-procedure TClockCompose.InnerCompose(Inner: TmnwElement; AResponse: TmnwResponse);
+procedure TClockCompose.InnerCompose(Inner: TmnwElement; const Context: TmnwContext);
 begin
   with THTML do
   begin
@@ -334,9 +333,9 @@ begin
           with TIntervalCompose.Create(This) do
           begin
             Route := 'clock';
-            OnCompose := procedure(Inner: TmnwElement; AResponse: TmnwResponse)
+            OnCompose := procedure(Inner: TmnwElement; const Context: TmnwContext)
             begin
-              AResponse.Stamp := TimeToStr(Now);
+              Context.Response.Stamp := TimeToStr(Now);
               TParagraph.Create(Inner, TimeToStr(Now));
               {with TImage.Create(Inner) do
               begin
@@ -802,11 +801,6 @@ begin
     end;
   end;
     
-end;
-
-class function TInfoSchema.GetCapabilities: TmnwSchemaCapabilities;
-begin
-  Result := (inherited GetCapabilities) + [schemaDynamic];
 end;
 
 { TFilesSchema }
