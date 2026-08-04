@@ -1351,8 +1351,8 @@ end;
 
 function TDON_Object.GetAsString: string;
 begin
-//  Result := '{Object}';
-  JsonSaveString(Self, Result);
+  //TODO Use Parent root to save it
+  JsonSaveString(Self, Result); //TODO: What if i want it XML?
 end;
 
 function TDON_Object.GetEnumerator: TPairsEnumerator;
