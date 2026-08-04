@@ -324,8 +324,9 @@ type
     function GetItem(Index: Integer): TDON_Value; override;
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
-  public
     procedure Created; override;
+  public
+    constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
     function Add(Value: TDON_Value): TDON_Value; overload;
     function Add(const Value: String): TDON_Value; overload;
@@ -396,16 +397,17 @@ type
     function GetAsString: string; override;
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
+    procedure Created; override;
   public
     function GetEnumerator: TPairsEnumerator; inline;
-
-    procedure Created; override;
+    constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
     function CreatePair(const PairName: string; AValue: TDON_Value = nil): TDON_Pair;
     procedure AcquirePair(const AName: string; out AObject: TObject);
     procedure AddPair(Value: TDON_Pair); overload;
     function AddPair(const Name: String; const Value: string): TDON_Value; overload;
 
+    function FindPair(const Name: string): TDON_Pair; overload;
     function FindByValue(const Value: string): TDON_Pair; overload;
     function FindNameByValue(const Value: string): string;  overload;
     
@@ -457,6 +459,7 @@ type
     procedure AddInlineTag(const TagName, TagAttributes, Value: string); overload;
     procedure ReadFromFile(FileName: string);
 
+    procedure AddSpace;
     procedure AddLinkScript(const src: string; Integrity: string = ''; Defer: Boolean = True; Cross: Boolean = True);
     procedure AddEmbedScript(const Text: string; Defer: Boolean = True);
     procedure AddLinkStyle(const src: string; Integrity: string = ''; Cross: Boolean  = True);
@@ -473,6 +476,7 @@ procedure JsonSaveFile(Pair: TDON_Pair; FileName: string; Options: TSerializerOp
 
 procedure JsonSaveStream(Obj: TDON_Object; AStream: TStream; Options: TSerializerOptions = []); overload;
 procedure JsonSaveFile(Obj: TDON_Object; FileName: string; Options: TSerializerOptions = []); overload;
+procedure JsonSaveString(Obj: TDON_Object; out Result: string; Options: TSerializerOptions = []); overload;
 
 //Loading file line by line, for file not socket (timeouts)
 
@@ -545,9 +549,22 @@ procedure JsonSaveFile(Obj: TDON_Object; FileName: string; Options: TSerializerO
 var
   AStream: TFileStream;
 begin
-  AStream := TFileStream.Create(FileName, fmOpenWrite or fmCreate);  
+  AStream := TFileStream.Create(FileName, fmOpenWrite or fmCreate);
   try
     JsonSaveStream(Obj, AStream, Options);
+  finally
+    AStream.Free;
+  end;
+end;
+
+procedure JsonSaveString(Obj: TDON_Object; out Result: string; Options: TSerializerOptions = []); overload;
+var
+  AStream: TStringStream;
+begin
+  AStream := TStringStream.Create('');
+  try
+    JsonSaveStream(Obj, AStream, Options);
+    Result := AStream.DataString;
   finally
     AStream.Free;
   end;
@@ -1190,6 +1207,11 @@ begin
   Add(Result);
 end;
 
+constructor TDON_Array.Create(AParent: TDON_Parent);
+begin
+  inherited Create(AParent);
+end;
+
 procedure TDON_Array.Created;
 begin
   inherited;
@@ -1252,6 +1274,11 @@ begin
   Result := aPair.Value;
 end;
 
+constructor TDON_Object.Create(AParent: TDON_Parent);
+begin
+  inherited Create(AParent);
+end;
+
 procedure TDON_Object.Created;
 begin
   inherited;
@@ -1310,9 +1337,22 @@ begin
   Result := '';
 end;
 
+function TDON_Object.FindPair(const Name: string): TDON_Pair;
+var
+  i: Integer;
+begin
+  for i := 0 to FPairs.Count-1 do
+    if SameText(FPairs[i].Name, Name) then
+    begin
+      Exit(FPairs[i]);
+    end;
+  Result := nil
+end;
+
 function TDON_Object.GetAsString: string;
 begin
-  Result := '{Object}';
+//  Result := '{Object}';
+  JsonSaveString(Self, Result);
 end;
 
 function TDON_Object.GetEnumerator: TPairsEnumerator;
@@ -1955,6 +1995,11 @@ end;
 procedure TmnwXML_TidyWriterHelper.AddShortTag(const TagName: string; TagAttributes: string);
 begin
   WriteLn('<'+TagName + SpaceIf(TagAttributes) + '>', [woOpenIndent, woCloseIndent]);
+end;
+
+procedure TmnwXML_TidyWriterHelper.AddSpace;
+begin
+  Write('&nbsp;');
 end;
 
 procedure TmnwXML_TidyWriterHelper.AddComment(const Comment: string);
