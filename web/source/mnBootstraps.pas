@@ -350,6 +350,7 @@ type
 
       TForm = class(THTMLElement)
       protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoEnterChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoLeaveChildRender(var Scope: TmnwScope; const Context: TmnwContext); override;
@@ -492,6 +493,20 @@ type
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      { TTimeInput }
+
+      TTimeInput = class(TInput)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TDateTimeInput }
+
+      TDateTimeInput = class(TInput)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       THiddenInput = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
@@ -589,8 +604,7 @@ end;
 
 function BSControlStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean): string;
 const
-  StyleNames: array[TItemStyle] of string = ('', 'primary', 'secondary', 'success', 'danger',
-    'warning', 'info', 'light', 'dark', 'link', 'bg-transparent');
+  StyleNames: array[TItemStyle] of string = ('', 'primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark', 'link', 'bg-transparent');
 begin
   Result := StyleNames[Style];
   if Result <> '' then
@@ -748,6 +762,8 @@ begin
     RegisterRenderer(THTML.TIntegerInput, TIntegerInput);
     RegisterRenderer(THTML.TCountInput, TCountInput);
     RegisterRenderer(THTML.TDateInput, TDateInput);
+    RegisterRenderer(THTML.TTimeInput, TTimeInput);
+    RegisterRenderer(THTML.TDateTimeInput, TDateTimeInput);
     RegisterRenderer(THTML.THiddenInput, THiddenInput);
     
     RegisterRenderer(THTML.TImage, TImage);
@@ -901,7 +917,7 @@ begin
     Scope.Classes.Add('col-md');
   if e.Gap > 0 then
     //Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
-    Scope.Classes.Add('m-childs'); 
+    Scope.Classes.Add('m-childs-' + e.Gap.ToString);
   Scope.Classes.Add('p-1 p-sm-2'); 
   Scope.Classes.Add('m-0'); //do not change it, keep it 0
 
@@ -936,13 +952,13 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
-  if e.Footer.Fixed then
-    Scope.Classes.Add('footer-padding');
+  if not e.Solitary and e.Footer.Fixed then
+    Scope.Classes.Add('fixed-footer-padding');
 
   Context.Writer.OpenTag('div', Scope.ToString([ssAttributes, ssOuter]));
   if e.Caption <> '' then
   begin      
-    Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header d-flex'+  BSControlStyleToStr('bg-', e.ControlStyle, True)+'"');
+    Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header d-flex'+ BSControlStyleToStr('text-bg-', e.ControlStyle, True) + BSControlStyleToStr('bg-', e.ControlStyle, True) + '"');
     Context.Writer.WriteLn(e.Caption);
     if e.Collapse then
     begin
@@ -953,15 +969,15 @@ begin
     Context.Writer.CloseTag('h5');
   end;  
 
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body p-2 collapse show" aria-labelledby="'+e.id+'-header"');  //removed `overflow-hidden`
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body p-1 collapse show" aria-labelledby="'+e.id+'-header"');  //removed `overflow-hidden`
 
   // InnerClasses (d-flex, flex-column, etc.) use !important which overrides
   // Bootstrap's .collapse:not(.show) { display: none; }. Wrap children in a
   // flex container so the collapse target div can be hidden properly.
-  
+
   Context.Writer.OpenTag('div', 'id="'+e.id+'-panel" class="overflow-hidden p-1' //p-1 needed for highlights inputs
 //    + When(e.Gap>0, ' m-childs-' + e.Gap.ToString)
-    + When(e.Gap > 0, ' m-childs')
+    + When(e.Gap > 0, ' m-childs-' + e.Gap.ToString)
     + SpaceIf(Scope.InnerClasses.Value)    
     + '"'
     );
@@ -971,6 +987,20 @@ begin
   if e.Footer <> nil then
     e.Footer.Render(Context);
   Context.Writer.CloseTag('div');
+end;
+
+procedure TBSRenderer.TForm.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TForm;
+begin
+  e := Scope.Element as THTML.TForm;
+  if e.Gap > 0 then  
+    Scope.InnerClasses.Add('m-childs-' + e.Gap.ToString);
+  Scope.Attributes.Add('method', 'post');
+  Scope.Attributes.AddIf('action', Context.GetLocationPath(e, e.Endpoint));
+  Scope.Attributes.AddIf('onsubmit', e.CallScript);
+  Scope.Attributes.AddIf('enctype', 'multipart/form-data');
+  inherited;
 end;
 
 { TBSRenderer.TFormHTML }
@@ -990,7 +1020,7 @@ var
   e: THTML.TForm;
 begin
   e := Scope.Element as THTML.TForm;
-  Context.Writer.OpenTag('form', 'method="post"'+ NV('action', Context.GetLocationPath(e, e.Endpoint)) + NV('onsubmit', e.CallScript) + ' enctype="multipart/form-data"' + Scope.ToString(True));
+  Context.Writer.OpenTag('form', Scope.ToString);
   inherited;
   if e.RedirectTo <> '' then
     Context.Writer.AddShortTag('input', 'type="hidden" name="redirect" value="' + e.RedirectTo + '"');
@@ -999,8 +1029,8 @@ begin
     Context.Writer.AddShortTag('input', 'type="hidden" name="execute" value="true"');
 
   if (e.Submit.Caption <> '') or (e.Cancel.Caption <> '') or (e.Reset.Caption <> '') then
-    Context.Writer.AddShortTag('hr');  
-  
+    Context.Writer.AddShortTag('hr');
+
   if e.Submit.Caption <> '' then
     Context.Writer.AddTag('button', 'class="btn btn-success" type="submit" form="'+e.ID+'" value="Submit"', e.Submit.Caption);
   if e.Reset.Caption <> '' then
@@ -1242,7 +1272,7 @@ begin
 
   Scope.Classes.Add('panel-body');
   if e.Gap > 0 then
-    Scope.Classes.Add('m-childs'); 
+    Scope.Classes.Add('m-childs-' + e.Gap.ToString);
 //    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
   if e.Direction <> dirUndefined then
     Scope.Attributes.Add('dir', DirectionToStr(e.Direction));
@@ -1783,8 +1813,9 @@ begin
   //Scope.Classes.Add(BSAlignToStr(e.Align));
   if e.Solitary then
   begin
-    Scope.Classes.Add('mx-auto');
-    Scope.Classes.Add('my-auto');
+//    Scope.Classes.Add('mx-auto');
+//    Scope.Classes.Add('my-auto');
+    Scope.Classes.Append('top-50 start-50 translate-middle');
   end;
 
   // Optimize margin/padding prefix calculation
@@ -1996,9 +2027,9 @@ begin
   if e.Count > 0 then  
   begin
     Scope.Classes.Add('card-footer');
-    if e.Fixed then
+    if not (e.Parent as THTML.TCard).Solitary and e.Fixed then
       Scope.Classes.Add('fixed-card-footer');
-    Context.Writer.OpenTag('div', Scope.ToString);  
+    Context.Writer.OpenTag('div', Scope.ToString);
   end;
   inherited;
   if e.Count > 0 then  
@@ -2134,6 +2165,7 @@ var
 begin
   inherited;
   e := Scope.Element as THTML.TCountInput;
+  Scope.Attributes['type'] := 'number';
   Scope.Attributes['min'] := e.Min.ToString;
   Scope.Attributes['max'] := e.Max.ToString;
 end;
@@ -2206,8 +2238,8 @@ begin
   e := Scope.Element as THTML.TBox;
   Scope.Classes.Add('d-flex');
   Scope.Classes.Add('m-0');
-  if e.Gap>1 then
-    Scope.Classes.Add('m-childs');
+  if e.Gap > 0 then
+    Scope.Classes.Add('m-childs' + e.Gap.ToString);
   inherited;
 end;
 
@@ -2216,6 +2248,22 @@ begin
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
+end;
+
+{ TBSRenderer.TDateTimeInput }
+
+procedure TBSRenderer.TDateTimeInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Attributes['type'] := 'datetime-local';
+end;
+
+{ TBSRenderer.TTimeInput }
+
+procedure TBSRenderer.TTimeInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+begin
+  inherited;
+  Scope.Attributes['type'] := 'time';
 end;
 
 initialization

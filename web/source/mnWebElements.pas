@@ -28,7 +28,7 @@ Method                    Domain    Port└──┬──────┘└┬�
 WebElement:                              NameSpace                                Params
     └────────────┬──────────────────────┘ ─ ─ ┘        |              |     
     |          HostURL (From Request or Config)        |              |     
-    └────────────────────────┬─────────────────────────┘              |     
+    └────────────────────────┬─────────────────────────┘              |
     |             HomeURL/URL (WebApp)                                |      
     └────────────────────────┬────────────────────────────────────────┘     
                             URL                                      
@@ -93,17 +93,17 @@ WebElement:                              NameSpace                              
 interface
 
 uses
-  Classes, SysUtils, StrUtils, DateUtils, Contnrs, Variants, Types, RTTI, 
+  Classes, SysUtils, StrUtils, DateUtils, Contnrs, Variants, Types, RTTI,
   {$ifdef FPC}
   resource, //* for RT_RCDATA
   {$endif}
-  syncobjs, mnDON, mnJSON, 
+  syncobjs, mnDON, mnJSON,
   mnUtils, mnClasses, mnStreams, mnStreamUtils, mnLogs, mnMIME, mnParams, mnTypes,
   mnMultipartData, mnModules, mnWebModules;
 
 const
   cVersion = '1.84';
-  
+
 {.$define rtti_objects}
 
 type
@@ -501,7 +501,7 @@ type
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
 
     procedure Use(ALibraryClass: TmnwLibraryClass); overload;
-    procedure Use(ALibraryName: string); overload;    
+    procedure Use(ALibraryName: string); overload;
   end;
 
   TJQuery_Library = class(TmnwLibrary)
@@ -559,6 +559,11 @@ type
 
   TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
 
+  TGap = 0..5;
+
+  TGapHelper = record helper for TGap
+    function ToString: string;
+  end;
 
   //Keep it as DoRespond form
   TRespondProc = reference to procedure (const Context: TmnwContext);
@@ -1477,12 +1482,12 @@ type
       protected
         procedure Created; override;
       public
-        Gap: Integer;
+        Gap: TGap;
       end;
 
       TBox = class(THTMLLayout)
       public
-        Gap: Integer;
+        Gap: TGap;
       end;
 
       TRow = class(THTMLLayout)
@@ -1581,7 +1586,7 @@ type
         AlignItems: TmnwAlign;
         JustifyItems: TmnwJustify;
         NoWrap: Boolean;
-        Gap: Integer;
+        Gap: TGap;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         property Footer: TCardFooter read FFooter;
       end;
@@ -1591,7 +1596,7 @@ type
       TPanel = class(THTMLItem)
       public
         Direction: TDirection;
-        Gap: Integer;
+        Gap: TGap;
       end;
 
       { TLink }
@@ -1682,6 +1687,7 @@ type
             Caption: string;
           end;
       public
+        Gap: TGap;
         Endpoint: TLocation;
         CancelTo: TLocation;
         CallScript: string;
@@ -1884,6 +1890,22 @@ type
 
       [TID_Extension]
       TDateInput = class(TInput)
+      protected
+      public
+      end;
+
+      { TTimeInput }
+
+      [TID_Extension]
+      TTimeInput = class(TInput)
+      protected
+      public
+      end;
+
+      { TDateTimeInput }
+
+      [TID_Extension]
+      TDateTimeInput = class(TInput)
       protected
       public
       end;
@@ -6372,6 +6394,7 @@ begin
     RegisterRenderer(THTML.TDocument, TDocument);
     RegisterRenderer(THTML.TBody, TBody);
 
+    RegisterRenderer(THTML.TOutput, TOutput);
     RegisterRenderer(THTML.TCompose, TCompose);
     RegisterRenderer(THTML.TIntervalCompose, TIntervalCompose);
     
@@ -6808,6 +6831,13 @@ constructor THTML.TOutput.Create(AParent: TmnwElement; AOnOutput: TRenderProc);
 begin
   inherited Create(AParent);
   OnOutput := AOnOutput;
+end;
+
+{ TGapHelper }
+
+function TGapHelper.ToString: string;
+begin
+  Result := IntToStr(Self);
 end;
 
 initialization
