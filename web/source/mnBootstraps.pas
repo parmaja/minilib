@@ -248,6 +248,7 @@ type
 
       TColumn = class(THTMLLayout)
       protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -944,9 +945,9 @@ begin
     Scope.Classes.Add('max-content-height');
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
     Scope.Classes.Add('col-md');
-  if e.Gap > 0 then
+//  if e.Gap > 0 then
     //Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
-    Scope.Classes.Add('m-childs-' + e.Gap.ToString);
+//    Scope.Classes.Add('m-childs-' + e.Gap.ToString);
   Scope.Classes.Add('p-1 p-sm-2'); 
   Scope.Classes.Add('m-0'); //do not change it, keep it 0
 
@@ -1496,7 +1497,9 @@ var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
-  if e.NoWrap then        
+  if e.Gap > 0 then
+    Scope.Classes.Add('gap-' + e.Gap.ToString);
+  if e.NoWrap then
     Scope.InnerClasses.Add('flex-md-nowrap');
   Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
   Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));      
@@ -1523,12 +1526,22 @@ end;
 
 { TBSRenderer.TColumn }
 
-procedure TBSRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TBSRenderer.TColumn.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
   Scope.Classes.Add('d-flex');
+  if e.Gap > 0 then
+    Scope.Classes.Add('gap-' + e.Gap.ToString);
+  inherited;
+end;
+
+procedure TBSRenderer.TColumn.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TColumn;
+begin
+  e := Scope.Element as THTML.TColumn;
   if e.Reverse then  
     Scope.Classes.Add('flex-column-reverse');
     Scope.Classes.Add('flex-column');
@@ -2268,7 +2281,7 @@ begin
   Scope.Classes.Add('d-flex');
   Scope.Classes.Add('m-0');
   if e.Gap > 0 then
-    Scope.Classes.Add('m-childs' + e.Gap.ToString);
+    Scope.Classes.Add('gap-' + e.Gap.ToString);
   inherited;
 end;
 

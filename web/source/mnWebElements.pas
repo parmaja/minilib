@@ -1482,7 +1482,7 @@ type
       protected
         procedure Created; override;
       public
-        Gap: TGap;
+//        Gap: TGap;
       end;
 
       TBox = class(THTMLLayout)
@@ -1492,6 +1492,7 @@ type
 
       TRow = class(THTMLLayout)
       public
+        Gap: TGap;
         NoWrap: Boolean;
         AlignItems: TmnwAlign;
         JustifyItems: TmnwJustify;
@@ -1499,6 +1500,7 @@ type
 
       TColumn = class(THTMLLayout)
       public
+        Gap: TGap;
         Size: Integer;
         Reverse: Boolean;
       end;
@@ -5189,7 +5191,7 @@ end;
 procedure THTML.TMain.Created;
 begin
   inherited;
-  Gap := 1;
+  //Gap := 1;
 end;
 
 { THTML.TBar }
