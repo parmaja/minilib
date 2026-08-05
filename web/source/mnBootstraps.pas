@@ -36,7 +36,7 @@ uses
   SysUtils, Classes, syncobjs, StrUtils, //NetEncoding, Hash,
   DateUtils,
   mnTypes, mnUtils, mnDON, mnSockets, mnServers, mnStreams, mnStreamUtils,
-  mnFields, mnParams, mnMultipartData, mnModules, mnWebModules, mnWebElements;
+  mnFields, mnParams, mnMultipartData, mnModules, mnWebModules, mnClasses, mnWebElements;
 
 type
   { TBSRenderer }
@@ -507,6 +507,32 @@ type
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      { TSelect }
+
+      TSelect = class(THTMLFormControl)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TTextArea }
+
+      TTextArea = class(THTMLFormControl)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      { TCheckbox }
+
+      TCheckbox = class(THTMLFormControl)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;
+      end;
+
       THiddenInput = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
@@ -764,6 +790,9 @@ begin
     RegisterRenderer(THTML.TDateInput, TDateInput);
     RegisterRenderer(THTML.TTimeInput, TTimeInput);
     RegisterRenderer(THTML.TDateTimeInput, TDateTimeInput);
+    RegisterRenderer(THTML.TSelect, TSelect);
+    RegisterRenderer(THTML.TTextArea, TTextArea);
+    RegisterRenderer(THTML.TCheckbox, TCheckbox);
     RegisterRenderer(THTML.THiddenInput, THiddenInput);
     
     RegisterRenderer(THTML.TImage, TImage);
@@ -2264,6 +2293,108 @@ procedure TBSRenderer.TTimeInput.DoCollectAttributes(var Scope: TmnwScope; Conte
 begin
   inherited;
   Scope.Attributes['type'] := 'time';
+end;
+
+{ TBSRenderer.TSelect }
+
+procedure TBSRenderer.TSelect.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TSelect;
+begin
+  e := Scope.Element as THTML.TSelect;
+  inherited;
+  Scope.Classes.Remove('form-control');
+  Scope.Classes.Add('form-select');
+  if e.Multiple then
+    Scope.Attributes.AddProp('multiple');
+  if e.ChangeScript <> '' then
+    Scope.Attributes.Add('onchange', e.ChangeScript);
+end;
+
+procedure TBSRenderer.TSelect.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TSelect;
+  o: TmnNameValueObject;
+  s, Selected: string;
+begin
+  e := Scope.Element as THTML.TSelect;
+  Context.Writer.OpenTag('select', Scope.ToString);
+  for o in e.Items do
+  begin
+    s := o.Value;
+    if s = '' then
+      s := o.Name;
+    Selected := '';
+    if SameText(s, e.SelectedValue) then
+      Selected := ' selected';
+    Context.Writer.AddTag('option', 'value=' + DQ(EscapeAttr(s)) + Selected, o.Name);
+  end;
+  Context.Writer.CloseTag('select');
+  inherited;
+end;
+
+{ TBSRenderer.TTextArea }
+
+procedure TBSRenderer.TTextArea.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TTextArea;
+begin
+  e := Scope.Element as THTML.TTextArea;
+  inherited;
+  if e.Rows > 0 then
+    Scope.Attributes['rows'] := e.Rows.ToString;
+end;
+
+procedure TBSRenderer.TTextArea.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TTextArea;
+begin
+  e := Scope.Element as THTML.TTextArea;
+  Context.Writer.OpenInlineTag('textarea', Scope.ToString);
+  if e.Text <> '' then
+    Context.Writer.Write(EscapeAttr(e.Text));
+  Context.Writer.CloseTag('textarea');
+  inherited;
+end;
+
+{ TBSRenderer.TCheckbox }
+
+procedure TBSRenderer.TCheckbox.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TCheckbox;
+begin
+  e := Scope.Element as THTML.TCheckbox;
+  inherited;
+  Scope.Classes.Remove('form-control');
+  Scope.Classes.Add('form-check');
+  Scope.Classes.Add('form-check-input');
+  Scope.Attributes['type'] := 'checkbox';
+  Scope.Attributes['value'] := e.Value;
+  if e.Checked then
+    Scope.Attributes.AddProp('checked');
+end;
+
+procedure TBSRenderer.TCheckbox.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
+begin
+  Scope.Classes.Remove('form-check-input');
+  Context.Writer.OpenTag('div', Scope.ToString([ssOuter]));
+end;
+
+procedure TBSRenderer.TCheckbox.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TCheckbox;
+begin
+  e := Scope.Element as THTML.TCheckbox;
+  Scope.Classes.Init('form-check-input');
+  Context.Writer.AddShortTag('input', Scope.ToString);
+  if e.Caption <> '' then
+    Context.Writer.AddTag('label', 'class="form-check-label" for="' + e.ID + '"', e.Caption);
+  inherited;
+end;
+
+procedure TBSRenderer.TCheckbox.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
+begin
+  Context.Writer.CloseTag('div');
 end;
 
 initialization

@@ -1910,6 +1910,49 @@ type
       public
       end;
 
+      { TSelect }
+
+      [TID_Extension]
+      TSelect = class(THTMLFormControl)
+      private
+        FItems: TmnNameValueObjectList<TmnNameValueObject>;
+        FSelectedValue: string;
+      protected
+        procedure Created; override;
+      public
+        Multiple: Boolean;
+        ChangeScript: string;
+        destructor Destroy; override;
+        property Items: TmnNameValueObjectList<TmnNameValueObject> read FItems;
+        //* Value of the selected option
+        property SelectedValue: string read FSelectedValue write FSelectedValue;
+      end;
+
+      { TTextArea }
+
+      [TID_Extension]
+      TTextArea = class(THTMLFormControl)
+      public
+        Text: string;
+        Rows: Integer;
+        constructor Create(AParent: TmnwElement; ACaption: string = ''; AText: string = ''); reintroduce;
+      end;
+
+      { TCheckbox }
+
+      [TID_Extension]
+      TCheckbox = class(THTMLFormControl)
+      private
+        FChecked: Boolean;
+        FValue: string;
+      protected
+        procedure Created; override;
+      public
+        property Checked: Boolean read FChecked write FChecked;
+        //* Value submitted when checked, default 'true'
+        property Value: string read FValue write FValue;
+      end;
+
       [TName_Extension]
       THiddenInput = class(THTMLElement)
       protected
@@ -6744,6 +6787,38 @@ begin
   inherited Create(AParent);
   Value := AValue;
   Caption := ACaption;
+end;
+
+{ THTML.TSelect }
+
+procedure THTML.TSelect.Created;
+begin
+  inherited;
+  FItems := TmnNameValueObjectList<TmnNameValueObject>.Create;
+end;
+
+destructor THTML.TSelect.Destroy;
+begin
+  FreeAndNil(FItems);
+  inherited;
+end;
+
+{ THTML.TTextArea }
+
+constructor THTML.TTextArea.Create(AParent: TmnwElement; ACaption: string; AText: string);
+begin
+  inherited Create(AParent);
+  Caption := ACaption;
+  Text := AText;
+  Rows := 3;
+end;
+
+{ THTML.TCheckbox }
+
+procedure THTML.TCheckbox.Created;
+begin
+  inherited;
+  FValue := 'true';
 end;
 
 { THTML.THTMLFormControl }
