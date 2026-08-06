@@ -404,8 +404,8 @@ type
     destructor Destroy; override;
     function CreatePair(const PairName: string; AValue: TDON_Value = nil): TDON_Pair;
     procedure AcquirePair(const AName: string; out AObject: TObject);
-    procedure AddPair(Value: TDON_Pair); overload;
-    function AddPair(const Name: String; const Value: string): TDON_Value; overload;
+    procedure Add(Value: TDON_Pair); overload;
+    function Add(const Name: String; const Value: string): TDON_Value; overload;
 
     function FindPair(const Name: string): TDON_Pair; overload;
     function PairExists(const Name: string): Boolean; overload;
@@ -1075,11 +1075,7 @@ var
   aPair: TDON_Pair;
 begin
   if (Self is TDON_Object) then
-  begin
-    aPair := (Self as TDON_Object).CreatePair(Name);
-    aPair.Value := TDON_String.Create(aPair, Value);
-    Result := aPair.Value;
-  end
+    Result := (Self as TDON_Object).Add(Name, Value)
   else
     raise Exception.Create('Not an object');
 end;
@@ -1266,7 +1262,7 @@ end;
 
 { TDON_Object }
 
-function TDON_Object.AddPair(const Name, Value: string): TDON_Value;
+function TDON_Object.Add(const Name, Value: string): TDON_Value;
 var
   aPair: TDON_Pair;
 begin
@@ -1291,7 +1287,7 @@ begin
   Result := TDON_Pair.Create(Self);
   Result.FName := PairName;
   Result.Value := AValue;
-  AddPair(Result);
+  Add(Result);
 end;
 
 destructor TDON_Object.Destroy;
@@ -1380,10 +1376,10 @@ procedure TDON_Object.AcquirePair(const AName: string; out AObject: TObject);
 begin
   AObject := TDON_Pair.Create(Self);
   (AObject as TDON_Pair).FName := AName;
-  AddPair((AObject as TDON_Pair));
+  Add((AObject as TDON_Pair));
 end;
 
-procedure TDON_Object.AddPair(Value: TDON_Pair);
+procedure TDON_Object.Add(Value: TDON_Pair);
 begin
   FPairs.Add(Value);
 end;

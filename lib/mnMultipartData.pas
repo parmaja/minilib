@@ -276,7 +276,7 @@ begin
         Exit(False);
       end
       else
-        AddPair(aItem);
+        Add(aItem);
 
       vStream.ReadUTF8Line(S, True);
       if S = '--' then

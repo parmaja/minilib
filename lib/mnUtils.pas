@@ -674,11 +674,14 @@ end;
 function UUIDToString(Guid: TGuid; Hyphen: string): string;
 begin
   Result := LowerCase(
-            IntToHex(Longint(GUID.D1), 8) + Hyphen + IntToHex(GUID.D2, 4) + Hyphen + IntToHex(GUID.D3, 4)
-            + Hyphen + IntToHex(GUID.D4[0], 2) + Hyphen + IntToHex(GUID.D4[1], 2) + Hyphen + IntToHex(GUID.D4[2], 2) + Hyphen + IntToHex(GUID.D4[3], 2)
-            + Hyphen + IntToHex(GUID.D4[4], 2) + Hyphen + IntToHex(GUID.D4[5], 2) + Hyphen + IntToHex(GUID.D4[6], 2) + Hyphen + IntToHex(GUID.D4[7], 2)
-            )
-//  Result := LowerCase(RemoveEncloseStr(GUIDToString(Guid), '{', '}'));
+            IntToHex(Guid.D1, 8) + Hyphen +
+            IntToHex(Guid.D2, 4) + Hyphen +
+            IntToHex(Guid.D3, 4) + Hyphen +
+            IntToHex(Guid.D4[0], 2) + IntToHex(Guid.D4[1], 2) + Hyphen +
+            IntToHex(Guid.D4[2], 2) + IntToHex(Guid.D4[3], 2) + IntToHex(Guid.D4[4], 2) +
+            IntToHex(Guid.D4[5], 2) + IntToHex(Guid.D4[6], 2) + IntToHex(Guid.D4[7], 2)
+            );
+//or  Result := LowerCase(RemoveEncloseStr(GUIDToString(Guid), '{', '}'));
 end;
 
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions; vChar: Char): string;
