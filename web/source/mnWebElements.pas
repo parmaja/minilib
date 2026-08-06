@@ -565,6 +565,23 @@ type
     function ToString: string;
   end;
 
+  TColSize = 0..12;
+
+  TColSizeHelper = record helper for TColSize
+    function ToString: string;
+  end;
+
+  TWidhSize = (
+        szUndefined,
+        szVeryVerySmall,
+        szVerySmall,
+        szSmall,
+        szMedium,
+        szLarge,
+        szVeryLarge,
+        szVeryVeryLarge
+    );
+
   //Keep it as DoRespond form
   TRespondProc = reference to procedure (const Context: TmnwContext);
   TRenderProc = reference to procedure(Scope: TmnwScope; const Context: TmnwContext);
@@ -1191,17 +1208,6 @@ type
     property ShowVersion: Boolean read FShowVersion write FShowVersion;
   end;
 
-  TSize = (
-        szUndefined,    
-        szVeryVerySmall,
-        szVerySmall,
-        szSmall,
-        szMedium,
-        szLarge,
-        szVeryLarge,
-        szVeryVeryLarge
-    );
-
 {-------------------------------------------------------}
 {-----------------    STANDARD    ----------------------}
 {-------------------------------------------------------}
@@ -1246,18 +1252,9 @@ type
         constructor Create(AParent: TmnwElement; AScript: string); reintroduce;
       end;
       
-      THTMLLayout = class abstract(THTMLElement)
-      public
-        Medium: Boolean; //Medium or above
-        Fixed: TmnwFixed;
-        Solitary: Boolean; //* Single in Row
-        //Padding: TmnwBounding; 
-        //Margin: TmnwBounding; 
-      end;
-
       { THTMLComponent }
 
-      THTMLComponent = class abstract(THTMLLayout)
+      THTMLComponent = class abstract(THTMLElement)
       protected
         procedure Created; override;
       public
@@ -1271,8 +1268,7 @@ type
       protected
         procedure Created; override;
       public
-        Size: TSize; //Max Width
-        MinSize: TSize; //Max Width
+        Size: TWidhSize;
         Shadow: TmnwShadow;
         Hint: string;
         ControlStyle: TItemStyle;
@@ -1428,6 +1424,7 @@ type
         FTools: TNavTools;
         FLogo: TImageFile;
       public
+        Fixed: TmnwFixed;
         Title: string;
 //        LogoImage: string;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
@@ -1478,21 +1475,32 @@ type
         function CanRender: Boolean; override;
       end;
 
-      TMain = class(THTMLLayout)
+      TMain = class(THTMLElement)
       protected
         procedure Created; override;
       public
 //        Gap: TGap;
       end;
 
-      TBox = class(THTMLLayout)
+      THTMLLayout = class abstract(THTMLElement)
+      protected
+        procedure Created; override;
       public
         Gap: TGap;
+        Padding: Integer;
+      end;
+
+      TBox = class(THTMLLayout)
+      protected
+        procedure Created; override;
+      public
+        Size: TColSize;
+        Columns: TColSize;
       end;
 
       TRow = class(THTMLLayout)
       public
-        Gap: TGap;
+        Fixed: TmnwFixed;
         NoWrap: Boolean;
         AlignItems: TmnwAlign;
         JustifyItems: TmnwJustify;
@@ -1500,12 +1508,10 @@ type
 
       TColumn = class(THTMLLayout)
       public
-        Gap: TGap;
-        Size: Integer;
+        Fixed: TmnwFixed;
+        Size: TColSize;
         Reverse: Boolean;
       end;
-
-      { TBar }
 
       TBar = class(THTMLLayout)
       protected
@@ -1539,7 +1545,7 @@ type
 
       { TAccordion }
 
-      TAccordion = class(THTMLLayout)
+      TAccordion = class(THTMLElement)
       protected
         procedure Created; override;
       public
@@ -1547,7 +1553,7 @@ type
       end;
 
       [TID_Extension]
-      TAccordionSection = class(THTMLLayout)
+      TAccordionSection = class(THTMLElement)
       protected
       public
         Image: TImageLocation;
@@ -1560,15 +1566,12 @@ type
       TAccordionItem = class(TClickable)
       public
       end;
-      
-      {THTMLContainer = class abstract(THTMLElement)
+
+      TCardHeader = class(THTMLElement)
       public
-        AlignItems1: TmnwAlign;
-        JustifyItems1: TmnwAlign;
-        Padding: TmnwBounding; 
-      end;}
-      
-      TCardFooter = class(THTMLLayout)      
+      end;
+
+      TCardFooter = class(THTMLElement)
       public
         Fixed: Boolean;
       end;
@@ -1577,20 +1580,23 @@ type
 
       [TID_Extension]
       TCard = class(THTMLControl)
-      private 
+      private
+        FHeader: TCardHeader;
         FFooter: TCardFooter;
       protected
         procedure Created; override;
       public
+        Solitary: Boolean; //* Single in Row
         Caption: string;
         Collapse: Boolean;
-        
+
         AlignItems: TmnwAlign;
         JustifyItems: TmnwJustify;
         NoWrap: Boolean;
         Gap: TGap;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         property Footer: TCardFooter read FFooter;
+        property Header: TCardHeader read FHeader;
       end;
 
       { TPanel }
@@ -3732,7 +3738,6 @@ end;
 procedure THTML.THTMLControl.Created;
 begin
   inherited;
-  MinSize := szUndefined;
   Size := szUndefined;
 end;
 
@@ -5199,7 +5204,7 @@ end;
 procedure THTML.TBar.Created;
 begin
   inherited;
-  //Padding := -1;
+  Padding := 1;
 end;
 
 { THTML.TCard }
@@ -5208,6 +5213,7 @@ constructor THTML.TCard.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
 begin
   inherited;
   FFooter := TCardFooter.Create(Self, [elEmbed, elInternal]);
+  FHeader := TCardHeader.Create(Self, [elEmbed, elInternal]);
 end;
 
 procedure THTML.TCard.Created;
@@ -6105,7 +6111,6 @@ end;
 
 procedure TAuthForm.DoCompose(const Context: TmnwContext);
 begin
-  Solitary := True;
   Caption := _T('login', Context.Language, 'Login');
 
   with THTML, Self do
@@ -6915,6 +6920,28 @@ end;
 function TGapHelper.ToString: string;
 begin
   Result := IntToStr(Self);
+end;
+
+{ TColSizeHelper }
+
+function TColSizeHelper.ToString: string;
+begin
+  Result := IntToStr(Self);
+end;
+
+{ THTML.THTMLLayout }
+
+procedure THTML.THTMLLayout.Created;
+begin
+  inherited;
+end;
+
+{ THTML.TBox }
+
+procedure THTML.TBox.Created;
+begin
+  inherited;
+  Columns := 3;
 end;
 
 initialization

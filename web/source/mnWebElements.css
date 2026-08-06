@@ -376,8 +376,39 @@ svg {
     margin-block-start: calc(var(--gap-unit) * 5);
 }
 
-/* Grid Columns */
+/* Grid Columns Count */
 
+/* use with style="--cols: 3" */
+.g-cols {
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 1), 1fr) !important;
+  }
+
+.g-cols-1 {
+    grid-template-columns: repeat(1, 1fr) !important;
+}
+
+.g-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.g-cols-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.g-cols-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+}
+
+.g-cols-5 {
+    grid-template-columns: repeat(5, 1fr) !important;
+}
+
+.g-cols-6 {
+    grid-template-columns: repeat(6, 1fr) !important;
+}
+
+/* Grid Columns */
 .g-columns-sm {
     grid-template-columns: repeat(2, 1fr) !important;
 }

@@ -1,4 +1,4 @@
-unit mnBootstraps;
+﻿unit mnBootstraps;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -58,15 +58,9 @@ type
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;}
 
-      THTMLLayout = class(THTMLElement)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-      public
-      end;
-
       { THTMLComponent }
 
-      THTMLComponent = class abstract(THTMLLayout)
+      THTMLComponent = class abstract(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;      
       end;
@@ -223,9 +217,14 @@ type
 
       { TMain }
 
-      TMain = class(THTMLLayout)
+      TMain = class(THTMLElement)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      THTMLLayout = class abstract(THTMLElement)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       { TRow }
@@ -282,17 +281,22 @@ type
       
       { TCard }
 
+      TCardHeader = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      TCardFooter = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       TCard = class(THTMLControl)
-      protected        
+      protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      TCardFooter = class(THTMLLayout)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
-      end;
-      
       TPanel = class(THTMLControl)
       protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
@@ -567,7 +571,7 @@ function BSRowAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean =
 function BSColumnAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean = False): string;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = False): string;
-function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean = False): string;
+function BSSizeToStr(const Prefix: string; Size: TWidhSize; WithSpace: Boolean = False): string;
 function BSControlStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = False): string;
 
 implementation
@@ -618,9 +622,9 @@ begin
     Result := ' ' + Result;
 end;
 
-function BSSizeToStr(const Prefix: string; Size: TSize; WithSpace: Boolean): string;
+function BSSizeToStr(const Prefix: string; Size: TWidhSize; WithSpace: Boolean): string;
 const
-  SizeStrs: array[TSize] of string = ('', 'xxs', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl');
+  SizeStrs: array[TWidhSize] of string = ('', 'xxs', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl');
 begin
   Result := SizeStrs[Size];
   if (Result <> '') then
@@ -800,8 +804,9 @@ begin
     RegisterRenderer(THTML.TImageFile, TImageFile);
     RegisterRenderer(THTML.TImageMemory, TImageMemory);
     
+    RegisterRenderer(THTML.TCardHeader, TCardHeader);
     RegisterRenderer(THTML.TCard, TCard);
-    RegisterRenderer(THTML.TCardFooter, TCardFooter);    
+    RegisterRenderer(THTML.TCardFooter, TCardFooter);
     RegisterRenderer(THTML.TDropdown, TDropdown);
     RegisterRenderer(THTML.TPopupMenu, TPopupMenu);
     RegisterRenderer(THTML.TGroup, TGroup);
@@ -840,8 +845,6 @@ begin
   end;
   if e.Size > szUndefined then
     Scope.Classes.Add(BSSizeToStr('max-w-', e.Size));
-{  if e.MinSize > szUndefined then
-    Scope.Classes.Add(BSSizeToStr('w-', e.MinSize));}
   case e.Shadow of
     shadowHairline: Scope.Classes.Add('shadow-hairline');
     shadowThin: Scope.Classes.Add('shadow-thin');
@@ -962,6 +965,13 @@ var
 begin
   e := Scope.Element as THTML.TCard;
 
+  if e.Solitary then
+  begin
+//    Scope.Classes.Add('mx-auto');
+//    Scope.Classes.Add('my-auto');
+    Scope.Classes.Append('top-50 start-50 translate-middle');
+  end;
+
   if e.JustifyItems > jstDefault then
   begin
     Scope.InnerClasses.Add('d-flex');
@@ -986,10 +996,14 @@ begin
     Scope.Classes.Add('fixed-footer-padding');
 
   Context.Writer.OpenTag('div', Scope.ToString([ssAttributes, ssOuter]));
-  if e.Caption <> '' then
-  begin      
-    Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header d-flex'+ BSControlStyleToStr('text-bg-', e.ControlStyle, True) + BSControlStyleToStr('bg-', e.ControlStyle, True) + '"');
+  if (e.Caption <> '') or (e.Header.Count > 0) then
+  begin
+    Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header align-items-center d-flex'+ BSControlStyleToStr('text-bg-', e.ControlStyle, True) + BSControlStyleToStr('bg-', e.ControlStyle, True) + '"');
     Context.Writer.WriteLn(e.Caption);
+    Context.Writer.OpenTag('div', 'class="ms-auto"');
+    e.Header.Render(Context);
+    Context.Writer.CloseTag('div');
+
     if e.Collapse then
     begin
       Context.Writer.Write('<span class="ms-auto my-auto icon-animate icon mnw-chevron-up"');
@@ -997,7 +1011,7 @@ begin
       Context.Writer.WriteLn('></span>');
     end;
     Context.Writer.CloseTag('h5');
-  end;  
+  end;
 
   Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body p-1 collapse show" aria-labelledby="'+e.id+'-header"');  //removed `overflow-hidden`
 
@@ -1497,8 +1511,6 @@ var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
-  if e.Gap > 0 then
-    Scope.Classes.Add('gap-' + e.Gap.ToString);
   if e.NoWrap then
     Scope.InnerClasses.Add('flex-md-nowrap');
   Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
@@ -1512,8 +1524,7 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   Scope.Classes.Add('row');
-  Scope.Classes.Add('d-flex');    
-  Scope.Classes.Add('flex-row');    
+  Scope.Classes.Add('flex-row');
   Scope.Classes.Add('m-0');    
 
   Scope.Classes.Add(BSFixedToStr(e.Fixed));
@@ -1531,9 +1542,14 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  Scope.Classes.Add('d-flex');
-  if e.Gap > 0 then
-    Scope.Classes.Add('gap-' + e.Gap.ToString);
+  if e.Reverse then
+    Scope.Classes.Add('flex-column-reverse');
+    Scope.Classes.Add('flex-column');
+  if e.Size > 0 then
+    Scope.Classes.Add('col-'+e.Size.ToString)
+  else
+    Scope.Classes.Add('col');
+  Scope.Classes.Add('m-0');
   inherited;
 end;
 
@@ -1542,14 +1558,6 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  if e.Reverse then  
-    Scope.Classes.Add('flex-column-reverse');
-    Scope.Classes.Add('flex-column');
-  if e.Size > 0 then
-    Scope.Classes.Add('col-'+e.Size.ToString)
-  else
-    Scope.Classes.Add('col');    
-  Scope.Classes.Add('m-0');    
   //Scope.Classes.Add(BSColumnAlignToStr('', e.ContentAlign));    
   if e.Fixed <> fixedDefault then
     Scope.Classes.Add(BSFixedToStr(e.Fixed));
@@ -1569,8 +1577,6 @@ begin
   e := Scope.Element as THTML.TBar;
   Scope.Classes.Add('bar');
   //Scope.Classes.Add('bg-body');
-  Scope.Classes.Add('d-flex');
-  Scope.Classes.Add('p-1');
   Scope.Classes.Add('align-items-center');
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
@@ -1841,28 +1847,6 @@ begin
   end
   else
     inherited;
-end;
-
-{ TBSRenderer.THTMLLayout }
-
-procedure TBSRenderer.THTMLLayout.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.THTMLLayout;
-begin
-  e := Scope.Element as THTML.THTMLLayout;
-  inherited;
-  Scope.Classes.Add(BSFixedToStr(e.Fixed));
-  //Scope.Classes.Add(BSAlignToStr(e.Align));
-  if e.Solitary then
-  begin
-//    Scope.Classes.Add('mx-auto');
-//    Scope.Classes.Add('my-auto');
-    Scope.Classes.Append('top-50 start-50 translate-middle');
-  end;
-
-  // Optimize margin/padding prefix calculation
-//  Scope.Classes.Add(e.Margin.ToBSString(When(e.Medium, 'm-md', 'm')));
-//  Scope.Classes.Add(e.Padding.ToBSString('p')));
 end;
 
 { TBSRenderer.TImageFile }
@@ -2277,12 +2261,18 @@ procedure TBSRenderer.TBox.DoCollectAttributes(var Scope: TmnwScope; Context: Tm
 var
   e: THTML.TBox;
 begin
-  e := Scope.Element as THTML.TBox;
-  Scope.Classes.Add('d-flex');
-  Scope.Classes.Add('m-0');
-  if e.Gap > 0 then
-    Scope.Classes.Add('gap-' + e.Gap.ToString);
   inherited;
+  e := Scope.Element as THTML.TBox;
+  Scope.Classes.Add('m-0');
+  Scope.Classes.Remove('d-flex'); //HMMMM
+  Scope.Classes.Add('d-grid');
+  if e.Size > 0 then
+    Scope.Classes.Add('col-'+e.Size.ToString)
+  else
+    Scope.Classes.Add('col');
+
+  if e.Columns > 0 then
+    Scope.Classes.Add('g-cols-'+e.Columns.ToString)
 end;
 
 procedure TBSRenderer.TBox.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
@@ -2342,8 +2332,8 @@ begin
       Selected := ' selected';
     Context.Writer.AddTag('option', 'value=' + DQ(EscapeAttr(s)) + Selected, o.Name);
   end;
-  Context.Writer.CloseTag('select');
   inherited;
+  Context.Writer.CloseTag('select');
 end;
 
 { TBSRenderer.TTextArea }
@@ -2408,6 +2398,34 @@ end;
 procedure TBSRenderer.TCheckbox.DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   Context.Writer.CloseTag('div');
+end;
+
+{ TBSRenderer.THTMLLayout }
+
+procedure TBSRenderer.THTMLLayout.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.THTMLLayout;
+begin
+  e := Scope.Element as THTML.THTMLLayout;
+  Scope.Classes.Add('d-flex');
+  if e.Gap > 0 then
+    Scope.Classes.Add('gap-' + e.Gap.ToString);
+  if e.Padding > 0 then
+    Scope.Classes.Add('p-' + e.Padding.ToString);
+  inherited;
+end;
+
+{ TBSRenderer.TCardHeader }
+
+procedure TBSRenderer.TCardHeader.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+//var
+//  e: THTML.TCardHeader;
+//  Card: THTML.TCard;
+begin
+//  e := Scope.Element as THTML.TCardHeader;
+//  Card := e.Parent as THTML.TCard;
+
+  inherited;
 end;
 
 initialization
