@@ -159,30 +159,6 @@ type
     class procedure Update(Element: TmnwElement); override;
   end;
 
-  { TmnwAttribute }
-
-  TmnwAttribute = class(TmnNameValueObject)
-  public
-    IsProperty: Boolean; //that dosnt have value
-    function CreateSubValues(vSeparators: TSysCharSet = [' ']): TStringList;    
-  end;
-
-  { TmnwAttributes }
-
-  TmnwAttributes = class(TmnNameValueObjectList<TmnwAttribute>)
-  protected
-    procedure Created; override;
-  public
-    function ToString: string; override;
-    function GetText: string;
-    procedure Delete(Name: string); overload;
-    function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
-    function SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
-    function UnsetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
-    function AddProp(Name: string): TmnwAttribute;
-    procedure Append(AAttributes: TmnwAttributes);
-  end;
-
   TDirection = (dirUndefined, dirLeftToRight, dirRightToLeft);
   TBindType = (btVisible, btEnabled);
 
@@ -271,21 +247,59 @@ type
     procedure SetLeftRight(Value: Double);
     end;
 
+  TAttributeArea = (ssOuter, ssInner);
+  TAttributeAreas = set of TAttributeArea;
+
+  { TmnwAttribute }
+
+  TmnwAttribute = class(TmnNameValueObject)
+  public
+    IsProperty: Boolean; //that dosnt have value
+    Area: TAttributeArea;
+    function CreateSubValues(vSeparators: TSysCharSet = [' ']): TStringList;
+  end;
+
+  { TmnwAttributes }
+
+  TmnwAttributes = class(TmnNameValueObjectList<TmnwAttribute>)
+  protected
+    procedure Created; override;
+  public
+    function ToString(Area: TAttributeAreas = [ssOuter, ssInner]): string; reintroduce;
+    function GetText: string;
+    function AddProp(const Name: string): TmnwAttribute;
+    function Add(const Name: string; const Value: string = ''; Area: TAttributeArea = ssOuter): TmnwAttribute; overload;
+    procedure Delete(const Name: string); overload;
+    function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
+    function SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
+    function UnsetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
+    procedure Append(AAttributes: TmnwAttributes);
+  end;
+
+  TElementClass = record
+  public
+    Name: string;
+    Area: TAttributeArea;
+    constructor Create(AName: string; AArea: TAttributeArea);
+  end;
+
   { TElementClasses }
 
   TElementClasses = record
-    Items: TArray<String>;
+    Items: TArray<TElementClass>;
     function IndexOf(const Name: string): Integer;
     function Exists(const Name: string): Boolean;
     //Add one item
-    function Add(const Name: string): Integer;
+    function Add(const Name: string; Area: TAttributeArea = ssOuter): Integer; overload;
+    function Add(const AClass: TElementClass): Integer; overload;
     function AddIf(Condition: Boolean; const Name: string): Integer; inline;
     //Add multiple items in on string
     procedure Append(const S: string; Delimiter: string = ' '); overload;
     procedure Append(A: TElementClasses); overload;
     function Remove(const Name: string): Boolean;
-    function ToString(const Initial: string = ''): string; overload;
-    function Value: string; overload;
+    //function ToString(const Initial: string = ''): string; overload;
+    function ToString(Area: TAttributeAreas = [ssOuter, ssInner]): string; overload;
+    function ToFullString(Area: TAttributeAreas = [ssOuter, ssInner]): string; overload;
     procedure Clear;
 
     class operator Add(A: TElementClasses; B: string): TElementClasses;
@@ -336,13 +350,10 @@ type
     Element: TmnwElement;
     Attributes: TmnwAttributes;
     Classes: TElementClasses;
-    InnerClasses: TElementClasses; //For content classes
     WrapClasses: TElementClasses; //WrapClass is a class used of what parent wrapped it
     State: TmnwScopeStates;
   public
-    type
-      TSelect = set of (ssAttributes, ssOuter, ssInner);
-    function ToString(Select: TSelect = [ssAttributes, ssOuter, ssInner]; WithSpace: Boolean = False): string; overload;
+    function ToString(Area: TAttributeAreas = [ssOuter, ssInner]; WithSpace: Boolean = False): string; overload;
     function ToString(WithSpace: Boolean): string; overload;
 
     constructor Create(AElement: TmnwElement);
@@ -951,9 +962,6 @@ type
     FRenderer: TmnwRenderer;
     FRendererRegister: TmnwElementRendererRegister;
   protected
-    //* Keep `var`
-    procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); virtual;
-
     function CanRenderChilds: Boolean; virtual;
     procedure RenderChilds(Scope: TmnwScope; Context: TmnwContext);
 
@@ -969,7 +977,10 @@ type
     procedure DoEnterOuterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
     procedure DoLeaveOuterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
+    //* Keep `var` to allow descents child takes new attributes
+    procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); virtual;
     //* Content render
+    //Scope will not inherited to descents child
     procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
     procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); virtual;
     procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
@@ -2792,8 +2803,7 @@ begin
   Result := aAttribute <> nil;
   if not Result then
   begin
-    aAttribute := TmnwAttribute.Create(AName, '');
-    Add(aAttribute);
+    aAttribute := Add(AName, '');
   end;
 
   SubValues := aAttribute.CreateSubValues(vSeparators);
@@ -2810,9 +2820,9 @@ begin
   end;
 end;
 
-function TmnwAttributes.ToString: string;
+function TmnwAttributes.ToString(Area: TAttributeAreas = [ssOuter, ssInner]): string;
 var
-  a: TmnwAttribute;
+  itm: TmnwAttribute;
   idItem: Integer;
   sb: TStringBuilder;
 begin
@@ -2821,18 +2831,20 @@ begin
     idItem := IndexOfName('id');
     if (idItem >= 0) then
     begin
-      a := Items[idItem];
-      sb.Append(a.Name).Append('=').Append(DQ(a.Value));
+      itm := Items[idItem];
+      if itm.Area in Area then
+        sb.Append(itm.Name).Append('=').Append(DQ(itm.Value));
     end;
 
-    for a in Self do
+    for itm in Self do
+    if itm.Area in Area then
     begin
       if sb.Length > 0 then
         sb.Append(' ');
-      if a.IsProperty and (a.Value = '') then
-        sb.Append(a.Name)
-      else if not SameText(a.name, 'id') then           
-        sb.Append(a.Name).Append('=').Append(DQ(a.Value));
+      if itm.IsProperty and (itm.Value = '') then
+        sb.Append(itm.Name)
+      else if not SameText(itm.name, 'id') then
+        sb.Append(itm.Name).Append('=').Append(DQ(itm.Value));
     end;
     Result := sb.ToString;
   finally
@@ -2868,7 +2880,13 @@ begin
   end;
 end;
 
-function TmnwAttributes.AddProp(Name: string): TmnwAttribute;
+function TmnwAttributes.Add(const Name, Value: string; Area: TAttributeArea): TmnwAttribute;
+begin
+  Result := inherited Add(Name, Value);
+  Result.Area := Area;
+end;
+
+function TmnwAttributes.AddProp(const Name: string): TmnwAttribute;
 begin
   Result := Add(Name);
   Result.IsProperty := True;  
@@ -2890,7 +2908,7 @@ begin
   //AutoRemove := True; //no AltTxt in image should writen even if it empty
 end;
 
-procedure TmnwAttributes.Delete(Name: string);
+procedure TmnwAttributes.Delete(const Name: string);
 var
   i: Integer;
 begin
@@ -5635,7 +5653,7 @@ end;
 
 { TElementClasses }
 
-function TElementClasses.Add(const Name: string): Integer;
+function TElementClasses.Add(const Name: string; Area: TAttributeArea): Integer;
 begin
   if Name = '' then
     exit(-1);
@@ -5643,7 +5661,7 @@ begin
   Result:= IndexOf(Name);
   if Result < 0 then
   begin
-    Items := Items + [Name];
+    Items := Items + [TElementClass.Create(Name, Area)];
     Result := Length(Items) - 1;
   end;
 end;
@@ -5668,6 +5686,11 @@ begin
   Result := A;
 end;
 
+function TElementClasses.Add(const AClass: TElementClass): Integer;
+begin
+  Items := Items + [AClass];
+end;
+
 function TElementClasses.AddIf(Condition: Boolean; const Name: string): Integer;
 begin
   if Condition then
@@ -5678,7 +5701,7 @@ end;
 
 procedure TElementClasses.Append(A: TElementClasses);
 var
- itm : String;
+ itm : TElementClass;
 begin
   for itm in A.Items do
   begin
@@ -5719,7 +5742,7 @@ var
 begin
   for i := 0 to Length(Items) -1 do
   begin
-    if SameText(Name, Items[i]) then
+    if SameText(Name, Items[i].Name) then
       exit(i)
   end;
   Result := -1
@@ -5751,24 +5774,25 @@ begin
   Result := A;
 end;
 
-function TElementClasses.ToString(const Initial: string): string;
+function TElementClasses.ToFullString(Area: TAttributeAreas): string;
 begin
-  Result := SpaceIf(Initial, Value);
+  Result := ToString(Area);
   if Result <> '' then
-    Result := 'class="' + Result + '"';
+    Result := 'class=' + DQ(Result);
 end;
 
-function TElementClasses.Value: string;
+function TElementClasses.ToString(Area: TAttributeAreas): string;
 var
- itm : String;
+ itm: TElementClass;
 begin
   Result := '';
   for itm in Items do
+  if (Area = []) or (itm.Area in Area) then
   begin
     if Result <> '' then
-      Result := Result + ' ' + itm
+      Result := Result + ' ' + itm.Name
     else
-      Result := itm;
+      Result := itm.Name;
   end;
 end;
 
@@ -5779,23 +5803,17 @@ begin
   FreeAndNil(Attributes);
   Element := nil;
   Classes := Default(TElementClasses);
-  InnerClasses := Default(TElementClasses);
   WrapClasses := Default(TElementClasses);
 end;
 
-function TmnwScope.ToString(Select: TSelect; WithSpace: Boolean): string;
+function TmnwScope.ToString(Area: TAttributeAreas; WithSpace: Boolean): string;
 begin
-  Result := '';
-  if (ssOuter in Select) then  
-    Result := Classes.Value;
-  if ssInner in Select then  
-    Result := SpaceIf(Result, InnerClasses.Value);  
+  Result := Classes.ToString(Area);
 
   if Result <> '' then
     Result := 'class=' + DQ(Result);
-  
-  if ssAttributes in Select then  
-    Result := SpaceIf(Result, Attributes.ToString);    
+
+  Result := SpaceIf(Result, Attributes.ToString(Area));
     
   if WithSpace and (Result <> '') then
     Result := ' ' + Result;
@@ -5810,7 +5828,7 @@ end;
 
 function TmnwScope.ToString(WithSpace: Boolean): string;
 begin
-  Result := ToString([ssAttributes, ssOuter, ssInner], WithSpace);
+  Result := ToString([ssOuter, ssInner], WithSpace);
 end;
 
 { THTML.TLink }
@@ -7025,6 +7043,14 @@ end;
 function TWidthHelper.ToString: string;
 begin
   Result := IntToStr(Self);
+end;
+
+{ TElementClass }
+
+constructor TElementClass.Create(AName: string; AArea: TAttributeArea);
+begin
+  Name := AName;
+  Area := AArea;
 end;
 
 initialization

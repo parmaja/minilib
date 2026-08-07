@@ -961,9 +961,9 @@ var
 begin
   e := Scope.Element as THTML.TMain;
   Scope.Classes.Add('main');
-//  Scope.InnerClasses.Add('d-flex');
-//  Scope.InnerClasses.Add('align-items-start');
-  //Scope.InnerClasses.Add('d-column');
+//  Scope.Classes.Add('d-flex', ssInner);
+//  Scope.Classes.Add('align-items-start', ssInner);
+  //Scope.Classes.Add('d-column', ssInner);
 
   if (e.Schema as THTML).Document.Body.Header.CanRender  then
     Scope.Classes.Add('max-content-height');
@@ -995,23 +995,23 @@ begin
 
   if e.Mode = emdColumn then
   begin
-    Scope.InnerClasses.Add('flex-column');
+    Scope.Classes.Add('flex-column', ssInner);
     if e.AlignItems > alDefault then
     begin
-      Scope.InnerClasses.Add('d-flex');
-      Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
+      Scope.Classes.Add('d-flex', ssInner);
+      Scope.Classes.Add(BSRowAlignToStr('align-items-', e.AlignItems), ssInner);
     end;
   end
   else if e.Mode = emdRow then
   begin
-    Scope.InnerClasses.Add('d-flex');
-    Scope.InnerClasses.Add('flex-row');
+    Scope.Classes.Add('d-flex', ssInner);
+    Scope.Classes.Add('flex-row', ssInner);
     if e.AlignItems > alDefault then
     begin
-      Scope.InnerClasses.Add(BSRowAlignToStr('justify-content-', e.AlignItems));
+      Scope.Classes.Add(BSRowAlignToStr('justify-content-', e.AlignItems), ssInner);
     end;
     if e.NoWrap then
-      Scope.InnerClasses.Add('flex-md-nowrap');
+      Scope.Classes.Add('flex-md-nowrap', ssInner);
   end;
 //  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));
   inherited;
@@ -1028,7 +1028,7 @@ begin
   if not e.Solitary and e.Footer.Fixed then
     Scope.Classes.Add('fixed-footer-padding');
 
-  Context.Writer.OpenTag('div', Scope.ToString([ssAttributes, ssOuter]));
+  Context.Writer.OpenTag('div', Scope.ToString([ssOuter]));
   if (e.Caption <> '') or (e.Header.Count > 0) then
   begin
     Context.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header align-items-center d-flex'+ BSControlStyleToStr('text-bg-', e.ControlStyle, True) + BSControlStyleToStr('bg-', e.ControlStyle, True) + '"');
@@ -1055,7 +1055,7 @@ begin
   Context.Writer.OpenTag('div', 'id="'+e.id+'-panel" class="overflow-hidden p-1' //p-1 needed for highlights inputs
 //    + When(e.Gap>0, ' m-childs-' + e.Gap.ToString)
     + When(e.Gap > 0, ' m-childs-' + e.Gap.ToString)
-    + SpaceIf(Scope.InnerClasses.Value)    
+    + SpaceIf(Scope.Classes.ToString([ssInner]))
     + '"'
     );
   inherited;
@@ -1072,7 +1072,7 @@ var
 begin
   e := Scope.Element as THTML.TForm;
   if e.Gap > 0 then  
-    Scope.InnerClasses.Add('m-childs-' + e.Gap.ToString);
+    Scope.Classes.Add('m-childs-' + e.Gap.ToString, ssInner);
   Scope.Attributes.Add('method', 'post');
   Scope.Attributes.AddIf('action', Context.GetLocationPath(e, e.Endpoint));
   Scope.Attributes.AddIf('onsubmit', e.CallScript);
@@ -1548,9 +1548,9 @@ var
 begin
   e := Scope.Element as THTML.TRow;
   if e.NoWrap then
-    Scope.InnerClasses.Add('flex-md-nowrap');
-  Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
-  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));      
+    Scope.Classes.Add('flex-md-nowrap', ssInner);
+  Scope.Classes.Add(BSRowAlignToStr('align-items-', e.AlignItems), ssInner);
+  Scope.Classes.Add(BSJustifyToStr('justify-content-', e.JustifyItems), ssInner);
   inherited;
 end;
 
@@ -1634,10 +1634,10 @@ procedure TBSRenderer.TAccordionSection.DoEnterChildRender(var Scope: TmnwScope;
 var 
   classes: TElementClasses;
 begin
-  classes.Init('list-group-item');
+  classes.Add('list-group-item');
   classes.Add('bg-transparent');
   classes.Append(Scope.WrapClasses);
-  Context.Writer.OpenTag('li', classes.ToString);  
+  Context.Writer.OpenTag('li', classes.ToFullString);
   inherited;
 end;
 
@@ -1735,7 +1735,7 @@ var
 begin
   classes.Init('nav-item');
   classes.Append(Scope.WrapClasses);
-  Context.Writer.OpenTag('li', classes.ToString);
+  Context.Writer.OpenTag('li', classes.ToFullString);
   inherited;
 end;
 
@@ -1947,7 +1947,7 @@ begin
   classes.Init('dropdown-menu');
   if dropEnd in e.Options then
     classes.Add ('dropdown-menu-end');
-  Context.Writer.OpenTag('ul', classes.ToString);
+  Context.Writer.OpenTag('ul', classes.ToFullString);
   inherited;
   Context.Writer.CloseTag('ul');
 end;

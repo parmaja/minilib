@@ -491,7 +491,7 @@ begin
                 ID := 'password';
                 Name := 'password';
                 Caption := 'Password';
-                HelpText := 'You need to use numbers';
+//                HelpText := 'You need to use numbers';
               end;
 
               TBreak.Create(This);
@@ -690,7 +690,7 @@ begin
             with TCard.Create(This) do
             begin
               Collapse := True;
-              Size := szVeryLarge;
+              Size := 5;
               Caption := 'Empty';
             end;
           end;
@@ -718,7 +718,7 @@ begin
                 ID := 'password';
                 Name := 'password';
                 Caption := 'Password';
-                HelpText := 'You need to use numbers';
+//                HelpText := 'You need to use numbers';
               end;
 
               TBreak.Create(This);
@@ -731,7 +731,7 @@ begin
 
           with TCard.Create(This) do
           begin
-            Size := szVeryLarge;
+            Size := 6;
             Caption := 'Task';
             Solitary := True;
             Collapse := True;
