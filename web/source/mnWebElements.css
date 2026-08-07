@@ -244,6 +244,40 @@ svg {
 
 /** Max Width */
 
+.max-w-1 {
+    max-width: calc(var(--size-unit));
+}
+
+.max-w-2 {
+    max-width: calc(var(--size-unit) * 2);
+}
+
+.max-w-3 {
+    max-width: calc(var(--size-unit) * 3);
+}
+
+.max-w-4 {
+    max-width: calc(var(--size-unit) * 4);
+}
+
+.max-w-5 {
+    max-width: calc(var(--size-unit) * 5);
+}
+
+.max-w-6 {
+    max-width: calc(var(--size-unit) * 6);
+}
+
+.max-w-7 {
+    max-width: calc(var(--size-unit) * 7);
+}
+
+.max-w-8 {
+    max-width: calc(var(--size-unit) * 8);
+}
+
+/** Max Width */
+
 .max-w-xxs {
     max-width: calc(var(--size-unit));
 }

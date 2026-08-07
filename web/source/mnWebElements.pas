@@ -278,12 +278,14 @@ type
     function Exists(const Name: string): Boolean;
     //Add one item
     function Add(const Name: string): Integer;
+    function AddIf(Condition: Boolean; const Name: string): Integer; inline;
     //Add multiple items in on string
     procedure Append(const S: string; Delimiter: string = ' '); overload;
     procedure Append(A: TElementClasses); overload;
     function Remove(const Name: string): Boolean;
     function ToString(const Initial: string = ''): string; overload;
     function Value: string; overload;
+    procedure Clear;
 
     class operator Add(A: TElementClasses; B: string): TElementClasses;
     class operator Subtract(A: TElementClasses; B: string): TElementClasses;
@@ -320,28 +322,34 @@ type
     property Instance: TObject read FInstance write SetInteralInstance;
     property Changed: Boolean read FChanged;
   end;  
-  
+
+  TmnwScopeState = (
+    sstSize //Size classes/attributes added
+  );
+
+  TmnwScopeStates = set of TmnwScopeState;
   { TmnwScope }
- 
-  TmnwScope = record  
+
+  TmnwScope = record
   public
     Element: TmnwElement;
     Attributes: TmnwAttributes;
     Classes: TElementClasses;
     InnerClasses: TElementClasses; //For content classes
     WrapClasses: TElementClasses; //WrapClass is a class used of what parent wrapped it
+    State: TmnwScopeStates;
   public
     type
       TSelect = set of (ssAttributes, ssOuter, ssInner);
     function ToString(Select: TSelect = [ssAttributes, ssOuter, ssInner]; WithSpace: Boolean = False): string; overload;
     function ToString(WithSpace: Boolean): string; overload;
-    
+
     constructor Create(AElement: TmnwElement);
     procedure Free;
   end;
 
   TmnwLibraryClass = class of TmnwLibrary;
-  
+
   TmnwContext = record
   private
     FResponse: TmnwResponse;
@@ -409,6 +417,8 @@ type
     property Web: TmnwWeb read FWeb;
     property Renderer: TmnwRenderer read FRenderer;
     property Writer: TmnTidyWriter read FWriter;
+
+    function _T(const Key: string; const Default: string = ''): string;
   public
     procedure Require(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0);
   end;
@@ -571,7 +581,7 @@ type
     function ToString: string;
   end;
 
-  TWidhSize = (
+  TWidthSize = (
         szUndefined,
         szVeryVerySmall,
         szVerySmall,
@@ -581,6 +591,13 @@ type
         szVeryLarge,
         szVeryVeryLarge
     );
+
+
+  TWidth = 0..6;
+
+  TWidthHelper = record helper for TWidth
+    function ToString: string;
+  end;
 
   //Keep it as DoRespond form
   TRespondProc = reference to procedure (const Context: TmnwContext);
@@ -1268,7 +1285,8 @@ type
       protected
         procedure Created; override;
       public
-        Size: TWidhSize;
+        Width: TWidth;
+        Size: TColSize;
         Shadow: TmnwShadow;
         Hint: string;
         ControlStyle: TItemStyle;
@@ -1276,15 +1294,19 @@ type
 
       TmnwLabelLayout = (lfUndefined, lfSide, lfTop, lfFloating);
 
-      THTMLFormControl = class abstract(THTMLControl)
+      TCustomFormControl = class abstract(THTMLControl)
+      public
+        Required: Boolean;
+      end;
+
+      THTMLFormControl = class abstract(TCustomFormControl)
       private
         FCaption: string;
         procedure SetCaption(const AValue: string);
       public
         //* Layout of the caption label: clTop (above input) or clSide (left of input)
-        LabelLayout: TmnwLabelLayout;        
-        Required: Boolean;
-        property Caption: string read FCaption write SetCaption;        
+        LabelLayout: TmnwLabelLayout;
+        property Caption: string read FCaption write SetCaption;
       end;
 
       { TJSFile }
@@ -1486,6 +1508,7 @@ type
       protected
         procedure Created; override;
       public
+        Size: TColSize;
         Gap: TGap;
         Padding: Integer;
       end;
@@ -1494,7 +1517,6 @@ type
       protected
         procedure Created; override;
       public
-        Size: TColSize;
         Columns: TColSize;
       end;
 
@@ -1509,7 +1531,6 @@ type
       TColumn = class(THTMLLayout)
       public
         Fixed: TmnwFixed;
-        Size: TColSize;
         Reverse: Boolean;
       end;
 
@@ -1567,6 +1588,10 @@ type
       public
       end;
 
+      { TCard }
+
+      TPanelMode = (emdColumn, emdRow);
+
       TCardHeader = class(THTMLElement)
       public
       end;
@@ -1575,8 +1600,6 @@ type
       public
         Fixed: Boolean;
       end;
-
-      { TCard }
 
       [TID_Extension]
       TCard = class(THTMLControl)
@@ -1591,8 +1614,9 @@ type
         Collapse: Boolean;
 
         AlignItems: TmnwAlign;
-        JustifyItems: TmnwJustify;
+//        JustifyItems: TmnwJustify;
         NoWrap: Boolean;
+        Mode: TPanelMode;
         Gap: TGap;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         property Footer: TCardFooter read FFooter;
@@ -1714,11 +1738,14 @@ type
         constructor Create(AParent: TmnwElement; AText: string = ''); reintroduce;
       end;
 
+      THeadingStyle = set of (hsMuted);
+
       THeading = class(THTMLElement)
       public
-        Size: Integer;
+        Level: Integer;
         Text: string;
-        constructor Create(AParent: TmnwElement; ASize: Integer; AText: string = ''); reintroduce;
+        Style: THeadingStyle;
+        constructor Create(AParent: TmnwElement; ALevel: Integer; AText: string = ''; AStyle: THeadingStyle = []); reintroduce;
       end;
 
       TCode = class(THTMLComponent)
@@ -1795,6 +1822,12 @@ type
       public
       end;
 
+      TLinkButton = class(TFormButton) //TODO
+      public
+        Location: string;
+        constructor Create(AParent: TmnwElement; const ALocation: string; const ACaption: string); reintroduce; overload;
+      end;
+
       TActionForm = class(TFormButton)
       public
         Action: string;
@@ -1841,7 +1874,6 @@ type
         procedure ReceiveMessage(JSON: TDON_Pair); override;
       public
         PlaceHolder: string;
-        HelpText: string;
         EditType: string;
       public
         property Value: string read FValue write SetValue;
@@ -1850,7 +1882,7 @@ type
       TInput = class(TCustomInput)      
       public
         AutoFocus: Boolean;
-        AutoComplete: Boolean;        
+        AutoComplete: Boolean; //default True
         constructor Create(AParent: TmnwElement; ACaption: string = ''; AValue: string = ''); reintroduce;      
       end;
 
@@ -1949,13 +1981,14 @@ type
       { TCheckbox }
 
       [TID_Extension]
-      TCheckbox = class(THTMLFormControl)
+      TCheckbox = class(TCustomFormControl)
       private
         FChecked: Boolean;
         FValue: string;
       protected
         procedure Created; override;
       public
+        Caption: string;
         property Checked: Boolean read FChecked write FChecked;
         //* Value submitted when checked, default 'true'
         property Value: string read FValue write FValue;
@@ -3738,7 +3771,7 @@ end;
 procedure THTML.THTMLControl.Created;
 begin
   inherited;
-  Size := szUndefined;
+//  Width := szUndefined;
 end;
 
 { TmnwElementRendererRegister }
@@ -5219,8 +5252,7 @@ end;
 procedure THTML.TCard.Created;
 begin
   inherited;
-//  MinSize := szSmall;
-  Size := szMedium;
+//  Width := szMedium;
   Shadow := shadowHairline;
 //  Shadow := shadowThin;
 end;
@@ -5261,11 +5293,12 @@ end;
 
 { THTML.THeading }
 
-constructor THTML.THeading.Create(AParent: TmnwElement; ASize: Integer; AText: string);
+constructor THTML.THeading.Create(AParent: TmnwElement; ALevel: Integer; AText: string; AStyle: THeadingStyle);
 begin
   inherited Create(AParent);
-  Size := ASize;
+  Level := ALevel;
   Text := AText;
+  Style := AStyle;
 end;
 
 { THTML.TAction }
@@ -5621,6 +5654,14 @@ begin
   Result := A;
 end;
 
+function TElementClasses.AddIf(Condition: Boolean; const Name: string): Integer;
+begin
+  if Condition then
+    Result := Add(Name)
+  else
+    Result := -1;
+end;
+
 procedure TElementClasses.Append(A: TElementClasses);
 var
  itm : String;
@@ -5629,6 +5670,11 @@ begin
   begin
     Add(itm);
   end;
+end;
+
+procedure TElementClasses.Clear;
+begin
+  Items := nil;
 end;
 
 function TElementClasses.Exists(const Name: string): Boolean;
@@ -5896,6 +5942,11 @@ begin
   Renderer.Require(ALibraryClass);
 end;
 
+function TmnwContext._T(const Key, Default: string): string;
+begin
+  Result := mnWebElements._T(Key, Language, Default);
+end;
+
 function TmnwContext.GetBasePath: string;
 begin
   Result := RemoveEndURLDelimiter(StartURL(Request.BasePath));
@@ -6053,8 +6104,10 @@ begin
         with FLoginCard do
         begin
           Solitary := True;
-          Size := szMedium;
-          Caption := _T('login', Context.Language, 'Login');
+          Width := 3;
+          Mode := emdColumn;
+//          Size := 3;
+          Caption := Context._T('login', 'Login');
 //          Auth.Compose(Context);
         end;
       end;
@@ -6111,7 +6164,7 @@ end;
 
 procedure TAuthForm.DoCompose(const Context: TmnwContext);
 begin
-  Caption := _T('login', Context.Language, 'Login');
+  Caption := Context._T('login', 'Login');
 
   with THTML, Self do
   begin
@@ -6127,8 +6180,8 @@ begin
       begin
         ID := 'username';
         Name := 'username';
-        Caption := _T('username', Context.Language, 'Username');
-        PlaceHolder := _T('type.user.name', Context.Language, 'Type user name');
+        Caption := Context._T('username', 'Username');
+        PlaceHolder := Context._T('type.user.name', 'Type user name');
         AutoFocus := True;
         Required := True;
       end;
@@ -6137,19 +6190,20 @@ begin
       begin
         ID := 'password';
         Name := 'password';
-        Caption := _T('password', Context.Language, 'Password');
-        HelpText := _T('you.need.numbers', Context.Language, 'You need to use letters numbers');
+        Caption := Context._T('password', 'Password');
         Token := Context.Web.PasswordToken;
       end;
+
+      TParagraph.Create(This, Context._T('you.need.numbers', 'You need to use letters numbers'));
 
       if JWTMode or Context.Web.JWTmode then
       begin
         THiddenInput.Create(This, 'JWTMode', 'True');
       end;
       
-      Submit.Caption := _T('submit',  Context.Language, 'Submit');
-      Reset.Caption := _T('reset',  Context.Language, 'Reset');
-      Cancel.Caption := _T('cancel',  Context.Language,'Cancel') ;
+      Submit.Caption := Context._T('submit',  'Submit');
+      Reset.Caption := Context._T('reset',  'Reset');
+      Cancel.Caption := Context._T('cancel', 'Cancel') ;
     end;
   end;
   inherited;
@@ -6794,6 +6848,7 @@ begin
   inherited Create(AParent);
   Value := AValue;
   Caption := ACaption;
+  AutoComplete := True;
 end;
 
 { THTML.TSelect }
@@ -6841,7 +6896,6 @@ end;
 procedure THTML.TUsername.Created;
 begin
   inherited;
-  AutoComplete := True;
 end;
 
 { THTML.TCountInput }
@@ -6942,6 +6996,21 @@ procedure THTML.TBox.Created;
 begin
   inherited;
   Columns := 3;
+end;
+
+{ THTML.TLinkButton }
+
+constructor THTML.TLinkButton.Create(AParent: TmnwElement; const ALocation, ACaption: string);
+begin
+  inherited Create(AParent, ACaption);
+  Location := ALocation;
+end;
+
+{ TWidthHelper }
+
+function TWidthHelper.ToString: string;
+begin
+  Result := IntToStr(Self);
 end;
 
 initialization

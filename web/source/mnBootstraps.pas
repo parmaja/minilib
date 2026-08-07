@@ -75,8 +75,8 @@ type
 
       THTMLFormControl = class abstract(THTMLControl)
       protected
-        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;
       public      
       end;
@@ -421,8 +421,14 @@ type
       end;
 
       TSubmitForm = class(TButton)
-      protected        
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;        
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      TLinkButton = class(THTMLItem)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
       TResetForm = class(TButton)
@@ -530,7 +536,7 @@ type
 
       { TCheckbox }
 
-      TCheckbox = class(THTMLFormControl)
+      TCheckbox = class(THTMLControl) //Yes THTMLControl
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
         procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); override;
@@ -571,7 +577,7 @@ function BSRowAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean =
 function BSColumnAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean = False): string;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = False): string;
-function BSSizeToStr(const Prefix: string; Size: TWidhSize; WithSpace: Boolean = False): string;
+function BSSizeToStr(const Prefix: string; Width: TWidthSize; WithSpace: Boolean = False): string;
 function BSControlStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = False): string;
 
 implementation
@@ -622,11 +628,11 @@ begin
     Result := ' ' + Result;
 end;
 
-function BSSizeToStr(const Prefix: string; Size: TWidhSize; WithSpace: Boolean): string;
+function BSSizeToStr(const Prefix: string; Width: TWidthSize; WithSpace: Boolean): string;
 const
-  SizeStrs: array[TWidhSize] of string = ('', 'xxs', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl');
+  SizeStrs: array[TWidthSize] of string = ('', 'xxs', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl');
 begin
-  Result := SizeStrs[Size];
+  Result := SizeStrs[Width];
   if (Result <> '') then
     Result := Prefix + Result;  
   if WithSpace and (Result <> '') then
@@ -781,6 +787,7 @@ begin
     RegisterRenderer(THTML.TButton, TButton);
     RegisterRenderer(THTML.TToolButton, TToolButton);
     RegisterRenderer(THTML.TSubmitForm, TSubmitForm);
+    RegisterRenderer(THTML.TLinkButton, TLinkButton);
     RegisterRenderer(THTML.TResetForm, TResetForm);
     RegisterRenderer(THTML.TActionForm, TActionForm);
     RegisterRenderer(THTML.TNavItem, TNavItem);
@@ -843,8 +850,15 @@ begin
     Scope.Attributes['data-bs-placement'] := 'top';
     Scope.Attributes['title'] := e.Hint;
   end;
-  if e.Size > szUndefined then
-    Scope.Classes.Add(BSSizeToStr('max-w-', e.Size));
+
+  if not (sstSize in Scope.State)  then
+  begin
+  //  Scope.Classes.AddIf(e.Width > szUndefined, BSSizeToStr('max-w-', e.Width));
+    Scope.Classes.AddIf(e.Width > 0, 'max-w-' + e.Width.ToString);
+    //Maybe need to check e.responsible
+    Scope.Classes.AddIf(e.Size > 0, 'col-md-' + e.Size.ToString); //Yes when it is big take the size, if small screen get full width
+  end;
+
   case e.Shadow of
     shadowHairline: Scope.Classes.Add('shadow-hairline');
     shadowThin: Scope.Classes.Add('shadow-thin');
@@ -972,15 +986,27 @@ begin
     Scope.Classes.Append('top-50 start-50 translate-middle');
   end;
 
-  if e.JustifyItems > jstDefault then
+  if e.Mode = emdColumn then
+  begin
+    Scope.InnerClasses.Add('flex-column');
+    if e.AlignItems > alDefault then
+    begin
+      Scope.InnerClasses.Add('d-flex');
+      Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
+    end;
+  end
+  else if e.Mode = emdRow then
   begin
     Scope.InnerClasses.Add('d-flex');
+    Scope.InnerClasses.Add('flex-row');
+    if e.AlignItems > alDefault then
+    begin
+      Scope.InnerClasses.Add(BSRowAlignToStr('justify-content-', e.AlignItems));
+    end;
     if e.NoWrap then
       Scope.InnerClasses.Add('flex-md-nowrap');
   end;
-//    Scope.InnerClasses.Add('flex-column')
-  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));
-  Scope.InnerClasses.Add(BSRowAlignToStr('align-items-', e.AlignItems));
+//  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));
   inherited;
 end;
 
@@ -1201,12 +1227,6 @@ var
   e: THTML.TInput;
 begin
   e := Scope.Element as THTML.TInput;
-  Scope.Attributes.AddIf('placeholder', e.PlaceHolder);
-  Scope.Attributes.AddIf('type', e.EditType);
-  if e.AutoFocus then  
-    Scope.Attributes.Add('autofocus');  
-  if not e.AutoComplete then  
-    Scope.Attributes['autocomplete'] := 'off';
   inherited;
 end;
 
@@ -1215,14 +1235,23 @@ var
   e: THTML.TInput;
 begin
   e := Scope.Element as THTML.TInput;
+
+  Scope.Attributes.AddIf('placeholder', e.PlaceHolder);
+  Scope.Attributes.AddIf('type', e.EditType);
+  if e.AutoFocus then
+    Scope.Attributes.Add('autofocus');
+  if not e.AutoComplete then
+  begin
+    Scope.Attributes['autocomplete'] := 'off';
+    Scope.Attributes['aria-autocomplete'] := 'none';
+  end;
+
   Scope.Attributes['value'] := e.Value;
 
   if Context.Schema.Interactive then
     Scope.Attributes.Add('onchange', 'mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')');
 
   Context.Writer.AddShortTag('input', Scope.ToString); //TODO need to generate less spaces
-  if e.HelpText <> '' then
-    Context.Writer.AddTag('div', 'class="form-text"', e.HelpText);
   inherited;
 end;
 
@@ -1543,12 +1572,9 @@ var
 begin
   e := Scope.Element as THTML.TColumn;
   if e.Reverse then
-    Scope.Classes.Add('flex-column-reverse');
-    Scope.Classes.Add('flex-column');
-  if e.Size > 0 then
-    Scope.Classes.Add('col-'+e.Size.ToString)
+    Scope.Classes.Add('flex-column-reverse')
   else
-    Scope.Classes.Add('col');
+    Scope.Classes.Add('flex-column');
   Scope.Classes.Add('m-0');
   inherited;
 end;
@@ -1791,7 +1817,7 @@ begin
   if e.NoDecoration then
     Scope.Classes.Add('text-decoration-none');
   Context.Writer.OpenTag('a', 'href="'+When(e.Location, '#') + '"'+ s + Scope.ToString(True));
-  RenderImageLocation(Context, e.Image);  
+  RenderImageLocation(Context, e.Image);
   Context.Writer.Write(e.Caption);
   inherited;
   Context.Writer.CloseTag('a');
@@ -2085,7 +2111,9 @@ var
   e: THTML.THTMLFormControl;
 begin
   e := Scope.Element as THTML.THTMLFormControl;
-  inherited;    
+  if e.Caption <> '' then
+    Scope.State := Scope.State + [sstSize];
+  inherited;
   Scope.Classes.Add('form-control');
   if e.Required then
     Scope.Attributes.AddProp('required');
@@ -2094,17 +2122,20 @@ end;
 procedure TBSRenderer.THTMLFormControl.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.THTMLFormControl;
+  Sizes: string;
 begin
   e := Scope.Element as THTML.THTMLFormControl;
-
   if e.Caption <> '' then
   begin
-    if lfFloating = e.LabelLayout then
-      Context.Writer.OpenTag('div', 'class="form-floating"')
-    else if lfTop = e.LabelLayout then
-      Context.Writer.OpenTag('div', 'class="row"');
-    Context.Writer.AddTag('label', 'id=' + DQ(e.ID+'_label') + ' class="form-label" for="' + e.ID + '"', e.Caption);
-  end;    
+    Sizes := When(e.Width > 0, 'max-w-' + e.Width.ToString) + When(e.Size > 0, ' col-md-' + e.Size.ToString);
+    if e.LabelLayout = lfFloating then
+      Context.Writer.OpenTag('div', 'class="form-floating' + Sizes + '"')
+    else if e.LabelLayout = lfTop then
+      Context.Writer.OpenTag('div', 'class="col align-items-center' + Sizes + '"')
+    else
+      Context.Writer.OpenTag('div', 'class="d-flex p-1 align-items-center' + Sizes + '"');
+    Context.Writer.AddTag('label', 'id=' + DQ(e.ID+'_label') + ' class="form-label col-form-label me-2 text-nowrap" for="' + e.ID + '"', e.Caption);
+  end;
   inherited;
 end;
 
@@ -2114,7 +2145,7 @@ var
 begin
   inherited;
   e := Scope.Element as THTML.THTMLFormControl;
-  if e.LabelLayout in [lfTop, lfFloating] then
+  if (e.Caption <> '') then
     Context.Writer.CloseTag('div');
 end;
 
@@ -2266,10 +2297,6 @@ begin
   Scope.Classes.Add('m-0');
   Scope.Classes.Remove('d-flex'); //HMMMM
   Scope.Classes.Add('d-grid');
-  if e.Size > 0 then
-    Scope.Classes.Add('col-'+e.Size.ToString)
-  else
-    Scope.Classes.Add('col');
 
   if e.Columns > 0 then
     Scope.Classes.Add('g-cols-'+e.Columns.ToString)
@@ -2381,6 +2408,7 @@ procedure TBSRenderer.TCheckbox.DoEnterRender(Scope: TmnwScope; const Context: T
 begin
   Scope.Classes.Remove('form-check-input');
   Context.Writer.OpenTag('div', Scope.ToString([ssOuter]));
+  inherited;
 end;
 
 procedure TBSRenderer.TCheckbox.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
@@ -2412,6 +2440,8 @@ begin
     Scope.Classes.Add('gap-' + e.Gap.ToString);
   if e.Padding > 0 then
     Scope.Classes.Add('p-' + e.Padding.ToString);
+  if e.Size > 0 then
+    Scope.Classes.Add('col-md-' + e.Size.ToString);
   inherited;
 end;
 
@@ -2426,6 +2456,29 @@ begin
 //  Card := e.Parent as THTML.TCard;
 
   inherited;
+end;
+
+{ TBSRenderer.TBackForm }
+
+procedure TBSRenderer.TLinkButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TLinkButton;
+begin
+  e := Scope.Element as THTML.TLinkButton;
+  inherited;
+  Scope.Classes.Add('btn-secondary');
+  Scope.Classes.Add('btn');
+//  Scope.Attributes['type'] := 'link';
+end;
+
+procedure TBSRenderer.TLinkButton.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TLinkButton;
+begin
+  e := Scope.Element as THTML.TLinkButton;
+  Context.Writer.OpenTag('a', 'href="'+When(e.Location, '#') + '"'+ Scope.ToString(True));
+  inherited;
+  Context.Writer.CloseTag('a');
 end;
 
 initialization
