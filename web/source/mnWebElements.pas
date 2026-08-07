@@ -184,6 +184,7 @@ type
   end;
 
   TDirection = (dirUndefined, dirLeftToRight, dirRightToLeft);
+  TBindType = (btVisible, btEnabled);
 
   //Decorate
   TItemStyle = (
@@ -249,7 +250,7 @@ type
     property Symbol: string read GetSymbol write SetSymbol;
 
     //TODO, Not rendered yet
-    procedure LoadFromFile(const AFileName: string); 
+    procedure LoadFromFile(const AFileName: string);
     property Data: TBytes read FData write SetData;
   end;
 
@@ -1290,6 +1291,9 @@ type
         Shadow: TmnwShadow;
         Hint: string;
         ControlStyle: TItemStyle;
+        //BindName: string;
+        BindGroup: string;
+        BindType: TBindType;
       end;
 
       TmnwLabelLayout = (lfUndefined, lfSide, lfTop, lfFloating);
@@ -1739,10 +1743,11 @@ type
       end;
 
       THeadingStyle = set of (hsMuted);
+      THeadingLevel = 1..6;
 
       THeading = class(THTMLElement)
       public
-        Level: Integer;
+        Level: THeadingLevel;
         Text: string;
         Style: THeadingStyle;
         constructor Create(AParent: TmnwElement; ALevel: Integer; AText: string = ''; AStyle: THeadingStyle = []); reintroduce;
@@ -2253,6 +2258,7 @@ const
   woFullTag = [woOpenIndent, woCloseIndent];
 
 function DirectionToStr(Direction: TDirection): string;
+function BindTypeToStr(BindType: TBindType): string;
 function ThemeToStr(Theme: TTheme): string;
 
 //Short functions
@@ -2292,6 +2298,14 @@ begin
     Result := 'rtl'
   else if Direction = dirLeftToRight then
     Result := 'ltr';
+end;
+
+function BindTypeToStr(BindType: TBindType): string;
+begin
+  case BindType of
+    btVisible: Result := 'visible';
+    btEnabled: Result := 'enabled';
+  end;
 end;
 
 function ThemeToStr(Theme: TTheme): string;

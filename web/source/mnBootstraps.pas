@@ -867,6 +867,13 @@ begin
     ShadowBottom: Scope.Classes.Add('shadow-bottom');
     else ;
   end;
+
+  if e.BindGroup <> '' then
+  begin
+    Scope.Attributes['data-bind-group'] := e.BindGroup;
+    Scope.Attributes['data-bind-type'] := BindTypeToStr(e.BindType);
+  end;
+
   inherited;
 end;
 
@@ -1134,8 +1141,8 @@ var
   Tag: string;
 begin
   e := Scope.Element as THTML.THeading;
-  if (e.Size >= 1) and (e.Size <= 6) then
-    Tag := 'h' + e.Size.ToString
+  if (e.Level >= 1) and (e.Level <= 6) then
+    Tag := 'h' + IntToStr(e.Level)
   else
     Tag := 'h3';
   Context.Writer.OpenInlineTag(Tag, Scope.ToString);
