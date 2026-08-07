@@ -929,10 +929,7 @@ end;
 { TBSRenderer.TFooterHTML }
 
 procedure TBSRenderer.TFooter.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TFooter;
 begin
-  e := Scope.Element as THTML.TFooter;
   Scope.Classes.Add('text-center');
   Context.Writer.OpenTag('footer', Scope.ToString);
   inherited;
@@ -942,10 +939,7 @@ end;
 { TBSRenderer.TToast }
 
 procedure TBSRenderer.TToast.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TToast;
 begin
-  e := Scope.Element as THTML.TToast;
   Context.Writer.OpenTag('div', 'aria-live="polite" aria-atomic="true"');
   Context.Writer.OpenTag('div', 'id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-2" style="z-index:1056;"');
   inherited;
@@ -1157,10 +1151,7 @@ var
   Tag: string;
 begin
   e := Scope.Element as THTML.THeading;
-  if (e.Level >= 1) and (e.Level <= 6) then
-    Tag := 'h' + IntToStr(e.Level)
-  else
-    Tag := 'h3';
+  Tag := 'h' + IntToStr(e.Level);
   Context.Writer.OpenInlineTag(Tag, Scope.ToString);
   if e.Text <> '' then
     Context.Writer.Write(e.Text);
@@ -1246,10 +1237,7 @@ end;
 { TBSRenderer.TInputHTML }
 
 procedure TBSRenderer.TInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TInput;
 begin
-  e := Scope.Element as THTML.TInput;
   inherited;
 end;
 
@@ -1303,10 +1291,7 @@ begin
 end;
 
 procedure TBSRenderer.TImageMemory.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TImageMemory;
 begin
-  e := Scope.Element as THTML.TImageMemory;
   Context.Writer.AddShortTag('img', Scope.ToString);
   inherited;
 end;
@@ -1913,10 +1898,7 @@ begin
 end;
 
 procedure TBSRenderer.TImageFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TImageFile;
 begin
-  e := Scope.Element as THTML.TImageFile;
   Context.Writer.AddShortTag('img', Scope.ToString);
   inherited;
 end;
@@ -1924,10 +1906,7 @@ end;
 { TBSRenderer.TNavTools }
 
 procedure TBSRenderer.TNavTools.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TNavTools;
 begin
-  e := Scope.Element as THTML.TNavTools;
   Scope.Classes.Add('navbar-nav ms-auto');
   inherited;
 end;
@@ -1993,10 +1972,7 @@ end;
 { TBSRenderer.TMultilineCode }
 
 procedure TBSRenderer.TMultilineCode.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TCode;
 begin
-  e := Scope.Element as THTML.TCode;
   Context.Writer.OpenTag('pre');
   inherited;
   Context.Writer.CloseTag('pre');
@@ -2047,10 +2023,7 @@ begin
 end;
 
 procedure TBSRenderer.TGroup.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TGroup;
 begin
-  e := Scope.Element as THTML.TGroup;
   Scope.Classes.Add('list-group');
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
@@ -2287,10 +2260,7 @@ begin
 end;
 
 procedure TBSRenderer.THiddenInput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.THiddenInput;
 begin
-  e := Scope.Element as THTML.THiddenInput;
   Context.Writer.AddShortTag('input', Scope.ToString); 
   inherited;
 end;
@@ -2486,10 +2456,7 @@ end;
 { TBSRenderer.TBackForm }
 
 procedure TBSRenderer.TLinkButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
-var
-  e: THTML.TLinkButton;
 begin
-  e := Scope.Element as THTML.TLinkButton;
   inherited;
   Scope.Classes.Add('btn-secondary');
   Scope.Classes.Add('btn');
