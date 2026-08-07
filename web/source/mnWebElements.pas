@@ -1182,6 +1182,9 @@ type
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
     procedure CleanSchemas;
+
+    procedure DoCompose(const Context: TmnwContext); virtual;
+
   public
     Started: Boolean;
 
@@ -1535,10 +1538,22 @@ type
         Columns: TColSize;
       end;
 
-      TRow = class(THTMLLayout)
+      TBar = class(THTMLLayout)
+      protected
+        procedure Created; override;
       public
         Fixed: TmnwFixed;
-        NoWrap: Boolean;
+        Wrap: Boolean;
+        AlignItems: TmnwAlign;
+        JustifyItems: TmnwJustify;
+      end;
+
+      TRow = class(THTMLLayout)
+      protected
+        procedure Created; override;
+      public
+        Fixed: TmnwFixed;
+        Wrap: Boolean;
         AlignItems: TmnwAlign;
         JustifyItems: TmnwJustify;
       end;
@@ -1547,12 +1562,6 @@ type
       public
         Fixed: TmnwFixed;
         Reverse: Boolean;
-      end;
-
-      TBar = class(THTMLLayout)
-      protected
-        procedure Created; override;
-      public
       end;
 
       THTMLItem = class abstract(THTMLControl)
@@ -1605,7 +1614,7 @@ type
 
       { TCard }
 
-      TPanelMode = (emdColumn, emdRow);
+      TPanelMode = (emdInline, emdColumn, emdRow);
 
       TCardHeader = class(THTMLElement)
       public
@@ -3215,6 +3224,11 @@ begin
   FreeAndNil(FRegistered);
   FreeAndNil(FLock);
   inherited;
+end;
+
+procedure TmnwWeb.DoCompose(const Context: TmnwContext);
+begin
+
 end;
 
 procedure TmnwWeb.Start;
@@ -5269,7 +5283,7 @@ end;
 procedure THTML.TBar.Created;
 begin
   inherited;
-  Padding := 1;
+//  Padding := 1;
 end;
 
 { THTML.TCard }
@@ -6208,8 +6222,9 @@ begin
 
       CallScript := 'mnw.formPost(event)';
 
-      with TInput.Create(This) do
+      with TUsername.Create(This) do
       begin
+        LabelLayout := lfFloating;
         ID := 'username';
         Name := 'username';
         Caption := Context._T('username', 'Username');
@@ -6220,6 +6235,7 @@ begin
 
       with TPassword.Create(This) do
       begin
+        LabelLayout := lfFloating;
         ID := 'password';
         Name := 'password';
         Caption := Context._T('password', 'Password');
@@ -6232,7 +6248,7 @@ begin
       begin
         THiddenInput.Create(This, 'JWTMode', 'True');
       end;
-      
+
       Submit.Caption := Context._T('submit',  'Submit');
       Reset.Caption := Context._T('reset',  'Reset');
       Cancel.Caption := Context._T('cancel', 'Cancel') ;
@@ -7020,6 +7036,7 @@ end;
 procedure THTML.THTMLLayout.Created;
 begin
   inherited;
+//  Gap := 1;
 end;
 
 { THTML.TBox }
@@ -7051,6 +7068,14 @@ constructor TElementClass.Create(AName: string; AArea: TAttributeArea);
 begin
   Name := AName;
   Area := AArea;
+end;
+
+{ THTML.TRow }
+
+procedure THTML.TRow.Created;
+begin
+  inherited;
+  Wrap := True;
 end;
 
 initialization

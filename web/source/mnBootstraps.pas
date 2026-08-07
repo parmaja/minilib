@@ -235,6 +235,13 @@ type
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      { TBar }
+
+      TBar = class(THTMLLayout)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       { TRow }
 
       TRow = class(THTMLLayout)
@@ -248,13 +255,6 @@ type
       TColumn = class(THTMLLayout)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
-      end;
-
-      { TBar }
-
-      TBar = class(THTMLLayout)
-      protected
         procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
@@ -580,6 +580,9 @@ function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean = False): string;
 function BSSizeToStr(const Prefix: string; Width: TWidthSize; WithSpace: Boolean = False): string;
 function BSControlStyleToStr(const Prefix: string; Style: TItemStyle; WithSpace: Boolean = False): string;
 
+procedure AddRowClasses(var Classes: TElementClasses; Wrap: Boolean = True);
+procedure AddColumnClasses(var Classes: TElementClasses);
+
 implementation
 
 function BSRowAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean): string;
@@ -648,6 +651,21 @@ begin
     Result := Prefix + Result;
   if WithSpace and (Result <> '') then
     Result := ' ' + Result;
+end;
+
+procedure AddRowClasses(var Classes: TElementClasses; Wrap: Boolean);
+begin
+  Classes.Add('d-flex', ssInner);
+  if Wrap then
+    Classes.Add('flex-wrap', ssInner)
+  else
+    Classes.Add('flex-nowrap', ssInner);
+end;
+
+procedure AddColumnClasses(var Classes: TElementClasses);
+begin
+  Classes.Add('d-flex', ssInner);
+  Classes.Add('flex-column', ssInner);
 end;
 
 function TmnwBSBoundingHelper.IsUniform: Boolean; 
@@ -822,12 +840,12 @@ begin
     RegisterRenderer(THTML.TCollapseCaption, TCollapseCaption);
     RegisterRenderer(THTML.TForm, TForm);
     RegisterRenderer(THTML.TBox, TBox);
+    RegisterRenderer(THTML.TBar, TBar);
     RegisterRenderer(THTML.TRow, TRow);
     RegisterRenderer(THTML.TColumn, TColumn);
     RegisterRenderer(THTML.TPanel, TPanel);
-    RegisterRenderer(THTML.TCode, TCode);  
-    RegisterRenderer(THTML.TMultilineCode, TMultilineCode);    
-    RegisterRenderer(THTML.TBar, TBar);
+    RegisterRenderer(THTML.TCode, TCode);
+    RegisterRenderer(THTML.TMultilineCode, TMultilineCode);
 
     RegisterRenderer(THTML.THTMLComponent, THTMLComponent);
     RegisterRenderer(THTML.THTMLFormControl, THTMLFormControl);
@@ -993,25 +1011,23 @@ begin
     Scope.Classes.Append('top-50 start-50 translate-middle');
   end;
 
-  if e.Mode = emdColumn then
+  if e.Mode = emdInline then
   begin
-    Scope.Classes.Add('flex-column', ssInner);
+    Scope.Classes.Add('d-inline-block', ssInner);
+  end
+  else if e.Mode = emdColumn then
+  begin
+    AddColumnClasses(Scope.Classes);
     if e.AlignItems > alDefault then
-    begin
-      Scope.Classes.Add('d-flex', ssInner);
       Scope.Classes.Add(BSRowAlignToStr('align-items-', e.AlignItems), ssInner);
-    end;
   end
   else if e.Mode = emdRow then
   begin
-    Scope.Classes.Add('d-flex', ssInner);
-    Scope.Classes.Add('flex-row', ssInner);
-    if e.AlignItems > alDefault then
-    begin
-      Scope.Classes.Add(BSRowAlignToStr('justify-content-', e.AlignItems), ssInner);
-    end;
-    if e.NoWrap then
-      Scope.Classes.Add('flex-md-nowrap', ssInner);
+    AddRowClasses(Scope.Classes);
+//    if e.AlignItems > alDefault then
+//      Scope.Classes.Add(BSRowAlignToStr('justify-content-', e.AlignItems), ssInner);
+//    if e.NoWrap then
+//      Scope.Classes.Add('flex-md-nowrap', ssInner);
   end;
 //  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));
   inherited;
@@ -1547,8 +1563,11 @@ var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
-  if e.NoWrap then
-    Scope.Classes.Add('flex-md-nowrap', ssInner);
+  Scope.Classes.Add('row', ssInner);
+  AddRowClasses(Scope.Classes, e.Wrap);
+//  Scope.Classes.Add('row');
+//  Scope.Classes.Add('flex-lg-nowrap');
+//  Scope.Classes.Add('d-block');
   Scope.Classes.Add(BSRowAlignToStr('align-items-', e.AlignItems), ssInner);
   Scope.Classes.Add(BSJustifyToStr('justify-content-', e.JustifyItems), ssInner);
   inherited;
@@ -1559,8 +1578,7 @@ var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
-  Scope.Classes.Add('row');
-  Scope.Classes.Add('flex-row');
+//  Scope.Classes.Add('row');
   Scope.Classes.Add('m-0');    
 
   Scope.Classes.Add(BSFixedToStr(e.Fixed));
@@ -1578,11 +1596,11 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
+  Scope.Classes.Add('d-flex');
   if e.Reverse then
     Scope.Classes.Add('flex-column-reverse')
   else
     Scope.Classes.Add('flex-column');
-  Scope.Classes.Add('m-0');
   inherited;
 end;
 
@@ -1591,7 +1609,8 @@ var
   e: THTML.TColumn;
 begin
   e := Scope.Element as THTML.TColumn;
-  //Scope.Classes.Add(BSColumnAlignToStr('', e.ContentAlign));    
+  Scope.Classes.Add('m-0');
+  //Scope.Classes.Add(BSColumnAlignToStr('', e.ContentAlign));
   if e.Fixed <> fixedDefault then
     Scope.Classes.Add(BSFixedToStr(e.Fixed));
 {  if e.Align <> alignDefault then
@@ -1608,8 +1627,7 @@ var
   e: THTML.TBar;
 begin
   e := Scope.Element as THTML.TBar;
-  Scope.Classes.Add('bar');
-  //Scope.Classes.Add('bg-body');
+  AddRowClasses(Scope.Classes, e.Wrap);
   Scope.Classes.Add('align-items-center');
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
@@ -2442,7 +2460,7 @@ var
   e: THTML.THTMLLayout;
 begin
   e := Scope.Element as THTML.THTMLLayout;
-  Scope.Classes.Add('d-flex');
+//  Scope.Classes.Add('d-flex');
   if e.Gap > 0 then
     Scope.Classes.Add('gap-' + e.Gap.ToString);
   if e.Padding > 0 then
