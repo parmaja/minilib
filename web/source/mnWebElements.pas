@@ -160,7 +160,6 @@ type
   end;
 
   TDirection = (dirUndefined, dirLeftToRight, dirRightToLeft);
-  TBindType = (btVisible, btEnabled);
 
   //Decorate
   TItemStyle = (
@@ -267,7 +266,7 @@ type
   public
     function ToString(Area: TAttributeAreas = [ssOuter, ssInner]): string; reintroduce;
     function GetText: string;
-    function AddProp(const Name: string): TmnwAttribute;
+    function AddProp(const Name: string; Area: TAttributeArea = ssOuter): TmnwAttribute;
     function Add(const Name: string; const Value: string = ''; Area: TAttributeArea = ssOuter): TmnwAttribute; overload;
     procedure Delete(const Name: string); overload;
     function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
@@ -604,11 +603,21 @@ type
         szVeryVeryLarge
     );
 
-
   TWidth = 0..6;
 
   TWidthHelper = record helper for TWidth
     function ToString: string;
+  end;
+
+  TmnwBindAction = (bindVisible, bindEnabled);
+
+  TmnwBind = record
+    //Show Hide, caller can have more than one name to show and hide others, "name1,name2"
+    Name: string;
+    //Group name, only under this group
+    Group: string;
+    //What action to do
+    Action: TmnwBindAction;
   end;
 
   //Keep it as DoRespond form
@@ -982,7 +991,7 @@ type
     //* Content render
     //Scope will not inherited to descents child
     procedure DoEnterRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
-    procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); virtual;
+    procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
     procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); virtual;
 
     property Renderer: TmnwRenderer read FRenderer;
@@ -1062,41 +1071,41 @@ type
 
       TComment = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;   
 
       { TJSScript }
 
       TJSScript = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TFile }
 
       TFile = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TJSFile }
 
       TJSFile = class(TFile)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TCSSFile }
 
       TCSSFile = class(TFile)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       //* Write at render time
       TOutput = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TCompose }
@@ -1104,7 +1113,7 @@ type
       //* Dynamic compose at render time with fake parent
       TCompose = class(THTMLElement)
       protected
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TIntervalCompose }
@@ -1119,7 +1128,7 @@ type
       TDocument = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TBody }
@@ -1127,7 +1136,7 @@ type
       TBody = class(THTMLElement)
       protected
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;        
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
         procedure DoLeaveRender(Scope: TmnwScope; const Context: TmnwContext); override;        
       end;
     
@@ -1305,9 +1314,7 @@ type
         Shadow: TmnwShadow;
         Hint: string;
         ControlStyle: TItemStyle;
-        //BindName: string;
-        BindGroup: string;
-        BindType: TBindType;
+        Bind: TmnwBind;
       end;
 
       TmnwLabelLayout = (lfUndefined, lfSide, lfTop, lfFloating);
@@ -1614,7 +1621,7 @@ type
 
       { TCard }
 
-      TPanelMode = (emdInline, emdColumn, emdRow);
+      TPanelMode = (emdUndefined, emdColumn, emdRow);
 
       TCardHeader = class(THTMLElement)
       public
@@ -2278,7 +2285,7 @@ const
   woFullTag = [woOpenIndent, woCloseIndent];
 
 function DirectionToStr(Direction: TDirection): string;
-function BindTypeToStr(BindType: TBindType): string;
+function BindActionToStr(BindType: TmnwBindAction): string;
 function ThemeToStr(Theme: TTheme): string;
 
 //Short functions
@@ -2286,10 +2293,11 @@ function ThemeToStr(Theme: TTheme): string;
 function SQ(const s: string): string; inline;
 //Double Quote
 function DQ(const s: string): string; inline;
+
 function Attr(const s: string): string; overload; inline;
 function Attr(Value: Integer): string; overload; inline;
 
-//Name Value with Quote 
+//Name Value with Quote
 function NV(const Name, Value: string): string; overload; inline;
 function NV(const Name, Value, Default: string): string; overload; inline;
 
@@ -2320,20 +2328,20 @@ begin
     Result := 'ltr';
 end;
 
-function BindTypeToStr(BindType: TBindType): string;
+function BindActionToStr(BindType: TmnwBindAction): string;
 begin
   case BindType of
-    btVisible: Result := 'visible';
-    btEnabled: Result := 'enabled';
+    bindVisible: Result := 'visible';
+    bindEnabled: Result := 'enabled';
   end;
 end;
 
 function ThemeToStr(Theme: TTheme): string;
 begin
   case Theme of
-  themeUndefined: Result := '';
-  themeLight: Result := 'light';
-  themeDark: Result := 'dark';
+    themeUndefined: Result := '';
+    themeLight: Result := 'light';
+    themeDark: Result := 'dark';
   end;
 end;
 
@@ -2369,9 +2377,9 @@ end;
 function NV(const Name, Value, Default: string): string; overload; inline;
 begin
   if Value <> '' then
-    Result := ' ' + DQ(Name) + '=' + DQ(Value)
+    Result := ' ' + Name + '=' + DQ(Value)
   else if Default <> '' then
-    Result := ' ' + DQ(Name) + '=' + DQ(Default)
+    Result := ' ' + Name + '=' + DQ(Default)
   else
     Result := '';
 end;
@@ -2895,10 +2903,10 @@ begin
   Result.Area := Area;
 end;
 
-function TmnwAttributes.AddProp(const Name: string): TmnwAttribute;
+function TmnwAttributes.AddProp(const Name: string; Area: TAttributeArea = ssOuter): TmnwAttribute;
 begin
-  Result := Add(Name);
-  Result.IsProperty := True;  
+  Result := Add(Name, '', Area);
+  Result.IsProperty := True;
 end;
 
 procedure TmnwAttributes.Append(AAttributes: TmnwAttributes);
@@ -2974,7 +2982,7 @@ procedure TmnwElementRenderer.DoEnterRender(Scope: TmnwScope; const Context: Tmn
 begin
 end;
 
-procedure TmnwElementRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwElementRenderer.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   if CanRenderChilds then
     RenderChilds(Scope, Context);
@@ -3045,9 +3053,9 @@ begin
   Scope.Classes := Scope.Element.ElementClass;
 
   if Scope.Element.ID <> '' then
-    Scope.Attributes['id'] := Scope.Element.ID;
+    Scope.Attributes.add('id', Scope.Element.ID, ssInner);
   if Scope.Element.Name <> '' then
-    Scope.Attributes['name'] := Scope.Element.Name;
+    Scope.Attributes.add('name', Scope.Element.Name, ssInner);
 
   DoCollectAttributes(Scope, Context);
 end;
@@ -3114,6 +3122,19 @@ begin
     Result := nil;
 end;
 
+function TmnwElementRenderers.Replace(AElementClass: TmnwElementClass; ReplaceWith: TmnwElementRendererRegister): Integer;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    if AElementClass = Items[i].ElementClass then
+    begin
+      Items[i] := ReplaceWith;
+      Exit(i);
+    end;
+  raise Exception.Create('Cannot replace renderer for ' + AElementClass.ClassName);
+end;
+
 { TmnwSchema.TmnwElementRenderers }
 
 function TmnwElementRenderers.RegisterRenderer(AElementClass: TmnwElementClass; ARendererClass: TmnwElementRendererClass; ReplaceIfExists: Boolean): TmnwElementRendererRegister;
@@ -3130,10 +3151,10 @@ begin
 
   if not AElementClass.InheritsFrom(TmnwElement) then
     raise Exception.Create('Element should inherited from THTML');
-      
+
   if not ARendererClass.InheritsFrom(TmnwElementRenderer) then
     raise Exception.Create('Renderer should inherited from TmnwElementRenderer');
-      
+
   Result := Find(AElementClass);
   if Result <> nil then
   begin
@@ -3143,7 +3164,7 @@ begin
       Result.Index := Replace(AElementClass, Result);
     end
     else
-      raise Exception.Create('You can''t re-register same class: ' + AElementClass.ClassName);
+      raise Exception.Create('You can''t re-register same class: ' + AElementClass.ClassName + ' with ' + Result.ElementClass.ClassName);
   end;
   
   if Result = nil then
@@ -3152,19 +3173,6 @@ begin
     Result.Index := Add(Result);
   end;
 end;
-
-function TmnwElementRenderers.Replace(AElementClass: TmnwElementClass; ReplaceWith: TmnwElementRendererRegister): Integer;
-var
-  i: Integer;
-begin
-  for i := 0 to Count - 1 do
-    if AElementClass = Items[i].ElementClass then
-    begin
-      Items[i] := ReplaceWith;
-      Exit(i);
-    end;
-  raise Exception.Create('Cannot replace renderer for ' + AElementClass.ClassName);
-end;       
 
 constructor TmnwElementRenderers.Create;
 begin
@@ -6189,7 +6197,7 @@ end;
 
 function THTML.TImageFile.GetRoute: String;
 begin
-  Result := ExtractFileName(FFileName);
+    Result := ExtractFileName(FFileName);
   if Result = '' then
     Result := inherited GetRoute;
 end;
@@ -6558,7 +6566,7 @@ end;
 
 { TmnwHTMLRenderer.TComment }
 
-procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TComment.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.TComment;
 begin
@@ -6569,7 +6577,7 @@ end;
 
 { TmnwHTMLRenderer.TFile }
 
-procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TFile.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.TFile;
 begin
@@ -6581,7 +6589,7 @@ end;
 
 { TmnwHTMLRenderer.TJSFile }
 
-procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TJSFile.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.TJSFile;
   src: string;
@@ -6604,7 +6612,7 @@ end;
 
 { TmnwHTMLRenderer.TCSSFile }
 
-procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TCSSFile.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.TCSSFile;
   src: string;
@@ -6627,7 +6635,7 @@ end;
 
 { TmnwHTMLRenderer.TCompose }
 
-procedure TmnwHTMLRenderer.TCompose.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TCompose.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   Context.Writer.OpenTag('div', Scope.Attributes.ToString);
   inherited;
@@ -6660,7 +6668,7 @@ begin
     Scope.Attributes['style'] := 'font-family: '+SQ(e.FontName)+'!important;';    
 end;
 
-procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TBody.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 begin
   inherited;  
 end;
@@ -6682,7 +6690,7 @@ begin
   Scope.Attributes['lang'] := When(Context.Language <> '', Context.Language, 'en');
 end;
 
-procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TDocument.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.TDocument;
   aLibrary: TmnwLibrary;
@@ -6869,7 +6877,7 @@ end;
 
 { TmnwHTMLRenderer.TJSScript }
 
-procedure TmnwHTMLRenderer.TJSScript.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TJSScript.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.TJSScript;
 begin
@@ -6999,7 +7007,7 @@ end;
 }
 { TmnwHTMLRenderer.TOutput }
 
-procedure TmnwHTMLRenderer.TOutput.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TmnwHTMLRenderer.TOutput.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.TOutput;
 begin

@@ -366,6 +366,10 @@ svg {
     width: calc(var(--size-unit) * 8);
 }
 
+.p-childs :where(*) {
+    padding-block-start: var(--gap-unit);
+}
+
 /** Gaps **/
 
 .m-childs > * + * {
@@ -638,10 +642,12 @@ aside{
 #mnw-confirm-modal .modal-footer .btn {
     min-width: 5rem;
 }
-/*
+
 .form-label {
-    min-width: 3rem;
-}*/
+    min-width: 2.4rem;
+    flex-shrink: 0;
+}
+
 /* override bootstrap variables, move to mnwBootstrap.css
 .card-header {
     --bs-card-cap-padding-y: 0.3rem;
