@@ -888,10 +888,11 @@ begin
     else ;
   end;
 
+  if e.Bind.Name <> '' then
+    Scope.Attributes['data-bind-name'] := e.Bind.Name;
+
   if e.Bind.Group <> '' then
   begin
-    if e.Bind.Name <> '' then
-      Scope.Attributes['data-bind-name'] := e.Bind.Name;
     Scope.Attributes['data-bind-group'] := e.Bind.Group;
     Scope.Attributes['data-bind-action'] := BindActionToStr(e.Bind.Action);
   end;

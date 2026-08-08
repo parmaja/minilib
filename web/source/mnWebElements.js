@@ -406,6 +406,64 @@ mnw.init_accordions = function()
   });
 }
 
+/* Binding (Bind property in TmnwElement) */
+
+//A TCheckBox or TSelect with data-bind-group toggles the visibility (d-none)
+//of every other element that has the same data-bind-group, itself is never changed.
+mnw.apply_binding = function(trigger)
+{
+  const group = trigger.getAttribute('data-bind-group');
+  if (!group) return;
+  const action = trigger.getAttribute('data-bind-action') || 'visible';
+
+  //The attribute may sit on a wrapper element (i.e. checkbox outer div)
+  const checkbox = trigger.matches('input[type="checkbox"]')
+    ? trigger
+    : trigger.querySelector('input[type="checkbox"]');
+  const select = trigger.matches('select')
+    ? trigger
+    : trigger.querySelector('select');
+
+  const checked = checkbox ? checkbox.checked : null;
+  const value = select ? select.value : null;
+
+  document.querySelectorAll('[data-bind-group="' + group + '"]').forEach(target => {
+    if (target === trigger) return;
+
+    let visible = false;
+    if (checkbox)
+      visible = checked;
+    else if (select)
+      visible = (target.getAttribute('data-bind-name') === value);
+
+    if (action === 'enabled')
+    {
+      target.querySelectorAll('input, select, textarea, button').forEach(c => c.disabled = !visible);
+    }
+    else
+    {
+      target.classList.toggle('d-none', !visible);
+    }
+  });
+};
+
+mnw.init_bindings = function()
+{
+  document.addEventListener('change', function(e) {
+    const el = e.target;
+    if (!el.matches('input[type="checkbox"], select')) return;
+    const trigger = el.closest('[data-bind-group]');
+    if (trigger)
+      mnw.apply_binding(trigger);
+  });
+
+  //Apply the initial state of every trigger
+  document.querySelectorAll('[data-bind-group]').forEach(el => {
+    if (el.matches('input[type="checkbox"], select') || el.querySelector('input[type="checkbox"], select'))
+      mnw.apply_binding(el);
+  });
+};
+
 document.addEventListener('DOMContentLoaded', function()
 {
   const el = document.querySelector('.version');
@@ -413,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function()
 
   //mnw.init_zoom(); moved to html
   mnw.init_accordions();
+  mnw.init_bindings();
 });
 
 /* Confirm Modal */
