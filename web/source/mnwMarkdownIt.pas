@@ -75,7 +75,7 @@ type
   TMarkdownItRenderer = class(TBSRenderer.THTMLControl)
   protected
     procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-    procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+    procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
   end;
 
   { TMarkdownIt_Library }
@@ -120,7 +120,7 @@ begin
   //Scope.Classes.Add('p-1');
 end;
 
-procedure TMarkdownItRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TMarkdownItRenderer.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: TMarkdownIt;
   srcID: string;

@@ -119,7 +119,7 @@ type
   TRapiDocRenderer = class(TBSRenderer.THTMLControl)
   protected
     procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-    procedure DoInnerRender(Scope: TmnwScope; Context: TmnwContext); override;
+    procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
   end;
 
   { TRapiDoc_Library }
@@ -160,7 +160,7 @@ begin
   Scope.Classes.Add('m-0');
 end;
 
-procedure TRapiDocRenderer.DoInnerRender(Scope: TmnwScope; Context: TmnwContext);
+procedure TRapiDocRenderer.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: TRapiDocControl;
   aSpecURL: string;
