@@ -520,6 +520,13 @@ type
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
+      { TMaskInput }
+
+      TMaskInput = class(TInput)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
       { TSelect }
 
       TSelect = class(THTMLFormControl)
@@ -822,6 +829,7 @@ begin
     RegisterRenderer(THTML.TDateInput, TDateInput);
     RegisterRenderer(THTML.TTimeInput, TTimeInput);
     RegisterRenderer(THTML.TDateTimeInput, TDateTimeInput);
+    RegisterRenderer(THTML.TMaskInput, TMaskInput);
     RegisterRenderer(THTML.TSelect, TSelect);
     RegisterRenderer(THTML.TTextArea, TTextArea);
     RegisterRenderer(THTML.TCheckbox, TCheckbox);
@@ -2335,6 +2343,18 @@ procedure TBSRenderer.TTimeInput.DoCollectAttributes(var Scope: TmnwScope; Conte
 begin
   inherited;
   Scope.Attributes['type'] := 'time';
+end;
+
+{ TBSRenderer.TMaskInput }
+
+procedure TBSRenderer.TMaskInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TMaskInput;
+begin
+  inherited;
+  e := Scope.Element as THTML.TMaskInput;
+  if e.Format <> '' then
+    Scope.Attributes['data-mask'] := e.Format;
 end;
 
 { TBSRenderer.TSelect }

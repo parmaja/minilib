@@ -472,7 +472,219 @@ document.addEventListener('DOMContentLoaded', function()
   //mnw.init_zoom(); moved to html
   mnw.init_accordions();
   mnw.init_bindings();
+  mnw.init_masks();
 });
+
+/* Masked Inputs (data-mask attribute) */
+
+//'9' required digit, '0' optional digit, '#' optional digit, 'A' required letter,
+//'*' required alphanumeric, '.' and ',' optional decimal separator slots
+mnw.maskChars = {
+  '9': /[0-9]/,
+  '0': /[0-9]/,
+  '#': /[0-9]/,
+  'A': /[A-Za-z]/,
+  '*': /[A-Za-z0-9]/,
+  '.': /[.,]/,
+  ',': /[.,]/
+};
+
+mnw.maskPresets = {
+  date:     '99/99/9999',
+  time:     '00:00',
+  datetime: '99/99/9999 00:00',
+  phone:    '(999) 999-9999',
+  number:   '999999.99',
+  zip:      '99999-9999'
+};
+
+mnw.mask_slots = function(pattern)
+{
+  const slots = [];
+  for (const ch of pattern)
+  {
+    if (mnw.maskChars[ch])
+      slots.push({ char: ch, optional: (ch === '0' || ch === '#' || ch === '.' || ch === ',') });
+    else
+      slots.push({ literal: ch });
+  }
+  return slots;
+};
+
+mnw.mask_pattern = function(input)
+{
+  let pattern = input.getAttribute('data-mask');
+  if (!pattern) return '';
+  if (mnw.maskPresets[pattern])
+    pattern = mnw.maskPresets[pattern];
+  return pattern;
+};
+
+//The index of the decimal separator slot ('.' or ','), -1 when the pattern has none
+mnw.mask_sep_slot = function(pattern)
+{
+  const slots = mnw.mask_slots(pattern);
+  for (let i = 0; i < slots.length; i++)
+    if (slots[i].char === '.' || slots[i].char === ',') return i;
+  return -1;
+};
+
+//Strip the literals and return the raw typed value
+mnw.unmask_value = function(value, pattern)
+{
+  const slots = mnw.mask_slots(pattern);
+  const sepSi = mnw.mask_sep_slot(pattern);
+  let raw = '';
+  let si = 0;
+  for (const ch of value)
+  {
+    while (si < slots.length && slots[si].literal !== undefined) si++;
+    if (si >= slots.length) break;
+    if (sepSi >= 0 && si < sepSi && (ch === '.' || ch === ',') &&
+        raw.indexOf('.') < 0 && raw.indexOf(',') < 0)
+    {
+      //a separator typed before its position jumps to the separator slot
+      raw += ch;
+      si = sepSi + 1;
+      continue;
+    }
+    if (mnw.maskChars[slots[si].char].test(ch))
+    {
+      raw += ch;
+      si++;
+    }
+  }
+  return raw;
+};
+
+//Build the formatted value from a raw value
+mnw.mask_value = function(raw, pattern)
+{
+  const slots = mnw.mask_slots(pattern);
+  const sepSi = mnw.mask_sep_slot(pattern);
+
+  //split the raw value at its separator, the integer part fills the slots
+  //before the separator slot and the fraction part the slots after it
+  let intRaw = raw;
+  let fracRaw = '';
+  let sepChar = '';
+  if (sepSi >= 0)
+  {
+    const sepIdx = raw.search(/[.,]/);
+    if (sepIdx >= 0)
+    {
+      intRaw = raw.substring(0, sepIdx);
+      fracRaw = raw.substring(sepIdx + 1);
+      sepChar = raw[sepIdx];
+    }
+  }
+
+  let out = '';
+  let ri = 0;
+  let part = intRaw;
+  let si = 0;
+  while (si < slots.length)
+  {
+    const slot = slots[si];
+    if (slot.literal !== undefined)
+    {
+      //only show the literal when there are still chars to type after it
+      if (ri < part.length)
+        out += slot.literal;
+      si++;
+      continue;
+    }
+    if (si === sepSi)
+    {
+      if (sepChar)
+      {
+        out += sepChar;
+        ri = 0;
+        part = fracRaw;
+      }
+      si++;
+      continue;
+    }
+    if (ri >= part.length)
+    {
+      si++;
+      continue;
+    }
+    const ch = part[ri];
+    if (mnw.maskChars[slot.char].test(ch))
+    {
+      out += ch;
+      ri++;
+      si++;
+    }
+    else if (slot.optional)
+      si++; //skip the slot, keep the char for the next slot
+    else
+      ri++; //drop the char, retry the slot
+  }
+  return out;
+};
+
+mnw.mask_caret = function(pattern, oldValue, start, masked)
+{
+  //caret was at the end, keep it at the end
+  if (start >= oldValue.length)
+    return masked.length;
+  const rawBefore = mnw.unmask_value(oldValue.substring(0, start), pattern);
+  const slots = mnw.mask_slots(pattern);
+  let ri = 0;
+  let pos = 0;
+  for (let si = 0; si < slots.length; si++)
+  {
+    const slot = slots[si];
+    if (slot.literal !== undefined)
+    {
+      pos++;
+      continue;
+    }
+    if (ri >= rawBefore.length) break;
+    ri++;
+    pos++;
+  }
+  //skip the literals that follow the last typed char
+  while (pos < masked.length && slots[pos] && slots[pos].literal !== undefined)
+    pos++;
+  return Math.min(pos, masked.length);
+};
+
+mnw.apply_mask = function(input)
+{
+  if (input._mnwMasked) return;
+  input._mnwMasked = true;
+  const pattern = mnw.mask_pattern(input);
+  if (pattern)
+  {
+    //format the initial value, digits-only masks get a numeric keyboard
+    const masked = mnw.mask_value(mnw.unmask_value(input.value, pattern), pattern);
+    if (masked !== input.value)
+      input.value = masked;
+    if (!/[A*]/.test(pattern) && !input.hasAttribute('inputmode'))
+      input.setAttribute('inputmode', 'numeric');
+  }
+  input.addEventListener('input', function(e)
+  {
+    const el = e.target;
+    const pattern = mnw.mask_pattern(el);
+    if (!pattern) return;
+    const start = el.selectionStart || 0;
+    const oldValue = el.value;
+    const masked = mnw.mask_value(mnw.unmask_value(oldValue, pattern), pattern);
+    if (masked === oldValue) return;
+    el.value = masked;
+    const pos = mnw.mask_caret(pattern, oldValue, start, masked);
+    try { el.setSelectionRange(pos, pos); } catch (err) { /* ignore */ }
+  });
+};
+
+mnw.init_masks = function()
+{
+  document.querySelectorAll('input[data-mask]').forEach(mnw.apply_mask);
+};
 
 /* Confirm Modal */
 

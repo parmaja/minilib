@@ -1982,6 +1982,21 @@ type
       public
       end;
 
+      { TMaskInput }
+
+      //* A text input that formats the value while typing
+      //* Format is rendered as data-mask attribute, e.g. '99/99/9999' (date), '00:00' (time),
+      //* '(999) 999-9999' (phone), '999999.99' (number) or a preset name: date, time, datetime, phone, number, zip
+      //* '9' required digit, '0' optional digit, '#' optional digit, 'A' required letter,
+      //* '*' required alphanumeric, '.' and ',' decimal separator slots
+      [TID_Extension]
+      TMaskInput = class(TInput)
+      private
+        FFormat: string;
+      public
+        property Format: string read FFormat write FFormat;
+      end;
+
       { TSelect }
 
       [TID_Extension]
