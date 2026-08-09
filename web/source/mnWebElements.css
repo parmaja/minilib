@@ -368,19 +368,19 @@ svg {
 
 /** Gaps **/
 
-.p-childs > * {
-    padding: var(--gap-unit);
+.p-childs > *  {
+    padding: calc(var(--gap-unit) / 2); /* !important */
 }
 
 .m-childs > * {
     margin: var(--gap-unit);
 }
 
-.p-childs-r :where(*) {
+.p-childs-r * {
     padding-block-start: var(--gap-unit);
 }
 
-.m-childs-r :where(*) {
+.m-childs-r * {
     margin-block-start: var(--gap-unit);
 }
 
@@ -529,8 +529,7 @@ aside{
     opacity: 100%;
     padding: 0;
     width: var(--sidebar-size);
-    background-color: var(--bs-secondary-bg);
-
+    background-color: rgba(var(--bs-body-color-rgb), 0.08);
     /*background-color: color-mix(in srgb, var(--bs-body-bg), black 5%);*/
 }
 
@@ -622,4 +621,4 @@ aside{
 .card-header {
     --bs-card-cap-padding-y: 0.3rem;
 }
-    */
+*/

@@ -1071,8 +1071,6 @@ begin
 end;
 
 function TDON_Value.AddPair(const Name, Value: string): TDON_Value;
-var
-  aPair: TDON_Pair;
 begin
   if (Self is TDON_Object) then
     Result := (Self as TDON_Object).Add(Name, Value)

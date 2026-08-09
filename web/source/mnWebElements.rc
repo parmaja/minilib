@@ -1,3 +1,4 @@
 mnWebElements_js RCDATA mnWebElements.js
 mnWebElements_css RCDATA mnWebElements.css
-bs-darkly_css RCDATA bs-darkly.css
+bs_darkly_css RCDATA bs_darkly.css
+bs_custom_css RCDATA bs_custom.css

@@ -545,11 +545,11 @@ type
   public
   end;
 
-{  TCustomTheme_Library = class(TmnwLibrary)
+  TCustomTheme_Library = class(TmnwLibrary)
   protected
     procedure Created; override;
   public
-  end;}
+  end;
 
   TElementExecute = reference to procedure;
 
@@ -7010,17 +7010,17 @@ end;
 procedure TDarklyTheme_Library.Created;
 begin
   inherited;
-  Sources.Add(stStyle, stResource, 'darkly.css', '?minilib\web\source\bs-darkly.css', '', []);
+  Sources.Add(stStyle, stResource, 'darkly.css', '?minilib\web\source\bs_darkly.css', '', []);
 end;
 
 { TCustomTheme_Library }
-{
+
 procedure TCustomTheme_Library.Created;
 begin
   inherited;
-  Sources.Add(stStyle, stResource, 'bs-custom.css', '?minilib\web\source\bs-custom.css', '', []);
+  Sources.Add(stStyle, stResource, 'custom.css', '?minilib\web\source\bs_custom.css', '', []);
 end;
-}
+
 { TmnwHTMLRenderer.TOutput }
 
 procedure TmnwHTMLRenderer.TOutput.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
@@ -7104,7 +7104,7 @@ end;
 initialization
   Libraries.RegisterLibrary(TWebElements_Library, 2000);
   Libraries.RegisterLibrary(TDarklyTheme_Library, 2000);
-//  Libraries.RegisterLibrary(TCustomTheme_Library, 2002);
+  Libraries.RegisterLibrary(TCustomTheme_Library, 2050);
   Libraries.RegisterLibrary(TJQuery_Library);
 finalization
   FreeAndNil(FRenderers);

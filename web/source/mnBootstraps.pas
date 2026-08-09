@@ -39,7 +39,7 @@ uses
   mnFields, mnParams, mnMultipartData, mnModules, mnWebModules, mnClasses, mnWebElements;
 
 const
-  GapChilds = 'p-childs';
+  GapChilds = 'm-childs';
 
 var
   ForceGap: Boolean = True;
@@ -1773,6 +1773,7 @@ begin
   Scope.Classes.Add('navbar-expand-md');
   Scope.Classes.Add('navbar-dark');
 //  Scope.Classes.Add('bg-black');
+  Scope.Classes.Add(GapChilds);
   Scope.Classes.Append('flex-nowrap w-100 py-0 px-1');
 
   Context.Writer.OpenTag('nav', Scope.ToString);
@@ -1872,7 +1873,7 @@ begin
   
   Context.Writer.OpenTag('aside', Scope.ToString);
   Context.Writer.OpenTag('div', 'id="' + e.ID + '-content' + '" class="sidebar-content' + When((e.Schema as THTML).Document.Body.Header.CanRender, ' min-content-height') + ' fixed"');
-  Context.Writer.OpenTag('div', 'id="' + e.ID + '-body" class="sidebar-body offcanvas-md offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" data-bs-keyboard="false" aria-controls="header"');
+  Context.Writer.OpenTag('div', 'id="' + e.ID + '-body" class="sidebar-body offcanvas-md offcanvas-start px-0" data-bs-scroll="true" data-bs-backdrop="false" data-bs-keyboard="false" aria-controls="header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');

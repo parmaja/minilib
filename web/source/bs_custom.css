@@ -1,0 +1,28 @@
+[data-bs-theme="dark"] {
+    /* Color system */
+    --bs-blue: #375a7f !important;
+    --bs-indigo: #6610f2 !important;
+    --bs-purple: #6f42c1 !important;
+    --bs-pink: #e83e8c !important;
+    --bs-red: #e74c3c !important;
+    --bs-orange: #fd7e14 !important;
+    --bs-yellow: #f39c12 !important;
+    --bs-green: #00bc8c !important;
+    --bs-teal: #20c997 !important;
+    --bs-cyan: #3498db !important;
+/*
+    --bs-primary-bg-subtle: var(--bs-gray-700);
+    --bs-secondary-bg: var(--bs-gray-800);
+*/
+    /* Body */
+    --bs-body-bg: var(--bs-gray-900) !important;
+    --bs-body-color: var(--bs-white);
+
+    /* Links */
+    --bs-link-color: var(--bs-success);
+
+    --bs-card-spacer-y: 0.5rem !important;
+    --bs-card-spacer-x: 0.5rem !important;
+
+    --bs-list-group-item-padding-y: 0.2rem !important;
+}
