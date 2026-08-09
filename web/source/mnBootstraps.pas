@@ -20,7 +20,7 @@
 
   //https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/
   //https://bootstrapbrain.com/tutorial/bootstrap-accordion-with-plus-minus-icon/
-  
+
  *}
 
 {$M+}
@@ -37,6 +37,12 @@ uses
   DateUtils,
   mnTypes, mnUtils, mnDON, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams, mnMultipartData, mnModules, mnWebModules, mnClasses, mnWebElements;
+
+const
+  GapChilds = 'p-childs';
+
+var
+  ForceGap: Boolean = True;
 
 type
   { TBSRenderer }
@@ -994,10 +1000,7 @@ begin
     Scope.Classes.Add('max-content-height');
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
     Scope.Classes.Add('col-md');
-//  if e.Gap > 0 then
-    //Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
-//    Scope.Classes.Add('m-childs-' + e.Gap.ToString);
-  Scope.Classes.Add('p-1 p-sm-2'); 
+  Scope.Classes.Add('p-1 p-sm-2');
   Scope.Classes.Add('m-0'); //do not change it, keep it 0
 
   Context.Writer.OpenTag('main', Scope.ToString);
@@ -1010,8 +1013,7 @@ var
   e: THTML.TCard;
 begin
   e := Scope.Element as THTML.TCard;
-  Scope.Classes.Add('p-childs', ssInner); //Gap
-
+  Scope.Classes.Add(GapChilds, ssInner);
   if e.Solitary then
   begin
 //    Scope.Classes.Add('mx-auto');
@@ -1049,6 +1051,7 @@ var
 begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
+  Scope.Classes.Add('p-0');
   if not e.Solitary and e.Footer.Fixed then
     Scope.Classes.Add('fixed-footer-padding');
 
@@ -1077,8 +1080,7 @@ begin
   // flex container so the collapse target div can be hidden properly.
 
   Context.Writer.OpenTag('div', 'id="'+e.id+'-panel" class="overflow-hidden p-1' //p-1 needed for highlights inputs
-//    + When(e.Gap>0, ' m-childs-' + e.Gap.ToString)
-//    + When(e.Gap > 0, ' m-childs-' + e.Gap.ToString)
+    + When((e.Gap > 0) or ForceGap, ' ' + GapChilds)
     + SpaceIf(Scope.Classes.ToString([ssInner]))
     + '"'
     );
@@ -1095,8 +1097,8 @@ var
   e: THTML.TForm;
 begin
   e := Scope.Element as THTML.TForm;
-  if e.Gap > 0 then  
-    Scope.Classes.Add('m-childs-' + e.Gap.ToString, ssInner);
+  if (e.Gap > 0) or ForceGap then
+    Scope.Classes.Add(GapChilds, ssInner);
   Scope.Attributes.Add('method', 'post');
   Scope.Attributes.AddIf('action', Context.GetLocationPath(e, e.Endpoint));
   Scope.Attributes.AddIf('onsubmit', e.CallScript);
@@ -1366,9 +1368,10 @@ begin
     Context.Writer.AddTag('div', 'class="panel-header"', e.Caption);
 
   Scope.Classes.Add('panel-body');
-  if e.Gap > 0 then
-    Scope.Classes.Add('m-childs-' + e.Gap.ToString);
-//    Scope.Classes.Add('m-childs-' + e.Gap.ToString); //'gap-'
+  if (e.Gap > 0) or ForceGap then
+    Scope.Classes.Add(GapChilds);
+
+//    Scope.Classes.Add(GapChilds);
   if e.Direction <> dirUndefined then
     Scope.Attributes.Add('dir', DirectionToStr(e.Direction));
   Context.Writer.OpenTag('div', Scope.ToString);
@@ -1623,6 +1626,7 @@ begin
   e := Scope.Element as THTML.TBar;
   AddRowClasses(Scope.Classes, e.Wrap);
   Scope.Classes.Add('align-items-center');
+  Scope.Classes.Add('p-0');
   Context.Writer.OpenTag('div', Scope.ToString);
   inherited;
   Context.Writer.CloseTag('div');
@@ -2140,6 +2144,7 @@ procedure TBSRenderer.THTMLFormControl.DoEnterRender(Scope: TmnwScope; const Con
 var
   e: THTML.THTMLFormControl;
   Sizes: string;
+  labelClasses: string;
 begin
   e := Scope.Element as THTML.THTMLFormControl;
   if e.Caption <> '' then
@@ -2147,12 +2152,18 @@ begin
     Sizes := When(e.Width > 0, 'max-w-' + e.Width.ToString) + When(e.Size > 0, ' col-md-' + e.Size.ToString);
     if e.LabelLayout = lfFloating then
       Context.Writer.OpenTag('div', 'class="form-floating' + Sizes + '"')
-    else if e.LabelLayout = lfTop then
+    else if e.LabelLayout = lfAbove then
+    begin
+      labelClasses := ' mb-1';
       Context.Writer.OpenTag('div', 'class="col align-items-center px-0' + Sizes + '"')
+    end
     else
+    begin
+      labelClasses := ' m-2';
       Context.Writer.OpenTag('div', 'class="d-flex align-items-center px-0' + Sizes + '"');
+    end;
     if e.LabelLayout <> lfFloating then
-      Context.Writer.AddTag('label', 'id=' + DQ(e.ID+'_label') + ' class="form-label p-0 m-2 my-auto text-nowrap" for="' + e.ID + '"', e.Caption);
+      Context.Writer.AddTag('label', 'id=' + DQ(e.ID+'_label') + ' class="form-label p-0 my-auto text-nowrap' + labelClasses + '" for="' + e.ID + '"', e.Caption);
   end;
   inherited;
 end;
@@ -2470,10 +2481,10 @@ var
 begin
   e := Scope.Element as THTML.THTMLLayout;
 //  Scope.Classes.Add('d-flex');
-  if e.Gap > 0 then
-    Scope.Classes.Add('gap-' + e.Gap.ToString);
-  if e.Padding > 0 then
-    Scope.Classes.Add('p-' + e.Padding.ToString);
+  if (e.Gap > 0) or ForceGap then
+    Scope.Classes.Add(GapChilds);
+  {if e.Padding > 0 then
+    Scope.Classes.Add('p-' + e.Padding.ToString);}
   if e.Size > 0 then
     Scope.Classes.Add('col-md-' + e.Size.ToString);
   inherited;

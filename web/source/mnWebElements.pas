@@ -102,7 +102,7 @@ uses
   mnMultipartData, mnModules, mnWebModules;
 
 const
-  cVersion = '1.84';
+  cVersion = '1.85';
 
 {.$define rtti_objects}
 
@@ -1317,7 +1317,7 @@ type
         Bind: TmnwBind;
       end;
 
-      TmnwLabelLayout = (lfUndefined, lfSide, lfTop, lfFloating);
+      TmnwLabelLayout = (lfUndefined, lfSide, lfAbove, lfFloating);
 
       TCustomFormControl = class abstract(THTMLControl)
       public
@@ -2206,8 +2206,8 @@ type
     FForm: THTML.TForm;
   protected
     procedure DoCompose(const Context: TmnwContext); override;
-    procedure Created; override;     
-  public      
+    procedure Created; override;
+  public
     JWTMode: Boolean;
     property Form: THTML.TForm read FForm;
   end;
@@ -5298,7 +5298,6 @@ end;
 procedure THTML.TMain.Created;
 begin
   inherited;
-  //Gap := 1;
 end;
 
 { THTML.TBar }
@@ -5322,6 +5321,7 @@ procedure THTML.TCard.Created;
 begin
   inherited;
 //  Width := szMedium;
+  Size := 4;
   Shadow := shadowHairline;
 //  Shadow := shadowThin;
 end;
@@ -5726,6 +5726,7 @@ end;
 function TElementClasses.Add(const AClass: TElementClass): Integer;
 begin
   Items := Items + [AClass];
+  Result := Length(Items) - 1;
 end;
 
 function TElementClasses.AddIf(Condition: Boolean; const Name: string): Integer;
@@ -7059,7 +7060,6 @@ end;
 procedure THTML.THTMLLayout.Created;
 begin
   inherited;
-//  Gap := 1;
 end;
 
 { THTML.TBox }

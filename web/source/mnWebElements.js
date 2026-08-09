@@ -1,5 +1,5 @@
 "use strict";
-const version = "1.84";
+const version = "1.85";
 //used <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.11.0/src/sha256.min.js"></script>
 
 let mnw = {};

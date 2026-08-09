@@ -1,4 +1,4 @@
-.version::after { content: " css: v1.84"; }
+.version::after { content: " css: v1.85"; }
 
 /** Icons */
 /**
@@ -366,52 +366,22 @@ svg {
     width: calc(var(--size-unit) * 8);
 }
 
-.p-childs :where(*) {
+/** Gaps **/
+
+.p-childs > * {
+    padding: var(--gap-unit);
+}
+
+.m-childs > * {
+    margin: var(--gap-unit);
+}
+
+.p-childs-r :where(*) {
     padding-block-start: var(--gap-unit);
 }
 
-/** Gaps **/
-
-.m-childs > * + * {
+.m-childs-r :where(*) {
     margin-block-start: var(--gap-unit);
-}
-
-.m-childs-all :where(*) {
-    gap: var(--gap-unit);
-}
-
-.m-childs.row > * + * {
-    margin: 0 var(--gap-unit);
-}
-
-.m-childs.column > * + * {
-    margin: var(--gap-unit) 0;
-}
-
-/*
-.m-childs > *:not(:last-child) {
-    margin-bottom: var(--gap-unit);
-    margin-block-end
-  }
-*/
-.m-childs-1 > * {
-    margin-block-start: calc(var(--gap-unit) * 1);
-}
-
-.m-childs-2 > * {
-    margin-block-start: calc(var(--gap-unit) * 2);
-}
-
-.m-childs-3 > * {
-    margin-block-start: calc(var(--gap-unit) * 3);
-}
-
-.m-childs-4 > * {
-    margin-block-start: calc(var(--gap-unit) * 4);
-}
-
-.m-childs-5 > * {
-    margin-block-start: calc(var(--gap-unit) * 5);
 }
 
 /* Grid Columns Count */
