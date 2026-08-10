@@ -1338,6 +1338,7 @@ var
 begin
   e := Scope.Element as THTML.TBody;
   inherited;
+  Scope.Classes.Add('body-bg');
   if e.Theme = themeDark then
   begin
     Scope.Attributes.Add('data-bs-theme', 'dark', ssInner);

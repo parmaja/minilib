@@ -529,8 +529,10 @@ aside{
     opacity: 100%;
     padding: 0;
     width: var(--sidebar-size);
-    background-color: rgba(var(--bs-body-color-rgb), 0.08);
-    /*background-color: color-mix(in srgb, var(--bs-body-bg), black 5%);*/
+
+    /* background-color: rgba(var(--bs-body-color-rgb), 0.08); IDK why changed in my CS app , that have blue gradian */
+    /* background-color: color-mix(in srgb, var(--bs-body-bg) 80% );*/
+    background-color: color-mix(in srgb, var(--bs-body-bg), black 8%);
 }
 
 .sidebar-content:dir(ltr)
