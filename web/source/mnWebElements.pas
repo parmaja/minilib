@@ -268,6 +268,8 @@ type
     function GetText: string;
     function AddProp(const Name: string; Area: TAttributeArea = ssOuter): TmnwAttribute;
     function Add(const Name: string; const Value: string = ''; Area: TAttributeArea = ssOuter): TmnwAttribute; overload;
+    function Change(const Name: string; const Value: string = ''; Area: TAttributeArea = ssOuter): TmnwAttribute; overload;
+    function AddIf(Condition: Boolean; const Name: string; const Value: string = ''; Area: TAttributeArea = ssOuter): TmnwAttribute; overload;
     procedure Delete(const Name: string); overload;
     function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
     function SetSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
@@ -290,8 +292,8 @@ type
     function Exists(const Name: string): Boolean;
     //Add one item
     function Add(const Name: string; Area: TAttributeArea = ssOuter): Integer; overload;
+    function AddIf(Condition: Boolean; const Name: string; Area: TAttributeArea = ssOuter): Integer; inline;
     function Add(const AClass: TElementClass): Integer; overload;
-    function AddIf(Condition: Boolean; const Name: string): Integer; inline;
     //Add multiple items in on string
     procedure Append(const S: string; Delimiter: string = ' '); overload;
     procedure Append(A: TElementClasses); overload;
@@ -2934,6 +2936,14 @@ begin
   Result.Area := Area;
 end;
 
+function TmnwAttributes.AddIf(Condition: Boolean; const Name, Value: string; Area: TAttributeArea): TmnwAttribute;
+begin
+  if Condition then
+    Result := Add(Name, Value, Area)
+  else
+    Result := nil;
+end;
+
 function TmnwAttributes.AddProp(const Name: string; Area: TAttributeArea = ssOuter): TmnwAttribute;
 begin
   Result := Add(Name, '', Area);
@@ -2948,6 +2958,18 @@ begin
   begin
     Add(TmnwAttribute.CreateFrom(fromAttibute));
   end;
+end;
+
+function TmnwAttributes.Change(const Name, Value: string; Area: TAttributeArea): TmnwAttribute;
+begin
+  Result := Find(Name);
+  if Result = nil then
+    Result := Add(Name, Value)
+  else
+  begin
+    Result.Value := Value;
+  end;
+  Result.Area := Area;
 end;
 
 procedure TmnwAttributes.Created;
@@ -5745,10 +5767,10 @@ begin
   Result := Length(Items) - 1;
 end;
 
-function TElementClasses.AddIf(Condition: Boolean; const Name: string): Integer;
+function TElementClasses.AddIf(Condition: Boolean; const Name: string; Area: TAttributeArea): Integer;
 begin
   if Condition then
-    Result := Add(Name)
+    Result := Add(Name, Area)
   else
     Result := -1;
 end;

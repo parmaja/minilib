@@ -39,11 +39,11 @@ uses
   mnFields, mnParams, mnMultipartData, mnModules, mnWebModules, mnClasses, mnWebElements;
 
 const
+  ForceGap: Boolean = False;
   GapChilds = 'm-childs';
-  WideSize = 'md';
 
-var
-  ForceGap: Boolean = True;
+  WideSize = 'md';
+  ControlPadding = 1;
 
 type
   { TBSRenderer }
@@ -234,7 +234,7 @@ type
         procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
       end;
 
-      { TRow }
+      { TBox }
 
       TBox = class(THTMLLayout)
       protected
@@ -897,25 +897,27 @@ begin
   e := Scope.Element as THTML.THTMLControl;
   if e.Hint <> '' then
   begin
-    Scope.Attributes['data-bs-toggle'] := 'tooltip';
-    Scope.Attributes['data-bs-placement'] := 'top';
-    Scope.Attributes['title'] := e.Hint;
+    Scope.Attributes.Add('data-bs-toggle', 'tooltip', ssInner);
+    Scope.Attributes.Add('data-bs-placement', 'top', ssInner);
+    Scope.Attributes.Add('title', e.Hint, ssInner);
   end;
 
   if not (sstSize in Scope.State)  then
   begin
-  //  Scope.Classes.AddIf(e.Width > szUndefined, BSSizeToStr('max-w-', e.Width));
-    Scope.Classes.AddIf(e.Width > 0, 'max-w-' + e.Width.ToString);
+    Scope.Classes.AddIf(e.Width > 0, 'max-w-' + e.Width.ToString, ssOuter);
     //Maybe need to check e.responsible
-    Scope.Classes.AddIf(e.Size, e.Size.ToString); //Yes when it is big take the size, if small screen get full width
+    Scope.Classes.AddIf(e.Size, e.Size.ToString, ssOuter); //Yes when it is big take the size, if small screen get full width
   end;
 
+  if ControlPadding > 0 then
+    Scope.Classes.Add('p-'+ControlPadding.ToString, ssOuter);
+
   case e.Shadow of
-    shadowHairline: Scope.Classes.Add('shadow-hairline');
-    shadowThin: Scope.Classes.Add('shadow-thin');
-    ShadowThick: Scope.Classes.Add('shadow-thick');
-    ShadowEnd: Scope.Classes.Add('shadow-end');
-    ShadowBottom: Scope.Classes.Add('shadow-bottom');
+    shadowHairline: Scope.Classes.Add('shadow-hairline', ssOuter);
+    shadowThin: Scope.Classes.Add('shadow-thin', ssOuter);
+    ShadowThick: Scope.Classes.Add('shadow-thick', ssOuter);
+    ShadowEnd: Scope.Classes.Add('shadow-end', ssOuter);
+    ShadowBottom: Scope.Classes.Add('shadow-bottom', ssOuter);
     else ;
   end;
 
@@ -1030,7 +1032,8 @@ var
   e: THTML.TCard;
 begin
   e := Scope.Element as THTML.TCard;
-  Scope.Classes.Add(GapChilds, ssInner);
+  if (e.Gap > 0) or ForceGap then
+    Scope.Classes.Add(GapChilds, ssInner);
   if e.Solitary then
   begin
 //    Scope.Classes.Add('mx-auto');
@@ -1097,7 +1100,7 @@ begin
   // flex container so the collapse target div can be hidden properly.
 
   Context.Writer.OpenTag('div', 'id="'+e.id+'-panel" class="overflow-hidden p-1' //p-1 needed for highlights inputs
-    + When((e.Gap > 0) or ForceGap, ' ' + GapChilds)
+//    + When((e.Gap > 0) or ForceGap, ' ' + GapChilds)
     + SpaceIf(Scope.Classes.ToString([ssInner]))
     + '"'
     );
@@ -1280,22 +1283,22 @@ var
 begin
   e := Scope.Element as THTML.TInput;
 
-  Scope.Attributes.AddIf('placeholder', e.PlaceHolder);
-  Scope.Attributes.AddIf('type', e.EditType);
+  Scope.Attributes.Add('placeholder', e.PlaceHolder, ssInner);
+  Scope.Attributes.AddIf(e.EditType<> '', 'type', e.EditType, ssInner);
   if e.AutoFocus then
-    Scope.Attributes.Add('autofocus');
+    Scope.Attributes.AddProp('autofocus', ssInner);
   if not e.AutoComplete then
   begin
-    Scope.Attributes['autocomplete'] := 'off';
+    Scope.Attributes.Add('autocomplete', 'off', ssInner);
     //Scope.Attributes['aria-autocomplete'] := 'none';
   end;
 
-  Scope.Attributes['value'] := e.Value;
+  Scope.Attributes.Add('value', e.Value, ssInner);
 
   if Context.Schema.Interactive then
-    Scope.Attributes.Add('onchange', 'mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')');
+    Scope.Attributes.Add('onchange', 'mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')', ssInner);
 
-  Context.Writer.AddShortTag('input', Scope.ToString); //TODO need to generate less spaces
+  Context.Writer.AddShortTag('input', Scope.ToString([ssInner])); //TODO [ssInner]
   inherited;
 end;
 
@@ -1872,7 +1875,7 @@ var
 begin
   e := Scope.Element as THTML.TSideBar;
   Scope.Classes.Add('sidebar');
-  Scope.Classes.Add('visible-');
+  //Scope.Classes.Add('visible-');
   //Scope.Classes.Add('navbar-expand-' + WideSize);
   if (e.Schema as THTML).Document.Body.Header.CanRender then
     Scope.Classes.Add('min-content-height');
@@ -2154,33 +2157,38 @@ begin
   if e.Caption <> '' then
     Scope.State := Scope.State + [sstSize];
   inherited;
-  Scope.Classes.Add('form-control');
+  Scope.Classes.Add('form-control', ssInner);
   if e.Required then
-    Scope.Attributes.AddProp('required');
+    Scope.Attributes.AddProp('required', ssInner);
 end;
 
 procedure TBSRenderer.THTMLFormControl.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.THTMLFormControl;
-  Sizes: string;
   labelClasses: string;
 begin
   e := Scope.Element as THTML.THTMLFormControl;
   if e.Caption <> '' then
   begin
-    Sizes := When(e.Width > 0, 'max-w-' + e.Width.ToString) + When(e.Size, ' ' + e.Size.ToString);
+    Scope.Classes.AddIf(e.Width > 0, 'max-w-' + e.Width.ToString);
+    Scope.Classes.AddIf(e.Size, ' ' + e.Size.ToString);
     if e.LabelLayout = lfFloating then
-      Context.Writer.OpenTag('div', 'class="form-floating' + Sizes + '"')
+      Scope.Classes.Add('form-floating')
     else if e.LabelLayout = lfAbove then
     begin
+      Scope.Classes.Add('col');
+      Scope.Classes.Add('align-items-center');
+      Scope.Classes.Add('px-0');
       labelClasses := ' mb-1';
-      Context.Writer.OpenTag('div', 'class="col align-items-center px-0' + Sizes + '"')
     end
     else
     begin
-      labelClasses := ' me-1';
-      Context.Writer.OpenTag('div', 'class="d-flex align-items-center px-0' + Sizes + '"');
+      Scope.Classes.Add('d-flex');
+      Scope.Classes.Add('align-items-center');
+      Scope.Classes.Add('px-0');
+      labelClasses := ' ms-1 me-2';
     end;
+    Context.Writer.OpenTag('div', Scope.ToString([ssOuter]));
     if e.LabelLayout <> lfFloating then
       Context.Writer.AddTag('label', 'id=' + DQ(e.ID+'_label') + ' class="form-label p-0 my-auto text-nowrap' + labelClasses + '" for="' + e.ID + '"', e.Caption);
   end;
@@ -2483,7 +2491,7 @@ begin
   e := Scope.Element as THTML.TCheckbox;
   Context.Writer.AddShortTag('input', Scope.ToString([ssInner]));
   if e.Caption <> '' then
-    Context.Writer.AddTag('label', 'id=' + DQ(e.id + '-label') + 'class="form-check-label p-0 my-auto text-nowrap" for="' + e.ID + '"', e.Caption);
+    Context.Writer.AddTag('label', 'id=' + DQ(e.id + '-label') + ' class="form-check-label p-0 my-auto text-nowrap" for="' + e.ID + '"', e.Caption);
   inherited;
 end;
 
@@ -2499,11 +2507,8 @@ var
   e: THTML.THTMLLayout;
 begin
   e := Scope.Element as THTML.THTMLLayout;
-//  Scope.Classes.Add('d-flex');
   if (e.Gap > 0) or ForceGap then
     Scope.Classes.Add(GapChilds);
-  {if e.Padding > 0 then
-    Scope.Classes.Add('p-' + e.Padding.ToString);}
   if e.Size then
     Scope.Classes.Add(e.Size.ToString);
   inherited;
