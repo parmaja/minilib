@@ -24,7 +24,7 @@
  *}
 
 {$M+}
-{$H+}                                                                                                            
+{$H+}
 
 {$IFDEF FPC}
 {$MODE delphi}
@@ -40,6 +40,7 @@ uses
 
 const
   GapChilds = 'm-childs';
+  WideSize = 'md';
 
 var
   ForceGap: Boolean = True;
@@ -587,6 +588,10 @@ type
     function ToBSString(prefix: string): string; {$ifndef DEBUG}inline;{$endif}
   end;
 
+  TColSizeHelper = record helper for TColSize
+    function ToString: string;
+  end;
+
 function BSJustifyToStr(const s: string; Align: TmnwJustify; WithSpace: Boolean = False): string; 
 function BSRowAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean = False): string;
 function BSColumnAlignToStr(const s: string; Align: TmnwAlign; WithSpace: Boolean = False): string;
@@ -691,6 +696,18 @@ end;
 function TmnwBSBoundingHelper.IsUniformSides: Boolean; 
 begin
   Result := (Top = Bottom) and (Left = Right);
+end;
+
+{ TColSizeHelper }
+
+function TColSizeHelper.ToString: string;
+begin
+  case Kind of
+    cskUndefined: Result := '';
+    cskNumber: Result := 'col-' + WideSize + '-' + IntToStr(Self);
+    cskAuto: Result := 'col-' + WideSize;
+    cskFit: Result := 'col-' + WideSize+ '-auto';
+  end;
 end;
 
 function TmnwBSBoundingHelper.ToBSString(prefix: string): string;
@@ -890,7 +907,7 @@ begin
   //  Scope.Classes.AddIf(e.Width > szUndefined, BSSizeToStr('max-w-', e.Width));
     Scope.Classes.AddIf(e.Width > 0, 'max-w-' + e.Width.ToString);
     //Maybe need to check e.responsible
-    Scope.Classes.AddIf(e.Size > 0, 'col-md-' + e.Size.ToString); //Yes when it is big take the size, if small screen get full width
+    Scope.Classes.AddIf(e.Size, e.Size.ToString); //Yes when it is big take the size, if small screen get full width
   end;
 
   case e.Shadow of
@@ -1073,7 +1090,7 @@ begin
     Context.Writer.CloseTag('h5');
   end;
 
-  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body p-1 collapse show" aria-labelledby="'+e.id+'-header"');  //removed `overflow-hidden`
+  Context.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body p-0 collapse show" aria-labelledby="'+e.id+'-header"');  //removed `overflow-hidden`
 
   // InnerClasses (d-flex, flex-column, etc.) use !important which overrides
   // Bootstrap's .collapse:not(.show) { display: none; }. Wrap children in a
@@ -1770,7 +1787,7 @@ begin
   Scope.Classes.Add('navbar');
   if e.Fixed = fixedTop then
     Scope.Classes.Add('fixed-top');
-  Scope.Classes.Add('navbar-expand-md');
+  Scope.Classes.Add('navbar-expand-' + WideSize);
   Scope.Classes.Add('navbar-dark');
 //  Scope.Classes.Add('bg-black');
   Scope.Classes.Add(GapChilds);
@@ -1790,7 +1807,7 @@ begin
 
   Context.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="true" data-bs-keyboard="false" tabindex="-1"');
   //Context.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
-  Context.Writer.OpenTag('ul', 'class="navbar-nav me-auto m-2 m-md-0"');
+  Context.Writer.OpenTag('ul', 'class="navbar-nav me-auto m-2 m-' + WideSize+'-0"');
   inherited;
   Context.Writer.CloseTag('ul');
   Context.Writer.CloseTag('div');
@@ -1855,7 +1872,8 @@ var
 begin
   e := Scope.Element as THTML.TSideBar;
   Scope.Classes.Add('sidebar');
-  //Scope.Classes.Add('navbar-expand-md');
+  Scope.Classes.Add('visible-');
+  //Scope.Classes.Add('navbar-expand-' + WideSize);
   if (e.Schema as THTML).Document.Body.Header.CanRender then
     Scope.Classes.Add('min-content-height');
   Scope.Classes.Add('p-0');
@@ -1870,10 +1888,10 @@ begin
     Scope.Classes.Add('bg-light');
     Scope.Attributes.Add('data-bs-theme', 'light');
   end;
-  
+
   Context.Writer.OpenTag('aside', Scope.ToString);
   Context.Writer.OpenTag('div', 'id="' + e.ID + '-content' + '" class="sidebar-content' + When((e.Schema as THTML).Document.Body.Header.CanRender, ' min-content-height') + ' fixed"');
-  Context.Writer.OpenTag('div', 'id="' + e.ID + '-body" class="sidebar-body offcanvas-md offcanvas-start px-0" data-bs-scroll="true" data-bs-backdrop="false" data-bs-keyboard="false" aria-controls="header"');
+  Context.Writer.OpenTag('div', 'id="' + e.ID + '-body" class="sidebar-body offcanvas-' + WideSize+' offcanvas-start px-0" data-bs-scroll="true" data-bs-backdrop="false" data-bs-keyboard="false" aria-controls="header"');
   inherited;
   Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
@@ -2150,7 +2168,7 @@ begin
   e := Scope.Element as THTML.THTMLFormControl;
   if e.Caption <> '' then
   begin
-    Sizes := When(e.Width > 0, 'max-w-' + e.Width.ToString) + When(e.Size > 0, ' col-md-' + e.Size.ToString);
+    Sizes := When(e.Width > 0, 'max-w-' + e.Width.ToString) + When(e.Size, ' ' + e.Size.ToString);
     if e.LabelLayout = lfFloating then
       Context.Writer.OpenTag('div', 'class="form-floating' + Sizes + '"')
     else if e.LabelLayout = lfAbove then
@@ -2160,7 +2178,7 @@ begin
     end
     else
     begin
-      labelClasses := ' m-2';
+      labelClasses := ' me-1';
       Context.Writer.OpenTag('div', 'class="d-flex align-items-center px-0' + Sizes + '"');
     end;
     if e.LabelLayout <> lfFloating then
@@ -2486,8 +2504,8 @@ begin
     Scope.Classes.Add(GapChilds);
   {if e.Padding > 0 then
     Scope.Classes.Add('p-' + e.Padding.ToString);}
-  if e.Size > 0 then
-    Scope.Classes.Add('col-md-' + e.Size.ToString);
+  if e.Size then
+    Scope.Classes.Add(e.Size.ToString);
   inherited;
 end;
 

@@ -586,10 +586,23 @@ type
     function ToString: string;
   end;
 
-  TColSize = 0..12;
+  TColCount = 0..12;
 
-  TColSizeHelper = record helper for TColSize
+  TColCountHelper = record helper for TColCount
     function ToString: string;
+  end;
+
+
+  TColSizeKind = (cskUndefined, cskNumber, cskAuto, cskFit);
+  TColSizeNumber = 0..12;
+  TColSize = record
+    Kind: TColSizeKind;
+    Columns: TColSizeNumber;
+    class operator Explicit(const Source: Integer): TColSize;
+    class operator Implicit(const Source: TColSize): Boolean;
+    class operator Implicit(Source : Integer) : TColSize;
+    class operator Implicit(Source : TColSize): Integer;
+    class operator Implicit(Source : TColSizeKind) : TColSize;
   end;
 
   TWidthSize = (
@@ -1542,7 +1555,7 @@ type
       protected
         procedure Created; override;
       public
-        Columns: TColSize;
+        Columns: TColCount;
       end;
 
       TBar = class(THTMLLayout)
@@ -1989,6 +2002,9 @@ type
       //* '(999) 999-9999' (phone), '999999.99' (number) or a preset name: date, time, datetime, phone, number, zip
       //* '9' required digit, '0' optional digit, '#' optional digit, 'A' required letter,
       //* '*' required alphanumeric, '.' and ',' decimal separator slots
+      //* Time masks use unit letters with ':' separators: 'hh' 12-hour (01-12),
+      //* 'HH' 24-hour (00-23), 'mm' minutes (00-59), 'ss' seconds (00-59),
+      //* e.g. 'hh:mm', 'HH:mm:ss', 'mm:ss'
       [TID_Extension]
       TMaskInput = class(TInput)
       private
@@ -7048,13 +7064,6 @@ begin
   Result := IntToStr(Self);
 end;
 
-{ TColSizeHelper }
-
-function TColSizeHelper.ToString: string;
-begin
-  Result := IntToStr(Self);
-end;
-
 { THTML.THTMLLayout }
 
 procedure THTML.THTMLLayout.Created;
@@ -7099,6 +7108,44 @@ procedure THTML.TRow.Created;
 begin
   inherited;
   Wrap := True;
+end;
+
+{ TColSize }
+
+class operator TColSize.Explicit(const Source: Integer): TColSize;
+begin
+  Result.Kind := cskNumber;
+  Result.Columns := Source;
+end;
+
+class operator TColSize.Implicit(const Source: TColSize): Boolean;
+begin
+  Result := Source.Kind > cskUndefined;
+end;
+
+class operator TColSize.Implicit(Source: TColSize): Integer;
+begin
+  Result := Source.Columns;
+end;
+
+class operator TColSize.Implicit(Source: Integer): TColSize;
+begin
+  Result.Kind := cskNumber;
+  Result.Columns := Source;
+end;
+
+class operator TColSize.Implicit(Source: TColSizeKind): TColSize;
+begin
+  Result.Kind := Source;
+  if Source <> cskNumber then
+    Result.Columns := 0;
+end;
+
+{ TColCountHelper }
+
+function TColCountHelper.ToString: string;
+begin
+  Result := IntToStr(Self);
 end;
 
 initialization
