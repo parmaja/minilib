@@ -479,6 +479,8 @@ document.addEventListener('DOMContentLoaded', function()
 
 //'9' required digit, '0' optional digit, '#' optional digit, 'A' required letter,
 //'*' required alphanumeric, '.' and ',' optional decimal separator slots
+//Time unit letters: 'h' 12-hour (01-12), 'H' 24-hour (00-23), 'm' minutes (00-59),
+//'s' seconds (00-59); combine them with ':' literals, e.g. 'hh:mm', 'HH:mm:ss', 'mm:ss'
 mnw.maskChars = {
   '9': /[0-9]/,
   '0': /[0-9]/,
@@ -496,6 +498,113 @@ mnw.maskPresets = {
   phone:    '(999) 999-9999',
   number:   '999999.99',
   zip:      '99999-9999'
+};
+
+mnw.timeUnitChars = { h: 1, H: 1, m: 1, M: 1, s: 1, S: 1 };
+
+//A pattern is a time pattern when it contains h/H/m/s unit letters and
+//its only other characters are ':' '-' '.' ' ' separators
+mnw.is_time_pattern = function(pattern)
+{
+  let hasUnit = false;
+  for (const ch of pattern)
+  {
+    if (mnw.timeUnitChars[ch])
+      hasUnit = true;
+    else if (!/[:\-.\s]/.test(ch))
+      return false;
+  }
+  return hasUnit;
+};
+
+//Split a time pattern into units (runs of the same letter) and single-char literals
+mnw.time_segments = function(pattern)
+{
+  const segs = [];
+  for (const ch of pattern)
+  {
+    if (mnw.timeUnitChars[ch])
+    {
+      const last = segs[segs.length - 1];
+      if (last && last.unit === ch)
+        last.len++;
+      else
+        segs.push({ unit: ch, len: 1 });
+    }
+    else
+      segs.push({ literal: ch });
+  }
+  return segs;
+};
+
+//Allowed digit range for one position of a time unit, null when the prefix is impossible
+mnw.time_digit_range = function(unit, pos, len, value)
+{
+  const first = value ? value[0] : '';
+  if (unit === 'h') //12-hour clock: 01-12
+  {
+    if (pos === 0) return (len > 1) ? { min: 0, max: 1 } : { min: 1, max: 9 };
+    if (first === '0') return { min: 1, max: 9 };
+    if (first === '1') return { min: 0, max: 2 };
+    return null;
+  }
+  if (unit === 'H') //24-hour clock: 00-23
+  {
+    if (pos === 0) return { min: 0, max: 2 };
+    return (first === '2') ? { min: 0, max: 3 } : { min: 0, max: 9 };
+  }
+  //minutes and seconds: 00-59
+  if (pos === 0) return { min: 0, max: 5 };
+  return { min: 0, max: 9 };
+};
+
+mnw.unmask_time_value = function(value)
+{
+  let raw = '';
+  for (const ch of value)
+    if (ch >= '0' && ch <= '9')
+      raw += ch;
+  return raw;
+};
+
+mnw.mask_time_value = function(raw, pattern)
+{
+  const segs = mnw.time_segments(pattern);
+  const moreAfter = new Array(segs.length).fill(false);
+  for (let i = segs.length - 2; i >= 0; i--)
+    moreAfter[i] = moreAfter[i + 1] || segs[i + 1].unit !== undefined;
+
+  let out = '';
+  let ri = 0;
+  for (let i = 0; i < segs.length; i++)
+  {
+    const seg = segs[i];
+    if (seg.literal !== undefined)
+    {
+      //only show the literal when there are still digits to type after it
+      if (ri < raw.length && moreAfter[i])
+        out += seg.literal;
+      continue;
+    }
+    let value = '';
+    for (let d = 0; d < seg.len && ri < raw.length; d++)
+    {
+      const ch = raw[ri];
+      const range = mnw.time_digit_range(seg.unit, d, seg.len, value);
+      if (range && ch >= String(range.min) && ch <= String(range.max))
+      {
+        value += ch;
+        ri++;
+      }
+      else
+      {
+        ri++; //drop the char and retry the same position
+        d--;
+      }
+    }
+    out += value;
+  }
+  return out;
 };
 
 mnw.mask_slots = function(pattern)
@@ -532,6 +641,8 @@ mnw.mask_sep_slot = function(pattern)
 //Strip the literals and return the raw typed value
 mnw.unmask_value = function(value, pattern)
 {
+  if (mnw.is_time_pattern(pattern))
+    return mnw.unmask_time_value(value);
   const slots = mnw.mask_slots(pattern);
   const sepSi = mnw.mask_sep_slot(pattern);
   let raw = '';
@@ -560,6 +671,8 @@ mnw.unmask_value = function(value, pattern)
 //Build the formatted value from a raw value
 mnw.mask_value = function(raw, pattern)
 {
+  if (mnw.is_time_pattern(pattern))
+    return mnw.mask_time_value(raw, pattern);
   const slots = mnw.mask_slots(pattern);
   const sepSi = mnw.mask_sep_slot(pattern);
 
@@ -627,6 +740,31 @@ mnw.mask_value = function(raw, pattern)
 
 mnw.mask_caret = function(pattern, oldValue, start, masked)
 {
+  if (mnw.is_time_pattern(pattern))
+  {
+    //caret was at the end, keep it at the end
+    if (start >= oldValue.length)
+      return masked.length;
+    const rawBefore = mnw.unmask_time_value(oldValue.substring(0, start));
+    const segs = mnw.time_segments(pattern);
+    let ri = 0;
+    let pos = 0;
+    for (const seg of segs)
+    {
+      if (seg.literal !== undefined)
+      {
+        pos++;
+        continue;
+      }
+      if (ri >= rawBefore.length) break;
+      ri++;
+      pos++;
+    }
+    //skip the literals that follow the last typed char
+    while (pos < masked.length && !/[0-9]/.test(masked[pos]))
+      pos++;
+    return Math.min(pos, masked.length);
+  }
   //caret was at the end, keep it at the end
   if (start >= oldValue.length)
     return masked.length;
