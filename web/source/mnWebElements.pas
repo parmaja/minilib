@@ -268,7 +268,6 @@ type
     function GetText: string;
     function AddProp(const Name: string; Area: TAttributeArea = ssOuter): TmnwAttribute;
     function Add(const Name: string; const Value: string = ''; Area: TAttributeArea = ssOuter): TmnwAttribute; overload;
-    function Change(const Name: string; const Value: string = ''; Area: TAttributeArea = ssOuter): TmnwAttribute; overload;
     function AddIf(Condition: Boolean; const Name: string; const Value: string = ''; Area: TAttributeArea = ssOuter): TmnwAttribute; overload;
     procedure Delete(const Name: string); overload;
     function HaveSubValue(const AName, AValue: String; vSeparators: TSysCharSet = [' ']): Boolean;
@@ -2930,12 +2929,6 @@ begin
   end;
 end;
 
-function TmnwAttributes.Add(const Name, Value: string; Area: TAttributeArea): TmnwAttribute;
-begin
-  Result := inherited Add(Name, Value);
-  Result.Area := Area;
-end;
-
 function TmnwAttributes.AddIf(Condition: Boolean; const Name, Value: string; Area: TAttributeArea): TmnwAttribute;
 begin
   if Condition then
@@ -2960,15 +2953,13 @@ begin
   end;
 end;
 
-function TmnwAttributes.Change(const Name, Value: string; Area: TAttributeArea): TmnwAttribute;
+function TmnwAttributes.Add(const Name, Value: string; Area: TAttributeArea): TmnwAttribute;
 begin
   Result := Find(Name);
   if Result = nil then
-    Result := Add(Name, Value)
+    Result := inherited Add(Name, Value)
   else
-  begin
     Result.Value := Value;
-  end;
   Result.Area := Area;
 end;
 
@@ -6575,8 +6566,11 @@ end;
 procedure TmnwHTMLRenderer.THTMLElement.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
+  {$ifopt D+}
+  Scope.Attributes.Add('data-mnw-class', Scope.Element.ClassName, ssOuter);
+  {$endif}
   if Scope.Element.Data <> '' then
-    Scope.Attributes['data-mnw-value'] := Scope.Element.Data;
+    Scope.Attributes.Add('data-mnw-value', Scope.Element.Data, ssInner);
 end;
 
 procedure TmnwHTMLRenderer.THTMLElement.DoEnterRender(Scope: TmnwScope; const Context: TmnwContext);

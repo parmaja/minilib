@@ -589,6 +589,11 @@ aside{
     color: var(--bs-primary-bg);
 }
 
+.accordion a
+{
+    text-decoration: none;
+}
+
 .accordion-button {
     /*border-width: 0.1rem;*/
     background-color: var(--bs-accordion-active-bg);

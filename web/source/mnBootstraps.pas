@@ -909,9 +909,6 @@ begin
     Scope.Classes.AddIf(e.Size, e.Size.ToString, ssOuter); //Yes when it is big take the size, if small screen get full width
   end;
 
-  if ControlPadding > 0 then
-    Scope.Classes.Add('p-'+ControlPadding.ToString, ssOuter);
-
   case e.Shadow of
     shadowHairline: Scope.Classes.Add('shadow-hairline', ssOuter);
     shadowThin: Scope.Classes.Add('shadow-thin', ssOuter);
@@ -922,14 +919,13 @@ begin
   end;
 
   if e.Bind.Name <> '' then
-    Scope.Attributes['data-bind-name'] := e.Bind.Name;
+    Scope.Attributes.Add('data-bind-name', e.Bind.Name, ssInner);
 
   if e.Bind.Group <> '' then
   begin
-    Scope.Attributes['data-bind-group'] := e.Bind.Group;
-    Scope.Attributes['data-bind-action'] := BindActionToStr(e.Bind.Action);
+    Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssInner);
+    Scope.Attributes.Add('data-bind-action', BindActionToStr(e.Bind.Action), ssInner);
   end;
-
   inherited;
 end;
 
@@ -1019,7 +1015,8 @@ begin
     Scope.Classes.Add('max-content-height');
   if (e.Parent.Parent as THTML.TBody).SideBar.CanRender then
     Scope.Classes.Add('col-md');
-  Scope.Classes.Add('p-1 p-sm-2');
+  Scope.Classes.Add('p-1');
+  Scope.Classes.Add('p-sm-2'); //???
   Scope.Classes.Add('m-0'); //do not change it, keep it 0
 
   Context.Writer.OpenTag('main', Scope.ToString);
@@ -1209,9 +1206,9 @@ var
 begin
   e := Scope.Element as THTML.TCustomButton;
   Scope.Classes.Add('btn');
-  Scope.Attributes['type'] := 'button';
+  Scope.Attributes.Add('type', 'button', ssInner);
   if e.ConfirmMessage <> '' then
-    Scope.Attributes['data-mnw-confirm'] := e.ConfirmMessage;
+    Scope.Attributes.Add('data-mnw-confirm', e.ConfirmMessage, ssInner);
   inherited;
 end;
 
@@ -1273,7 +1270,20 @@ end;
 { TBSRenderer.TInputHTML }
 
 procedure TBSRenderer.TInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TInput;
 begin
+  e := Scope.Element as THTML.TInput;
+  Scope.Attributes.AddIf(e.EditType<> '', 'type', e.EditType, ssInner);
+  Scope.Attributes.Add('placeholder', e.PlaceHolder, ssInner);
+  if e.AutoFocus then
+    Scope.Attributes.AddProp('autofocus', ssInner);
+  if not e.AutoComplete then
+  begin
+    Scope.Attributes.Add('autocomplete', 'off', ssInner);
+    //Scope.Attributes.Add('aria-autocomplete', 'none', ssInner);
+  end;
+  Scope.Attributes.Add('value', e.Value, ssInner);
   inherited;
 end;
 
@@ -1282,18 +1292,6 @@ var
   e: THTML.TInput;
 begin
   e := Scope.Element as THTML.TInput;
-
-  Scope.Attributes.Add('placeholder', e.PlaceHolder, ssInner);
-  Scope.Attributes.AddIf(e.EditType<> '', 'type', e.EditType, ssInner);
-  if e.AutoFocus then
-    Scope.Attributes.AddProp('autofocus', ssInner);
-  if not e.AutoComplete then
-  begin
-    Scope.Attributes.Add('autocomplete', 'off', ssInner);
-    //Scope.Attributes['aria-autocomplete'] := 'none';
-  end;
-
-  Scope.Attributes.Add('value', e.Value, ssInner);
 
   if Context.Schema.Interactive then
     Scope.Attributes.Add('onchange', 'mnw.send(' + SQ(e.ID) + ', '+ SQ('change') + ',' + 'this.value' + ')', ssInner);
@@ -1306,8 +1304,8 @@ end;
 
 procedure TBSRenderer.TImage.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
-  Scope.Attributes['src'] := (Scope.Element as THTML.TImage).Source;
-  Scope.Attributes['alt'] := (Scope.Element as THTML.TImage).AltText; //* always set
+  Scope.Attributes.Add('src' , (Scope.Element as THTML.TImage).Source, ssInner);
+  Scope.Attributes.Add('alt', (Scope.Element as THTML.TImage).AltText, ssInner); //* always set
   inherited;
 end;
 
@@ -1321,8 +1319,8 @@ end;
 
 procedure TBSRenderer.TImageMemory.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
-  Scope.Attributes['src'] := Context.GetPath(Scope.Element);
-  Scope.Attributes['alt'] := (Scope.Element as THTML.TImageMemory).AltText;
+  Scope.Attributes.Add('src', Context.GetPath(Scope.Element), ssInner);
+  Scope.Attributes.Add('alt', (Scope.Element as THTML.TImageMemory).AltText, ssInner);
   inherited;
 end;
 
@@ -1342,13 +1340,13 @@ begin
   inherited;
   if e.Theme = themeDark then
   begin
-    Scope.Attributes['data-bs-theme'] := 'dark';
-    Scope.Attributes['data-theme'] := 'dark';
+    Scope.Attributes.Add('data-bs-theme', 'dark', ssInner);
+    Scope.Attributes.Add('data-theme', 'dark', ssInner);
   end
   else if e.Theme = themeLight then
   begin
-    Scope.Attributes['data-bs-theme'] := 'light';
-    Scope.Attributes['data-theme'] := 'light';
+    Scope.Attributes.Add('data-bs-theme', 'light', ssInner);
+    Scope.Attributes.Add('data-theme', 'light', ssInner);
   end;
 end;
 
@@ -1422,7 +1420,7 @@ end;
 procedure TBSRenderer.TThemeButton.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Scope.Attributes['aria-label'] := 'Toggle theme';
+  Scope.Attributes.Add('aria-label', 'Toggle theme', ssInner);
 end;
 
 { TBSRenderer.TDropdown }
@@ -1927,8 +1925,8 @@ var
   e: THTML.TImageFile;
 begin
   e := Scope.Element as THTML.TImageFile;
-  Scope.Attributes['src'] := Context.GetPath(Scope.Element);
-  Scope.Attributes['alt'] := When(e.AltText, e.Name);
+  Scope.Attributes.Add('src', Context.GetPath(Scope.Element), ssInner);
+  Scope.Attributes.Add('alt', When(e.AltText, e.Name), ssInner);
   inherited;
 end;
 
@@ -2156,6 +2154,8 @@ begin
   e := Scope.Element as THTML.THTMLFormControl;
   if e.Caption <> '' then
     Scope.State := Scope.State + [sstSize];
+  if ControlPadding > 0 then
+    Scope.Classes.Add('p-'+ControlPadding.ToString, ssOuter);
   inherited;
   Scope.Classes.Add('form-control', ssInner);
   if e.Required then
@@ -2186,7 +2186,7 @@ begin
       Scope.Classes.Add('d-flex');
       Scope.Classes.Add('align-items-center');
       Scope.Classes.Add('px-0');
-      labelClasses := ' ms-1 me-2';
+      labelClasses := ' mx-2';
     end;
     Context.Writer.OpenTag('div', Scope.ToString([ssOuter]));
     if e.LabelLayout <> lfFloating then
@@ -2218,9 +2218,9 @@ begin
   e := Scope.Element as THTML.TSubmitForm;
   inherited;
   Scope.Classes.Add('btn-success');
-  Scope.Attributes['type'] := 'submit';
+  Scope.Attributes.Add('type', 'submit', ssInner);
   if e.FormID <> '' then
-    Scope.Attributes['form'] := e.FormID;
+    Scope.Attributes.Add('form', e.FormID, ssInner);
 end;
 
 { TBSRenderer.TResetForm }
@@ -2232,9 +2232,9 @@ begin
   e := Scope.Element as THTML.TResetForm;
   inherited;
 //  Scope.Classes.Add('btn-success');
-  Scope.Attributes['type'] := 'reset';
+  Scope.Attributes.Add('type', 'reset', ssInner);
   if e.FormID <> '' then
-    Scope.Attributes['form'] := e.FormID;
+    Scope.Attributes.Add('form', e.FormID, ssInner);
 end;
 
 { TBSRenderer.TPassword }
@@ -2245,9 +2245,9 @@ var
 begin
   e := Scope.Element as THTML.TPassword;
   inherited;
-  Scope.Attributes['type'] := 'password';
-  if e.Token <> '' then  
-    Scope.Attributes['data-token'] := e.Token
+  Scope.Attributes.Add('type', 'password', ssInner);
+  if e.Token <> '' then
+    Scope.Attributes.Add('data-token', e.Token, ssInner);
 end;
 
 { TBSRenderer.TUsername }
@@ -2262,7 +2262,7 @@ end;
 procedure TBSRenderer.TNewPassword.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Scope.Attributes['autocomplete'] := 'new-password';
+  Scope.Attributes.Add('autocomplete', 'new-password', ssInner);
 end;
 
 { TBSRenderer.TIntegerInput }
@@ -2270,8 +2270,8 @@ end;
 procedure TBSRenderer.TIntegerInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Scope.Attributes['type'] := 'number';
-  Scope.Attributes['step'] := '1'; //Whole numbers only
+  Scope.Attributes.Add('type', 'number', ssInner);
+  Scope.Attributes.Add('step', '1', ssInner); //Whole numbers only
 end;
 
 { TBSRenderer.TCountInput }
@@ -2282,9 +2282,9 @@ var
 begin
   inherited;
   e := Scope.Element as THTML.TCountInput;
-  Scope.Attributes['type'] := 'number';
-  Scope.Attributes['min'] := e.Min.ToString;
-  Scope.Attributes['max'] := e.Max.ToString;
+  Scope.Attributes.Add('type', 'number', ssInner);
+  Scope.Attributes.Add('min', e.Min.ToString, ssInner);
+  Scope.Attributes.Add('max', e.Max.ToString, ssInner);
 end;
 
 { TBSRenderer.TDateInput }
@@ -2292,7 +2292,7 @@ end;
 procedure TBSRenderer.TDateInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Scope.Attributes['type'] := 'date';
+  Scope.Attributes.Add('type', 'date', ssInner);
 end;
 
 { TBSRenderer.TActionForm }
@@ -2303,10 +2303,10 @@ var
 begin
   e := Scope.Element as THTML.TActionForm;
   inherited;
-  Scope.Attributes['type'] := 'submit';
-  Scope.Attributes['data-action'] := e.Action;  
+  Scope.Attributes.Add('type', 'submit', ssInner);
+  Scope.Attributes.Add('data-action', e.Action, ssInner);
   if e.FormID <> '' then
-    Scope.Attributes['form'] := e.FormID;
+    Scope.Attributes.Add('form', e.FormID, ssInner);
 end;
 
 { TBSRenderer.THiddenInput }
@@ -2317,8 +2317,8 @@ var
 begin
   e := Scope.Element as THTML.THiddenInput;
   inherited;
-  Scope.Attributes['type'] := 'hidden';
-  Scope.Attributes['value'] := e.Value;
+  Scope.Attributes.Add('type', 'hidden', ssInner);
+  Scope.Attributes.Add('value', e.Value, ssInner);
 end;
 
 procedure TBSRenderer.THiddenInput.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
@@ -2372,7 +2372,7 @@ end;
 procedure TBSRenderer.TDateTimeInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Scope.Attributes['type'] := 'datetime-local';
+  Scope.Attributes.Add('type', 'datetime-local', ssInner);
 end;
 
 { TBSRenderer.TTimeInput }
@@ -2380,7 +2380,7 @@ end;
 procedure TBSRenderer.TTimeInput.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
 begin
   inherited;
-  Scope.Attributes['type'] := 'time';
+  Scope.Attributes.Add('type', 'time', ssInner);
 end;
 
 { TBSRenderer.TMaskInput }
@@ -2392,7 +2392,7 @@ begin
   inherited;
   e := Scope.Element as THTML.TMaskInput;
   if e.Format <> '' then
-    Scope.Attributes['data-mask'] := e.Format;
+    Scope.Attributes.Add('data-mask', e.Format, ssInner);
 end;
 
 { TBSRenderer.TSelect }
@@ -2404,11 +2404,11 @@ begin
   e := Scope.Element as THTML.TSelect;
   inherited;
   Scope.Classes.Remove('form-control');
-  Scope.Classes.Add('form-select');
+  Scope.Classes.Add('form-select', ssInner);
   if e.Multiple then
-    Scope.Attributes.AddProp('multiple');
+    Scope.Attributes.AddProp('multiple', ssInner);
   if e.ChangeScript <> '' then
-    Scope.Attributes.Add('onchange', e.ChangeScript);
+    Scope.Attributes.Add('onchange', e.ChangeScript, ssInner);
 end;
 
 procedure TBSRenderer.TSelect.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
@@ -2418,7 +2418,7 @@ var
   s, Selected: string;
 begin
   e := Scope.Element as THTML.TSelect;
-  Context.Writer.OpenTag('select', Scope.ToString);
+  Context.Writer.OpenTag('select', Scope.ToString([ssInner]));
   for o in e.Items do
   begin
     s := o.Value;
@@ -2442,7 +2442,7 @@ begin
   e := Scope.Element as THTML.TTextArea;
   inherited;
   if e.Rows > 0 then
-    Scope.Attributes['rows'] := e.Rows.ToString;
+    Scope.Attributes.Add('rows', e.Rows.ToString, ssInner);
 end;
 
 procedure TBSRenderer.TTextArea.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
@@ -2528,7 +2528,7 @@ begin
   inherited;
   Scope.Classes.Add('btn-secondary');
   Scope.Classes.Add('btn');
-//  Scope.Attributes['type'] := 'link';
+//  Scope.Attributes.Add('type', 'link', ssInner);
 end;
 
 procedure TBSRenderer.TLinkButton.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
