@@ -483,23 +483,6 @@ aside{
     position: fixed !important; /* option to stick it without scroll */
 }
 
-/* Targets screens smaller than 768px (Bootstrap md breakpoint) */
-@media (max-width: 767.98px) {
-  .fixed-bottom-md {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 1030; /* Matches Bootstrap default navbar z-index */
-    border-radius: 0; /* Ensures a flush look on mobile edges */
-    height : var(--header-size);
-  }
-
-  .fixed-bottom-padding-md {
-    margin-bottom: var(--header-size);
-  }
-}
-
 /** for header **/
 
 .content-top {

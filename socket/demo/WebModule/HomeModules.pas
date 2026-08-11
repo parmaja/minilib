@@ -123,7 +123,7 @@ type
 
   TClockCompose = class(THTML.TIntervalCompose)
   public
-    procedure InnerCompose(Inner: TmnwElement; const Context: TmnwContext); override;
+    procedure InnerCompose(Inner: TmnwElement; const Ctx: TmnwContext); override;
   end;
 
   TThreadTimer = class(TThread)
@@ -187,7 +187,7 @@ end;
 
 { TClockComposer }
 
-procedure TClockCompose.InnerCompose(Inner: TmnwElement; const Context: TmnwContext);
+procedure TClockCompose.InnerCompose(Inner: TmnwElement; const Ctx: TmnwContext);
 begin
   with THTML do
   begin
@@ -333,9 +333,9 @@ begin
           with TIntervalCompose.Create(This) do
           begin
             Route := 'clock';
-            OnCompose := procedure(Inner: TmnwElement; const Context: TmnwContext)
+            OnCompose := procedure(Inner: TmnwElement; const Ctx: TmnwContext)
             begin
-              Context.Response.Stamp := TimeToStr(Now);
+              Ctx.Response.Stamp := TimeToStr(Now);
               TParagraph.Create(Inner, TimeToStr(Now));
               {with TImage.Create(Inner) do
               begin
@@ -762,32 +762,32 @@ begin
     with TPanel.Create(this) do    
     begin
       Route := 'panel1';
-      TCode.Create(This, 'Context.CurrentPath: ' + AContext.CurrentPath);
+      TCode.Create(This, 'Ctx.CurrentPath: ' + AContext.CurrentPath);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.Request.Path: ' + AContext.Request.Path);
+      TCode.Create(This, 'Ctx.Request.Path: ' + AContext.Request.Path);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.Request.CurrentPath: ' + AContext.Request.CurrentPath);
+      TCode.Create(This, 'Ctx.Request.CurrentPath: ' + AContext.Request.CurrentPath);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.Request.BasePath: ' + AContext.Request.BasePath);
+      TCode.Create(This, 'Ctx.Request.BasePath: ' + AContext.Request.BasePath);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.Request.NameSpace: ' + AContext.Request.NameSpace);
+      TCode.Create(This, 'Ctx.Request.NameSpace: ' + AContext.Request.NameSpace);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.Request.NameSpace: ' + AContext.Request.NameSpace);
+      TCode.Create(This, 'Ctx.Request.NameSpace: ' + AContext.Request.NameSpace);
       TBreak.Create(This);
       TCode.Create(This, 'e.GetPath: ' + This.GetPath);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.GetRelativePath: ' + AContext.GetRelativePath(This));
+      TCode.Create(This, 'Ctx.GetRelativePath: ' + AContext.GetRelativePath(This));
       TBreak.Create(This);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.GetDefaultPath: ' + AContext.GetDefaultPath);
+      TCode.Create(This, 'Ctx.GetDefaultPath: ' + AContext.GetDefaultPath);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.GetPath(e): ' + AContext.GetPath(This));
+      TCode.Create(This, 'Ctx.GetPath(e): ' + AContext.GetPath(This));
       TBreak.Create(This);
-      TCode.Create(This, 'Context.GetURL: ' + AContext.GetURL);
+      TCode.Create(This, 'Ctx.GetURL: ' + AContext.GetURL);
       TBreak.Create(This);
-      TCode.Create(This, 'Context.GetURL(e): ' + AContext.GetURL(this));
+      TCode.Create(This, 'Ctx.GetURL(e): ' + AContext.GetURL(this));
       TBreak.Create(This);
-      TCode.Create(This, 'Context.GetHomeURL: ' + AContext.GetHomeURL);
+      TCode.Create(This, 'Ctx.GetHomeURL: ' + AContext.GetHomeURL);
     end;
     
     aPanel := TPanel.Create(this);

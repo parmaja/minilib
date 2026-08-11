@@ -90,7 +90,7 @@ type
     FFontSize: string;
   protected
     procedure Created; override;
-    procedure DoRequired(const Context: TmnwContext); override;
+    procedure DoRequired(const Ctx: TmnwContext); override;
   public
     //* URL to the OpenAPI/Swagger spec (JSON)
     property SpecURL: string read FSpecURL write FSpecURL;
@@ -118,8 +118,8 @@ type
 
   TRapiDocRenderer = class(TBSRenderer.THTMLControl)
   protected
-    procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-    procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
+    procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+    procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
   end;
 
   { TRapiDoc_Library }
@@ -141,17 +141,17 @@ begin
   FSchemaExpandLevel := -1; // unlimited
 end;
 
-procedure TRapiDocControl.DoRequired(const Context: TmnwContext);
+procedure TRapiDocControl.DoRequired(const Ctx: TmnwContext);
 begin
   inherited;
-  Context.Require(TBootstrap_Library);
-  Context.Require(TBootstrapIcons_Library);
-  Context.Require(TRapiDoc_Library);
+  Ctx.Require(TBootstrap_Library);
+  Ctx.Require(TBootstrapIcons_Library);
+  Ctx.Require(TRapiDoc_Library);
 end;
 
 { TRapiDocRenderer }
 
-procedure TRapiDocRenderer.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+procedure TRapiDocRenderer.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Classes.Add('rapidoc-container');
@@ -160,7 +160,7 @@ begin
   Scope.Classes.Add('m-0');
 end;
 
-procedure TRapiDocRenderer.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TRapiDocRenderer.DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext);
 var
   e: TRapiDocControl;
   aSpecURL: string;
@@ -288,30 +288,30 @@ begin
     AddAttr('font-size', e.FFontSize);
 
   // Render the <rapi-doc> custom element
-  Context.Writer.OpenTag('rapi-doc', 'id=' + DQ(e.ID) + IfThen(aAttrText <> '', ' ' + aAttrText, ''));
-  Context.Writer.CloseTag('rapi-doc');
+  Ctx.Writer.OpenTag('rapi-doc', 'id=' + DQ(e.ID) + IfThen(aAttrText <> '', ' ' + aAttrText, ''));
+  Ctx.Writer.CloseTag('rapi-doc');
 
   // For inline spec content (no URL), use a JavaScript blob approach
   if (e.FSpecURL = '') and (e.FSpecContent <> '') then
   begin
     // Store inline spec in a text/template script
-    Context.Writer.OpenTag('script', 'type="text/template" id=' + DQ(e.ID + '_spec'));
-    Context.Writer.Write(StringReplace(e.FSpecContent, '</script>', '<\/script>', [rfReplaceAll]));
-    Context.Writer.CloseTag('script');
+    Ctx.Writer.OpenTag('script', 'type="text/template" id=' + DQ(e.ID + '_spec'));
+    Ctx.Writer.Write(StringReplace(e.FSpecContent, '</script>', '<\/script>', [rfReplaceAll]));
+    Ctx.Writer.CloseTag('script');
 
     // Initialisation script that sets spec-content attribute from inline JSON
-    Context.Writer.OpenTag('script');
-    Context.Writer.WriteLn('document.addEventListener("DOMContentLoaded", () => {');
-    Context.Writer.WriteLn('  var el = document.getElementById(' + DQ(e.ID) + ');');
-    Context.Writer.WriteLn('  if (el) {');
-    Context.Writer.WriteLn('    var specEl = document.getElementById(' + DQ(e.ID + '_spec') + ');');
-    Context.Writer.WriteLn('    if (specEl) {');
-    Context.Writer.WriteLn('      var spec = specEl.textContent.trim();');
-    Context.Writer.WriteLn('      el.loadSpec(JSON.parse(spec));');
-    Context.Writer.WriteLn('    }');
-    Context.Writer.WriteLn('  }');
-    Context.Writer.WriteLn(' });');
-    Context.Writer.CloseTag('script');
+    Ctx.Writer.OpenTag('script');
+    Ctx.Writer.WriteLn('document.addEventListener("DOMContentLoaded", () => {');
+    Ctx.Writer.WriteLn('  var el = document.getElementById(' + DQ(e.ID) + ');');
+    Ctx.Writer.WriteLn('  if (el) {');
+    Ctx.Writer.WriteLn('    var specEl = document.getElementById(' + DQ(e.ID + '_spec') + ');');
+    Ctx.Writer.WriteLn('    if (specEl) {');
+    Ctx.Writer.WriteLn('      var spec = specEl.textContent.trim();');
+    Ctx.Writer.WriteLn('      el.loadSpec(JSON.parse(spec));');
+    Ctx.Writer.WriteLn('    }');
+    Ctx.Writer.WriteLn('  }');
+    Ctx.Writer.WriteLn(' });');
+    Ctx.Writer.CloseTag('script');
   end;
 end;
 

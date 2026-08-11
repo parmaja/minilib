@@ -62,7 +62,7 @@ type
     FOptions: TMarkdownItOptions;
   protected
     procedure Created; override;
-    procedure DoRequired(const Context: TmnwContext); override;
+    procedure DoRequired(const Ctx: TmnwContext); override;
   public
     //* The markdown source text to render
     property Source: string read FSource write FSource;
@@ -74,8 +74,8 @@ type
 
   TMarkdownItRenderer = class(TBSRenderer.THTMLControl)
   protected
-    procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-    procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
+    procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+    procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
   end;
 
   { TMarkdownIt_Library }
@@ -102,25 +102,25 @@ begin
   FOptions := [mioHTML, mioLinkify, mioSanitize];
 end;
 
-procedure TMarkdownIt.DoRequired(const Context: TmnwContext);
+procedure TMarkdownIt.DoRequired(const Ctx: TmnwContext);
 begin
   inherited;
-  Context.Require(TBootstrap_Library);
-  Context.Require(TBootstrapIcons_Library);
-  Context.Require(TMarkdownIt_Library);
-  Context.Require(THighlightJS_Library);
+  Ctx.Require(TBootstrap_Library);
+  Ctx.Require(TBootstrapIcons_Library);
+  Ctx.Require(TMarkdownIt_Library);
+  Ctx.Require(THighlightJS_Library);
 end;
 
 { TMarkdownItRenderer }
 
-procedure TMarkdownItRenderer.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+procedure TMarkdownItRenderer.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Classes.Add('markdown-body');
   //Scope.Classes.Add('p-1');
 end;
 
-procedure TMarkdownItRenderer.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
+procedure TMarkdownItRenderer.DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext);
 var
   e: TMarkdownIt;
   srcID: string;
@@ -135,14 +135,14 @@ begin
   srcID := e.ID + '_src';
 
   // Output container - markdown-body class is added by DoCollectAttributes
-  Context.Writer.OpenTag('div', Scope.ToString(True));
-  Context.Writer.CloseTag('div');
+  Ctx.Writer.OpenTag('div', Scope.ToString(True));
+  Ctx.Writer.CloseTag('div');
 
   // Store source text in a text/template script to avoid HTML escaping issues.
   src := StringReplace(e.Source, '</script>', '<\/script>', [rfReplaceAll]);
-  Context.Writer.OpenTag('script', 'type="text/template" id=' + DQ(srcID));
-  Context.Writer.Write(src);
-  Context.Writer.CloseTag('script');
+  Ctx.Writer.OpenTag('script', 'type="text/template" id=' + DQ(srcID));
+  Ctx.Writer.Write(src);
+  Ctx.Writer.CloseTag('script');
 
   // Build markdown-it options as a JavaScript object
   aOptions := '{';
@@ -154,33 +154,33 @@ begin
   aOptions := aOptions + '}';
 
   // Renderer script: on DOMContentLoaded, parse markdown and inject into the container.
-  Context.Writer.OpenTag('script');
-  Context.Writer.WriteLn('document.addEventListener("DOMContentLoaded", function(){');
-  Context.Writer.WriteLn('  var srcEl = document.getElementById(' + DQ(srcID) + ');');
-  Context.Writer.WriteLn('  var outEl = document.getElementById(' + DQ(e.ID) + ');');
-  Context.Writer.WriteLn('  if (srcEl && outEl) {');
-  Context.Writer.WriteLn('    var mdOptions = ' + aOptions + ';');
+  Ctx.Writer.OpenTag('script');
+  Ctx.Writer.WriteLn('document.addEventListener("DOMContentLoaded", function(){');
+  Ctx.Writer.WriteLn('  var srcEl = document.getElementById(' + DQ(srcID) + ');');
+  Ctx.Writer.WriteLn('  var outEl = document.getElementById(' + DQ(e.ID) + ');');
+  Ctx.Writer.WriteLn('  if (srcEl && outEl) {');
+  Ctx.Writer.WriteLn('    var mdOptions = ' + aOptions + ';');
   if mioHighlight in e.Options then
   begin
-    Context.Writer.WriteLn('    mdOptions.highlight = function(str, lang) {');
-    Context.Writer.WriteLn('      if (lang && hljs.getLanguage(lang)) {');
-    Context.Writer.WriteLn('        try {');
-    Context.Writer.WriteLn('          return ''<pre><code class="hljs language-'' + lang + ''">'' + hljs.highlight(str, {language: lang, ignoreIllegals: true}).value + ''</code></pre>'';');
-    Context.Writer.WriteLn('        } catch (e) {}');
-    Context.Writer.WriteLn('      }');
-    Context.Writer.WriteLn('      return ''<pre><code class="hljs">'' + str.replace(/&/g, ''&amp;'').replace(/</g, ''&lt;'').replace(/>/g, ''&gt;'') + ''</code></pre>'';');
-    Context.Writer.WriteLn('    };');
+    Ctx.Writer.WriteLn('    mdOptions.highlight = function(str, lang) {');
+    Ctx.Writer.WriteLn('      if (lang && hljs.getLanguage(lang)) {');
+    Ctx.Writer.WriteLn('        try {');
+    Ctx.Writer.WriteLn('          return ''<pre><code class="hljs language-'' + lang + ''">'' + hljs.highlight(str, {language: lang, ignoreIllegals: true}).value + ''</code></pre>'';');
+    Ctx.Writer.WriteLn('        } catch (e) {}');
+    Ctx.Writer.WriteLn('      }');
+    Ctx.Writer.WriteLn('      return ''<pre><code class="hljs">'' + str.replace(/&/g, ''&amp;'').replace(/</g, ''&lt;'').replace(/>/g, ''&gt;'') + ''</code></pre>'';');
+    Ctx.Writer.WriteLn('    };');
   end;
-  Context.Writer.WriteLn('    var md = window.markdownit(mdOptions);');
+  Ctx.Writer.WriteLn('    var md = window.markdownit(mdOptions);');
   if mioTaskLists in e.Options then
-    Context.Writer.WriteLn('    md.use(window.markdownitTaskLists);');
-  Context.Writer.WriteLn('    var html = md.render(srcEl.textContent || srcEl.text);');
+    Ctx.Writer.WriteLn('    md.use(window.markdownitTaskLists);');
+  Ctx.Writer.WriteLn('    var html = md.render(srcEl.textContent || srcEl.text);');
   if mioSanitize in e.Options then
-    Context.Writer.WriteLn('    html = DOMPurify.sanitize(html);');
-  Context.Writer.WriteLn('    outEl.innerHTML = html;');
-  Context.Writer.WriteLn('  }');
-  Context.Writer.WriteLn('});');
-  Context.Writer.CloseTag('script');
+    Ctx.Writer.WriteLn('    html = DOMPurify.sanitize(html);');
+  Ctx.Writer.WriteLn('    outEl.innerHTML = html;');
+  Ctx.Writer.WriteLn('  }');
+  Ctx.Writer.WriteLn('});');
+  Ctx.Writer.CloseTag('script');
 end;
 
 { TMarkdownIt_Library }
