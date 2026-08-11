@@ -485,7 +485,7 @@ aside{
 
 /* Targets screens smaller than 768px (Bootstrap md breakpoint) */
 @media (max-width: 767.98px) {
-  .fixed-card-footer {
+  .fixed-bottom-md {
     position: fixed;
     right: 0;
     bottom: 0;
@@ -495,7 +495,7 @@ aside{
     height : var(--header-size);
   }
 
-  .fixed-footer-padding {
+  .fixed-bottom-padding-md {
     margin-bottom: var(--header-size);
   }
 }
@@ -584,6 +584,13 @@ aside{
 .navbar-toggler:focus {
   outline: none;
   box-shadow: none;
+}
+
+/* bootstrap */
+
+.card
+{
+    margin-bottom: 0.25rem;
 }
 
 .card-header {

@@ -265,6 +265,36 @@ type
         procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
+      { TPanel }
+
+      TCustomPanel = class(THTMLControl)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+      end;
+
+      TPanel = class(TCustomPanel)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
+      end;
+
+      { TCard }
+
+      TCardHeader = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
+      end;
+
+      TCardFooter = class(THTMLElement)
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
+      end;
+
+      TCard = class(TCustomPanel)
+      protected
+        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
+        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
+      end;
+
       { TAccordion }
 
       TAccordion = class(THTMLElement)
@@ -284,29 +314,6 @@ type
       { TAccordionItem }
 
       TAccordionItem = class(THTMLControl)
-      end;
-      
-      { TCard }
-
-      TCardHeader = class(THTMLElement)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
-      end;
-
-      TCardFooter = class(THTMLElement)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
-      end;
-
-      TCard = class(THTMLControl)
-      protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext); override;
-        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
-      end;
-
-      TPanel = class(THTMLControl)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; const Context: TmnwContext); override;
       end;
 
       { TCollapseCaption }
@@ -643,8 +650,8 @@ end;
 
 function BSFixedToStr(Fixed: TmnwFixed; WithSpace: Boolean): string;
 const
-  FixedStrs: array[TmnwFixed] of string = ('', 'fixed-top', 'fixed-bottom', 'fixed-start', 'fixed-end',
-    'sticky-top', 'sticky-bottom', 'sticky-start', 'sticky-end');
+  FixedStrs: array[TmnwFixed] of string = ('', 'fixed-top', 'fixed-bottom', 'fixed-start', 'fixed-end');
+//    'sticky-top', 'sticky-bottom', 'sticky-start', 'sticky-end');
 begin
   Result := FixedStrs[Fixed];
   if (Result <> '') and WithSpace then
@@ -707,6 +714,11 @@ begin
     cskNumber: Result := 'col-' + WideSize + '-' + IntToStr(Self);
     cskAuto: Result := 'col-' + WideSize;
     cskFit: Result := 'col-' + WideSize+ '-auto';
+    cskMax:
+    begin
+      Result := 'col-' + WideSize+ '-12';
+      Result := Result + BSSizeToStr(' max-w-' , Max);
+    end;
   end;
 end;
 
@@ -904,7 +916,7 @@ begin
 
   if not (sstSize in Scope.State)  then
   begin
-    Scope.Classes.AddIf(e.Width > 0, 'max-w-' + e.Width.ToString, ssOuter);
+    //Scope.Classes.AddIf(e.Width > 0, 'max-w-' + e.Width.ToString, ssOuter);
     //Maybe need to check e.responsible
     Scope.Classes.AddIf(e.Size, e.Size.ToString, ssOuter); //Yes when it is big take the size, if small screen get full width
   end;
@@ -1029,34 +1041,6 @@ var
   e: THTML.TCard;
 begin
   e := Scope.Element as THTML.TCard;
-  if (e.Gap > 0) or ForceGap then
-    Scope.Classes.Add(GapChilds, ssInner);
-  if e.Solitary then
-  begin
-//    Scope.Classes.Add('mx-auto');
-//    Scope.Classes.Add('my-auto');
-    Scope.Classes.Append('top-50 start-50 translate-middle');
-  end;
-
-  if e.Mode = emdUndefined then
-  begin
-    //Scope.Classes.Add('d-inline-block', ssInner);
-  end
-  else if e.Mode = emdRow then
-  begin
-    AddRowClasses(Scope.Classes);
-//    if e.AlignItems > alDefault then
-//      Scope.Classes.Add(BSRowAlignToStr('justify-content-', e.AlignItems), ssInner);
-//    if e.NoWrap then
-//      Scope.Classes.Add('flex-md-nowrap', ssInner);
-  end
-  else if e.Mode = emdColumn then
-  begin
-    AddColumnClasses(Scope.Classes);
-    if e.AlignItems > alDefault then
-      Scope.Classes.Add(BSRowAlignToStr('align-items-', e.AlignItems), ssInner);
-  end;
-//  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));
   inherited;
 end;
 
@@ -1069,8 +1053,6 @@ begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
   Scope.Classes.Add('p-0');
-  if not e.Solitary and e.Footer.Fixed then
-    Scope.Classes.Add('fixed-footer-padding');
 
   Context.Writer.OpenTag('div', Scope.ToString([ssOuter]));
   if (e.Caption <> '') or (e.Header.Count > 0) then
@@ -1375,27 +1357,68 @@ begin
   Context.Writer.CloseTag('body');
 end;
 
-{ TBSRenderer.TPanel }
+{ TBSRenderer.TCustomPanel }
+
+procedure TBSRenderer.TCustomPanel.DoCollectAttributes(var Scope: TmnwScope; Context: TmnwContext);
+var
+  e: THTML.TCustomPanel;
+begin
+  e := Scope.Element as THTML.TCustomPanel;
+  inherited;
+  if (e.Gap > 0) or ForceGap then
+    Scope.Classes.Add(GapChilds, ssInner);
+  if e.Direction <> dirUndefined then
+    Scope.Attributes.Add('dir', DirectionToStr(e.Direction));
+  if e.Solitary then
+  begin
+//    Scope.Classes.Add('mx-auto');
+//    Scope.Classes.Add('my-auto');
+    Scope.Classes.Append('top-50 start-50 translate-middle');
+  end;
+
+  if e.Mode = emdUndefined then
+  begin
+    //Scope.Classes.Add('d-inline-block', ssInner);
+  end
+  else if e.Mode = emdRow then
+  begin
+    AddRowClasses(Scope.Classes);
+  end
+  else if e.Mode = emdColumn then
+  begin
+    AddColumnClasses(Scope.Classes);
+    if e.AlignItems > alDefault then
+      Scope.Classes.Add(BSRowAlignToStr('align-items-', e.AlignItems), ssInner);
+  end;
+//  Scope.InnerClasses.Add(BSJustifyToStr('justify-content-', e.JustifyItems));
+end;
+
 
 procedure TBSRenderer.TPanel.DoInnerRender(Scope: TmnwScope; const Context: TmnwContext);
 var
   e: THTML.TPanel;
 begin
-  e := Scope.Element as THTML.TPanel; 
-  Context.Writer.OpenTag('div', 'class="panel"'); //fit-content
-  if e.Caption <> '' then
-    Context.Writer.AddTag('div', 'class="panel-header"', e.Caption);
+  e := Scope.Element as THTML.TPanel;
+  Scope.Classes.Add('panel');
+  Scope.Classes.Add('p-1');
+  Scope.Classes.Add('border');
+  Scope.Classes.Add('rounded');
+  Scope.Classes.Add('overflow-hidden');
+  case e.Sticky of
+    stickyTop:
+    begin
+      Scope.Classes.Add('position-sticky');
+      Scope.Classes.Add('top-0');
+    end;
+    stickyBottom:
+    begin
+      Scope.Classes.Add('position-sticky');
+      Scope.Classes.Add('bottom-0');
+    end;
+  end;
 
-  Scope.Classes.Add('panel-body');
-  if (e.Gap > 0) or ForceGap then
-    Scope.Classes.Add(GapChilds);
-
-//    Scope.Classes.Add(GapChilds);
-  if e.Direction <> dirUndefined then
-    Scope.Attributes.Add('dir', DirectionToStr(e.Direction));
-  Context.Writer.OpenTag('div', Scope.ToString);
+  Context.Writer.OpenTag('div', Scope.ToString); //fit-content
   inherited;
-  Context.Writer.CloseTag('div');
   Context.Writer.CloseTag('div');
 end;
 
@@ -1627,7 +1650,7 @@ var
 begin
   e := Scope.Element as THTML.TColumn;
   //Scope.Classes.Add(BSColumnAlignToStr('', e.ContentAlign));
-  if e.Fixed <> fixedDefault then
+  if e.Fixed <> fixedNone then
     Scope.Classes.Add(BSFixedToStr(e.Fixed));
 {  if e.Align <> alignDefault then
     Scope.Classes.Add(BSAlignToStr(e.Align));}
@@ -2118,11 +2141,14 @@ var
   e: THTML.TCardFooter;
 begin
   e := Scope.Element as THTML.TCardFooter;
-  if e.Count > 0 then  
+  if e.Count > 0 then
   begin
     Scope.Classes.Add('card-footer');
-    if not (e.Parent as THTML.TCard).Solitary and e.Fixed then
-      Scope.Classes.Add('fixed-card-footer');
+    if e.Sticky then
+    begin
+      Scope.Classes.Add('position-sticky');
+      Scope.Classes.Add('bottom-0');
+    end;
     Context.Writer.OpenTag('div', Scope.ToString);
   end;
   inherited;
@@ -2171,7 +2197,7 @@ begin
   e := Scope.Element as THTML.THTMLFormControl;
   if e.Caption <> '' then
   begin
-    Scope.Classes.AddIf(e.Width > 0, 'max-w-' + e.Width.ToString);
+    //Scope.Classes.AddIf(e.Width > 0, 'max-w-' + e.Width.ToString);
     Scope.Classes.AddIf(e.Size, ' ' + e.Size.ToString);
     if e.LabelLayout = lfFloating then
       Scope.Classes.Add('form-floating')

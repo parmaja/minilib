@@ -579,7 +579,9 @@ type
   TmnwAlign = (alDefault, alFirst, alCenter, alStreach, alLast);
   TmnwJustify = (jstDefault, jstStart, jstCenter, ralBetween, jstAround, jstEvenly, jstEnd);
 
-  TmnwFixed= (fixedDefault, fixedTop, fixedBottom, fixedStart, fixedEnd, stickyTop, stickyBottom, stickyStart, stickyEnd);
+  TmnwFixed = (fixedNone, fixedTop, fixedBottom, fixedStart, fixedEnd);
+
+  TmnwSticky = (stickyNone, stickyTop, stickyBottom);
 
   TGap = 0..5;
 
@@ -593,34 +595,37 @@ type
     function ToString: string;
   end;
 
-
-  TColSizeKind = (cskUndefined, cskNumber, cskAuto, cskFit);
-  TColSizeNumber = 0..12;
-  TColSize = record
-    Kind: TColSizeKind;
-    Columns: TColSizeNumber;
-    class operator Explicit(const Source: Integer): TColSize;
-    class operator Implicit(const Source: TColSize): Boolean;
-    class operator Implicit(Source : Integer) : TColSize;
-    class operator Implicit(Source : TColSize): Integer;
-    class operator Implicit(Source : TColSizeKind) : TColSize;
-  end;
-
   TWidthSize = (
         szUndefined,
-        szVeryVerySmall,
+        szExtraSmall,
         szVerySmall,
         szSmall,
         szMedium,
         szLarge,
         szVeryLarge,
-        szVeryVeryLarge
+        szExtraLarge
     );
 
   TWidth = 0..6;
 
   TWidthHelper = record helper for TWidth
     function ToString: string;
+  end;
+
+  TColSizeKind = (cskUndefined, cskNumber, cskAuto, cskFit, cskMax);
+
+  TColSizeNumber = 0..12;
+  TColSize = record
+    Kind: TColSizeKind;
+    Columns: TColSizeNumber;
+    Max: TWidthSize;
+    class operator Explicit(const Source: Integer): TColSize;
+    class operator Explicit(const Source: TWidthSize): TColSize;
+    class operator Implicit(const Source: TColSize): Boolean;
+    class operator Implicit(Source : Integer) : TColSize;
+    class operator Implicit(Source : TWidthSize) : TColSize;
+    class operator Implicit(Source : TColSize): Integer;
+    class operator Implicit(Source : TColSizeKind) : TColSize;
   end;
 
   TmnwBindAction = (bindVisible, bindEnabled);
@@ -1323,7 +1328,7 @@ type
       protected
         procedure Created; override;
       public
-        Width: TWidth;
+//        Width: TWidth;
         Size: TColSize;
         Shadow: TmnwShadow;
         Hint: string;
@@ -1633,9 +1638,29 @@ type
       public
       end;
 
-      { TCard }
-
       TPanelMode = (emdUndefined, emdColumn, emdRow);
+
+      { TPanel }
+
+      TCustomPanel = class(THTMLControl)
+      protected
+        procedure Created; override;
+      public
+        Direction: TDirection;
+        Gap: TGap;
+        Solitary: Boolean; //* Single in Row
+        AlignItems: TmnwAlign;
+//        JustifyItems: TmnwJustify;
+        NoWrap: Boolean;
+        Mode: TPanelMode;
+      end;
+
+      TPanel = class(TCustomPanel)
+      public
+        Sticky: TmnwSticky;
+      end;
+
+      { TCard }
 
       TCardHeader = class(THTMLElement)
       public
@@ -1643,37 +1668,22 @@ type
 
       TCardFooter = class(THTMLElement)
       public
-        Fixed: Boolean;
+        Sticky: Boolean;
       end;
 
       [TID_Extension]
-      TCard = class(THTMLControl)
+      TCard = class(TCustomPanel)
       private
         FHeader: TCardHeader;
         FFooter: TCardFooter;
       protected
         procedure Created; override;
       public
-        Solitary: Boolean; //* Single in Row
         Caption: string;
         Collapse: Boolean;
-
-        AlignItems: TmnwAlign;
-//        JustifyItems: TmnwJustify;
-        NoWrap: Boolean;
-        Mode: TPanelMode;
-        Gap: TGap;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         property Footer: TCardFooter read FFooter;
         property Header: TCardHeader read FHeader;
-      end;
-
-      { TPanel }
-
-      TPanel = class(THTMLItem)
-      public
-        Direction: TDirection;
-        Gap: TGap;
       end;
 
       { TLink }
@@ -5349,10 +5359,6 @@ end;
 procedure THTML.TCard.Created;
 begin
   inherited;
-//  Width := szMedium;
-  Size := 4;
-  Shadow := shadowHairline;
-//  Shadow := shadowThin;
 end;
 
 { THTML.TForm }
@@ -6203,9 +6209,8 @@ begin
         with FLoginCard do
         begin
           Solitary := True;
-          Width := 3;
+          Size := szSmall;
           Mode := emdColumn;
-//          Size := 3;
           Caption := Context._T('login', 'Login');
 //          Auth.Compose(Context);
         end;
@@ -7150,6 +7155,20 @@ begin
   Result.Columns := Source;
 end;
 
+class operator TColSize.Explicit(const Source: TWidthSize): TColSize;
+begin
+  Result.Max := Source;
+  Result.Columns := 12;
+  Result.Kind := cskMax;
+end;
+
+class operator TColSize.Implicit(Source: TWidthSize): TColSize;
+begin
+  Result.Max := Source;
+  Result.Columns := 12;
+  Result.Kind := cskMax;
+end;
+
 class operator TColSize.Implicit(Source: TColSizeKind): TColSize;
 begin
   Result.Kind := Source;
@@ -7162,6 +7181,16 @@ end;
 function TColCountHelper.ToString: string;
 begin
   Result := IntToStr(Self);
+end;
+
+{ THTML.TCustomPanel }
+
+procedure THTML.TCustomPanel.Created;
+begin
+  inherited;
+//  Width := szMedium;
+  Size := 8;
+  Shadow := shadowHairline;
 end;
 
 initialization
