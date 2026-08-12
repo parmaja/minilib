@@ -1731,7 +1731,7 @@ begin
     if e.SaveState then
       aScope.Attributes.Add('data-mnw-savestate', 'true');
 
-    Ctx.Writer.OpenTag('h2', 'id="'+e.id+'-header" class="accordion-header"');
+    Ctx.Writer.OpenTag('h2', 'id="'+e.id+'-header" class="accordion-header p-1"'); //p-1 for full show box-shadow when focused
     Ctx.Writer.OpenTag('button', aScope.ToString);
   finally
     aScope.Free;
@@ -1740,7 +1740,7 @@ begin
   if e.Image.Location = imgSymbol then
   begin
     if e.Image.Symbol <> '' then    
-      Ctx.Writer.AddTag('span', 'class='+ DQ(e.Image.Symbol + ' p-1'));
+      Ctx.Writer.AddTag('span', 'class='+ DQ(e.Image.Symbol + ' px-1'));
   end
   else if e.Image.Location = imgPath then
   begin

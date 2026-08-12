@@ -515,7 +515,7 @@ aside{
 
     /* background-color: rgba(var(--bs-body-color-rgb), 0.08); IDK why changed in my CS app , that have blue gradian */
     /* background-color: color-mix(in srgb, var(--bs-body-bg) 80% );*/
-    background-color: color-mix(in srgb, var(--bs-body-bg), black 8%);
+    background-color: color-mix(in srgb, var(--bs-body-bg), black 7%);
 }
 
 .sidebar-content:dir(ltr)
@@ -614,6 +614,9 @@ aside{
     flex-shrink: 0;
 }
 
+.accordion-header{
+    background-color: var(--bs-accordion-active-bg);
+}
 /* override bootstrap variables, move to mnwBootstrap.css
 .card-header {
     --bs-card-cap-padding-y: 0.3rem;
