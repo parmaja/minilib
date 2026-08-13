@@ -148,8 +148,6 @@ mnw.click = function(sender, event)
 
 mnw.action = function(event, url, data)
 {
-  //if (event) event.preventDefault();
-  //console.log(JSON.stringify(data));
   fetch(url, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -157,15 +155,29 @@ mnw.action = function(event, url, data)
       'Content-Type': 'application/json'
     }
   })
-  .then(response => response.text())
-  .then(data => console.log("Action response: "+data))
+  .then(response => response.json())
+  .then(data => {
+      console.log("Action response: ", data);
+
+      if (data.redirect) {
+        if (data.redirect === ".") {
+          window.location.reload(); // Reloads the current page
+        } else {
+          window.location.href = data.redirect;
+        }
+      } else if (data.type === 'error' || !data.type) {
+        mnw.showToast(data.message || 'Request failed', 'danger');
+      } else if (data.message) {
+        mnw.showToast(data.message, data.type || 'info');
+      }
+  })
   .catch(error => {
     console.error('Error in action:', error);
-    console.log("Error in action: "+error.message);
+    console.log("Error in action: " + error.message);
   });
-   return false;
-}
 
+  return false;
+}
 
 /* Utils functions */
 
@@ -227,10 +239,11 @@ mnw.formPost = async function(e, extraJson) {
     return response.text().then(text => ({ type: response.type, status: response.status, message: text }));
   })
   .then(result => {
-    if (!result) return;
-    let json;
+    if (!result)
+      return;
+    let data;
     try {
-      json = JSON.parse(result.message);
+      data = JSON.parse(result.message);
     } catch (e) {
       if (result.type === 'error' || !result.type) {
         mnw.showToast('Error ' + result.status, 'danger');
@@ -239,12 +252,12 @@ mnw.formPost = async function(e, extraJson) {
       }
       return;
     }
-    if (json.redirect) {
-      window.location.href = json.redirect;
-    } else if (json.type === 'error' || !result.type) {
-      mnw.showToast(json.message || 'Request failed', 'danger');
-    } else if (json.message) {
-      mnw.showToast(json.message, json.type || 'info');
+    if (data.redirect) {
+      window.location.href = data.redirect;
+    } else if (data.type === 'error' || !result.type) {
+      mnw.showToast(data.message || 'Request failed', 'danger');
+    } else if (data.message) {
+      mnw.showToast(data.message, data.type || 'info');
     }
   })
   .catch(error => {
