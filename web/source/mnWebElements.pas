@@ -400,6 +400,8 @@ type
     // http://host:80/basepath/module/schema
     function GetSchemaURL: string; overload;
 
+    function GetRequestURL: string;
+
     // With Schema
     // /basepath/module/schema
     function GetPath: string; overload;
@@ -6022,6 +6024,11 @@ end;
 function TmnwContext.GetRequest: TwebRequest;
 begin
   Result := Response.Request;
+end;
+
+function TmnwContext.GetRequestURL: string;
+begin
+  Result := EndUrl(GetHostURL) + Request.URI;
 end;
 
 function TmnwContext.GetSchemaURL: string;

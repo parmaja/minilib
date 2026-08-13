@@ -2239,7 +2239,7 @@ begin
     if Request.Header.Field['Content-type'].Have('multipart/form-data', [';']) then
       Request.RequestType := rtFormData
     else if Request.Header.Field['Content-type'].Have('application/json', [';']) then
-      if SameText(Request.Header['X-Form-Submit'], 'json') then
+//      if SameText(Request.Header['X-Form-Submit'], 'json') then
         Request.RequestType := rtJSONData;
       
     {if not Response.KeepAlive and (Request.Use.Compressing in [ovUndefined, ovYes]) then
@@ -3601,7 +3601,7 @@ end;
 
 procedure TwebResponse.RespondJSON(ResultType, State, Message, Redirect: string; AAnswer: TmodAnswer);
 begin
-  RespondJSON('{"type": "' + ResultType + '", "state": "' + State + '", "message": "' + Message + '", "redirect":"'+EscapeJSONString(Redirect)+'"}', AAnswer);
+  RespondJSON('{"type": "' + ResultType + '", "state": "' + State + '", "message": "' + Message + '", "redirect":"' + EscapeJSONString(Redirect) + '"}', AAnswer);
 end;
 
 procedure TwebResponse.RespondJSON(S: string; AAnswer: TmodAnswer);
