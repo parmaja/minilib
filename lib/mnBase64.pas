@@ -25,7 +25,6 @@ function Base64Encode(const S: UTF8String): UTF8String;
 function Base64Decode(const S: UTF8String): UTF8String;
 
 {******************************************************************************}
-{******************************************************************************}
 implementation
 
 const
@@ -67,6 +66,11 @@ var
 begin
   if (Length(S) mod 4) <> 0 then
     raise Exception.Create('Base64: Incorrect UTF8String format');
+  if Length(S) = 0 then
+  begin
+    Result := '';
+    Exit;
+  end;
   SetLength(Result, ((Length(S) div 4) - 1) * 3);
   for i := 1 to ((Length(S) div 4) - 1) do
   begin
@@ -112,8 +116,8 @@ begin
     else
       InBuf[3] := 63;
     OutBuf[0] := (InBuf[0] shl 2) or ((InBuf[1] shr 4) and $03);
-    OutBuf[1] := (InBuf[1] shl 4) or ((InBuf[2] shr 2) and $0F);
-    OutBuf[2] := (InBuf[2] shl 6) or (InBuf[3] and $3F);
+    OutBuf[1] := ((InBuf[1] shl 4) or ((InBuf[2] shr 2) and $0F)) and $FF;
+    OutBuf[2] := ((InBuf[2] shl 6) or (InBuf[3] and $3F)) and $FF;
     Move(OutBuf, Result[(i - 1) * 3 + 1], 3);
   end;
   if Length(S) <> 0 then
@@ -177,7 +181,7 @@ begin
       else
         InBuf[2] := 63;
       OutBuf[0] := (InBuf[0] shl 2) or ((InBuf[1] shr 4) and $03);
-      OutBuf[1] := (InBuf[1] shl 4) or ((InBuf[2] shr 2) and $0F);
+      OutBuf[1] := ((InBuf[1] shl 4) or ((InBuf[2] shr 2) and $0F)) and $FF;
       Result := Result + UTF8Char(OutBuf[0]) + UTF8Char(OutBuf[1]);
     end
     else
@@ -223,8 +227,8 @@ begin
       else
         InBuf[3] := 63;
       OutBuf[0] := (InBuf[0] shl 2) or ((InBuf[1] shr 4) and $03);
-      OutBuf[1] := (InBuf[1] shl 4) or ((InBuf[2] shr 2) and $0F);
-      OutBuf[2] := (InBuf[2] shl 6) or (InBuf[3] and $3F);
+      OutBuf[1] := ((InBuf[1] shl 4) or ((InBuf[2] shr 2) and $0F)) and $FF;
+      OutBuf[2] := ((InBuf[2] shl 6) or (InBuf[3] and $3F)) and $FF;
       Result := Result + UTF8Char(OutBuf[0]) + UTF8Char(OutBuf[1]) + UTF8Char(OutBuf[2]);
     end;
   end;
