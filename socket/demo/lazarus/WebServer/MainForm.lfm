@@ -9,7 +9,7 @@ object Main: TMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Mini Web Server'
-  ClientHeight = 277
+  ClientHeight = 297
   ClientWidth = 345
   Font.CharSet = ARABIC_CHARSET
   Font.Color = clBlack
@@ -17,10 +17,10 @@ object Main: TMain
   Font.Name = 'Tahoma'
   Font.Pitch = fpVariable
   Menu = MainMenu1
+  LCLVersion = '4.99.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnHide = FormHide
-  LCLVersion = '2.1.0.0'
   object Bevel1: TBevel
     Left = 43
     Height = 18
@@ -123,8 +123,8 @@ object Main: TMain
     BorderSpacing.InnerBorder = 4
     Caption = 'Start'
     Default = True
-    OnClick = StartBtnClick
     TabOrder = 0
+    OnClick = StartBtnClick
   end
   object RootEdit: TEdit
     Left = 43
@@ -143,8 +143,8 @@ object Main: TMain
     BorderSpacing.InnerBorder = 4
     Caption = 'Stop'
     Enabled = False
-    OnClick = StopBtnClick
     TabOrder = 3
+    OnClick = StopBtnClick
   end
   object PortEdit: TEdit
     Left = 43
@@ -162,8 +162,8 @@ object Main: TMain
     Anchors = [akTop, akRight]
     BorderSpacing.InnerBorder = 4
     Caption = 'Exit'
-    OnClick = ExitBtnClick
     TabOrder = 5
+    OnClick = ExitBtnClick
   end
   object KeepAliveChk: TCheckBox
     Left = 10
@@ -174,8 +174,8 @@ object Main: TMain
     TabOrder = 6
   end
   object MainMenu1: TMainMenu
-    left = 42
-    top = 131
+    Left = 42
+    Top = 131
     object MenuItem1: TMenuItem
       Caption = 'Exit'
       OnClick = MenuItem1Click

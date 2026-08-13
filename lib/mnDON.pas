@@ -402,10 +402,13 @@ type
     function GetEnumerator: TPairsEnumerator; inline;
     constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
+    function ToString: string;
     function CreatePair(const PairName: string; AValue: TDON_Value = nil): TDON_Pair;
     procedure AcquirePair(const AName: string; out AObject: TObject);
     procedure Add(Value: TDON_Pair); overload;
     function Add(const Name: String; const Value: string): TDON_Value; overload;
+    function Add(const Name: String; const Value: Integer): TDON_Value; overload;
+    function Add(const Name: String; const Value: Int64): TDON_Value; overload;
 
     function FindPair(const Name: string): TDON_Pair; overload;
     function PairExists(const Name: string): Boolean; overload;
@@ -491,6 +494,7 @@ function JsonLoadFile(const FileName: string; Options: TJSONParseOptions = []): 
 
 // Loading from String
 procedure JsonParseString(Pair: TDON_Pair; const Content: string; Options: TJSONParseOptions = []); overload;
+procedure JsonParseString(out AObject: TDON_Object; const Content: string; Options: TJSONParseOptions = []); overload;
 function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
 //* {"value": "test1"}
 function JsonParseValueString(const Content: string; Options: TJSONParseOptions = []): TDON_Value; overload;
@@ -643,19 +647,35 @@ begin
   end;
 end;
 
-function JsonLoadFile(const FileName: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
+function JsonLoadFile(const FileName: string; Options: TJSONParseOptions): TDON_Pair; overload;
 begin
   Result := TDON_Pair.Create(nil);
   JsonLoadFile(Result, FileName, Options);
 end;
 
-procedure JsonParseString(Pair: TDON_Pair; const Content: string; Options: TJSONParseOptions = []); overload;
+procedure JsonParseString(Pair: TDON_Pair; const Content: string; Options: TJSONParseOptions); overload;
 var
   Parser: TmnJSONParser;
-begin  
+begin
   Parser.Init(Pair, @JsonParseAcquireCallback, Options);
   Parser.Parse(Content);
   Parser.Finish;
+end;
+
+procedure JsonParseString(out AObject: TDON_Object; const Content: string; Options: TJSONParseOptions); overload;
+var
+  Parser: TmnJSONParser;
+  Pair: TDON_Pair;
+begin
+  Pair := TDON_Pair.Create(nil);
+  try
+    Parser.Init(Pair, @JsonParseAcquireCallback, Options);
+    Parser.Parse(Content);
+    Parser.Finish;
+    AObject := Pair.ReleaseValue as TDON_Object;
+  finally
+    Pair.Free;
+  end;
 end;
 
 function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
@@ -1269,9 +1289,27 @@ begin
   Result := aPair.Value;
 end;
 
+function TDON_Object.Add(const Name: String; const Value: Int64): TDON_Value;
+var
+  aPair: TDON_Pair;
+begin
+  aPair := CreatePair(Name);
+  aPair.Value := TDON_Number.Create(aPair, Value);
+  Result := aPair.Value;
+end;
+
+function TDON_Object.Add(const Name: String; const Value: Integer): TDON_Value;
+var
+  aPair: TDON_Pair;
+begin
+  aPair := CreatePair(Name);
+  aPair.Value := TDON_Number.Create(aPair, Value);
+  Result := aPair.Value;
+end;
+
 constructor TDON_Object.Create(AParent: TDON_Parent);
 begin
-  inherited Create(AParent);
+  inherited;
 end;
 
 procedure TDON_Object.Created;
@@ -1385,6 +1423,11 @@ end;
 procedure TDON_Object.SetValue(const AValue: Variant);
 begin
   AsString := aValue;
+end;
+
+function TDON_Object.ToString: string;
+begin
+  Result := GetAsString;
 end;
 
 { TDON_Pair }

@@ -2352,14 +2352,14 @@ function EscapeAttr(const S: string): string;
 function Renderers: TmnwRenderers;
 function Libraries: TmnwLibraries;
 
-procedure InitLanguages(const APath: string);
 function _T(const Key: string; const Lang: string; const Default: string = ''): string;
+procedure InitLanguages(const APath: string);
 
 implementation
 
 uses  
   Generics.Collections,
-  mnHttpClient;
+  mnBase64, mnHttpClient;
 
 function DirectionToStr(Direction: TDirection): string;
 begin

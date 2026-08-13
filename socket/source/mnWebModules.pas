@@ -61,7 +61,7 @@ uses
   {$else}
   NetEncoding, Hash,
   {$endif}
-  DateUtils, mnLogs, mnBase64,
+  DateUtils, mnLogs, mnBase64, mnDON, mnJSON,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams, mnClasses, mnMultipartData, mnModules;
 
@@ -334,6 +334,10 @@ procedure WebServeDir(Title, Path: string; Response: TwebResponse; Request: Tmod
 procedure WebServeFile(Response: TwebResponse; Request: TmodRequest; DefaultDocuments: TStringList; Options: TmodServeFiles);
 
 function IsJWT(const S: string): Boolean;
+{$ifndef FPC}
+function JWTEncode(const Payload: UTF8String; const Secret: UTF8String): string;
+function JWTPayload(const Token: string; const Secret: string): TDON_Object;
+{$endif}
 
 function WebServers: TWebServers;
 
@@ -356,6 +360,51 @@ function IsJWT(const S: string): Boolean;
 begin
   Result := (Length(S) > 0) and (S.CountChar('.') = 2);
 end;
+
+{$ifndef FPC}
+function JWTEncode(const Payload: UTF8String; const Secret: UTF8String): string;
+var
+  HeaderB64, PayloadB64: UTF8String;
+  Signature: UTF8String;
+begin
+  HeaderB64 := Base64Encode('{"alg":"HS256","typ":"JWT"}');
+  PayloadB64 := Base64Encode(Payload);
+  Signature := THashSHA2.GetHMAC(Secret, HeaderB64 + '.' + PayloadB64, SHA256);
+  Result := HeaderB64 + '.' + PayloadB64 + '.' + Signature;
+end;
+
+function JWTPayload(const Token: string; const Secret: string): TDON_Object;
+var
+  Parts: TArray<string>;
+  HeaderB64, PayloadB64, SigB64: string;
+  Payload: UTF8String;
+  ExpectedSig: UTF8String;
+begin
+  Result := nil;
+  Parts := Token.Split(['.']);
+  if Length(Parts) <> 3 then
+    Exit;
+
+  HeaderB64 := Parts[0];
+  PayloadB64 := Parts[1];
+  SigB64 := Parts[2];
+
+  ExpectedSig := THashSHA2.GetHMAC(Secret, HeaderB64 + '.' + PayloadB64);
+
+  if ExpectedSig <> SigB64 then
+    Exit;
+
+  Payload := Base64Decode(PayloadB64);
+  if Payload = '' then
+    Exit;
+
+  try
+    JsonParseString(Result, Payload, [jsoSafe]);
+  except
+    Result := nil;
+  end;
+end;
+{$endif}
 
 function WebFindDocument(const HomeDir, Path: string; out Document:string; Smart: Boolean = False): Boolean;
 var
