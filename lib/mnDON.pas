@@ -356,6 +356,7 @@ type
   public
     constructor Create(AParent: TDON_Object);
     destructor Destroy; override;
+    function ToString: string; override;
     function ReleaseValue: TDON_Value;
   published
     property Value: TDON_Value read FValue write SetPairValue;
@@ -402,7 +403,7 @@ type
     function GetEnumerator: TPairsEnumerator; inline;
     constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
-    function ToString: string;
+    function ToString: string; override;
     function CreatePair(const PairName: string; AValue: TDON_Value = nil): TDON_Pair;
     procedure AcquirePair(const AName: string; out AObject: TObject);
     procedure Add(Value: TDON_Pair); overload;
@@ -477,6 +478,7 @@ procedure JsonConsoleSerialize(AObject: TDON_Value; Options: TSerializerOptions 
 // Save
 procedure JsonSaveStream(Pair: TDON_Pair; AStream: TStream; Options: TSerializerOptions = []); overload;
 procedure JsonSaveFile(Pair: TDON_Pair; FileName: string; Options: TSerializerOptions = []); overload;
+procedure JsonSaveString(Pair: TDON_Pair; out Result: string; Options: TSerializerOptions = []); overload;
 
 procedure JsonSaveStream(Obj: TDON_Object; AStream: TStream; Options: TSerializerOptions = []); overload;
 procedure JsonSaveFile(Obj: TDON_Object; FileName: string; Options: TSerializerOptions = []); overload;
@@ -532,6 +534,19 @@ begin
   AStream := TFileStream.Create(FileName, fmOpenWrite or fmCreate);  
   try
     JsonSaveStream(Pair, AStream, Options);
+  finally
+    AStream.Free;
+  end;
+end;
+
+procedure JsonSaveString(Pair: TDON_Pair; out Result: string; Options: TSerializerOptions = []); overload;
+var
+  AStream: TStringStream;
+begin
+  AStream := TStringStream.Create('');
+  try
+    JsonSaveStream(Pair, AStream, Options);
+    Result := AStream.DataString;
   finally
     AStream.Free;
   end;
@@ -1466,7 +1481,7 @@ end;
 
 function TDON_Pair.GetAsString: string;
 begin
-  Result := '{Pair}';
+  JsonSaveString(Self, Result); //TODO: What if i want it XML?
 end;
 
 function TDON_Pair.GetValue: Variant;
@@ -1489,6 +1504,11 @@ end;
 procedure TDON_Pair.SetValue(const AValue: Variant);
 begin
   AsString := AValue;
+end;
+
+function TDON_Pair.ToString: string;
+begin
+  Result := GetAsString;
 end;
 
 { TDON_Boolean }
