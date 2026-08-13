@@ -810,7 +810,7 @@ end;
 
 function TmnCustomField.ReadIsEmpty: Boolean;
 begin
-  Result := IsExists or (AsString = '');
+  Result := not IsExists or (AsString = '');
 end;
 
 function TmnCustomField.ReadIsExists: Boolean;

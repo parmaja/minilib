@@ -22,7 +22,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, StrUtils,
-  mnClasses, mnUtils, mnStreams,
+  mnClasses, mnUtils, mnStreams, Variants,
   mncConnections, mncCommons;
 
 type
@@ -283,12 +283,55 @@ type
     procedure LoadFromFiles(Strings: TStringList);
   end;
 
+  TmncSQLMode = class abstract(TObject)
+  private
+  public
+    class function QuoteValue(const V: Variant): string; virtual;
+    class function QuoteField(const S: string): string; virtual;
+    class function QuoteString(const S: string): string; virtual;
+    class function BoolValue(const B: Boolean): string; virtual;
+  end;
+
+  TSQLStandardMode = class(TmncSQLMode)
+  public
+    class function QuoteField(const S: string): string; override;
+    class function BoolValue(const B: Boolean): string; override;
+  end;
+
+  TSQLiteMode = class(TmncSQLMode)
+  public
+    class function QuoteField(const S: string): string; override;
+    class function BoolValue(const B: Boolean): string; override;
+  end;
+
+  TPostgreMode = class(TmncSQLMode)
+  public
+    class function QuoteField(const S: string): string; override;
+    class function BoolValue(const B: Boolean): string; override;
+  end;
+
+  TsgFieldFlag = (fldKey, fldRequired);
+  TsgFieldFlags = set of TsgFieldFlag;
+
+  TsgField = record
+  public
+    Name: string;
+    Flags: TsgFieldFlags;
+    Value: Variant;
+    constructor Create(const AName: string; const AValue: Variant; AFlags: TsgFieldFlags = []); overload;
+    constructor Create(const AName: string; AFlags: TsgFieldFlags = []); overload;
+    function IsKey: Boolean;
+    function IsRequired: Boolean;
+  end;
+
+  TsgFields = TArray<TsgField>;
+
   { TSQLGenerator }
 
-  TSQLGenerator = record
+  TSQLGenerator<T: TmncSQLMode> = record
   private
     FTable: string;
-    FFields: TArray<string>;
+    FFields: TArray<TsgField>;
     FOrder: string;
     FWhere: string;
     FJoins: TArray<string>;
@@ -297,14 +340,22 @@ type
     FStart: string;
     FDistinct: Boolean;
   public
-    function AsSelect: string;
+    function AsSelect(WithKeys: Boolean = False): string;
+    function AsInsert(WithKeys: Boolean = False): string;
+    function AsUpdate: string;
+    function AsDelete: string;
     procedure Clear;
-    procedure AddField(const Name: string);
+    procedure AddField(const Name: string; const Value: Variant; Flags: TsgFieldFlags = []); overload;
+    procedure AddField(const Name: string; Flags: TsgFieldFlags = []); overload;
+    procedure AddFields(const Names: TArray<String>; Flags: TsgFieldFlags = []); overload;
+    procedure AddFields(const Keys, Names: TArray<String>); overload;
+    procedure AddFields(const Keys, Required, Names: TArray<String>); overload;
     procedure AddJoin(const Join: string); //TODO TJoin record (table, where, fields)
+
     property Table: string read FTable write FTable;
-    property Fields: TArray<string> read FFields;
-    property Joins: TArray<string> read FJoins;
-    property Where: string read FWhere write FWhere;
+    property Fields: TsgFields read FFields;
+    property Joins: TArray<string> read FJoins;//TODO TJoin.Table TJoin.Fields
+    property Where: string read FWhere write FWhere; //TODO nested wheres
     property GroupBy: string read FGroupBy write FGroupBy;
     property Order: string read FOrder write FOrder;
     property Connect: string read FConnect write FConnect;
@@ -312,7 +363,7 @@ type
     property Distinct: Boolean read FDistinct write FDistinct;
   end;
 
-
+  TSQLGenStandard = TSQLGenerator<TSQLStandardMode>;
 
 {$ifndef FPC}
 var
@@ -1227,19 +1278,70 @@ begin
   {$endif}
 end;
 {$endif}
+
 { TSQLGenerator }
 
-procedure TSQLGenerator.AddField(const Name: string);
+procedure TSQLGenerator<T>.AddField(const Name: string; Flags: TsgFieldFlags);
 begin
-  FFields := FFields + [Name];
+  FFields := FFields + [TsgField.Create(Name, Flags)];
 end;
 
-procedure TSQLGenerator.AddJoin(const Join: string);
+procedure TSQLGenerator<T>.AddFields(const Keys, Required, Names: TArray<String>);
+var
+  itm: string;
+begin
+  for itm in Keys do
+  begin
+    AddField(itm, [fldKey]);
+  end;
+
+  for itm in Required do
+  begin
+    AddField(itm, [fldRequired]);
+  end;
+
+  for itm in Names do
+  begin
+    AddField(itm);
+  end;
+end;
+
+procedure TSQLGenerator<T>.AddFields(const Keys, Names: TArray<String>);
+var
+  itm: string;
+begin
+  for itm in Keys do
+  begin
+    AddField(itm, fldKey);
+  end;
+
+  for itm in Names do
+  begin
+    AddField(itm);
+  end;
+end;
+
+procedure TSQLGenerator<T>.AddField(const Name: string; const Value: Variant; Flags: TsgFieldFlags);
+begin
+  FFields := FFields + [TsgField.Create(Name, Value, Flags)];
+end;
+
+procedure TSQLGenerator<T>.AddFields(const Names: TArray<String>; Flags: TsgFieldFlags);
+var
+  itm: string;
+begin
+  for itm in Names do
+  begin
+    AddField(itm, Flags);
+  end;
+end;
+
+procedure TSQLGenerator<T>.AddJoin(const Join: string);
 begin
   FJoins := FJoins + [Join];
 end;
 
-procedure TSQLGenerator.Clear;
+procedure TSQLGenerator<T>.Clear;
 begin
   FFields := nil;
   FJoins := nil;
@@ -1247,7 +1349,56 @@ begin
   FOrder := '';
 end;
 
-function TSQLGenerator.AsSelect: string;
+function TSQLGenerator<T>.AsDelete: string;
+var
+  i: Integer;
+begin
+  Result := 'delete from ' + T.QuoteField(Table) + #13;
+  for i := 0 to Length(Fields) - 1 do
+  if (fldKey in Fields[i].Flags) then
+  begin
+    if i = 0 then
+      Result := Result + #13'where '
+    else
+      Result := Result + ' and ';
+    Result := Result + T.QuoteField(Fields[i].Name) + '=?' + Fields[i].Name;
+  end;
+end;
+
+function TSQLGenerator<T>.AsInsert(WithKeys: Boolean): string;
+var
+  i: Integer;
+  b: Boolean;
+begin
+  Result := 'insert into ' + T.QuoteField(Table) + ' (';
+  b := False;
+  for i := 0 to Length(Fields) - 1 do
+  if WithKeys or not Fields[i].IsKey then
+  begin
+    if b then
+      Result := Result + ', '
+    else
+      b := True;
+    Result := Result + T.QuoteField(Fields[i].Name);
+  end;
+  b := False;
+  Result := Result + ') '#13'values (';
+  for i := 0 to Length(Fields) - 1 do
+  if WithKeys or not Fields[i].IsKey then
+  begin
+    if b then
+      Result := Result + ', '
+    else
+      b := True;
+    if Fields[i].Value <> varEmpty then
+      Result := Result + '=' + T.QuoteValue(Fields[i].Value)
+    else
+      Result := Result + '?' + Fields[i].Name;
+  end;
+  Result := Result + ')';
+end;
+
+function TSQLGenerator<T>.AsSelect(WithKeys: Boolean): string;
 var
   i: Integer;
   SL: TStrings;
@@ -1261,8 +1412,9 @@ begin
     else
       SL.Text := 'select ';
     for i := 0 to Length(Fields) - 1 do
+    if WithKeys or not Fields[i].IsKey then
     begin
-      S := Fields[i];
+      S := Fields[i].Name;
       if i <> (Length(Fields) - 1) then
         S := S + ',';
       SL.Add(S);
@@ -1292,6 +1444,138 @@ begin
     Result := SL.Text;
   finally
     SL.Free;
+  end;
+end;
+
+function TSQLGenerator<T>.AsUpdate: string;
+var
+  i: Integer;
+  b: Boolean;
+begin
+  Result := 'update ' + T.QuoteField(Table) + ' set '#13;
+  b := False;
+  for i := 0 to Length(Fields) - 1 do
+  if not (fldKey in Fields[i].Flags) then
+  begin
+    if b then
+      Result := Result + ', '
+    else
+      b := True;
+    if Fields[i].Value <> varEmpty then
+      Result := Result + T.QuoteField(Fields[i].Name) + '=?' + T.QuoteValue(Fields[i].Value)
+    else
+      Result := Result + T.QuoteField(Fields[i].Name) + '=?' + Fields[i].Name;
+  end;
+
+  for i := 0 to Length(Fields) - 1 do
+  if (fldKey in Fields[i].Flags) then
+  begin
+    if i = 0 then
+      Result := Result + #13'where '
+    else
+      Result := Result + ' and ';
+    if Fields[i].Value <> varEmpty then
+      Result := Result + T.QuoteField(Fields[i].Name) + '=' + T.QuoteValue(Fields[i].Value)
+    else
+      Result := Result + T.QuoteField(Fields[i].Name) + '=?' + Fields[i].Name;
+  end;
+end;
+
+{ TsgField }
+
+constructor TsgField.Create(const AName: string; AFlags: TsgFieldFlags);
+begin
+  Name := AName;
+  Flags := AFlags;
+  Value := varEmpty;
+end;
+
+function TsgField.IsKey: Boolean;
+begin
+  Result := fldKey in Flags;
+end;
+
+function TsgField.IsRequired: Boolean;
+begin
+  Result := fldRequired in Flags;
+end;
+
+constructor TsgField.Create(const AName: string; const AValue: Variant; AFlags: TsgFieldFlags);
+begin
+  Name := AName;
+  Flags := AFlags;
+  Value := AValue;
+end;
+
+{ TSQLStandardMode }
+
+class function TSQLStandardMode.BoolValue(const B: Boolean): string;
+const
+  cBoolStrs: array [Boolean] of String = ('false', 'true');
+begin
+  Result := cBoolStrs[B]
+end;
+
+class function TSQLStandardMode.QuoteField(const S: string): string;
+begin
+  Result := S;
+end;
+
+{ TPostgreMode }
+
+class function TPostgreMode.BoolValue(const B: Boolean): string;
+const
+  cBoolStrs: array [Boolean] of String = ('false', 'true');
+begin
+  Result := cBoolStrs[B]
+end;
+
+class function TPostgreMode.QuoteField(const S: string): string;
+begin
+  Result := QuoteStr(S, '"');
+end;
+
+{ TSQLiteMode }
+
+class function TSQLiteMode.BoolValue(const B: Boolean): string;
+const
+  cBoolStrs: array [Boolean] of String = ('false', 'true');
+begin
+  Result := cBoolStrs[B]
+end;
+
+class function TSQLiteMode.QuoteField(const S: string): string;
+begin
+  Result := QuoteStr(S, '"');
+end;
+
+{ TmncSQLMode }
+
+class function TmncSQLMode.BoolValue(const B: Boolean): string;
+begin
+  if B then
+    Result := '1'
+  else
+    Result := '0';
+end;
+
+class function TmncSQLMode.QuoteField(const S: string): string;
+begin
+  Result := S;
+end;
+
+class function TmncSQLMode.QuoteString(const S: string): string;
+begin
+  Result := QuoteStr(S, '''');
+end;
+
+class function TmncSQLMode.QuoteValue(const V: Variant): string;
+begin
+  case VarType(V) of
+    varString: Result := QuoteString(V);
+    varDate: Result := QuoteString(ISODateToStr(V));
+    else
+      Result := String(V);
   end;
 end;
 

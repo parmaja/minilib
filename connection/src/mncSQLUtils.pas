@@ -632,7 +632,7 @@ end;
 
 class function TSQLStandard.QuoteName(const S: string): string;
 begin
-  Result := '';
+  Result := S;
 end;
 
 { TFirebirdMode }
