@@ -494,7 +494,7 @@ var
     except
       on E: Exception do
       begin
-        E.Message := E.Message + #13 + ' on script number ' + IntToStr(c);
+        E.Message := E.Message + #13#10 + ' on script number ' + IntToStr(c);
         raise;
       end
       else

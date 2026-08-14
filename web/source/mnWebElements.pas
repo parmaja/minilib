@@ -294,7 +294,7 @@ type
     function AddIf(Condition: Boolean; const Name: string; Area: TAttributeArea = ssOuter): Integer; inline;
     function Add(const AClass: TElementClass): Integer; overload;
     //Add multiple items in on string
-    procedure Append(const S: string; Delimiter: string = ' '); overload;
+    procedure Append(const S: string; Area: TAttributeArea = ssOuter); overload;
     procedure Append(A: TElementClasses); overload;
     function Remove(const Name: string): Boolean;
     //function ToString(const Initial: string = ''): string; overload;
@@ -5746,11 +5746,21 @@ begin
   PElementClasses(Sender)^.Add(S);
 end;
 
-procedure TElementClasses.Append(const S: string; Delimiter: string);
+procedure TElementClasses.Append(const S: string; Area: TAttributeArea);
 var
-  MatchCount: Integer;
+  strings: TStringList;
+  itm: string;
 begin
-  StrToStringsExCallback(S, 0, @Self, [Delimiter, #13], MatchCount, @Classes_StrToStringsExCallbackProc, []);
+  strings := TStringList.Create;
+  try
+    StrToStrings(S, strings, [' '], [], []);
+    for itm in strings do
+    begin
+      Add(itm, Area);
+    end;
+  finally
+    strings.Free;
+  end;
 end;
 
 class operator TElementClasses.Add(A: TElementClasses; B: string): TElementClasses;

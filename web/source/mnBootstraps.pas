@@ -1373,7 +1373,7 @@ begin
   begin
 //    Scope.Classes.Add('mx-auto');
 //    Scope.Classes.Add('my-auto');
-    Scope.Classes.Append('top-50 start-50 translate-middle');
+    Scope.Classes.Append('top-50 start-50 translate-middle', ssOuter);
   end;
 
   if e.Mode = emdUndefined then
@@ -1401,6 +1401,7 @@ begin
   e := Scope.Element as THTML.TPanel;
   Scope.Classes.Add('panel');
   Scope.Classes.Add('p-1');
+  Scope.Classes.Add('bg-body');
   Scope.Classes.Add('border');
   Scope.Classes.Add('rounded');
   Scope.Classes.Add('overflow-hidden');
@@ -2494,6 +2495,7 @@ begin
   inherited;
   Scope.Classes.Remove('form-control');
   Scope.Classes.Add('align-items-center', ssOuter);
+  Scope.Classes.Add('p-1', ssOuter);
   Scope.Classes.Add('form-check-input', ssInner);
   Scope.Attributes.Add('type', 'checkbox', ssInner);
   if e.Value <> '' then
