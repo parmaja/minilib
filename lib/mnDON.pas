@@ -503,7 +503,8 @@ function JsonParseValueString(const Content: string; Options: TJSONParseOptions 
 
 //* For testing
 function JsonParseChunks(const Content: string; Options: TJSONParseOptions = []; ChunkSize: Integer = 3): TDON_Pair;
-function JsonParsePairString(const S: utf8string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
+function JsonParsePairString(const S: utf8string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
+function JsonParsePairString(const S: utf8string; Options: TJSONParseOptions = []): TDON_Pair; overload;
 
 //Load file but parse as string
 function JsonParsePairFile(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
@@ -809,6 +810,13 @@ begin
       raise;
     end;
   end
+end;
+
+function JsonParsePairString(const S: utf8string; Options: TJSONParseOptions = []): TDON_Pair;
+var
+  err: string;
+begin
+  Result := JsonParsePairString(S, err, Options);
 end;
 
 function JsonParsePairFile(const FileName: string; out Error: string; Options: TJSONParseOptions = []): TDON_Pair;
