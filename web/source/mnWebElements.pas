@@ -2558,9 +2558,13 @@ begin
   begin
     if LangData[Key].IsExists then
       Result := LangData[Key].AsString
+    else if Default = '' then
+      Result := Key
     else
       Result := Default;
   end
+  else if Default = '' then
+    Result := Key
   else
     Result := Default;
 end;

@@ -1041,6 +1041,8 @@ var
   e: THTML.TCard;
 begin
   e := Scope.Element as THTML.TCard;
+  if Scope.Element.ID <> '' then
+    Scope.Attributes.Add('id', Scope.Element.ID, ssOuter); //change area
   inherited;
 end;
 
@@ -2361,7 +2363,7 @@ procedure TBSRenderer.TToolButton.DoCollectAttributes(var Scope: TmnwScope; Ctx:
 begin
   inherited;
   Scope.Classes.Add('d-block');
-  Scope.Classes.Add('p-1');
+//  Scope.Classes.Add('p-1');
   Scope.Attributes.Add('aria-label', 'Toggle navigation');
 end;
 

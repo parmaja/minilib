@@ -181,12 +181,32 @@ mnw.action = function(event, url, data)
 
 /* Utils functions */
 
+function nestDottedKeys(obj) {
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const parts = key.split('.');
+    if (parts.length > 1 && parts.every(p => p !== '')) {
+      let target = result;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (typeof target[part] !== 'object' || target[part] === null)
+          target[part] = {};
+        target = target[part];
+      }
+      target[parts[parts.length - 1]] = value;
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 mnw.formPost = async function(e, extraJson) {
   if (e) e.preventDefault();
   const formElement = e.target;
 
   // Collect all native inputs as JSON (handles checkboxes, radios, files automatically)
-  const data = Object.fromEntries(new FormData(formElement));
+  let data = Object.fromEntries(new FormData(formElement));
 
   if (extraJson)
     Object.assign(data, extraJson);
@@ -212,6 +232,8 @@ mnw.formPost = async function(e, extraJson) {
         el.setJSON(data);
     }
   });
+
+  data = nestDottedKeys(data);
 
   fetch(formElement.action, {
     method: 'POST',
