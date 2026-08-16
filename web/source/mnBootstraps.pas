@@ -2434,6 +2434,7 @@ begin
   e := Scope.Element as THTML.TSelect;
   inherited;
   Scope.Classes.Remove('form-control');
+  Scope.Classes.Remove('p-1');
   Scope.Classes.Add('form-select', ssInner);
   if e.Multiple then
     Scope.Attributes.AddProp('multiple', ssInner);
@@ -2448,7 +2449,7 @@ var
   s, Selected: string;
 begin
   e := Scope.Element as THTML.TSelect;
-  Ctx.Writer.OpenTag('select', Scope.ToString([ssInner]));
+  Ctx.Writer.OpenTag('select', Scope.ToString);
   for o in e.Items do
   begin
     s := o.Value;

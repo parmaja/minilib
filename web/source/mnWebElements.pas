@@ -255,8 +255,16 @@ type
   public
     IsProperty: Boolean; //that dosnt have value
     Area: TAttributeArea;
+    Used: Boolean;
     function CreateSubValues(vSeparators: TSysCharSet = [' ']): TStringList;
   end;
+
+
+  TmnwScopeState = (
+    sstSize //Size classes/attributes added
+  );
+
+  TmnwScopeStates = set of TmnwScopeState;
 
   { TmnwAttributes }
 
@@ -280,6 +288,7 @@ type
   public
     Name: string;
     Area: TAttributeArea;
+    Used: Boolean;
     constructor Create(AName: string; AArea: TAttributeArea);
   end;
 
@@ -338,11 +347,6 @@ type
     property Changed: Boolean read FChanged;
   end;  
 
-  TmnwScopeState = (
-    sstSize //Size classes/attributes added
-  );
-
-  TmnwScopeStates = set of TmnwScopeState;
   { TmnwScope }
 
   TmnwScope = record
@@ -351,8 +355,8 @@ type
     Attributes: TmnwAttributes;
     Classes: TElementClasses;
     WrapClasses: TElementClasses; //WrapClass is a class used of what parent wrapped it
-    State: TmnwScopeStates;
   public
+    State: TmnwScopeStates;
     function ToString(Area: TAttributeAreas = [ssOuter, ssInner]; WithSpace: Boolean = False): string; overload;
     function ToString(WithSpace: Boolean): string; overload;
 
@@ -2896,20 +2900,25 @@ begin
     if (idItem >= 0) then
     begin
       itm := Items[idItem];
-      if itm.Area in Area then
-        sb.Append(itm.Name).Append('=').Append(DQ(itm.Value));
+      if (Area = []) or (itm.Area in Area) then
+        if not itm.Used then
+        begin
+          sb.Append(itm.Name).Append('=').Append(DQ(itm.Value));
+          itm.Used := True;
+        end;
     end;
 
     for itm in Self do
-    if itm.Area in Area then
-    begin
-      if sb.Length > 0 then
-        sb.Append(' ');
-      if itm.IsProperty and (itm.Value = '') then
-        sb.Append(itm.Name)
-      else if not SameText(itm.name, 'id') then
-        sb.Append(itm.Name).Append('=').Append(DQ(itm.Value));
-    end;
+    if (Area = []) or (itm.Area in Area) then
+      if not itm.Used then
+      begin
+        if sb.Length > 0 then
+          sb.Append(' ');
+        if itm.IsProperty and (itm.Value = '') then
+          sb.Append(itm.Name)
+        else if not SameText(itm.name, 'id') then
+          sb.Append(itm.Name).Append('=').Append(DQ(itm.Value));
+      end;
     Result := sb.ToString;
   finally
     sb.Free;
@@ -5876,12 +5885,13 @@ begin
   Result := '';
   for itm in Items do
   if (Area = []) or (itm.Area in Area) then
-  begin
-    if Result <> '' then
-      Result := Result + ' ' + itm.Name
-    else
-      Result := itm.Name;
-  end;
+    if not itm.Used then
+    begin
+      if Result <> '' then
+        Result := Result + ' ' + itm.Name
+      else
+        Result := itm.Name;
+    end;
 end;
 
 { TmnwScope }
