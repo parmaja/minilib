@@ -74,7 +74,7 @@ type
 
   TMarkdownItRenderer = class(TBSRenderer.THTMLControl)
   protected
-    procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+    procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
     procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
   end;
 
@@ -113,7 +113,7 @@ end;
 
 { TMarkdownItRenderer }
 
-procedure TMarkdownItRenderer.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TMarkdownItRenderer.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Classes.Add('markdown-body');

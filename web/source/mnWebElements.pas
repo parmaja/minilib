@@ -350,7 +350,7 @@ type
 
   { TmnwScope }
 
-  TmnwScope = record
+  TmnwScope = class(TmnObject)
   public
     Element: TmnwElement;
     Attributes: TmnwAttributes;
@@ -1003,15 +1003,15 @@ type
     //* Called to parent to wrap the child rendering, each chiled will wrap it with this render
     //* This method exists in parent render
     //* Keep `var`
-    procedure DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); virtual;
-    procedure DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); virtual;
+    procedure DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext); virtual;
+    procedure DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext); virtual;
 
     //* Called only if have parent but exists in a child
     procedure DoEnterOuterRender(Scope: TmnwScope; const Ctx: TmnwContext); virtual;
     procedure DoLeaveOuterRender(Scope: TmnwScope; const Ctx: TmnwContext); virtual;
 
     //* Keep `var` to allow descents child takes new attributes
-    procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); virtual;
+    procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); virtual;
     //* Content render
     //Scope will not inherited to descents child
     procedure DoEnterRender(Scope: TmnwScope; const Ctx: TmnwContext); virtual;
@@ -1023,7 +1023,7 @@ type
   public
     procedure Render(AElement: TmnwElement; const Ctx: TmnwContext);
     constructor Create(ARenderer: TmnwRenderer; ARendererRegister: TmnwElementRendererRegister); virtual; //useful for creating it by RendererClass.Create
-    procedure CollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+    procedure CollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
   end;
 
   TmnwElementRendererClass = class of TmnwElementRenderer;
@@ -1087,7 +1087,7 @@ type
 
       THTMLElement = class abstract(TmnwElementRenderer)
       protected         
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoEnterRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
     
@@ -1144,14 +1144,14 @@ type
 
       TIntervalCompose = class(TCompose)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
     
       { TDocument }
 
       TDocument = class(THTMLElement)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -1159,7 +1159,7 @@ type
 
       TBody = class(THTMLElement)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoLeaveRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
@@ -3049,7 +3049,7 @@ begin
   end;
 end;
 
-procedure TmnwElementRenderer.DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TmnwElementRenderer.DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 begin
 end;
 
@@ -3067,7 +3067,7 @@ procedure TmnwElementRenderer.DoLeaveRender(Scope: TmnwScope; const Ctx: TmnwCon
 begin
 end;
 
-procedure TmnwElementRenderer.DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TmnwElementRenderer.DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 begin
 end;
 
@@ -3079,7 +3079,7 @@ procedure TmnwElementRenderer.DoLeaveOuterRender(Scope: TmnwScope; const Ctx: Tm
 begin
 end;
 
-procedure TmnwElementRenderer.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TmnwElementRenderer.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
 end;
 
@@ -3122,7 +3122,7 @@ begin
   Result := True;
 end;
 
-procedure TmnwElementRenderer.CollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TmnwElementRenderer.CollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   if Scope.Element.ID <> '' then
     Scope.Attributes.add('id', Scope.Element.ID, ssInner);
@@ -5930,9 +5930,9 @@ end;
 
 constructor TmnwScope.Create(AElement: TmnwElement);
 begin
-  Self := Default(TmnwScope);
-  Self.Attributes := TmnwAttributes.Create;
-  Self.Element := AElement;
+  inherited Create;
+  Attributes := TmnwAttributes.Create;
+  Element := AElement;
 end;
 
 function TmnwScope.ToString(WithSpace: Boolean): string;
@@ -6609,7 +6609,7 @@ end;
 
 { TmnwHTMLRenderer.THTMLElement }
 
-procedure TmnwHTMLRenderer.THTMLElement.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TmnwHTMLRenderer.THTMLElement.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   {$ifopt D+}
@@ -6739,7 +6739,7 @@ end;
 
 { TmnwHTMLRenderer.TIntervalCompose }
 
-procedure TmnwHTMLRenderer.TIntervalCompose.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TmnwHTMLRenderer.TIntervalCompose.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Attributes['data-mnw-refresh-url'] := Ctx.GetPath(Scope.Element);
@@ -6747,7 +6747,7 @@ end;
 
 { TmnwHTMLRenderer.TBody }
 
-procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TmnwHTMLRenderer.TBody.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TBody;
 begin
@@ -6774,7 +6774,7 @@ end;
 
 { TmnwHTMLRenderer.TDocument }
 
-procedure TmnwHTMLRenderer.TDocument.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TmnwHTMLRenderer.TDocument.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   if Ctx.Direction = dirRightToLeft then

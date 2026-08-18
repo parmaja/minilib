@@ -69,20 +69,20 @@ type
 
       THTMLComponent = class abstract(THTMLElement)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { THTMLControl }
 
       THTMLControl = class abstract(THTMLComponent)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure RenderImageLocation(const Ctx: TmnwContext; const Image: TImageLocation);
       end;
 
       THTMLFormControl = class abstract(THTMLControl)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoEnterRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoLeaveRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       public      
@@ -92,7 +92,7 @@ type
 
       TImage = class(THTMLComponent)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -100,7 +100,7 @@ type
 
       TImageFile = class(THTMLComponent)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -108,7 +108,7 @@ type
 
       TImageMemory = class(THTMLComponent)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
       
@@ -121,7 +121,7 @@ type
 
       TBody = class(TmnwHTMLRenderer.TBody)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -141,9 +141,9 @@ type
       TNavDropdown = class(THTMLComponent)
       private
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       public
       end;
@@ -154,8 +154,8 @@ type
       private
       protected
         procedure DoRenderBrand(Scope: TmnwScope; Ctx: TmnwContext); virtual;
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       public
       end;
@@ -198,7 +198,7 @@ type
 
       TSpanButton = class(TSpan)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TFooter }
@@ -238,14 +238,14 @@ type
 
       THTMLLayout = class abstract(THTMLElement)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TBox }
 
       TBox = class(THTMLLayout)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -260,7 +260,7 @@ type
 
       TRow = class(THTMLLayout)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -268,7 +268,7 @@ type
 
       TColumn = class(THTMLLayout)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -276,7 +276,7 @@ type
 
       TCustomPanel = class(THTMLControl)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       TPanel = class(TCustomPanel)
@@ -298,7 +298,7 @@ type
 
       TCard = class(TCustomPanel)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -313,9 +313,9 @@ type
 
       TAccordionSection = class(THTMLElement)
       protected
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
       { TAccordionItem }
@@ -334,7 +334,7 @@ type
 
       TDropdown = class(THTMLControl)
       protected
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -347,7 +347,7 @@ type
 
       TGroup = class(THTMLControl)
       protected
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
       
@@ -376,10 +376,10 @@ type
 
       TForm = class(THTMLElement)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
-        procedure DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
-        procedure DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
       { TParagraph }
@@ -424,13 +424,13 @@ type
 
       TButton = class(THTMLItem)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
       TToolButton = class(TButton)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -438,28 +438,28 @@ type
 
       TThemeButton = class(TToolButton)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       TSubmitForm = class(TButton)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       TLinkButton = class(THTMLItem)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
       TResetForm = class(TButton)
       protected        
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       TActionForm = class(TButton)
       protected        
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TNavItem }
@@ -487,72 +487,72 @@ type
 
       TInput = class(THTMLFormControl)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
       TUsername = class(TInput)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       TPassword = class(TInput)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
       
       TNewPassword = class(TPassword)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TIntegerInput }
 
       TIntegerInput = class(TInput)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TCountInput }
 
       TCountInput = class(TIntegerInput)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TDateInput }
 
       TDateInput = class(TInput)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TTimeInput }
 
       TTimeInput = class(TInput)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TDateTimeInput }
 
       TDateTimeInput = class(TInput)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TMaskInput }
 
       TMaskInput = class(TInput)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
       { TSelect }
 
       TSelect = class(THTMLFormControl)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -560,7 +560,7 @@ type
 
       TTextArea = class(THTMLFormControl)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -568,7 +568,7 @@ type
 
       TCheckbox = class(THTMLControl) //Yes THTMLControl
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoEnterRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
         procedure DoLeaveRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
@@ -576,7 +576,7 @@ type
 
       THiddenInput = class(THTMLElement)
       protected
-        procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;      
   public
@@ -909,7 +909,7 @@ end;
 
 { TBSRenderer.THTMLControl }
 
-procedure TBSRenderer.THTMLControl.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.THTMLControl.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.THTMLControl;
 begin
@@ -1048,7 +1048,7 @@ begin
   Ctx.Writer.CloseTag('main');
 end;
 
-procedure TBSRenderer.TCard.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TCard.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TCard;
 begin
@@ -1105,7 +1105,7 @@ begin
   Ctx.Writer.CloseTag('div');
 end;
 
-procedure TBSRenderer.TForm.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TForm.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TForm;
 begin
@@ -1121,12 +1121,12 @@ end;
 
 { TBSRenderer.TFormHTML }
 
-procedure TBSRenderer.TForm.DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TForm.DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 begin
   inherited;
 end;
 
-procedure TBSRenderer.TForm.DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TForm.DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 begin
   inherited;
 end;
@@ -1196,7 +1196,7 @@ begin
   //Ctx.Writer.AddSpace;
 end;
 
-procedure TBSRenderer.TButton.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TButton.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TCustomButton;
 begin
@@ -1265,7 +1265,7 @@ end;
 
 { TBSRenderer.TInputHTML }
 
-procedure TBSRenderer.TInput.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TInput.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TInput;
 begin
@@ -1298,7 +1298,7 @@ end;
 
 { TBSRenderer.TImageHTML }
 
-procedure TBSRenderer.TImage.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TImage.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   Scope.Attributes.Add('src' , (Scope.Element as THTML.TImage).Source, ssInner);
   Scope.Attributes.Add('alt', (Scope.Element as THTML.TImage).AltText, ssInner); //* always set
@@ -1313,7 +1313,7 @@ end;
 
 { TBSRenderer.TImageMemory }
 
-procedure TBSRenderer.TImageMemory.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TImageMemory.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   Scope.Attributes.Add('src', Ctx.GetPath(Scope.Element), ssInner);
   Scope.Attributes.Add('alt', (Scope.Element as THTML.TImageMemory).AltText, ssInner);
@@ -1328,7 +1328,7 @@ end;
 
 { TBSRenderer.TBody }
 
-procedure TBSRenderer.TBody.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TBody.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TBody;
 begin
@@ -1373,7 +1373,7 @@ end;
 
 { TBSRenderer.TCustomPanel }
 
-procedure TBSRenderer.TCustomPanel.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TCustomPanel.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TCustomPanel;
 begin
@@ -1456,7 +1456,7 @@ end;
 
 { TBSRenderer.TThemeButton }
 
-procedure TBSRenderer.TThemeButton.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TThemeButton.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Attributes.Add('aria-label', 'Toggle theme', ssInner);
@@ -1464,7 +1464,7 @@ end;
 
 { TBSRenderer.TDropdown }
 
-procedure TBSRenderer.TDropdown.DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TDropdown.DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 begin
   inherited;
   Scope.Classes.Add('dropdown-item');
@@ -1612,7 +1612,7 @@ end;
 
 { TBSRenderer.TRow }
 
-procedure TBSRenderer.TRow.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TRow.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TRow;
 begin
@@ -1644,7 +1644,7 @@ end;
 
 { TBSRenderer.TColumn }
 
-procedure TBSRenderer.TColumn.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TColumn.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TColumn;
 begin
@@ -1703,7 +1703,7 @@ end;
 
 { TBSRenderer.TAccordionSection }
 
-procedure TBSRenderer.TAccordionSection.DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TAccordionSection.DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 var 
   classes: TElementClasses;
 begin
@@ -1714,7 +1714,7 @@ begin
   inherited;
 end;
 
-procedure TBSRenderer.TAccordionSection.DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TAccordionSection.DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 begin
   inherited;
   Ctx.Writer.CloseTag('li');
@@ -1802,7 +1802,7 @@ begin
   Ctx.Writer.CloseTag('a');
 end;
 
-procedure TBSRenderer.TNavBar.DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TNavBar.DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 var
   classes: TElementClasses;
 begin
@@ -1812,7 +1812,7 @@ begin
   inherited;
 end;
 
-procedure TBSRenderer.TNavBar.DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TNavBar.DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 begin
   inherited;
   Ctx.Writer.CloseTag('li');
@@ -1959,7 +1959,7 @@ end;
 
 { TBSRenderer.TImageFile }
 
-procedure TBSRenderer.TImageFile.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TImageFile.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TImageFile;
 begin
@@ -1985,13 +1985,13 @@ end;
 
 { TBSRenderer.TNavDropdown }
 
-procedure TBSRenderer.TNavDropdown.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TNavDropdown.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.WrapClasses.Add('dropdown');
 end;
 
-procedure TBSRenderer.TNavDropdown.DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TNavDropdown.DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 begin
   Ctx.Writer.OpenTag('li', 'class="dropdown-item"');
   inherited;
@@ -2021,7 +2021,7 @@ begin
   Ctx.Writer.CloseTag('ul');
 end;
 
-procedure TBSRenderer.TNavDropdown.DoLeaveChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TNavDropdown.DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 begin
   inherited;
   Ctx.Writer.CloseTag('li');
@@ -2085,7 +2085,7 @@ end;
 
 { TBSRenderer.TGroup }
 
-procedure TBSRenderer.TGroup.DoEnterChildRender(var Scope: TmnwScope; const Ctx: TmnwContext);
+procedure TBSRenderer.TGroup.DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
 var
   e: THTML.THTMLComponent;
 begin
@@ -2114,7 +2114,7 @@ end;
 
 { TBSRenderer.THTMLContainer }
 {
-procedure TBSRenderer.THTMLContainer.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.THTMLContainer.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.THTMLContainer;
   PaddingPrefix: string;
@@ -2137,7 +2137,7 @@ end;
 }
 { TBSRenderer.THTMLComponent }
 
-procedure TBSRenderer.THTMLComponent.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.THTMLComponent.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.THTMLComponent;
 begin
@@ -2181,7 +2181,7 @@ end;
 
 { TBSRenderer.TSpanButton }
 
-procedure TBSRenderer.TSpanButton.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TSpanButton.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   Scope.Classes.Add('btn');
   inherited;  
@@ -2189,7 +2189,7 @@ end;
 
 { TBSRenderer.THTMLFormControl }
 
-procedure TBSRenderer.THTMLFormControl.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.THTMLFormControl.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.THTMLFormControl;
 begin
@@ -2253,7 +2253,7 @@ end;
 
 { TBSRenderer.TSubmitForm }
 
-procedure TBSRenderer.TSubmitForm.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TSubmitForm.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TSubmitForm;
 begin
@@ -2267,7 +2267,7 @@ end;
 
 { TBSRenderer.TResetForm }
 
-procedure TBSRenderer.TResetForm.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TResetForm.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TResetForm;
 begin
@@ -2281,7 +2281,7 @@ end;
 
 { TBSRenderer.TPassword }
 
-procedure TBSRenderer.TPassword.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TPassword.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TPassword;
 begin
@@ -2294,14 +2294,14 @@ end;
 
 { TBSRenderer.TUsername }
 
-procedure TBSRenderer.TUsername.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TUsername.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
 end;
 
 { TBSRenderer.TNewPassword }
 
-procedure TBSRenderer.TNewPassword.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TNewPassword.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Attributes.Add('autocomplete', 'new-password', ssInner);
@@ -2309,7 +2309,7 @@ end;
 
 { TBSRenderer.TIntegerInput }
 
-procedure TBSRenderer.TIntegerInput.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TIntegerInput.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Attributes.Add('type', 'number', ssInner);
@@ -2318,7 +2318,7 @@ end;
 
 { TBSRenderer.TCountInput }
 
-procedure TBSRenderer.TCountInput.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TCountInput.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TCountInput;
 begin
@@ -2331,7 +2331,7 @@ end;
 
 { TBSRenderer.TDateInput }
 
-procedure TBSRenderer.TDateInput.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TDateInput.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Attributes.Add('type', 'date', ssInner);
@@ -2339,7 +2339,7 @@ end;
 
 { TBSRenderer.TActionForm }
 
-procedure TBSRenderer.TActionForm.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TActionForm.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TActionForm;
 begin
@@ -2353,7 +2353,7 @@ end;
 
 { TBSRenderer.THiddenInput }
 
-procedure TBSRenderer.THiddenInput.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.THiddenInput.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.THiddenInput;
 begin
@@ -2371,7 +2371,7 @@ end;
 
 { TBSRenderer.TToolButton }
 
-procedure TBSRenderer.TToolButton.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TToolButton.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Classes.Add('d-block');
@@ -2387,7 +2387,7 @@ end;
 
 { TBSRenderer.TBox }
 
-procedure TBSRenderer.TBox.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TBox.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TBox;
 begin
@@ -2411,7 +2411,7 @@ end;
 
 { TBSRenderer.TDateTimeInput }
 
-procedure TBSRenderer.TDateTimeInput.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TDateTimeInput.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Attributes.Add('type', 'datetime-local', ssInner);
@@ -2419,7 +2419,7 @@ end;
 
 { TBSRenderer.TTimeInput }
 
-procedure TBSRenderer.TTimeInput.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TTimeInput.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Attributes.Add('type', 'time', ssInner);
@@ -2427,7 +2427,7 @@ end;
 
 { TBSRenderer.TMaskInput }
 
-procedure TBSRenderer.TMaskInput.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TMaskInput.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TMaskInput;
 begin
@@ -2439,7 +2439,7 @@ end;
 
 { TBSRenderer.TSelect }
 
-procedure TBSRenderer.TSelect.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TSelect.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TSelect;
 begin
@@ -2476,7 +2476,7 @@ end;
 
 { TBSRenderer.TTextArea }
 
-procedure TBSRenderer.TTextArea.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TTextArea.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TTextArea;
 begin
@@ -2500,7 +2500,7 @@ end;
 
 { TBSRenderer.TCheckbox }
 
-procedure TBSRenderer.TCheckbox.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TCheckbox.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.TCheckbox;
 begin
@@ -2544,7 +2544,7 @@ end;
 
 { TBSRenderer.THTMLLayout }
 
-procedure TBSRenderer.THTMLLayout.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.THTMLLayout.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 var
   e: THTML.THTMLLayout;
 begin
@@ -2565,7 +2565,7 @@ end;
 
 { TBSRenderer.TBackForm }
 
-procedure TBSRenderer.TLinkButton.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TBSRenderer.TLinkButton.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Classes.Add('btn-secondary');

@@ -118,7 +118,7 @@ type
 
   TRapiDocRenderer = class(TBSRenderer.THTMLControl)
   protected
-    procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+    procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
     procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
   end;
 
@@ -151,7 +151,7 @@ end;
 
 { TRapiDocRenderer }
 
-procedure TRapiDocRenderer.DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
+procedure TRapiDocRenderer.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
   Scope.Classes.Add('rapidoc-container');
