@@ -443,16 +443,14 @@ mnw.init_accordions = function()
 
 /* Binding (Bind property in TmnwElement) */
 
-//A master control (TCheckBox or TSelect) with data-bind-group and
-//data-bind-action toggles the visibility (d-none) of every other element
-//(slave) that has the same data-bind-group but no data-bind-action,
-//the master itself is never changed.
-//A TSelect master matches its value against the id attribute of the slaves.
+//A TCheckBox or TSelect with data-bind-group toggles the visibility (d-none)
+//of every other element that has the same data-bind-group, itself is never changed.
 mnw.apply_binding = function(trigger)
 {
   const group = trigger.getAttribute('data-bind-group');
   if (!group) return;
-  const action = trigger.getAttribute('data-bind-action') || 'visible';
+  const action = trigger.getAttribute('data-bind-action');
+  if (!action) return;
 
   //The attribute may sit on a wrapper element (i.e. checkbox outer div)
   const checkbox = trigger.matches('input[type="checkbox"]') ? trigger : trigger.querySelector('input[type="checkbox"]');
@@ -461,12 +459,14 @@ mnw.apply_binding = function(trigger)
   const checked = checkbox ? checkbox.checked : null;
   const value = select ? select.value : null;
 
-  document.querySelectorAll('[data-bind-group="' + group + '"]:not([data-bind-action])').forEach(target => {
+  document.querySelectorAll('[data-bind-group="' + group + '"]:not([data-bind-action]').forEach(target => {
+    if (target === trigger) return;
+
     let visible = false;
     if (checkbox)
       visible = checked;
     else if (select)
-      visible = (target.id === value);
+      visible = (target.id === value) || (target.getAttribute('data-bind-name') === value);
 
     if (action === 'enabled')
     {

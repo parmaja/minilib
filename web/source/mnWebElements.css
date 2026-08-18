@@ -585,7 +585,6 @@ aside{
 }
 
 .card-header {
-    --bs-card-cap-padding-y: 0.4rem;
     background-color: var(--bs-primary-bg-subtle);
     color: var(--bs-primary-bg);
 }

@@ -642,10 +642,12 @@ type
   );
 
   TmnwBind = record
-    //Group name, only under this group
-    Group: string;
     //What action to do
-    Action: TmnwBindAction;
+    Action: TmnwBindAction; //Only Master have it
+    //Slaves and Masters
+    Group: string;
+    //Group name, only under this group
+    Name: string; //optional, You can use ID instead
   end;
 
   //Keep it as DoRespond form
@@ -6613,13 +6615,33 @@ end;
 { TmnwHTMLRenderer.THTMLElement }
 
 procedure TmnwHTMLRenderer.THTMLElement.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
+var
+  e: THTML.THTMLElement;
 begin
+  e := Scope.Element as THTML.THTMLElement;
   inherited;
+  if e.Bind.Group <> '' then
+  begin
+    if e.Bind.Action > bindNone then
+    begin
+      //Master control: the JS listens to it and toggles every slave of the group
+      Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssInner);
+      Scope.Attributes.Add('data-bind-action', BindActionToStr(e.Bind.Action), ssInner);
+      if e.Bind.Name <> '' then
+        Scope.Attributes.Add('data-bind-name', e.Bind.Name, ssOuter);
+    end
+    else //Slave: only tagged with the group, the master toggles it
+    begin
+      Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssOuter);
+      if e.Bind.Name <> '' then
+        Scope.Attributes.Add('data-bind-name', e.Bind.Name, ssOuter);
+    end;
+  end;
+  if Scope.Element.Data <> '' then
+    Scope.Attributes.Add('data-mnw-value', Scope.Element.Data, ssInner);
   {$ifopt D+}
   Scope.Attributes.Add('data-mnw-class', Scope.Element.ClassName, ssOuter);
   {$endif}
-  if Scope.Element.Data <> '' then
-    Scope.Attributes.Add('data-mnw-value', Scope.Element.Data, ssInner);
 end;
 
 procedure TmnwHTMLRenderer.THTMLElement.DoEnterRender(Scope: TmnwScope; const Ctx: TmnwContext);

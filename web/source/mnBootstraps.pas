@@ -853,6 +853,7 @@ begin
     RegisterRenderer(THTML.TToast, TToast);
     RegisterRenderer(THTML.TLink, TLink);
     RegisterRenderer(THTML.TSpan, TSpan);
+    RegisterRenderer(THTML.TBadge, TBadge);
     RegisterRenderer(THTML.TButton, TButton);
     RegisterRenderer(THTML.TToolButton, TToolButton);
     RegisterRenderer(THTML.TSubmitForm, TSubmitForm);
@@ -935,18 +936,6 @@ begin
     ShadowEnd: Scope.Classes.Add('shadow-end', ssOuter);
     ShadowBottom: Scope.Classes.Add('shadow-bottom', ssOuter);
     else ;
-  end;
-
-  if e.Bind.Group <> '' then
-  begin
-    if e.Bind.Action > bindNone then
-    begin
-      //Master control: the JS listens to it and toggles every slave of the group
-      Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssInner);
-      Scope.Attributes.Add('data-bind-action', BindActionToStr(e.Bind.Action), ssInner);
-    end
-    else //Slave: only tagged with the group, the master toggles it
-      Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssOuter);
   end;
   inherited;
 end;
