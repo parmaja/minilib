@@ -937,9 +937,6 @@ begin
     else ;
   end;
 
-  if e.Bind.Name <> '' then
-    Scope.Attributes.Add('data-bind-name', e.Bind.Name, ssInner);
-
   if e.Bind.Group <> '' then
   begin
     if e.Bind.Action = bindNone then
@@ -1071,7 +1068,7 @@ begin
   Ctx.Writer.OpenTag('div', Scope.ToString([ssOuter]));
   if (e.Caption <> '') or (e.Header.Count > 0) then
   begin
-    Ctx.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header align-items-center d-flex'+ BSControlStyleToStr('text-bg-', e.Style, True) + BSControlStyleToStr('bg-', e.Style, True) + '"');
+    Ctx.Writer.OpenTag('h6', 'id="' + e.id + '-header" class="card-header align-items-center d-flex'+ BSControlStyleToStr('text-bg-', e.Style, True) + BSControlStyleToStr('bg-', e.Style, True) + '"');
     Ctx.Writer.WriteLn(e.Caption);
     Ctx.Writer.OpenTag('div', 'class="d-flex ms-auto"');
     e.Header.Render(Ctx);
@@ -2445,6 +2442,7 @@ var
 begin
   e := Scope.Element as THTML.TSelect;
   inherited;
+  Scope.Classes.Remove('form-control');
   Scope.Classes.Add('form-select', ssInner);
   if e.Multiple then
     Scope.Attributes.AddProp('multiple', ssInner);

@@ -490,7 +490,7 @@ mnw.init_bindings = function()
   });
 
   //Apply the initial state of every trigger
-  document.querySelectorAll('[data-bind-group], [data-bind-action]').forEach(el => {
+  document.querySelectorAll('[data-bind-group]:not([data-bind-action])').forEach(el => {
     if (el.matches('input[type="checkbox"], select') || el.querySelector('input[type="checkbox"], select'))
       mnw.apply_binding(el);
   });

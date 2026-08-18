@@ -569,7 +569,15 @@ aside{
   box-shadow: none;
 }
 
+.logo img{
+    width: var(--header-size);
+    height: 100%;
+    padding: 0.2em;
+    /* object-fit: contain; /* or 'cover' */
+}
+
 /* bootstrap */
+/* Override Bootstrap : move it to bs-custom.css */
 
 .card
 {
@@ -577,6 +585,7 @@ aside{
 }
 
 .card-header {
+    --bs-card-cap-padding-y: 0.4rem;
     background-color: var(--bs-primary-bg-subtle);
     color: var(--bs-primary-bg);
 }
@@ -589,13 +598,6 @@ aside{
 .accordion-button {
     /*border-width: 0.1rem;*/
     background-color: var(--bs-accordion-active-bg);
-}
-
-.logo img{
-    width: var(--header-size);
-    height: 100%;
-    padding: 0.2em;
-    /* object-fit: contain; /* or 'cover' */
 }
 
 /* Confirm Modal */
@@ -617,6 +619,16 @@ aside{
 .accordion-header{
     background-color: var(--bs-accordion-active-bg);
 }
+
+.form-control {
+    padding: .200rem .500rem;
+}
+
+.form-select {
+    padding-top: .200rem;
+    padding-bottom: .200rem;
+}
+
 /* override bootstrap variables, move to mnwBootstrap.css
 .card-header {
     --bs-card-cap-padding-y: 0.3rem;

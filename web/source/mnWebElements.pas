@@ -642,8 +642,6 @@ type
   );
 
   TmnwBind = record
-    //Show Hide, caller can have more than one name to show and hide others, "name1,name2"
-    Name: string;
     //Group name, only under this group
     Group: string;
     //What action to do
@@ -5751,6 +5749,11 @@ begin
   begin
     Items := Items + [TElementClass.Create(Name, Area)];
     Result := Length(Items) - 1;
+  end
+  else
+  begin
+    Items[Result].Area := Area;
+    Items[Result].Used := False;
   end;
 end;
 
