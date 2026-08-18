@@ -76,8 +76,8 @@ type
 
       THTMLControl = class abstract(THTMLComponent)
       protected
-        procedure RenderImageLocation(const Ctx: TmnwContext; const Image: TImageLocation);
         procedure DoCollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext); override;
+        procedure RenderImageLocation(const Ctx: TmnwContext; const Image: TImageLocation);
       end;
 
       THTMLFormControl = class abstract(THTMLControl)
@@ -183,7 +183,14 @@ type
       { TSpan }
 
       TSpan = class(THTMLElement)
-      protected        
+      protected
+        procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
+      end;
+
+      { TBadge }
+
+      TBadge = class(THTMLElement)
+      protected
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
 
@@ -935,8 +942,13 @@ begin
 
   if e.Bind.Group <> '' then
   begin
-    Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssInner);
-    Scope.Attributes.Add('data-bind-action', BindActionToStr(e.Bind.Action), ssInner);
+    if e.Bind.Action = bindNone then
+      Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssOuter)
+    else
+    begin
+      Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssInner);
+      Scope.Attributes.Add('data-bind-action', BindActionToStr(e.Bind.Action), ssInner);
+    end;
   end;
   inherited;
 end;
@@ -1059,7 +1071,7 @@ begin
   Ctx.Writer.OpenTag('div', Scope.ToString([ssOuter]));
   if (e.Caption <> '') or (e.Header.Count > 0) then
   begin
-    Ctx.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header align-items-center d-flex'+ BSControlStyleToStr('text-bg-', e.ControlStyle, True) + BSControlStyleToStr('bg-', e.ControlStyle, True) + '"');
+    Ctx.Writer.OpenTag('h5', 'id="' + e.id + '-header" class="card-header align-items-center d-flex'+ BSControlStyleToStr('text-bg-', e.Style, True) + BSControlStyleToStr('bg-', e.Style, True) + '"');
     Ctx.Writer.WriteLn(e.Caption);
     Ctx.Writer.OpenTag('div', 'class="d-flex ms-auto"');
     e.Header.Render(Ctx);
@@ -1080,7 +1092,7 @@ begin
   // Bootstrap's .collapse:not(.show) { display: none; }. Wrap children in a
   // flex container so the collapse target div can be hidden properly.
 
-  Ctx.Writer.OpenTag('div', 'id="'+e.id+'-panel" class="overflow-hidden p-1' //p-1 needed for highlights inputs
+  Ctx.Writer.OpenTag('div', 'id="'+e.id+'-panel" class="overflow-hidden p-2' //p-1 needed for highlights inputs
 //    + When((e.Gap > 0) or ForceGap, ' ' + GapChilds)
     + SpaceIf(Scope.Classes.ToString([ssInner]))
     + '"'
@@ -1204,12 +1216,12 @@ var
   event: string;
 begin
   e := Scope.Element as THTML.TCustomButton;
-  if e.ControlStyle <> styleUndefined then
+  if e.Style <> styleUndefined then
   begin
     if e.Outline then
-      Scope.Classes.Add(BSControlStyleToStr('btn-outline-', e.ControlStyle))
+      Scope.Classes.Add(BSControlStyleToStr('btn-outline-', e.Style))
     else
-      Scope.Classes.Add(BSControlStyleToStr('btn-', e.ControlStyle));
+      Scope.Classes.Add(BSControlStyleToStr('btn-', e.Style));
   end;
   if e.CallScript <> '' then
     event := ' onclick='''+e.CallScript+''''
@@ -1470,8 +1482,8 @@ begin
     Scope.Classes.Add('dropdown-toggle');
   if dropSplit in e.Options then
     Scope.Classes.Add('dropdown-toggle-split');
-  if e.ControlStyle <> styleUndefined then
-    Scope.Classes.Add(BSControlStyleToStr('btn-', e.ControlStyle));
+  if e.Style <> styleUndefined then
+    Scope.Classes.Add(BSControlStyleToStr('btn-', e.Style));
   Scope.Attributes.Add('data-bs-toggle', 'dropdown');
   Scope.Attributes.Add('aria-expanded', 'false');
   Scope.Attributes.Add('type', 'button');
@@ -1510,8 +1522,8 @@ begin
 
   Scope.Classes.Add('btn');
   Scope.Classes.Add('dropdown-toggle');
-  if e.ControlStyle <> styleUndefined then
-    Scope.Classes.Add(BSControlStyleToStr('btn-', e.ControlStyle));
+  if e.Style <> styleUndefined then
+    Scope.Classes.Add(BSControlStyleToStr('btn-', e.Style));
   Scope.Attributes.Add('data-bs-toggle', 'dropdown');
   Scope.Attributes.Add('aria-expanded', 'false');
   Scope.Attributes.Add('type', 'button');
@@ -1612,8 +1624,8 @@ begin
 //  Scope.Classes.Add('row');
 //  Scope.Classes.Add('flex-lg-nowrap');
 //  Scope.Classes.Add('d-block');
-  Scope.Classes.Add(BSRowAlignToStr('align-items-', e.AlignItems), ssInner);
-  Scope.Classes.Add(BSJustifyToStr('justify-content-', e.JustifyItems), ssInner);
+  Scope.Classes.AddIf(BSRowAlignToStr('align-items-', e.AlignItems), ssInner);
+  Scope.Classes.AddIf(BSJustifyToStr('justify-content-', e.JustifyItems), ssInner);
   inherited;
 end;
 
@@ -1622,7 +1634,7 @@ var
   e: THTML.TRow;
 begin
   e := Scope.Element as THTML.TRow;
-  Scope.Classes.Add(BSFixedToStr(e.Fixed));
+  Scope.Classes.AddIf(BSFixedToStr(e.Fixed));
 {  if e.Align <> alignDefault then
     Scope.Classes.Add(BSAlignToStr(e.Align));}
   Ctx.Writer.OpenTag('div', Scope.ToString);
@@ -2218,10 +2230,10 @@ begin
       Scope.Classes.Add('px-0');
       labelClasses := ' mx-2';
     end;
-    Ctx.Writer.OpenTag('div', Scope.ToString([ssOuter]));
-    if e.LabelLayout <> lfFloating then
-      Ctx.Writer.AddTag('label', 'id=' + DQ(e.ID+'_label') + ' class="form-label p-0 my-auto text-nowrap' + labelClasses + '" for="' + e.ID + '"', e.Caption);
   end;
+  Ctx.Writer.OpenTag('div', Scope.ToString([ssOuter]));
+  if (e.Caption <> '') and (e.LabelLayout <> lfFloating) then
+    Ctx.Writer.AddTag('label', 'id=' + DQ(e.ID+'_label') + ' class="form-label p-0 my-auto text-nowrap' + labelClasses + '" for="' + e.ID + '"', e.Caption);
   inherited;
 end;
 
@@ -2235,8 +2247,8 @@ begin
   begin
     if e.LabelLayout = lfFloating then
       Ctx.Writer.AddTag('label', 'id=' + DQ(e.ID+'_label') + ' class="form-label" for="' + e.ID + '"', e.Caption);
-    Ctx.Writer.CloseTag('div');
   end;
+  Ctx.Writer.CloseTag('div');
 end;
 
 { TBSRenderer.TSubmitForm }
@@ -2433,8 +2445,6 @@ var
 begin
   e := Scope.Element as THTML.TSelect;
   inherited;
-  Scope.Classes.Remove('form-control');
-  Scope.Classes.Remove('p-1');
   Scope.Classes.Add('form-select', ssInner);
   if e.Multiple then
     Scope.Attributes.AddProp('multiple', ssInner);
@@ -2449,6 +2459,7 @@ var
   s, Selected: string;
 begin
   e := Scope.Element as THTML.TSelect;
+  inherited;
   Ctx.Writer.OpenTag('select', Scope.ToString);
   for o in e.Items do
   begin
@@ -2460,7 +2471,6 @@ begin
       Selected := ' selected';
     Ctx.Writer.AddTag('option', 'value=' + DQ(EscapeAttr(s)) + Selected, o.Name);
   end;
-  inherited;
   Ctx.Writer.CloseTag('select');
 end;
 
@@ -2571,6 +2581,27 @@ begin
   Ctx.Writer.OpenTag('a', 'href="'+When(e.Location, '#') + '"'+ Scope.ToString(True));
   inherited;
   Ctx.Writer.CloseTag('a');
+end;
+
+{ TBSRenderer.TBadge }
+
+procedure TBSRenderer.TBadge.DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext);
+var
+  e: THTML.TBadge;
+  s: string;
+begin
+  e := Scope.Element as THTML.TBadge;
+  Scope.Classes.Add('badge');
+  Scope.Classes.Add(BSControlStyleToStr('bg-', e.Style));
+  s := Scope.ToString;
+  if (s <> '') or (e.Text <> '') then
+  begin
+    Ctx.Writer.OpenInlineTag('span', Scope.ToString, e.Text);
+    inherited;
+    Ctx.Writer.CloseTag('span');
+  end
+  else
+    inherited;
 end;
 
 initialization

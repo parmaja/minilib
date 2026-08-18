@@ -300,7 +300,8 @@ type
     function Exists(const Name: string): Boolean;
     //Add one item
     function Add(const Name: string; Area: TAttributeArea = ssOuter): Integer; overload;
-    function AddIf(Condition: Boolean; const Name: string; Area: TAttributeArea = ssOuter): Integer; inline;
+    function AddIf(Condition: Boolean; const Name: string; Area: TAttributeArea = ssOuter): Integer; {$ifopt D-}inline;{$endif} overload;
+    function AddIf(const Name: string; Area: TAttributeArea = ssOuter): Integer;  {$ifopt D-}inline;{$endif} overload;
     function Add(const AClass: TElementClass): Integer; overload;
     //Add multiple items in on string
     procedure Append(const S: string; Area: TAttributeArea = ssOuter); overload;
@@ -634,7 +635,11 @@ type
     class operator Implicit(Source : TColSizeKind) : TColSize;
   end;
 
-  TmnwBindAction = (bindVisible, bindEnabled);
+  TmnwBindAction = (
+    bindNone, //Only for master
+    bindVisible,
+    bindEnabled
+  );
 
   TmnwBind = record
     //Show Hide, caller can have more than one name to show and hide others, "name1,name2"
@@ -655,7 +660,6 @@ type
   private
     FEnabled: Boolean;
     FHandle: THandle;
-    FStyle: String;
     FVisible: Boolean;
     FSchema: TmnwSchema;
     FParent: TmnwElement;
@@ -664,8 +668,6 @@ type
     FComment: String;
     FID: String;
     FName: String;
-    FElementClass: String;
-    FAttributes: TmnwAttributes;
     FKind: TmnwElementKinds;
     FPriority: TmnwPriority;
     FState: TmnwElementState;
@@ -773,8 +775,6 @@ type
     property Name: String read FName write FName;
     property Data: String read FData write FData;
     property Route: String read GetRoute write FRoute; 
-    property Style: String read FStyle write FStyle; //* no, it is not css style
-    property ElementClass: String read FElementClass write FElementClass;
     property Comment: String read FComment write FComment;
 
     property Visible: Boolean read FVisible write FVisible;
@@ -783,7 +783,6 @@ type
     property RespondIt: Boolean read GetRespondIt; // false: do not use respond
     property RenderIt: Boolean read GetRenderIt write SetRenderIt;
 
-    property Attributes: TmnwAttributes read FAttributes;
     property Kind: TmnwElementKinds read FKind write FKind;
     property Priority: TmnwPriority read FPriority write FPriority;
     property State: TmnwElementState read FState write SetState;
@@ -1338,7 +1337,7 @@ type
         Size: TColSize;
         Shadow: TmnwShadow;
         Hint: string;
-        ControlStyle: TItemStyle;
+        Style: TItemStyle;
         Bind: TmnwBind;
       end;
 
@@ -1839,6 +1838,13 @@ type
       public
         Text: string;
         constructor Create(AParent: TmnwElement; const AText: string); reintroduce;
+      end;
+
+      TBadge = class(THTMLElement)
+      public
+        Text: string;
+        Style: TItemStyle;
+        constructor Create(AParent: TmnwElement; const AText: string; AStyle: TItemStyle); reintroduce;
       end;
 
       TSpanButton = class(TSpan)
@@ -2918,6 +2924,7 @@ begin
           sb.Append(itm.Name)
         else if not SameText(itm.name, 'id') then
           sb.Append(itm.Name).Append('=').Append(DQ(itm.Value));
+        itm.Used := True;
       end;
     Result := sb.ToString;
   finally
@@ -3117,9 +3124,6 @@ end;
 
 procedure TmnwElementRenderer.CollectAttributes(var Scope: TmnwScope; Ctx: TmnwContext);
 begin
-  Scope.Attributes.Append(Scope.Element.Attributes);
-  Scope.Classes := Scope.Element.ElementClass;
-
   if Scope.Element.ID <> '' then
     Scope.Attributes.add('id', Scope.Element.ID, ssInner);
   if Scope.Element.Name <> '' then
@@ -4719,7 +4723,6 @@ begin
   FEnabled := True;
   FVisible := True;
   FName := '';
-  FAttributes := TmnwAttributes.Create;
   FKind := AKind;
   FParent := AParent;
   if FParent <> nil then
@@ -4741,7 +4744,6 @@ end;
 
 destructor TmnwElement.Destroy;
 begin
-  FreeAndNil(FAttributes);
   inherited;
 end;
 
@@ -5742,7 +5744,7 @@ end;
 function TElementClasses.Add(const Name: string; Area: TAttributeArea): Integer;
 begin
   if Name = '' then
-    exit(-1);
+    raise Exception.Create('Classs.Add needs a name');
 
   Result:= IndexOf(Name);
   if Result < 0 then
@@ -5780,6 +5782,12 @@ class operator TElementClasses.Add(A: TElementClasses; B: string): TElementClass
 begin
   A.Add(B);
   Result := A;
+end;
+
+function TElementClasses.AddIf(const Name: string; Area: TAttributeArea): Integer;
+begin
+  if Name <> '' then
+    Result := Add(Name, Area);
 end;
 
 function TElementClasses.Add(const AClass: TElementClass): Integer;
@@ -5880,18 +5888,21 @@ end;
 
 function TElementClasses.ToString(Area: TAttributeAreas): string;
 var
- itm: TElementClass;
+  i: Integer;
 begin
   Result := '';
-  for itm in Items do
-  if (Area = []) or (itm.Area in Area) then
-    if not itm.Used then
-    begin
-      if Result <> '' then
-        Result := Result + ' ' + itm.Name
-      else
-        Result := itm.Name;
-    end;
+  for i := 0 to Length(Items) -1 do
+  begin
+    if (Area = []) or (Items[i].Area in Area) then
+      if not Items[i].Used then
+      begin
+        if Result <> '' then
+          Result := Result + ' ' + Items[i].Name
+        else
+          Result := Items[i].Name;
+        Items[i].Used := True; //keep Items[i]
+      end;
+  end;
 end;
 
 { TmnwScope }
@@ -5974,19 +5985,19 @@ begin
   inherited;
   FButtonSmall := THTML.TToolButton.Create(Self, [elEmbed]);
   FButtonSmall.Data := 'small';
-  FButtonSmall.ControlStyle := styleUndefined;
+  FButtonSmall.Style := styleUndefined;
   FButtonSmall.Image.Symbol := 'icon mnw-scale-down';
   FButtonSmall.CallScript := 'mnw.switch_zoom(event)';
 
   FButtonNormal := THTML.TToolButton.Create(Self, [elEmbed]);
   FButtonNormal.Data := 'normal';
-  FButtonNormal.ControlStyle := styleUndefined;
+  FButtonNormal.Style := styleUndefined;
   FButtonNormal.Image.Symbol := 'icon mnw-scale-reset';
   FButtonNormal.CallScript := 'mnw.switch_zoom(event)';
 
   FButtonLarge := THTML.TToolButton.Create(Self, [elEmbed]);
   FButtonLarge.Data := 'large';
-  FButtonLarge.ControlStyle := styleUndefined;
+  FButtonLarge.Style := styleUndefined;
   FButtonLarge.Image.Symbol := 'icon mnw-scale-up';
   FButtonLarge.CallScript := 'mnw.switch_zoom(event)';
 end;
@@ -6015,7 +6026,7 @@ end;
 procedure THTML.TCustomButton.Created;
 begin
   inherited;
-  ControlStyle := stylePrimary;
+  Style := stylePrimary;
 end;
 
 { TmnwContext }
@@ -7067,7 +7078,7 @@ end;
 procedure THTML.TThemeButton.Created;
 begin
   inherited;
-  ControlStyle := styleUndefined;
+  Style := styleUndefined;
   Image.Symbol := 'icon mnw-theme';
   CallScript := 'mnw.switch_theme(event)';
 end;
@@ -7221,6 +7232,15 @@ begin
 //  Width := szMedium;
   Size := 8;
   Shadow := shadowHairline;
+end;
+
+{ THTML.TBadge }
+
+constructor THTML.TBadge.Create(AParent: TmnwElement; const AText: string; AStyle: TItemStyle);
+begin
+  inherited Create(Parent);
+  Text := AText;
+  Style := AStyle;
 end;
 
 initialization

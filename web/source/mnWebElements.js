@@ -449,20 +449,17 @@ mnw.apply_binding = function(trigger)
 {
   const group = trigger.getAttribute('data-bind-group');
   if (!group) return;
-  const action = trigger.getAttribute('data-bind-action') || 'visible';
+  const action = trigger.getAttribute('data-bind-action');
+  if (!action) return;
 
   //The attribute may sit on a wrapper element (i.e. checkbox outer div)
-  const checkbox = trigger.matches('input[type="checkbox"]')
-    ? trigger
-    : trigger.querySelector('input[type="checkbox"]');
-  const select = trigger.matches('select')
-    ? trigger
-    : trigger.querySelector('select');
+  const checkbox = trigger.matches('input[type="checkbox"]') ? trigger : trigger.querySelector('input[type="checkbox"]');
+  const select = trigger.matches('select') ? trigger : trigger.querySelector('select');
 
   const checked = checkbox ? checkbox.checked : null;
   const value = select ? select.value : null;
 
-  document.querySelectorAll('[data-bind-group="' + group + '"]').forEach(target => {
+  document.querySelectorAll('[data-bind-group="' + group + '"]:not([data-bind-action]').forEach(target => {
     if (target === trigger) return;
 
     let visible = false;
@@ -493,7 +490,7 @@ mnw.init_bindings = function()
   });
 
   //Apply the initial state of every trigger
-  document.querySelectorAll('[data-bind-group]').forEach(el => {
+  document.querySelectorAll('[data-bind-group], [data-bind-action]').forEach(el => {
     if (el.matches('input[type="checkbox"], select') || el.querySelector('input[type="checkbox"], select'))
       mnw.apply_binding(el);
   });
