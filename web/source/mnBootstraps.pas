@@ -939,13 +939,14 @@ begin
 
   if e.Bind.Group <> '' then
   begin
-    if e.Bind.Action = bindNone then
-      Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssOuter)
-    else
+    if e.Bind.Action > bindNone then
     begin
+      //Master control: the JS listens to it and toggles every slave of the group
       Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssInner);
       Scope.Attributes.Add('data-bind-action', BindActionToStr(e.Bind.Action), ssInner);
-    end;
+    end
+    else //Slave: only tagged with the group, the master toggles it
+      Scope.Attributes.Add('data-bind-group', e.Bind.Group, ssOuter);
   end;
   inherited;
 end;

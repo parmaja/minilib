@@ -1298,6 +1298,7 @@ type
       THTMLElement = class(TmnwElement)
       protected
       public
+        Bind: TmnwBind;
       end;
 
       { TComment }
@@ -1336,7 +1337,6 @@ type
         Shadow: TmnwShadow;
         Hint: string;
         Style: TItemStyle;
-        Bind: TmnwBind;
       end;
 
       TmnwLabelLayout = (lfUndefined, lfSide, lfAbove, lfFloating);

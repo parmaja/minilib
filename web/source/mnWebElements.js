@@ -443,14 +443,16 @@ mnw.init_accordions = function()
 
 /* Binding (Bind property in TmnwElement) */
 
-//A TCheckBox or TSelect with data-bind-group toggles the visibility (d-none)
-//of every other element that has the same data-bind-group, itself is never changed.
+//A master control (TCheckBox or TSelect) with data-bind-group and
+//data-bind-action toggles the visibility (d-none) of every other element
+//(slave) that has the same data-bind-group but no data-bind-action,
+//the master itself is never changed.
+//A TSelect master matches its value against the id attribute of the slaves.
 mnw.apply_binding = function(trigger)
 {
   const group = trigger.getAttribute('data-bind-group');
   if (!group) return;
-  const action = trigger.getAttribute('data-bind-action');
-  if (!action) return;
+  const action = trigger.getAttribute('data-bind-action') || 'visible';
 
   //The attribute may sit on a wrapper element (i.e. checkbox outer div)
   const checkbox = trigger.matches('input[type="checkbox"]') ? trigger : trigger.querySelector('input[type="checkbox"]');
@@ -459,14 +461,12 @@ mnw.apply_binding = function(trigger)
   const checked = checkbox ? checkbox.checked : null;
   const value = select ? select.value : null;
 
-  document.querySelectorAll('[data-bind-group="' + group + '"]:not([data-bind-action]').forEach(target => {
-    if (target === trigger) return;
-
+  document.querySelectorAll('[data-bind-group="' + group + '"]:not([data-bind-action])').forEach(target => {
     let visible = false;
     if (checkbox)
       visible = checked;
     else if (select)
-      visible = (target.getAttribute('data-bind-name') === value);
+      visible = (target.id === value);
 
     if (action === 'enabled')
     {
@@ -481,18 +481,22 @@ mnw.apply_binding = function(trigger)
 
 mnw.init_bindings = function()
 {
-  document.addEventListener('change', function(e) {
-    const el = e.target;
-    if (!el.matches('input[type="checkbox"], select')) return;
-    const trigger = el.closest('[data-bind-group]');
-    if (trigger)
-      mnw.apply_binding(trigger);
+  //Listen to change of the master control that has data-bind-action,
+  //not the whole document
+  document.querySelectorAll('[data-bind-action]').forEach(master => {
+    const control = master.matches('input[type="checkbox"], select')
+      ? master
+      : master.querySelector('input[type="checkbox"], select');
+    if (!control) return;
+    control.addEventListener('change', function() {
+      mnw.apply_binding(master);
+    });
   });
 
-  //Apply the initial state of every trigger
-  document.querySelectorAll('[data-bind-group]:not([data-bind-action])').forEach(el => {
-    if (el.matches('input[type="checkbox"], select') || el.querySelector('input[type="checkbox"], select'))
-      mnw.apply_binding(el);
+  //Apply the initial state of every master
+  document.querySelectorAll('[data-bind-action]').forEach(master => {
+    if (master.matches('input[type="checkbox"], select') || master.querySelector('input[type="checkbox"], select'))
+      mnw.apply_binding(master);
   });
 };
 
