@@ -300,8 +300,8 @@ type
     function Exists(const Name: string): Boolean;
     //Add one item
     function Add(const Name: string; Area: TAttributeArea = ssOuter): Integer; overload;
-    function AddIf(Condition: Boolean; const Name: string; Area: TAttributeArea = ssOuter): Integer; {$ifopt D-}inline;{$endif} overload;
-    function AddIf(const Name: string; Area: TAttributeArea = ssOuter): Integer;  {$ifopt D-}inline;{$endif} overload;
+    function AddIf(Condition: Boolean; const Name: string; Area: TAttributeArea = ssOuter): Integer; overload; inline;
+    function AddIf(const Name: string; Area: TAttributeArea = ssOuter): Integer; overload; inline;
     function Add(const AClass: TElementClass): Integer; overload;
     //Add multiple items in on string
     procedure Append(const S: string; Area: TAttributeArea = ssOuter); overload;
@@ -358,7 +358,8 @@ type
     WrapClasses: TElementClasses; //WrapClass is a class used of what parent wrapped it
   public
     State: TmnwScopeStates;
-    function ToString(Area: TAttributeAreas = [ssOuter, ssInner]; WithSpace: Boolean = False): string; overload;
+    function ToString: string; overload; override;
+    function ToString(Area: TAttributeAreas; WithSpace: Boolean = False): string; overload;
     function ToString(WithSpace: Boolean): string; overload;
 
     constructor Create(AElement: TmnwElement);
@@ -2326,6 +2327,9 @@ type
     procedure DoCompose(const Ctx: TmnwContext); override;
   end;
 
+  TTableWriter = class(TmnObject)
+
+  end;
   
 {$ifdef FPC}
 {$R 'mnWebElements.rc'}
@@ -5792,7 +5796,9 @@ end;
 function TElementClasses.AddIf(const Name: string; Area: TAttributeArea): Integer;
 begin
   if Name <> '' then
-    Result := Add(Name, Area);
+    Result := Add(Name, Area)
+  else
+    Result := -1;
 end;
 
 function TElementClasses.Add(const AClass: TElementClass): Integer;
@@ -5943,6 +5949,11 @@ end;
 function TmnwScope.ToString(WithSpace: Boolean): string;
 begin
   Result := ToString([ssOuter, ssInner], WithSpace);
+end;
+
+function TmnwScope.ToString: string;
+begin
+  Result := ToString([ssOuter, ssInner]);
 end;
 
 { THTML.TLink }

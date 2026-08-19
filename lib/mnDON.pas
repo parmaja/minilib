@@ -2031,7 +2031,7 @@ end;
 
 procedure TmnwXML_TidyWriterHelper.OpenTagA(const TagName, Classes: string; Attributes, TagText: string);
 begin
-  WriteLn('<'+TagName + When(Classes <> '', 'class="' + Classes + '"') + SpaceIf(Attributes) + '>' + TagText, [woOpenIndent])
+  WriteLn('<'+TagName + When(Classes <> '', ' class="' + Classes + '"') + SpaceIf(Attributes) + '>' + TagText, [woOpenIndent])
 end;
 
 procedure TmnwXML_TidyWriterHelper.ReadFromFile(FileName: string);

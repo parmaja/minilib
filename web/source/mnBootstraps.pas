@@ -599,7 +599,7 @@ type
   public
     function IsUniform: Boolean; inline;
     function IsUniformSides: Boolean; inline;
-    function ToBSString(prefix: string): string; {$ifndef DEBUG}inline;{$endif}
+    function ToBSString(prefix: string): string; inline;
   end;
 
   TColSizeHelper = record helper for TColSize
@@ -1070,7 +1070,7 @@ begin
       Ctx.Writer.Write(' role="button" data-bs-toggle="collapse" data-bs-target="#'+e.id+'-body" aria-labelledby="' + e.id + '-header" aria-expanded="true" aria-controls="'+e.id+'-body"');
       Ctx.Writer.WriteLn('></span>');
     end;
-    Ctx.Writer.CloseTag('h5');
+    Ctx.Writer.CloseTag('h6');
   end;
 
   Ctx.Writer.OpenTag('div', 'id="'+e.id+'-body" class="card-body p-0 collapse show" aria-labelledby="'+e.id+'-header"');  //removed `overflow-hidden`
