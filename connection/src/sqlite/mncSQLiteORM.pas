@@ -168,6 +168,7 @@ begin
     ftTime: Result := 'time';
     ftDateTime: Result := 'datetime';
     ftText: Result := 'text';
+    ftUUID: Result := 'char(36)';
     ftBlob: Result := 'text';
   end;
 end;

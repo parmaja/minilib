@@ -14,7 +14,7 @@ unit mncORM;
 interface
 
 uses
-  Classes, SysUtils, Contnrs, Variants,
+  Classes, SysUtils, Contnrs, Variants, System.Rtti,
   mnClasses;
 
 type
@@ -216,7 +216,7 @@ type
       );
       TormFieldOptions = set of TormFieldOption;
 
-      TormFieldType = (ftString, ftBoolean, ftSmallInteger, ftInteger, ftBigInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftText, ftBlob);
+      TormFieldType = (ftString, ftBoolean, ftSmallInteger, ftInteger, ftBigInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftText, ftUUID, ftBlob);
 
       TormReferenceOption = (
         rfoNothing,
@@ -405,17 +405,17 @@ type
 
   TDateTimeField = class(TmncORM.TField)
   public
-    constructor Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions = []);
+    constructor Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions = []; Default: string = '');
   end;
 
   TIntegerField = class(TmncORM.TField)
   public
-    constructor Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions = []);
+    constructor Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions = []; Default: string = '');
   end;
 
   TBooleanField = class(TmncORM.TField)
   public
-    constructor Create(AFields: TmncORM.TFields; AName: String);
+    constructor Create(AFields: TmncORM.TFields; AName: String; Default: Boolean  = False);
   end;
 
   TCurrencyField = class(TmncORM.TField)
@@ -424,6 +424,18 @@ type
   end;
 
   TCommentField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String = '');
+  end;
+
+  TUUIDField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String = ''; AOptions: TmncORM.TormFieldOptions = []; Default: string = '');
+  end;
+
+  //********************************
+
+  TUIDField = class(TUUIDField)
   public
     constructor Create(AFields: TmncORM.TFields; AName: String = '');
   end;
@@ -1138,7 +1150,7 @@ end;
 destructor TmncORM.Destroy;
 begin
   FreeAndNil(FObjectClasses);
-  inherited Destroy;
+  inherited;
 end;
 
 function TmncORM.This: TmncORM;
@@ -1628,10 +1640,10 @@ end;
 
 { TBooleanField }
 
-constructor TBooleanField.Create(AFields: TmncORM.TFields; AName: String);
+constructor TBooleanField.Create(AFields: TmncORM.TFields; AName: String; Default: Boolean  = False);
 begin
   inherited Create(AFields, AName, ftBoolean, [foNotNull]);
-  DefaultValue := True;
+  DefaultValue := Default;
 end;
 
 { TRefIDField }
@@ -1656,16 +1668,20 @@ end;
 
 { TIntegerField }
 
-constructor TIntegerField.Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions);
+constructor TIntegerField.Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions; Default: string);
 begin
   inherited Create(AFields, AName, ftInteger, AOptions);
+  if Default <> '' then
+    DefaultValue := Default;
 end;
 
 { TDateTimeField }
 
-constructor TDateTimeField.Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions);
+constructor TDateTimeField.Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions; Default: string);
 begin
   inherited Create(AFields, AName, ftDateTime, AOptions);
+  if Default <> '' then
+    DefaultValue := Default
 end;
 
 { TRefStringField }
@@ -1682,6 +1698,24 @@ constructor TCurrencyField.Create(AFields: TmncORM.TFields; AName: String);
 begin
   inherited Create(AFields, AName, ftCurrency, [foNotNull]);
   DefaultValue := 0;
+end;
+
+{ TUIDField }
+
+constructor TUIDField.Create(AFields: TmncORM.TFields; AName: String);
+begin
+  if AName = '' then
+    AName := 'ID';
+  inherited Create(AFields, AName, [foIndexed, foPrimary, foInternal, foNotNull]); // foSequenced
+end;
+
+{ TUUIDField }
+
+constructor TUUIDField.Create(AFields: TmncORM.TFields; AName: string; AOptions: TmncORM.TormFieldOptions; Default: string);
+begin
+  inherited Create(AFields, AName, ftUUID, AOptions); // foSequenced
+  if Default <> '' then
+    DefaultValue := Default;
 end;
 
 end.
