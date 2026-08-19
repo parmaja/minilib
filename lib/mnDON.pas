@@ -479,6 +479,7 @@ procedure JsonConsoleSerialize(AObject: TDON_Value; Options: TSerializerOptions 
 procedure JsonSaveStream(Pair: TDON_Pair; AStream: TStream; Options: TSerializerOptions = []); overload;
 procedure JsonSaveFile(Pair: TDON_Pair; FileName: string; Options: TSerializerOptions = []); overload;
 procedure JsonSaveString(Pair: TDON_Pair; out Result: string; Options: TSerializerOptions = []); overload;
+procedure JsonSaveString(Pair: TDON_Array; out Result: string; Options: TSerializerOptions = []); overload;
 
 procedure JsonSaveStream(Obj: TDON_Object; AStream: TStream; Options: TSerializerOptions = []); overload;
 procedure JsonSaveFile(Obj: TDON_Object; FileName: string; Options: TSerializerOptions = []); overload;
@@ -549,6 +550,23 @@ begin
     JsonSaveStream(Pair, AStream, Options);
     Result := AStream.DataString;
   finally
+    AStream.Free;
+  end;
+end;
+
+procedure JsonSaveString(Pair: TDON_Array; out Result: string; Options: TSerializerOptions);
+var
+  AStream: TStringStream;
+  Serializer: TStreamSerializer;
+begin
+  AStream := TStringStream.Create('');
+  Serializer := TStreamSerializer.Create(AStream, True);
+  try
+    Serializer.Options := Options;
+    Serializer.Serialize(TJsonSerializeGernerator, Pair);
+    Result := AStream.DataString;
+  finally
+    Serializer.Free;
     AStream.Free;
   end;
 end;
@@ -1269,7 +1287,7 @@ end;
 
 function TDON_Array.GetAsString: string;
 begin
-  Result := '{Array}';
+  JsonSaveString(Self, Result); //TODO: What if i want it XML?
 end;
 
 function TDON_Array.GetCount: Integer;
