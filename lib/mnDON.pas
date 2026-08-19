@@ -318,6 +318,17 @@ type
     FItems: TDON_List;
     function GetCount: Integer;
   protected
+    type
+      TArrayEnumerator = class(TObject)
+      private
+        FList: TDON_List;
+        FIndex: Integer;
+      public
+        constructor Create(AList: TDON_List);
+        function GetCurrent: TDON_Value; inline;
+        function MoveNext: Boolean; inline;
+        property Current: TDON_Value read GetCurrent;
+      end;
 
     function GetAsString: string; override;
     function FindItem(const Name: string): TDON_Value; override;
@@ -328,6 +339,8 @@ type
   public
     constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
+    function GetEnumerator: TArrayEnumerator; inline;
+
     function Add(Value: TDON_Value): TDON_Value; overload;
     function Add(const Value: String): TDON_Value; overload;
     procedure Add(const Values: array of const); overload;
@@ -376,6 +389,8 @@ type
   TDON_Object = class(TDON_Parent)
   private
     FPairs: TDON_Pairs;
+    function GetCount: Integer;
+    function GetItems(index: Integer): TDON_Pair;
   protected
     type
 
@@ -416,7 +431,9 @@ type
     function FindByValue(const Value: string): TDON_Pair; overload;
     function FindNameByValue(const Value: string): string;  overload;
     
-    property Pairs: TDON_Pairs read FPairs;    
+    property Pairs: TDON_Pairs read FPairs;
+    property Items[index: Integer]: TDON_Pair read GetItems;
+    property Count: Integer read GetCount;
   published
   end;
 
@@ -498,6 +515,8 @@ function JsonLoadFile(const FileName: string; Options: TJSONParseOptions = []): 
 // Loading from String
 procedure JsonParseString(Pair: TDON_Pair; const Content: string; Options: TJSONParseOptions = []); overload;
 procedure JsonParseString(out AObject: TDON_Object; const Content: string; Options: TJSONParseOptions = []); overload;
+procedure JsonParseString(Pair: TDON_Array; const Content: string; Options: TJSONParseOptions = []); overload;
+
 function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
 //* {"value": "test1"}
 function JsonParseValueString(const Content: string; Options: TJSONParseOptions = []): TDON_Value; overload;
@@ -541,7 +560,7 @@ begin
   end;
 end;
 
-procedure JsonSaveString(Pair: TDON_Pair; out Result: string; Options: TSerializerOptions = []); overload;
+procedure JsonSaveString(Pair: TDON_Pair; out Result: string; Options: TSerializerOptions = []);
 var
   AStream: TStringStream;
 begin
@@ -596,7 +615,7 @@ begin
   end;
 end;
 
-procedure JsonSaveString(Obj: TDON_Object; out Result: string; Options: TSerializerOptions = []); overload;
+procedure JsonSaveString(Obj: TDON_Object; out Result: string; Options: TSerializerOptions = []);
 var
   AStream: TStringStream;
 begin
@@ -609,7 +628,7 @@ begin
   end;
 end;
 
-procedure JsonLoadStream(Pair: TDON_Pair; Stream: TStream; Options: TJSONParseOptions = []); overload;
+procedure JsonLoadStream(Pair: TDON_Pair; Stream: TStream; Options: TJSONParseOptions = []);
 var
   Parser: TmnJSONParser;
   w: TmnWrapperStream;
@@ -639,17 +658,17 @@ begin
   end;
 end;
 
-function JsonLoadPairStream(Stream: TStream; Options: TJSONParseOptions = []): TDON_Pair; overload;
+function JsonLoadPairStream(Stream: TStream; Options: TJSONParseOptions = []): TDON_Pair;
 begin
   Result := TDON_Pair.Create(nil);
   JsonLoadStream(Result, Stream, Options); 
 end;
 
-function JsonLoadValueStream(Stream: TStream; Options: TJSONParseOptions = []): TDON_Value; overload;
+function JsonLoadValueStream(Stream: TStream; Options: TJSONParseOptions = []): TDON_Value;
 var
   Pair: TDON_Pair;
 begin
-  Pair := JsonLoadPairStream(Stream, Options);  
+  Pair := JsonLoadPairStream(Stream, Options);
   try
     if Pair<>nil then
       Result := Pair.ReleaseValue
@@ -681,13 +700,13 @@ begin
   end;
 end;
 
-function JsonLoadFile(const FileName: string; Options: TJSONParseOptions): TDON_Pair; overload;
+function JsonLoadFile(const FileName: string; Options: TJSONParseOptions): TDON_Pair;
 begin
   Result := TDON_Pair.Create(nil);
   JsonLoadFile(Result, FileName, Options);
 end;
 
-procedure JsonParseString(Pair: TDON_Pair; const Content: string; Options: TJSONParseOptions); overload;
+procedure JsonParseString(Pair: TDON_Pair; const Content: string; Options: TJSONParseOptions);
 var
   Parser: TmnJSONParser;
 begin
@@ -696,7 +715,7 @@ begin
   Parser.Finish;
 end;
 
-procedure JsonParseString(out AObject: TDON_Object; const Content: string; Options: TJSONParseOptions); overload;
+procedure JsonParseString(out AObject: TDON_Object; const Content: string; Options: TJSONParseOptions);
 var
   Parser: TmnJSONParser;
   Pair: TDON_Pair;
@@ -712,13 +731,17 @@ begin
   end;
 end;
 
+procedure JsonParseString(Pair: TDON_Array; const Content: string; Options: TJSONParseOptions = []);
+begin
+end;
+
 function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
 begin
   Result := TDON_Pair.Create(nil);
   JsonParseString(Result, Content, Options);
 end;
 
-function JsonParseValueString(const Content: string; Options: TJSONParseOptions = []): TDON_Value; overload;
+function JsonParseValueString(const Content: string; Options: TJSONParseOptions = []): TDON_Value;
 var
   Pair: TDON_Pair;
 begin
@@ -1295,6 +1318,11 @@ begin
   Result := Items.Count;
 end;
 
+function TDON_Array.GetEnumerator: TArrayEnumerator;
+begin
+  Result := TArrayEnumerator.Create(FItems);
+end;
+
 function TDON_Array.GetItem(Index: Integer): TDON_Value;
 begin
   if Index < FItems.Count then
@@ -1429,6 +1457,11 @@ begin
   JsonSaveString(Self, Result); //TODO: What if i want it XML?
 end;
 
+function TDON_Object.GetCount: Integer;
+begin
+  Result := Pairs.Count;
+end;
+
 function TDON_Object.GetEnumerator: TPairsEnumerator;
 begin
   Result := TPairsEnumerator.Create(FPairs);
@@ -1437,6 +1470,11 @@ end;
 function TDON_Object.GetItem(Index: Integer): TDON_Value;
 begin
   Result := FPairs[Index].Value;
+end;
+
+function TDON_Object.GetItems(index: Integer): TDON_Pair;
+begin
+  Result := Pairs.Items[Index];
 end;
 
 function TDON_Object.GetValue: Variant;
@@ -2176,6 +2214,26 @@ begin
 end;
 
 function TDON_Object.TPairsEnumerator.MoveNext: Boolean;
+begin
+  Inc(FIndex);
+  Result := FIndex < FList.Count;
+end;
+
+{ TDON_Array.TArrayEnumerator }
+
+constructor TDON_Array.TArrayEnumerator.Create(AList: TDON_List);
+begin
+  inherited Create;
+  FList := Alist;
+  FIndex := -1;
+end;
+
+function TDON_Array.TArrayEnumerator.GetCurrent: TDON_Value;
+begin
+  Result := FList[FIndex];
+end;
+
+function TDON_Array.TArrayEnumerator.MoveNext: Boolean;
 begin
   Inc(FIndex);
   Result := FIndex < FList.Count;
