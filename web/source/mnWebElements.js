@@ -466,7 +466,9 @@ mnw.apply_binding = function(trigger)
     if (checkbox)
       visible = checked;
     else if (select)
-      visible = (target.id === value) || (target.getAttribute('data-bind-name') === value);
+      //data-bind-name may contain a comma separated list of matching values (i.e. "Daily,Weekly,Monthly")
+      visible = ((target.id + ',' + (target.getAttribute('data-bind-name') || '')).split(',')
+        .some(name => (name || '').trim() === value));
 
     if (action === 'enabled')
     {
