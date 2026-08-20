@@ -363,7 +363,8 @@ type
     property Distinct: Boolean read FDistinct write FDistinct;
   end;
 
-  TSQLGenStandard = TSQLGenerator<TSQLStandardMode>;
+
+  TSQLGenStandard = TSQLGenerator<TSQLStandardMode>;
 
 {$ifndef FPC}
 var
@@ -1312,7 +1313,7 @@ var
 begin
   for itm in Keys do
   begin
-    AddField(itm, fldKey);
+    AddField(itm, [fldKey]);
   end;
 
   for itm in Names do

@@ -156,6 +156,7 @@ type
 	  {$endif}
 
     property AsUtf8String;
+    function ToString: string; override;
   published
     //property IsBlob;
     //property BlobType;
@@ -375,7 +376,6 @@ type
   public
     constructor Create(AParent: TDON_Object);
     destructor Destroy; override;
-    function ToString: string; override;
     function ReleaseValue: TDON_Value;
   published
     property Value: TDON_Value read FValue write SetPairValue;
@@ -424,7 +424,6 @@ type
     function GetEnumerator: TPairsEnumerator; inline;
     constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
-    function ToString: string; override;
     function CreatePair(const PairName: string; AValue: TDON_Value = nil): TDON_Pair;
     procedure AcquirePair(const AName: string; out AObject: TObject);
     procedure Add(Value: TDON_Pair); overload;
@@ -1278,6 +1277,11 @@ begin
   //TODO
 end;
 
+function TDON_Value.ToString: string;
+begin
+  Result := AsString;
+end;
+
 { TDON_Array }
 
 procedure TDON_Array.Add(const Values: array of const);
@@ -1545,11 +1549,6 @@ begin
   AsString := aValue;
 end;
 
-function TDON_Object.ToString: string;
-begin
-  Result := GetAsString;
-end;
-
 { TDON_Pair }
 
 procedure TDON_Pair.SetPairValue(AValue: TDON_Value);
@@ -1609,11 +1608,6 @@ end;
 procedure TDON_Pair.SetValue(const AValue: Variant);
 begin
   AsString := AValue;
-end;
-
-function TDON_Pair.ToString: string;
-begin
-  Result := GetAsString;
 end;
 
 { TDON_Boolean }
