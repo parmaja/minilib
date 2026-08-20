@@ -773,6 +773,7 @@ type
     property IsRoot: Boolean read FIsRoot write FIsRoot;
 
     property ID: String read FID write FID;
+    //Name used in form submit if name have parentname[subname] like `params[test]` it will post in json as nested object
     property Name: String read FName write FName;
     property Data: String read FData write FData;
     property Route: String read GetRoute write FRoute; 

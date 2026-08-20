@@ -184,9 +184,11 @@ type
 
   TDON_ValueClass = class of TDON_Value;
 
+  TDON_ScalarValue = class abstract(TDON_Value);
+
   { TDON_CustomStringValue }
 
-  TDON_CustomStringValue = class abstract(TDON_Value)
+  TDON_CustomStringValue = class abstract(TDON_ScalarValue)
   private
     FValue: string;
     FStringType: TmnJsonStringType;
@@ -232,7 +234,7 @@ type
 
   { TDON_Number }
 
-  TDON_Number = class(TDON_Value)
+  TDON_Number = class(TDON_ScalarValue)
   private
     FValue: Double;
     FIsHex: Boolean;
@@ -261,7 +263,7 @@ type
 
   { TDON_Boolean }
 
-  TDON_Boolean = class(TDON_Value)
+  TDON_Boolean = class(TDON_ScalarValue)
   private
     FValue: Boolean;
   protected
@@ -291,7 +293,7 @@ type
   { TDON_Comment }
   //* Not used
 
-  TDON_Comment = class(TDON_Value)
+  TDON_Comment = class(TDON_ScalarValue)
   private
     FValue: string;
   public
@@ -300,7 +302,7 @@ type
     property Value: string read FValue write FValue;
   end;
 
-  TDON_Parent = class abstract(TDON_Value)
+  TDON_Parent = class abstract(TDON_Value) //No not TDON_ScalarValue it is aggregate
   end;
 
   { Arrays }
@@ -344,6 +346,10 @@ type
     function Add(Value: TDON_Value): TDON_Value; overload;
     function Add(const Value: String): TDON_Value; overload;
     procedure Add(const Values: array of const); overload;
+
+    //Find in scalar values only
+    function Find(const AName: string): Integer; //Slow
+    function IsExists(const AName: string): Boolean; //Slow
 
     property Items: TDON_List read FItems;
     property Item[Index: Integer]: TDON_Value read GetItem; default;
@@ -430,7 +436,7 @@ type
     function PairExists(const Name: string): Boolean; overload;
     function FindByValue(const Value: string): TDON_Pair; overload;
     function FindNameByValue(const Value: string): string;  overload;
-    
+
     property Pairs: TDON_Pairs read FPairs;
     property Items[index: Integer]: TDON_Pair read GetItems;
     property Count: Integer read GetCount;
@@ -515,7 +521,7 @@ function JsonLoadFile(const FileName: string; Options: TJSONParseOptions = []): 
 // Loading from String
 procedure JsonParseString(Pair: TDON_Pair; const Content: string; Options: TJSONParseOptions = []); overload;
 procedure JsonParseString(out AObject: TDON_Object; const Content: string; Options: TJSONParseOptions = []); overload;
-procedure JsonParseString(Pair: TDON_Array; const Content: string; Options: TJSONParseOptions = []); overload;
+procedure JsonParseString(out AArray: TDON_Array; const Content: string; Options: TJSONParseOptions = []); overload;
 
 function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair; overload;
 //* {"value": "test1"}
@@ -731,8 +737,23 @@ begin
   end;
 end;
 
-procedure JsonParseString(Pair: TDON_Array; const Content: string; Options: TJSONParseOptions = []);
+procedure JsonParseString(out AArray: TDON_Array; const Content: string; Options: TJSONParseOptions = []);
+var
+  Parser: TmnJSONParser;
+  Pair: TDON_Pair;
 begin
+  Pair := TDON_Pair.Create(nil);
+  try
+    Parser.Init(Pair, @JsonParseAcquireCallback, Options);
+    Parser.Parse(Content);
+    Parser.Finish;
+    if Pair.Value is TDON_Array then
+      AArray := Pair.ReleaseValue as TDON_Array
+    else
+      raise Exception.Create('Content is not an array');
+  finally
+    Pair.Free;
+  end;
 end;
 
 function JsonParseString(const Content: string; Options: TJSONParseOptions = []): TDON_Pair;
@@ -747,7 +768,7 @@ var
 begin
   Pair := JsonParseString(Content, Options);  
   try
-    if Pair<>nil then
+    if Pair <> nil then
       Result := Pair.ReleaseValue
     else
       Result := nil;
@@ -1303,6 +1324,21 @@ begin
   inherited;
 end;
 
+function TDON_Array.Find(const AName: string): Integer;
+var
+  i: Integer;
+begin
+  for i := 0 to Items.Count -1 do
+  begin
+    if not (Items[i] is TDON_Parent) then
+    begin
+      if SameText(Items[i].ToString, AName) then
+        exit(i);
+    end;
+  end;
+  Result := -1;
+end;
+
 function TDON_Array.FindItem(const Name: string): TDON_Value;
 begin
   Result := nil;
@@ -1334,6 +1370,11 @@ end;
 function TDON_Array.GetValue: Variant;
 begin
   Result := AsString;
+end;
+
+function TDON_Array.IsExists(const AName: string): Boolean;
+begin
+  Result := Find(AName) >= 0;
 end;
 
 function TDON_Array.Add(Value: TDON_Value): TDON_Value;

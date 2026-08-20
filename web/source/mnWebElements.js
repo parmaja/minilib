@@ -181,10 +181,35 @@ mnw.action = function(event, url, data)
 
 /* Utils functions */
 
-function nestDottedKeys(obj) {
+function nestKeys(data) {
+  const result = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    // Extract keys from brackets: "user[name]" -> ["user", "name"]
+    const keys = key.match(/[^[\]]+/g) || [key];
+    let current = result;
+
+    keys.forEach((k, i) => {
+      if (i === keys.length - 1) {
+        current[k] = value;
+      } else {
+        // Create array if next key is a number, otherwise object
+        const nextIsNum = /^\d+$/.test(keys[i + 1]);
+        if (!current[k] || typeof current[k] !== 'object') {
+          current[k] = nextIsNum ? [] : {};
+        }
+        current = current[k];
+      }
+    });
+  }
+
+  return result;
+}
+
+/*function nestKeys(obj) {
   const result = {};
   for (const [key, value] of Object.entries(obj)) {
-    const parts = key.split('.');
+    const parts = key.split('\\');
     if (parts.length > 1 && parts.every(p => p !== '')) {
       let target = result;
       for (let i = 0; i < parts.length - 1; i++) {
@@ -199,7 +224,7 @@ function nestDottedKeys(obj) {
     }
   }
   return result;
-}
+}*/
 
 mnw.formPost = async function(e, extraJson) {
   if (e) e.preventDefault();
@@ -207,6 +232,8 @@ mnw.formPost = async function(e, extraJson) {
 
   // Collect all native inputs as JSON (handles checkboxes, radios, files automatically)
   let data = Object.fromEntries(new FormData(formElement));
+
+  data = nestKeys(data);
 
   if (extraJson)
     Object.assign(data, extraJson);
@@ -232,8 +259,6 @@ mnw.formPost = async function(e, extraJson) {
         el.setJSON(data);
     }
   });
-
-  data = nestDottedKeys(data);
 
   fetch(formElement.action, {
     method: 'POST',
