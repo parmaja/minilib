@@ -4,19 +4,14 @@
 
 unit MiniXML;
 
+{$warn 5023 off : no warning about unused units}
 interface
 
 uses
   mnXML, mnXMLNodes, mnXMLReader, mnXMLRtti, mnXMLRttiProfile, 
   mnXMLRttiReader, mnXMLRttiStdClasses, mnXMLRttiWriter, mnXMLScanner, 
-  mnXMLUtils, mnXMLWriter, LazarusPackageIntf;
+  mnXMLUtils, mnXMLWriter;
 
 implementation
 
-procedure Register;
-begin
-end;
-
-initialization
-  RegisterPackage('MiniXML', @Register);
 end.

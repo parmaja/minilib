@@ -186,6 +186,8 @@ type
   { TmodWebServer }
 
   TmodWebServer = class(TmodModuleServer)
+  private
+    function GetModules: TmodWebModules;
   protected
     function CreateModules: TmodModules; override;
   public
@@ -195,6 +197,7 @@ type
     procedure AddRedirectHttps;
     procedure SetFallbackRedirect(ToLocation: string);
     procedure SetNotfound;
+    property Modules: TmodWebModules read GetModules;
   end;
 
   TmodWebServerClass = class of TmodWebServer;
@@ -990,6 +993,11 @@ end;
 function TmodWebServer.CreateModules: TmodModules;
 begin
   Result := TmodWebModules.Create(Self);
+end;
+
+function TmodWebServer.GetModules: TmodWebModules;
+begin
+  Result := inherited Modules as TmodWebModules;
 end;
 
 constructor TmodWebServer.Create;

@@ -3,7 +3,7 @@ object Main: TMain
   Top = 554
   BiDiMode = bdLeftToRight
   Caption = 'Mini Web Server'
-  ClientHeight = 333
+  ClientHeight = 377
   ClientWidth = 453
   Color = clBtnFace
   CustomTitleBar.CaptionAlignment = taCenter
@@ -17,7 +17,7 @@ object Main: TMain
   OnDestroy = FormDestroy
   DesignSize = (
     453
-    333)
+    377)
   TextHeight = 13
   object Label1: TLabel
     Left = 10
@@ -62,9 +62,9 @@ object Main: TMain
   end
   object Memo: TMemo
     Left = 0
-    Top = 143
+    Top = 208
     Width = 453
-    Height = 190
+    Height = 169
     Align = alBottom
     Anchors = [akLeft, akTop, akRight, akBottom]
     BiDiMode = bdLeftToRight
@@ -74,9 +74,9 @@ object Main: TMain
     TabOrder = 2
   end
   object StartBtn: TButton
-    Left = 377
+    Left = 381
     Top = 6
-    Width = 72
+    Width = 68
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'Start'
@@ -96,9 +96,9 @@ object Main: TMain
     Text = '.\html'
   end
   object StopBtn: TButton
-    Left = 377
+    Left = 381
     Top = 30
-    Width = 72
+    Width = 68
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'Stop'
@@ -119,7 +119,7 @@ object Main: TMain
   end
   object StayOnTopChk: TCheckBox
     Left = 8
-    Top = 84
+    Top = 102
     Width = 97
     Height = 17
     Caption = 'Stay on top'
@@ -128,20 +128,21 @@ object Main: TMain
   end
   object Panel3: TPanel
     Left = 0
-    Top = 108
+    Top = 171
     Width = 453
-    Height = 35
+    Height = 37
     Align = alBottom
     Anchors = [akLeft, akTop, akRight]
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 9
+    ExplicitTop = 106
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
       Top = 6
       Width = 60
-      Height = 23
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -166,7 +167,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 13
+      Height = 25
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -179,13 +180,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object Label3: TLabel
       AlignWithMargins = True
       Left = 101
       Top = 6
       Width = 20
-      Height = 13
+      Height = 25
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -198,13 +200,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object MaxOfThreadsLabel: TLabel
       AlignWithMargins = True
       Left = 127
       Top = 6
       Width = 60
-      Height = 23
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -229,7 +232,7 @@ object Main: TMain
       Left = 35
       Top = 6
       Width = 60
-      Height = 23
+      Height = 25
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -252,7 +255,7 @@ object Main: TMain
       Left = 3
       Top = 3
       Width = 29
-      Height = 13
+      Height = 31
       Align = alLeft
       Caption = 'Count'
       Color = clBtnFace
@@ -265,6 +268,7 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
   end
   object UseSSLChk: TCheckBox
@@ -277,9 +281,9 @@ object Main: TMain
     OnClick = StayOnTopChkClick
   end
   object Button2: TButton
-    Left = 326
+    Left = 330
     Top = 60
-    Width = 123
+    Width = 119
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'WebElements'
@@ -315,43 +319,33 @@ object Main: TMain
     TabOrder = 13
     OnClick = StayOnTopChkClick
   end
-  object AutoOpenChk: TCheckBox
-    Left = 304
-    Top = 114
-    Width = 141
-    Height = 17
-    Anchors = [akTop, akRight]
-    Caption = 'Auto Open URL'
-    TabOrder = 14
-    OnClick = StayOnTopChkClick
-  end
   object AutoRunChk: TCheckBox
-    Left = 106
-    Top = 84
+    Left = 8
+    Top = 125
     Width = 97
     Height = 17
     Caption = 'AutoRun'
-    TabOrder = 15
+    TabOrder = 14
     OnClick = StayOnTopChkClick
   end
   object OpenBtn: TButton
-    Left = 326
+    Left = 330
     Top = 86
-    Width = 123
+    Width = 119
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'Open URL'
-    TabOrder = 16
+    TabOrder = 15
     OnClick = OpenBtnClick
   end
   object Button4: TButton
-    Left = 248
-    Top = 86
-    Width = 72
+    Left = 330
+    Top = 114
+    Width = 119
     Height = 22
     Anchors = [akTop, akRight]
     Caption = 'MakeCert'
-    TabOrder = 17
+    TabOrder = 16
     OnClick = Button4Click
   end
   object HomeAliasEdit: TEdit
@@ -375,5 +369,24 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 5
     Text = '0.0.0.0'
+  end
+  object AutoOpenChk: TCheckBox
+    Left = 8
+    Top = 148
+    Width = 141
+    Height = 17
+    Caption = 'Auto Open URL'
+    TabOrder = 17
+    OnClick = StayOnTopChkClick
+  end
+  object Button1: TButton
+    Left = 330
+    Top = 142
+    Width = 119
+    Height = 22
+    Anchors = [akTop, akRight]
+    Caption = 'Renew'
+    TabOrder = 18
+    OnClick = Button1Click
   end
 end

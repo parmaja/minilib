@@ -430,7 +430,9 @@ type
     //Dir of PublicPath of assets
     function GetAssetDir: string;
     function GetLocationPath(AElement: TmnwElement; Location: TLocation): string; overload;
-    
+
+    function HaveRoute: Boolean;
+
     property Request: TwebRequest read GetRequest;
     property Response: TmnwResponse read FResponse;
     property Session: TmnwSession read GetSession;
@@ -1967,6 +1969,7 @@ type
       [TID_Extension]
       TPassword = class(TInput)
       protected
+        procedure Created; override;
       public
         Token: string;
       end;
@@ -6100,6 +6103,11 @@ begin
   Result := GetURL(Schema);
 end;
 
+function TmnwContext.HaveRoute: Boolean;
+begin
+  Result := not((CurrentPath = '') or (CurrentPath = URLDelimiter) or (CurrentPath = PathDelimiter));
+end;
+
 procedure TmnwContext.Require(ALibraryClass: TmnwLibraryClass; Priority: Integer);
 begin
   Renderer.Require(ALibraryClass);
@@ -7035,7 +7043,7 @@ begin
   inherited Create(AParent);
   Value := AValue;
   Caption := ACaption;
-  AutoComplete := True;
+  AutoComplete := False;
 end;
 
 { THTML.TSelect }
@@ -7083,6 +7091,7 @@ end;
 procedure THTML.TUsername.Created;
 begin
   inherited;
+  AutoComplete := True;
 end;
 
 { THTML.TCountInput }
@@ -7278,6 +7287,14 @@ begin
   inherited Create(Parent);
   Text := AText;
   Style := AStyle;
+end;
+
+{ THTML.TPassword }
+
+procedure THTML.TPassword.Created;
+begin
+  inherited;
+  AutoComplete := True;
 end;
 
 initialization

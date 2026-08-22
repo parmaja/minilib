@@ -38,7 +38,6 @@ type
     Label5: TLabel;
     KeepAliveChk: TCheckBox;
     CompressChk: TCheckBox;
-    AutoOpenChk: TCheckBox;
     AutoRunChk: TCheckBox;
     OpenBtn: TButton;
     Button4: TButton;
@@ -46,6 +45,8 @@ type
     Label6: TLabel;
     BindEdit: TEdit;
     Label7: TLabel;
+    AutoOpenChk: TCheckBox;
+    Button1: TButton;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
@@ -54,6 +55,7 @@ type
     procedure OpenBtnClick(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     FMax:Integer;
     HttpServer: TmodWebServer;
@@ -260,6 +262,11 @@ begin
   end;
   //LogEdit.Lines.Add('Finished');
   *)
+end;
+
+procedure TMain.Button1Click(Sender: TObject);
+begin
+// Renew cert
 end;
 
 procedure TMain.Button2Click(Sender: TObject);

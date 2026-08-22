@@ -1261,11 +1261,11 @@ begin
   Scope.Attributes.Add('placeholder', e.PlaceHolder, ssInner);
   if e.AutoFocus then
     Scope.Attributes.AddProp('autofocus', ssInner);
-  if not e.AutoComplete then
-  begin
+  if e.AutoComplete then
+    Scope.Attributes.Add('autocomplete', 'on', ssInner)
+  else
     Scope.Attributes.Add('autocomplete', 'off', ssInner);
-    //Scope.Attributes.Add('aria-autocomplete', 'none', ssInner);
-  end;
+  //Scope.Attributes.Add('aria-autocomplete', 'none', ssInner);
   Scope.Attributes.Add('value', e.Value, ssInner);
   inherited;
 end;

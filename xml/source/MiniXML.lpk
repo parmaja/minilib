@@ -3,7 +3,6 @@
   <Package Version="5">
     <PathDelim Value="\"/>
     <Name Value="MiniXML"/>
-    <Type Value="RunAndDesignTime"/>
     <Author Value="Zaher Dirkey"/>
     <CompilerOptions>
       <Version Value="11"/>
@@ -19,7 +18,7 @@
       </Parsing>
       <Other>
         <Verbosity>
-          <ShoLineNum Value="True"/>
+          <ShowLineNum Value="True"/>
         </Verbosity>
         <CompilerMessages>
           <IgnoredMessages idx5024="True"/>

@@ -14,7 +14,7 @@ unit mncORM;
 interface
 
 uses
-  Classes, SysUtils, Contnrs, Variants, System.Rtti,
+  Classes, SysUtils, Contnrs, Variants, Rtti,
   mnClasses;
 
 type

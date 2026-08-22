@@ -14,6 +14,7 @@
       </SearchPaths>
     </CompilerOptions>
     <Description Value="Mini Web Element, Web Server HTML/Front End Generator"/>
+    <Version Minor="1" Release="1" Build="1"/>
     <Files>
       <Item>
         <Filename Value="..\source\mnBootstraps.pas"/>

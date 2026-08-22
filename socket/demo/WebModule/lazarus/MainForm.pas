@@ -19,7 +19,8 @@ interface
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
   mnLogs, mnUtils, rtti,
-  StdCtrls, ExtCtrls, mnSockets, mnServers, mnOpenSSL, mnBootstraps,
+  StdCtrls, ExtCtrls, mnSockets, mnServers, mnOpenSSL,
+  mnBootstraps,
   mnModules, mnWebModules, mnWebElements, HomeModules,
   LResources, Buttons, Menus;
 
@@ -181,7 +182,7 @@ begin
   if aDocModule <> nil then
   begin
     aDocModule.AliasName := DocAliasEdit.Text;
-    aDocModule.HomeFolder := aHomeFolder;
+    aDocModule.PublicPath := aHomeFolder;
     (aDocModule as TmodWebFileModule).ServeFiles:= [serveEnabled, serveIndex, serveDefault, serveSmart];
     //aDocModule.Use.AcceptCompressing := True;
     if CompressChk.Checked then
@@ -203,16 +204,16 @@ begin
     //aHomeModule.Domain := 'localhost';
     //aHomeModule.Port := HttpServer.Port;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
-    aHomeModule.HomeFolder := aHomeFolder;
-    aHomeModule.WorkFolder := aAppFolder;
+    aHomeModule.PublicPath := aHomeFolder;
+    aHomeModule.PrivatePath := aAppFolder;
 
     aHomeModule.Web.IsSecure := HttpServer.IsSecure;
-    aHomeModule.Web.AppFolder := Application.Location;
+    aHomeModule.Web.AppPath := Application.Location;
     //aHomeModule.Web.Assets.Logo.LoadFromFile(aHomeModule.HomePath + 'cs-v2.png');
-    aHomeModule.Web.Assets.LogoFile := aHomeModule.HomeFolder + 'cs.svg';
+    aHomeModule.Web.Assets.LogoFile := aHomeModule.PublicPath + 'cs.svg';
 
-    ForceDirectories(aHomeModule.WorkFolder + 'cache');
-    ForceDirectories(aHomeModule.WorkFolder + 'temp');
+    ForceDirectories(aHomeModule.PrivatePath + 'cache');
+    ForceDirectories(aHomeModule.PrivatePath + 'temp');
 
     if CompressChk.Checked then
       aHomeModule.UseCompressing := ovUndefined
@@ -291,7 +292,6 @@ begin
   ChallengeServer.Bind:= BindEdit.Text;
 
   ChallengeServer.OnLog := ServerLog;
-  ChallengeServer.Logging := LogMessages;
   WebServers.AddServer('ChallengeServer', ChallengeServer);
 
   HttpServer := TmodWebServer.Create;
@@ -300,12 +300,11 @@ begin
   HttpServer.OnAfterClose := HttpServerAfterClose;
   HttpServer.OnChanged :=  HttpServerChanged;
   HttpServer.OnLog := ServerLog;
-  HttpServer.Logging := LogMessages;
 
   WebServers.AddServer('HttpServer', HttpServer);
 
-  HttpServer.Modules.Add(TmodWebFileModule.Create('doc', 'doc'));
-  HttpServer.Modules.Add(THomeModule.Create('home', 'home'));
+  TmodWebFileModule.Create(HttpServer, 'doc', 'doc');
+  THomeModule.Create(HttpServer, 'home', 'home');
   //HttpServer.SetFallbackRedirect('/doc/');
   HttpServer.SetNotfound;
 
