@@ -39,6 +39,7 @@ type
     DocAliasEdit: TEdit;
     AutoRunChk: TCheckBox;
     BindEdit: TEdit;
+    MakeCertBtn1: TButton;
     UseSSLChk: TCheckBox;
     ExitBtn: TButton;
     Label1: TLabel;
@@ -63,6 +64,7 @@ type
     CompressChk: TCheckBox;
     procedure ExitBtnClick(Sender: TObject);
     procedure FormHide(Sender: TObject);
+    procedure MakeCertBtn1Click(Sender: TObject);
     procedure MakeCertBtnClick(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure NumberOfThreadsClick(Sender: TObject);
@@ -117,6 +119,13 @@ end;
 
 procedure TMain.FormHide(Sender: TObject);
 begin
+end;
+
+procedure TMain.MakeCertBtn1Click(Sender: TObject);
+begin
+  //Make function to renew from https://letsencrypt.org/
+  //put this function in mnWebModules.pas in TmodWebServer
+  //my email account on letsencrypt zaherdirkey@yahoo.com
 end;
 
 procedure TMain.MakeCertBtnClick(Sender: TObject);
@@ -202,6 +211,7 @@ begin
 
     //aHomeModule.IsSSL := HttpServer.IsSecure;
     //aHomeModule.Domain := 'localhost';
+    aHomeModule.Domain := 'dirkey.ddns.net';
     //aHomeModule.Port := HttpServer.Port;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.PublicPath := aHomeFolder;

@@ -99,7 +99,7 @@ object Main: TMain
         OnClick = StartBtnClick
       end
       object MakeCertBtn: TButton
-        Left = 374
+        Left = 278
         Height = 29
         Top = 5
         Width = 93
@@ -118,6 +118,17 @@ object Main: TMain
         Caption = 'Auto Run'
         TabOrder = 4
         OnChange = StayOnTopChkChange
+      end
+      object MakeCertBtn1: TButton
+        Left = 374
+        Height = 29
+        Top = 5
+        Width = 93
+        Align = alRight
+        BorderSpacing.InnerBorder = 4
+        Caption = 'Renew'
+        TabOrder = 5
+        OnClick = MakeCertBtn1Click
       end
     end
     object Label1: TLabel
