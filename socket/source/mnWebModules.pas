@@ -69,6 +69,9 @@ type
 
   TmodWebModule = class;
 
+  //ACME (Let's Encrypt) log event
+  TacmeLog = procedure(const S: string) of object;
+
   TSendFileDisposition = (sdDefault, sdInline, sdAttachment);
   TmodServeFiles = set of (
     serveEnabled,
@@ -197,6 +200,12 @@ type
     procedure AddRedirectHttps;
     procedure SetFallbackRedirect(ToLocation: string);
     procedure SetNotfound;
+    //Request/renew a certificate from Let's Encrypt (ACME v2) using HTTP-01 challenge
+    //AChallengeDir must be served by AddChallengeAcme, pass its acme-challenge dir
+    procedure RenewCertificate(const ADomain, AEmail: string;
+      const ACertificateFile, APrivateKeyFile: string;
+      const AChallengeDir: string; ALog: TacmeLog = nil;
+      const ADirectoryURL: string = '');
     property Modules: TmodWebModules read GetModules;
   end;
 
@@ -347,7 +356,8 @@ function WebServers: TWebServers;
 implementation
 
 uses
-  mnMIME;
+  mnMIME,
+  mnACME;
 
 var
   FWebServers: TWebServers = nil;
@@ -1066,6 +1076,24 @@ begin
   aModule := Modules.Find<TmodNotFoundModule>;
   if aModule = nil then
     TmodNotFoundModule.Create(Self, 'notfound');
+end;
+
+procedure TmodWebServer.RenewCertificate(const ADomain, AEmail: string;
+  const ACertificateFile, APrivateKeyFile: string;
+  const AChallengeDir: string; ALog: TacmeLog;
+  const ADirectoryURL: string);
+var
+  aAccountKeyFile, aAccountKidFile, aDirURL: string;
+begin
+  //account key and kid are stored next to the certificate
+  aAccountKeyFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account.key';
+  aAccountKidFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account.kid';
+  if ADirectoryURL = '' then
+    aDirURL := cLetsEncryptProduction
+  else
+    aDirURL := ADirectoryURL;
+  AcmeRenewCertificate(ADomain, AEmail, ACertificateFile, APrivateKeyFile,
+    aAccountKeyFile, aAccountKidFile, AChallengeDir, ALog, aDirURL);
 end;
 
 { TmodCustomWebModules }

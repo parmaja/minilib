@@ -523,12 +523,21 @@ var
   BN_new: function(): PBIGNUM; cdecl;
   BN_set_word: function(a: PBIGNUM; w: BN_ULONG): integer; cdecl;
   BN_free: procedure(a: PBIGNUM); cdecl;
+  BN_num_bits: function(a: PBIGNUM): Integer; cdecl;
+  BN_bn2bin: function(a: PBIGNUM; to_: PByte): Integer; cdecl;
 
   RSA_new: function(): PRSA; cdecl;
   RSA_generate_key_ex: function(rsa: PRSA; bits: integer; e: PBIGNUM; cb: PBN_GENCB): Integer; cdecl;
   RSA_print: function(bp: PBIO; x: PRSA; offset: integer): Integer; cdecl;
   RSA_print_fp: function(fp: Pointer; x: PRSA; offset: integer): Integer; cdecl;
   RSA_free: procedure(r: PRSA); cdecl;
+  RSA_get0_key: function(rsa: PRSA; out n: PBIGNUM; out e: PBIGNUM; out d: PBIGNUM): Integer; cdecl;
+  RSA_sign: function(sig_type: Integer; m: PByte; m_len: Integer; sigret: PByte; siglen: PCardinal; rsa: PRSA): Integer; cdecl;
+
+  PEM_read_bio_RSAPrivateKey: function(bp: PBIO; x: PPRSA; cb: Ppem_password_cb; u: Pointer): PRSA; cdecl;
+  PEM_write_bio_RSAPrivateKey: function(bp: PBIO; x: PRSA; const enc: PEVP_CIPHER; kstr: PByte; klen: Integer; cb: Ppem_password_cb; u: Pointer): Integer; cdecl;
+
+  EVP_Digest: function(data: Pointer; count: NativeUInt; md: PByte; size: PCardinal; atype: PEVP_MD; impl: Pointer): Integer; cdecl;
 
   CRYPTO_mem_ctrl: function(mode: integer): integer; cdecl;
 
@@ -1006,12 +1015,21 @@ begin
   BN_new := GetAddress('BN_new');
   BN_set_word := GetAddress('BN_set_word');
   BN_free := GetAddress('BN_free');
+  BN_num_bits := GetAddress('BN_num_bits');
+  BN_bn2bin := GetAddress('BN_bn2bin');
 
   RSA_new := GetAddress('RSA_new');
   RSA_generate_key_ex := GetAddress('RSA_generate_key_ex');
   RSA_print := GetAddress('RSA_print');
   RSA_print_fp := GetAddress('RSA_print_fp');
   RSA_free := GetAddress('RSA_free');
+  RSA_get0_key := GetAddress('RSA_get0_key');
+  RSA_sign := GetAddress('RSA_sign');
+
+  PEM_read_bio_RSAPrivateKey := GetAddress('PEM_read_bio_RSAPrivateKey');
+  PEM_write_bio_RSAPrivateKey := GetAddress('PEM_write_bio_RSAPrivateKey');
+
+  EVP_Digest := GetAddress('EVP_Digest');
 
   CRYPTO_mem_ctrl := GetAddress('CRYPTO_mem_ctrl');
 

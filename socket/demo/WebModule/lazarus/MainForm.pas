@@ -123,9 +123,15 @@ end;
 
 procedure TMain.MakeCertBtn1Click(Sender: TObject);
 begin
-  //Make function to renew from https://letsencrypt.org/
-  //put this function in mnWebModules.pas in TmodWebServer
-  //my email account on letsencrypt zaherdirkey@yahoo.com
+  //Renew certificate from https://letsencrypt.org/ (ACME v2, http-01 challenge)
+  //Challenge server must be started to serve .well-known/acme-challenge
+  HttpServer.RenewCertificate(
+    'dirkey.ddns.net',
+    'zaherdirkey@yahoo.com',
+    CertFile,
+    PrivateKeyFile,
+    ExtractFilePath(ParamStr(0)) + 'acme\.well-known\acme-challenge\',
+    ServerLog);
 end;
 
 procedure TMain.MakeCertBtnClick(Sender: TObject);
