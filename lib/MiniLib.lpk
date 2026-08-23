@@ -128,6 +128,10 @@
         <UnitName Value="mnHeaders"/>
       </Item>
       <Item>
+        <Filename Value="mnHMAC.pas"/>
+        <UnitName Value="mnHMAC"/>
+      </Item>
+      <Item>
         <Filename Value="ucp864.pas"/>
         <UnitName Value="ucp864"/>
       </Item>
