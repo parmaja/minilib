@@ -1083,11 +1083,17 @@ procedure TmodWebServer.RenewCertificate(const ADomain, AEmail: string;
   const AChallengeDir: string; ALog: TacmeLog;
   const ADirectoryURL: string);
 var
-  aAccountKeyFile, aAccountKidFile, aDirURL: string;
+  aAccountKeyFile, aAccountKidFile, aDirURL, aAccountSuffix: string;
 begin
+  //staging and production have separate accounts (kid), so keep separate key/kid files
+  if ContainsText(ADirectoryURL, 'staging') then
+    aAccountSuffix := '-staging'
+  else
+    aAccountSuffix := '';
+
   //account key and kid are stored next to the certificate
-  aAccountKeyFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account.key';
-  aAccountKidFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account.kid';
+  aAccountKeyFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account' + aAccountSuffix + '.key';
+  aAccountKidFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account' + aAccountSuffix + '.kid';
   if ADirectoryURL = '' then
     aDirURL := cLetsEncryptProduction
   else

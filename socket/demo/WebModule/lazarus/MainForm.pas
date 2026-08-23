@@ -21,7 +21,7 @@ uses
   mnLogs, mnUtils, rtti,
   StdCtrls, ExtCtrls, mnSockets, mnServers, mnOpenSSL,
   mnBootstraps,
-  mnModules, mnWebModules, mnWebElements, HomeModules,
+  mnModules, mnWebModules, mnACME, mnWebElements, HomeModules,
   LResources, Buttons, Menus;
 
 type
@@ -79,6 +79,7 @@ type
     PrivateKeyFile: string;
     ChallengeServer: TmodWebServer;
     HttpServer: TmodWebServer;
+    StagingChk: TCheckBox; //created in runtime, use staging server to test renew without hit the limit
     FMax:Integer;
     WebServers: TWebServers;
     LogMessages: Boolean;
@@ -122,16 +123,26 @@ begin
 end;
 
 procedure TMain.MakeCertBtn1Click(Sender: TObject);
+var
+  aDirectoryURL: string;
 begin
   //Renew certificate from https://letsencrypt.org/ (ACME v2, http-01 challenge)
   //Challenge server must be started to serve .well-known/acme-challenge
+  //Check "Staging" to test against https://acme-staging-v02.api.letsencrypt.org
+  //without hitting the production rate limits
+  if StagingChk.Checked then
+    aDirectoryURL := cLetsEncryptStaging
+  else
+    aDirectoryURL := cLetsEncryptProduction;
+
   HttpServer.RenewCertificate(
     'dirkey.ddns.net',
     'zaherdirkey@yahoo.com',
     CertFile,
     PrivateKeyFile,
     ExtractFilePath(ParamStr(0)) + 'acme\.well-known\acme-challenge\',
-    ServerLog);
+    ServerLog,
+    aDirectoryURL);
 end;
 
 procedure TMain.MakeCertBtnClick(Sender: TObject);
@@ -302,6 +313,16 @@ begin
   WebServers := TWebServers.Create;
   InstallEventLog(ServerLog);
 
+  //Staging checkbox to test renew against staging server without hit the limit
+  StagingChk := TCheckBox.Create(Self);
+  StagingChk.Parent := ChallengeSSLChk.Parent;
+  StagingChk.Caption := 'Staging';
+  StagingChk.Left := ChallengeSSLChk.Left;
+  StagingChk.Top := ChallengeSSLChk.Top + ChallengeSSLChk.Height + 4;
+  StagingChk.Width := ChallengeSSLChk.Width;
+  StagingChk.ShowHint := True;
+  StagingChk.Hint := 'Use Let''s Encrypt staging server for certificate renewal tests';
+
   ChallengeServer := TmodWebServer.Create;
   ChallengeServer.AddChallengeAcme(ExtractFilePath(ParamStr(0)) + 'acme\.well-known\');
   ChallengeServer.AddRedirectHttps;
@@ -335,6 +356,7 @@ begin
     CompressChk.Checked := GetOption('compress', false);
     KeepAliveChk.Checked := GetOption('keep-alive', false);
     ChallengeSSLChk.Checked := GetOption('challenge', False);
+    StagingChk.Checked := GetOption('staging', False);
     CertPassword := GetOption('cert_password', '');
     CertFile := CorrectPath(ExpandToPath(GetOption('certificate', './certificate.pem'), Application.Location));
     PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), Application.Location));
@@ -376,6 +398,7 @@ begin
     aIni.WriteBool('options', 'compress', CompressChk.Checked);
     aIni.WriteBool('options', 'keep-alive', KeepAliveChk.Checked);
     aIni.WriteBool('options', 'challenge', ChallengeSSLChk.Checked);
+    aIni.WriteBool('options', 'staging', StagingChk.Checked);
   finally
     aIni.Free;
   end;
