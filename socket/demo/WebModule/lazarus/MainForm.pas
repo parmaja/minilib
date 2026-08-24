@@ -136,6 +136,7 @@ procedure TMain.MakeCertBtn1Click(Sender: TObject);
 var
   aPath: string;
 begin
+
   //Renew certificate from https://letsencrypt.org/ (ACME v2, http-01 challenge)
   //Challenge server must be started to serve .well-known/acme-challenge
   //Check "Staging" to test against https://acme-staging-v02.api.letsencrypt.org
@@ -234,7 +235,7 @@ begin
 
     //aHomeModule.IsSSL := HttpServer.IsSecure;
     //aHomeModule.Domain := 'localhost';
-    aHomeModule.Domain := 'dirkey.ddns.net';
+    aHomeModule.Domain := AcmeDomain;
     //aHomeModule.Port := HttpServer.Port;
 //    aHomeModule.AssetsURL := '/' + aHomeModule.AliasName + '/assets/';
     aHomeModule.PublicPath := aHomeFolder;
@@ -407,12 +408,12 @@ begin
     ChallengeSSLChk.Checked := GetOption('challenge', False);
     StagingChk.Checked := GetOption('staging', False);
 
-    AcmePath := CorrectPath(ExpandToPath(aIni.ReadString('acme', 'path', Application.Location + 'acme'), Application.Location));
+    AcmePath := CorrectPath(IncludePathDelimiter(ExpandToPath(aIni.ReadString('acme', 'path', Application.Location + 'acme'), Application.Location)));
     AcmePort := aIni.ReadString('acme', 'port', '80');
     AcmeDomain := aIni.ReadString('acme', 'domain', '');
     AcmeEmail := aIni.ReadString('acme', 'email', '');
 
-    CertPath := CorrectPath(ExpandToPath(aIni.ReadString('cert', 'path', './'), Application.Location));
+    CertPath := CorrectPath(IncludePathDelimiter(ExpandToPath(aIni.ReadString('cert', 'path', './'), Application.Location)));
     CertPassword := aIni.ReadString('cert', 'password', Application.Location + 'cert');
     CertFile := CorrectPath(ExpandToPath(aIni.ReadString('cert', 'certificate', './certificate.pem'), Application.Location));
     PrivateKeyFile := CorrectPath(ExpandToPath(aIni.ReadString('cert', 'privatekey', './privatekey.pem'), Application.Location));
