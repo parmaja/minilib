@@ -399,7 +399,7 @@ var
     pkey: PEVP_PKEY;
     req: PX509_REQ;
     name: PX509_NAME;
-    ctx: TX509V3_CTX;
+    sk: POPENSSL_STACK;
     ext: PX509_EXTENSION;
     bio: PBIO;
     aBN_E: PBIGNUM;
@@ -442,16 +442,22 @@ var
           PByte(PAnsiChar(Utf8String(ADomain))), -1, -1, 0);
         X509_REQ_set_pubkey(req, pkey);
 
-            //subjectAltName = DNS:<domain>
-            X509V3_set_ctx_nodb(@ctx);
-            X509V3_set_ctx(@ctx, nil, nil, req, nil, 0);
-
-        ext := X509V3_EXT_conf_nid(nil, @ctx, OBJ_txt2nid('subjectAltName'),
-          PAnsiChar(Utf8String('DNS:' + ADomain)));
-        if ext <> nil then
-        begin
-          X509_add_ext(req, ext, -1);
-          X509_EXTENSION_free(ext);
+        //subjectAltName = DNS:<domain>
+        //stored as request attribute via X509_REQ_add_extensions_nid
+        //(X509_add_ext must not be used on an X509_REQ)
+        sk := OPENSSL_sk_new_null();
+        try
+          ext := X509V3_EXT_conf_nid(nil, nil, NID_subject_alt_name,
+            PAnsiChar(Utf8String('DNS:' + ADomain)));
+          if ext <> nil then
+          try
+            OPENSSL_sk_push(sk, ext);
+            X509_REQ_add_extensions_nid(req, sk, NID_subject_alt_name);
+          finally
+            X509_EXTENSION_free(ext); //sk owns nothing; extension was copied (i2d) into the attribute
+          end;
+        finally
+          OPENSSL_sk_free(sk);
         end;
 
         X509_REQ_sign(req, pkey, EVP_sha256());
