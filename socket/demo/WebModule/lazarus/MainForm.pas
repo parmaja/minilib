@@ -300,7 +300,7 @@ begin
 
   ChallengeServer := TmodWebServer.Create;
   ChallengeServer.Name := 'ChallengeServer';
-  ChallengeServer.AddChallengeAcme(AcmePath + '.well-known\acme-challenge\');
+  ChallengeServer.AddChallengeAcme(AcmePath + '.well-known\');
   ChallengeServer.AddRedirectHttps;
   ChallengeServer.OnBeforeOpen := ChallengeServerBeforeOpen;
 

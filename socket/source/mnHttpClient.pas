@@ -432,6 +432,8 @@ begin
 
   if (vData <> nil) and (vCount > 0) then
     Stream.Write(vData^, vCount);
+
+  Request.Header.Clear;
 end;
 
 procedure TmnCustomHttpClient.SendGet;
@@ -657,6 +659,8 @@ begin
   if FStream <> nil then
     FStream.Disconnect;
   FreeStream;
+  Request.Header.Clear;
+  Response.Header.Clear;
 end;
 
 function TmnCustomHttpClient.GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
