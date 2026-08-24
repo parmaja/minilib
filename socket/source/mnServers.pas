@@ -708,10 +708,10 @@ begin
     begin
       Changed;
       Started;
-      s := 'Server '+ Server.Name + ' started at port: ';
+      s := 'Server '+ Server.Name + ' started at port: ' + FPort;
       if soSSL in Options then
         s := s + ' Secured';
-      Log(s + FPort);
+      Log(s);
     end;
     Event.SetEvent;
     while Connected and not Terminated do
