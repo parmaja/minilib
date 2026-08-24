@@ -18,7 +18,7 @@ uses
   {$endif}
   SysUtils, IniFiles, Classes,
   mnLogs, mnUtils,
-  mnSockets, mnServers,
+  mnSockets, mnServers, mnOpenSSL,
   mnBootstraps,
   mnModules, mnWebModules, mnACME, mnWebElements, HomeModules;
 
@@ -58,6 +58,9 @@ type
     procedure ChallengeServerBeforeOpen(Sender: TObject);
     procedure ServerLog(const S: String);
     procedure Start;
+    procedure RenewCert;
+    procedure MakeCertCmd;
+    function ExecuteCommand(const ACommand: string): Boolean;
   end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;
@@ -225,9 +228,57 @@ begin
   WebServers.Start;
 end;
 
+{Renew certificate from https://letsencrypt.org/ (ACME v2, http-01 challenge)
+ Check "Staging" to test against https://acme-staging-v02.api.letsencrypt.org
+ without hitting the production rate limits}
+procedure TwscServer.RenewCert;
+var
+  aPath: string;
+begin
+  if (AcmeDomain = '') or (AcmeEmail = '') then
+    raise Exception.Create('Domain and EMail must defined in [acme] section of config.ini');
+  aPath := AcmePath + '.well-known' + PathDelim + 'acme-challenge' + PathDelim;
+  ForceDirectories(aPath);
+  RenewCertificate(AcmeDomain, AcmeEmail, CertFile, PrivateKeyFile, aPath, Staging, ServerLog);
+end;
+
+procedure TwscServer.MakeCertCmd;
+begin
+  MakeCert('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
+end;
+
+function TwscServer.ExecuteCommand(const ACommand: string): Boolean;
+begin
+  Result := True;
+  if ACommand = 'renew' then
+  begin
+    //Challenge server must be started to serve .well-known/acme-challenge
+    ChallengeServer.Enabled := True;
+    WebServers.Start;
+    try
+      RenewCert;
+    finally
+      WebServers.Stop;
+    end;
+  end
+  else if ACommand = 'makecert' then
+    MakeCertCmd
+  else
+    Result := False;
+end;
+
 var
   aWsc: TwscServer;
-  cmd: string;
+  cmd, aCommand: string;
+
+  function GetCommand: string; //first argument if it is a known command
+  begin
+    Result := LowerCase(Trim(ParamStr(1)));
+    if (Result = 'renew') or (Result = 'makecert') then
+      //known command
+    else
+      Result := '';
+  end;
 
 begin
   {$ifndef WINDOWS}
@@ -262,16 +313,29 @@ begin
       THomeModule.Create(HttpServer, 'home', 'home');
       HttpServer.SetNotfound;
 
-      Start;
+      aCommand := GetCommand;
+      if aCommand <> '' then
+      begin
+        //run one command then exit
+        if not ExecuteCommand(aCommand) then
+          Writeln('Unknown command: ' + aCommand);
+      end
+      else
+      begin
+        Start;
 
-      Writeln('');
-      Writeln('Type "quit" or press Ctrl+C to stop the server.');
-      repeat
-        Readln(cmd);
-        cmd := Trim(LowerCase(cmd));
-      until (cmd = 'quit') or (cmd = 'exit') or (cmd = 'q');
+        Writeln('');
+        Writeln('Commands: renew, makecert, quit');
+        repeat
+          Readln(cmd);
+          cmd := Trim(LowerCase(cmd));
+          if cmd = 'quit' then Break;
+          if not ExecuteCommand(cmd) and (cmd <> '') and (cmd <> 'exit') and (cmd <> 'q') then
+            Writeln('Unknown command: ' + cmd);
+        until (cmd = 'exit') or (cmd = 'q');
 
-      WebServers.Stop;
+        WebServers.Stop;
+      end;
       FreeAndNil(WebServers);
     end;
   finally
