@@ -19,7 +19,9 @@
       </Parsing>
       <Linking>
         <Debugging>
+          <RunWithoutDebug Value="True"/>
           <DebugInfoType Value="dsDwarf3"/>
+          <UseValgrind Value="True"/>
         </Debugging>
       </Linking>
       <Other>

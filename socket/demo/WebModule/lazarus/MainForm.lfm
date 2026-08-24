@@ -113,9 +113,9 @@ object Main: TMain
         Left = 131
         Height = 29
         Top = 5
-        Width = 63
+        Width = 68
         Align = alLeft
-        Caption = 'Auto Run'
+        Caption = 'Auto Start'
         TabOrder = 4
         OnChange = StayOnTopChkChange
       end
@@ -315,20 +315,20 @@ object Main: TMain
       Caption = 'Alias'
     end
     object StayOnTopChk: TCheckBox
-      Left = 243
+      Left = 176
       Height = 17
-      Top = 81
+      Top = 104
       Width = 53
       Caption = 'On Top'
       TabOrder = 6
       OnChange = StayOnTopChkChange
     end
-    object ChallengeSSLChk: TCheckBox
-      Left = 97
+    object StagingChk: TCheckBox
+      Left = 240
       Height = 17
       Top = 81
-      Width = 130
-      Caption = 'Challenge Server on 80'
+      Width = 107
+      Caption = 'Test mode Renew '
       TabOrder = 7
     end
     object HomeAliasEdit: TEdit
@@ -350,8 +350,8 @@ object Main: TMain
       Left = 136
       Height = 13
       Top = 35
-      Width = 31
-      Caption = 'Label6'
+      Width = 20
+      Caption = 'Port'
     end
   end
   object CompressChk: TCheckBox
@@ -363,7 +363,7 @@ object Main: TMain
     TabOrder = 2
   end
   object KeepAliveChk: TCheckBox
-    Left = 98
+    Left = 96
     Height = 17
     Top = 103
     Width = 68
@@ -377,6 +377,14 @@ object Main: TMain
     Width = 78
     TabOrder = 4
     Text = '0.0.0.0'
+  end
+  object ChallengeSSLChk: TCheckBox
+    Left = 97
+    Height = 17
+    Top = 81
+    Width = 130
+    Caption = 'Challenge Server on 80'
+    TabOrder = 5
   end
   object MainMenu: TMainMenu
     Left = 448

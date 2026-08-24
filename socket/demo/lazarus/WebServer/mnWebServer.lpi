@@ -61,6 +61,9 @@
         <ResourceBaseClass Value="Form"/>
       </Unit1>
     </Units>
+    <Debugger>
+      <StoreDebuggerClassConfInSession Value="True"/>
+    </Debugger>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
@@ -87,6 +90,12 @@
         </Win32>
       </Options>
     </Linking>
+    <Other>
+      <CustomOptions Value="-dDEBUG"/>
+      <OtherDefines Count="1">
+        <Define0 Value="DEBUG"/>
+      </OtherDefines>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

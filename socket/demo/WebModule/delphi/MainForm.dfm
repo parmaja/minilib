@@ -119,7 +119,7 @@ object Main: TMain
   end
   object StayOnTopChk: TCheckBox
     Left = 8
-    Top = 102
+    Top = 111
     Width = 97
     Height = 17
     Caption = 'Stay on top'
@@ -136,7 +136,6 @@ object Main: TMain
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 9
-    ExplicitTop = 106
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
@@ -311,8 +310,8 @@ object Main: TMain
     OnClick = StayOnTopChkClick
   end
   object CompressChk: TCheckBox
-    Left = 196
-    Top = 63
+    Left = 8
+    Top = 83
     Width = 97
     Height = 17
     Caption = 'Compress'
@@ -321,7 +320,7 @@ object Main: TMain
   end
   object AutoRunChk: TCheckBox
     Left = 8
-    Top = 125
+    Top = 130
     Width = 97
     Height = 17
     Caption = 'AutoRun'
@@ -372,7 +371,7 @@ object Main: TMain
   end
   object AutoOpenChk: TCheckBox
     Left = 8
-    Top = 148
+    Top = 149
     Width = 141
     Height = 17
     Caption = 'Auto Open URL'
@@ -388,5 +387,23 @@ object Main: TMain
     Caption = 'Renew'
     TabOrder = 18
     OnClick = Button1Click
+  end
+  object ChallengeSSLChk: TCheckBox
+    Left = 106
+    Top = 83
+    Width = 97
+    Height = 17
+    Caption = 'ACME Challenge 80'
+    TabOrder = 19
+    OnClick = StayOnTopChkClick
+  end
+  object StagingChk: TCheckBox
+    Left = 217
+    Top = 83
+    Width = 97
+    Height = 17
+    Caption = 'StagingChk'
+    TabOrder = 20
+    OnClick = StayOnTopChkClick
   end
 end

@@ -29,8 +29,9 @@ type
   { TMain }
 
   TMain = class(TForm)
-    HomeAliasEdit: TEdit;
     ChallengeSSLChk: TCheckBox;
+    HomeAliasEdit: TEdit;
+    StagingChk: TCheckBox;
     KeepAliveChk: TCheckBox;
     Label5: TLabel;
     HomeLbl: TLabel;
@@ -79,7 +80,6 @@ type
     PrivateKeyFile: string;
     ChallengeServer: TmodWebServer;
     HttpServer: TmodWebServer;
-    StagingChk: TCheckBox; //created in runtime, use staging server to test renew without hit the limit
     FMax:Integer;
     WebServers: TWebServers;
     LogMessages: Boolean;
@@ -113,7 +113,7 @@ begin
     ServerLog('use https://localhost:' + PortEdit.Text + '/doc/')
   else
     ServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
-  ChallengeServer.Enabled := UseSSLChk.Checked and ChallengeSSLChk.Checked;
+  ChallengeServer.Enabled := UseSSLChk.Checked and StagingChk.Checked;
 
   WebServers.Start;
 end;
@@ -314,12 +314,6 @@ begin
   InstallEventLog(ServerLog);
 
   //Staging checkbox to test renew against staging server without hit the limit
-  StagingChk := TCheckBox.Create(Self);
-  StagingChk.Parent := ChallengeSSLChk.Parent;
-  StagingChk.Caption := 'Staging';
-  StagingChk.Left := ChallengeSSLChk.Left;
-  StagingChk.Top := ChallengeSSLChk.Top + ChallengeSSLChk.Height + 4;
-  StagingChk.Width := ChallengeSSLChk.Width;
   StagingChk.ShowHint := True;
   StagingChk.Hint := 'Use Let''s Encrypt staging server for certificate renewal tests';
 

@@ -11,7 +11,7 @@ interface
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
   mnOpenSSLUtils, mnOpenSSL, mnLogs, mnOpenSSLAPI,
-  mnModules, mnStreamUtils, mnUtils, mnWebElements,
+  mnModules, mnStreamUtils, mnUtils, mnWebElements, mnACME,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules,
   HomeModules;
 
@@ -47,6 +47,8 @@ type
     Label7: TLabel;
     AutoOpenChk: TCheckBox;
     Button1: TButton;
+    ChallengeSSLChk: TCheckBox;
+    StagingChk: TCheckBox;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
@@ -58,16 +60,23 @@ type
     procedure Button1Click(Sender: TObject);
   private
     FMax:Integer;
+    CertPassword: string;
+    CertFile: string;
+    PrivateKeyFile: string;
     HttpServer: TmodWebServer;
+    WebServers: TWebServers;
+    ChallengeServer: TmodWebServer;
     procedure OpenURL;
     procedure UpdateStatus;
     procedure HttpServerBeforeOpen(Sender: TObject);
     procedure HttpServerAfterOpen(Sender: TObject);
     procedure HttpServerAfterClose(Sender: TObject);
     procedure HttpServerChanged(Listener: TmnListener);
-    procedure HttpServerLog(const S: string);
     procedure Cert2;
     procedure TestImage;
+    procedure Start;
+    procedure Stop;
+    procedure ServerLog(const S: String);
   public
   end;
 
@@ -78,15 +87,38 @@ implementation
 
 {$R *.DFM}
 
+procedure TMain.ServerLog(const S: String);
+begin
+  Memo.Lines.Add(S);
+end;
+
+procedure TMain.Start;
+begin
+  if UseSSLChk.Checked then
+    ServerLog('use https://localhost:' + PortEdit.Text + '/doc/')
+  else
+    ServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
+  ChallengeServer.Enabled := UseSSLChk.Checked and StagingChk.Checked;
+
+  HttpServer.Start;
+end;
+
 procedure TMain.StartBtnClick(Sender: TObject);
 begin
-  HttpServer.Start;
+  Start;
+end;
+
+procedure TMain.Stop;
+begin
+  WebServers.Stop;
+  StartBtn.Enabled:= true;
+  MaxOfThreadsLabel.Caption := '0';
+  LastIDLabel.Caption := '0';
 end;
 
 procedure TMain.StopBtnClick(Sender: TObject);
 begin
-  HttpServer.Stop;
-  StartBtn.Enabled := true;
+  Stop;
 end;
 
 procedure TMain.UpdateStatus;
@@ -105,13 +137,19 @@ begin
   if (LeftStr(aPublicPath, 2)='.\') or (LeftStr(aPublicPath, 2)='./') then
     aPublicPath := ExtractFilePath(Application.ExeName) + Copy(aPublicPath, 3, MaxInt);
 
+  ChallengeServer.Bind:= BindEdit.Text;
+
   HttpServer.Bind := BindEdit.Text;
   HttpServer.Port := PortEdit.Text;
   HttpServer.IsSecure := UseSSLChk.Checked;
   if HttpServer.IsSecure then
   begin
-    HttpServer.CertificateFile := 'HttpServer.crt';
-    HttpServer.PrivateKeyFile := 'HttpServer.private.key';
+//    HttpServer.CertificateFile := 'HttpServer.crt';
+//    HttpServer.PrivateKeyFile := 'HttpServer.private.key';
+    HttpServer.IsSecure := True;
+    HttpServer.CertificateFile := CertFile;
+    HttpServer.CertPassword := CertPassword;
+    HttpServer.PrivateKeyFile := PrivateKeyFile;
   end;
 
   aDocModule := HttpServer.Module<TmodWebFileModule>;
@@ -265,8 +303,26 @@ begin
 end;
 
 procedure TMain.Button1Click(Sender: TObject);
+var
+  aDirectoryURL: string;
 begin
-// Renew cert
+  //Renew certificate from https://letsencrypt.org/ (ACME v2, http-01 challenge)
+  //Challenge server must be started to serve .well-known/acme-challenge
+  //Check "Staging" to test against https://acme-staging-v02.api.letsencrypt.org
+  //without hitting the production rate limits
+  if StagingChk.Checked then
+    aDirectoryURL := cLetsEncryptStaging
+  else
+    aDirectoryURL := cLetsEncryptProduction;
+
+  HttpServer.RenewCertificate(
+    'dirkey.ddns.net',
+    'zaherdirkey@yahoo.com',
+    CertFile,
+    PrivateKeyFile,
+    ExtractFilePath(ParamStr(0)) + 'acme\.well-known\acme-challenge\',
+    ServerLog,
+    aDirectoryURL);
 end;
 
 procedure TMain.Button2Click(Sender: TObject);
@@ -317,17 +373,25 @@ var
 begin
   Memo.Font.Name := 'Consolas';
   Memo.Font.Size := 10;
-  InstallEventLog(HttpServerLog);
+  WebServers := TWebServers.Create;
+  InstallEventLog(ServerLog);
+
+  ChallengeServer := TmodWebServer.Create;
+  ChallengeServer.AddChallengeAcme(ExtractFilePath(ParamStr(0)) + 'acme\.well-known\');
+  ChallengeServer.AddRedirectHttps;
+  ChallengeServer.OnLog := ServerLog;
+  WebServers.AddServer('ChallengeServer', ChallengeServer);
 
   HttpServer := TmodWebServer.Create;
   HttpServer.OnBeforeOpen := HttpServerBeforeOpen;
   HttpServer.OnAfterOpen := HttpServerAfterOpen;
   HttpServer.OnAfterClose := HttpServerAfterClose;
   HttpServer.OnChanged :=  HttpServerChanged;
-  HttpServer.OnLog := HttpServerLog;  
+  HttpServer.OnLog := ServerLog;
 
   HttpServer.Add(TmodWebFileModule, 'doc', 'doc');
   THomeModule.Create(HttpServer, 'home', 'home');
+  HttpServer.SetNotfound;
 
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
@@ -339,6 +403,11 @@ begin
     UseSSLChk.Checked := GetOption('ssl', false);
     KeepAliveChk.Checked := GetOption('keep_alive', false);
     CompressChk.Checked := GetOption('compress', false);
+    ChallengeSSLChk.Checked := GetOption('challenge', False);
+    StagingChk.Checked := GetOption('staging', False);
+    CertPassword := GetOption('cert_password', '');
+    CertFile := CorrectPath(ExpandToPath(GetOption('certificate', './certificate.pem'), ExtractFilePath(Application.ExeName)));
+    PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), ExtractFilePath(Application.ExeName)));
     aBounds.Left := aIni.ReadInteger('window', 'left', Left);
     aBounds.Top := aIni.ReadInteger('window', 'top', Top);
     aBounds.Width := aIni.ReadInteger('window', 'width', Width);
@@ -376,6 +445,8 @@ begin
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'keep_alive', KeepAliveChk.Checked);
     aIni.WriteBool('options', 'compress', CompressChk.Checked);
+    aIni.WriteBool('options', 'challenge', ChallengeSSLChk.Checked);
+    aIni.WriteBool('options', 'staging', StagingChk.Checked);
   finally
     aIni.Free;
   end;
@@ -412,11 +483,6 @@ begin
     FMax := Listener.Count;
   MaxOfThreadsLabel.Caption:=IntToStr(FMax);
   UpdateStatus;
-end;
-
-procedure TMain.HttpServerLog(const s: string);
-begin
-  Memo.Lines.Add(s);
 end;
 
 procedure TMain.OpenBtnClick(Sender: TObject);
