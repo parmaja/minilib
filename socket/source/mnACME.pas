@@ -1,4 +1,4 @@
-unit mnACME;
+﻿unit mnACME;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -500,8 +500,7 @@ var
   procedure AcquireNonce;
   begin
     Log('get new nonce');
-    aHttpClient.Disconnect;
-    aHttpClient.Open(aNewNonceURL);
+    aHttpClient.Reopen(aNewNonceURL);
     try
       aNonce := aHttpClient.Response.Header['Replay-Nonce'];
     finally
@@ -545,8 +544,7 @@ var
 
     Log('POST ' + AURL);
 
-    aHttpClient.Disconnect;
-    aHttpClient.Open(AURL, False);
+    aHttpClient.Reconnect(AURL);
     try
       aHttpClient.Request.PutHeader('Content-Type', 'application/jose+json');
       aHttpClient.Post(PByte(PAnsiChar(Utf8String(aRequest))), Length(aRequest));

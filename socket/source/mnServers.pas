@@ -186,6 +186,7 @@ type
   TmnServer = class(TmnObject)
   private
     FActive: Boolean;
+    FName: string;
     FPort: string;
     FBind: string;
     FListener: TmnListener;
@@ -194,6 +195,7 @@ type
     FIdleInterval: Int64;
     procedure SetActive(const Value: Boolean);
     procedure SetBind(const Value: string);
+    procedure SetName(AValue: string);
     procedure SetPort(const Value: string);
     function GetCount: Integer;
     function GetConnected: Boolean;
@@ -253,6 +255,7 @@ type
     property Started: boolean read FActive write SetActive default False;
     property Connected: Boolean read GetConnected;
     property IdleInterval: Int64 read FIdleInterval write FIdleInterval default cIdleInterval;
+    property Name: string read FName write SetName;
   end;
 
 //TODO move to another unit SimpleClientServer
@@ -705,9 +708,9 @@ begin
     begin
       Changed;
       Started;
-      s := 'Server started at port: ';
+      s := 'Server '+ Server.Name + ' started at port: ';
       if soSSL in Options then
-        s := s + 'SSL:';
+        s := s + ' Secured';
       Log(s + FPort);
     end;
     Event.SetEvent;
@@ -939,8 +942,8 @@ begin
   inherited Create;
   FBind := '0.0.0.0';
   //FAddress := '';
-  CertificateFile := 'certificate.pem';
-  PrivateKeyFile := 'privatekey.pem';
+  //CertificateFile := 'certificate.pem';
+  //PrivateKeyFile := 'privatekey.pem';
   IdleInterval := cIdleInterval;
   FIdleTick := TThread.GetTickCount64;
 end;
@@ -1084,6 +1087,14 @@ begin
   if Active then
     raise EmnException.Create('Can not change Address value when active');
   FBind := Value;
+end;
+
+procedure TmnServer.SetName(AValue: string);
+begin
+  if FName=AValue then Exit;
+  if Started then
+    raise Exception.Create('Server is active you cannot change the name');
+  FName:=AValue;
 end;
 
 procedure TmnServer.SetPort(const Value: string);

@@ -202,10 +202,6 @@ type
     procedure SetNotfound;
     //Request/renew a certificate from Let's Encrypt (ACME v2) using HTTP-01 challenge
     //AChallengeDir must be served by AddChallengeAcme, pass its acme-challenge dir
-    procedure RenewCertificate(const ADomain, AEmail: string;
-      const ACertificateFile, APrivateKeyFile: string;
-      const AChallengeDir: string; ALog: TacmeLog = nil;
-      const ADirectoryURL: string = '');
     property Modules: TmodWebModules read GetModules;
   end;
 
@@ -345,6 +341,13 @@ function FindDefaultDocument(Root: string; DefaultDocuments: TStringList): strin
 procedure WebServeDir(Title, Path: string; Response: TwebResponse; Request: TmodRequest);
 procedure WebServeFile(Response: TwebResponse; Request: TmodRequest; DefaultDocuments: TStringList; Options: TmodServeFiles);
 
+procedure RenewCertificate(
+            const ADomain, AEmail: string;
+            const ACertificateFile, APrivateKeyFile: string;
+            const AChallengeDir: string;
+            Staging: Boolean; ALog: TacmeLog = nil
+          );
+
 function IsJWT(const S: string): Boolean;
 {$ifndef FPC}
 function JWTEncode(const Payload: UTF8String; const Secret: UTF8String): string;
@@ -356,8 +359,7 @@ function WebServers: TWebServers;
 implementation
 
 uses
-  mnMIME,
-  mnACME;
+  mnMIME, mnACME;
 
 var
   FWebServers: TWebServers = nil;
@@ -1078,28 +1080,37 @@ begin
     TmodNotFoundModule.Create(Self, 'notfound');
 end;
 
-procedure TmodWebServer.RenewCertificate(const ADomain, AEmail: string;
-  const ACertificateFile, APrivateKeyFile: string;
-  const AChallengeDir: string; ALog: TacmeLog;
-  const ADirectoryURL: string);
+procedure RenewCertificate(
+            const ADomain, AEmail: string;
+            const ACertificateFile, APrivateKeyFile: string;
+            const AChallengeDir: string;
+            Staging: Boolean; ALog: TacmeLog = nil
+          );
 var
   aAccountKeyFile, aAccountKidFile, aDirURL, aAccountSuffix: string;
+  aDirectoryURL: string;
 begin
-  //staging and production have separate accounts (kid), so keep separate key/kid files
-  if ContainsText(ADirectoryURL, 'staging') then
+  if (ADomain = '') or (AEmail = '') then
+    raise Exception.Create('Domain and EMail must be defined');
+  //Staging and production have separate accounts (kid), so keep separate key/kid files
+  if Staging then
+  begin
+    aDirectoryURL := cLetsEncryptStaging;
     aAccountSuffix := '-staging'
+  end
   else
+  begin
+    aDirectoryURL := cLetsEncryptProduction;
     aAccountSuffix := '';
-
-  //account key and kid are stored next to the certificate
+  end;
+  //Account key and kid are stored next to the certificate
   aAccountKeyFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account' + aAccountSuffix + '.key';
   aAccountKidFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account' + aAccountSuffix + '.kid';
   if ADirectoryURL = '' then
     aDirURL := cLetsEncryptProduction
   else
     aDirURL := ADirectoryURL;
-  AcmeRenewCertificate(ADomain, AEmail, ACertificateFile, APrivateKeyFile,
-    aAccountKeyFile, aAccountKidFile, AChallengeDir, ALog, aDirURL);
+  AcmeRenewCertificate(ADomain, AEmail, ACertificateFile, APrivateKeyFile, aAccountKeyFile, aAccountKidFile, AChallengeDir, ALog, aDirURL);
 end;
 
 { TmodCustomWebModules }

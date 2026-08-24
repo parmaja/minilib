@@ -75,17 +75,27 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
+    FMax:Integer;
+
+    AcmePath: string;
+    AcmePort: string;
+    AcmeDomain,
+    AcmeEmail,
     CertPassword: string;
+    CertPath: string;
     CertFile: string;
     PrivateKeyFile: string;
+
     ChallengeServer: TmodWebServer;
     HttpServer: TmodWebServer;
-    FMax:Integer;
+
     WebServers: TWebServers;
     LogMessages: Boolean;
     procedure Start;
     procedure UpdateStatus;
+    procedure LoadConfig;
 
+    procedure ChallengeServerBeforeOpen(Sender: TObject);
     procedure HttpServerBeforeOpen(Sender: TObject);
     procedure HttpServerAfterOpen(Sender: TObject);
     procedure HttpServerAfterClose(Sender: TObject);
@@ -124,25 +134,17 @@ end;
 
 procedure TMain.MakeCertBtn1Click(Sender: TObject);
 var
-  aDirectoryURL: string;
+  aPath: string;
 begin
   //Renew certificate from https://letsencrypt.org/ (ACME v2, http-01 challenge)
   //Challenge server must be started to serve .well-known/acme-challenge
   //Check "Staging" to test against https://acme-staging-v02.api.letsencrypt.org
   //without hitting the production rate limits
-  if StagingChk.Checked then
-    aDirectoryURL := cLetsEncryptStaging
-  else
-    aDirectoryURL := cLetsEncryptProduction;
-
-  HttpServer.RenewCertificate(
-    'dirkey.ddns.net',
-    'zaherdirkey@yahoo.com',
-    CertFile,
-    PrivateKeyFile,
-    ExtractFilePath(ParamStr(0)) + 'acme\.well-known\acme-challenge\',
-    ServerLog,
-    aDirectoryURL);
+  if (AcmeDomain = '') or (AcmeEmail = '') then
+    raise Exception.Create('Domain and EMail must defined');
+  aPath := AcmePath + '.well-known\acme-challenge\';
+  ForceDirectories(aPath);
+  RenewCertificate(AcmeDomain, AcmeEmail, CertFile, PrivateKeyFile, aPath, StagingChk.Checked, ServerLog);
 end;
 
 procedure TMain.MakeCertBtnClick(Sender: TObject);
@@ -195,12 +197,16 @@ begin
   HttpServer.Port := PortEdit.Text;
   if UseSSLChk.Checked then
   begin
-    //HttpServer.CertificateFile := Application.Location + '\acme\fullchain.pem';
-    //HttpServer.PrivateKeyFile := Application.Location + '\acme\privkey.pem';
-    HttpServer.IsSecure := True;
-    HttpServer.CertificateFile := CertFile;
-    HttpServer.CertPassword := CertPassword;
-    HttpServer.PrivateKeyFile := PrivateKeyFile;
+    if FileExists(CertFile)then
+    begin
+      HttpServer.IsSecure := True;
+      HttpServer.CertPassword := CertPassword;
+      HttpServer.CertificateFile := CertFile;
+      if FileExists(PrivateKeyFile) then
+      begin
+        HttpServer.PrivateKeyFile := PrivateKeyFile;
+      end;
+    end;
   end;
   //Server.Address := '127.0.0.1';
 
@@ -281,34 +287,6 @@ end;
 procedure TMain.FormCreate(Sender: TObject);
 var
   aIni:TIniFile;
-  function GetOption(AName, ADefault: string): string; overload;
-  var
-    s:string;
-  begin
-    s := '';
-    if FindCmdLineValue(AName, s) then
-      Result :=AnsiDequotedStr(s, '"')
-    else
-      Result := aIni.ReadString('options', AName, ADefault);
-  end;
-
-  function GetOption(AName: string; ADefault: Boolean = False): Boolean; overload;
-  begin
-    Result := aIni.ReadBool('options', AName, ADefault);
-  end;
-
-  function GetSwitch(AName, ADefault: string): string; overload; //if found in cmd mean it is true
-  var
-    s:string;
-  begin
-    s := '';
-    if FindCmdLineValue(AName, s) then
-      Result := 'True'
-    else
-      Result := aIni.ReadString('options',AName, ADefault);
-  end;
-var
-  aBounds: TRect;
 begin
   WebServers := TWebServers.Create;
   InstallEventLog(ServerLog);
@@ -317,15 +295,19 @@ begin
   StagingChk.ShowHint := True;
   StagingChk.Hint := 'Use Let''s Encrypt staging server for certificate renewal tests';
 
+  LoadConfig;
+
   ChallengeServer := TmodWebServer.Create;
-  ChallengeServer.AddChallengeAcme(ExtractFilePath(ParamStr(0)) + 'acme\.well-known\');
+  ChallengeServer.Name := 'ChallengeServer';
+  ChallengeServer.AddChallengeAcme(AcmePath + '.well-known\acme-challenge\');
   ChallengeServer.AddRedirectHttps;
-  ChallengeServer.Bind:= BindEdit.Text;
+  ChallengeServer.OnBeforeOpen := ChallengeServerBeforeOpen;
 
   ChallengeServer.OnLog := ServerLog;
   WebServers.AddServer('ChallengeServer', ChallengeServer);
 
   HttpServer := TmodWebServer.Create;
+  HttpServer.Name := 'WebServer';
   HttpServer.OnBeforeOpen := HttpServerBeforeOpen;
   HttpServer.OnAfterOpen :=  HttpServerAfterOpen;
   HttpServer.OnAfterClose := HttpServerAfterClose;
@@ -338,33 +320,6 @@ begin
   THomeModule.Create(HttpServer, 'home', 'home');
   //HttpServer.SetFallbackRedirect('/doc/');
   HttpServer.SetNotfound;
-
-  aIni := TIniFile.Create(Application.Location + 'config.ini');
-  try
-    HomePathEdit.Text := GetOption('homepath', '.\html');
-    PortEdit.Text := GetOption('port', '81');
-    DocAliasEdit.Text := GetOption('doc.alias', 'doc');
-    HomeAliasEdit.Text := GetOption('home.alias', 'home');
-    BindEdit.Text := GetOption('bind', '0.0.0.0');
-    UseSSLChk.Checked := GetOption('ssl', false);
-    CompressChk.Checked := GetOption('compress', false);
-    KeepAliveChk.Checked := GetOption('keep-alive', false);
-    ChallengeSSLChk.Checked := GetOption('challenge', False);
-    StagingChk.Checked := GetOption('staging', False);
-    CertPassword := GetOption('cert_password', '');
-    CertFile := CorrectPath(ExpandToPath(GetOption('certificate', './certificate.pem'), Application.Location));
-    PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), Application.Location));
-    aBounds.Left := aIni.ReadInteger('window', 'left', Left);
-    aBounds.Top := aIni.ReadInteger('window', 'top', Top);
-    aBounds.Width := aIni.ReadInteger('window', 'width', Width);
-    aBounds.Height := aIni.ReadInteger('window', 'height', Height);
-    BoundsRect := aBounds;
-    StayOnTopChk.Checked := aIni.ReadBool('window', 'ontop', StayOnTopChk.Checked);
-    AutoRunChk.Checked := aIni.ReadBool('window', 'autorun', AutoRunChk.Checked);
-    LogMessages := GetOption('log');
-  finally
-    aIni.Free;
-  end;
 
   if AutoRunChk.Checked then
     Start;
@@ -404,6 +359,81 @@ procedure TMain.UpdateStatus;
 begin
   NumberOfThreads.Caption := IntToStr(HttpServer.Listener.Count);
   LastIDLabel.Caption := IntToStr(HttpServer.Listener.LastID);
+end;
+
+procedure TMain.LoadConfig;
+var
+  aIni: TIniFile;
+  function GetOption(AName, ADefault: string): string; overload;
+  var
+    s:string;
+  begin
+    s := '';
+    if FindCmdLineValue(AName, s) then
+      Result :=AnsiDequotedStr(s, '"')
+    else
+      Result := aIni.ReadString('options', AName, ADefault);
+  end;
+
+  function GetOption(AName: string; ADefault: Boolean = False): Boolean; overload;
+  begin
+    Result := aIni.ReadBool('options', AName, ADefault);
+  end;
+
+  function GetSwitch(AName, ADefault: string): string; overload; //if found in cmd mean it is true
+  var
+    s:string;
+  begin
+    s := '';
+    if FindCmdLineValue(AName, s) then
+      Result := 'True'
+    else
+      Result := aIni.ReadString('options',AName, ADefault);
+  end;
+var
+  aBounds: TRect;
+begin
+  aIni := TIniFile.Create(Application.Location + 'config.ini');
+  try
+    HomePathEdit.Text := GetOption('homepath', '.\html');
+    PortEdit.Text := GetOption('port', '81');
+    DocAliasEdit.Text := GetOption('doc.alias', 'doc');
+    HomeAliasEdit.Text := GetOption('home.alias', 'home');
+    BindEdit.Text := GetOption('bind', '0.0.0.0');
+    UseSSLChk.Checked := GetOption('ssl', false);
+    CompressChk.Checked := GetOption('compress', false);
+    KeepAliveChk.Checked := GetOption('keep-alive', false);
+
+    ChallengeSSLChk.Checked := GetOption('challenge', False);
+    StagingChk.Checked := GetOption('staging', False);
+
+    AcmePath := CorrectPath(ExpandToPath(aIni.ReadString('acme', 'path', Application.Location + 'acme'), Application.Location));
+    AcmePort := aIni.ReadString('acme', 'port', '80');
+    AcmeDomain := aIni.ReadString('acme', 'domain', '');
+    AcmeEmail := aIni.ReadString('acme', 'email', '');
+
+    CertPath := CorrectPath(ExpandToPath(aIni.ReadString('cert', 'path', './'), Application.Location));
+    CertPassword := aIni.ReadString('cert', 'password', Application.Location + 'cert');
+    CertFile := CorrectPath(ExpandToPath(aIni.ReadString('cert', 'certificate', './certificate.pem'), Application.Location));
+    PrivateKeyFile := CorrectPath(ExpandToPath(aIni.ReadString('cert', 'privatekey', './privatekey.pem'), Application.Location));
+
+    aBounds.Left := aIni.ReadInteger('window', 'left', Left);
+    aBounds.Top := aIni.ReadInteger('window', 'top', Top);
+    aBounds.Width := aIni.ReadInteger('window', 'width', Width);
+    aBounds.Height := aIni.ReadInteger('window', 'height', Height);
+    BoundsRect := aBounds;
+    StayOnTopChk.Checked := aIni.ReadBool('window', 'ontop', StayOnTopChk.Checked);
+    AutoRunChk.Checked := aIni.ReadBool('window', 'autorun', AutoRunChk.Checked);
+    LogMessages := GetOption('log');
+  finally
+    aIni.Free;
+  end;
+end;
+
+procedure TMain.ChallengeServerBeforeOpen(Sender: TObject);
+begin
+  ChallengeServer.Bind := BindEdit.Text;
+  ChallengeServer.Port := AcmePort;
 end;
 
 procedure TMain.HttpServerAfterClose(Sender: TObject);

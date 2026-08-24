@@ -32,6 +32,8 @@ type
 
   TOnHttpDownloadProgress = reference to procedure(Sender: TObject; const AFileName: string; ATotal, ADownloaded: Int64; var ACancel: Boolean);
 
+  THttpClientOpen = (coSendAndReceive);
+
   { TmnCustomHttpClient }
 
   TmnCustomHttpClient = class abstract(TmnCustomClientCommand)
@@ -42,6 +44,7 @@ type
 
     FStream: TmnConnectionStream;
     FOnProgress: TOnHttpDownloadProgress;
+    FLastURL: UTF8String;
     function GetRequest: TwebRequest;
     function GetResponse: TwebResponse;
   protected
@@ -50,7 +53,7 @@ type
     function CreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 
     procedure FreeStream; virtual;
-    procedure Receive; virtual;
+    procedure ReceiveHeader; virtual;
 
     procedure SendCommand(const Command: string; vData: PByte; vCount: Integer);
     procedure SendPatch(vData: PByte; vCount: Integer);
@@ -66,10 +69,13 @@ type
     destructor Destroy; override;
     function Connected: Boolean;
 
-
     //Use it to open connection and keep it connected
-    procedure Connect(const vURL: UTF8String);
-    function Open(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
+    function Connect(const vURL: UTF8String): Boolean;
+    function Reconnect(const vURL: UTF8String): Boolean;
+    //Connect send GET receive Header
+    function Open(const vURL: UTF8String): Boolean;
+    //Disconnet then Open
+    function Reopen(const vURL: UTF8String): Boolean;
 
     function Post(vData: PByte; vCount: Integer): Boolean; overload;
     function Post(const vData: UTF8String): Boolean; overload;
@@ -418,7 +424,7 @@ procedure TmnCustomHttpClient.SendCommand(const Command: string; vData: PByte; v
 begin
   Request.Head := Command + ' ' + Path + ' ' + sHTTPProtocol_101;
 
-  if Request.Use.Compressing<>ovYes then
+  if Request.Use.Compressing <> ovYes then
     Request.ContentLength := vCount;
 
   Request.Reset;
@@ -465,7 +471,7 @@ begin
   Response.Clear;
 end;
 
-procedure TmnCustomHttpClient.Connect(const vURL: UTF8String);
+function TmnCustomHttpClient.Connect(const vURL: UTF8String): Boolean;
 var
   aHost: UTF8String;
 begin
@@ -475,10 +481,20 @@ begin
     Request.Host := aHost;
   end;
   Stream.Connect;
+  Request.Reset;
+  Result := Stream.Connected;
+end;
+
+function TmnCustomHttpClient.Reconnect(const vURL: UTF8String): Boolean;
+begin
+  if Connected then
+    Disconnect;
+  Result := Connect(vURL);
 end;
 
 function TmnCustomHttpClient.CreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream;
 begin
+  FLastURL := vURL;;
   Result := DoCreateStream(vURL, vProtocol, vHost, vPort, vParams);
   Request.SetStream(Result, True);
 end;
@@ -522,17 +538,22 @@ end;
 
 { TmnCustomHttpClient }
 
-function TmnCustomHttpClient.Open(const vURL: UTF8String; SendAndReceive: Boolean): Boolean;
+function TmnCustomHttpClient.Open(const vURL: UTF8String): Boolean;
 begin
-  Connect(vURL);
-  if SendAndReceive then
-  begin
-    SendGet;
-    //Stream.Disconnect;///////////////////
-    if Stream.Connected then
-      Receive;
-  end;
+  if not Connected then
+    Connect(vURL);
+  SendGet;
+  //Stream.Disconnect;///////////////////
+  if Stream.Connected then
+    ReceiveHeader;
   Result := Stream.Connected;
+end;
+
+function TmnCustomHttpClient.Reopen(const vURL: UTF8String): Boolean;
+begin
+  if Connected then
+    Disconnect;
+  Result := Open(vURL);
 end;
 
 function TmnCustomHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
@@ -549,10 +570,11 @@ begin
 
   Result := Stream.Connected;
   if Result then
-    Receive;
+    ReceiveHeader;
 end;
 
-function TmnCustomHttpClient.Post(const vURL, vData: UTF8String): Boolean;
+function TmnCustomHttpClient.Post(const vURL: UTF8String;
+  const vData: UTF8String): Boolean;
 begin
   Result := Post(vURL, PByte(vData), Length(vData));
 end;
@@ -565,7 +587,7 @@ begin
   Result := Stream.Connected;
   if Result then
   begin
-    Receive;
+    ReceiveHeader;
   end;
 end;
 
@@ -619,7 +641,7 @@ begin
     Result := FStream.ReadStream(AStream, -1); //read complete stream
 end;
 
-procedure TmnCustomHttpClient.Receive;
+procedure TmnCustomHttpClient.ReceiveHeader;
 begin
   Response.ReceiveHeader(True);
 end;
@@ -678,7 +700,7 @@ begin
 
   Result := Stream.Connected;
   if Result then
-    Receive;
+    ReceiveHeader;
 end;
 
 function TmnCustomHttpClient.GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
@@ -698,12 +720,12 @@ var
   aSizeStr: string;
 begin
   FileSize := 0;
-  Result := Open(vURL, False);
+  Result := Connect(vURL);
   if not Result then
     Exit;
   try
     SendHead;
-    Receive;
+    ReceiveHeader;
     aSizeStr := Response.Header['Content-Length'];
     FileSize := StrToInt64Def(aSizeStr, 0);
   finally

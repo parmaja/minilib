@@ -791,7 +791,6 @@ type
     FDefaultProtocol: String;
     FEnabled: Boolean;
     FModules: TmodModules;
-    FName: string;
     procedure SetEndOfLine(AValue: String);
     procedure SetEnabled(AValue: Boolean);
   protected
@@ -812,7 +811,6 @@ type
     function Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
     function Add(ModuleClass: TmodModuleClass; const AName: string; const AAliasName: String = ''): TmodModule; overload; 
     property Enabled: Boolean read FEnabled write SetEnabled;
-    property Name: string read FName write FName;
     property EndOfLine: String read FEndOfLine write SetEndOfLine; //TODO move to module
     property DefaultProtocol: String read FDefaultProtocol write FDefaultProtocol;
   end;
@@ -1483,7 +1481,7 @@ var
 
   procedure _SendHeader(ACount: Int64; ACompress: Boolean);
   begin
-    if not (resHeaderSent in  Header.States) then
+    if not (resHeaderSent in Header.States) then
     begin
       ContentLength := ACount;
       if ACompress then
