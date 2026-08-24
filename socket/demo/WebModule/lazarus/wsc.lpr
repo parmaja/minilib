@@ -60,6 +60,7 @@ type
     procedure Start;
     procedure RenewCert;
     procedure MakeCertCmd;
+    procedure SaveRenewErrorReport(E: Exception);
     function ExecuteCommand(const ACommand: string): Boolean;
   end;
 
@@ -239,7 +240,82 @@ begin
     raise Exception.Create('Domain and EMail must defined in [acme] section of config.ini');
   aPath := AcmePath + '.well-known' + PathDelim + 'acme-challenge' + PathDelim;
   ForceDirectories(aPath);
-  RenewCertificate(AcmeDomain, AcmeEmail, CertFile, PrivateKeyFile, aPath, Staging, ServerLog);
+  try
+    RenewCertificate(AcmeDomain, AcmeEmail, CertFile, PrivateKeyFile, aPath, Staging, ServerLog);
+  except
+    on E: Exception do
+    begin
+      SaveRenewErrorReport(E);
+      raise;
+    end;
+  end;
+end;
+
+//Save a JSON report of the renewal error next to the certificate,
+//if the exception carries an ACME error body (JSON), it is embedded as acme.error
+procedure TwscServer.SaveRenewErrorReport(E: Exception);
+var
+  aReport, aMsg, aBody: string;
+  p: Integer;
+
+  function JsonEscape(const S: string): string;
+  var
+    i: Integer;
+  begin
+    Result := '';
+    for i := 1 to Length(S) do
+      case S[i] of
+        '\': Result := Result + '\\';
+        '"': Result := Result + '\"';
+        #10: Result := Result + '\n';
+        #13: {skip};
+        #9: Result := Result + '\t';
+      else
+        if Ord(S[i]) < 32 then
+          Result := Result + '\' + IntToHex(Ord(S[i]), 4)
+        else
+          Result := Result + S[i];
+      end;
+  end;
+
+begin
+  aMsg := E.Message;
+  aBody := '';
+  //exception message format: "ACME error (<url>): <json body>"
+  p := Pos('{', aMsg);
+  if p > 0 then
+  begin
+    aBody := Trim(Copy(aMsg, p, MaxInt));
+    aMsg := Trim(Copy(aMsg, 1, p - 1));
+  end;
+
+  ForceDirectories(ExtractFilePath(CertFile));
+  aReport := '{' + sLineBreak
+    + '  "type": "renew",' + sLineBreak
+    + '  "datetime": "' + JsonEscape(FormatDateTime('yyyy-mm-dd hh:nn:ss', Now)) + '",' + sLineBreak
+    + '  "domain": "' + JsonEscape(AcmeDomain) + '",' + sLineBreak
+    + '  "staging": ' + LowerCase(BoolToStr(Staging, True)) + ',' + sLineBreak
+    + '  "certificate": "' + JsonEscape(CertFile) + '",' + sLineBreak
+    + '  "privatekey": "' + JsonEscape(PrivateKeyFile) + '",' + sLineBreak
+    + '  "error": {' + sLineBreak
+    + '    "message": "' + JsonEscape(aMsg) + '"' + sLineBreak;
+  if aBody <> '' then
+    aReport := aReport + '    ,"' + 'body' + '": ' + aBody + sLineBreak;
+  aReport := aReport + '  }' + sLineBreak + '}' + sLineBreak;
+
+  try
+    with TStringList.Create do
+    try
+      Text := aReport;
+      SaveToFile(ExtractFilePath(CertFile) + 'renew-report.json');
+    finally
+      Free;
+    end;
+    ServerLog('renew error report saved: ' + ExtractFilePath(CertFile) + 'renew-report.json');
+  except
+    on E2: Exception do
+      ServerLog('cannot save renew error report: ' + E2.Message);
+  end;
 end;
 
 procedure TwscServer.MakeCertCmd;

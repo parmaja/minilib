@@ -383,11 +383,12 @@ var
     EVP_PKEY_assign_RSA(aKeyPKey, aKeyRSA); //pkey owns the RSA now
 
     //JWK and thumbprint (RFC 7638)
+    //RFC 7638 requires the required members sorted lexicographically: e, kty, n
     aBN_N := nil;
     aBN_E := nil;
     aBN_D := nil;
     RSA_get0_key(aKeyRSA, aBN_N, aBN_E, aBN_D);
-    aJwk := '{"kty":"RSA","e":"' + BNToB64Url(aBN_E) + '","n":"' + BNToB64Url(aBN_N) + '"}';
+    aJwk := '{"e":"' + BNToB64Url(aBN_E) + '","kty":"RSA","n":"' + BNToB64Url(aBN_N) + '"}';
     aThumbprint := StrToB64Url(BytesToUTF8(StrSHA256(Utf8String(aJwk))));
   end;
 
