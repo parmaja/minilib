@@ -123,7 +123,7 @@ begin
     ServerLog('use https://localhost:' + PortEdit.Text + '/doc/')
   else
     ServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
-  ChallengeServer.Enabled := UseSSLChk.Checked and StagingChk.Checked;
+  ChallengeServer.Enabled := UseSSLChk.Checked;
 
   WebServers.Start;
 end;

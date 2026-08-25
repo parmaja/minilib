@@ -225,7 +225,7 @@ begin
   else
     ServerLog('use http://localhost:' + Port + '/doc/');
 
-  ChallengeServer.Enabled := UseSSL and Staging and Challenge;
+  ChallengeServer.Enabled := UseSSL and Challenge;
   WebServers.Start;
 end;
 
