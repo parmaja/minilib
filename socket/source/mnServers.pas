@@ -544,7 +544,7 @@ end;
 
 procedure TmnServer.Idle(vListener: TmnListener);
 begin
-  if (TThread.GetTickCount64-FIdleTick)>IdleInterval then
+  if (TThread.GetTickCount64 - FIdleTick) > UInt64(IdleInterval) then
   begin
     FIdleTick := TThread.GetTickCount64;
     vListener.Queue(DoIdle);
@@ -945,7 +945,7 @@ begin
   //CertificateFile := 'certificate.pem';
   //PrivateKeyFile := 'privatekey.pem';
   IdleInterval := cIdleInterval;
-  FIdleTick := TThread.GetTickCount64;
+  FIdleTick := 0;
 end;
 
 procedure TmnServer.BeforeDestruction;
