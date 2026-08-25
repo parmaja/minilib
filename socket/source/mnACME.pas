@@ -1,4 +1,9 @@
 ﻿unit mnACME;
+{$H+}{$M+}
+{$ifdef fpc}
+{$mode delphi}
+{$WARN 5024 off : Parameter "$1" not used}
+{$endif}
 {**
  *  This file is part of the "Mini Library"
  *
@@ -24,12 +29,6 @@
     ACertificateFile  full chain PEM
     APrivateKeyFile   certificate private key PEM (new key generated each time)
 }
-
-{$H+}{$M+}
-{$ifdef fpc}
-{$mode delphi}
-{$WARN 5024 off : Parameter "$1" not used}
-{$endif}
 
 interface
 

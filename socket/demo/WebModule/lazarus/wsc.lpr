@@ -370,6 +370,7 @@ var
   end;
 
 begin
+  InitOpenSSL(True);
   {$ifndef WINDOWS}
   //cmem;
   {$endif}
