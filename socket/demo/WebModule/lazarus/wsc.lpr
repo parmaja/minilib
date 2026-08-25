@@ -217,6 +217,8 @@ begin
 end;
 
 procedure TwscServer.Start;
+var
+  aDaysLeft: Integer;
 begin
   ServerLog('');
   ServerLog('wsc - web server console');
@@ -224,6 +226,17 @@ begin
     ServerLog('use https://localhost:' + Port + '/doc/')
   else
     ServerLog('use http://localhost:' + Port + '/doc/');
+
+  if UseSSL and FileExists(CertFile) then
+  begin
+    aDaysLeft := GetCertDaysLeft(CertFile);
+    if aDaysLeft = MaxInt then
+      ServerLog('certificate: cannot read expiry from ' + CertFile)
+    else if aDaysLeft < 0 then
+      ServerLog('WARNING: certificate EXPIRED ' + IntToStr(Abs(aDaysLeft)) + ' day(s) ago: ' + CertFile)
+    else
+      ServerLog('certificate expires in ' + IntToStr(aDaysLeft) + ' day(s): ' + CertFile);
+  end;
 
   ChallengeServer.Enabled := UseSSL and Challenge;
   WebServers.Start;

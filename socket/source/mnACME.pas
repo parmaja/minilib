@@ -47,6 +47,19 @@ const
 type
   TacmeLog = procedure(const S: string) of object;
 
+//Read the notAfter (expiry) date from the first certificate in a PEM file.
+//Returns 0 if the file cannot be read or contains no valid certificate.
+function CertExpiryDate(const ACertificateFile: string): TDateTime;
+
+//Read expiry from the sidecar .expiry text file written by AcmeRenewCertificate.
+//Falls back to parsing the PEM when the sidecar is absent.
+//Returns 0 on any failure.
+function CertExpiryDateFromFile(const ACertificateFile: string): TDateTime;
+
+//Returns how many whole days remain before the certificate expires (UTC now).
+//Negative = already expired.  Returns MaxInt when the expiry cannot be read.
+function CertDaysLeft(const ACertificateFile: string): Integer;
+
 procedure AcmeRenewCertificate(const ADomain: string; const AEmail: string;
   const ACertificateFile, APrivateKeyFile: string;
   const AAccountKeyFile, AAccountKidFile: string;
@@ -59,6 +72,8 @@ const
   sB64URLChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   cMBSTRING_UTF8 = $1000;
   cMaxMDSize = 64;
+  V_ASN1_UTCTIME          = 23;
+  V_ASN1_GENERALIZEDTIME  = 24;
 
 function BinToB64Url(Buf: PByte; Len: Integer): string;
 var
@@ -290,6 +305,133 @@ begin
   finally
     sl.Free;
   end;
+end;
+
+//Parse an ASN1 UTCTime (YYMMDDHHMMSSZ) or GeneralizedTime (YYYYMMDDHHMMSSZ)
+//string directly from the raw data pointer without needing ASN1_TIME_to_tm.
+function ASN1TimeToDateTime(A: PASN1_TIME): TDateTime;
+var
+  s: AnsiString;
+  yr, mo, dy, hh, mm, ss: Integer;
+  p: Integer;
+begin
+  Result := 0;
+  if A = nil then Exit;
+  SetString(s, PAnsiChar(A^.data), A^.length);
+  if s = '' then Exit;
+  p := 1;
+  if A^.&type = V_ASN1_GENERALIZEDTIME then
+  begin
+    //YYYYMMDDHHMMSSZ  (14 chars + Z)
+    if Length(s) < 14 then Exit;
+    yr := StrToIntDef(Copy(string(s), 1, 4), 0);  p := 5;
+  end
+  else
+  begin
+    //YYMMDDHHMMSSZ  (12 chars + Z)
+    if Length(s) < 12 then Exit;
+    yr := StrToIntDef(Copy(string(s), 1, 2), 0);  p := 3;
+    if yr >= 50 then yr := 1900 + yr else yr := 2000 + yr;
+  end;
+  mo := StrToIntDef(Copy(string(s), p,     2), 0);
+  dy := StrToIntDef(Copy(string(s), p + 2, 2), 0);
+  hh := StrToIntDef(Copy(string(s), p + 4, 2), 0);
+  mm := StrToIntDef(Copy(string(s), p + 6, 2), 0);
+  ss := StrToIntDef(Copy(string(s), p + 8, 2), 0);
+  try
+    Result := EncodeDate(yr, mo, dy) + EncodeTime(hh, mm, ss, 0);
+  except
+    Result := 0;
+  end;
+end;
+
+function CertExpiryDate(const ACertificateFile: string): TDateTime;
+var
+  bio: PBIO;
+  x509: PX509;
+  t: PASN1_TIME;
+  m: TMemoryStream;
+  fs: TFileStream;
+begin
+  Result := 0;
+  if not FileExists(ACertificateFile) then Exit;
+  m := TMemoryStream.Create;
+  try
+    fs := TFileStream.Create(ACertificateFile, fmOpenRead or fmShareDenyWrite);
+    try
+      m.CopyFrom(fs, 0);
+    finally
+      fs.Free;
+    end;
+    bio := BIO_new_mem_buf(PByte(m.Memory), m.Size);
+    try
+      x509 := PEM_read_bio_X509(bio, nil, nil, nil);
+      if x509 <> nil then
+      try
+        t := X509_getm_notAfter(x509);
+        Result := ASN1TimeToDateTime(t);
+      finally
+        X509_free(x509);
+      end;
+    finally
+      BIO_free(bio);
+    end;
+  finally
+    m.Free;
+  end;
+end;
+
+function CertExpiryDateFromFile(const ACertificateFile: string): TDateTime;
+var
+  aExpiryFile: string;
+  sl: TStringList;
+  s: string;
+begin
+  Result := 0;
+  aExpiryFile := ChangeFileExt(ACertificateFile, '.expiry');
+  if FileExists(aExpiryFile) then
+  begin
+    sl := TStringList.Create;
+    try
+      sl.LoadFromFile(aExpiryFile);
+      if sl.Count > 0 then
+      begin
+        //format: "yyyy-mm-dd hh:nn:ss UTC"
+        s := Trim(sl[0]);
+        if Length(s) >= 19 then
+        try
+          Result := EncodeDate(
+            StrToIntDef(Copy(s,  1, 4), 0),
+            StrToIntDef(Copy(s,  6, 2), 0),
+            StrToIntDef(Copy(s,  9, 2), 0)
+          ) + EncodeTime(
+            StrToIntDef(Copy(s, 12, 2), 0),
+            StrToIntDef(Copy(s, 15, 2), 0),
+            StrToIntDef(Copy(s, 18, 2), 0),
+            0
+          );
+        except
+          Result := 0;
+        end;
+      end;
+    finally
+      sl.Free;
+    end;
+  end;
+  //Fall back to parsing the PEM directly when sidecar is missing
+  if Result = 0 then
+    Result := CertExpiryDate(ACertificateFile);
+end;
+
+function CertDaysLeft(const ACertificateFile: string): Integer;
+var
+  aExpiry: TDateTime;
+begin
+  aExpiry := CertExpiryDateFromFile(ACertificateFile);
+  if aExpiry = 0 then
+    Result := MaxInt
+  else
+    Result := Trunc(aExpiry - Now);
 end;
 
 procedure AcmeRenewCertificate(const ADomain: string; const AEmail: string;
@@ -753,9 +895,20 @@ begin
       Free;
     end;
 
+    //Save expiry date to a sidecar .expiry file (ISO-8601 UTC) next to the certificate
+    //so the caller can check it daily without parsing the PEM again.
+    with TStringList.Create do
+    try
+      Add(FormatDateTime('yyyy-mm-dd hh:nn:ss', CertExpiryDate(ACertificateFile)) + ' UTC');
+      SaveToFile(ChangeFileExt(ACertificateFile, '.expiry'));
+    finally
+      Free;
+    end;
+
     DeleteFile(aTokenFile);
 
-    Log('certificate saved: ' + ACertificateFile);
+    Log('certificate saved: ' + ACertificateFile + ' (expires ' +
+      FormatDateTime('yyyy-mm-dd', CertExpiryDate(ACertificateFile)) + ')');
   finally
     aHttpClient.Free;
     if aKeyPKey <> nil then

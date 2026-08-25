@@ -348,6 +348,14 @@ procedure RenewCertificate(
             Staging: Boolean; ALog: TacmeLog = nil
           );
 
+//Returns the expiry date stored in the .expiry sidecar file (falls back to
+//parsing the PEM).  Returns 0 when the certificate file does not exist.
+function GetCertExpiryDate(const ACertificateFile: string): TDateTime;
+
+//Returns how many whole days remain before the certificate expires (UTC now).
+//Negative = already expired.  Returns MaxInt when the expiry cannot be read.
+function GetCertDaysLeft(const ACertificateFile: string): Integer;
+
 function IsJWT(const S: string): Boolean;
 {$ifndef FPC}
 function JWTEncode(const Payload: UTF8String; const Secret: UTF8String): string;
@@ -1106,6 +1114,16 @@ begin
   aAccountKeyFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account' + aAccountSuffix + '.key';
   aAccountKidFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account' + aAccountSuffix + '.kid';
   AcmeRenewCertificate(ADomain, AEmail, ACertificateFile, APrivateKeyFile, aAccountKeyFile, aAccountKidFile, AChallengeDir, ALog, aDirectoryURL);
+end;
+
+function GetCertExpiryDate(const ACertificateFile: string): TDateTime;
+begin
+  Result := CertExpiryDateFromFile(ACertificateFile);
+end;
+
+function GetCertDaysLeft(const ACertificateFile: string): Integer;
+begin
+  Result := CertDaysLeft(ACertificateFile);
 end;
 
 { TmodCustomWebModules }
