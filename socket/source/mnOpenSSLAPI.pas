@@ -527,6 +527,7 @@ var
   BN_bn2bin: function(a: PBIGNUM; to_: PByte): Integer; cdecl;
 
   RSA_new: function(): PRSA; cdecl;
+  RSA_size: function(rsa: PRSA): Integer; cdecl;
   RSA_generate_key_ex: function(rsa: PRSA; bits: integer; e: PBIGNUM; cb: PBN_GENCB): Integer; cdecl;
   RSA_print: function(bp: PBIO; x: PRSA; offset: integer): Integer; cdecl;
   RSA_print_fp: function(fp: Pointer; x: PRSA; offset: integer): Integer; cdecl;
@@ -1019,6 +1020,7 @@ begin
   BN_bn2bin := GetAddress('BN_bn2bin');
 
   RSA_new := GetAddress('RSA_new');
+  RSA_size := GetAddress('RSA_size');
   RSA_generate_key_ex := GetAddress('RSA_generate_key_ex');
   RSA_print := GetAddress('RSA_print');
   RSA_print_fp := GetAddress('RSA_print_fp');

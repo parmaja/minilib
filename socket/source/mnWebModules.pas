@@ -1087,8 +1087,7 @@ procedure RenewCertificate(
             Staging: Boolean; ALog: TacmeLog = nil
           );
 var
-  aAccountKeyFile, aAccountKidFile, aDirURL, aAccountSuffix: string;
-  aDirectoryURL: string;
+  aAccountKeyFile, aAccountKidFile, aAccountSuffix, aDirectoryURL: string;
 begin
   if (ADomain = '') or (AEmail = '') then
     raise Exception.Create('Domain and EMail must be defined');
@@ -1106,11 +1105,7 @@ begin
   //Account key and kid are stored next to the certificate
   aAccountKeyFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account' + aAccountSuffix + '.key';
   aAccountKidFile := IncludePathDelimiter(ExtractFilePath(ACertificateFile)) + 'acme-account' + aAccountSuffix + '.kid';
-  if ADirectoryURL = '' then
-    aDirURL := cLetsEncryptProduction
-  else
-    aDirURL := ADirectoryURL;
-  AcmeRenewCertificate(ADomain, AEmail, ACertificateFile, APrivateKeyFile, aAccountKeyFile, aAccountKidFile, AChallengeDir, ALog, aDirURL);
+  AcmeRenewCertificate(ADomain, AEmail, ACertificateFile, APrivateKeyFile, aAccountKeyFile, aAccountKidFile, AChallengeDir, ALog, aDirectoryURL);
 end;
 
 { TmodCustomWebModules }

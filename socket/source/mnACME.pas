@@ -173,13 +173,13 @@ end;
 
 function RSASignSHA256(RSA: PRSA; const Digest: TBytes): TBytes;
 var
-  sig: array[0..1023] of Byte;
   sigLen: Cardinal;
 begin
-  if RSA_sign(NID_sha256, PByte(@Digest[0]), Length(Digest), @sig[0], @sigLen, RSA) <> 1 then
+  SetLength(Result, RSA_size(RSA));
+  sigLen := 0;
+  if RSA_sign(NID_sha256, PByte(@Digest[0]), Length(Digest), PByte(Result), @sigLen, RSA) <> 1 then
     raise Exception.Create('ACME: RSA sign failed');
   SetLength(Result, sigLen);
-  Move(sig[0], Result[0], sigLen);
 end;
 
 function BNToB64Url(bn: PBIGNUM): string;
@@ -524,6 +524,7 @@ var
     aProtected, aPayloadB64, aSigningInput: UTF8String;
     aDigest, aSig: TBytes;
     aRequest: string;
+    aRequestUTF8: UTF8String;
 
     function JsonEscape(const S: string): string;
     begin
@@ -551,10 +552,11 @@ var
 
     Log('POST ' + AURL);
 
+    aRequestUTF8 := Utf8String(aRequest);
     aHttpClient.Reconnect(AURL);
     try
       aHttpClient.Request.PutHeader('Content-Type', 'application/jose+json');
-      aHttpClient.Post(PByte(PAnsiChar(Utf8String(aRequest))), Length(aRequest));
+      aHttpClient.Post(PByte(PAnsiChar(aRequestUTF8)), Length(aRequestUTF8));
       ABody := ReadResponseBody;
       Result := aHttpClient.Response.Header['Location'];
       aNonce := ''; //each nonce is single use
@@ -568,7 +570,7 @@ var
   //POST-as-GET with kid account (empty payload)
   function PostAsGet(const AURL: string; out ABody: string): string;
   begin
-    Result := JwsPost(AURL, '', aBody);
+    Result := JwsPost(AURL, '', ABody);
   end;
 
   function PollUntil(const AURL: string; const AStatus: string; ATimeoutSec: Integer): string;

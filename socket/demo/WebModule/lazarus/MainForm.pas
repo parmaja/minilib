@@ -143,7 +143,7 @@ begin
   //without hitting the production rate limits
   if (AcmeDomain = '') or (AcmeEmail = '') then
     raise Exception.Create('Domain and EMail must defined');
-  aPath := AcmePath + '.well-known\acme-challenge\';
+  aPath := AcmePath + '.well-known' + PathDelim + 'acme-challenge' + PathDelim;
   ForceDirectories(aPath);
   RenewCertificate(AcmeDomain, AcmeEmail, CertFile, PrivateKeyFile, aPath, StagingChk.Checked, ServerLog);
 end;
@@ -300,7 +300,7 @@ begin
 
   ChallengeServer := TmodWebServer.Create;
   ChallengeServer.Name := 'ChallengeServer';
-  ChallengeServer.AddChallengeAcme(AcmePath + '.well-known\');
+  ChallengeServer.AddChallengeAcme(AcmePath + '.well-known' + PathDelim);
   ChallengeServer.AddRedirectHttps;
   ChallengeServer.OnBeforeOpen := ChallengeServerBeforeOpen;
 
