@@ -136,6 +136,8 @@ type
   public
     constructor Create(AParent: TDON_Parent);
 
+    //class operator Implicit(const AData: TDON_Value): string;
+
     function ByPath(Path: TStrings): TDON_Value; overload;
     function ByPath(const Path: string; Delimiter: Char = '.'): TDON_Value; overload;
     function ByPath(const Path: TArray<string>): TDON_Value; overload;
@@ -1271,6 +1273,11 @@ begin
   else
     Result := FindItem(Index);
 end;
+
+{class operator TDON_Value.Implicit(const AData: TDON_Value): string;
+begin
+  Result := AData.ToString;
+end;}
 
 procedure TDON_Value.SetValues(const Index: string; const Value: TDON_Value);
 begin

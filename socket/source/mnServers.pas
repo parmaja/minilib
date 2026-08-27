@@ -193,6 +193,7 @@ type
     FIsSecure: Boolean;
     FIdleTick: UInt64;
     FIdleInterval: Int64;
+    FPrepared: Boolean;
     procedure SetActive(const Value: Boolean);
     procedure SetBind(const Value: string);
     procedure SetName(AValue: string);
@@ -205,6 +206,7 @@ type
     IsStopping: Boolean;
     function DoCreateListener: TmnListener; virtual;
     function CreateListener: TmnListener; virtual;
+    procedure DoPrepare; virtual;
     procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
     procedure DoStarted(vListener: TmnListener); virtual;
@@ -221,6 +223,7 @@ type
     procedure WaitStartedEvent;
     //Idle is in Listener thread not in main thread
     procedure Idle(vListener: TmnListener);
+    procedure Prepare;
   public
     CertPassword: string;
     CertificateFile: string;
@@ -806,7 +809,7 @@ const
 var
   aDate: TDateTime;
 begin
-  if (GetTickCount64-FLastCheck)>sChangeInterval then
+  if (GetTickCount64-FLastCheck) > sChangeInterval then
   begin
     FLastCheck := GetTickCount64;
     if FileAge(CertificateFile, aDate, True) and (CertificateFileDate <> aDate) then
@@ -975,6 +978,15 @@ begin
     DoLog(S);
 end;
 
+procedure TmnServer.Prepare;
+begin
+  if not FPrepared then
+  begin
+    DoPrepare;
+    FPrepared := True;
+  end;
+end;
+
 procedure TmnServer.Restart;
 begin
   Stop;
@@ -983,6 +995,7 @@ end;
 
 procedure TmnServer.Start(WaitToStart: Boolean);
 begin
+  Prepare;
   if (FListener = nil) then // if its already active, dont start again
   begin
     DoBeforeOpen; //* Init/read/load config values
@@ -1079,6 +1092,10 @@ begin
 end;
 
 procedure TmnServer.DoLog(const S: string);
+begin
+end;
+
+procedure TmnServer.DoPrepare;
 begin
 end;
 

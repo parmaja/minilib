@@ -315,6 +315,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
+    procedure Disconnect;
     procedure Start;
     procedure Stop;
 
@@ -322,16 +323,27 @@ type
     property Started: Boolean read GetStarted;
   end;
 
+  TWebServersOption = (wsoOwnIt, wsoDefault);
+  TWebServersOptions = set of TWebServersOption;
+
   { TWebServers }
 
   TWebServers = class(TmnNamedObjectList<TWebServerItem>)
   private
+    FDefault: TmodWebServer;
     FStarted: Boolean;
+    function GetItem(index: Integer): TmodWebServer;
+    function GetDefault: TmodWebServer;
   public
-    function AddServer(AName: string; AServer: TmodWebServer; OwnIt: Boolean = True): Integer;
+    function AddServer(AName: string; AServer: TmodWebServer; Options: TWebServersOptions): Integer;
+    procedure Disconnect;
     procedure Start;
+    procedure Wait;
     procedure Stop;
+    function Server<T: class>: T;
     property Started: Boolean read FStarted;
+    property Default: TmodWebServer read GetDefault;
+    property Item[index: Integer]: TmodWebServer read GetItem; default;
   end;
 
 function WebFindDocument(const HomeDir, Path: string; out Document:string; Smart: Boolean = False): Boolean;
@@ -939,6 +951,12 @@ begin
   inherited;
 end;
 
+procedure TWebServerItem.Disconnect;
+begin
+  if Server <> nil then
+    Server.Disconnect;
+end;
+
 procedure TWebServerItem.Start;
 begin
   if Server <> nil then
@@ -957,16 +975,53 @@ end;
 
 { TWebServers }
 
-function TWebServers.AddServer(AName: string; AServer: TmodWebServer;
-  OwnIt: Boolean): Integer;
+function TWebServers.AddServer(AName: string; AServer: TmodWebServer; Options: TWebServersOptions): Integer;
 var
   item: TWebServerItem;
 begin
   item := TWebServerItem.Create;
   item.Name := AName;
   item.FServer := AServer;
-  item.FOwnIt := OwnIt;
+  item.FServer.Name := AName;
+  item.FOwnIt := wsoOwnIt in Options;
   Result := Add(item);
+  if wsoDefault in Options then
+    FDefault := AServer;
+end;
+
+procedure TWebServers.Disconnect;
+var
+  item: TWebServerItem;
+begin
+  for item in Self do
+  begin
+    if (item.Server <> nil) and item.Server.Started then
+      item.Disconnect;
+  end;
+end;
+
+function TWebServers.GetDefault: TmodWebServer;
+begin
+  if FDefault <> nil then
+    Result := FDefault
+  else
+    Result := First.Server;
+end;
+
+function TWebServers.GetItem(index: Integer): TmodWebServer;
+begin
+  Result := (inherited Items[index]).Server;
+end;
+
+function TWebServers.Server<T>: T;
+var
+  i: Integer;
+begin
+  for I := 0 to Count-1 do
+    if Items[i].Server is T then
+      Exit(Items[i].Server as T);
+
+  Result := nil;
 end;
 
 procedure TWebServers.Start;
@@ -991,6 +1046,17 @@ begin
       item.Stop;
   end;
   FStarted := False;
+end;
+
+procedure TWebServers.Wait;
+var
+  item: TWebServerItem;
+begin
+  for item in Self do
+  begin
+    if (item.Server <> nil) and item.Server.Enabled then
+      item.Server.Wait;
+  end;
 end;
 
 { TwebFileCommand }
