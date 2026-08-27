@@ -335,7 +335,7 @@ type
     function GetItem(index: Integer): TmodWebServer;
     function GetDefault: TmodWebServer;
   public
-    function AddServer(AName: string; AServer: TmodWebServer; Options: TWebServersOptions): Integer;
+    function AddServer(AName: string; AServer: TmodWebServer; Options: TWebServersOptions = [wsoOwnIt]): Integer;
     procedure Disconnect;
     procedure Start;
     procedure Wait;
