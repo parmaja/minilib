@@ -6,10 +6,10 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  IniFiles, Variants,
+  IniFiles, Variants, StrUtils,
   SynEdit, SynHighlighterSQL,
-  mnMsgBox, GUIMsgBox, ntvPanels, ntvBoard,
-  mncDB, mncConnections, mncSQL, ParamsForms,
+  mnMsgBox, GUIMsgBox, ntvPanels, ntvBoard, ntvPageControls,
+  mncDB, mncConnections, mncSQL, ParamsForms, mnDON,
   mncSQLite, mncPostgre, mncMySQL, mncFirebird,
   mncORM, mncMySQLORM, mncSQLiteORM, mncPGORM, mncFBORM,
   appSchema;
@@ -39,20 +39,22 @@ type
   public
   end;
 
-  TUseFetchs = (fetchNo, fetchNoNext, fetchNormal, fetchShort);
+  TUseFetchs = (fetchNotDone, fetchNext, fetchFetch, fetchFetchNoNext, fetchForIn, fetchShort);
 
   { TMainForm }
 
   TMainForm = class(TForm)
     AddRecordBtn: TButton;
-    AddRecordBtn1: TButton;
-    Button2: TButton;
-    Button3: TButton;
-    ConnectBtn1: TButton;
+    Bevel2: TBevel;
+    AutoConnectChk: TCheckBox;
     LogEdit: TSynEdit;
-    ntvPanel1: TntvPanel;
+    ntvPageControl1: TntvPageControl;
+    ReadRecordBtn: TButton;
+    DeleteRecordBtn: TButton;
+    ExecuteBtn: TButton;
     ConnectBtn: TButton;
-    CreateDB1Btn: TButton;
+    ConnectAndCreateBtn: TButton;
+    GenerateBtn: TButton;
     EnginesCbo: TComboBox;
     HostEdit: TEdit;
     DataEdit: TEdit;
@@ -67,19 +69,31 @@ type
     Panel3: TPanel;
     PasswordEdit: TEdit;
     SynEdit: TSynEdit;
+    WhileFetchBtn: TButton;
     SynSQLSyn: TSynSQLSyn;
     TestThreadBtn: TButton;
     UserEdit: TEdit;
-    procedure ReadRecordBtn1Click(Sender: TObject);
+    ForInBtn: TButton;
+    WhileNextBtn: TButton;
+    WhileFetchNoNextBtn: TButton;
+    WhileNotDoneBtn: TButton;
+    ClearBtn: TButton;
+    procedure ClearBtnClick(Sender: TObject);
+    procedure ForInBtnClick(Sender: TObject);
+    procedure ReadRecordBtnClick(Sender: TObject);
     procedure AddRecordBtnClick(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
-    procedure Button3Click(Sender: TObject);
-    procedure ConnectBtn1Click(Sender: TObject);
+    procedure DeleteRecordBtnClick(Sender: TObject);
+    procedure ExecuteBtnClick(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
-    procedure CreateDB1BtnClick(Sender: TObject);
+    procedure ConnectAndCreateBtnClick(Sender: TObject);
+    procedure GenerateBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure TestThreadBtnClick(Sender: TObject);
+    procedure WhileFetchBtnClick(Sender: TObject);
+    procedure WhileNextBtnClick(Sender: TObject);
+    procedure WhileFetchNoNextBtnClick(Sender: TObject);
+    procedure WhileNotDoneBtnClick(Sender: TObject);
   private
     procedure Log(const s: string);
     procedure Connect(CreateIt: Boolean);
@@ -89,11 +103,18 @@ type
     TestThread: TTestThread;
   end;
 
+//  operator := (R: String) L: TDON_Value;
+
 var
   MainForm: TMainForm;
 
 implementation
-
+{
+operator := (R: String)L: TDON_Value;
+begin
+  R := L.AsString;
+end;
+}
 {$R *.lfm}
 
 { TTestThread }
@@ -152,7 +173,7 @@ end;
 { TMainForm }
 
 
-procedure TMainForm.CreateDB1BtnClick(Sender: TObject);
+procedure TMainForm.GenerateBtnClick(Sender: TObject);
 begin
   if EnginesCbo.ItemIndex >= 0 then
   begin
@@ -166,7 +187,7 @@ begin
   end;
 end;
 
-procedure TMainForm.ConnectBtnClick(Sender: TObject);
+procedure TMainForm.ConnectAndCreateBtnClick(Sender: TObject);
 begin
   Connect(True);
 end;
@@ -222,6 +243,8 @@ procedure TMainForm.AddRecordBtnClick(Sender: TObject);
 var
   CMD: TmncSQLCommand;
 begin
+  if (Engine = nil) and AutoConnectChk.Checked then
+    Connect(False);
   if Engine = nil then
   begin
     log('Not connected');
@@ -229,6 +252,7 @@ begin
   end;
   CMD := Engine.Transaction.CreateCommand;
   try
+    CMD.Transaction.Start;
     CMD.Options := CMD.Options + [cmoTruncate];
     CMD.SQL.Text := 'insert into Companies(Name, Address) values(?Name, ?Address)';
 
@@ -236,16 +260,19 @@ begin
     CMD.Param['Name'].AsString := 'Test' + DateTimeToStr(Now);
     CMD.Param['Address'].AsString := 'On the Earth';
     CMD.Execute;
+    CMD.Transaction.Commit;
   finally
     CMD.Free;
   end;
 end;
 
-procedure TMainForm.Button2Click(Sender: TObject);
+procedure TMainForm.DeleteRecordBtnClick(Sender: TObject);
 var
   CMD: TmncSQLCommand;
   n: String;
 begin
+  if (Engine = nil) and AutoConnectChk.Checked then
+    Connect(False);
   if Engine = nil then
   begin
     log('Not connected');
@@ -267,12 +294,14 @@ begin
   end;
 end;
 
-procedure TMainForm.Button3Click(Sender: TObject);
+procedure TMainForm.ExecuteBtnClick(Sender: TObject);
 var
   CMD: TmncSQLCommand;
   s: string;
   i: Integer;
 begin
+  if (Engine = nil) and AutoConnectChk.Checked then
+    Connect(False);
   if Engine = nil then
   begin
     log('Not connected');
@@ -314,20 +343,19 @@ begin
   end;
 end;
 
-procedure TMainForm.ReadRecordBtn1Click(Sender: TObject);
+procedure TMainForm.ReadRecordBtnClick(Sender: TObject);
 begin
-  if Engine = nil then
-  begin
-    log('Not connected');
-    exit;
-  end;
+  ReadRecords(fetchNotDone);
+end;
 
-  ReadRecords(fetchNoNext);
-  exit;
+procedure TMainForm.ForInBtnClick(Sender: TObject);
+begin
+  ReadRecords(fetchForIn);
+end;
 
-  ReadRecords(fetchNo);
-  ReadRecords(fetchNormal);
-  ReadRecords(fetchShort);
+procedure TMainForm.ClearBtnClick(Sender: TObject);
+begin
+  LogEdit.Clear;
 end;
 
 procedure TMainForm.ReadRecords(UseFetchs: TUseFetchs);
@@ -346,6 +374,8 @@ var
       s := s + CMD.Columns[i].Name;
     end;
     Log(s);
+    Log('------------------------------------------------');
+    //Log(StringOfChar('-', Length(s)));
   end;
 
   procedure PrintRecord;
@@ -364,94 +394,136 @@ var
   end;
 
 var
-  f: Boolean;
   s: string;
-  Fields: TmncFields;
+  f: TmncFields;
 begin
+  if (Engine = nil) and AutoConnectChk.Checked then
+    Connect(False);
   if Engine = nil then
   begin
     log('Not connected');
     exit;
   end;
+
   CMD := Engine.Transaction.CreateCommand;
   try
     CMD.SQL.Text := 'select * from Companies';
     //CMD.SQL.Text := 'select * from Companies where ID=?ID';
     //CMD.Param['ID'].Value := 10;
 
-    //Cmd.SQL.Add('select ID, Name, Name from Companies');
-
-    f := True;
     s := '';
-    Log('## Using For in Quick');
-    //CMD.Execute(False);
-    for Fields in CMD.Prepare('select * from Companies') do
-    begin
-        s := VarToStr(Fields['ID'].Value);
-        s := s + #9 + VarToStr(Fields['Name'].Value);
-        Log(s);
-    end;
-
-    Log('## Using For in 2');
-    for Fields in CMD do
-    begin
-        s := VarToStr(Fields['ID'].Value);
-        s := s + #9 + VarToStr(Fields['Name'].Value);
-        Log(s);
-    end;
+    Log('##############################################');
+    CMD.SQL.Text := 'select * from Companies';
 
     Log('');
 
-
-    if UseFetchs = fetchNoNext then
+    if UseFetchs = fetchForIn then
     begin
-      Log('## fetchNoNext');
+      Log('## fetchForIn Execute(True)');
+      CMD.Execute(True);
+      PrintHeader;
+      for f in CMD do
+      begin
+        s := f['ID'].AsString;
+        s := s + #9 + f['Name'].AsString;
+        Log(s);
+      end;
+
+      Log('## fetchForIn Execute(False)');
       CMD.Execute(False);
+      PrintHeader;
+      for f in CMD do
+      begin
+        s := f['ID'].AsString;
+        s := s + #9 + f['Name'].AsString;
+        Log(s);
+      end;
+
+      Log('##--------------------------------------------');
+      Log('## fetchForIn no Execute');
+      PrintHeader;
+      for f in CMD do
+      begin
+        s := f['ID'].AsString;
+        s := s + #9 + f['Name'].AsString;
+        Log(s);
+      end;
+
+    end
+    else if UseFetchs = fetchFetchNoNext then
+    begin
+      Log('## fetchFetchNoNext');
+      CMD.Execute(False);
+      PrintHeader;
       while CMD.Fetch do
       begin
-        if f then
-        begin
-          PrintHeader;
-          f := False;
-        end;
         PrintRecord;
       end;
     end
-    else if UseFetchs = fetchShort then
+    else if UseFetchs = fetchFetch then
     begin
-      Log('## fetchShort');
+      Log('## fetchFetch Execute(True)');
+      CMD.Execute;
+      PrintHeader;
       while CMD.Fetch do
       begin
-        if f then
-        begin
-          PrintHeader;
-          f := False;
-        end;
+        PrintRecord;
+      end;
+
+      Log('##--------------------------------------------');
+      Log('## fetchFetch Execute(True)');
+      CMD.Execute(False);
+      PrintHeader;
+      while CMD.Fetch do
+      begin
+        PrintRecord;
+      end;
+
+      Log('##--------------------------------------------');
+      Log('## fetchFetch no Execute');
+      PrintHeader;
+      while CMD.Fetch do
+      begin
+        PrintRecord;
+      end;
+      Log('##--------------------------------------------');
+      Log('## fetchFetch again, no Execute');
+      PrintHeader;
+      while CMD.Fetch do
+      begin
+        PrintRecord;
+      end;
+    end
+    else if UseFetchs = fetchNext then
+    begin
+      Log('## fetchNext Execute(True)');
+      CMD.Execute;
+      PrintHeader;
+
+      PrintRecord;
+      while CMD.Next do
+      begin
+        PrintRecord;
+      end;
+
+      Log('## fetchNext Execute(False)');
+      CMD.Execute(False);
+      PrintHeader;
+      while CMD.Next do
+      begin
         PrintRecord;
       end;
     end
     else
     begin
-      Cmd.Prepare;
       if CMD.Execute then
       begin
-        Log('## fetchNormal');
+        Log('## fetchNotDone');
         PrintHeader;
-        if UseFetchs = fetchNormal then
+        while not CMD.Done do
         begin
-          while CMD.Fetch do
-          begin
-            PrintRecord;
-          end;
-        end
-        else
-        begin
-          Log('## While not Done');
-          while not CMD.Done do //Done=EOF
-          begin
-            PrintRecord;
-            CMD.Next;
-          end;
+          PrintRecord;
+          CMD.Next;
         end;
       end
       else
@@ -463,7 +535,7 @@ begin
   end;
 end;
 
-procedure TMainForm.ConnectBtn1Click(Sender: TObject);
+procedure TMainForm.ConnectBtnClick(Sender: TObject);
 begin
   Connect(False);
 end;
@@ -483,6 +555,7 @@ begin
     HostEdit.Text := IniFile.ReadString('Options', 'Host', 'localhost');
     UserEdit.Text := IniFile.ReadString('Options', 'User', '');
     PasswordEdit.Text := IniFile.ReadString('Options', 'Password', '');
+    AutoConnectChk.Checked := IniFile.ReadBool('Options', 'AutoConnect', False);
     EnginesCbo.ItemIndex := EnginesCbo.Items.IndexOfObject(Engines.Find(IniFile.ReadString('Options', 'Engine', Engines[0].Name)));
   finally
     IniFile.Free;
@@ -512,6 +585,7 @@ begin
     IniFile.WriteString('Options', 'User', UserEdit.Text);
     IniFile.WriteString('Options', 'Password', PasswordEdit.Text);
     IniFile.WriteString('Options', 'Engine', (EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).Name);
+    IniFile.WriteBool('Options', 'AutoConnect', AutoConnectChk.Checked);
   finally
     IniFile.Free;
   end;
@@ -520,6 +594,8 @@ end;
 
 procedure TMainForm.TestThreadBtnClick(Sender: TObject);
 begin
+  if (Engine = nil) and AutoConnectChk.Checked then
+    Connect(False);
   if Engine = nil then
     exit;
 
@@ -529,6 +605,26 @@ begin
     TestThread.Engine := Engine;
     TestThread.Start;
   end;
+end;
+
+procedure TMainForm.WhileFetchBtnClick(Sender: TObject);
+begin
+  ReadRecords(fetchFetch);
+end;
+
+procedure TMainForm.WhileNextBtnClick(Sender: TObject);
+begin
+  ReadRecords(fetchNext);
+end;
+
+procedure TMainForm.WhileFetchNoNextBtnClick(Sender: TObject);
+begin
+  ReadRecords(fetchFetchNoNext);
+end;
+
+procedure TMainForm.WhileNotDoneBtnClick(Sender: TObject);
+begin
+  ReadRecords(fetchNotDone);
 end;
 
 procedure TMainForm.Log(const s: string);

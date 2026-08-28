@@ -100,7 +100,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\src\postgre;..\..\src\firebird;..\..\src\mysql"/>
+      <OtherUnitFiles Value="..\..\src;..\..\src\postgre;..\..\src\firebird;..\..\src\mysql;..\..\src\sqlite;D:\lab\pascal\miniCtrls\src\db\"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

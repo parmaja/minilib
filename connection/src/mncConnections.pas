@@ -557,6 +557,7 @@ type
     FDone: Boolean;
     FReady: Boolean;
     FExecuted: Boolean;
+    FFetched: Boolean;
     function GetValues(const Index: string): Variant;
     procedure SetRequest(const Value: TStrings);
     procedure SetColumns(const Value: TmncColumns);
@@ -617,7 +618,6 @@ type
     function Execute: Boolean; overload;
     function Execute(vNext: Boolean): Boolean; overload;
     function Next: Boolean;
-    //function Step: Boolean; deprecated 'Use Fetch';
     function Fetch: Boolean; //Execute and Next for while loop
     procedure Close;
     procedure Clear; virtual;
@@ -975,20 +975,21 @@ end;
 
 function TmncCommand.InternalExecute(vNext: Boolean): Boolean;
 begin
+  FIndex := -1;
   if not FPrepared then
     Prepare;
   FReady := True;
   FDone := False;
-  FExecuted := True;
   DoExecute;
+  FExecuted := True;
   if vNext and not Done then //TODO Check it do we need not Done
   begin
-    FIndex := -1;
     Result := Next;
+    FFetched := False; //Reset it because Next set it
   end
   else
   begin
-    FIndex := 0;
+    Inc(FIndex);
     Result := not Done;
   end;
 end;
@@ -1061,6 +1062,9 @@ var
   field: TmncField;
   c, i: Integer;
 begin
+  if Fields = nil then
+    exit('');
+
   Result := '';
   if asNames in Options then
   begin
@@ -1096,6 +1100,8 @@ var
   field: TmncField;
   c, i: Integer;
 begin
+  if Fields = nil then
+    exit('');
   if asObject in Options then
   begin
     if Rows = '' then
@@ -1130,7 +1136,7 @@ begin
         dtFloat: Result := Result + field.AsString;
         else
           //TODO Escape
-          Result := Result + QuoteStr(field.AsString);
+          Result := Result + QuoteStr(EscapeJSONString(field.AsString));
       end;
       inc(i);      
     end;
@@ -1150,28 +1156,19 @@ end;
 
 function TmncCommand.Fetch: Boolean;
 begin
-  {if FExecuted then in case we need skip first next after execute
-  begin
-    if FSteped or Ready then
-      Result := Next
-    else
-      Result := not Done;
+  if not FExecuted then
+    Result := InternalExecute(True);
 
-    FSteped := True;
+  if not FFetched then
+  begin
+    Result := not Done;
+    FFetched := True;
   end
   else
-  begin
-    if Ready then
-      Result := InternalExecute(True)
-    else
-      Result := Next;
-  end;}
+    Result := Next;
 
-
-  if not FExecuted then
-    Result := InternalExecute(True)
-  else
-    Result := Next
+  if not Result then
+    Close;
 end;
 
 function TmncCommand.Next: Boolean;
@@ -1179,6 +1176,7 @@ begin
   DoNext;
   HitUnready;
   Result := not Done;
+  FFetched := True; //Yes there is reset it in InternalExecute
   if Result then
     Inc(FIndex);
 end;
@@ -1241,15 +1239,14 @@ procedure TmncCommand.Close;
 begin
 {  if not Active then
     raise EmncException.Create('Command already Closed');}
-
-  if Prepared then
-    DoUnprepare;
-
   FReady := True;
   FDone := True;
   FExecuted := False;
   DoClose;
+  if Prepared then
+    DoUnprepare;
   FPrepared := False;
+  FIndex := 0;
 end;
 
 function TmncCommand.GetValues(const Index: string): Variant;
@@ -1283,7 +1280,11 @@ end;
 constructor TmncCommand.TmncCommandEnumerator.Create(ACommand: TmncCommand);
 begin
   FCommand := ACommand;
-  //FCommand.Execute(False);
+  with FCommand do
+  begin
+    if not FExecuted then
+      InternalExecute(True);
+  end;
 end;
 
 function TmncCommand.TmncCommandEnumerator.GetCurrent: TmncFields;
@@ -1294,8 +1295,6 @@ end;
 function TmncCommand.TmncCommandEnumerator.MoveNext: Boolean;
 begin
   Result := FCommand.Fetch;
-  if not Result then
-    FCommand.Close;
 end;
 
 { TmncLinkTransaction }

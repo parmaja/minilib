@@ -28,9 +28,8 @@ begin
     with Result do
     begin
       UsePrefexes := True;
-      with TDatabase.Create(This, 'Database') do
+      with TDatabase.Create(This, 'Database') do begin
         with TSchema.Create(This, 'Schema') do begin
-
           with TTable.Create(This, 'Companies') do begin
             with TFields.Create(This) do begin
               with TField.Create(This, 'ID', ftInteger) do begin
@@ -84,6 +83,40 @@ begin
                 //Options := Options + [foTotal];
               end;
             end;
+          end;
+        end;
+        with TInsertData.Create(This, 'Companies') do
+        begin
+          AddValue('id', '1');
+          AddValue('name', 'Toyota');
+          AddValue('address', 'Japan');
+        end;
+        with TInsertData.Create(This, 'Companies') do
+        begin
+          AddValue('id', '2');
+          AddValue('name', 'Honda');
+          AddValue('address', 'Japan');
+        end;
+
+        with TInsertData.Create(This, 'Companies') do
+        begin
+          AddValue('id', '3');
+          AddValue('name', 'Ford');
+          AddValue('address', 'USA');
+        end;
+
+        with TInsertData.Create(This, 'Companies') do
+        begin
+          AddValue('id', '4');
+          AddValue('name', 'BMW');
+          AddValue('address', 'Germany');
+        end;
+
+        with TInsertData.Create(This, 'Companies') do
+        begin
+          AddValue('id', '5');
+          AddValue('name', 'Hyundai');
+          AddValue('address', 'South Korea');
         end;
       end;
     end;

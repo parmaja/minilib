@@ -252,7 +252,7 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    function Prepare(vSQL: string): TmncCommand; overload;
+    procedure Prepare(vSQL: string); overload;
     procedure ExecuteScript(AStrings: TStrings; ATerminator: string = '^');
 
     function GetLastRowID: Int64; virtual;
@@ -864,11 +864,10 @@ begin
   inherited;
 end;
 
-function TmncSQLCommand.Prepare(vSQL: string): TmncCommand;
+procedure TmncSQLCommand.Prepare(vSQL: string);
 begin
   SQL.Text:= vSQL;
-  Prepare();
-  Result := Self;
+  Prepare;
 end;
 
 function TmncSQLCommand.GetLastRowID: Int64;

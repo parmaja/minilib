@@ -15,7 +15,8 @@ uses
 {$R *.res}
 
 begin
-(*  {$ifdef DEBUG}
+(*
+{$ifdef DEBUG}
   if FileExists('heap.trc') then
     DeleteFile('heap.trc');
   SetHeapTraceOutput('heap.trc');
