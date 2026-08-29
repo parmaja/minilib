@@ -332,7 +332,7 @@ type
   private
     FDefault: TmodWebServer;
     FStarted: Boolean;
-    function GetItem(index: Integer): TmodWebServer;
+    function GetItem(index: NativeInt): TmodWebServer;
     function GetDefault: TmodWebServer;
   public
     function AddServer(AName: string; AServer: TmodWebServer; Options: TWebServersOptions = [wsoOwnIt]): Integer;
@@ -343,7 +343,7 @@ type
     function Server<T: class>: T;
     property Started: Boolean read FStarted;
     property Default: TmodWebServer read GetDefault;
-    property Item[index: Integer]: TmodWebServer read GetItem; default;
+    property Item[index: NativeInt]: TmodWebServer read GetItem; default;
   end;
 
 function WebFindDocument(const HomeDir, Path: string; out Document:string; Smart: Boolean = False): Boolean;
@@ -1008,7 +1008,7 @@ begin
     Result := First.Server;
 end;
 
-function TWebServers.GetItem(index: Integer): TmodWebServer;
+function TWebServers.GetItem(index: NativeInt): TmodWebServer;
 begin
   Result := (inherited Items[index]).Server;
 end;
