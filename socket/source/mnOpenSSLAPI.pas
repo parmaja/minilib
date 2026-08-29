@@ -440,6 +440,8 @@ var
   X509_verify_cert_error_string: function(n: clong): PUTF8Char; cdecl;
   X509_sign: function(x: PX509; pkey: PEVP_PKEY; md: PEVP_MD): Integer; cdecl;
   X509_REQ_new: function(): PX509_REQ; cdecl;
+  X509_NAME_new: function(): PX509_NAME; cdecl;
+  X509_NAME_free: procedure(a: PX509_NAME); cdecl;
   X509_REQ_get_subject_name: function(req: PX509_REQ): PX509_NAME; cdecl;
   X509_REQ_set_pubkey: function(x: PX509_REQ; pkey: PEVP_PKEY): Integer; cdecl;
   X509_REQ_sign: function(x: PX509_REQ; pkey: PEVP_PKEY; const md: PEVP_MD): integer; cdecl;
@@ -477,6 +479,7 @@ var
   PEM_read_bio_RSAPublicKey: function(bp: PBIO; x: PPRSA; cb: Ppem_password_cb; u: Pointer): PRSA; cdecl;
 
   PEM_read_bio_PUBKEY: function(bp: PBIO; x: PPEVP_PKEY; cb: Ppem_password_cb; u: Pointer): PEVP_PKEY; cdecl;
+  PEM_write_bio_PUBKEY: function(bp: PBIO; x: PEVP_PKEY): Integer; cdecl;
 
   PEM_X509_INFO_read_bio: function(bp: PBIO; sk: POPENSSL_STACK; cb: Ppem_password_cb; u: Pointer): POPENSSL_STACK; cdecl;
 
@@ -905,6 +908,8 @@ begin
   X509_free := GetAddress('X509_free');
   X509_verify_cert_error_string := GetAddress('X509_verify_cert_error_string');
   X509_REQ_new := GetAddress('X509_REQ_new');
+  X509_NAME_new := GetAddress('X509_NAME_new');
+  X509_NAME_free := GetAddress('X509_NAME_free');
   X509_sign := GetAddress('X509_sign');
   X509_REQ_set_version := GetAddress('X509_REQ_set_version');
   X509_REQ_get_subject_name := GetAddress('X509_REQ_get_subject_name');
@@ -946,6 +951,7 @@ begin
   PEM_read_bio_X509 := GetAddress('PEM_read_bio_X509');
   PEM_read_bio_PrivateKey := GetAddress('PEM_read_bio_PrivateKey');
   PEM_read_bio_PUBKEY := GetAddress('PEM_read_bio_PUBKEY');
+  PEM_write_bio_PUBKEY := GetAddress('PEM_write_bio_PUBKEY');
   PEM_read_bio_RSAPublicKey := GetAddress('PEM_read_bio_RSAPublicKey');
   PEM_X509_INFO_read_bio := GetAddress('PEM_X509_INFO_read_bio');
 
