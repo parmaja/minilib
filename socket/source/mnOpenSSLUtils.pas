@@ -67,12 +67,18 @@ type
 
   TSSLStackArr = TArray<TSSLStackData>;
 
+  TBuildAltNamesProc = reference to procedure(nid: Integer; const value: string);
+  TFetchNamesProc = reference to procedure(vProc: TBuildAltNamesProc);
+
 function MakeX509(vConfig: TsslConfig): PX509;
 function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
 function MakeCertReq(vConfig: TsslConfig; px: PX509; pk: PEVP_PKEY): Boolean; overload;
 function MakeCertReq(vConfig: TsslConfig): Boolean; overload;
 function MakeCertReq(const vName: string; vConfig: TsslConfig): Boolean; overload;
+
 function BuildAltStack(AltType: Integer; Names: TStrings; var vArr: TSSLStackArr): POPENSSL_STACK;
+procedure AddDirNameSAN(req: PX509_REQ; vProc: TFetchNamesProc);
+
 
 function MakeCert2(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 function MakeCert2(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
@@ -595,6 +601,83 @@ begin
     d := UTF8Encode(vData);
 
     X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_UTF8, PByte(d), -1, -1, 0);
+  end;
+end;
+
+procedure AddDirNameSAN(req: PX509_REQ; vProc: TFetchNamesProc);
+var
+  dirName: PX509_NAME;
+  gen: PGENERAL_NAME;
+  gens: PSTACK_OF_GENERAL_NAME; // = Pstack_st_GENERAL_NAME in most bindings
+  extStack: Pstack_st_X509_EXTENSION; // local stack, NOT pulled from req
+  ret: Integer;
+begin
+
+  var aProc := procedure(nid: Integer; const value: string)
+  begin
+    if value = '' then Exit; // skip empty attrs rather than emitting an empty RDN
+    var utf8 := UTF8Encode(value);
+    if X509_NAME_add_entry_by_NID(dirName, nid, MBSTRING_UTF8, PByte(utf8), Length(utf8), -1, 0) <> 1 then
+      raise Exception.CreateFmt('X509_NAME_add_entry_by_NID failed for NID %d', [nid]);
+  end;
+
+
+  dirName := X509_NAME_new();
+  try
+    // Order matters for how the DN prints/encodes — match your
+    // issuing CA's expected attribute order if one is mandated.
+    {AddEntry(dirName, NID_surname,           ASN);
+    AddEntry(dirName, NID_uniqueIdentifier,  AUID);
+    AddEntry(dirName, NID_title,             ATitle);
+    AddEntry(dirName, NID_registeredAddress, ARegisteredAddress);
+    AddEntry(dirName, NID_businessCategory,  ABusinessCategory);}
+
+    vProc(aProc);
+
+
+    gen := GENERAL_NAME_new();
+
+    // GEN_DIRNAME = 4. GENERAL_NAME_set0_value takes ownership of dirName.
+    GENERAL_NAME_set0_value(gen, GEN_DIRNAME, dirName);
+    dirName := nil; // ownership transferred; don't free it below
+
+    gens := sk_GENERAL_NAME_new_null();
+    if gens = nil then
+    begin
+      GENERAL_NAME_free(gen);
+      raise Exception.Create('sk_GENERAL_NAME_new_null failed');
+    end;
+
+    if sk_GENERAL_NAME_push(gens, gen) = 0 then
+    begin
+      GENERAL_NAME_free(gen);
+      sk_GENERAL_NAME_free(gens);
+      raise Exception.Create('sk_GENERAL_NAME_push failed');
+    end;
+
+    try
+      // Address of the mutable extension-stack field on the cert.
+      // Exact accessor depends on your binding: some expose
+      // X509_get0_extensions returning a mutable pointer pre-1.1.0-style
+      // structs; others require going through cert^.cert_info^.extensions.
+
+      extStack := nil;
+      ret := X509V3_add1_i2d(@extStack, NID_subject_alt_name, gens, 0, X509V3_ADD_APPEND);
+      if ret <> 1 then
+        raise Exception.CreateFmt('X509V3_add1_i2d failed, ret=%d', [ret]);
+    finally
+      // add1_i2d serializes gens to DER internally and does NOT take
+      // ownership — you must free the stack (and its GENERAL_NAME) yourself.
+      sk_GENERAL_NAME_pop_free(gens, @GENERAL_NAME_free);
+    end;
+
+    if X509_REQ_add_extensions(req, extStack) <> 1 then
+      raise Exception.Create('X509_REQ_add_extensions failed');
+  finally
+    X509_NAME_free(dirName); // only reached if we raised before set0_value
+    if extStack <> nil then
+      sk_X509_EXTENSION_pop_free(extStack, @X509_EXTENSION_free);
+    aProc := nil;
   end;
 end;
 

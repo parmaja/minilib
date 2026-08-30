@@ -143,6 +143,8 @@ type
 
   POPENSSL_STACK = PSLLObject;
   PPOPENSSL_STACK = ^POPENSSL_STACK;
+  PSTACK_OF_GENERAL_NAME = PSLLObject;
+  PPSTACK_OF_GENERAL_NAME = ^PSTACK_OF_GENERAL_NAME;
 
   TASN1_string = record
     length: Integer;
@@ -442,6 +444,7 @@ var
   X509_REQ_new: function(): PX509_REQ; cdecl;
   X509_NAME_new: function(): PX509_NAME; cdecl;
   X509_NAME_free: procedure(a: PX509_NAME); cdecl;
+
   X509_REQ_get_subject_name: function(req: PX509_REQ): PX509_NAME; cdecl;
   X509_REQ_set_pubkey: function(x: PX509_REQ; pkey: PEVP_PKEY): Integer; cdecl;
   X509_REQ_sign: function(x: PX509_REQ; pkey: PEVP_PKEY; const md: PEVP_MD): integer; cdecl;
@@ -590,13 +593,22 @@ var
   ASN1_OCTET_STRING_free: procedure(str: PASN1_OCTET_STRING); cdecl;
 
   GENERAL_NAME_new: function(): PGENERAL_NAME; cdecl;
+
   GENERAL_NAME_set0_value: procedure(a: PGENERAL_NAME; typ: Integer; value: Pointer); cdecl;
   GENERAL_NAME_free: procedure(a: PGENERAL_NAME); cdecl;
+
+  sk_GENERAL_NAME_new_null: function(): PSTACK_OF_GENERAL_NAME; cdecl;
+  sk_GENERAL_NAME_push: function(sk: PSTACK_OF_GENERAL_NAME; data: PGENERAL_NAME): Integer; cdecl;
+  sk_GENERAL_NAME_free: procedure(sk: PSTACK_OF_GENERAL_NAME); cdecl;
+  sk_GENERAL_NAME_pop_free: procedure(sk: PSTACK_OF_GENERAL_NAME; free_func: Pointer); cdecl;
+  sk_X509_EXTENSION_pop_free: procedure(sk: Pstack_st_X509_EXTENSION; free_func: Pointer); cdecl;
+
+  X509_get_extensions_ptr: function(x: PX509): Pstack_st_X509_EXTENSION; cdecl;
 
   X509_NAME_add_entry_by_NID: function(name: PX509_NAME; nid: Integer; typ: Integer; bytes: PByte; len: Integer; loc: Integer; &set: Integer): Integer; cdecl;
   X509_REQ_add_extensions: function(req: PX509_REQ; sk: Pstack_st_X509_EXTENSION): Integer; cdecl;
   X509_REQ_add_extensions_nid: function(req: PX509_REQ; sk: Pstack_st_X509_EXTENSION; nid: Integer): Integer; cdecl;
-  X509V3_add1_i2d: function(var sk: POPENSSL_STACK; nid: Integer; value: Pointer; crit: Integer; flags: Cardinal): Integer; cdecl;
+  X509V3_add1_i2d: function(sk: Pstack_st_X509_EXTENSION; nid: Integer; value: Pointer; crit: Integer; flags: Cardinal): Integer; cdecl;
 
   OBJ_create: function(name: PUTF8Char; sn: PUTF8Char; ln: PUTF8Char): Integer; cdecl;
   OBJ_txt2nid: function(s: PUTF8Char): Integer; cdecl;
@@ -1015,6 +1027,14 @@ begin
   GENERAL_NAME_new := GetAddress('GENERAL_NAME_new');
   GENERAL_NAME_set0_value := GetAddress('GENERAL_NAME_set0_value');
   GENERAL_NAME_free := GetAddress('GENERAL_NAME_free');
+
+  sk_GENERAL_NAME_new_null := GetAddress('OPENSSL_sk_new_null');
+  sk_GENERAL_NAME_push := GetAddress('OPENSSL_sk_push');
+  sk_GENERAL_NAME_free := GetAddress('OPENSSL_sk_free');
+  sk_GENERAL_NAME_pop_free := GetAddress('OPENSSL_sk_pop_free');
+  sk_X509_EXTENSION_pop_free := GetAddress('OPENSSL_sk_pop_free');
+
+  X509_get_extensions_ptr := GetAddress('X509_get0_extensions');
 
   BIO_s_mem := GetAddress('BIO_s_mem');
   HMAC := GetAddress('HMAC');
