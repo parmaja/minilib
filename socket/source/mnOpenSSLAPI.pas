@@ -602,6 +602,8 @@ var
   sk_GENERAL_NAME_free: procedure(sk: PSTACK_OF_GENERAL_NAME); cdecl;
   sk_GENERAL_NAME_pop_free: procedure(sk: PSTACK_OF_GENERAL_NAME; free_func: Pointer); cdecl;
   sk_X509_EXTENSION_pop_free: procedure(sk: Pstack_st_X509_EXTENSION; free_func: Pointer); cdecl;
+  sk_X509_EXTENSION_new_null: function(): Pstack_st_X509_EXTENSION; cdecl;
+  sk_X509_EXTENSION_push: function(sk: Pstack_st_X509_EXTENSION; data: PX509_EXTENSION): Integer; cdecl;
 
   X509_get_extensions_ptr: function(x: PX509): Pstack_st_X509_EXTENSION; cdecl;
 
@@ -1033,6 +1035,8 @@ begin
   sk_GENERAL_NAME_free := GetAddress('OPENSSL_sk_free');
   sk_GENERAL_NAME_pop_free := GetAddress('OPENSSL_sk_pop_free');
   sk_X509_EXTENSION_pop_free := GetAddress('OPENSSL_sk_pop_free');
+  sk_X509_EXTENSION_new_null := GetAddress('OPENSSL_sk_new_null');
+  sk_X509_EXTENSION_push := GetAddress('OPENSSL_sk_push');
 
   X509_get_extensions_ptr := GetAddress('X509_get0_extensions');
 
