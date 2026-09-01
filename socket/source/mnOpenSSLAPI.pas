@@ -374,6 +374,7 @@ var
   ERR_load_SSL_strings: procedure(); cdecl;
   ERR_load_CRYPTO_strings: function(): Integer; cdecl;
   ERR_error_string: function(e: culong; bug: PUTF8Char): PUTF8Char; cdecl;
+  ERR_error_string_n: procedure(e: culong; buf: PAnsiChar; len: Integer); cdecl;
   ERR_get_error: function(): culong; cdecl;
   ERR_peek_error: function(): culong; cdecl;
 
@@ -591,6 +592,8 @@ var
   ASN1_OCTET_STRING_new: function():PASN1_OCTET_STRING; cdecl;
   ASN1_OCTET_STRING_set: function(str: PASN1_OCTET_STRING; data: PByte; len: Integer): Integer; cdecl;
   ASN1_OCTET_STRING_free: procedure(str: PASN1_OCTET_STRING); cdecl;
+  ASN1_IA5STRING_new: function(): PASN1_IA5STRING; cdecl;
+  ASN1_IA5STRING_free: procedure(str: PASN1_IA5STRING); cdecl;
 
   GENERAL_NAME_new: function(): PGENERAL_NAME; cdecl;
 
@@ -1025,6 +1028,8 @@ begin
   ASN1_OCTET_STRING_new := GetAddress('ASN1_OCTET_STRING_new');
   ASN1_OCTET_STRING_set := GetAddress('ASN1_OCTET_STRING_set');
   ASN1_OCTET_STRING_free := GetAddress('ASN1_OCTET_STRING_free');
+  ASN1_IA5STRING_new := GetAddress('ASN1_IA5STRING_new');
+  ASN1_IA5STRING_free := GetAddress('ASN1_IA5STRING_free');
 
   GENERAL_NAME_new := GetAddress('GENERAL_NAME_new');
   GENERAL_NAME_set0_value := GetAddress('GENERAL_NAME_set0_value');
@@ -1067,6 +1072,7 @@ begin
 
   ERR_get_error := GetAddress('ERR_get_error');
   ERR_error_string := GetAddress('ERR_error_string');
+  ERR_error_string_n := GetAddress('ERR_error_string_n');
   ERR_load_CRYPTO_strings := GetAddress('ERR_load_CRYPTO_strings');
   ERR_peek_error := GetAddress('ERR_peek_error');
 
