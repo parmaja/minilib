@@ -239,6 +239,19 @@ type
     function Add(ANameType: Integer; ADirs: TDirNames): Integer; overload;
   end;
 
+  TReqExtension = record
+    Nid: Integer; //NID_basic_constraints, NID_key_usage...
+    Value: UTF8String; //config text, e.g. 'CA:FALSE' or 'critical,CA:FALSE'
+    constructor Create(ANid: Integer; const AValue: UTF8String);
+  end;
+
+  TReqExtensions = array of TReqExtension;
+
+  TReqExtensionsHelper = record helper for TReqExtensions
+  public
+    function Add(ANid: Integer; const AValue: UTF8String): Integer;
+  end;
+
 procedure InitOpenSSL(All: Boolean = True);
 procedure InitOpenSSLLibrary(All: Boolean = True);
 procedure CleanupOpenSSL;
@@ -266,8 +279,13 @@ function LoadEckey(FileName: string): PEVP_PKEY;
 function BuildSanStack(const vAltNames: TAltNameEntries): PSTACK_OF_GENERAL_NAME;
 procedure AddNameEntry(Name: PX509_NAME; const Field, Value: UTF8String); overload;
 function AddSanToReq(req: PX509_REQ; const vAltNames: TAltNameEntries): Integer; overload;
+//Build SAN (if any) and the v3 text extensions into a single extensionRequest attribute.
+//X509_REQ_add_extensions must be called once, so all extensions are added together.
+//Extension values use openssl.cnf text, e.g. 'CA:FALSE' or 'digitalSignature, nonRepudiation'
+function AddReqExtensions(req: PX509_REQ; const vAltNames: TAltNameEntries; const vExts: TReqExtensions): Integer;
 //Decode openssl req -in mycsr.csr -noout -text
-function CreateECCsr(const dn: TDNInfo; const vAltNames: TAltNameEntries; pkey: PEVP_PKEY): PX509_REQ;
+function CreateECCsr(const dn: TDNInfo; const vAltNames: TAltNameEntries; const vExts: TReqExtensions; pkey: PEVP_PKEY): PX509_REQ; overload;
+function CreateECCsr(const dn: TDNInfo; const vAltNames: TAltNameEntries; pkey: PEVP_PKEY): PX509_REQ; overload;
 
 function CsrToString(req: PX509_REQ): UTF8String;
 procedure CsrToFile(req: PX509_REQ; FileName: string);
@@ -522,7 +540,12 @@ begin
   end, FileName);
 end;
 
-function CreateECCsr(const dn: TDNInfo; const vAltNames: TAltNameEntries; pkey: PEVP_PKEY): PX509_REQ;
+function CreateECCsr(const dn: TDNInfo; const vAltNames: TAltNameEntries; pkey: PEVP_PKEY): PX509_REQ; overload;
+begin
+  Result := CreateECCsr(dn, vAltNames, nil, pkey);
+end;
+
+function CreateECCsr(const dn: TDNInfo; const vAltNames: TAltNameEntries; const vExts: TReqExtensions; pkey: PEVP_PKEY): PX509_REQ; overload;
 var
   name: PX509_NAME;
 begin
@@ -542,10 +565,10 @@ begin
     AddNameEntry(name, 'L', dn.City);
     AddNameEntry(name, 'emailAddress', dn.Email);
 
-    if Length(vAltNames) > 0 then
+    if (Length(vAltNames) > 0) or (Length(vExts) > 0) then
     begin
-      if AddSanToReq(Result, vAltNames) = 0 then
-        raise Exception.Create('AddSanToReq failed');
+      if AddReqExtensions(Result, vAltNames, vExts) = 0 then
+        raise Exception.Create('AddReqExtensions failed');
     end;
 
     if X509_REQ_set_pubkey(Result, pkey) <> 1 then
@@ -747,6 +770,65 @@ begin
     Result := 1;
   finally
     sk_GENERAL_NAME_pop_free(gens, Pointer(@GENERAL_NAME_free));
+    if extStack <> nil then
+      sk_X509_EXTENSION_pop_free(extStack, Pointer(@X509_EXTENSION_free));
+  end;
+end;
+
+function AddReqExtensions(req: PX509_REQ; const vAltNames: TAltNameEntries; const vExts: TReqExtensions): Integer;
+var
+  ctx: TX509V3_CTX;
+  ext: PX509_EXTENSION;
+  gens: PSTACK_OF_GENERAL_NAME;
+  extStack: Pstack_st_X509_EXTENSION;
+  i: Integer;
+begin
+  Result := 0;
+  if req = nil then
+    Exit;
+  if (Length(vAltNames) = 0) and (Length(vExts) = 0) then
+    Exit;
+
+  gens := nil;
+  extStack := sk_X509_EXTENSION_new_null();
+  if extStack = nil then
+    raise EmnOpenSSLException.Create('Error sk_X509_EXTENSION_new_null');
+  try
+    if Length(vAltNames) > 0 then
+    begin
+      gens := BuildSanStack(vAltNames);
+      if gens = nil then
+        raise EmnOpenSSLException.Create('Error BuildSanStack');
+      if X509V3_add1_i2d(Pstack_st_X509_EXTENSION(@extStack), NID_subject_alt_name,
+          Pointer(gens), 0, X509V3_ADD_APPEND) <> 1 then
+        raise EmnOpenSSLException.Create('Error X509V3_add1_i2d failed for SAN');
+    end;
+
+    if Length(vExts) > 0 then
+    begin
+      FillChar(ctx, SizeOf(ctx), 0);
+      X509V3_set_ctx_nodb(@ctx);
+      X509V3_set_ctx(@ctx, nil, nil, req, nil, 0);
+      for i := Low(vExts) to High(vExts) do
+      begin
+        ext := X509V3_EXT_conf_nid(nil, @ctx, vExts[i].Nid, PUTF8Char(vExts[i].Value));
+        if ext = nil then
+          raise EmnOpenSSLException.Create('Error X509V3_EXT_conf_nid for NID ' + IntToStr(vExts[i].Nid));
+        if sk_X509_EXTENSION_push(extStack, ext) = 0 then
+        begin
+          X509_EXTENSION_free(ext);
+          raise EmnOpenSSLException.Create('Error sk_X509_EXTENSION_push');
+        end;
+      end;
+    end;
+
+    if X509_REQ_add_extensions(req, extStack) <> 1 then
+      raise EmnOpenSSLException.Create('Error X509_REQ_add_extensions');
+
+    Result := 1;
+  finally
+    if gens <> nil then
+      sk_GENERAL_NAME_pop_free(gens, Pointer(@GENERAL_NAME_free));
     if extStack <> nil then
       sk_X509_EXTENSION_pop_free(extStack, Pointer(@X509_EXTENSION_free));
   end;
@@ -1672,6 +1754,22 @@ end;
 function TDirNamesHelper.Add(FieldName, Value: UTF8String): Integer;
 begin
   Self := Self + [TDirName.Create(FieldName, Value)];
+  Result := Length(Self);
+end;
+
+{ TReqExtension }
+
+constructor TReqExtension.Create(ANid: Integer; const AValue: UTF8String);
+begin
+  Nid := ANid;
+  Value := AValue;
+end;
+
+{ TReqExtensionsHelper }
+
+function TReqExtensionsHelper.Add(ANid: Integer; const AValue: UTF8String): Integer;
+begin
+  Self := Self + [TReqExtension.Create(ANid, AValue)];
   Result := Length(Self);
 end;
 
