@@ -467,6 +467,7 @@ var
   X509V3_set_ctx: procedure(ctx: PX509V3_CTX; issuer: PX509; subject: PX509; req: PX509_REQ; crl: PX509_CRL; flags: integer); cdecl;
 
   X509V3_EXT_conf_nid: function(conf: PLHASH; ctx: PX509V3_CTX; ext_nid: integer; value: PUTF8Char): PX509_EXTENSION; cdecl;
+  X509V3_EXT_nconf: function(conf: PLHASH; ctx: PX509V3_CTX; name: PUTF8Char; value: PUTF8Char): PX509_EXTENSION; cdecl;
   X509_set_version: function(x: PX509; version: clong): Integer; cdecl;
 
   X509_REQ_set_version: function(x: PX509_REQ; version: clong): Integer; cdecl;
@@ -938,6 +939,7 @@ begin
   X509_add_ext := GetAddress('X509_add_ext');
   X509V3_set_ctx := GetAddress('X509V3_set_ctx');
   X509V3_EXT_conf_nid := GetAddress('X509V3_EXT_conf_nid');
+  X509V3_EXT_nconf := GetAddress('X509V3_EXT_nconf');
   X509_set_version := GetAddress('X509_set_version');
   X509_EXTENSION_free := GetAddress('X509_EXTENSION_free');
   X509_set_issuer_name := GetAddress('X509_set_issuer_name');

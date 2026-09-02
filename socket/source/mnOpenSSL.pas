@@ -240,16 +240,19 @@ type
   end;
 
   TReqExtension = record
-    Nid: Integer; //NID_basic_constraints, NID_key_usage...
-    Value: UTF8String; //config text, e.g. 'CA:FALSE' or 'critical,CA:FALSE'
-    constructor Create(ANid: Integer; const AValue: UTF8String);
+    Nid: Integer; //NID_basic_constraints, NID_key_usage... (0 when resolved by name)
+    Name: UTF8String; //openssl.cnf key: a short/long name or a dotted OID like '1.3.6.1.4.1.311.20.2'
+    Value: UTF8String; //config text, e.g. 'CA:FALSE', 'critical,CA:FALSE' or 'ASN1:PRINTABLESTRING:ZATCA-Code-Signing'
+    constructor Create(ANid: Integer; const AValue: UTF8String); overload;
+    constructor Create(const AName: UTF8String; const AValue: UTF8String); overload;
   end;
 
   TReqExtensions = array of TReqExtension;
 
   TReqExtensionsHelper = record helper for TReqExtensions
   public
-    function Add(ANid: Integer; const AValue: UTF8String): Integer;
+    function Add(ANid: Integer; const AValue: UTF8String): Integer; overload;
+    function Add(const AName: UTF8String; const AValue: UTF8String): Integer; overload;
   end;
 
 procedure InitOpenSSL(All: Boolean = True);
@@ -811,9 +814,20 @@ begin
       X509V3_set_ctx(@ctx, nil, nil, req, nil, 0);
       for i := Low(vExts) to High(vExts) do
       begin
-        ext := X509V3_EXT_conf_nid(nil, @ctx, vExts[i].Nid, PUTF8Char(vExts[i].Value));
-        if ext = nil then
-          raise EmnOpenSSLException.Create('Error X509V3_EXT_conf_nid for NID ' + IntToStr(vExts[i].Nid));
+        if vExts[i].Name <> '' then
+        begin
+          if not Assigned(X509V3_EXT_nconf) then
+            raise EmnOpenSSLException.Create('X509V3_EXT_nconf not available');
+          ext := X509V3_EXT_nconf(nil, @ctx, PUTF8Char(vExts[i].Name), PUTF8Char(vExts[i].Value));
+          if ext = nil then
+            raise EmnOpenSSLException.CreateLastError('Error X509V3_EXT_nconf for ' + vExts[i].Name);
+        end
+        else
+        begin
+          ext := X509V3_EXT_conf_nid(nil, @ctx, vExts[i].Nid, PUTF8Char(vExts[i].Value));
+          if ext = nil then
+            raise EmnOpenSSLException.CreateLastError('Error X509V3_EXT_conf_nid for NID ' + IntToStr(vExts[i].Nid));
+        end;
         if sk_X509_EXTENSION_push(extStack, ext) = 0 then
         begin
           X509_EXTENSION_free(ext);
@@ -1763,6 +1777,14 @@ constructor TReqExtension.Create(ANid: Integer; const AValue: UTF8String);
 begin
   Nid := ANid;
   Value := AValue;
+  Name := '';
+end;
+
+constructor TReqExtension.Create(const AName: UTF8String; const AValue: UTF8String);
+begin
+  Nid := 0;
+  Value := AValue;
+  Name := AName;
 end;
 
 { TReqExtensionsHelper }
@@ -1770,6 +1792,12 @@ end;
 function TReqExtensionsHelper.Add(ANid: Integer; const AValue: UTF8String): Integer;
 begin
   Self := Self + [TReqExtension.Create(ANid, AValue)];
+  Result := Length(Self);
+end;
+
+function TReqExtensionsHelper.Add(const AName: UTF8String; const AValue: UTF8String): Integer;
+begin
+  Self := Self + [TReqExtension.Create(AName, AValue)];
   Result := Length(Self);
 end;
 
