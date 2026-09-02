@@ -273,6 +273,8 @@ function CsrToString(req: PX509_REQ): UTF8String;
 procedure CsrToFile(req: PX509_REQ; FileName: string);
 function KeyToString(pkey: PEVP_PKEY): UTF8String;
 procedure KeyToFile(pkey: PEVP_PKEY; FileName: string);
+function PublicKeyToString(pkey: PEVP_PKEY): UTF8String;
+procedure PublicKeyToFile(pkey: PEVP_PKEY; FileName: string);
 
 const
   sUID = 'UID';
@@ -501,6 +503,22 @@ begin
   BIOToFile(procedure(bio: PBIO)
   begin
     PEM_write_bio_PrivateKey(bio, pkey, nil, nil, 0, nil, nil);
+  end, FileName);
+end;
+
+function PublicKeyToString(pkey: PEVP_PKEY): UTF8String;
+begin
+  Result := BIOToString(procedure(bio: PBIO)
+  begin
+    PEM_write_bio_PUBKEY(bio, pkey);
+  end);
+end;
+
+procedure PublicKeyToFile(pkey: PEVP_PKEY; FileName: string);
+begin
+  BIOToFile(procedure(bio: PBIO)
+  begin
+    PEM_write_bio_PUBKEY(bio, pkey);
   end, FileName);
 end;
 
