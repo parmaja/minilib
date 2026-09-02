@@ -333,12 +333,13 @@ type
     {$endif}
   end;
 
-function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload; 
-function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload; 
-function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload; 
-function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_UTF8): string; overload; 
+function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload;
+function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload;
+function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload;
+function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_UTF8): string; overload;
 
 function StringOfUTF8(const Value: PByte; Size: Integer): string;
+function UTF8StringOf(const Value: PByte; Size: Integer): UTF8String;
 
 function NewUUID: string;
 //TODO fix ansi to widestring
@@ -2933,6 +2934,13 @@ begin
   {$else}
   Result := TEncoding.UTF8.GetString(Value, Size);
   {$endif}
+end;
+
+function UTF8StringOf(const Value: PByte; Size: Integer): UTF8String;
+begin
+  SetLength(Result, Size);
+  if Size > 0 then
+    Move(Value^, Result[1], Size);
 end;
 
 function HexToString(const vData: string): string; overload;

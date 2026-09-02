@@ -12,7 +12,7 @@
   GEN_EDIPARTY                    = 5;
   GEN_URI                         = 6;
   GEN_IPADD                       = 7;
-  GEN_RID                             = 8;
+  GEN_RID                         = 8;
 
   BIO_FP_READ                         = $02;
   BIO_FP_WRITE                        = $04;

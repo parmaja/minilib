@@ -198,25 +198,46 @@ type
     property CTX: TContext read FCTX;
   end;
 
-  TDirNameEntry = record
+  TBIOWriteProc = reference to procedure(bio: PBIO);
+
+  TDirName = record
     FieldName: UTF8String;
     Value: UTF8String;
+    constructor Create(AFieldName: UTF8String; AValue: UTF8String); overload;
   end;
 
-  TAltNameEntry = record
+  TDirNames = array of TDirName;
+
+  TDirNamesHelper = record helper for TDirNames
+  public
+    function Add(FieldName: UTF8String; Value: UTF8String): Integer;
+  end;
+
+  TAltName = record
     NameType: Integer; //GEN_DNS, GEN_IPADD, GEN_DIRNAME...
     Value: UTF8String;
-    DirNames: array of TDirNameEntry;
+    DirNames: TDirNames;
+    constructor Create(ANameType: Integer; AValue: UTF8String); overload;
+    constructor Create(ANameType: Integer; ADirNames: TDirNames); overload;
   end;
 
-  TAltNameEntries = array of TAltNameEntry;
+  TDNInfo = record
+    Cn: UTF8String;
+    O: UTF8String;
+    Ou: UTF8String;
+    C: UTF8String;
+    State: UTF8String;
+    City: UTF8String;
+    Email: UTF8String;
+  end;
 
-  TPemWriteProc = reference to procedure(bio: PBIO);
+  TAltNameEntries = array of TAltName;
 
-function GenerateEckey(vNid: Integer): PEVP_PKEY;
-function BuildSanStack(const vAltNames: TAltNameEntries): PSTACK_OF_GENERAL_NAME;
-function AddSanToReq(req: PX509_REQ; const vAltNames: TAltNameEntries): Integer;
-function MakePemString(vProc: TPemWriteProc): UTF8String;
+  TAltNameEntriesHelper = record helper for TAltNameEntries
+  public
+    function Add(ANameType: Integer; AValue: UTF8String): Integer; overload;
+    function Add(ANameType: Integer; ADirs: TDirNames): Integer; overload;
+  end;
 
 procedure InitOpenSSL(All: Boolean = True);
 procedure InitOpenSSLLibrary(All: Boolean = True);
@@ -230,8 +251,38 @@ function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf
 
 function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
 function ECDSASignBase64(const vData, vKey: utf8string): UTF8String; overload;
-function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
+
 procedure X509SaveToFile(X509: PX509; const FileName: string);
+
+function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
+
+function BIOToString(vProc: TBIOWriteProc): UTF8String; overload;
+procedure BIOToStream(vProc: TBIOWriteProc; Stream: TStream); overload;
+procedure BIOToFile(vProc: TBIOWriteProc; FileName: string); overload;
+
+function GenerateEckey(vNid: Integer): PEVP_PKEY;
+function LoadEckey(FileName: string): PEVP_PKEY;
+
+function BuildSanStack(const vAltNames: TAltNameEntries): PSTACK_OF_GENERAL_NAME;
+procedure AddNameEntry(Name: PX509_NAME; const Field, Value: UTF8String); overload;
+function AddSanToReq(req: PX509_REQ; const vAltNames: TAltNameEntries): Integer; overload;
+//Decode openssl req -in mycsr.csr -noout -text
+function CreateECCsr(const dn: TDNInfo; const vAltNames: TAltNameEntries; pkey: PEVP_PKEY): PX509_REQ;
+
+function CsrToString(req: PX509_REQ): UTF8String;
+procedure CsrToFile(req: PX509_REQ; FileName: string);
+function KeyToString(pkey: PEVP_PKEY): UTF8String;
+procedure KeyToFile(pkey: PEVP_PKEY; FileName: string);
+
+const
+  sUID = 'UID';
+  sSN = 'SN';
+  sTitle = 'title';
+  sRegisteredAddress = 'registeredAddress';
+  sBusinessCategory = 'businessCategory';
+
+  sSubjectAltName = 'subjectAltName';
+  sCertificateTemplateName = 'certificateTemplateName';
 
 implementation
 
@@ -346,7 +397,6 @@ begin
       ECDSA_sign(0, PByte(vData), Length(vData), PByte(Result), @aLen, aKey);
       SetLength(Result, aLen);
     finally
-
     end;
   finally
     BIO_free(bio);
@@ -362,7 +412,7 @@ begin
   //Result := tnet
 end;
 
-function MakePemString(vProc: TPemWriteProc): UTF8String;
+function BIOToString(vProc: TBIOWriteProc): UTF8String;
 var
   bio: PBIO;
   b: PByte;
@@ -384,6 +434,124 @@ begin
   finally
     BIO_free(bio);
   end;
+end;
+
+procedure BIOToStream(vProc: TBIOWriteProc; Stream: TStream);
+var
+  bio: PBIO;
+  b: PByte;
+  aLen: NativeInt;
+begin
+  bio := BIO_new(BIO_s_mem());
+  if bio = nil then
+    raise EmnOpenSSLException.Create('Error BIO_new mem');
+  try
+    vProc(bio);
+    aLen := BIO_get_mem_data(bio, b);
+    if (aLen <= 0) or (b = nil) then
+      raise EmnOpenSSLException.Create('Error BIO_get_mem_data');
+    Stream.Write(b^, aLen);
+  finally
+    BIO_free(bio);
+  end;
+end;
+
+procedure BIOToFile(vProc: TBIOWriteProc; FileName: string);
+var
+  bio: PBIO;
+  b: PByte;
+  aLen: NativeInt;
+begin
+  bio := BIO_new_file(PUTF8Char(UTF8Encode(FileName)), PUTF8Char('wb'));
+  if bio = nil then
+    raise EmnOpenSSLException.Create('Error BIO_new_file');
+  try
+    vProc(bio);
+  finally
+    BIO_free(bio);
+  end;
+end;
+
+function CsrToString(req: PX509_REQ): UTF8String;
+begin
+  Result := BIOToString(procedure(bio: PBIO)
+  begin
+    PEM_write_bio_X509_REQ(bio, req);
+  end);
+end;
+
+procedure CsrToFile(req: PX509_REQ; FileName: string);
+begin
+  BIOToFile(procedure(bio: PBIO)
+  begin
+    PEM_write_bio_X509_REQ(bio, req);
+  end, FileName);
+end;
+
+function KeyToString(pkey: PEVP_PKEY): UTF8String;
+begin
+  Result := BIOToString(procedure(bio: PBIO)
+  begin
+    PEM_write_bio_PrivateKey(bio, pkey, nil, nil, 0, nil, nil);
+  end);
+end;
+
+procedure KeyToFile(pkey: PEVP_PKEY; FileName: string);
+begin
+  BIOToFile(procedure(bio: PBIO)
+  begin
+    PEM_write_bio_PrivateKey(bio, pkey, nil, nil, 0, nil, nil);
+  end, FileName);
+end;
+
+function CreateECCsr(const dn: TDNInfo; const vAltNames: TAltNameEntries; pkey: PEVP_PKEY): PX509_REQ;
+var
+  name: PX509_NAME;
+begin
+  Result := X509_REQ_new();
+  if Result = nil then
+    raise Exception.Create('X509_REQ_new failed');
+
+  try
+    X509_REQ_set_version(Result, 0);
+
+    name := X509_REQ_get_subject_name(Result);
+    AddNameEntry(name, 'CN', dn.Cn);
+    AddNameEntry(name, 'O', dn.O);
+    AddNameEntry(name, 'OU', dn.Ou);
+    AddNameEntry(name, 'C', dn.C);
+    AddNameEntry(name, 'ST', dn.State);
+    AddNameEntry(name, 'L', dn.City);
+    AddNameEntry(name, 'emailAddress', dn.Email);
+
+    if Length(vAltNames) > 0 then
+    begin
+      if AddSanToReq(Result, vAltNames) = 0 then
+        raise Exception.Create('AddSanToReq failed');
+    end;
+
+    if X509_REQ_set_pubkey(Result, pkey) <> 1 then
+      raise Exception.Create('X509_REQ_set_pubkey failed');
+
+    if X509_REQ_sign(Result, pkey, EVP_sha256()) = 0 then
+      raise Exception.Create('X509_REQ_sign failed');
+  except
+    X509_REQ_free(Result);
+    Result := nil;
+    raise;
+  end;
+end;
+
+procedure AddNameEntry(Name: PX509_NAME; const Field, Value: UTF8String);
+begin
+  if Name = nil then
+    Exit;
+  if Value = '' then
+    Exit;
+
+  if X509_NAME_add_entry_by_txt(name, PUtf8Char(Field), MBSTRING_UTF8,
+      PByte(Value), -1, -1, 0) <> 1 then
+    raise Exception.CreateFmt('X509_NAME_add_entry_by_txt failed for %s', [UTF8String(Field)]);
 end;
 
 function GenerateEckey(vNid: Integer): PEVP_PKEY;
@@ -417,6 +585,11 @@ begin
     Result := nil;
     raise EmnOpenSSLException.Create('Error EVP_PKEY_assign_EC_KEY');
   end;
+end;
+
+function LoadEckey(FileName: string): PEVP_PKEY;
+begin
+//TODO
 end;
 
 function BuildSanStack(const vAltNames: TAltNameEntries): PSTACK_OF_GENERAL_NAME;
@@ -831,11 +1004,29 @@ end;
 
 { EmnOpenSSLException }
 
+function CollectOpenSSLErrors: string;
+var
+  e: NativeUInt;
+  buf: array[0..255] of AnsiChar;
+begin
+  Result := '';
+  e := ERR_get_error();
+  while e <> 0 do
+  begin
+    ERR_error_string_n(e, @buf, SizeOf(buf));
+    Result := Result + #13#10 + buf;
+    e := ERR_get_error();
+  end;
+end;
+
 constructor EmnOpenSSLException.CreateLastError(const msg: string);
 var
   s: string;
+  e: NativeUInt;
+  buf: array[0..255] of AnsiChar;
 begin
-  s := ERR_error_string(ERR_peek_error, nil);
+  //s := ERR_error_string(ERR_peek_error, nil);
+  s := CollectOpenSSLErrors;
   raise EmnOpenSSLException.CreateFmt(msg + ' [%s]', [s]);
 end;
 
@@ -1302,9 +1493,9 @@ var
   CertName: string;
   CertStream: TMemoryStream;
   x: PX509;
-  hProvOrKey: HCRYPTPROV = 0;
+  {hProvOrKey: HCRYPTPROV = 0;
   dwKeySpec: DWORD;
-  fCallerFreeProv: BOOL;
+  fCallerFreeProv: BOOL;}
 begin
   hStore := CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0, CERT_STORE_READONLY_FLAG or CERT_STORE_MAXIMUM_ALLOWED_FLAG or CERT_SYSTEM_STORE_LOCAL_MACHINE, PWideChar('MY'));
   if hStore = nil then
@@ -1399,6 +1590,50 @@ end;
 procedure TTLS_SSLClientMethod.CreateHandle;
 begin
   Handle := TLS_client_method();
+end;
+
+{ TAltName }
+
+constructor TAltName.Create(ANameType: Integer; AValue: UTF8String);
+begin
+  NameType:= ANameType;
+  Value := AValue;
+end;
+
+constructor TAltName.Create(ANameType: Integer; ADirNames: TDirNames);
+begin
+  NameType:= ANameType;
+  DirNames := ADirNames;
+end;
+
+{ TDirName }
+
+constructor TDirName.Create(AFieldName, AValue: UTF8String);
+begin
+  FieldName := AFieldName;
+  Value := AValue;
+end;
+
+{ TAltNameEntriesHelper }
+
+function TAltNameEntriesHelper.Add(ANameType: Integer; AValue: UTF8String): Integer;
+begin
+  Self := Self + [TAltName.Create(ANameType, AValue)];
+  Result := Length(Self);
+end;
+
+function TAltNameEntriesHelper.Add(ANameType: Integer; ADirs: TDirNames): Integer;
+begin
+  Self := Self + [TAltName.Create(ANameType, ADirs)];
+  Result := Length(Self);
+end;
+
+{ TDirNamesHelper }
+
+function TDirNamesHelper.Add(FieldName, Value: UTF8String): Integer;
+begin
+  Self := Self + [TDirName.Create(FieldName, Value)];
+  Result := Length(Self);
 end;
 
 end.

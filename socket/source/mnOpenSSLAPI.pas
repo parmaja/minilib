@@ -212,8 +212,8 @@ type
   PASN1_SCTX = Pointer;
   PPASN1_SCTX = ^PASN1_SCTX;
 
-  Pstack_st_X509_EXTENSION = PSSLObject;
-  PPstack_st_X509_EXTENSION = ^Pstack_st_X509_EXTENSION;
+  PStack_st_X509_EXTENSION = PSSLObject;
+  PPStack_st_X509_EXTENSION = ^PStack_st_X509_EXTENSION;
 
   TASN1_ENCODING = record
     enc: PByte;
@@ -558,6 +558,7 @@ var
   BIO_f_base64: function(): PBIO_METHOD; cdecl;
 
   BIO_s_mem: function(): PBIO_METHOD; cdecl;
+
   HMAC: function(evp_md: PEVP_MD; key: Pointer; key_len: Integer; d: PByte; n: NativeUInt; md: PByte; var md_len: Cardinal): PByte; cdecl;
 
   BIO_read: function(b: PBIO; var data; dlen: integer): Integer; cdecl;
