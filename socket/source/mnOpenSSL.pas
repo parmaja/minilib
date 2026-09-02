@@ -588,8 +588,25 @@ begin
 end;
 
 function LoadEckey(FileName: string): PEVP_PKEY;
+var
+  bio: PBIO;
 begin
-//TODO
+  Result := nil;
+  InitOpenSSLLibrary;
+
+  if not FileExists(FileName) then
+    raise EmnOpenSSLException.Create('Key file not exist:' + FileName);
+
+  bio := BIO_new_file(PUTF8Char(UTF8Encode(FileName)), PUTF8Char('rb'));
+  if bio = nil then
+    raise EmnOpenSSLException.CreateLastError('Error reading file by BIO_new_file');
+  try
+    Result := PEM_read_bio_PrivateKey(bio, nil, nil, nil);
+    if Result = nil then
+      raise EmnOpenSSLException.CreateLastError('Error PEM_read_bio_PrivateKey:' + FileName);
+  finally
+    BIO_free(bio);
+  end;
 end;
 
 function BuildSanStack(const vAltNames: TAltNameEntries): PSTACK_OF_GENERAL_NAME;
