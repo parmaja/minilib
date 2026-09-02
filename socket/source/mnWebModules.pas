@@ -334,6 +334,8 @@ type
     FStarted: Boolean;
     function GetItem(index: NativeInt): TmodWebServer;
     function GetDefault: TmodWebServer;
+  protected
+    procedure Notify(const Value: TWebServerItem; Action: TCollectionNotification); override;
   public
     function AddServer(AName: string; AServer: TmodWebServer; Options: TWebServersOptions = [wsoOwnIt]): Integer;
     procedure Disconnect;
@@ -1013,6 +1015,12 @@ begin
   Result := (inherited Items[index]).Server;
 end;
 
+procedure TWebServers.Notify(const Value: TWebServerItem; Action: TCollectionNotification);
+begin
+  inherited;
+
+end;
+
 function TWebServers.Server<T>: T;
 var
   i: Integer;
@@ -1284,4 +1292,6 @@ end;
 
 initialization
 finalization
+  FreeAndNil(FWebServers);
+
 end.
