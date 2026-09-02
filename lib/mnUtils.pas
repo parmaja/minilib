@@ -339,7 +339,8 @@ function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): 
 function StringOf(const Value: PByte; Start, Size: Integer; CodePage: Word = CP_UTF8): string; overload;
 
 function StringOfUTF8(const Value: PByte; Size: Integer): string;
-function UTF8StringOf(const Value: PByte; Size: Integer): UTF8String;
+function UTF8StringOf(const Value: PByte; Size: Integer): UTF8String; overload;
+function UTF8StringOf(const Value: TBytes): UTF8String; overload;
 
 function NewUUID: string;
 //TODO fix ansi to widestring
@@ -401,6 +402,7 @@ function SwapBytes(const Source: Int64): Int64; overload;
 procedure CenterRect(var R1: TRect; R2: TRect);
 
 procedure OpenURL(URL: string);
+function IPToBytes(const DottedIP: string): TBytes;
 
 procedure GetEnvironmentList(List: TStrings);
 
@@ -2943,6 +2945,16 @@ begin
     Move(Value^, Result[1], Size);
 end;
 
+function UTF8StringOf(const Value: TBytes): UTF8String;
+var
+  Size: NativeInt;
+begin
+  Size := Length(Value);
+  SetLength(Result, Size);
+  if Size > 0 then
+    Move(PByte(Value)^, Result[1], Size);
+end;
+
 function HexToString(const vData: string): string; overload;
 var
   b, r: TBytes;
@@ -3344,6 +3356,20 @@ begin
   {$ifdef windows}
   ShellExecute(0, 'Open', PWideChar(URL), nil, nil, 0);
   {$endif}
+end;
+
+function IPToBytes(const DottedIP: string): TBytes;
+var
+  Parts: TArray<string>;
+  i: Integer;
+begin
+  Parts := SplitString(DottedIP, '.');
+  if Length(Parts) <> 4 then
+    raise Exception.Create('Invalid IPv4 address format');
+
+  SetLength(Result, 4);
+  for i := 0 to 3 do
+    Result[i] := StrToInt(Parts[i]);
 end;
 
 function IsServiceProcess: Boolean;

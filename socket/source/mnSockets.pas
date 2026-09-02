@@ -34,10 +34,8 @@ unit mnSockets;
 interface
 
 uses
-  Classes,
-  SysUtils,
-  mnOpenSSL,
-  mnStreams;
+  Classes, SysUtils,
+  mnOpenSSL, mnStreams;
 
 const
   WaitForEver: Longint = -1;

@@ -25,11 +25,11 @@ unit mnOpenSSL;
 interface
 
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, StrUtils,
   {$ifdef MSWINDOWS}{$ifdef FPC}
   JwaWinCrypt, JwaWinType,
   {$endif}{$endif}
-  mnLogs, mnLibraries,
+  mnLogs, mnLibraries, mnUtils,
   mnOpenSSLAPI;
 
 type
@@ -665,6 +665,11 @@ begin
         Continue;
       end;
 
+      if vAltNames[i].NameType = GEN_IPADD then
+      begin
+        v := UTF8StringOf(IPToBytes(v));
+      end;
+
       if ASN1_STRING_set(ia5, PByte(v), Length(v)) <> 1 then
       begin
         ASN1_IA5STRING_free(ia5);
@@ -759,9 +764,7 @@ begin
     begin
       pk := EVP_PKEY_new();
   		if (pk = nil) then
-      begin
   			exit(False);
-      end
     end
   	else
       pk := pkeyp;
@@ -1482,9 +1485,10 @@ procedure TContext.LoadSysStore(Name: utf8string);
   var
     NameLen: DWORD;
   begin
+    Result := '';
     NameLen := CertGetNameString(CertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, nil, nil, 0);
     SetLength(Result, NameLen);
-    CertGetNameString(CertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, nil, PChar(Result), NameLen);
+    CertGetNameString(CertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, nil, PAnsiChar(Result), NameLen);
     Result := TrimRight(Result);
   end;
 var
@@ -1636,4 +1640,5 @@ begin
   Result := Length(Self);
 end;
 
+initialization
 end.
