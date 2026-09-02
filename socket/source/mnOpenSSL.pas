@@ -198,6 +198,26 @@ type
     property CTX: TContext read FCTX;
   end;
 
+  TDirNameEntry = record
+    FieldName: UTF8String;
+    Value: UTF8String;
+  end;
+
+  TAltNameEntry = record
+    NameType: Integer; //GEN_DNS, GEN_IPADD, GEN_DIRNAME...
+    Value: UTF8String;
+    DirNames: array of TDirNameEntry;
+  end;
+
+  TAltNameEntries = array of TAltNameEntry;
+
+  TPemWriteProc = reference to procedure(bio: PBIO);
+
+function GenerateEckey(vNid: Integer): PEVP_PKEY;
+function BuildSanStack(const vAltNames: TAltNameEntries): PSTACK_OF_GENERAL_NAME;
+function AddSanToReq(req: PX509_REQ; const vAltNames: TAltNameEntries): Integer;
+function MakePemString(vProc: TPemWriteProc): string;
+
 procedure InitOpenSSL(All: Boolean = True);
 procedure InitOpenSSLLibrary(All: Boolean = True);
 procedure CleanupOpenSSL;
@@ -340,6 +360,183 @@ begin
   b := ECDSASign(vData, vKey);
   Result := BioBase64Encode(PByte(b[0]), Length(b)); //TODO check warning in FPC
   //Result := tnet
+end;
+
+function MakePemString(vProc: TPemWriteProc): string;
+var
+  bio: PBIO;
+  b: PByte;
+  aLen: NativeInt;
+  a: AnsiString;
+begin
+  Result := '';
+  bio := BIO_new(BIO_s_mem());
+  if bio = nil then
+    raise EmnOpenSSLException.Create('Error BIO_new mem');
+  try
+    vProc(bio);
+    aLen := BIO_get_mem_data(bio, b);
+    if (aLen <= 0) or (b = nil) then
+      raise EmnOpenSSLException.Create('Error BIO_get_mem_data');
+    SetLength(a, aLen);
+    Move(b^, a[1], aLen);
+    Result := a;
+  finally
+    BIO_free(bio);
+  end;
+end;
+
+function GenerateEckey(vNid: Integer): PEVP_PKEY;
+var
+  ec: PEC_KEY;
+begin
+  Result := EVP_PKEY_new();
+  if Result = nil then
+    raise EmnOpenSSLException.Create('Error EVP_PKEY_new');
+
+  ec := EC_KEY_new_by_curve_name(vNid);
+  if ec = nil then
+  begin
+    EVP_PKEY_free(Result);
+    Result := nil;
+    raise EmnOpenSSLException.Create('Error EC_KEY_new_by_curve_name');
+  end;
+
+  if EC_KEY_generate_key(ec) = 0 then
+  begin
+    EC_KEY_free(ec);
+    EVP_PKEY_free(Result);
+    Result := nil;
+    raise EmnOpenSSLException.Create('Error EC_KEY_generate_key');
+  end;
+
+  if EVP_PKEY_assign_EC_KEY(Result, ec) = 0 then
+  begin
+    EC_KEY_free(ec);
+    EVP_PKEY_free(Result);
+    Result := nil;
+    raise EmnOpenSSLException.Create('Error EVP_PKEY_assign_EC_KEY');
+  end;
+end;
+
+function BuildSanStack(const vAltNames: TAltNameEntries): PSTACK_OF_GENERAL_NAME;
+var
+  g: PGENERAL_NAME;
+  ia5: PASN1_IA5STRING;
+  dirName: PX509_NAME;
+  i, j: Integer;
+  ok: Boolean;
+  v: UTF8String;
+begin
+  Result := nil;
+  if Length(vAltNames) = 0 then
+    Exit;
+
+  Result := sk_GENERAL_NAME_new_null();
+  if Result = nil then
+    raise EmnOpenSSLException.Create('Error sk_GENERAL_NAME_new_null');
+
+  for i := Low(vAltNames) to High(vAltNames) do
+  begin
+    g := GENERAL_NAME_new();
+    if g = nil then
+    begin
+      Log.writeln('Error GENERAL_NAME_new');
+      Continue;
+    end;
+
+    if vAltNames[i].NameType = GEN_DIRNAME then
+    begin
+      dirName := X509_NAME_new();
+      if dirName = nil then
+      begin
+        GENERAL_NAME_free(g);
+        Continue;
+      end;
+
+      ok := True;
+      for j := Low(vAltNames[i].DirNames) to High(vAltNames[i].DirNames) do
+      begin
+        if X509_NAME_add_entry_by_txt(dirName,
+            PUTF8Char(vAltNames[i].DirNames[j].FieldName), MBSTRING_UTF8,
+            PByte(vAltNames[i].DirNames[j].Value), -1, -1, 0) <> 1 then
+        begin
+          ok := False;
+          Break;
+        end;
+      end;
+
+      if not ok then
+      begin
+        X509_NAME_free(dirName);
+        GENERAL_NAME_free(g);
+        Continue;
+      end;
+
+      //Ownership of dirName is transferred to g
+      GENERAL_NAME_set0_value(g, GEN_DIRNAME, Pointer(dirName));
+    end
+    else
+    begin
+      v := vAltNames[i].Value;
+      if v = '' then
+      begin
+        GENERAL_NAME_free(g);
+        Continue;
+      end;
+
+      ia5 := ASN1_IA5STRING_new();
+      if ia5 = nil then
+      begin
+        GENERAL_NAME_free(g);
+        Continue;
+      end;
+
+      if ASN1_STRING_set(ia5, PByte(v), Length(v)) <> 1 then
+      begin
+        ASN1_IA5STRING_free(ia5);
+        GENERAL_NAME_free(g);
+        Continue;
+      end;
+
+      GENERAL_NAME_set0_value(g, vAltNames[i].NameType, Pointer(ia5));
+    end;
+
+    if sk_GENERAL_NAME_push(Result, g) = 0 then
+      GENERAL_NAME_free(g);
+  end;
+end;
+
+//Returns 1 on success, 0 on failure
+function AddSanToReq(req: PX509_REQ; const vAltNames: TAltNameEntries): Integer;
+var
+  gens: PSTACK_OF_GENERAL_NAME;
+  extStack: Pstack_st_X509_EXTENSION;
+begin
+  Result := 0;
+  if req = nil then
+    Exit;
+
+  gens := BuildSanStack(vAltNames);
+  if gens = nil then
+    Exit;
+
+  try
+    extStack := nil;
+
+    if X509V3_add1_i2d(Pstack_st_X509_EXTENSION(@extStack), NID_subject_alt_name,
+        Pointer(gens), 0, X509V3_ADD_APPEND) <> 1 then
+      raise EmnOpenSSLException.Create('Error X509V3_add1_i2d failed for SAN');
+
+    if X509_REQ_add_extensions(req, extStack) <> 1 then
+      raise EmnOpenSSLException.Create('Error X509_REQ_add_extensions');
+
+    Result := 1;
+  finally
+    sk_GENERAL_NAME_pop_free(gens, Pointer(@GENERAL_NAME_free));
+    if extStack <> nil then
+      sk_X509_EXTENSION_pop_free(extStack, Pointer(@X509_EXTENSION_free));
+  end;
 end;
 
 function AddExt(cert: PX509; nid: integer; value: PUTF8Char): Integer;
