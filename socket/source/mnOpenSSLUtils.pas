@@ -6,10 +6,10 @@ unit mnOpenSSLUtils;
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
 {$M+}{$H+}
-{$IFDEF FPC}
+{$ifdef fpc}
 {$mode delphi}
 {$error 'Delphi Only'}
-{$ENDIF}
+{$endif}
 
 //I mixed of 2 of examples
 //https://github.com/irtimmer/moonlight-embedded/blob/master/libgamestream/mkcert.c
@@ -34,6 +34,7 @@ type
   end;
 
   TPX509Helper = record helper for PX509
+  public
     procedure SetSerial(vSerial: Integer);
     procedure AdjTime(vDays: NativeInt); overload;
     procedure AdjTime(vFrom, vTo: NativeInt); overload;

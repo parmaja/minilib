@@ -216,7 +216,7 @@ type
 function GenerateEckey(vNid: Integer): PEVP_PKEY;
 function BuildSanStack(const vAltNames: TAltNameEntries): PSTACK_OF_GENERAL_NAME;
 function AddSanToReq(req: PX509_REQ; const vAltNames: TAltNameEntries): Integer;
-function MakePemString(vProc: TPemWriteProc): string;
+function MakePemString(vProc: TPemWriteProc): UTF8String;
 
 procedure InitOpenSSL(All: Boolean = True);
 procedure InitOpenSSLLibrary(All: Boolean = True);
@@ -362,7 +362,7 @@ begin
   //Result := tnet
 end;
 
-function MakePemString(vProc: TPemWriteProc): string;
+function MakePemString(vProc: TPemWriteProc): UTF8String;
 var
   bio: PBIO;
   b: PByte;
