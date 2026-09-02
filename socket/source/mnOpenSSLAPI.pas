@@ -53,68 +53,68 @@ type
 
   POPENSSL_INIT_SETTINGS = ^TOPENSSL_INIT_SETTINGS;
 
-  //PSLLObject = class(TObject);
+  //PSSLObject = class(TObject);
   {$ifdef FPC}
-  SSLObject = record end;
-  PSLLObject = ^SSLObject; //* Unfortunately FPC have no `type of` :(
-  //PSLLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
+  //SSLObject = record end;
+  //PSSLObject = ^SSLObject;
+  PSSLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
   {$else}
 //  SSLObject = record end;
-//  PSLLObject = ^SSLObject; //* Unfortunately FPC have no `type of` :(
-  PSLLObject = type Pointer;
-  //PSLLObject = type of Pointer; for check errors and not wrking with helper need check in future
+//  PSSLObject = ^SSLObject; //* Unfortunately FPC have no `type of` :(
+  PSSLObject = type Pointer;
+  //PSSLObject = type of Pointer; for check errors and not wrking with helper need check in future
   {$endif}
-  PPSLLObject = ^PSLLObject;
+  PPSSLObject = ^PSSLObject;
 
-  PSSL = PSLLObject;
-  PSSL_CTX = PSLLObject;
-  PSSL_METHOD = PSLLObject;
-  PBIO = PSLLObject;
+  PSSL = PSSLObject;
+  PSSL_CTX = PSSLObject;
+  PSSL_METHOD = PSSLObject;
+  PBIO = PSSLObject;
 
-  PBIGNUM = PSLLObject;
-  PBN_GENCB = PSLLObject;
+  PBIGNUM = PSSLObject;
+  PBN_GENCB = PSSLObject;
   PRSA = Pointer;
   PPRSA = Pointer;
 
   PASN1_VALUE = Pointer;
   PPASN1_VALUE = ^PASN1_VALUE;
 
-  PX509 = type PSLLObject;
+  PX509 = type PSSLObject;
   PPX509 = ^PX509;
-  PX509_STORE_CTX = PSLLObject;
-  PX509_REQ = type PSLLObject;
-  PX509_CRL = PSLLObject;
-  PX509V3_CONF_METHOD = PSLLObject;
+  PX509_STORE_CTX = PSSLObject;
+  PX509_REQ = type PSSLObject;
+  PX509_CRL = PSSLObject;
+  PX509V3_CONF_METHOD = PSSLObject;
   PPX509_REQ = ^PX509_REQ;
-  PX509_NAME = PSLLObject;
-  PX509_EXTENSION = PSLLObject;
-  PLHASH = PSLLObject;
-  PX509_STORE = type PSLLObject;
+  PX509_NAME = PSSLObject;
+  PX509_EXTENSION = PSSLObject;
+  PLHASH = PSSLObject;
+  PX509_STORE = type PSSLObject;
 
-  PEC_KEY = PSLLObject;
+  PEC_KEY = PSSLObject;
   PPEC_KEY = ^PEC_KEY;
-  PEC_KEY_METHOD = PSLLObject;
+  PEC_KEY_METHOD = PSSLObject;
   PPEC_KEY_METHOD = ^PEC_KEY_METHOD;
 
-  PKCS12 = PSLLObject;
+  PKCS12 = PSSLObject;
   PPKCS12 = ^PKCS12;
 
-  PBIO_METHOD = PSLLObject;
+  PBIO_METHOD = PSSLObject;
   PPBIO_METHOD = ^PBIO_METHOD;
 
-  PEVP_MD_CTX = PSLLObject;
+  PEVP_MD_CTX = PSSLObject;
   PPEVP_MD_CTX = ^PEVP_MD_CTX;
 
   Ppem_password_cb = Pointer;
 
-  PEVP_CIPHER = PSLLObject;
-  PEVP_PKEY = PSLLObject;
+  PEVP_CIPHER = PSSLObject;
+  PEVP_PKEY = PSSLObject;
   PPEVP_PKEY = ^PEVP_PKEY;
-  PEVP_MD = PSLLObject;
+  PEVP_MD = PSSLObject;
 
-  PEC_GROUP = PSLLObject;
+  PEC_GROUP = PSSLObject;
   PPEC_GROUP = ^PEC_GROUP;
-  PEC_POINT = PSLLObject;
+  PEC_POINT = PSSLObject;
   PPEC_POINT = ^PEC_POINT;
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
@@ -141,9 +141,9 @@ type
   TX509V3_CTX = TV3_ext_ctx;
   PX509V3_CTX = ^TX509V3_CTX;
 
-  POPENSSL_STACK = PSLLObject;
+  POPENSSL_STACK = PSSLObject;
   PPOPENSSL_STACK = ^POPENSSL_STACK;
-  PSTACK_OF_GENERAL_NAME = PSLLObject;
+  PSTACK_OF_GENERAL_NAME = PSSLObject;
   PPSTACK_OF_GENERAL_NAME = ^PSTACK_OF_GENERAL_NAME;
 
   TASN1_string = record
@@ -212,7 +212,7 @@ type
   PASN1_SCTX = Pointer;
   PPASN1_SCTX = ^PASN1_SCTX;
 
-  Pstack_st_X509_EXTENSION = PSLLObject;
+  Pstack_st_X509_EXTENSION = PSSLObject;
   PPstack_st_X509_EXTENSION = ^Pstack_st_X509_EXTENSION;
 
   TASN1_ENCODING = record
@@ -315,8 +315,8 @@ type
   PGENERAL_NAME = ^TGENERAL_NAME;
   PPGENERAL_NAME = ^PGENERAL_NAME;
 
-  PX509_ALGOR = PSLLObject;
-  EVP_CIPHER_INFO = PSLLObject;
+  PX509_ALGOR = PSSLObject;
+  EVP_CIPHER_INFO = PSSLObject;
 
   TPrivate_Key = record
     version: integer;
@@ -638,7 +638,7 @@ var
   d2i_X509: function(px: PPX509; data: PPointer; size: Integer): PX509; cdecl;
   d2i_PKCS12_bio: function(bp: PBIO; p: PPKCS12): PKCS12; cdecl; //return PKCS12
 
-  PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; out pkey: PEVP_PKEY; out cert: PX509; var ca: PSLLObject): Integer; cdecl;
+  PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; out pkey: PEVP_PKEY; out cert: PX509; var ca: PSSLObject): Integer; cdecl;
   PKCS12_free: procedure(a: PKCS12); cdecl;
 
   //Aliases functions

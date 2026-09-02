@@ -1104,7 +1104,7 @@ procedure TContext.LoadPFXFromBio(bio: PBIO; Password: utf8string);
 var
   p12: PKCS12;
   cert: PX509;
-  chain: PSLLObject;
+  chain: POPENSSL_STACK;
   c, i: Integer;
   pPassword: Pointer;
 begin
