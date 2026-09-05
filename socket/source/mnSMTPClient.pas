@@ -26,6 +26,45 @@ uses
   mnTypes, mnUtils, mnClasses, mnFields, mnParams, mnModules, mnSockets, mnJobs, mnBase64,
   mnClients, mnStreams, mnStreamUtils;
 
+const
+  // 2xx - Success
+  SMTP_SYSTEM_STATUS          = 211; // System status / help reply
+  SMTP_HELP_MESSAGE           = 214; // Help message
+  SMTP_SERVICE_READY          = 220; // <domain> Service ready (on connect)
+  SMTP_SERVICE_CLOSING        = 221; // Service closing transmission channel (after QUIT)
+  SMTP_AUTH_SUCCESS           = 235; // Authentication successful
+  SMTP_OK                     = 250; // Requested mail action okay, completed
+  SMTP_USER_NOT_LOCAL         = 251; // User not local; will forward
+  SMTP_CANNOT_VERIFY          = 252; // Cannot VRFY user, but will accept message
+
+  // 3xx - Intermediate (more input required)
+  SMTP_AUTH_CONTINUE          = 334; // Server challenge, continue with AUTH exchange
+  SMTP_START_MAIL_INPUT       = 354; // Start mail input; end with <CRLF>.<CRLF>
+
+  // 4xx - Temporary failure (retry later)
+  SMTP_SERVICE_NOT_AVAILABLE  = 421; // Service not available, closing channel
+  SMTP_MAILBOX_BUSY           = 450; // Requested action not taken: mailbox busy/blocked
+  SMTP_LOCAL_ERROR            = 451; // Requested action aborted: local error in processing
+  SMTP_INSUFFICIENT_STORAGE   = 452; // Requested action not taken: insufficient system storage
+  SMTP_TEMP_AUTH_FAILURE      = 454; // Temporary authentication failure
+  SMTP_PARAMS_ERROR           = 455; // Server unable to accommodate parameters
+
+  // 5xx - Permanent failure
+  SMTP_SYNTAX_ERROR           = 500; // Syntax error, command unrecognized
+  SMTP_SYNTAX_ERROR_PARAMS    = 501; // Syntax error in parameters or arguments
+  SMTP_COMMAND_NOT_IMPLEMENTED= 502; // Command not implemented
+  SMTP_BAD_SEQUENCE           = 503; // Bad sequence of commands
+  SMTP_PARAM_NOT_IMPLEMENTED  = 504; // Command parameter not implemented
+  SMTP_AUTH_REQUIRED          = 530; // Authentication required
+  SMTP_AUTH_TOO_WEAK          = 534; // Authentication mechanism too weak
+  SMTP_AUTH_CREDENTIALS_INVALID = 535; // Authentication credentials invalid
+  SMTP_ENCRYPTION_REQUIRED    = 538; // Encryption required for requested auth mechanism
+  SMTP_MAILBOX_UNAVAILABLE    = 550; // Requested action not taken: mailbox unavailable
+  SMTP_USER_NOT_LOCAL_FWD     = 551; // User not local; please try <forward-path>
+  SMTP_EXCEEDED_STORAGE       = 552; // Requested mail action aborted: exceeded storage allocation
+  SMTP_MAILBOX_NAME_INVALID   = 553; // Requested action not taken: mailbox name not allowed
+  SMTP_TRANSACTION_FAILED     = 554; // Transaction failed / no valid recipients
+
 type
 
   TmnCustomSMTPClient = class;
@@ -127,6 +166,21 @@ implementation
 
 const
   sUserAgent = 'mnMAIL';
+
+function IsSMTPSuccess(ACode: Integer): Boolean;
+begin
+  Result := (ACode >= 200) and (ACode < 300);
+end;
+
+function IsSMTPTemporaryFailure(ACode: Integer): Boolean;
+begin
+  Result := (ACode >= 400) and (ACode < 500);
+end;
+
+function IsSMTPPermanentFailure(ACode: Integer): Boolean;
+begin
+  Result := ACode >= 500;
+end;
 
 function ScanString(S: string; out Separator: Char; out Code, Message: string): Boolean;
 var
@@ -388,13 +442,13 @@ var
   procedure AuthLogin;
   begin
     WriteCommand('AUTH', 'LOGIN');
-    if ReadRespond <> 334 then
+    if ReadRespond <> SMTP_AUTH_CONTINUE then
       Exit;
     WriteLine(Base64Encode(Username));
-    if ReadRespond <> 334 then
+    if ReadRespond <> SMTP_AUTH_CONTINUE then
       Exit;
     WriteLine(Base64Encode(Password));
-    FAuthenticated := ReadRespond = 235;
+    FAuthenticated := ReadRespond = SMTP_AUTH_SUCCESS;
   end;
 
   procedure AuthPlain;
@@ -403,7 +457,7 @@ var
   begin
     s := Utf8Char(0) + Username + Utf8Char(0) + Password;
     WriteCommand('AUTH', 'PLAIN ' + Base64Encode(s));
-    FAuthenticated := ReadRespond = 235;
+    FAuthenticated := ReadRespond = SMTP_AUTH_SUCCESS;
   end;
 
 var
@@ -437,7 +491,7 @@ begin
       FSSLEnabled := True;
     end;
 
-    Result := ReadRespond = 220;
+    Result := ReadRespond = SMTP_SERVICE_READY;
     if Result then
       SendHello;
     if Result then
@@ -445,7 +499,7 @@ begin
       if not FSSLEnabled and CapabilityExists('STARTTLS') then
       begin
         WriteCommand('STARTTLS');
-        Result := ReadRespond = 220;
+        Result := ReadRespond = SMTP_SERVICE_READY;
         if Result then
         begin
           EnableSSL;
@@ -524,7 +578,7 @@ begin
   if EMail = '' then
     raise Exception.Create('SMTP Client: From EMail is Empty');
   WriteCommand('Mail From:', '<' + EMail + '>');
-  Result := ReadRespond = 250;
+  Result := ReadRespond = SMTP_OK;
 end;
 
 function TmnCustomSMTPClient.SendTo(vTo: string): Boolean;
@@ -535,7 +589,7 @@ begin
   if EMail = '' then
     raise Exception.Create('SMTP Client: To EMail is Empty');
   WriteCommand('RCPT TO:', '<' + EMail + '>');
-  Result := ReadRespond = 250;
+  Result := ReadRespond = SMTP_OK;
 end;
 
 function TmnCustomSMTPClient.SendMail(const vFrom, vTo, vSubject: string; vBody: TStringList): Boolean;
@@ -553,12 +607,12 @@ begin
       Result := SendFrom(vFrom);
       if not Result then
         Exit;
-      SendTo(vTo);
+      Result := SendTo(vTo);
       if not Result then
         Exit;
 
       WriteCommand('DATA');
-      Result := ReadRespond = 354;
+      Result := ReadRespond = SMTP_START_MAIL_INPUT;
       if not Result then
         Exit;
 
@@ -580,10 +634,10 @@ begin
         WriteLine(Line);
       end;
       WriteLine(Terminator);
-      Result := ReadRespond = 250;
+      Result := ReadRespond = SMTP_OK;
 
       WriteCommand('QUIT');
-      Result := Result and (ReadRespond = 221);
+      Result := Result and (ReadRespond = SMTP_SERVICE_CLOSING);
     end;
   end;
 end;
