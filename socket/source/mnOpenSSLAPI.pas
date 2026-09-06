@@ -698,7 +698,7 @@ type
     {$ifdef MSWINDOWS}
     tv_sec: Longint;
     {$else}
-    tv_sec: PtrInt;
+    tv_sec: IntPtr;
     {$endif}
     tv_usec: Longint;
   end;

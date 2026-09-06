@@ -629,7 +629,7 @@ begin
   aHandle := Posix.SysSocket.socket(LAddrInfo.ai_family, LAddrInfo.ai_socktype, LAddrInfo.ai_protocol);
   if LAddrInfo <> nil then
   begin
-    Posix.NetDB.freeaddrinfo(LAddrInfo);
+    Posix.NetDB.freeaddrinfo(LAddrInfo^);
     LAddrInfo := nil;
   end;
 
@@ -681,7 +681,7 @@ begin
           end;
           if LAddrInfo <> nil then
           begin
-            Posix.NetDB.freeaddrinfo(LAddrInfo);
+            Posix.NetDB.freeaddrinfo(LAddrInfo^);
             LAddrInfo := nil;
           end;
         end;

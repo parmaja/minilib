@@ -448,7 +448,9 @@ var
   {$IFDEF MSWINDOWS}
   EnvBlock, P: PChar;
   {$else}
-  EnvVar: PAnsiChar;
+  s: string;
+  p: PPChar;
+  I: Integer;
   {$endif}
 begin
   if not Assigned(List) then
@@ -457,33 +459,33 @@ begin
   List.BeginUpdate;
   try
     List.Clear;
-    
+
     {$IFDEF MSWINDOWS}
     EnvBlock := GetEnvironmentStrings;
     try
-      if EnvBlock = nil then 
+      if EnvBlock = nil then
         Exit;
 
       P := EnvBlock;
       while P^ <> #0 do
       begin
-        List.Add(P);        
-        Inc(P, StrLen(P) + 1); 
+        List.Add(P);
+        Inc(P, StrLen(P) + 1);
       end;
     finally
       FreeEnvironmentStrings(EnvBlock);
     end;
     {$ELSE}
     // On POSIX (Linux/macOS), we iterate through the 'environ' global variable
+    P := envp;   // System.envp
+    if P = nil then Exit;
     I := 0;
-    while True do
+    while p^<>nil do
     begin
-      EnvVar := GetEnviron[I];
-      if not Assigned(EnvVar) then
-        Break;
-      
-      List.Add(UTF8ToString(EnvVar));
-      Inc(I);
+      S := UTF8ToString(P^);
+      if S.IndexOf('=')>0 then
+        List.Add(s);
+      Inc(p);
     end;
     {$ENDIF}
   finally
