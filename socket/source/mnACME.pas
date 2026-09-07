@@ -635,10 +635,7 @@ var
     m := TMemoryStream.Create;
     try
       aHttpClient.ReceiveStream(m);
-      m.Seek(0, soFromBeginning);
-      SetLength(Result, m.Size);
-      if m.Size > 0 then
-        Move(PByte(m.Memory)^, PAnsiChar(Pointer(Result))^, m.Size);
+      Result := TEncoding.UTF8.GetString(PByte(m.Memory), m.Size);
     finally
       m.Free;
     end;
@@ -691,16 +688,22 @@ var
     aRequest := '{"protected":"' + StrToB64Url(aProtected) + '","payload":"' + string(aPayloadB64)
       + '","signature":"' + BinToB64Url(@aSig[0], Length(aSig)) + '"}';
 
-    Log('POST ' + AURL);
 
     aRequestUTF8 := Utf8String(aRequest);
+    Log('POST ' + AURL);
+    Log('Request ' + aRequest);
+
     aHttpClient.Reconnect(AURL);
     try
       aHttpClient.Request.PutHeader('Content-Type', 'application/jose+json');
-      aHttpClient.Post(PByte(PAnsiChar(aRequestUTF8)), Length(aRequestUTF8));
+      aHttpClient.Post(PByte(aRequestUTF8), Length(aRequestUTF8));
       ABody := ReadResponseBody;
       Result := aHttpClient.Response.Header['Location'];
       aNonce := ''; //each nonce is single use
+      Log('Head:' + aHttpClient.Response.Head);
+      Log('Header:' + aHttpClient.Response.Header.ToString);
+      Log('Response:' + ABody);
+
     finally
       aHttpClient.Disconnect;
     end;
