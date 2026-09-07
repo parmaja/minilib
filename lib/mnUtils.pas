@@ -23,7 +23,7 @@ interface
 
 uses
   {$ifdef windows}Windows, ShellAPI, {$endif}
-  Classes, SysUtils, StrUtils, DateUtils, Types, Character, IOUtils,
+  Classes, SysUtils, StrUtils, DateUtils, Types, Character,
   mnTypes;
 
 procedure Nothing;

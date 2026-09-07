@@ -402,7 +402,7 @@ object Main: TMain
     Top = 83
     Width = 97
     Height = 17
-    Caption = 'StagingChk'
+    Caption = 'Staging'
     TabOrder = 20
     OnClick = StayOnTopChkClick
   end

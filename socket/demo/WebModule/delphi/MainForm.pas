@@ -60,6 +60,8 @@ type
     procedure Button1Click(Sender: TObject);
   private
     FMax:Integer;
+    AcmeEmail: string;
+    AcmeDomain: string;
     CertPassword: string;
     CertFile: string;
     PrivateKeyFile: string;
@@ -303,26 +305,18 @@ begin
 end;
 
 procedure TMain.Button1Click(Sender: TObject);
-var
-  aDirectoryURL: string;
 begin
   //Renew certificate from https://letsencrypt.org/ (ACME v2, http-01 challenge)
   //Challenge server must be started to serve .well-known/acme-challenge
   //Check "Staging" to test against https://acme-staging-v02.api.letsencrypt.org
   //without hitting the production rate limits
-  if StagingChk.Checked then
-    aDirectoryURL := cLetsEncryptStaging
-  else
-    aDirectoryURL := cLetsEncryptProduction;
 
-  HttpServer.RenewCertificate(
-    'dirkey.ddns.net',
-    'zaherdirkey@yahoo.com',
+  RenewCertificate(
+    AcmeDomain,
+    AcmeEmail,
     CertFile,
     PrivateKeyFile,
-    ExtractFilePath(ParamStr(0)) + 'acme\.well-known\acme-challenge\',
-    ServerLog,
-    aDirectoryURL);
+    ExtractFilePath(ParamStr(0)) + 'acme\.well-known\acme-challenge\',  StagingChk.Checked, ServerLog);
 end;
 
 procedure TMain.Button2Click(Sender: TObject);
@@ -355,6 +349,11 @@ var
   function GetOption(AName: string; ADefault: Boolean): Boolean; overload;
   begin
     Result := aIni.ReadBool('options', AName, ADefault);
+  end;
+
+  function GetValue(ASection, AName: string; ADefault: string = ''): string; overload;
+  begin
+    Result := aIni.ReadString(ASection, AName, ADefault);
   end;
 
   function GetSwitch(AName, ADefault: string): string;//if found in cmd mean it is true
@@ -403,11 +402,17 @@ begin
     UseSSLChk.Checked := GetOption('ssl', false);
     KeepAliveChk.Checked := GetOption('keep_alive', false);
     CompressChk.Checked := GetOption('compress', false);
+
     ChallengeSSLChk.Checked := GetOption('challenge', False);
     StagingChk.Checked := GetOption('staging', False);
-    CertPassword := GetOption('cert_password', '');
-    CertFile := CorrectPath(ExpandToPath(GetOption('certificate', './certificate.pem'), ExtractFilePath(Application.ExeName)));
-    PrivateKeyFile := CorrectPath(ExpandToPath(GetOption('privatekey', './privatekey.pem'), ExtractFilePath(Application.ExeName)));
+
+    AcmeEmail := GetValue('acme' , 'Email');
+    AcmeDomain := GetValue('acme' , 'Domain');
+
+    CertPassword := GetValue('cert' , 'cert_password');
+    CertFile := CorrectPath(ExpandToPath(GetValue('cert' ,'certificate', './certificate.pem'), ExtractFilePath(Application.ExeName)));
+    PrivateKeyFile := CorrectPath(ExpandToPath(GetValue('cert' ,'privatekey', './privatekey.pem'), ExtractFilePath(Application.ExeName)));
+
     aBounds.Left := aIni.ReadInteger('window', 'left', Left);
     aBounds.Top := aIni.ReadInteger('window', 'top', Top);
     aBounds.Width := aIni.ReadInteger('window', 'width', Width);
