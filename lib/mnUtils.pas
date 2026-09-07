@@ -23,7 +23,7 @@ interface
 
 uses
   {$ifdef windows}Windows, ShellAPI, {$endif}
-  Classes, SysUtils, StrUtils, DateUtils, Types, Character,
+  Classes, SysUtils, StrUtils, DateUtils, Types, Character, IOUtils,
   mnTypes;
 
 procedure Nothing;
@@ -448,9 +448,9 @@ var
   {$IFDEF MSWINDOWS}
   EnvBlock, P: PChar;
   {$else}
-  s: string;
-  p: PPChar;
-  I: Integer;
+  Raw: TBytes;
+  Start, i, Len: Integer;
+  Line: string;
   {$endif}
 begin
   if not Assigned(List) then
@@ -477,22 +477,28 @@ begin
     end;
     {$ELSE}
     // On POSIX (Linux/macOS), we iterate through the 'environ' global variable
-    P := envp;   // System.envp
-    if P = nil then Exit;
-    I := 0;
-    while p^<>nil do
+
+    Raw := LoadFileBytes('/proc/self/environ');
+    Start := 0;
+    for i := 0 to Length(Raw) - 1 do
     begin
-      S := UTF8ToString(P^);
-      if S.IndexOf('=')>0 then
-        List.Add(s);
-      Inc(p);
+      if Raw[i] = 0 then
+      begin
+        Len := i - Start;
+        if Len > 0 then
+        begin
+          Line := TEncoding.UTF8.GetString(Raw, Start, Len);
+          List.Add(Line);
+        end;
+        Start := i + 1;
+      end;
     end;
     {$ENDIF}
   finally
     List.EndUpdate;
   end;
 end;
-  
+
 function EnvironmentValues: TStrings;
 begin
   if FEnvironmentValues = nil then
@@ -3226,7 +3232,12 @@ function LoadFileBytes(const vFile: TFileName): TBytes;
 var
   aSize: Int64;
   aStream: TFileStream;
+  {$IFDEF POSIX}
+  aBuffer: array[0..4095] of Byte;
+  aBytesRead, aTotal: Integer;
+  {$ENDIF}
 begin
+  Result := nil;
   if FileExists(vFile) then
   begin
     aStream := TFileStream.Create(vFile, fmOpenRead or fmShareDenyWrite);
@@ -3236,14 +3247,27 @@ begin
       begin
         SetLength(Result, aSize);
         aStream.ReadBuffer(Result, aSize);
-        Exit;
       end
+      else if aSize=0 then
+      begin
+        {$IFDEF POSIX}
+        //TFile.ReadAllBytes (and TFileStream.Size) trust fstat(), like /proc/self/environ always reports a size of 0, even though read() returns real data.
+        aTotal := 0;
+        repeat
+          aBytesRead := aStream.Read(aBuffer, SizeOf(aBuffer));
+          if aBytesRead > 0 then
+          begin
+            SetLength(Result, aTotal + aBytesRead);
+            Move(aBuffer[0], Result[aTotal], aBytesRead);
+            Inc(aTotal, aBytesRead);
+          end;
+        until aBytesRead < SizeOf(aBuffer);
+       {$ENDIF}
+      end;
     finally
       aStream.Free;
     end;
   end;
-
-  Result := nil;
 end;
 
 function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer;
