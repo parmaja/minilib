@@ -1001,7 +1001,21 @@ begin
     DoBeforeOpen; //* Init/read/load config values
     DoStarting; //* more init values from read config
     if IsSecure then
+    begin
+      if not FileExists(CertificateFile) then
+      begin
+        DoLog('CertificateFile not exists');
+        Exit;
+      end;
+
+      if not FileExists(PrivateKeyFile) then
+      begin
+        DoLog('PrivateKeyFile not exists');
+        Exit;
+      end;
+
       InitOpenSSL;
+    end;
     FListener := CreateListener;
     try
       FListener.FServer := Self;

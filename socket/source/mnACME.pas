@@ -848,7 +848,8 @@ begin
     end;
 
     aKeyAuthz := aToken + '.' + aThumbprint;
-    aTokenFile := IncludePathDelimiter(AChallengeDir) + aToken;
+    aTokenFile := IncludePathDelimiter(AChallengeDir) + 'acme-challenge' + PathDelim + aToken;
+    mnUtils.LoadFileBytes
     with TStringList.Create do
     try
       Add(aKeyAuthz);
