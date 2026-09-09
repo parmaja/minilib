@@ -381,45 +381,8 @@ begin
 end;
 
 function CertExpiryDateFromFile(const ACertificateFile: string): TDateTime;
-var
-  aExpiryFile: string;
-  sl: TStringList;
-  s: string;
 begin
-  Result := 0;
-  aExpiryFile := ChangeFileExt(ACertificateFile, '.expiry');
-  if FileExists(aExpiryFile) then
-  begin
-    sl := TStringList.Create;
-    try
-      sl.LoadFromFile(aExpiryFile);
-      if sl.Count > 0 then
-      begin
-        //format: "yyyy-mm-dd hh:nn:ss UTC"
-        s := Trim(sl[0]);
-        if Length(s) >= 19 then
-        try
-          Result := EncodeDate(
-            StrToIntDef(Copy(s,  1, 4), 0),
-            StrToIntDef(Copy(s,  6, 2), 0),
-            StrToIntDef(Copy(s,  9, 2), 0)
-          ) + EncodeTime(
-            StrToIntDef(Copy(s, 12, 2), 0),
-            StrToIntDef(Copy(s, 15, 2), 0),
-            StrToIntDef(Copy(s, 18, 2), 0),
-            0
-          );
-        except
-          Result := 0;
-        end;
-      end;
-    finally
-      sl.Free;
-    end;
-  end;
-  //Fall back to parsing the PEM directly when sidecar is missing
-  if Result = 0 then
-    Result := CertExpiryDate(ACertificateFile);
+  Result := CertExpiryDate(ACertificateFile);
 end;
 
 function CertDaysLeft(const ACertificateFile: string): Integer;
@@ -803,13 +766,7 @@ begin
         raise Exception.Create('ACME: no account Location returned');
       Log('account created: ' + aKid);
       if AAccountKidFile <> '' then
-        with TStringList.Create do
-        try
-          Add(aKid);
-          SaveToFile(AAccountKidFile);
-        finally
-          Free;
-        end;
+        SaveFileBytes(TEncoding.UTF8.GetBytes(aKid), AAccountKidFile);
     end;
 
     //3. new order
@@ -849,14 +806,8 @@ begin
 
     aKeyAuthz := aToken + '.' + aThumbprint;
     aTokenFile := IncludePathDelimiter(AChallengeDir) + 'acme-challenge' + PathDelim + aToken;
-    mnUtils.LoadFileBytes
-    with TStringList.Create do
-    try
-      Add(aKeyAuthz);
-      SaveToFile(aTokenFile);
-    finally
-      Free;
-    end;
+    SaveFileBytes(TEncoding.UTF8.GetBytes(aKeyAuthz), aTokenFile);
+
     Log('challenge file saved: ' + aTokenFile);
     Log('make sure it is served at http://' + ADomain + '/.well-known/acme-challenge/' + aToken);
 
@@ -890,23 +841,7 @@ begin
     RaiseAcmeError(aCertPem, 'certificate');
 
     ForceDirectories(ExtractFilePath(ACertificateFile));
-    with TStringList.Create do
-    try
-      Text := aCertPem;
-      SaveToFile(ACertificateFile);
-    finally
-      Free;
-    end;
-
-    //Save expiry date to a sidecar .expiry file (ISO-8601 UTC) next to the certificate
-    //so the caller can check it daily without parsing the PEM again.
-    with TStringList.Create do
-    try
-      Add(FormatDateTime('yyyy-mm-dd hh:nn:ss', CertExpiryDate(ACertificateFile)) + ' UTC');
-      SaveToFile(ChangeFileExt(ACertificateFile, '.expiry'));
-    finally
-      Free;
-    end;
+    SaveFileBytes(TEncoding.UTF8.GetBytes(aCertPem), ACertificateFile);
 
     DeleteFile(aTokenFile);
 

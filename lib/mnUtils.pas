@@ -374,6 +374,9 @@ function DeleteFiles(const Path, Files: string): Integer;
 function LoadFileString(FileName: string): string;
 function LoadFileBytes(const vFile: TFileName): TBytes; //Thanks to Belal
 
+procedure SaveFileBytes(const vData: TBytes; const vFile: string); overload;
+procedure SaveFileBytes(vData: PByte; vLen: Integer; const vFile: string); overload;
+
 type
   TFileInfo = record
     Exists: Boolean;
@@ -3225,6 +3228,23 @@ begin
     Result := Stream.DataString;
   finally
     Stream.Free;
+  end;
+end;
+
+procedure SaveFileBytes(const vData: TBytes; const vFile: string);
+begin
+  SaveFileBytes(PByte(@vData[0]), Length(vData), vFile);
+end;
+
+procedure SaveFileBytes(vData: PByte; vLen: Integer; const vFile: string);
+var
+  f: TFileStream;
+begin
+  f := TFileStream.Create(vFile, fmCreate);
+  try
+    f.Write(vData^, vLen);
+  finally
+    f.Free;
   end;
 end;
 
