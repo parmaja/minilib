@@ -7,7 +7,7 @@
       <Version Value="11"/>
       <SearchPaths>
         <IncludeFiles Value="$(ProjOutDir)"/>
-        <OtherUnitFiles Value="."/>
+        <OtherUnitFiles Value=".;../font"/>
         <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
@@ -155,6 +155,10 @@
       <Item>
         <Filename Value="mnTypes.pas"/>
         <UnitName Value="mnTypes"/>
+      </Item>
+      <Item>
+        <Filename Value="../font/mnBDF.pp"/>
+        <UnitName Value="mnBDF"/>
       </Item>
     </Files>
     <RequiredPkgs>

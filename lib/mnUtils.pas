@@ -280,8 +280,8 @@ function ExcludePathDelimiter(Path: string): string;
 function IncludeURLDelimiter(const S: string): string; //deprecated 'AddEndURLDelimiter';
 function IsURLDelimiter(const S: string): Boolean;
 
-function StartsDelimiter(const vFileName: string): Boolean;
-function EndsDelimiter(const vFileName: string): Boolean;
+function StartsDelimiter(const FileName: string): Boolean;
+function EndsDelimiter(const FileName: string): Boolean;
 
 //If empty do not add
 function AddStartDelimiter(const Path: string; Delimiter: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
@@ -371,11 +371,11 @@ procedure EnumFiles(Callback: TEnumFilesCallback; AObject: TObject; const Folder
 function FirstFile(const Path, Files: string): string;
 function DeleteFiles(const Path, Files: string): Integer;
 
-function LoadFileString(FileName: string): string;
-function LoadFileBytes(const vFile: TFileName): TBytes; //Thanks to Belal
-
-procedure SaveFileBytes(const vData: TBytes; const vFile: string); overload;
-procedure SaveFileBytes(vData: PByte; vLen: Integer; const vFile: string); overload;
+function LoadFileString(const FileName: string): string;
+procedure SaveFileUTF8String(const FileName, S: utf8string);
+function LoadFileBytes(const FileName: TFileName): TBytes;
+procedure SaveFileBytes(const Data: TBytes; const FileName: string); overload;
+procedure SaveFileBytes(Data: PByte; Size: Integer; const FileName: string); overload;
 
 type
   TFileInfo = record
@@ -384,10 +384,10 @@ type
     Size: Int64;
   end;
   
-function GetFileInfo(const vFile: string; out Info: TFileInfo): Boolean; overload;
-function GetFileInfo(const vFile: string): TFileInfo; overload; 
+function GetFileInfo(const FileName: string; out Info: TFileInfo): Boolean; overload;
+function GetFileInfo(const FileName: string): TFileInfo; overload; 
 
-function GetSizeOfFile(const vFile: string): Int64; deprecated; //GetFileSize
+function GetSizeOfFile(const FileName: string): Int64; deprecated; //GetFileSize
 
 //mnMulDiv not using windows unit
 function mnMulDiv(nNumber, nNumerator, nDenominator: Integer): Integer; overload;
@@ -1645,14 +1645,14 @@ begin
   end;
 end;
 
-function StartsDelimiter(const vFileName: string): Boolean;
+function StartsDelimiter(const FileName: string): Boolean;
 begin
-  Result := StartsStr('/', vFileName) or StartsStr('\', vFileName);
+  Result := StartsStr('/', FileName) or StartsStr('\', FileName);
 end;
 
-function EndsDelimiter(const vFileName: string): Boolean;
+function EndsDelimiter(const FileName: string): Boolean;
 begin
-  Result := EndsStr('/', vFileName) or EndsStr('\', vFileName);
+  Result := EndsStr('/', FileName) or EndsStr('\', FileName);
 end;
 
 function ExpandToPath(FileName: string; Path: string; Root: string): string;
@@ -3109,11 +3109,11 @@ begin
   end;
 end;
 
-function GetSizeOfFile(const vFile: string): Int64;
+function GetSizeOfFile(const FileName: string): Int64;
 var
   R: TSearchRec;
 begin
-  if SysUtils.FindFirst(vFile, faAnyFile, R) = 0 then
+  if SysUtils.FindFirst(FileName, faAnyFile, R) = 0 then
   begin
     Result := R.Size;
     SysUtils.FindClose(R);
@@ -3122,11 +3122,11 @@ begin
     Result := -1;
 end;
 
-function GetFileInfo(const vFile: string; out Info: TFileInfo): Boolean; 
+function GetFileInfo(const FileName: string; out Info: TFileInfo): Boolean; 
 var
   R: TSearchRec;
 begin
-  if SysUtils.FindFirst(vFile, faAnyFile, R) = 0 then
+  if SysUtils.FindFirst(FileName, faAnyFile, R) = 0 then
   begin
     Info.TimeStamp := R.TimeStamp;
     Info.Size := R.Size;
@@ -3140,9 +3140,9 @@ begin
   end;
 end;
 
-function GetFileInfo(const vFile: string): TFileInfo; overload; inline;
+function GetFileInfo(const FileName: string): TFileInfo; overload; inline;
 begin
-  GetFileInfo(vFile, Result);
+  GetFileInfo(FileName, Result);
 end;
 
 procedure EnumFiles(Callback: TEnumFilesCallback; AObject: TObject; const Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
@@ -3218,7 +3218,7 @@ begin
   end;
 end;
 
-function LoadFileString(FileName: string): string;
+function LoadFileString(const FileName: string): string;
 var
   Stream : TStringStream;
 begin
@@ -3231,24 +3231,36 @@ begin
   end;
 end;
 
-procedure SaveFileBytes(const vData: TBytes; const vFile: string);
-begin
-  SaveFileBytes(PByte(@vData[0]), Length(vData), vFile);
-end;
-
-procedure SaveFileBytes(vData: PByte; vLen: Integer; const vFile: string);
+procedure SaveFileUTF8String(const FileName, S: utf8string);
 var
   f: TFileStream;
 begin
-  f := TFileStream.Create(vFile, fmCreate);
+  f := TFileStream.Create(FileName, fmCreate);
   try
-    f.Write(vData^, vLen);
+    f.Write(PUTF8Char(S)^, Length(S));
   finally
     f.Free;
   end;
 end;
 
-function LoadFileBytes(const vFile: TFileName): TBytes;
+procedure SaveFileBytes(const Data: TBytes; const FileName: string);
+begin
+  SaveFileBytes(PByte(@Data[0]), Length(Data), FileName);
+end;
+
+procedure SaveFileBytes(Data: PByte; Size: Integer; const FileName: string);
+var
+  f: TFileStream;
+begin
+  f := TFileStream.Create(FileName, fmCreate);
+  try
+    f.Write(Data^, Size);
+  finally
+    f.Free;
+  end;
+end;
+
+function LoadFileBytes(const FileName: TFileName): TBytes;
 var
   aSize: Int64;
   aStream: TFileStream;
@@ -3258,9 +3270,9 @@ var
   {$ENDIF}
 begin
   Result := nil;
-  if FileExists(vFile) then
+  if FileExists(FileName) then
   begin
-    aStream := TFileStream.Create(vFile, fmOpenRead or fmShareDenyWrite);
+    aStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
     try
       aSize := aStream.Size;
       if aSize>0 then
