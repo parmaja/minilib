@@ -8,7 +8,7 @@ unit MiniSockets;
 interface
 
 uses
-  mnClients, mnSockets, mnIRCClients, mnHttpServer, mnModules,
+  mnClients, mnSockets, mnIRCClients, mnHttpServer, mnModules, mnOpenSSLAPI, 
   mnOpenSSL, mnZKTClients, mnHttpClient, mnWebModules;
 
 implementation

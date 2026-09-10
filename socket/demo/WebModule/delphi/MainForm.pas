@@ -316,7 +316,7 @@ begin
     AcmeEmail,
     CertFile,
     PrivateKeyFile,
-    ExtractFilePath(ParamStr(0)) + 'acme\.well-known\acme-challenge\',  StagingChk.Checked, ServerLog);
+    ExtractFilePath(ParamStr(0)) + 'acme\.well-known\',  StagingChk.Checked, ServerLog);
 end;
 
 procedure TMain.Button2Click(Sender: TObject);
