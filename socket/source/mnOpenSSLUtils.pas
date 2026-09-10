@@ -22,12 +22,9 @@ interface
 uses
   Classes, SysUtils, IniFiles,
   mnClasses, mnUtils,
-mnSockets, mnOpenSSL,
-{$IFDEF OPENSSL3}
-mnOpenSSL3API
-{$ELSE}
-mnOpenSSLAPI
-{$ENDIF};
+  mnSockets, mnOpenSSL,
+  {$IFDEF OPENSSL3}mnOpenSSL3API{$ELSE}mnOpenSSLAPI{$ENDIF};
+
 type
 
   TsslConfig = class(TMemIniFile)
