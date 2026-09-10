@@ -143,7 +143,7 @@ begin
   //without hitting the production rate limits
   if (AcmeDomain = '') or (AcmeEmail = '') then
     raise Exception.Create('Domain and EMail must defined');
-  aPath := AcmePath + '.well-known' + PathDelim + 'acme-challenge' + PathDelim;
+  aPath := AcmePath + '.well-known' + PathDelim;
   ForceDirectories(aPath);
   RenewCertificate(AcmeDomain, AcmeEmail, CertFile, PrivateKeyFile, aPath, StagingChk.Checked, ServerLog);
 end;

@@ -727,14 +727,14 @@ var
     end;
   end;
 
-  function ReadResponseBody: string;
+  function ReadResponseBody: utf8string;
   var
     m: TMemoryStream;
   begin
     m := TMemoryStream.Create;
     try
       aHttpClient.ReceiveStream(m);
-      Result := TEncoding.UTF8.GetString(PByte(m.Memory), m.Size);
+      Result := UTF8StringOf(m.Memory, m.Size);
     finally
       m.Free;
     end;
