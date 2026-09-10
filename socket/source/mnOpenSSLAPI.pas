@@ -127,7 +127,7 @@ type
   //CTX_TEST 0x1
   //X509V3_CTX_REPLACE 0x2
 
-  TV3_ext_ctx = packed record
+  TV3_ext_ctx = record
       flags: Integer;
       issuer_cert: PX509;
       subject_cert: PX509;
