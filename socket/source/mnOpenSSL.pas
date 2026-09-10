@@ -30,7 +30,7 @@ uses
   JwaWinCrypt, JwaWinType,
   {$endif}{$endif}
   mnLogs, mnLibraries, mnUtils,
-  mnOpenSSLAPI;
+  {$IFDEF OPENSSL3}mnOpenSSL3API{$ELSE}mnOpenSSLAPI{$ENDIF};
 
 type
 

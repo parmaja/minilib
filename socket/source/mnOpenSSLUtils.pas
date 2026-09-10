@@ -22,8 +22,12 @@ interface
 uses
   Classes, SysUtils, IniFiles,
   mnClasses, mnUtils,
-  mnSockets, mnOpenSSL, mnOpenSSLAPI;
-
+mnSockets, mnOpenSSL,
+{$IFDEFOPENSSL3}
+,mnOpenSSL3API
+{$ELSE}
+,mnOpenSSLAPI
+{$ENDIF};
 type
 
   TsslConfig = class(TMemIniFile)
@@ -625,7 +629,7 @@ begin
 
   dirName := X509_NAME_new();
   try
-    // Order matters for how the DN prints/encodes — match your
+    // Order matters for how the DN prints/encodes - match your
     // issuing CA's expected attribute order if one is mandated.
     {AddEntry(dirName, NID_surname,           ASN);
     AddEntry(dirName, NID_uniqueIdentifier,  AUID);
@@ -668,7 +672,7 @@ begin
         raise Exception.CreateFmt('X509V3_add1_i2d failed, ret=%d', [ret]);
     finally
       // add1_i2d serializes gens to DER internally and does NOT take
-      // ownership — you must free the stack (and its GENERAL_NAME) yourself.
+      // ownership - you must free the stack (and its GENERAL_NAME) yourself.
       sk_GENERAL_NAME_pop_free(gens, @GENERAL_NAME_free);
     end;
 

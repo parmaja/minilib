@@ -36,7 +36,7 @@ uses
   SysUtils, Classes, StrUtils,
   mnTypes, mnUtils, mnLogs, mnClasses, mnFields, mnParams, mnModules,
   mnSockets, mnClients, mnStreams, mnStreamUtils,
-  mnOpenSSL, mnOpenSSLAPI, mnBase64, mnDON, mnJSON,
+  mnOpenSSL, {$IFDEF OPENSSL3}mnOpenSSL3API{$ELSE}mnOpenSSLAPI{$ENDIF}, mnBase64, mnDON, mnJSON,
   mnWebModules, mnHttpClient;
 
 const

@@ -10,7 +10,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
-  mnOpenSSLUtils, mnOpenSSL, mnLogs, mnOpenSSLAPI,
+  mnOpenSSLUtils, mnOpenSSL, mnLogs, {$IFDEF OPENSSL3}mnOpenSSL3API{$ELSE}mnOpenSSLAPI{$ENDIF},
   mnModules, mnStreamUtils, mnUtils, mnWebElements, mnACME,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules,
   HomeModules;
