@@ -3294,17 +3294,6 @@ begin
   Result := nil;
 end;
 
-{function TmnwElementRenderers.FindRendererClass(AObjectClass: TmnwElementClass): TmnwElementRendererClass;
-var
-  o: TmnwElementRendererRegister;
-begin
-  o := Find(AObjectClass, True);
-  if o <> nil then
-    Result := o.RendererClass
-  else
-    Result := TmnwElementRenderer;
-end;}
-
 { TmnwWeb }
 
 destructor TmnwWeb.Destroy;
@@ -7208,6 +7197,7 @@ constructor TElementClass.Create(AName: string; AArea: TAttributeArea);
 begin
   Name := AName;
   Area := AArea;
+  Used := False;
 end;
 
 { THTML.TRow }
