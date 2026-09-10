@@ -23,10 +23,10 @@ uses
   Classes, SysUtils, IniFiles,
   mnClasses, mnUtils,
 mnSockets, mnOpenSSL,
-{$IFDEFOPENSSL3}
-,mnOpenSSL3API
+{$IFDEF OPENSSL3}
+mnOpenSSL3API
 {$ELSE}
-,mnOpenSSLAPI
+mnOpenSSLAPI
 {$ENDIF};
 type
 
@@ -104,7 +104,11 @@ begin
   }
 
   X509V3_set_ctx(@ctx, cert, cert, nil, nil, 0);
+  {$IFDEF OPENSSL3}
+  ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), value); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+  {$ELSE}
   ex := X509V3_EXT_conf_nid(nil, @ctx, nid, value);
+  {$ENDIF}
 
   if (ex = nil) then
   	exit(0);
@@ -118,7 +122,9 @@ function MakeCert2(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8str
 var
   x: PX509;
   pk: PEVP_PKEY;
+  {$IFNDEF OPENSSL3}
   rsa: PRSA;
+  {$ENDIF}
   name: PX509_NAME;
   bne: PBIGNUM;
   sign: Integer;
@@ -131,11 +137,15 @@ begin
     InitOpenSSLLibrary;
     if (pkeyp = nil) then
     begin
+      {$IFDEF OPENSSL3}
+      pk := nil; //key generated below via GenerateRSAKey
+      {$ELSE}
       pk := EVP_PKEY_new();
       if (pk = nil) then
       begin
         exit(False);
       end
+      {$ENDIF}
     end
     else
       pk := pkeyp;
@@ -149,6 +159,20 @@ begin
     else
       x := x509p;
 
+    {$IFDEF OPENSSL3}
+    //generate RSA key (replaces RSA_new/RSA_generate_key_ex/EVP_PKEY_assign_RSA, deprecated in OpenSSL 3.x)
+    if pk = nil then
+    begin
+      bne := BN_new();
+      if (bne = nil) then
+        exit(False);
+      BN_set_word(bne, RSA_F4);
+      pk := GenerateRSAKey(Bits, bne);
+      BN_free(bne);
+      if pk = nil then
+        exit(False);
+    end;
+    {$ELSE}
     rsa := RSA_new();
     if (rsa = nil) then
       exit(False);
@@ -168,12 +192,19 @@ begin
     res := EVP_PKEY_assign_RSA(pk, rsa);
     if (res = 0) then
       exit(False);
+    {$ENDIF}
 
     X509_set_version(x, 2);
 
     ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
+    {$IFDEF OPENSSL3}
+    //set validity (replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x)
+    X509_time_adj_ex(X509_get0_notBefore(x), 0, 0, nil);
+    X509_time_adj_ex(X509_get0_notAfter(x), 60 * 60 * 24 * Days, 0, nil);
+    {$ELSE}
     X509_gmtime_adj(X509_getm_notBefore(x), 0);
     X509_gmtime_adj(X509_getm_notAfter(x), 60 * 60 * 24 * Days);
+    {$ENDIF}
 
     X509_set_pubkey(x, pk);
     name := X509_get_subject_name(x);
@@ -256,11 +287,30 @@ begin
 end;
 
 function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
+{$IFNDEF OPENSSL3}
 var
+  //legacy: uses EC_KEY_*/EVP_PKEY_assign_EC_KEY (deprecated in OpenSSL 3.x)
   ecp: PEC_KEY;
   ecg: PEC_GROUP;
   bits: Integer;
+{$ENDIF}
 begin
+  {$IFDEF OPENSSL3}
+  Result := nil;
+  try
+    Result := GenerateECKey(NID_secp256k1);
+    if Result = nil then
+      raise Exception.Create('Error generating secp256k1 key');
+
+    X509_set_pubkey(X509, Result);
+
+    if X509_sign(X509, Result, EVP_sha256()) = 0 then
+      raise Exception.Create('Error X509_sign');
+  except
+    EVP_PKEY_free(Result);
+    Result := nil;
+  end;
+  {$ELSE}
   bits := vConfig.ReadInteger('req', 'default_bits', 2048);
 
   Result := EVP_PKEY_new();
@@ -295,6 +345,7 @@ begin
     EVP_PKEY_free(Result);
     Result := nil;
   end;
+  {$ENDIF}
 end;
 
 function MakeX509(vConfig: TsslConfig): PX509;
@@ -417,11 +468,14 @@ begin
     end));
 
     vConfig.WriteString('Result', 'PubKey', px.BIOstr(procedure(bio: PBIO)
-    var
-      rsa: PRSA;
     begin
+      {$IFDEF OPENSSL3}
+      PEM_write_bio_PUBKEY(bio, pk); //replaces EVP_PKEY_get1_RSA/PEM_write_bio_RSAPublicKey (deprecated in OpenSSL 3.x)
+      {$ELSE}
+      var rsa: PRSA;
       rsa := EVP_PKEY_get1_RSA(pk);
       PEM_write_bio_RSAPublicKey(bio, rsa);
+      {$ENDIF}
     end));
 
     vConfig.WriteString('Result', 'Cer', px.BIOstr(procedure(bio: PBIO)
@@ -491,8 +545,14 @@ end;
 
 procedure TPX509Helper.AdjTime(vFrom, vTo: NativeInt);
 begin
+  {$IFDEF OPENSSL3}
+  //replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x
+  X509_time_adj_ex(X509_get0_notBefore(Self), 0, 0, nil);
+  X509_time_adj_ex(X509_get0_notAfter(Self), 60 * 60 * 24 * vTo, 0, nil);
+  {$ELSE}
   X509_gmtime_adj(X509_getm_notBefore(Self), 0);
   X509_gmtime_adj(X509_getm_notAfter(Self), 60 * 60 * 24 * vTo);
+  {$ENDIF}
 end;
 
 function TPX509Helper.BIOstr(vProc: TProc<PBIO>): string;
@@ -580,7 +640,11 @@ begin
     X509V3_set_ctx_nodb(@ctx);
     X509V3_set_ctx(@ctx, Self, Self, nil, nil, 0);
 
+    {$IFDEF OPENSSL3}
+    ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(NID), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+    {$ELSE}
     ex := X509V3_EXT_conf_nid(nil, @ctx, NID, PUTF8Char(d));
+    {$ENDIF}
     if ex <> nil then
     try
       Result := X509_add_ext(Self, ex, -1);
@@ -753,7 +817,11 @@ begin
   if vData <> '' then
   begin
     d := UTF8Encode(vData);
+    {$IFDEF OPENSSL3}
+    Ext := X509V3_EXT_nconf(nil, nil, OBJ_nid2sn(NID), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+    {$ELSE}
     Ext := X509V3_EXT_conf_nid(nil, nil, NID, PUTF8Char(d));
+    {$ENDIF}
     if Ext <> nil then
     begin
       if OPENSSL_sk_push(Self, Ext) > 0 then
@@ -781,7 +849,11 @@ begin
     X509V3_set_ctx(@ctx, nil, nil, req, nil, 0);
     nid := OBJ_txt2nid(PUTF8Char(n));
 
+    {$IFDEF OPENSSL3}
+    ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+    {$ELSE}
     ex := X509V3_EXT_conf_nid(nil, @ctx, nid, PUTF8Char(d));
+    {$ENDIF}
     if ex <> nil then
     begin
       if OPENSSL_sk_push(Self, ex) > 0 then
@@ -828,7 +900,11 @@ begin
     X509V3_set_ctx(@ctx, nil, nil, Self, nil, 0);
     nid := OBJ_txt2nid(PUTF8Char(n));
 
+    {$IFDEF OPENSSL3}
+    ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+    {$ELSE}
     ex := X509V3_EXT_conf_nid(nil, @ctx, nid, PUTF8Char(d));
+    {$ENDIF}
     if ex <> nil then
     begin
       if OPENSSL_sk_push(sk, ex) > 0 then

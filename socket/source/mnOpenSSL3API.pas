@@ -1,0 +1,1134 @@
+unit mnOpenSSL3API;
+{$IFDEF FPC}
+{$MODE delphi}
+{$ENDIF}
+{$M+}{$H+}
+{**
+ *  This file is part of the "MiniLib"
+ *
+ * @license   Mit
+ * @author    Zaher Dirkey zaherdirkey
+ * @author    Belal Hamed <belal, belalhamed@gmail.com>
+ *
+ * @thanks    To all who i get some code from them
+ *
+ *}
+{
+ https://aticleworld.com/ssl-server-client-using-openssl-in-c/
+ https://eclipsesource.com/blogs/2016/09/07/tutorial-code-signing-and-verification-with-openssl/
+
+ https://www.xolphin.com/support/OpenSSL/OpenSSL_-_Installation_under_Windows
+ https://wiki.openssl.org/index.php/Libcrypto_API
+ https://slproweb.com/products/Win32OpenSSL.html
+ https://github.com/sota2502/mpstation/blob/master/lib/IdSSLOpenSSLHeaders.pas
+ https://fuchsia-docs.firebaseapp.com/rust/src/boringssl_sys/lib.rs.html#1929
+
+ official examples
+ https://www.openssl.org/docs/man1.0.2/man3/BIO_get_ssl.html
+
+ https://security.stackexchange.com/questions/184845/how-to-generate-csrcertificate-signing-request-using-c-and-openssl
+}
+interface
+
+uses
+  SysUtils, 
+  mnTypes, mnLibraries; // take it from github/parmaja/minilib
+
+type
+  BN_ULONG = culong;
+
+{$MINENUMSIZE 4} //All enum must be sized as Integer
+{$Z4}
+{$A8}
+
+const
+  {$i mnOpenSSLConsts.inc}
+
+  //OpenSSL 3.x EVP_PKEY param names (OSSL_PKEY_PARAM_*)
+  OSSL_PKEY_PARAM_RSA_N = 'n';
+  OSSL_PKEY_PARAM_RSA_E = 'e';
+  OSSL_PKEY_PARAM_RSA_D = 'd';
+
+type
+
+  TOPENSSL_INIT_SETTINGS =record
+    FileName: PAnsiChar;
+    AppName: PAnsiChar;
+   end;
+
+  POPENSSL_INIT_SETTINGS = ^TOPENSSL_INIT_SETTINGS;
+
+  //PSSLObject = class(TObject);
+  {$ifdef FPC}
+  //SSLObject = record end;
+  //PSSLObject = ^SSLObject;
+  PSSLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
+  {$else}
+//  SSLObject = record end;
+//  PSSLObject = ^SSLObject; //* Unfortunately FPC have no `type of` :(
+  PSSLObject = type Pointer;
+  //PSSLObject = type of Pointer; for check errors and not wrking with helper need check in future
+  {$endif}
+  PPSSLObject = ^PSSLObject;
+
+  PSSL = PSSLObject;
+  PSSL_CTX = PSSLObject;
+  PSSL_METHOD = PSSLObject;
+  PBIO = PSSLObject;
+
+  PBIGNUM = PSSLObject;
+  PPBIGNUM = ^PBIGNUM;
+
+  PASN1_VALUE = Pointer;
+  PPASN1_VALUE = ^PASN1_VALUE;
+
+  PX509 = type PSSLObject;
+  PPX509 = ^PX509;
+  PX509_STORE_CTX = PSSLObject;
+  PX509_REQ = type PSSLObject;
+  PX509_CRL = PSSLObject;
+  PX509V3_CONF_METHOD = PSSLObject;
+  PPX509_REQ = ^PX509_REQ;
+  PX509_NAME = PSSLObject;
+  PX509_EXTENSION = PSSLObject;
+  PLHASH = PSSLObject;
+  PX509_STORE = type PSSLObject;
+
+  PKCS12 = PSSLObject;
+  PPKCS12 = ^PKCS12;
+
+  PBIO_METHOD = PSSLObject;
+  PPBIO_METHOD = ^PBIO_METHOD;
+
+  PEVP_MD_CTX = PSSLObject;
+  PPEVP_MD_CTX = ^PEVP_MD_CTX;
+
+  Ppem_password_cb = Pointer;
+
+  PEVP_CIPHER = PSSLObject;
+  PEVP_PKEY = PSSLObject;
+  PPEVP_PKEY = ^PEVP_PKEY;
+  PEVP_MD = PSSLObject;
+  PEVP_PKEY_CTX = PSSLObject;
+  PPEVP_PKEY_CTX = ^PEVP_PKEY_CTX;
+
+  TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
+  TCTXInfoCallback = procedure(ssl: PSSL; where: cint; ret: cint); cdecl;
+  TCTXAlpnSelectCallback = function(ssl: PSSL; var outdata: PByte; var outlen: integer; const indata: PByte; inlen: Byte; arg: Pointer): Integer; cdecl; //TODO check again
+
+  { Context specific info }
+  //https://abi-laboratory.pro/index.php?view=type_view&l=openssl&v=1.0.2e&obj=c93f7&t=1ede6
+  //CTX_TEST 0x1
+  //X509V3_CTX_REPLACE 0x2
+
+  TV3_ext_ctx = packed record
+      flags: Integer;
+      issuer_cert: PX509;
+      subject_cert: PX509;
+      subject_req: PX509_REQ;
+      crl: PX509_CRL;
+      db_meth: PX509V3_CONF_METHOD;
+      db: Pointer;
+    // Maybe more here
+  end;
+  Pv3_ext_ctx = ^TV3_ext_ctx;
+
+  TX509V3_CTX = TV3_ext_ctx;
+  PX509V3_CTX = ^TX509V3_CTX;
+
+  POPENSSL_STACK = PSSLObject;
+  PPOPENSSL_STACK = ^POPENSSL_STACK;
+  PSTACK_OF_GENERAL_NAME = PSSLObject;
+  PPSTACK_OF_GENERAL_NAME = ^PSTACK_OF_GENERAL_NAME;
+
+  TASN1_string = record
+    length: Integer;
+    &type: Integer;
+    data: PByte;
+    flags: Integer;
+  end;
+
+  ASN1_INTEGER = TASN1_string;
+  PASN1_INTEGER = ^ASN1_INTEGER;
+  PPASN1_INTEGER = ^PASN1_INTEGER;
+  ASN1_ENUMERATED = TASN1_string;
+  PASN1_ENUMERATED = ^ASN1_ENUMERATED;
+  PPASN1_ENUMERATED = ^PASN1_ENUMERATED;
+  ASN1_STRING = TASN1_string;
+  PASN1_STRING = ^ASN1_STRING;
+  PPASN1_STRING = ^PASN1_STRING;
+  ASN1_BIT_STRING = TASN1_string;
+  PASN1_BIT_STRING = ^ASN1_BIT_STRING;
+  PPASN1_BIT_STRING = ^PASN1_BIT_STRING;
+  ASN1_OCTET_STRING = TASN1_string;
+  PASN1_OCTET_STRING = ^ASN1_OCTET_STRING;
+  PPASN1_OCTET_STRING = ^PASN1_OCTET_STRING;
+  ASN1_PRINTABLESTRING = TASN1_string;
+  PASN1_PRINTABLESTRING = ^ASN1_PRINTABLESTRING;
+  PPASN1_PRINTABLESTRING = ^PASN1_PRINTABLESTRING;
+  ASN1_T61STRING = TASN1_string;
+  PASN1_T61STRING = ^ASN1_T61STRING;
+  PPASN1_T61STRING = ^PASN1_T61STRING;
+  //ASN1_IA5STRING = TASN1_string;
+  PASN1_IA5STRING = PASN1_STRING;
+  PPASN1_IA5STRING = ^PASN1_IA5STRING;
+  ASN1_GENERALSTRING = TASN1_string;
+  PASN1_GENERALSTRING = ^ASN1_GENERALSTRING;
+  PPASN1_GENERALSTRING = ^PASN1_GENERALSTRING;
+  ASN1_UNIVERSALSTRING = TASN1_string;
+  PASN1_UNIVERSALSTRING = ^ASN1_UNIVERSALSTRING;
+  PPASN1_UNIVERSALSTRING = ^PASN1_UNIVERSALSTRING;
+  ASN1_BMPSTRING = TASN1_string;
+  PASN1_BMPSTRING = ^ASN1_BMPSTRING;
+  PPASN1_BMPSTRING = ^PASN1_BMPSTRING;
+  ASN1_UTCTIME = TASN1_string;
+  PASN1_UTCTIME = ^ASN1_UTCTIME;
+  PPASN1_UTCTIME = ^PASN1_UTCTIME;
+  ASN1_TIME = TASN1_string;
+  PASN1_TIME = ^ASN1_TIME;
+  PPASN1_TIME = ^PASN1_TIME;
+  ASN1_GENERALIZEDTIME = TASN1_string;
+  PASN1_GENERALIZEDTIME = ^ASN1_GENERALIZEDTIME;
+  PPASN1_GENERALIZEDTIME = ^PASN1_GENERALIZEDTIME;
+  ASN1_VISIBLESTRING = TASN1_string;
+  PASN1_VISIBLESTRING = ^ASN1_VISIBLESTRING;
+  PPASN1_VISIBLESTRING = ^PASN1_VISIBLESTRING;
+  ASN1_UTF8STRING = TASN1_string;
+  PASN1_UTF8STRING = ^ASN1_UTF8STRING;
+  PPASN1_UTF8STRING = ^PASN1_UTF8STRING;
+  ASN1_BOOLEAN = Integer;
+  ASN1_NULL = Integer;
+  PASN1_NULL = ^ASN1_NULL;
+  PPASN1_NULL = ^PASN1_NULL;
+  PASN1_OBJECT = Pointer;
+  PPASN1_OBJECT = ^PASN1_OBJECT;
+  PASN1_PCTX = Pointer;
+  PPASN1_PCTX = ^PASN1_PCTX;
+  PASN1_SCTX = Pointer;
+  PPASN1_SCTX = ^PASN1_SCTX;
+
+  PStack_st_X509_EXTENSION = PSSLObject;
+  PPStack_st_X509_EXTENSION = ^PStack_st_X509_EXTENSION;
+
+  TASN1_ENCODING = record
+    enc: PByte;
+    len: Integer;
+    modified: Integer;
+  end;
+
+  TASN1_string_table = record
+    nid: Integer;
+    minsize: Integer;
+    maxsize: Integer;
+    mask: Cardinal;
+    flags: Cardinal;
+  end;
+
+  PASN1_STRING_TABLE = ^TASN1_STRING_TABLE;
+  PPASN1_STRING_TABLE = ^PASN1_STRING_TABLE;
+
+  PASN1_TYPE = ^TASN1_TYPE;
+  PPASN1_TYPE = ^PASN1_TYPE;
+
+  TOtherName= record
+    type_id: PASN1_OBJECT;
+    value: PASN1_TYPE;
+  end;
+  POTHERNAME = ^TOTHERNAME;
+  PPOTHERNAME = ^POTHERNAME;
+
+  _anonymous_type_1 = record
+    case Integer of
+      0: (ptr: PUTF8Char);
+      1: (boolean: ASN1_BOOLEAN);
+      2: (asn1_string: PASN1_STRING);
+      3: (&object: PASN1_OBJECT);
+      4: (&integer: PASN1_INTEGER);
+      5: (enumerated: PASN1_ENUMERATED);
+      6: (bit_string: PASN1_BIT_STRING);
+      7: (octet_string: PASN1_OCTET_STRING);
+      8: (printablestring: PASN1_PRINTABLESTRING);
+      9: (t61string: PASN1_T61STRING);
+      10: (ia5string: PASN1_IA5STRING);
+      11: (generalstring: PASN1_GENERALSTRING);
+      12: (bmpstring: PASN1_BMPSTRING);
+      13: (universalstring: PASN1_UNIVERSALSTRING);
+      14: (utctime: PASN1_UTCTIME);
+      15: (generalizedtime: PASN1_GENERALIZEDTIME);
+      16: (visiblestring: PASN1_VISIBLESTRING);
+      17: (utf8string: PASN1_UTF8STRING);
+      18: (&set: PASN1_STRING);
+      19: (sequence: PASN1_STRING);
+      20: (asn1_value: PASN1_VALUE);
+  end;
+  P_anonymous_type_1 = ^_anonymous_type_1;
+
+  TEDIPartyName = record
+    nameAssigner: PASN1_STRING;
+    partyName: PASN1_STRING;
+  end;
+  PEDIPARTYNAME = ^TEDIPARTYNAME;
+  PPEDIPARTYNAME = ^PEDIPARTYNAME;
+
+  _anonymous_type_5 = record
+    case Integer of
+      0: (ptr: PUTF8Char);
+      1: (otherName: POTHERNAME);
+      2: (rfc822Name: PASN1_IA5STRING);
+      3: (dNSName: PASN1_IA5STRING);
+      4: (x400Address: PASN1_TYPE);
+      5: (directoryName: PX509_NAME);
+      6: (ediPartyName: PEDIPARTYNAME);
+      7: (uniformResourceIdentifier: PASN1_IA5STRING);
+      8: (iPAddress: PASN1_OCTET_STRING);
+      9: (registeredID: PASN1_OBJECT);
+      10: (ip: PASN1_OCTET_STRING);
+      11: (dirn: PX509_NAME);
+      12: (ia5: PASN1_IA5STRING);
+      13: (rid: PASN1_OBJECT);
+      14: (other: PASN1_TYPE);
+  end;
+  P_anonymous_type_5 = ^_anonymous_type_5;
+
+  TBuf_mem= record
+    length: NativeUInt;
+    data: PUTF8Char;
+    max: NativeUInt;
+  end;
+  PBuf_mem = ^TBuf_mem;
+
+  TASN1_TYPE = record
+    &type: Integer;
+    value: _anonymous_type_1;
+  end;
+
+  TGENERAL_NAME = record
+    &type: Integer;
+    d: _anonymous_type_5;
+  end;
+
+  PGENERAL_NAME = ^TGENERAL_NAME;
+  PPGENERAL_NAME = ^PGENERAL_NAME;
+
+  PX509_ALGOR = PSSLObject;
+  EVP_CIPHER_INFO = PSSLObject;
+
+  TPrivate_Key = record
+    version: integer;
+    enc_algor: PX509_ALGOR;
+    enc_pkey: PASN1_OCTET_STRING;
+    dec_pkey: PEVP_PKEY;
+    key_length: integer;
+    key_data: PUtf8Char;
+    key_free: integer;
+    cipher: EVP_CIPHER_INFO;
+  end;
+
+  X509_PKEY = TPrivate_Key;
+  PX509_PKEY = ^X509_PKEY;
+
+  TX509_info = record
+    x509: PX509;
+    crl: PX509_CRL;
+    x_pkey: PX509_PKEY;
+    enc_cipher: PEVP_CIPHER;
+    enc_len: integer;
+    enc_data: PUtf8Char;
+  end;
+
+  X509_INFO = TX509_info;
+  PX509_INFO = ^X509_INFO;
+  PPX509_INFO = ^PX509_INFO;
+
+  { TmnOpenSSLLib }
+
+  TmnOpenSSLLib = class(TmnLibrary)
+  public
+  protected
+    procedure Link; override;
+  end;
+
+  { TmnCryptoLib }
+
+  TmnCryptoLib = class(TmnLibrary)
+  public
+  protected
+    procedure Link; override;
+  end;
+
+  SSL_set_msg_callback_cb = procedure(write_p: integer; version: integer; content_type: integer; buf: pointer; len: NativeUInt; ssl: PSSL; arg: pointer); cdecl;
+  SSL_CTX_set_msg_callback_cb = procedure(write_p: integer; version: integer; content_type: integer; buf: pointer; len: NativeUInt; ssl: PSSL; arg: pointer); cdecl;
+
+var
+  OPENSSL_init_ssl: procedure(opts: UInt64; settings: POPENSSL_INIT_SETTINGS); cdecl;
+  OPENSSL_init_crypto: function(opts: uint64; settings: POPENSSL_INIT_SETTINGS): Integer; cdecl;
+
+  SSL_get_error: function(s: PSSL; ret_code: Integer): Integer; cdecl;
+
+  ERR_error_string: function(e: culong; bug: PUTF8Char): PUTF8Char; cdecl;
+  ERR_error_string_n: procedure(e: culong; buf: PAnsiChar; len: Integer); cdecl;
+  ERR_get_error: function(): culong; cdecl;
+  ERR_peek_error: function(): culong; cdecl;
+
+  SSL_get1_peer_certificate: function(ssl: PSSL): PX509; cdecl; //replaces SSL_get_peer_certificate (removed in OpenSSL 3.x)
+  SSL_set_cipher_list: function(ssl: PSSL; str: PUTF8Char): Integer; cdecl;
+  SSL_set_verify: procedure(ssl: PSSL; Mode: Integer; Callback: TSSLVerifyCallback); cdecl;
+  SSL_get_verify_result: function(ssl: PSSL): clong; cdecl;
+  SSL_set_msg_callback: procedure(ssl: PSSL; cb: SSL_set_msg_callback_cb); cdecl;
+  SSL_CTX_set_msg_callback: procedure(ctx: PSSL_CTX; cb: SSL_CTX_set_msg_callback_cb); cdecl;
+
+  SSL_ctrl: function(ssl: PSSL; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
+  SSL_new: function(ctx: PSSL_CTX): PSSL; cdecl;
+  SSL_shutdown: function(ssl: PSSL): Integer; cdecl;
+  SSL_set_shutdown: procedure(ssl: PSSL; mode: Integer); cdecl;
+  SSL_clear: function(ssl: PSSL): Integer; cdecl;
+  SSL_free: procedure(ssl: PSSL); cdecl;
+  SSL_get_version: function(const ssl: PSSL): PUTF8Char; cdecl;
+  SSL_set_fd: function(ssl: PSSL; d: Integer): integer; cdecl;
+  SSL_connect: function(ssl: PSSL): Integer; cdecl;
+  SSL_accept: function(ssl: PSSL): Integer; cdecl;
+  SSL_set_bio: procedure(ssl: PSSL; rbio: PBIO; wbio: PBIO); cdecl;
+
+  SSL_read: function(ssl: PSSL; var buf; size: integer): integer; cdecl;
+  SSL_write: function(ssl: PSSL; const buf; size: integer): integer; cdecl;
+
+  SSL_pending: function(ssl: PSSL): Integer; cdecl;
+  SSL_has_pending: function(ssl: PSSL): Integer; cdecl;
+
+  SSL_state_string: function(ssl: PSSL): PUTF8Char; cdecl;
+  SSL_state_string_long: function(ssl: PSSL): PUTF8Char; cdecl;
+  SSL_alert_type_string_long: function(val: integer): PUTF8Char; cdecl;
+  SSL_alert_desc_string_long: function(val: integer): PUTF8Char; cdecl;
+  SSL_select_next_proto: function(var outdata: PByte; var outlen: byte; const server: PUTF8Char; serverlen: Cardinal; client: PUTF8Char; clientlen: Cardinal): Integer; cdecl;
+  SSL_get0_alpn_selected: procedure(ssl: PSSL; var outdata: PByte; var len: Cardinal); cdecl;
+  SSL_use_certificate_chain_file: function(ssl: PSSL; const afile: PUTF8Char): Integer; cdecl;
+
+  SSL_CTX_new: function(Method: PSSL_METHOD): PSSL_CTX; cdecl;
+  SSL_CTX_set_verify: procedure(ctx: PSSL_CTX; Mode: Integer; Callback: TSSLVerifyCallback); cdecl;
+  SSL_CTX_set_verify_depth: procedure(ctx: PSSL_CTX; Depth: integer); cdecl;
+  SSL_CTX_set_options: function(ctx: PSSL_CTX; Options: culong): culong; cdecl;
+  SSL_CTX_load_verify_locations: function(ctx: PSSL_CTX; CAfile: PUTF8Char; CApath: PUTF8Char): Integer; cdecl;
+  SSL_CTX_free: procedure(ctx: PSSL_CTX); cdecl;
+  SSL_CTX_set_cipher_list: function(ctx: PSSL_CTX; const str: PUTF8Char): Integer; cdecl;
+  SSL_CTX_use_certificate: function(ctx: PSSL_CTX; x: PX509): Integer; cdecl;
+  SSL_CTX_use_certificate_file: function(ctx: PSSL_CTX; afile: PUTF8Char; atype: Integer): Integer; cdecl;
+  SSL_CTX_use_certificate_chain_file: function(ctx: PSSL_CTX; const afile: PUTF8Char): Integer; cdecl;
+  SSL_CTX_use_PrivateKey: function(ctx: PSSL_CTX; pkey: PEVP_PKEY): Integer; cdecl; //AI changed
+  SSL_CTX_use_PrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
+  SSL_CTX_check_private_key: function(ctx: PSSL_CTX): Integer; cdecl;
+  SSL_CTX_ctrl: function(ctx: PSSL_CTX; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
+  SSL_CTX_set_info_callback: procedure(ctx: PSSL_CTX; Callback: TCTXInfoCallback); cdecl;
+  SSL_CTX_set_alpn_select_cb: function(ctx: PSSL_CTX; Callback: TCTXAlpnSelectCallback; args: Pointer): Integer; cdecl;
+  SSL_CTX_set_alpn_protos: function(ctx: PSSL_CTX; prots: PUTF8Char; len: integer): Integer; cdecl;
+
+  SSL_CTX_get_cert_store: function(ctx: PSSL_CTX): PX509_STORE; cdecl;
+
+  TLS_method: function(): PSSL_METHOD; cdecl;
+  TLS_client_method: function(): PSSL_METHOD; cdecl;
+  TLS_server_method: function(): PSSL_METHOD; cdecl;
+
+  RAND_bytes: function(buf: PByte; num: Integer): Integer; cdecl;
+
+  X509_new: function(): PX509; cdecl;
+  X509_free: procedure(a: PX509); cdecl;
+  X509_verify_cert_error_string: function(n: clong): PUTF8Char; cdecl;
+  X509_sign: function(x: PX509; pkey: PEVP_PKEY; md: PEVP_MD): Integer; cdecl;
+  X509_REQ_new: function(): PX509_REQ; cdecl;
+  X509_NAME_new: function(): PX509_NAME; cdecl;
+  X509_NAME_free: procedure(a: PX509_NAME); cdecl;
+
+  X509_REQ_get_subject_name: function(req: PX509_REQ): PX509_NAME; cdecl;
+  X509_REQ_set_pubkey: function(x: PX509_REQ; pkey: PEVP_PKEY): Integer; cdecl;
+  X509_REQ_sign: function(x: PX509_REQ; pkey: PEVP_PKEY; const md: PEVP_MD): integer; cdecl;
+  X509_NAME_add_entry_by_txt: function(name: PX509_NAME; field: PUTF8Char; aType: Integer; const Bytes: PByte; Len: integer; Loc: Integer; ASet: integer): Integer; cdecl;
+  X509_REQ_free: procedure(a: PX509_REQ); cdecl;
+  X509_add_ext: function(x: PX509; ex: PX509_EXTENSION; loc: Integer): integer; cdecl;
+  X509_EXTENSION_free: procedure(a: PX509_EXTENSION); cdecl;
+  X509_set_issuer_name: function(x: PX509; name: PX509_NAME): Integer; cdecl;
+  X509_to_X509_REQ: function(x: PX509; pkey: PEVP_PKEY; md: PEVP_MD): PX509_REQ; cdecl;
+
+//  X509_STORE_CTX *X509_STORE_CTX_new(void);
+  X509_STORE_CTX_get_error_depth: function(ctx: PX509_STORE_CTX): Integer; cdecl;
+//  void X509_STORE_CTX_free(X509_STORE_CTX *ctx);
+
+  X509_STORE_new: function(): PX509_STORE; cdecl;
+  X509_STORE_add_cert: function(ctx: PX509_STORE; x: PX509): integer; cdecl;
+  X509_STORE_free: procedure(v: PX509_STORE); cdecl;
+
+  X509V3_set_ctx: procedure(ctx: PX509V3_CTX; issuer: PX509; subject: PX509; req: PX509_REQ; crl: PX509_CRL; flags: integer); cdecl;
+
+  X509V3_EXT_nconf: function(conf: PLHASH; ctx: PX509V3_CTX; name: PUTF8Char; value: PUTF8Char): PX509_EXTENSION; cdecl; //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+  X509_set_version: function(x: PX509; version: clong): Integer; cdecl;
+
+  X509_REQ_set_version: function(x: PX509_REQ; version: clong): Integer; cdecl;
+
+  PEM_read_bio_X509_REQ: function(bp: PBIO; x: PPX509_REQ; cb: Ppem_password_cb; var u): PX509_REQ; cdecl;
+  PEM_write_bio_X509_REQ: function(bp: PBIO; x: PX509_REQ): Integer; cdecl;
+  PEM_write_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; const enc: PEVP_CIPHER; kstr: PByte; klen: Integer; cb: Ppem_password_cb; u: Pointer): integer; cdecl;
+  PEM_write_bio_X509: function(bp: PBIO; x: PX509): Integer; cdecl;
+  PEM_write_X509: function(fh: Pointer; x: PX509): Integer; cdecl;
+
+  PEM_read_bio_X509: function(bp: PBIO; x: PPX509; cb: Ppem_password_cb; u: Pointer): PX509; cdecl;
+  PEM_read_bio_PrivateKey: function(bp: PBIO; x: PPEVP_PKEY; cb: Ppem_password_cb; u: Pointer): PEVP_PKEY; cdecl;
+
+  PEM_read_bio_PUBKEY: function(bp: PBIO; x: PPEVP_PKEY; cb: Ppem_password_cb; u: Pointer): PEVP_PKEY; cdecl;
+  PEM_write_bio_PUBKEY: function(bp: PBIO; x: PEVP_PKEY): Integer; cdecl;
+
+  PEM_X509_INFO_read_bio: function(bp: PBIO; sk: POPENSSL_STACK; cb: Ppem_password_cb; u: Pointer): POPENSSL_STACK; cdecl;
+
+  ASN1_INTEGER_set_int64: function(a: PASN1_INTEGER; r: Int64): Integer; cdecl;
+  ASN1_INTEGER_set: function(a: PASN1_INTEGER; v: Integer): Integer; cdecl;
+
+  X509_get_serialNumber: function(x: PX509): PASN1_INTEGER; cdecl;
+  X509_get0_notBefore: function(x: PX509): PASN1_TIME; cdecl; //replaces X509_getm_notBefore (deprecated in OpenSSL 3.x)
+  X509_get0_notAfter: function(x: PX509): PASN1_TIME; cdecl; //replaces X509_getm_notAfter (deprecated in OpenSSL 3.x)
+  X509_time_adj_ex: function(s: PASN1_TIME; offset_sec: clong; offset_day: clong; t: Pointer): PASN1_TIME; cdecl; //replaces X509_gmtime_adj (deprecated in OpenSSL 3.x)
+  X509_set1_notBefore: function(x: PX509; t: PASN1_TIME): Integer; cdecl;
+  X509_set1_notAfter: function(x: PX509; t: PASN1_TIME): Integer; cdecl;
+  ASN1_TIME_free: procedure(a: PASN1_TIME); cdecl;
+  X509_set_pubkey: function(x: PX509; pkey: PEVP_PKEY): Integer; cdecl;
+  X509_get_subject_name: function(x: PX509): PX509_NAME; cdecl;
+  X509_add1_ext_i2d: function(x: PX509; nid: Integer; value: Pointer; crit: Integer; flags: Cardinal): Integer; cdecl;
+
+  X509_set_subject_name: function(x: PX509; name: PX509_NAME): Integer; cdecl;
+  X509_REQ_set_subject_name: function(req: PX509_REQ; name: PX509_NAME): Integer; cdecl;
+
+  X509_REQ_get_pubkey: function(req: PX509_REQ): PEVP_PKEY; cdecl;
+  X509_REQ_add1_attr_by_txt: function(req: PX509_REQ; attrname: PByte; &type: Integer; bytes: PByte; len: Integer): Integer; cdecl;
+
+  EVP_PKEY_new: function(): PEVP_PKEY; cdecl;
+  EVP_PKEY_free: procedure(key: PEVP_PKEY); cdecl;
+  EVP_PKEY_get_size: function(pkey: PEVP_PKEY): Integer; cdecl; //replaces RSA_size/ECDSA_size (deprecated in OpenSSL 3.x)
+  EVP_PKEY_get_bn_param: function(pkey: PEVP_PKEY; key_name: PUTF8Char; var bn: PBIGNUM): Integer; cdecl; //replaces RSA_get0_key (deprecated in OpenSSL 3.x)
+  EVP_PKEY_eq: function(a: PEVP_PKEY; b: PEVP_PKEY): Integer; cdecl; //replaces EVP_PKEY_copy_parameters (deprecated in OpenSSL 3.x)
+
+  //EVP_PKEY key generation (replaces RSA_generate_key_ex / EC_KEY_generate_key, deprecated in OpenSSL 3.x)
+  EVP_PKEY_CTX_new_id: function(id: Integer; e: Pointer): PEVP_PKEY_CTX; cdecl;
+  EVP_PKEY_CTX_new: function(pkey: PEVP_PKEY; e: Pointer): PEVP_PKEY_CTX; cdecl;
+  EVP_PKEY_CTX_free: procedure(ctx: PEVP_PKEY_CTX); cdecl;
+  EVP_PKEY_keygen_init: function(ctx: PEVP_PKEY_CTX): Integer; cdecl;
+  EVP_PKEY_keygen: function(ctx: PEVP_PKEY_CTX; var pkey: PEVP_PKEY): Integer; cdecl;
+  EVP_PKEY_CTX_set_rsa_keygen_bits: function(ctx: PEVP_PKEY_CTX; bits: Integer): Integer; cdecl;
+  EVP_PKEY_CTX_set1_rsa_keygen_pubexp: function(ctx: PEVP_PKEY_CTX; pubexp: PBIGNUM): Integer; cdecl;
+  EVP_PKEY_CTX_set_ec_paramgen_curve_nid: function(ctx: PEVP_PKEY_CTX; nid: Integer): Integer; cdecl;
+
+  //EVP signing (replaces RSA_sign / ECDSA_sign, deprecated in OpenSSL 3.x)
+  EVP_PKEY_sign_init: function(ctx: PEVP_PKEY_CTX): Integer; cdecl;
+  EVP_PKEY_sign: function(ctx: PEVP_PKEY_CTX; sig: PByte; var siglen: NativeUInt; tbs: PByte; tbslen: NativeUInt): Integer; cdecl;
+  EVP_PKEY_CTX_set_signature_md: function(ctx: PEVP_PKEY_CTX; md: PEVP_MD): Integer; cdecl;
+  EVP_MD_CTX_new: function(): PEVP_MD_CTX; cdecl;
+  EVP_MD_CTX_free: procedure(ctx: PEVP_MD_CTX); cdecl;
+  EVP_DigestSignInit: function(ctx: PEVP_MD_CTX; var pctx: PEVP_PKEY_CTX; md: PEVP_MD; engine: Pointer; pkey: PEVP_PKEY): Integer; cdecl;
+  EVP_DigestSign: function(ctx: PEVP_MD_CTX; sig: PByte; var siglen: NativeUInt; data: PByte; datalen: NativeUInt): Integer; cdecl;
+  EVP_DigestSignFinal: function(ctx: PEVP_MD_CTX; sig: PByte; var siglen: NativeUInt): Integer; cdecl;
+
+  //EVP_cleanup: procedure(); cdecl;
+  EVP_md_null: function(): PEVP_MD; cdecl;
+  //EVP_md2: function(): PEVP_MD; cdecl; not exists in 1.1
+  EVP_md5: function(): PEVP_MD; cdecl;
+  EVP_sha1: function(): PEVP_MD; cdecl;
+  //EVP_mdc2: function(): PEVP_MD; cdecl;
+  EVP_ripemd160: function(): PEVP_MD; cdecl;
+  EVP_blake2b512: function(): PEVP_MD; cdecl;
+  EVP_blake2s256: function(): PEVP_MD; cdecl;
+
+  EVP_sha224: function(): PEVP_MD; cdecl;
+  EVP_sha256: function(): PEVP_MD; cdecl;
+  EVP_sha384: function(): PEVP_MD; cdecl;
+  EVP_sha512: function(): PEVP_MD; cdecl;
+  EVP_DigestUpdate: function(ctx: PEVP_MD_CTX; d: Pointer; cnt: NativeUInt): Integer; cdecl;
+
+  BN_new: function(): PBIGNUM; cdecl;
+  BN_set_word: function(a: PBIGNUM; w: BN_ULONG): integer; cdecl;
+  BN_free: procedure(a: PBIGNUM); cdecl;
+  BN_num_bits: function(a: PBIGNUM): Integer; cdecl;
+  BN_bn2bin: function(a: PBIGNUM; to_: PByte): Integer; cdecl;
+  BN_bin2bn: function(s: PByte; len: Integer; ret: PBIGNUM): PBIGNUM; cdecl;
+
+  EVP_Digest: function(data: Pointer; count: NativeUInt; md: PByte; size: PCardinal; atype: PEVP_MD; impl: Pointer): Integer; cdecl;
+
+  BIO_new: function(typ: PBIO_METHOD): PBIO; cdecl;
+  BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
+  BIO_new_fd: function(fd: Integer; close_flag: Integer): PBIO; cdecl; //idk
+  BIO_new_file: function(filename: PUTF8Char; Mode: PUTF8Char): PBIO; cdecl;
+  BIO_new_mem_buf: function(buf: PByte; len: Integer): PBIO; cdecl;
+  BIO_f_base64: function(): PBIO_METHOD; cdecl;
+
+  BIO_s_mem: function(): PBIO_METHOD; cdecl;
+
+  BIO_read: function(b: PBIO; var data; dlen: integer): Integer; cdecl;
+  BIO_write: function(b: PBIO; const data; dlen: Integer): Integer; cdecl;
+  BIO_gets: function(b: PBIO; buf: PByte; Size: Integer): Integer; cdecl;
+  BIO_puts: function(bio: PBIO; buf: PUTF8Char): Integer; cdecl;
+  BIO_push: function(b: PBIO; append: PBIO): PBIO; cdecl;
+  BIO_set_flags: function(b: PBIO; flags: Integer): integer; cdecl;
+  BIO_test_flags: function(b: PBIO; flags: Integer): integer; cdecl;
+  //BIO_read_filename: function(b: PBIO; filename: PUTF8Char): Integer; cdecl;
+  BIO_free_all: procedure(b: PBIO); cdecl;
+  BIO_free: function(bio: PBIO): Integer; cdecl;
+
+  {TODO
+  int BIO_read_ex(BIO *b, void *data, size_t dlen, size_t *readbytes);
+  int BIO_write_ex(BIO *b, const void *data, size_t dlen, size_t *written);
+  }
+
+  //https://www.openssl.org/docs/man1.1.1/man3/BIO_ctrl.html
+  BIO_ctrl: function(bp: PBIO; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
+
+  OPENSSL_sk_new_null: function(): POPENSSL_STACK; cdecl;
+  OPENSSL_sk_push: function(sk: POPENSSL_STACK; vData: Pointer): Integer; cdecl;
+  OPENSSL_sk_num: function(sk: POPENSSL_STACK): Integer; cdecl;
+  OPENSSL_sk_value: function(sk: POPENSSL_STACK; idx: integer): Pointer; cdecl;
+  OPENSSL_sk_free: procedure(sk: POPENSSL_STACK); cdecl;
+  OPENSSL_sk_pop_free: procedure(st: POPENSSL_STACK; free_func: Pointer); cdecl;
+
+  ASN1_STRING_set: function(str: PASN1_STRING; data: Pointer; len: Integer): Integer; cdecl;
+  ASN1_STRING_new: function(): PASN1_STRING; cdecl;
+  ASN1_STRING_free: procedure(str: PASN1_STRING); cdecl;
+  ASN1_OCTET_STRING_new: function():PASN1_OCTET_STRING; cdecl;
+  ASN1_OCTET_STRING_set: function(str: PASN1_OCTET_STRING; data: PByte; len: Integer): Integer; cdecl;
+  ASN1_OCTET_STRING_free: procedure(str: PASN1_OCTET_STRING); cdecl;
+  ASN1_IA5STRING_new: function(): PASN1_IA5STRING; cdecl;
+  ASN1_IA5STRING_free: procedure(str: PASN1_IA5STRING); cdecl;
+
+  GENERAL_NAME_new: function(): PGENERAL_NAME; cdecl;
+
+  GENERAL_NAME_set0_value: procedure(a: PGENERAL_NAME; typ: Integer; value: Pointer); cdecl;
+  GENERAL_NAME_free: procedure(a: PGENERAL_NAME); cdecl;
+
+  sk_GENERAL_NAME_new_null: function(): PSTACK_OF_GENERAL_NAME; cdecl;
+  sk_GENERAL_NAME_push: function(sk: PSTACK_OF_GENERAL_NAME; data: PGENERAL_NAME): Integer; cdecl;
+  sk_GENERAL_NAME_free: procedure(sk: PSTACK_OF_GENERAL_NAME); cdecl;
+  sk_GENERAL_NAME_pop_free: procedure(sk: PSTACK_OF_GENERAL_NAME; free_func: Pointer); cdecl;
+  sk_X509_EXTENSION_pop_free: procedure(sk: Pstack_st_X509_EXTENSION; free_func: Pointer); cdecl;
+  sk_X509_EXTENSION_new_null: function(): Pstack_st_X509_EXTENSION; cdecl;
+  sk_X509_EXTENSION_push: function(sk: Pstack_st_X509_EXTENSION; data: PX509_EXTENSION): Integer; cdecl;
+
+  X509_get0_extensions: function(x: PX509): Pstack_st_X509_EXTENSION; cdecl; //renamed in OpenSSL 3.x
+
+  X509_NAME_add_entry_by_NID: function(name: PX509_NAME; nid: Integer; typ: Integer; bytes: PByte; len: Integer; loc: Integer; &set: Integer): Integer; cdecl;
+  X509_REQ_add_extensions: function(req: PX509_REQ; sk: Pstack_st_X509_EXTENSION): Integer; cdecl;
+  X509_REQ_add_extensions_nid: function(req: PX509_REQ; sk: Pstack_st_X509_EXTENSION; nid: Integer): Integer; cdecl;
+  X509V3_add1_i2d: function(sk: Pstack_st_X509_EXTENSION; nid: Integer; value: Pointer; crit: Integer; flags: Cardinal): Integer; cdecl;
+
+  OBJ_create: function(name: PUTF8Char; sn: PUTF8Char; ln: PUTF8Char): Integer; cdecl;
+  OBJ_txt2nid: function(s: PUTF8Char): Integer; cdecl;
+  OBJ_nid2sn: function(n: Integer): PUTF8Char; cdecl;
+
+  d2i_X509: function(px: PPX509; data: PPointer; size: Integer): PX509; cdecl;
+  d2i_PKCS12_bio: function(bp: PBIO; p: PPKCS12): PKCS12; cdecl; //return PKCS12
+
+  PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; out pkey: PEVP_PKEY; out cert: PX509; var ca: PSSLObject): Integer; cdecl;
+  PKCS12_free: procedure(a: PKCS12); cdecl;
+
+  //Aliases functions
+
+  function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong; inline;
+  function BIO_set_conn_port(b: PBIO; Port: PUTF8Char): clong; inline;
+  function BIO_set_conn_address(b: PBIO; Address: PUTF8Char): clong; inline;
+  function BIO_set_recv_timeout(b: PBIO; timeout: Integer): clong; inline;
+  function BIO_set_send_timeout(b: PBIO; timeout: Integer): clong; inline;
+  function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong; inline;
+  function BIO_do_connect(b: PBIO): clong; inline;
+  function BIO_do_handshake(b: PBIO): clong; inline;
+  function BIO_set_nbio(b: PBIO; n: Integer): clong; inline; //set blocking mode or not
+  function BIO_should_retry(b: PBIO): Boolean; inline;
+  function BIO_get_mem_ptr(b: PBIO; var pp: PBUF_MEM): clong; inline;
+  function BIO_flush(b: PBIO): clong; inline;
+  function BIO_set_close(b: PBIO; c: clong): clong; inline;
+
+  function SSL_set_mode(ssl: PSSL; op: Integer): clong; inline;
+
+  //key generation helpers (OpenSSL 3.x style, replaces low-level RSA_/EC_KEY_ API)
+  function GenerateRSAKey(Bits: Integer; const PubExp: PBIGNUM): PEVP_PKEY;
+  function GenerateECKey(Nid: Integer): PEVP_PKEY;
+
+  //tls1.h
+  function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
+
+  procedure X509V3_set_ctx_nodb(ctx: PX509V3_CTX); inline;
+  function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt; inline;
+
+  function SSL_CTX_set_min_proto_version(ctx: PSSL_CTX; version: integer): integer;
+  function SSL_CTX_set_max_proto_version(ctx: PSSL_CTX; version: integer): integer;
+  function SSL_CTX_add_extra_chain_cert(ctx: PSSL_CTX; x509:PX509): Integer;
+  function SSL_CTX_clear_extra_chain_certs(ctx: PSSL_CTX): Integer;
+
+  function sk_X509_num(const skX509: POPENSSL_STACK): Integer;
+  function sk_X509_value(const skX509: POPENSSL_STACK; index: Integer): PX509;
+
+  procedure OpenSSL_add_all_algorithms;
+
+const
+  TLS1_VERSION    = $0301;
+  TLS1_1_VERSION  = $0302;
+  TLS1_2_VERSION  = $0303;
+  TLS1_3_VERSION  = $0304;
+  TLS_MAX_VERSION = TLS1_3_VERSION;
+  TLS_ANY_VERSION = $10000;
+
+var
+  OpenSSLLib: TmnOpenSSLLib = nil;
+  CryptoLib: TmnCryptoLib = nil;
+
+implementation
+
+type
+  TTimeVal = record
+    {$ifdef MSWINDOWS}
+    tv_sec: Longint;
+    {$else}
+    tv_sec: IntPtr;
+    {$endif}
+    tv_usec: Longint;
+  end;
+
+function sk_X509_num(const skX509: POPENSSL_STACK): Integer;
+begin
+  Result := OPENSSL_sk_num(skX509);
+end;
+
+function sk_X509_value(const skX509: POPENSSL_STACK; index: Integer): PX509;
+begin
+  Result := OPENSSL_sk_Value(skX509, Index);
+end;
+
+procedure OpenSSL_add_all_algorithms;
+begin
+  OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS or OPENSSL_INIT_ADD_ALL_DIGESTS or OPENSSL_INIT_LOAD_CONFIG, nil);
+end;
+
+function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_SET_CONNECT, 0, Name);
+end;
+
+function SSL_CTX_set_min_proto_version(ctx: PSSL_CTX; version: integer): integer;
+begin
+  result := SSL_CTX_ctrl(ctx, SSL_CTRL_SET_MIN_PROTO_VERSION, version, nil);
+end;
+
+function SSL_CTX_set_max_proto_version(ctx: PSSL_CTX; version: integer): integer;
+begin
+  result := SSL_CTX_ctrl(ctx, SSL_CTRL_SET_MAX_PROTO_VERSION, version, nil);
+end;
+
+function SSL_CTX_add_extra_chain_cert(ctx: PSSL_CTX; x509:PX509): Integer;
+begin
+  Result := SSL_CTX_ctrl(ctx,SSL_CTRL_EXTRA_CHAIN_CERT,0 , x509)
+end;
+
+function SSL_CTX_clear_extra_chain_certs(ctx: PSSL_CTX): Integer;
+begin
+  Result := SSL_CTX_ctrl(ctx,SSL_CTRL_CLEAR_EXTRA_CHAIN_CERTS,0, nil);
+end;
+
+function BIO_set_conn_port(b: PBIO; Port: PUTF8Char): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_SET_CONNECT, 1, Port);
+end;
+
+function BIO_set_recv_timeout(b: PBIO; timeout: Integer): clong;
+var
+  TimeVal: TTimeVal;
+begin
+  TimeVal.tv_sec := Timeout div 1000;
+  TimeVal.tv_usec := (Timeout mod 1000) * 1000;
+  Result := BIO_ctrl(b, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, @TimeVal);
+end;
+
+function BIO_set_send_timeout(b: PBIO; timeout: Integer): clong;
+var
+  TimeVal: TTimeVal;
+begin
+  TimeVal.tv_sec := Timeout div 1000;
+  TimeVal.tv_usec := (Timeout mod 1000) * 1000;
+  Result := BIO_ctrl(b, BIO_CTRL_DGRAM_SET_SEND_TIMEOUT, 0, @TimeVal);
+end;
+
+function BIO_set_conn_address(b: PBIO; Address: PUTF8Char): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_SET_CONNECT, 2, Address);
+end;
+
+function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_GET_SSL, 0, @ssl);
+end;
+
+function BIO_get_mem_ptr(b: PBIO; var pp: PBUF_MEM) : clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_GET_BUF_MEM_PTR, 0, @pp);
+end;
+
+function BIO_flush(b: PBIO): clong; inline;
+begin
+  Result := BIO_ctrl(b, BIO_CTRL_FLUSH, 0, nil);
+end;
+
+function BIO_set_close(b: PBIO; c: clong): clong; inline;
+begin
+  Result := BIO_ctrl(b, BIO_CTRL_SET_CLOSE, c, nil);
+end;
+
+function GenerateRSAKey(Bits: Integer; const PubExp: PBIGNUM): PEVP_PKEY;
+var
+  ctx: PEVP_PKEY_CTX;
+begin
+  Result := nil;
+  ctx := EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nil);
+  if ctx = nil then Exit;
+  try
+    if EVP_PKEY_keygen_init(ctx) <> 1 then Exit;
+    if EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, Bits) <> 1 then Exit;
+    if (PubExp <> nil) and (EVP_PKEY_CTX_set1_rsa_keygen_pubexp(ctx, PubExp) <> 1) then Exit;
+    if EVP_PKEY_keygen(ctx, Result) <> 1 then
+      Result := nil;
+  finally
+    EVP_PKEY_CTX_free(ctx);
+  end;
+end;
+
+function GenerateECKey(Nid: Integer): PEVP_PKEY;
+var
+  ctx: PEVP_PKEY_CTX;
+begin
+  Result := nil;
+  ctx := EVP_PKEY_CTX_new_id(EVP_PKEY_EC, nil);
+  if ctx = nil then Exit;
+  try
+    if EVP_PKEY_keygen_init(ctx) <> 1 then Exit;
+    if EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctx, Nid) <> 1 then Exit;
+    if EVP_PKEY_keygen(ctx, Result) <> 1 then
+      Result := nil;
+  finally
+    EVP_PKEY_CTX_free(ctx);
+  end;
+end;
+
+function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
+begin
+  Result := SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, Name);
+end;
+
+procedure X509V3_set_ctx_nodb(ctx: PX509V3_CTX);
+begin
+  ctx^.db := nil;
+end;
+
+function BIO_do_handshake(b: PBIO): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_DO_STATE_MACHINE, 0, nil);
+end;
+
+function BIO_do_connect(b: PBIO): clong;
+begin
+  Result := BIO_do_handshake(b);
+end;
+
+function BIO_set_nbio(b: PBIO; n: Integer): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_SET_NBIO, n, nil);
+end;
+
+function BIO_should_retry(b: PBIO): Boolean;
+begin
+  Result := BIO_test_flags(b, BIO_FLAGS_SHOULD_RETRY) > 0;
+end;
+
+function SSL_set_mode(ssl: PSSL; op: Integer): clong; inline;
+begin
+  Result := SSL_ctrl(ssl, SSL_CTRL_MODE, op, nil);
+end;
+
+{ TmnOpenSSLLib }
+
+procedure TmnOpenSSLLib.Link;
+begin
+  RaiseError := True; //Raise error of one of this functions not exists
+  OPENSSL_init_ssl := GetAddress('OPENSSL_init_ssl');
+
+  //EVP_cleanup := GetAddress('EVP_cleanup');
+
+  SSL_get_error := GetAddress('SSL_get_error');
+  SSL_set_cipher_list := GetAddress('SSL_set_cipher_list');
+  SSL_set_verify := GetAddress('SSL_set_verify');
+  SSL_get_verify_result := GetAddress('SSL_get_verify_result');
+  SSL_set_msg_callback := GetAddress('SSL_set_msg_callback');
+  SSL_ctrl := GetAddress('SSL_ctrl');
+  SSL_new := GetAddress('SSL_new');
+  SSL_shutdown := GetAddress('SSL_shutdown');
+  SSL_set_shutdown := GetAddress('SSL_set_shutdown');
+  SSL_clear := GetAddress('SSL_clear');
+  SSL_free := GetAddress('SSL_free');
+  SSL_get_version := GetAddress('SSL_get_version');
+  SSL_set_fd := GetAddress('SSL_set_fd');
+  SSL_connect := GetAddress('SSL_connect');
+  SSL_accept := GetAddress('SSL_accept');
+  SSL_read := GetAddress('SSL_read');
+  SSL_write := GetAddress('SSL_write');
+  SSL_pending := GetAddress('SSL_pending');
+  SSL_has_pending := GetAddress('SSL_has_pending');
+  SSL_set_bio := GetAddress('SSL_set_bio');
+  SSL_CTX_set_msg_callback := GetAddress('SSL_CTX_set_msg_callback');
+
+  SSL_state_string := GetAddress('SSL_state_string');
+  SSL_state_string_long := GetAddress('SSL_state_string_long');
+  SSL_alert_type_string_long := GetAddress('SSL_alert_type_string_long');
+  SSL_alert_desc_string_long := GetAddress('SSL_alert_desc_string_long');
+  SSL_select_next_proto := GetAddress('SSL_select_next_proto');
+  SSL_get0_alpn_selected := GetAddress('SSL_get0_alpn_selected');
+  SSL_use_certificate_chain_file := GetAddress('SSL_use_certificate_chain_file');
+  BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect'); //still exported in libssl-3 (used by TBIOStreamSSL)
+
+  SSL_get1_peer_certificate := GetAddress('SSL_get1_peer_certificate');
+
+  TLS_method := GetAddress('TLS_method');
+  TLS_client_method := GetAddress('TLS_client_method');
+  TLS_server_method := GetAddress('TLS_server_method');
+
+  SSL_CTX_new := GetAddress('SSL_CTX_new');
+  SSL_CTX_set_verify := GetAddress('SSL_CTX_set_verify');
+  SSL_CTX_set_verify_depth := GetAddress('SSL_CTX_set_verify_depth');
+  SSL_CTX_set_options := GetAddress('SSL_CTX_set_options');
+  SSL_CTX_load_verify_locations := GetAddress('SSL_CTX_load_verify_locations');
+  SSL_CTX_free := GetAddress('SSL_CTX_free');
+  SSL_CTX_set_cipher_list := GetAddress('SSL_CTX_set_cipher_list');
+  SSL_CTX_use_certificate := GetAddress('SSL_CTX_use_certificate');
+  SSL_CTX_use_certificate_file := GetAddress('SSL_CTX_use_certificate_file');
+  SSL_CTX_use_certificate_chain_file := GetAddress('SSL_CTX_use_certificate_chain_file');
+
+  SSL_CTX_use_PrivateKey := GetAddress('SSL_CTX_use_PrivateKey');
+  SSL_CTX_use_PrivateKey_file := GetAddress('SSL_CTX_use_PrivateKey_file');
+  SSL_CTX_check_private_key := GetAddress('SSL_CTX_check_private_key');
+  SSL_CTX_ctrl := GetAddress('SSL_CTX_ctrl');
+  SSL_CTX_set_info_callback := GetAddress('SSL_CTX_set_info_callback');
+  SSL_CTX_set_alpn_select_cb := GetAddress('SSL_CTX_set_alpn_select_cb');
+  SSL_CTX_set_alpn_protos := GetAddress('SSL_CTX_set_alpn_protos');
+
+  //SSL_CTX_add_extra_chain_cert := GetAddress('SSL_CTX_add_extra_chain_cert');
+  //SSL_CTX_clear_extra_chain_certs := GetAddress('SSL_CTX_clear_extra_chain_certs');
+
+  SSL_CTX_get_cert_store := GetAddress('SSL_CTX_get_cert_store');
+end;
+
+{ TmnCryptoLib }
+
+procedure TmnCryptoLib.Link;
+begin
+  RaiseError := True; //Raise error of one of this functions not exists
+
+  OPENSSL_init_crypto := GetAddress('OPENSSL_init_crypto');
+
+  RAND_bytes := GetAddress('RAND_bytes');
+
+  X509_new := GetAddress('X509_new');
+  X509_free := GetAddress('X509_free');
+  X509_verify_cert_error_string := GetAddress('X509_verify_cert_error_string');
+  X509_REQ_new := GetAddress('X509_REQ_new');
+  X509_NAME_new := GetAddress('X509_NAME_new');
+  X509_NAME_free := GetAddress('X509_NAME_free');
+  X509_sign := GetAddress('X509_sign');
+  X509_REQ_set_version := GetAddress('X509_REQ_set_version');
+  X509_REQ_get_subject_name := GetAddress('X509_REQ_get_subject_name');
+  X509_REQ_set_pubkey := GetAddress('X509_REQ_set_pubkey');
+  X509_REQ_sign := GetAddress('X509_REQ_sign');
+  X509_NAME_add_entry_by_txt := GetAddress('X509_NAME_add_entry_by_txt');
+  X509_REQ_free := GetAddress('X509_REQ_free');
+  X509_add_ext := GetAddress('X509_add_ext');
+  X509V3_set_ctx := GetAddress('X509V3_set_ctx');
+  X509V3_EXT_nconf := GetAddress('X509V3_EXT_nconf');
+  X509_set_version := GetAddress('X509_set_version');
+  X509_EXTENSION_free := GetAddress('X509_EXTENSION_free');
+  X509_set_issuer_name := GetAddress('X509_set_issuer_name');
+  X509_to_X509_REQ := GetAddress('X509_to_X509_REQ');
+
+  ASN1_INTEGER_set := GetAddress('ASN1_INTEGER_set');
+  ASN1_INTEGER_set_int64 := GetAddress('ASN1_INTEGER_set_int64');
+  X509_get_serialNumber := GetAddress('X509_get_serialNumber');
+  X509_time_adj_ex := GetAddress('X509_time_adj_ex');
+  X509_set1_notBefore := GetAddress('X509_set1_notBefore');
+  X509_set1_notAfter := GetAddress('X509_set1_notAfter');
+  X509_get0_notBefore := GetAddress('X509_get0_notBefore');
+  X509_get0_notAfter := GetAddress('X509_get0_notAfter');
+  ASN1_TIME_free := GetAddress('ASN1_TIME_free');
+  X509_set_pubkey := GetAddress('X509_set_pubkey');
+  X509_get_subject_name := GetAddress('X509_get_subject_name');
+  X509_add1_ext_i2d := GetAddress('X509_add1_ext_i2d');
+
+
+  X509_set_subject_name := GetAddress('X509_set_subject_name');
+  X509_REQ_set_subject_name := GetAddress('X509_REQ_set_subject_name');
+  X509_REQ_get_pubkey := GetAddress('X509_REQ_get_pubkey');
+  X509_REQ_add1_attr_by_txt := GetAddress('X509_REQ_add1_attr_by_txt');
+
+  X509_STORE_CTX_get_error_depth := GetAddress('X509_STORE_CTX_get_error_depth');
+  PEM_read_bio_X509_REQ := GetAddress('PEM_read_bio_X509_REQ');
+  PEM_write_bio_X509_REQ := GetAddress('PEM_write_bio_X509_REQ');
+  PEM_write_bio_PrivateKey := GetAddress('PEM_write_bio_PrivateKey');
+  PEM_write_bio_X509 := GetAddress('PEM_write_bio_X509');
+  PEM_write_X509 := GetAddress('PEM_write_X509');
+  PEM_read_bio_X509 := GetAddress('PEM_read_bio_X509');
+  PEM_read_bio_PrivateKey := GetAddress('PEM_read_bio_PrivateKey');
+  PEM_read_bio_PUBKEY := GetAddress('PEM_read_bio_PUBKEY');
+  PEM_write_bio_PUBKEY := GetAddress('PEM_write_bio_PUBKEY');
+  PEM_X509_INFO_read_bio := GetAddress('PEM_X509_INFO_read_bio');
+
+  EVP_PKEY_new := GetAddress('EVP_PKEY_new');
+  EVP_PKEY_get_size := GetAddress('EVP_PKEY_get_size');
+  EVP_PKEY_get_bn_param := GetAddress('EVP_PKEY_get_bn_param');
+  EVP_PKEY_eq := GetAddress('EVP_PKEY_eq');
+
+  EVP_PKEY_CTX_new_id := GetAddress('EVP_PKEY_CTX_new_id');
+  EVP_PKEY_CTX_new := GetAddress('EVP_PKEY_CTX_new');
+  EVP_PKEY_CTX_free := GetAddress('EVP_PKEY_CTX_free');
+  EVP_PKEY_keygen_init := GetAddress('EVP_PKEY_keygen_init');
+  EVP_PKEY_keygen := GetAddress('EVP_PKEY_keygen');
+  EVP_PKEY_CTX_set_rsa_keygen_bits := GetAddress('EVP_PKEY_CTX_set_rsa_keygen_bits');
+  EVP_PKEY_CTX_set1_rsa_keygen_pubexp := GetAddress('EVP_PKEY_CTX_set1_rsa_keygen_pubexp');
+  EVP_PKEY_CTX_set_ec_paramgen_curve_nid := GetAddress('EVP_PKEY_CTX_set_ec_paramgen_curve_nid');
+
+  EVP_PKEY_sign_init := GetAddress('EVP_PKEY_sign_init');
+  EVP_PKEY_sign := GetAddress('EVP_PKEY_sign');
+  EVP_PKEY_CTX_set_signature_md := GetAddress('EVP_PKEY_CTX_set_signature_md');
+  EVP_MD_CTX_new := GetAddress('EVP_MD_CTX_new');
+  EVP_MD_CTX_free := GetAddress('EVP_MD_CTX_free');
+  EVP_DigestSignInit := GetAddress('EVP_DigestSignInit');
+  EVP_DigestSign := GetAddress('EVP_DigestSign');
+  EVP_DigestSignFinal := GetAddress('EVP_DigestSignFinal');
+
+  EVP_PKEY_free := GetAddress('EVP_PKEY_free');
+
+  EVP_md_null := GetAddress('EVP_md_null');
+  EVP_md5 := GetAddress('EVP_md5');
+  EVP_sha1 := GetAddress('EVP_sha1');
+  //EVP_mdc2 := GetAddress('EVP_mdc2');
+  EVP_ripemd160 := GetAddress('EVP_ripemd160');
+  EVP_blake2b512 := GetAddress('EVP_blake2b512');
+  EVP_blake2s256 := GetAddress('EVP_blake2s256');
+
+  EVP_sha224 := GetAddress('EVP_sha224');
+  EVP_sha256 := GetAddress('EVP_sha256');
+  EVP_sha384 := GetAddress('EVP_sha384');
+  EVP_sha512 := GetAddress('EVP_sha512');
+  EVP_DigestUpdate := GetAddress('EVP_DigestUpdate');
+
+  BIO_ctrl := GetAddress('BIO_ctrl');
+  BIO_new := GetAddress('BIO_new');
+  BIO_new_fd := GetAddress('BIO_new_fd');
+  BIO_new_file := GetAddress('BIO_new_file');
+  BIO_new_mem_buf := GetAddress('BIO_new_mem_buf');
+  BIO_f_base64 := GetAddress('BIO_f_base64');
+  BIO_set_flags := GetAddress('BIO_set_flags');
+  BIO_test_flags := GetAddress('BIO_test_flags');
+  //BIO_read_filename := GetAddress('BIO_read_filename');
+  BIO_free := GetAddress('BIO_free');
+  BIO_free_all := GetAddress('BIO_free_all');
+  BIO_write := GetAddress('BIO_write');
+  BIO_read := GetAddress('BIO_read');
+  BIO_puts := GetAddress('BIO_puts');
+  BIO_push := GetAddress('BIO_push');
+  BIO_gets := GetAddress('BIO_gets');
+
+  OPENSSL_sk_new_null := GetAddress('OPENSSL_sk_new_null');
+  OPENSSL_sk_push := GetAddress('OPENSSL_sk_push');
+  OPENSSL_sk_num := GetAddress('OPENSSL_sk_num');
+  OPENSSL_sk_value := GetAddress('OPENSSL_sk_value');
+  OPENSSL_sk_free := GetAddress('OPENSSL_sk_free');
+  OPENSSL_sk_pop_free := GetAddress('OPENSSL_sk_pop_free');
+
+  //sk_X509_num := GetAddress('sk_X509_num');
+  //sk_X509_value := GetAddress('sk_X509_value');
+
+  ASN1_STRING_new := GetAddress('ASN1_STRING_new');
+  ASN1_STRING_set := GetAddress('ASN1_STRING_set');
+  ASN1_STRING_free := GetAddress('ASN1_STRING_free');
+  ASN1_OCTET_STRING_new := GetAddress('ASN1_OCTET_STRING_new');
+  ASN1_OCTET_STRING_set := GetAddress('ASN1_OCTET_STRING_set');
+  ASN1_OCTET_STRING_free := GetAddress('ASN1_OCTET_STRING_free');
+  ASN1_IA5STRING_new := GetAddress('ASN1_IA5STRING_new');
+  ASN1_IA5STRING_free := GetAddress('ASN1_IA5STRING_free');
+
+  GENERAL_NAME_new := GetAddress('GENERAL_NAME_new');
+  GENERAL_NAME_set0_value := GetAddress('GENERAL_NAME_set0_value');
+  GENERAL_NAME_free := GetAddress('GENERAL_NAME_free');
+
+  sk_GENERAL_NAME_new_null := GetAddress('OPENSSL_sk_new_null');
+  sk_GENERAL_NAME_push := GetAddress('OPENSSL_sk_push');
+  sk_GENERAL_NAME_free := GetAddress('OPENSSL_sk_free');
+  sk_GENERAL_NAME_pop_free := GetAddress('OPENSSL_sk_pop_free');
+  sk_X509_EXTENSION_pop_free := GetAddress('OPENSSL_sk_pop_free');
+  sk_X509_EXTENSION_new_null := GetAddress('OPENSSL_sk_new_null');
+  sk_X509_EXTENSION_push := GetAddress('OPENSSL_sk_push');
+
+  X509_get0_extensions := GetAddress('X509_get0_extensions');
+
+  BIO_s_mem := GetAddress('BIO_s_mem');
+
+  BN_new := GetAddress('BN_new');
+  BN_set_word := GetAddress('BN_set_word');
+  BN_free := GetAddress('BN_free');
+  BN_num_bits := GetAddress('BN_num_bits');
+  BN_bn2bin := GetAddress('BN_bn2bin');
+  BN_bin2bn := GetAddress('BN_bin2bn');
+
+  EVP_Digest := GetAddress('EVP_Digest');
+
+  ERR_get_error := GetAddress('ERR_get_error');
+  ERR_error_string := GetAddress('ERR_error_string');
+  ERR_error_string_n := GetAddress('ERR_error_string_n');
+  ERR_peek_error := GetAddress('ERR_peek_error');
+
+  X509_NAME_add_entry_by_NID := GetAddress('X509_NAME_add_entry_by_NID');
+  X509_REQ_add_extensions := GetAddress('X509_REQ_add_extensions');
+  X509_REQ_add_extensions_nid := GetAddress('X509_REQ_add_extensions_nid');
+  X509V3_add1_i2d := GetAddress('X509V3_add1_i2d');
+
+  X509_STORE_new := GetAddress('X509_STORE_new');
+  X509_STORE_add_cert := GetAddress('X509_STORE_add_cert');
+  X509_STORE_free := GetAddress('X509_STORE_free');
+
+  OBJ_create  := GetAddress('OBJ_create');
+  OBJ_txt2nid := GetAddress('OBJ_txt2nid');
+  OBJ_nid2sn := GetAddress('OBJ_nid2sn');
+
+  d2i_X509 := GetAddress('d2i_X509');
+  d2i_PKCS12_bio := GetAddress('d2i_PKCS12_bio');
+  PKCS12_parse := GetAddress('PKCS12_parse');
+  PKCS12_free := GetAddress('PKCS12_free');
+end;
+
+function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt; inline;
+begin
+  Result := BIO_ctrl(b, BIO_CTRL_INFO, 0, @pp);
+end;
+
+initialization
+  {$ifdef MSWINDOWS}
+  {$ifdef win64}
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl-3-x64');
+  CryptoLib := TmnCryptoLib.Create('libcrypto-3-x64');
+  {$else}
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl-3');
+  CryptoLib := TmnCryptoLib.Create('libcrypto-3');
+  {$endif}
+  {$else}
+  {$ifdef macos}
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl.3');
+  CryptoLib := TmnCryptoLib.Create('libcrypto.3');
+  {$else}
+  {$ifdef linux}
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl.so.3');
+  CryptoLib := TmnCryptoLib.Create('libcrypto.so.3');
+  {$else}
+  CryptoLib := TmnCryptoLib.Create('libcrypto_3.so'); //android
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl_3.so');  //android
+  //https://github.com/KDAB/android_openssl
+  {$endif}
+  {$endif}
+  {$endif}
+finalization
+  FreeAndNil(OpenSSLLib);
+  FreeAndNil(CryptoLib);
+end.
+
