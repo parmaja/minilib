@@ -51,7 +51,6 @@ type
     procedure Clear;
     function ParseHexRow(const HexLine: string; BitWidth: Integer): TBytes;
     procedure BuildAtlasToStream(Stream: TStream);
-    //TODO this must match the RayLib png rules
     procedure BuildXNAToStream(Stream: TStream);
   public
     destructor Destroy; override;
@@ -314,7 +313,7 @@ begin
   if not FLoaded then
     Exit;
   Result := TMemoryStream.Create;
-  BuildAtlasToStream(Result);
+  BuildXNAToStream(Result);
   Result.Position := 0;
 end;
 
@@ -414,6 +413,129 @@ begin
       writer.CompressionLevel := clDefault;
       writer.UseAlpha := False;
       writer.WordSized := False;   // write 8-bit samples -> plain RGB (truecolor) PNG
+      writer.GrayScale := False;
+      img.SaveToStream(Stream, writer);
+    finally
+      writer.Free;
+    end;
+  finally
+    img.Free;
+  end;
+end;
+
+procedure TBDF.BuildXNAToStream(Stream: TStream);
+const
+  cSpacing = 1;        // key-color (magenta) border thickness between and around cells
+  cFirstChar = 32;     // Space
+  cGlyphCount = 95;    // printable ASCII: 32..126
+  cColumns = 21;       // cells per row (grid layout, like the reference RayLib atlas)
+var
+  img: TFPMemoryImage;
+  writer: TFPWriterPNG;
+  x, y, i, px, py, RowBytes, ByteIndex, BitInByte, BitValue, Mask, Rows: Integer;
+  Code, Index, CellWidth, CellHeight, TotalWidth, TotalHeight, BaseLineY, OffY: Integer;
+  KeyColor, CellColor, MarkColor: TFPColor;
+  CodeIndex: array[0..255] of Integer;
+  Glyph: TCodePoint;
+  CellX, CellY: Integer;
+begin
+  if FCount = 0 then
+    Exit;
+
+  CellWidth := FWidth;
+  for i := 0 to FCount - 1 do
+    if FCodePoints[i].BBXWidth > CellWidth then
+      CellWidth := FCodePoints[i].BBXWidth;
+  if CellWidth < 1 then
+    CellWidth := 1;
+
+  CellHeight := FHeight;
+  if CellHeight < 1 then
+    CellHeight := 1;
+
+  Rows := (cGlyphCount + cColumns - 1) div cColumns;
+  if Rows < 1 then
+    Rows := 1;
+
+  TotalWidth := cSpacing + (CellWidth + cSpacing) * cColumns;
+  TotalHeight := cSpacing + (CellHeight + cSpacing) * Rows;
+
+  // All cell boxes share the same height so every glyph stands on the same baseline.
+  BaseLineY := 0;
+  for i := 0 to FCount - 1 do
+  begin
+    y := FCodePoints[i].BBXOffY + FCodePoints[i].BBXHeight - 1;
+    if y > BaseLineY then
+      BaseLineY := y;
+  end;
+
+  // Magenta is the single key color: it surrounds every character and is the
+  // transparent key for RayLib LoadFontFromImage(). Cells are solid non-key so
+  // the RayLib scan always measures a contiguous box; glyph marks are white.
+  KeyColor.Red := $FFFF; KeyColor.Green := $0000; KeyColor.Blue := $FFFF; KeyColor.Alpha := $FFFF;
+  CellColor.Red := $0000; CellColor.Green := $0000; CellColor.Blue := $0000; CellColor.Alpha := $FFFF;
+  MarkColor.Red := $FFFF; MarkColor.Green := $FFFF; MarkColor.Blue := $FFFF; MarkColor.Alpha := $FFFF;
+
+  for i := 0 to 255 do
+    CodeIndex[i] := -1;
+  for i := 0 to FCount - 1 do
+    if (FCodePoints[i].Code >= 0) and (FCodePoints[i].Code <= 255) then
+      CodeIndex[FCodePoints[i].Code] := i;
+
+  img := TFPMemoryImage.Create(TotalWidth, TotalHeight);
+  try
+    // Background: everything is the key (magenta), cells are drawn on top of it.
+    for py := 0 to TotalHeight - 1 do
+      for px := 0 to TotalWidth - 1 do
+        img.Colors[px, py] := KeyColor;
+
+    // Characters arranged sequentially in rows, starting with Space (ASCII 32).
+    for Code := 0 to cGlyphCount - 1 do
+    begin
+      CellX := cSpacing + (Code mod cColumns) * (CellWidth + cSpacing);
+      CellY := cSpacing + (Code div cColumns) * (CellHeight + cSpacing);
+
+      for py := CellY to CellY + CellHeight - 1 do
+        for px := CellX to CellX + CellWidth - 1 do
+          img.Colors[px, py] := CellColor;
+
+      Index := CodeIndex[cFirstChar + Code];
+      if Index < 0 then
+        Continue;
+      Glyph := FCodePoints[Index];
+      if (Glyph.BBXWidth <= 0) or (Glyph.BBXHeight <= 0) or (Length(Glyph.Bits) = 0) then
+        Continue;
+
+      RowBytes := (Glyph.BBXWidth + 7) div 8;
+      OffY := BaseLineY - (Glyph.BBXOffY + Glyph.BBXHeight - 1);
+      for y := 0 to Glyph.BBXHeight - 1 do
+      begin
+        py := CellY + OffY + y;
+        if (py < CellY) or (py >= CellY + CellHeight) then
+          Continue;
+        for x := 0 to Glyph.BBXWidth - 1 do
+        begin
+          ByteIndex := y * RowBytes + (x shr 3);
+          if ByteIndex >= Length(Glyph.Bits) then
+            Continue;
+          BitInByte := 7 - (x and 7);
+          BitValue := Glyph.Bits[ByteIndex];
+          Mask := 1 shl BitInByte;
+          if (BitValue and Mask) <> 0 then
+          begin
+            px := CellX + Glyph.BBXOffX + x;
+            if (px >= CellX) and (px < CellX + CellWidth) then
+              img.Colors[px, py] := MarkColor;
+          end;
+        end;
+      end;
+    end;
+
+    writer := TFPWriterPNG.Create;
+    try
+      writer.CompressionLevel := clDefault;
+      writer.UseAlpha := False;
+      writer.WordSized := False;
       writer.GrayScale := False;
       img.SaveToStream(Stream, writer);
     finally
