@@ -487,7 +487,7 @@ begin
     // Background: everything is the key (magenta), cells are drawn on top of it.
     for py := 0 to TotalHeight - 1 do
       for px := 0 to TotalWidth - 1 do
-        img.Colors[px, py] := KeyColor;
+        img.Colors[px, py] := CellColor;
 
     // Characters arranged sequentially in rows, starting with Space (ASCII 32).
     for Code := 0 to cGlyphCount - 1 do
@@ -497,7 +497,7 @@ begin
 
       for py := CellY to CellY + CellHeight - 1 do
         for px := CellX to CellX + CellWidth - 1 do
-          img.Colors[px, py] := CellColor;
+          img.Colors[px, py] := KeyColor;
 
       Index := CodeIndex[cFirstChar + Code];
       if Index < 0 then
@@ -534,7 +534,8 @@ begin
     writer := TFPWriterPNG.Create;
     try
       writer.CompressionLevel := clDefault;
-      writer.UseAlpha := False;
+      writer.Indexed := True;
+      writer.UseAlpha := True;
       writer.WordSized := False;
       writer.GrayScale := False;
       img.SaveToStream(Stream, writer);
