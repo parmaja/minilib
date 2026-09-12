@@ -51,6 +51,8 @@ type
     procedure Clear;
     function ParseHexRow(const HexLine: string; BitWidth: Integer): TBytes;
     procedure BuildAtlasToStream(Stream: TStream);
+    //TODO this must match the RayLib png rules
+    procedure BuildXNAToStream(Stream: TStream);
   public
     destructor Destroy; override;
     // Load a BDF from a local file (read as binary into memory first)
@@ -317,12 +319,14 @@ begin
 end;
 
 procedure TBDF.BuildAtlasToStream(Stream: TStream);
+const
+  cCharsPerRow = 32; // 16 chars per row (grid layout)
 var
   img: TFPMemoryImage;
   writer: TFPWriterPNG;
-  x, y, i, cx, RowBytes, ByteIndex, BitInByte, BitValue, Mask, px, py: Integer;
+  x, y, i, cx, cy, RowBytes, ByteIndex, BitInByte, BitValue, Mask, px, py: Integer;
   Glyph: TCodePoint;
-  CellWidth, CellHeight, TotalWidth, RowStart, OriginY: Integer;
+  CellWidth, CellHeight, TotalWidth, TotalHeight, RowStart, BaseLineY, Rows: Integer;
   FgColor, BgColor: TFPColor;
 begin
   if FCount = 0 then
@@ -340,44 +344,64 @@ begin
     CellWidth := FWidth;
   if CellWidth < 1 then
     CellWidth := 1;
-  TotalWidth := CellWidth * FCount;
+
+  // Grid layout: cCharsPerRow columns, glyphs placed left-to-right, top-to-bottom.
+  Rows := (FCount + cCharsPerRow - 1) div cCharsPerRow;
+  if Rows < 1 then
+    Rows := 1;
+  TotalWidth := cCharsPerRow * CellWidth;
+  TotalHeight := Rows * CellHeight;
+
+  // Baseline row in image coordinates (0 = top of the cell). Place the tallest
+  // glyph's top row on the first row of its cell so glyphs stand on a baseline.
+  BaseLineY := 0;
+  for i := 0 to FCount - 1 do
+  begin
+    y := FCodePoints[i].BBXOffY + FCodePoints[i].BBXHeight - 1;
+    if y > BaseLineY then
+      BaseLineY := y;
+  end;
 
   // RayLib font atlas: set pixels are black, unset are the magenta transparent key.
   FgColor.Red := $0000; FgColor.Green := $0000; FgColor.Blue := $0000; FgColor.Alpha := $FFFF;   // black
   BgColor.Red := $FFFF; BgColor.Green := $0000; BgColor.Blue := $FFFF; BgColor.Alpha := $FFFF;   // magenta key (transparent)
 
-  img := TFPMemoryImage.Create(TotalWidth, CellHeight);
+  img := TFPMemoryImage.Create(TotalWidth, TotalHeight);
   try
     // background = transparent key (magenta)
-    for y := 0 to CellHeight - 1 do
-      for x := 0 to TotalWidth - 1 do
-        img.Colors[x, y] := BgColor;
+    for py := 0 to TotalHeight - 1 do
+      for px := 0 to TotalWidth - 1 do
+        img.Colors[px, py] := BgColor;
     for i := 0 to FCount - 1 do
     begin
       Glyph := FCodePoints[i];
-      cx := i * CellWidth;
+      cx := (i mod cCharsPerRow) * CellWidth;
+      cy := (i div cCharsPerRow) * CellHeight;
       if (Glyph.BBXWidth > 0) and (Glyph.BBXHeight > 0) and (Length(Glyph.Bits) > 0) then
       begin
         RowBytes := (Glyph.BBXWidth + 7) div 8;
         // BBXOffY is offset from the baseline; negative means the glyph extends above it.
-        OriginY := CellHeight + Glyph.BBXOffY;
+        // BDF bitmap rows run top-down: row 0 is the glyph's top row.
         for y := 0 to Glyph.BBXHeight - 1 do
         begin
           RowStart := y * RowBytes;
-          for x := 0 to Glyph.BBXWidth - 1 do
+          py := cy + BaseLineY - (Glyph.BBXOffY + Glyph.BBXHeight - 1) + y;
+          if (py >= cy) and (py < cy + CellHeight) then
           begin
-            ByteIndex := RowStart + (x shr 3);
-            if ByteIndex < Length(Glyph.Bits) then
+            for x := 0 to Glyph.BBXWidth - 1 do
             begin
-              BitInByte := 7 - (x and 7);
-              BitValue := Glyph.Bits[ByteIndex];
-              Mask := (1 shl BitInByte);
-              if (BitValue and Mask) <> 0 then
+              ByteIndex := RowStart + (x shr 3);
+              if ByteIndex < Length(Glyph.Bits) then
               begin
-                px := cx + Glyph.BBXOffX + x;
-                py := OriginY - y; // BDF bitmap rows run top-down from the top origin
-                if (px >= 0) and (px < TotalWidth) and (py >= 0) and (py < CellHeight) then
-                  img.Colors[px, py] := FgColor;
+                BitInByte := 7 - (x and 7);
+                BitValue := Glyph.Bits[ByteIndex];
+                Mask := (1 shl BitInByte);
+                if (BitValue and Mask) <> 0 then
+                begin
+                  px := cx + Glyph.BBXOffX + x;
+                  if (px >= cx) and (px < cx + CellWidth) then
+                    img.Colors[px, py] := FgColor;
+                end;
               end;
             end;
           end;
@@ -387,8 +411,9 @@ begin
 
     writer := TFPWriterPNG.Create;
     try
-      writer.CompressionLevel := cldefault;
+      writer.CompressionLevel := clDefault;
       writer.UseAlpha := False;
+      writer.WordSized := False;   // write 8-bit samples -> plain RGB (truecolor) PNG
       writer.GrayScale := False;
       img.SaveToStream(Stream, writer);
     finally
