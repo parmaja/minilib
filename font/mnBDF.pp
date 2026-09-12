@@ -44,7 +44,7 @@ type
     FBaseLine: Integer;
     FWidth: Integer;
     FHeight: Integer;
-    FPngStream: TMemoryStream; // PNG font atlas, ready for RayLib LoadFontFromImage
+    //FPngStream: TMemoryStream; // PNG font atlas, ready for RayLib LoadFontFromImage
     FLoaded: Boolean;
     function GetCodePoints(Index: Integer): TCodePoint;
   protected
@@ -60,7 +60,8 @@ type
     // Load a BDF from raw binary memory (AnsiString/RawByteString)
     procedure LoadFromMemory(const Data: RawByteString);
     // Encode loaded glyphs into a PNG font atlas memory stream (for RayLib)
-    procedure EncodeToPNG;
+    // PNG font atlas as a memory stream
+    function EncodeToPNG: TMemoryStream;
     property Count: Integer read FCount;
     property CodePoints[Index: Integer]: TCodePoint read GetCodePoints;
     // Font pixel height (from FONTBOUNDINGBOX height or SIZE)
@@ -69,8 +70,6 @@ type
     property Width: Integer read FWidth;
     // Baseline offset in pixels from the top of the font cell (FONTBOUNDINGBOX y negated)
     property BaseLine: Integer read FBaseLine;
-    // PNG font atlas as a memory stream (call EncodeToPNG first, or it is done on load)
-    property PngStream: TMemoryStream read FPngStream;
     property Loaded: Boolean read FLoaded;
   end;
 
@@ -119,8 +118,6 @@ end;
 destructor TBDF.Destroy;
 begin
   Clear;
-  if Assigned(FPngStream) then
-    FreeAndNil(FPngStream);
   inherited;
 end;
 
@@ -310,15 +307,13 @@ begin
   end;
 end;
 
-procedure TBDF.EncodeToPNG;
+function TBDF.EncodeToPNG: TMemoryStream;
 begin
   if not FLoaded then
     Exit;
-  if not Assigned(FPngStream) then
-    FPngStream := TMemoryStream.Create;
-  FPngStream.Clear;
-  BuildAtlasToStream(FPngStream);
-  FPngStream.Position := 0;
+  Result := TMemoryStream.Create;
+  BuildAtlasToStream(Result);
+  Result.Position := 0;
 end;
 
 procedure TBDF.BuildAtlasToStream(Stream: TStream);
