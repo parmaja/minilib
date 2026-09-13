@@ -50,10 +50,10 @@ type
   protected
     procedure Clear;
     function ParseHexRow(const HexLine: string; BitWidth: Integer): TBytes;
-    procedure BuildAtlasToStream(Stream: TStream);
-    procedure BuildXNAToStream(Stream: TStream);
   public
     destructor Destroy; override;
+    procedure BuildAtlasToStream(Stream: TStream);
+    procedure BuildXNAToStream(Stream: TStream);
     // Load a BDF from a local file (read as binary into memory first)
     procedure LoadFromFile(const FileName: string);
     // Load a BDF from an already loaded binary memory stream
@@ -473,7 +473,7 @@ begin
   // transparent key for RayLib LoadFontFromImage(). Cells are solid non-key so
   // the RayLib scan always measures a contiguous box; glyph marks are white.
   KeyColor.Red := $FFFF; KeyColor.Green := $0000; KeyColor.Blue := $FFFF; KeyColor.Alpha := $FFFF;
-  CellColor.Red := $0000; CellColor.Green := $0000; CellColor.Blue := $0000; CellColor.Alpha := $FFFF;
+  CellColor.Red := $0000; CellColor.Green := $0000; CellColor.Blue := $0000; CellColor.Alpha := $0000;
   MarkColor.Red := $FFFF; MarkColor.Green := $FFFF; MarkColor.Blue := $FFFF; MarkColor.Alpha := $FFFF;
 
   for i := 0 to 255 do
@@ -484,10 +484,11 @@ begin
 
   img := TFPMemoryImage.Create(TotalWidth, TotalHeight);
   try
+    img.UsePalette := True;
     // Background: everything is the key (magenta), cells are drawn on top of it.
     for py := 0 to TotalHeight - 1 do
       for px := 0 to TotalWidth - 1 do
-        img.Colors[px, py] := CellColor;
+        img.Colors[px, py] := KeyColor;
 
     // Characters arranged sequentially in rows, starting with Space (ASCII 32).
     for Code := 0 to cGlyphCount - 1 do
@@ -497,7 +498,7 @@ begin
 
       for py := CellY to CellY + CellHeight - 1 do
         for px := CellX to CellX + CellWidth - 1 do
-          img.Colors[px, py] := KeyColor;
+          img.Colors[px, py] := CellColor;
 
       Index := CodeIndex[cFirstChar + Code];
       if Index < 0 then
@@ -534,7 +535,7 @@ begin
     writer := TFPWriterPNG.Create;
     try
       writer.CompressionLevel := clDefault;
-      writer.Indexed := True;
+      writer.Indexed:= True;
       writer.UseAlpha := True;
       writer.WordSized := False;
       writer.GrayScale := False;
