@@ -653,10 +653,10 @@ begin
     X509_REQ_set_version(Result, 0);
 
     name := X509_REQ_get_subject_name(Result);
-    AddNameEntry(name, 'CN', dn.Cn);
-    AddNameEntry(name, 'O', dn.O);
-    AddNameEntry(name, 'OU', dn.Ou);
     AddNameEntry(name, 'C', dn.C);
+    AddNameEntry(name, 'OU', dn.Ou);
+    AddNameEntry(name, 'O', dn.O);
+    AddNameEntry(name, 'CN', dn.Cn);
     AddNameEntry(name, 'ST', dn.State);
     AddNameEntry(name, 'L', dn.City);
     AddNameEntry(name, 'emailAddress', dn.Email);
@@ -868,16 +868,6 @@ begin
   if extStack = nil then
     raise EmnOpenSSLException.Create('Error sk_X509_EXTENSION_new_null');
   try
-    if Length(vAltNames) > 0 then
-    begin
-      gens := BuildSanStack(vAltNames);
-      if gens = nil then
-        raise EmnOpenSSLException.Create('Error BuildSanStack');
-      if X509V3_add1_i2d(Pstack_st_X509_EXTENSION(@extStack), NID_subject_alt_name,
-          Pointer(gens), 0, X509V3_ADD_APPEND) <> 1 then
-        raise EmnOpenSSLException.Create('Error X509V3_add1_i2d failed for SAN');
-    end;
-
     if Length(vExts) > 0 then
     begin
       FillChar(ctx, SizeOf(ctx), 0);
@@ -905,6 +895,16 @@ begin
           raise EmnOpenSSLException.Create('Error sk_X509_EXTENSION_push');
         end;
       end;
+    end;
+
+    if Length(vAltNames) > 0 then
+    begin
+      gens := BuildSanStack(vAltNames);
+      if gens = nil then
+        raise EmnOpenSSLException.Create('Error BuildSanStack');
+      if X509V3_add1_i2d(Pstack_st_X509_EXTENSION(@extStack), NID_subject_alt_name,
+          Pointer(gens), 0, X509V3_ADD_APPEND) <> 1 then
+        raise EmnOpenSSLException.Create('Error X509V3_add1_i2d failed for SAN');
     end;
 
     if X509_REQ_add_extensions(req, extStack) <> 1 then
