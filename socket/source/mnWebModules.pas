@@ -56,14 +56,10 @@ interface
 
 uses
   SysUtils, Classes, syncobjs, StrUtils,
-  {$ifdef FPC}
-  sha1, base64,
-  {$else}
-  NetEncoding, Hash,
-  {$endif}
   DateUtils, mnLogs, mnBase64, mnDON, mnJSON,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
-  mnFields, mnParams, mnClasses, mnMultipartData, mnModules;
+  mnFields, mnParams, mnClasses, mnMultipartData, mnOpenSSL,
+  mnModules;
 
 type
 
@@ -233,7 +229,6 @@ type
   public
     procedure RespondResult(var Result: TmodRespondResult); override;
   end;
-
   {$endif}
 
   { TmodHttpGetPostCommand }
@@ -370,10 +365,8 @@ function GetCertExpiryDate(const ACertificateFile: string): TDateTime;
 function GetCertDaysLeft(const ACertificateFile: string): Integer;
 
 function IsJWT(const S: string): Boolean;
-{$ifndef FPC}
 function JWTEncode(const Payload: UTF8String; const Secret: UTF8String): string;
 function JWTPayload(const Token: string; const Secret: string): TDON_Object;
-{$endif}
 
 function WebServers: TWebServers;
 
@@ -397,7 +390,6 @@ begin
   Result := (Length(S) > 0) and (S.CountChar('.') = 2);
 end;
 
-{$ifndef FPC}
 function JWTEncode(const Payload: UTF8String; const Secret: UTF8String): string;
 var
   HeaderB64, PayloadB64: UTF8String;
@@ -405,7 +397,7 @@ var
 begin
   HeaderB64 := Base64Encode('{"alg":"HS256","typ":"JWT"}');
   PayloadB64 := Base64Encode(Payload);
-  Signature := THashSHA2.GetHMAC(Secret, HeaderB64 + '.' + PayloadB64, SHA256);
+  Signature := HmacSHA256Base64(Secret, HeaderB64 + '.' + PayloadB64);
   Result := HeaderB64 + '.' + PayloadB64 + '.' + Signature;
 end;
 
@@ -425,7 +417,7 @@ begin
   PayloadB64 := Parts[1];
   SigB64 := Parts[2];
 
-  ExpectedSig := THashSHA2.GetHMAC(Secret, HeaderB64 + '.' + PayloadB64);
+  ExpectedSig := HmacSHA256Base64(Secret, HeaderB64 + '.' + PayloadB64);
 
   if ExpectedSig <> SigB64 then
     Exit;
@@ -440,7 +432,6 @@ begin
     Result := nil;
   end;
 end;
-{$endif}
 
 function WebFindDocument(const HomeDir, Path: string; out Document:string; Smart: Boolean = False): Boolean;
 var

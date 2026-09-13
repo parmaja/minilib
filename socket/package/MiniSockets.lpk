@@ -59,8 +59,8 @@
         <UnitName Value="mnModules"/>
       </Item>
       <Item>
-        <Filename Value="..\source\mnOpenSSLAPI.pas"/>
-        <UnitName Value="mnOpenSSLAPI"/>
+        <Filename Value="..\source\mnOpenSSL3API.pas"/>
+        <UnitName Value="mnOpenSSL3API"/>
       </Item>
       <Item>
         <Filename Value="..\source\mnOpenSSL.pas"/>
