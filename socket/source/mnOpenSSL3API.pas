@@ -49,6 +49,21 @@ const
   OSSL_PKEY_PARAM_RSA_E = 'e';
   OSSL_PKEY_PARAM_RSA_D = 'd';
 
+  //OpenSSL 3.x EVP_MAC param names (OSSL_MAC_PARAM_*)
+  OSSL_MAC_PARAM_DIGEST = 'digest';
+  OSSL_MAC_PARAM_KEY = 'key';
+
+  //OSSL_PARAM data types
+  OSSL_PARAM_INTEGER = 1;
+  OSSL_PARAM_UNSIGNED_INTEGER = 2;
+  OSSL_PARAM_REAL = 3;
+  OSSL_PARAM_UTF8_STRING = 4;
+  OSSL_PARAM_OCTET_STRING = 5;
+  OSSL_PARAM_UTF8_PTR = 6;
+  OSSL_PARAM_OCTET_PTR = 7;
+  OSSL_PARAM_CONSTRUCT = 8;
+  OSSL_PARAM_CONSTRUCT_PTR = 9;
+
 type
 
   TOPENSSL_INIT_SETTINGS =record
@@ -111,6 +126,19 @@ type
   PEVP_MD = PSSLObject;
   PEVP_PKEY_CTX = PSSLObject;
   PPEVP_PKEY_CTX = ^PEVP_PKEY_CTX;
+
+  PEVP_MAC = PSSLObject;
+  PEVP_MAC_CTX = PSSLObject;
+
+  TOSSL_PARAM = record
+    key: PUTF8Char;
+    data_type: Cardinal;
+    data: Pointer;
+    data_size: NativeUInt;
+    return_size: NativeUInt;
+  end;
+  OSSL_PARAM = TOSSL_PARAM;
+  POSSL_PARAM = ^TOSSL_PARAM;
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
   TCTXInfoCallback = procedure(ssl: PSSL; where: cint; ret: cint); cdecl;
@@ -546,6 +574,16 @@ var
   BN_bin2bn: function(s: PByte; len: Integer; ret: PBIGNUM): PBIGNUM; cdecl;
 
   EVP_Digest: function(data: Pointer; count: NativeUInt; md: PByte; size: PCardinal; atype: PEVP_MD; impl: Pointer): Integer; cdecl;
+  EVP_EncodeBlock: function(t: PByte; f: PByte; n: Integer): Integer; cdecl;
+
+  //OpenSSL 3.x MAC API (HMAC via EVP_MAC)
+  EVP_MAC_fetch: function(libctx: Pointer; const algorithm: PUTF8Char; props: PUTF8Char): PEVP_MAC; cdecl;
+  EVP_MAC_free: procedure(mac: PEVP_MAC); cdecl;
+  EVP_MAC_CTX_new: function(mac: PEVP_MAC): PEVP_MAC_CTX; cdecl;
+  EVP_MAC_CTX_free: procedure(ctx: PEVP_MAC_CTX); cdecl;
+  EVP_MAC_init: function(ctx: PEVP_MAC_CTX; const key: PByte; keylen: NativeUInt; params: POSSL_PARAM): Integer; cdecl;
+  EVP_MAC_update: function(ctx: PEVP_MAC_CTX; const data: PByte; datalen: NativeUInt): Integer; cdecl;
+  EVP_MAC_final: function(ctx: PEVP_MAC_CTX; out_: PByte; var outl: NativeUInt; outsize: NativeUInt): Integer; cdecl;
 
   BIO_new: function(typ: PBIO_METHOD): PBIO; cdecl;
   BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
@@ -1073,6 +1111,15 @@ begin
   BN_bin2bn := GetAddress('BN_bin2bn');
 
   EVP_Digest := GetAddress('EVP_Digest');
+  EVP_EncodeBlock := GetAddress('EVP_EncodeBlock');
+
+  EVP_MAC_fetch := GetAddress('EVP_MAC_fetch');
+  EVP_MAC_free := GetAddress('EVP_MAC_free');
+  EVP_MAC_CTX_new := GetAddress('EVP_MAC_CTX_new');
+  EVP_MAC_CTX_free := GetAddress('EVP_MAC_CTX_free');
+  EVP_MAC_init := GetAddress('EVP_MAC_init');
+  EVP_MAC_update := GetAddress('EVP_MAC_update');
+  EVP_MAC_final := GetAddress('EVP_MAC_final');
 
   ERR_get_error := GetAddress('ERR_get_error');
   ERR_error_string := GetAddress('ERR_error_string');

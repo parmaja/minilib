@@ -268,6 +268,12 @@ function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf
 function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
 function ECDSASignBase64(const vData, vKey: utf8string): UTF8String; overload;
 
+function HmacSHA256(const vKey: Pointer; vKeyLen: NativeUInt; const vData: Pointer; vDataLen: NativeUInt): TBytes; overload;
+function HmacSHA256(const vKey, vData: TBytes): TBytes; overload;
+function HmacSHA256(const vKey, vData: utf8string): TBytes; overload;
+function HmacSHA256Base64(const vKey, vData: TBytes): UTF8String; overload;
+function HmacSHA256Base64(const vKey, vData: utf8string): UTF8String; overload;
+
 procedure X509SaveToFile(X509: PX509; const FileName: string);
 
 function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
@@ -380,25 +386,12 @@ end;
 
 function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
 var
-  bio, b64: PBIO;
-  aBuf: PBUF_MEM;
+  outLen: Integer;
 begin
   InitOpenSSLLibrary;
-
-	b64 := BIO_new(BIO_f_base64());
-	bio := BIO_new(BIO_s_mem());
-	bio := BIO_push(b64, bio);
-
-	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); //Ignore newlines - write everything in one line
-	BIO_write(bio, vBuf, vLen);
-	BIO_flush(bio);
-  BIO_get_mem_ptr(bio, aBuf);
-
-  Result := aBuf.data;
-  SetLength(Result, aBuf.length);
-
-	//BIO_set_close(bio, BIO_NOCLOSE);
-	BIO_free_all(bio);
+  SetLength(Result, ((vLen + 2) div 3) * 4);
+  outLen := EVP_EncodeBlock(PByte(Result), vBuf, vLen);
+  SetLength(Result, outLen);
 end;
 
 function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
@@ -449,6 +442,90 @@ begin
   b := ECDSASign(vData, vKey);
   Result := BioBase64Encode(PByte(b[0]), Length(b)); //TODO check warning in FPC
   //Result := tnet
+end;
+
+function HmacSHA256(const vKey: Pointer; vKeyLen: NativeUInt; const vData: Pointer; vDataLen: NativeUInt): TBytes; overload;
+var
+  mac: PEVP_MAC;
+  mctx: PEVP_MAC_CTX;
+  params: array[0..1] of OSSL_PARAM;
+  aLen: NativeUInt;
+  aDigestSize: NativeUInt;
+begin
+  InitOpenSSLLibrary;
+  Result := nil;
+  aDigestSize := 32; //SHA256 = 32 bytes
+
+  mac := EVP_MAC_fetch(nil, PUTF8Char('HMAC'), nil);
+  if mac = nil then
+    raise EmnOpenSSLException.CreateLastError('Error EVP_MAC_fetch');
+  try
+    mctx := EVP_MAC_CTX_new(mac);
+    if mctx = nil then
+      raise EmnOpenSSLException.CreateLastError('Error EVP_MAC_CTX_new');
+    try
+      FillChar(params, SizeOf(params), 0);
+      params[0].key := PUTF8Char('digest'); //OSSL_MAC_PARAM_DIGEST
+      params[0].data := Pointer(PUTF8Char('SHA256'));
+      params[0].data_size := Length('SHA256') + 1; //include the null terminator
+      params[0].data_type := OSSL_PARAM_UTF8_STRING;
+
+      if EVP_MAC_init(mctx, PByte(vKey), vKeyLen, @params[0]) <> 1 then
+        raise EmnOpenSSLException.CreateLastError('Error EVP_MAC_init');
+
+      if (vDataLen > 0) and (EVP_MAC_update(mctx, PByte(vData), vDataLen) <> 1) then
+        raise EmnOpenSSLException.CreateLastError('Error EVP_MAC_update');
+
+      SetLength(Result, aDigestSize);
+      aLen := aDigestSize;
+      if EVP_MAC_final(mctx, PByte(Result), aLen, aDigestSize) <> 1 then
+        raise EmnOpenSSLException.CreateLastError('Error EVP_MAC_final');
+      SetLength(Result, aLen);
+    finally
+      EVP_MAC_CTX_free(mctx);
+    end;
+  finally
+    EVP_MAC_free(mac);
+  end;
+end;
+
+function HmacSHA256(const vKey, vData: TBytes): TBytes; overload;
+var
+  kp, dp: Pointer;
+  kLen, dLen: NativeUInt;
+begin
+  kLen := Length(vKey);
+  dLen := Length(vData);
+  if kLen = 0 then kp := nil else kp := @vKey[0];
+  if dLen = 0 then dp := nil else dp := @vData[0];
+  Result := HmacSHA256(kp, kLen, dp, dLen);
+end;
+
+function HmacSHA256(const vKey, vData: utf8string): TBytes; overload;
+begin
+  Result := HmacSHA256(PByte(vKey), Length(vKey), PByte(vData), Length(vData));
+end;
+
+function HmacSHA256Base64(const vKey, vData: TBytes): UTF8String; overload;
+var
+  b: TBytes;
+begin
+  b := HmacSHA256(vKey, vData);
+  if Length(b) > 0 then
+    Result := BioBase64Encode(PByte(@b[0]), Length(b))
+  else
+    Result := '';
+end;
+
+function HmacSHA256Base64(const vKey, vData: utf8string): UTF8String; overload;
+var
+  b: TBytes;
+begin
+  b := HmacSHA256(vKey, vData);
+  if Length(b) > 0 then
+    Result := BioBase64Encode(PByte(@b[0]), Length(b))
+  else
+    Result := '';
 end;
 
 function BIOToString(vProc: TBIOWriteProc): UTF8String;
