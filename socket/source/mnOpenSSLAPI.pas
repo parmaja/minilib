@@ -1,5 +1,4 @@
 unit mnOpenSSLAPI;
-{$error 'OpenSSL1 not supported'}
 {$IFDEF FPC}
 {$MODE delphi}
 {$ENDIF}
