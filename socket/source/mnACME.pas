@@ -36,7 +36,7 @@ uses
   SysUtils, Classes, StrUtils,
   mnTypes, mnUtils, mnLogs, mnClasses, mnFields, mnParams, mnModules,
   mnSockets, mnClients, mnStreams, mnStreamUtils,
-  mnOpenSSL, {$IFDEF OPENSSL3}mnOpenSSL3API{$ELSE}mnOpenSSLAPI{$ENDIF}, mnBase64, mnDON, mnJSON,
+  mnOpenSSL, mnOpenSSL3API, mnBase64, mnDON, mnJSON,
   mnWebModules, mnHttpClient;
 
 const
@@ -187,15 +187,9 @@ end;
 
 function RSASignSHA256(PKey: PEVP_PKEY; const Digest: TBytes): TBytes;
 var
-{$ifdef OPENSSL3}
   ctx: PEVP_PKEY_CTX;
   sigLen: NativeUInt;
-{$else}
-  rsa: PRSA;
-  sigLen: Cardinal;
-{$endif}
 begin
-{$ifdef OPENSSL3}
   sigLen := EVP_PKEY_get_size(PKey);
   SetLength(Result, sigLen);
   ctx := EVP_PKEY_CTX_new(PKey, nil);
@@ -210,19 +204,6 @@ begin
     EVP_PKEY_CTX_free(ctx);
   end;
   SetLength(Result, sigLen);
-{$else}
-  rsa := EVP_PKEY_get1_RSA(PKey);
-  try
-    sigLen := RSA_size(rsa);
-    SetLength(Result, sigLen);
-    sigLen := 0;
-    if RSA_sign(NID_sha256, PByte(@Digest[0]), Length(Digest), PByte(Result), @sigLen, rsa) <> 1 then
-      raise Exception.Create('ACME: RSA sign failed');
-  finally
-    RSA_free(rsa);
-  end;
-  SetLength(Result, sigLen);
-{$endif}
 end;
 
 function BNToB64Url(bn: PBIGNUM): string;
@@ -396,11 +377,7 @@ begin
       x509 := PEM_read_bio_X509(bio, nil, nil, nil);
       if x509 <> nil then
       try
-        {$ifdef OPENSSL3}
         t := X509_get0_notAfter(x509); //replaces X509_getm_notAfter (deprecated in OpenSSL 3.x)
-        {$else}
-        t := X509_getm_notAfter(x509);
-        {$endif}
         Result := ASN1TimeToDateTime(t);
       finally
         X509_free(x509);
@@ -443,9 +420,6 @@ procedure AcmeRenewCertificate(const ADomain: string; const AEmail: string;
 
 var
   aKeyPKey: PEVP_PKEY;
-{$ifndef OPENSSL3}
-  aKeyRSA: PRSA;
-{$endif}
   aKid: string;
   aThumbprint: string;
   aJwk: string;
@@ -461,15 +435,8 @@ var
     fs: TFileStream;
     m: TMemoryStream;
     aBN_N, aBN_E, aBN_D: PBIGNUM;
-{$ifndef OPENSSL3}
-    rsaNew: PRSA;
-{$endif}
   begin
     aKeyPKey := nil;
-{$ifndef OPENSSL3}
-    aKeyRSA := nil;
-{$endif}
-{$ifdef OPENSSL3}
     if FileExists(AAccountKeyFile) then
     begin
       m := TMemoryStream.Create;
@@ -532,72 +499,6 @@ var
       BN_free(aBN_N);
       BN_free(aBN_E);
     end;
-{$else}
-    if FileExists(AAccountKeyFile) then
-    begin
-      m := TMemoryStream.Create;
-      try
-        fs := TFileStream.Create(AAccountKeyFile, fmOpenRead or fmShareDenyWrite);
-        try
-          m.CopyFrom(fs, 0);
-        finally
-          fs.Free;
-        end;
-        bio := BIO_new_mem_buf(PByte(m.Memory), m.Size);
-        try
-          aKeyRSA := PEM_read_bio_RSAPrivateKey(bio, nil, nil, nil);
-        finally
-          BIO_free(bio);
-        end;
-      finally
-        m.Free;
-      end;
-    end;
-
-    if aKeyRSA = nil then
-    begin
-      Log('creating new account key ' + AAccountKeyFile);
-      ForceDirectories(ExtractFilePath(AAccountKeyFile));
-      rsaNew := RSA_new();
-      try
-        aBN_E := BN_new();
-        try
-          BN_set_word(aBN_E, RSA_F4);
-          if RSA_generate_key_ex(rsaNew, 2048, aBN_E, nil) <> 1 then
-            raise Exception.Create('ACME: cannot generate account key');
-        finally
-          BN_free(aBN_E);
-        end;
-        bio := BIO_new_file(PAnsiChar(Utf8String(AAccountKeyFile)), 'wt');
-        if bio = nil then
-          raise Exception.Create('ACME: cannot write ' + AAccountKeyFile);
-        try
-          PEM_write_bio_RSAPrivateKey(bio, rsaNew, nil, nil, 0, nil, nil);
-        finally
-          BIO_free(bio);
-        end;
-        aKeyRSA := rsaNew;
-        rsaNew := nil; //owned by pkey below
-      finally
-        if rsaNew <> nil then
-          RSA_free(rsaNew);
-      end;
-    end
-    else
-      Log('using account key ' + AAccountKeyFile);
-
-    aKeyPKey := EVP_PKEY_new();
-    EVP_PKEY_assign_RSA(aKeyPKey, aKeyRSA); //pkey owns the RSA now
-
-    //JWK and thumbprint (RFC 7638)
-    //RFC 7638 requires the required members sorted lexicographically: e, kty, n
-    aBN_N := nil;
-    aBN_E := nil;
-    aBN_D := nil;
-    RSA_get0_key(aKeyRSA, aBN_N, aBN_E, aBN_D);
-    aJwk := '{"e":"' + BNToB64Url(aBN_E) + '","kty":"RSA","n":"' + BNToB64Url(aBN_N) + '"}';
-    aThumbprint := StrToB64Url(BytesToUTF8(StrSHA256(Utf8String(aJwk))));
-{$endif}
   end;
 
   //Generate the certificate private key and CSR with SAN for the domain
@@ -613,16 +514,12 @@ var
     s: AnsiString;
     buf: array[0..4095] of AnsiChar;
     n: Integer;
-{$ifndef OPENSSL3}
-    rsa: PRSA;
-{$endif}
   begin
     Log('generating certificate key ' + AKeyFile);
     ForceDirectories(ExtractFilePath(AKeyFile));
 
     pkey := nil;
     try
-{$ifdef OPENSSL3}
       aBN_E := BN_new();
       try
         BN_set_word(aBN_E, RSA_F4);
@@ -642,29 +539,6 @@ var
       finally
         BIO_free(bio);
       end;
-{$else}
-      rsa := RSA_new();
-      aBN_E := BN_new();
-      try
-        BN_set_word(aBN_E, RSA_F4);
-        if RSA_generate_key_ex(rsa, 2048, aBN_E, nil) <> 1 then
-          raise Exception.Create('ACME: cannot generate certificate key');
-      finally
-        BN_free(aBN_E);
-      end;
-
-      bio := BIO_new_file(PAnsiChar(Utf8String(AKeyFile)), 'wt');
-      if bio = nil then
-        raise Exception.Create('ACME: cannot write ' + AKeyFile);
-      try
-        PEM_write_bio_RSAPrivateKey(bio, rsa, nil, nil, 0, nil, nil);
-      finally
-        BIO_free(bio);
-      end;
-
-      pkey := EVP_PKEY_new();
-      EVP_PKEY_assign_RSA(pkey, rsa); //pkey owns rsa
-{$endif}
 
       req := X509_REQ_new();
       try
@@ -679,13 +553,8 @@ var
         //(X509_add_ext must not be used on an X509_REQ)
         sk := OPENSSL_sk_new_null();
         try
-{$ifdef OPENSSL3}
           ext := X509V3_EXT_nconf(nil, nil, OBJ_nid2sn(NID_subject_alt_name),
             PUTF8Char(Utf8String('DNS:' + ADomain)));
-{$else}
-          ext := X509V3_EXT_conf_nid(nil, nil, NID_subject_alt_name,
-            PAnsiChar(Utf8String('DNS:' + ADomain)));
-{$endif}
           if ext <> nil then
           try
             OPENSSL_sk_push(sk, ext);
@@ -718,12 +587,7 @@ var
       end;
     finally
       if pkey <> nil then
-        EVP_PKEY_free(pkey)
-{$ifndef OPENSSL3}
-      else if rsa <> nil then
-        RSA_free(rsa)
-{$endif}
-      ;
+        EVP_PKEY_free(pkey);
     end;
   end;
 

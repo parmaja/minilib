@@ -30,7 +30,7 @@ uses
   JwaWinCrypt, JwaWinType,
   {$endif}{$endif}
   mnLogs, mnLibraries, mnUtils,
-  {$IFDEF OPENSSL3}mnOpenSSL3API{$ELSE}mnOpenSSLAPI{$ENDIF};
+  mnOpenSSL3API;
 
 type
 
@@ -402,7 +402,6 @@ begin
 end;
 
 function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
-{$IFDEF OPENSSL3}
 var
 	pkey: PEVP_PKEY;
   bio: PBIO;
@@ -442,31 +441,6 @@ begin
     BIO_free(bio);
   end;
 end;
-{$ELSE}
-var
-	aKey: PEC_KEY;
-  bio: PBIO;
-  aLen: Integer;
-begin
-  InitOpenSSLLibrary;
-
-  bio := BIO_new_mem_buf(PByte(vKey), Length(vKey));
-  try
-    aKey := PEM_read_bio_ECPrivateKey(bio, nil, nil, nil);
-    try
-      {$ifdef FPC}Result := nil;{$endif}
-      aLen := ECDSA_size(aKey);
-      SetLength(Result, aLen);
-
-      ECDSA_sign(0, PByte(vData), Length(vData), PByte(Result), @aLen, aKey);
-      SetLength(Result, aLen);
-    finally
-    end;
-  finally
-    BIO_free(bio);
-  end;
-end;
-{$ENDIF}
 
 function ECDSASignBase64(const vData, vKey: utf8string): UTF8String; overload;
 var
@@ -641,49 +615,15 @@ begin
 end;
 
 function GenerateEckey(vNid: Integer): PEVP_PKEY;
-{$IFDEF OPENSSL3}
 var
   ec: PEVP_PKEY;
 begin
   //replaces EC_KEY_new_by_curve_name/EC_KEY_generate_key/EVP_PKEY_assign_EC_KEY (deprecated in OpenSSL 3.x)
-  ec := GenerateECKey(vNid);
+  ec := mnOpenSSL3API.GenerateECKey(vNid);
   if ec = nil then
     raise EmnOpenSSLException.Create('Error EC_KEY_new_by_curve_name');
   Result := ec;
 end;
-{$ELSE}
-var
-  ec: PEC_KEY;
-begin
-  Result := EVP_PKEY_new();
-  if Result = nil then
-    raise EmnOpenSSLException.Create('Error EVP_PKEY_new');
-
-  ec := EC_KEY_new_by_curve_name(vNid);
-  if ec = nil then
-  begin
-    EVP_PKEY_free(Result);
-    Result := nil;
-    raise EmnOpenSSLException.Create('Error EC_KEY_new_by_curve_name');
-  end;
-
-  if EC_KEY_generate_key(ec) = 0 then
-  begin
-    EC_KEY_free(ec);
-    EVP_PKEY_free(Result);
-    Result := nil;
-    raise EmnOpenSSLException.Create('Error EC_KEY_generate_key');
-  end;
-
-  if EVP_PKEY_assign_EC_KEY(Result, ec) = 0 then
-  begin
-    EC_KEY_free(ec);
-    EVP_PKEY_free(Result);
-    Result := nil;
-    raise EmnOpenSSLException.Create('Error EVP_PKEY_assign_EC_KEY');
-  end;
-end;
-{$ENDIF}
 
 function LoadEckey(FileName: string): PEVP_PKEY;
 var
@@ -878,15 +818,9 @@ begin
         end
         else
         begin
-          {$IFDEF OPENSSL3}
           ext := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(vExts[i].Nid), PUTF8Char(vExts[i].Value)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
           if ext = nil then
             raise EmnOpenSSLException.CreateLastError('Error X509V3_EXT_nconf for NID ' + IntToStr(vExts[i].Nid));
-          {$ELSE}
-          ext := X509V3_EXT_conf_nid(nil, @ctx, vExts[i].Nid, PUTF8Char(vExts[i].Value));
-          if ext = nil then
-            raise EmnOpenSSLException.CreateLastError('Error X509V3_EXT_conf_nid for NID ' + IntToStr(vExts[i].Nid));
-          {$ENDIF}
         end;
         if sk_X509_EXTENSION_push(extStack, ext) = 0 then
         begin
@@ -922,11 +856,7 @@ begin
   }
 
   X509V3_set_ctx(@ctx, cert, cert, nil, nil, 0);
-  {$IFDEF OPENSSL3}
   ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), value); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
-  {$ELSE}
-  ex := X509V3_EXT_conf_nid(nil, @ctx, nid, value);
-  {$ENDIF}
 
   if (ex = nil) then
   	exit(0);
@@ -941,9 +871,6 @@ function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8stri
 var
   x: PX509;
   pk: PEVP_PKEY;
-  {$IFNDEF OPENSSL3}
-  rsa: PRSA;
-  {$ENDIF}
   name: PX509_NAME;
   bne: PBIGNUM;
   sign: Integer;
@@ -959,13 +886,7 @@ begin
     InitOpenSSLLibrary;
   	if (pkeyp = nil) then
     begin
-      {$IFDEF OPENSSL3}
       pk := nil; //key generated below via GenerateRSAKey
-      {$ELSE}
-      pk := EVP_PKEY_new();
-  		if (pk = nil) then
-  			exit(False);
-      {$ENDIF}
     end
   	else
       pk := pkeyp;
@@ -979,7 +900,6 @@ begin
   	else
   		x := x509p;
 
-    {$IFDEF OPENSSL3}
     //generate RSA key (replaces RSA_new/RSA_generate_key_ex/EVP_PKEY_assign_RSA, deprecated in OpenSSL 3.x)
     if pk = nil then
     begin
@@ -992,39 +912,13 @@ begin
       if pk = nil then
         exit(False);
     end;
-    {$ELSE}
-    rsa := RSA_new();
-
-    if (rsa = nil) then
-      exit(False);
-
-    bne := BN_new();
-    if (bne = nil) then
-      exit(False);
-
-    BN_set_word(bne, RSA_F4);
-
-    res := RSA_generate_key_ex(rsa, bits, bne, nil);
-
-    if (res = 0) then
-      exit(False);
-
-    res := EVP_PKEY_assign_RSA(pk, rsa);
-    if (res = 0) then
-      exit(False);
-    {$ENDIF}
 
     X509_set_version(x, 2);
 
     ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
-    {$IFDEF OPENSSL3}
     //replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x
     X509_time_adj_ex(X509_get0_notBefore(x), 0, 0, nil);
     X509_time_adj_ex(X509_get0_notAfter(x), 60 * 60 * 24 * Days, 0, nil);
-    {$ELSE}
-    X509_gmtime_adj(X509_getm_notBefore(x), 0);
-    X509_gmtime_adj(X509_getm_notAfter(x), 60 * 60 * 24 * Days);
-    {$ENDIF}
 
     X509_set_pubkey(x, pk);
     name := X509_get_subject_name(x);

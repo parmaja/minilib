@@ -1,5 +1,5 @@
 unit mnOpenSSLAPI;
-{$ifdef OPENSSL3}{$error 'OpenSSL3 is enabled'}{$endif}
+{$error 'OpenSSL1 not supported'}
 {$IFDEF FPC}
 {$MODE delphi}
 {$ENDIF}
