@@ -45,6 +45,7 @@ type
     FStream: TmnConnectionStream;
     FOnProgress: TOnHttpDownloadProgress;
     FLastURL: UTF8String;
+    FAutoClearHeaders: Boolean;
     function GetRequest: TwebRequest;
     function GetResponse: TwebResponse;
   protected
@@ -109,6 +110,7 @@ type
     procedure SendFile(const vURL: UTF8String; AFileName: UTF8String);
     procedure Clear;
 
+    property AutoClearHeaders: Boolean read FAutoClearHeaders write FAutoClearHeaders default False;
     property Protocol: UTF8String read FProtocol write FProtocol;
     property Port: UTF8String read FPort write FPort;
     property Path: UTF8String read FPath write FPath;
@@ -433,7 +435,7 @@ begin
   if (vData <> nil) and (vCount > 0) then
     Stream.Write(vData^, vCount);
 
-  Request.Header.Clear;
+  //Request.Header.Clear; noooooo
 end;
 
 procedure TmnCustomHttpClient.SendGet;
@@ -518,6 +520,7 @@ begin
   inherited Create;
   FRequest := CreateRequest(nil);
   FResponse := CreateResponse;
+  FAutoClearHeaders := False;
 end;
 
 function TmnCustomHttpClient.CreateRequest(AStream: TmnConnectionStream): TmodRequest;
@@ -659,7 +662,10 @@ begin
   if FStream <> nil then
     FStream.Disconnect;
   FreeStream;
-  Request.Header.Clear;
+
+  if AutoClearHeaders then
+    Request.Header.Clear;
+
   Response.Header.Clear;
 end;
 
@@ -777,7 +783,7 @@ begin
   aStream.Address := vHost;
   aStream.Port := vPort;
 
-  if SameText(Protocol, 'https') or SameText(Protocol, 'wss') then
+  if SameText(vProtocol, 'https') or SameText(vProtocol, 'wss') then
     aStream.Options := aStream.Options + [soSSL]
   else
     aStream.Options := aStream.Options - [soSSL];

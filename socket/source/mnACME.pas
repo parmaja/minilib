@@ -737,6 +737,7 @@ begin
   try
     //1. directory
     Log('get directory ' + ADirectoryURL);
+    aHttpClient.AutoClearHeaders := True;
     aHttpClient.GetString(ADirectoryURL, aDirectoryBody);
     RaiseAcmeError(aDirectoryBody, 'directory');
 

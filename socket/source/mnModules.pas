@@ -3291,7 +3291,8 @@ end;
 procedure TwebRequest.Created;
 begin
   inherited;
-  Accept := '*/*';
+  //Accept := '*/*'; should be empty
+  Accept := '';
   UserAgent := sUserAgent;
 end;
 
