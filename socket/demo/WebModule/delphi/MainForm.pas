@@ -102,7 +102,7 @@ begin
     ServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
   ChallengeServer.Enabled := UseSSLChk.Checked and StagingChk.Checked;
 
-  HttpServer.Start;
+  WebServers.Start;
 end;
 
 procedure TMain.StartBtnClick(Sender: TObject);
@@ -310,7 +310,8 @@ begin
   //Challenge server must be started to serve .well-known/acme-challenge
   //Check "Staging" to test against https://acme-staging-v02.api.letsencrypt.org
   //without hitting the production rate limits
-
+  Log.WriteLn('Renew Domain: ' + AcmeDomain);
+  Log.WriteLn('Renew Email: ' + AcmeEmail);
   RenewCertificate(
     AcmeDomain,
     AcmeEmail,
@@ -425,7 +426,7 @@ begin
     aIni.Free;
   end;
   if AutoRunChk.Checked then
-     HttpServer.Start;
+     Start;
 end;
 
 procedure TMain.FormDestroy(Sender: TObject);
