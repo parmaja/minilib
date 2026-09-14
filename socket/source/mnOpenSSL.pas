@@ -217,8 +217,8 @@ type
     NameType: Integer; //GEN_DNS, GEN_IPADD, GEN_DIRNAME...
     Value: UTF8String;
     DirNames: TDirNames;
-    constructor Create(ANameType: Integer; AValue: UTF8String); overload;
-    constructor Create(ANameType: Integer; ADirNames: TDirNames); overload;
+    constructor Create(ANameType: Integer; const AValue: UTF8String); overload;
+    constructor Create(ANameType: Integer; const ADirNames: TDirNames); overload;
   end;
 
   TDNInfo = record
@@ -1791,13 +1791,13 @@ end;
 
 { TAltName }
 
-constructor TAltName.Create(ANameType: Integer; AValue: UTF8String);
+constructor TAltName.Create(ANameType: Integer; const AValue: UTF8String);
 begin
   NameType:= ANameType;
   Value := AValue;
 end;
 
-constructor TAltName.Create(ANameType: Integer; ADirNames: TDirNames);
+constructor TAltName.Create(ANameType: Integer; const ADirNames: TDirNames);
 begin
   NameType:= ANameType;
   DirNames := ADirNames;
