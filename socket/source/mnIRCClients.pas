@@ -43,7 +43,7 @@ interface
 
 uses
   Classes, StrUtils, SyncObjs, Types,
-  mnClasses, mnSockets, mnServers, mnClients, mnStreams, mnConnections, mnUtils;
+  mnClasses, mnSockets, mnClients, mnStreams, mnConnections, mnUtils;
 
 const
   cCTCPChar: Char = #1;
