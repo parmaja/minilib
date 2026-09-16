@@ -518,9 +518,9 @@ begin
   CurrentEmbedding := ParagraphLevel;
   CurrentOverride := ctON;
   StackTop := 0;
+  j := 0;
   if fX then
   begin
-    j := 0;
     for i := 0 to Count - 1 do
     begin
       tempType := OrigTypes[i];
