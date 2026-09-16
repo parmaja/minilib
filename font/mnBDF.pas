@@ -22,7 +22,7 @@ uses
   {$IFDEF FPC}
   fpimage, fpwritepng, zstream
   {$ELSE}
-  Graphics, PNGImage
+  Vcl.Graphics, Vcl.Imaging.pngimage
   {$ENDIF};
 
 type
@@ -192,123 +192,294 @@ begin
 end;
 
 procedure TBDF.LoadFromStream(Stream: TStream);
+
+  // Inline hex nibble decode, returns 0..15 or -1 for invalid
+  function HexVal(c: AnsiChar): Integer; inline;
+  begin
+    case c of
+      '0'..'9': Result := Ord(c) - Ord('0');
+      'A'..'F': Result := Ord(c) - Ord('A') + 10;
+      'a'..'f': Result := Ord(c) - Ord('a') + 10;
+    else
+      Result := -1;
+    end;
+  end;
+
+  // Fast inline integer parse from buffer range [ps..pe-1], no string allocation
+  function BufToInt(ps, pe: PAnsiChar): Integer; inline;
+  var
+    neg: Boolean;
+  begin
+    Result := 0;
+    if ps >= pe then Exit;
+    neg := (ps^ = '-');
+    if neg or (ps^ = '+') then Inc(ps);
+    while ps < pe do
+    begin
+      Result := Result * 10 + (Ord(ps^) - Ord('0'));
+      Inc(ps);
+    end;
+    if neg then Result := -Result;
+  end;
+
 var
-  Lines: TStringList;
-  LineIndex: Integer;
-  Line, Keyword: string;
-  InChar: Boolean;
-  InBitmap: Boolean;
+  Buf: RawByteString;
+  BufLen: Integer;
+  P, BufEnd, LineStart, LineEnd, TokStart: PAnsiChar;
+  InChar, InBitmap: Boolean;
   Glyph: TCodePoint;
-  BitmapRows: TStringList;
   FontBBXWidth, FontBBXHeight, FontBBXOffX, FontBBXOffY: Integer;
-  GlyphRowBytes: Integer;
-  i: Integer;
-  Row: TBytes;
+  GlyphRowBytes, BitmapRow, Capacity: Integer;
+  hi, lo: Integer;
+  TokIndex: Integer;
+  Tokens: array[0..4] of record S, E: PAnsiChar; end; // start/end pointers for up to 5 tokens
+  TokCount: Integer;
+  KwLen: Integer;
 begin
   Clear;
-  Lines := TStringList.Create;
-  BitmapRows := TStringList.Create;
-  try
-    Lines.LoadFromStream(Stream);
 
-    FontBBXWidth := 0;
-    FontBBXHeight := 0;
-    FontBBXOffX := 0;
-    FontBBXOffY := 0;
+  BufLen := Stream.Size - Stream.Position;
+  if BufLen <= 0 then Exit;
 
-    InChar := False;
-    InBitmap := False;
-    FillChar(Glyph, SizeOf(Glyph), 0);
+  // Single allocation: read entire stream into a RawByteString buffer
+  SetLength(Buf, BufLen);
+  Stream.ReadBuffer(Buf[1], BufLen);
 
-    for LineIndex := 0 to Lines.Count - 1 do
+  P := @Buf[1];
+  BufEnd := P + BufLen;
+
+  FontBBXWidth := 0;
+  FontBBXHeight := 0;
+  FontBBXOffX := 0;
+  FontBBXOffY := 0;
+
+  InChar := False;
+  InBitmap := False;
+  FillChar(Glyph, SizeOf(Glyph), 0);
+  BitmapRow := 0;
+  GlyphRowBytes := 0;
+  Capacity := 0;
+
+  // Scan buffer line by line using pointer arithmetic
+  while P < BufEnd do
+  begin
+    // Find line boundaries
+    LineStart := P;
+    while (P < BufEnd) and (P^ <> #10) and (P^ <> #13) do
+      Inc(P);
+    LineEnd := P;
+    // Skip line ending
+    if (P < BufEnd) and (P^ = #13) then Inc(P);
+    if (P < BufEnd) and (P^ = #10) then Inc(P);
+
+    // Trim leading whitespace
+    while (LineStart < LineEnd) and ((LineStart^ = ' ') or (LineStart^ = #9)) do
+      Inc(LineStart);
+    // Trim trailing whitespace
+    while (LineEnd > LineStart) and (((LineEnd - 1)^ = ' ') or ((LineEnd - 1)^ = #9)) do
+      Dec(LineEnd);
+
+    if LineStart >= LineEnd then
+      Continue;
+
+    // In bitmap mode, lines are pure hex data - decode directly, no tokenizing
+    if InBitmap then
     begin
-      Line := Trim(Lines[LineIndex]);
-      if Line <> '' then
+      // Check for ENDCHAR (7 chars)
+      KwLen := LineEnd - LineStart;
+      if (KwLen >= 7) and (LineStart^ = 'E') then
       begin
-        Keyword := BDFToken(Line, 0);
-        if not InChar then
+        if (KwLen = 7) and CompareMem(LineStart, PAnsiChar('ENDCHAR'), 7) then
         begin
-          if Keyword = 'STARTFONT' then
-            Continue
-          else if Keyword = 'SIZE' then
-            FHeight := StrToIntDef(BDFToken(Line, 1), 0)
-          else if Keyword = 'FONTBOUNDINGBOX' then
-          begin
-            FontBBXWidth := StrToIntDef(BDFToken(Line, 1), 0);
-            FontBBXHeight := StrToIntDef(BDFToken(Line, 2), 0);
-            FontBBXOffX := StrToIntDef(BDFToken(Line, 3), 0);
-            FontBBXOffY := StrToIntDef(BDFToken(Line, 4), 0);
-          end
-          else if Keyword = 'CHARS' then
-            Continue
-          else if Keyword = 'ENDFONT' then
-            Break;
-        end
-        else
-        begin
-          // inside STARTCHAR .. ENDCHAR
-          if Keyword = 'ENCODING' then
-            Glyph.Code := StrToIntDef(BDFToken(Line, 1), 0)
-          else if Keyword = 'DWIDTH' then
-            Glyph.Width := StrToIntDef(BDFToken(Line, 1), 0)
-          else if Keyword = 'BBX' then
-          begin
-            Glyph.BBXWidth := StrToIntDef(BDFToken(Line, 1), 0);
-            Glyph.BBXHeight := StrToIntDef(BDFToken(Line, 2), 0);
-            Glyph.BBXOffX := StrToIntDef(BDFToken(Line, 3), 0);
-            Glyph.BBXOffY := StrToIntDef(BDFToken(Line, 4), 0);
-          end
-          else if Keyword = 'BITMAP' then
-          begin
-            InBitmap := True;
-            BitmapRows.Clear;
-          end
-          else if Keyword = 'ENDCHAR' then
-          begin
-            InBitmap := False;
-            // Pack bitmap rows into a contiguous byte array (MSB-first per row).
-            if (Glyph.BBXWidth > 0) and (Glyph.BBXHeight > 0) and (BitmapRows.Count > 0) then
-            begin
-              GlyphRowBytes := (Glyph.BBXWidth + 7) div 8;
-              SetLength(Glyph.Bits, GlyphRowBytes * BitmapRows.Count);
-              for i := 0 to BitmapRows.Count - 1 do
-              begin
-                Row := ParseHexRow(BitmapRows[i], Glyph.BBXWidth);
-                Move(Row[0], Glyph.Bits[i * GlyphRowBytes], Length(Row));
-              end;
-            end;
-            FCount := FCount + 1;
-            SetLength(FCodePoints, FCount);
-            FCodePoints[FCount - 1] := Glyph;
-            FillChar(Glyph, SizeOf(Glyph), 0);
-            InChar := False;
-          end
-          else if InBitmap then
-            BitmapRows.Add(Line);
-        end;
-        if Keyword = 'STARTCHAR' then
-        begin
-          InChar := True;
           InBitmap := False;
+          // Trim Glyph.Bits to actual size if we allocated more
+          if (Glyph.BBXWidth > 0) and (GlyphRowBytes > 0) then
+            SetLength(Glyph.Bits, BitmapRow * GlyphRowBytes)
+          else
+            Glyph.Bits := nil;
+
+          // Store glyph - grow array with doubling strategy
+          if FCount >= Capacity then
+          begin
+            if Capacity = 0 then
+              Capacity := 256
+            else
+              Capacity := Capacity * 2;
+            SetLength(FCodePoints, Capacity);
+          end;
+          FCodePoints[FCount] := Glyph;
+          Inc(FCount);
           FillChar(Glyph, SizeOf(Glyph), 0);
-          BitmapRows.Clear;
+          InChar := False;
+          BitmapRow := 0;
+          Continue;
         end;
       end;
+
+      // Decode hex row directly into Glyph.Bits without any intermediate allocation
+      if GlyphRowBytes > 0 then
+      begin
+        // Ensure Glyph.Bits is large enough
+        if Length(Glyph.Bits) < (BitmapRow + 1) * GlyphRowBytes then
+          SetLength(Glyph.Bits, (BitmapRow + 16) * GlyphRowBytes); // grow in chunks
+
+        FillChar(Glyph.Bits[BitmapRow * GlyphRowBytes], GlyphRowBytes, 0);
+        TokStart := LineStart;
+        TokIndex := 0; // byte index within row
+        while (TokStart < LineEnd) and (TokIndex < GlyphRowBytes) do
+        begin
+          hi := HexVal(TokStart^);
+          if hi < 0 then begin Inc(TokStart); Continue; end;
+          Inc(TokStart);
+          if TokStart < LineEnd then
+          begin
+            lo := HexVal(TokStart^);
+            if lo >= 0 then
+            begin
+              Glyph.Bits[BitmapRow * GlyphRowBytes + TokIndex] := Byte(hi shl 4 or lo);
+              Inc(TokIndex);
+              Inc(TokStart);
+            end
+            else
+            begin
+              Glyph.Bits[BitmapRow * GlyphRowBytes + TokIndex] := Byte(hi shl 4);
+              Inc(TokIndex);
+            end;
+          end
+          else
+          begin
+            Glyph.Bits[BitmapRow * GlyphRowBytes + TokIndex] := Byte(hi shl 4);
+            Inc(TokIndex);
+          end;
+        end;
+        Inc(BitmapRow);
+      end;
+      Continue;
     end;
 
-    if FontBBXHeight > 0 then
-      FHeight := FontBBXHeight;
-    FWidth := FontBBXWidth;
-    if FontBBXOffY < 0 then
-      FBaseLine := FontBBXHeight + FontBBXOffY
-    else
-      FBaseLine := FontBBXHeight;
+    // Tokenize line: extract up to 5 tokens (keyword + up to 4 arguments)
+    TokCount := 0;
+    TokStart := LineStart;
+    while (TokStart < LineEnd) and (TokCount < 5) do
+    begin
+      // skip whitespace
+      while (TokStart < LineEnd) and ((TokStart^ = ' ') or (TokStart^ = #9)) do
+        Inc(TokStart);
+      if TokStart >= LineEnd then Break;
+      Tokens[TokCount].S := TokStart;
+      while (TokStart < LineEnd) and (TokStart^ <> ' ') and (TokStart^ <> #9) do
+        Inc(TokStart);
+      Tokens[TokCount].E := TokStart;
+      Inc(TokCount);
+    end;
 
-    FLoaded := True;
-  finally
-    BitmapRows.Free;
-    Lines.Free;
+    if TokCount = 0 then
+      Continue;
+
+    // Keyword matching using first char + length for fast rejection
+    KwLen := Tokens[0].E - Tokens[0].S;
+
+    if not InChar then
+    begin
+      case Tokens[0].S^ of
+        'S':
+          begin
+            if (KwLen = 9) and CompareMem(Tokens[0].S, PAnsiChar('STARTCHAR'), 9) then
+            begin
+              InChar := True;
+              InBitmap := False;
+              FillChar(Glyph, SizeOf(Glyph), 0);
+              BitmapRow := 0;
+            end
+            else if (KwLen = 9) and CompareMem(Tokens[0].S, PAnsiChar('STARTFONT'), 9) then
+              // skip
+            else if (KwLen = 4) and CompareMem(Tokens[0].S, PAnsiChar('SIZE'), 4) then
+            begin
+              if TokCount > 1 then
+                FHeight := BufToInt(Tokens[1].S, Tokens[1].E);
+            end;
+          end;
+        'F':
+          if (KwLen = 15) and CompareMem(Tokens[0].S, PAnsiChar('FONTBOUNDINGBOX'), 15) then
+          begin
+            if TokCount > 1 then FontBBXWidth := BufToInt(Tokens[1].S, Tokens[1].E);
+            if TokCount > 2 then FontBBXHeight := BufToInt(Tokens[2].S, Tokens[2].E);
+            if TokCount > 3 then FontBBXOffX := BufToInt(Tokens[3].S, Tokens[3].E);
+            if TokCount > 4 then FontBBXOffY := BufToInt(Tokens[4].S, Tokens[4].E);
+          end;
+        'C':
+          if (KwLen = 5) and CompareMem(Tokens[0].S, PAnsiChar('CHARS'), 5) then
+          begin
+            // Pre-allocate FCodePoints using expected glyph count
+            if TokCount > 1 then
+            begin
+              Capacity := BufToInt(Tokens[1].S, Tokens[1].E);
+              if Capacity > 0 then
+                SetLength(FCodePoints, Capacity);
+            end;
+          end;
+        'E':
+          if (KwLen = 7) and CompareMem(Tokens[0].S, PAnsiChar('ENDFONT'), 7) then
+            Break;
+      end;
+    end
+    else
+    begin
+      // Inside STARTCHAR .. ENDCHAR
+      case Tokens[0].S^ of
+        'E':
+          if (KwLen = 8) and CompareMem(Tokens[0].S, PAnsiChar('ENCODING'), 8) then
+          begin
+            if TokCount > 1 then
+              Glyph.Code := BufToInt(Tokens[1].S, Tokens[1].E);
+          end;
+        'D':
+          if (KwLen = 6) and CompareMem(Tokens[0].S, PAnsiChar('DWIDTH'), 6) then
+          begin
+            if TokCount > 1 then
+              Glyph.Width := BufToInt(Tokens[1].S, Tokens[1].E);
+          end;
+        'B':
+          begin
+            if (KwLen = 3) and CompareMem(Tokens[0].S, PAnsiChar('BBX'), 3) then
+            begin
+              if TokCount > 1 then Glyph.BBXWidth := BufToInt(Tokens[1].S, Tokens[1].E);
+              if TokCount > 2 then Glyph.BBXHeight := BufToInt(Tokens[2].S, Tokens[2].E);
+              if TokCount > 3 then Glyph.BBXOffX := BufToInt(Tokens[3].S, Tokens[3].E);
+              if TokCount > 4 then Glyph.BBXOffY := BufToInt(Tokens[4].S, Tokens[4].E);
+            end
+            else if (KwLen = 6) and CompareMem(Tokens[0].S, PAnsiChar('BITMAP'), 6) then
+            begin
+              InBitmap := True;
+              BitmapRow := 0;
+              GlyphRowBytes := (Glyph.BBXWidth + 7) div 8;
+            end;
+          end;
+        'S':
+          if (KwLen = 9) and CompareMem(Tokens[0].S, PAnsiChar('STARTCHAR'), 9) then
+          begin
+            // Shouldn't happen in valid BDF but handle re-entry
+            InChar := True;
+            InBitmap := False;
+            FillChar(Glyph, SizeOf(Glyph), 0);
+            BitmapRow := 0;
+          end;
+      end;
+    end;
   end;
+
+  // Trim FCodePoints to actual count
+  SetLength(FCodePoints, FCount);
+
+  if FontBBXHeight > 0 then
+    FHeight := FontBBXHeight;
+  FWidth := FontBBXWidth;
+  if FontBBXOffY < 0 then
+    FBaseLine := FontBBXHeight + FontBBXOffY
+  else
+    FBaseLine := FontBBXHeight;
+
+  FLoaded := True;
 end;
 
 function TBDF.EncodeToPNG: TMemoryStream;
