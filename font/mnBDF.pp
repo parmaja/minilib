@@ -18,8 +18,12 @@ unit mnBDF;
 interface
 
 uses
-  Classes, SysUtils,
-  fpimage, fpwritepng, zstream;
+  Classes, SysUtils
+  {$IFDEF FPC}
+  , fpimage, fpwritepng, zstream
+  {$ELSE}
+  , Graphics, PNGImage
+  {$ENDIF};
 
 type
   { TCodePoint }
@@ -319,19 +323,23 @@ end;
 
 procedure TBDF.BuildAtlasToStream(Stream: TStream);
 const
-  cCharsPerRow = 32; // 16 chars per row (grid layout)
+  cCharsPerRow = 32;
 var
+  {$IFDEF FPC}
   img: TFPMemoryImage;
   writer: TFPWriterPNG;
+  FgColor, BgColor: TFPColor;
+  {$ELSE}
+  bmp: TBitmap;
+  png: TPngImage;
+  {$ENDIF}
   x, y, i, cx, cy, RowBytes, ByteIndex, BitInByte, BitValue, Mask, px, py: Integer;
   Glyph: TCodePoint;
   CellWidth, CellHeight, TotalWidth, TotalHeight, RowStart, BaseLineY, Rows: Integer;
-  FgColor, BgColor: TFPColor;
 begin
   if FCount = 0 then
     Exit;
 
-  // Atlas cell: each glyph in a cell of width = max(BBXWidth) and height = FHeight.
   CellHeight := FHeight;
   if CellHeight < 1 then
     CellHeight := 1;
@@ -344,15 +352,12 @@ begin
   if CellWidth < 1 then
     CellWidth := 1;
 
-  // Grid layout: cCharsPerRow columns, glyphs placed left-to-right, top-to-bottom.
   Rows := (FCount + cCharsPerRow - 1) div cCharsPerRow;
   if Rows < 1 then
     Rows := 1;
   TotalWidth := cCharsPerRow * CellWidth;
   TotalHeight := Rows * CellHeight;
 
-  // Baseline row in image coordinates (0 = top of the cell). Place the tallest
-  // glyph's top row on the first row of its cell so glyphs stand on a baseline.
   BaseLineY := 0;
   for i := 0 to FCount - 1 do
   begin
@@ -361,13 +366,12 @@ begin
       BaseLineY := y;
   end;
 
-  // RayLib font atlas: set pixels are black, unset are the magenta transparent key.
-  FgColor.Red := $0000; FgColor.Green := $0000; FgColor.Blue := $0000; FgColor.Alpha := $FFFF;   // black
-  BgColor.Red := $FFFF; BgColor.Green := $0000; BgColor.Blue := $FFFF; BgColor.Alpha := $FFFF;   // magenta key (transparent)
+  {$IFDEF FPC}
+  FgColor.Red := $0000; FgColor.Green := $0000; FgColor.Blue := $0000; FgColor.Alpha := $FFFF;
+  BgColor.Red := $FFFF; BgColor.Green := $0000; BgColor.Blue := $FFFF; BgColor.Alpha := $FFFF;
 
   img := TFPMemoryImage.Create(TotalWidth, TotalHeight);
   try
-    // background = transparent key (magenta)
     for py := 0 to TotalHeight - 1 do
       for px := 0 to TotalWidth - 1 do
         img.Colors[px, py] := BgColor;
@@ -379,8 +383,6 @@ begin
       if (Glyph.BBXWidth > 0) and (Glyph.BBXHeight > 0) and (Length(Glyph.Bits) > 0) then
       begin
         RowBytes := (Glyph.BBXWidth + 7) div 8;
-        // BBXOffY is offset from the baseline; negative means the glyph extends above it.
-        // BDF bitmap rows run top-down: row 0 is the glyph's top row.
         for y := 0 to Glyph.BBXHeight - 1 do
         begin
           RowStart := y * RowBytes;
@@ -412,7 +414,7 @@ begin
     try
       writer.CompressionLevel := clDefault;
       writer.UseAlpha := False;
-      writer.WordSized := False;   // write 8-bit samples -> plain RGB (truecolor) PNG
+      writer.WordSized := False;
       writer.GrayScale := False;
       img.SaveToStream(Stream, writer);
     finally
@@ -421,20 +423,77 @@ begin
   finally
     img.Free;
   end;
+  {$ELSE}
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(TotalWidth, TotalHeight);
+    bmp.PixelFormat := pf24bit;
+    bmp.Canvas.Brush.Color := clFuchsia;
+    bmp.Canvas.FillRect(Rect(0, 0, TotalWidth, TotalHeight));
+    for i := 0 to FCount - 1 do
+    begin
+      Glyph := FCodePoints[i];
+      cx := (i mod cCharsPerRow) * CellWidth;
+      cy := (i div cCharsPerRow) * CellHeight;
+      if (Glyph.BBXWidth > 0) and (Glyph.BBXHeight > 0) and (Length(Glyph.Bits) > 0) then
+      begin
+        RowBytes := (Glyph.BBXWidth + 7) div 8;
+        for y := 0 to Glyph.BBXHeight - 1 do
+        begin
+          RowStart := y * RowBytes;
+          py := cy + BaseLineY - (Glyph.BBXOffY + Glyph.BBXHeight - 1) + y;
+          if (py >= cy) and (py < cy + CellHeight) then
+          begin
+            for x := 0 to Glyph.BBXWidth - 1 do
+            begin
+              ByteIndex := RowStart + (x shr 3);
+              if ByteIndex < Length(Glyph.Bits) then
+              begin
+                BitInByte := 7 - (x and 7);
+                BitValue := Glyph.Bits[ByteIndex];
+                Mask := (1 shl BitInByte);
+                if (BitValue and Mask) <> 0 then
+                begin
+                  px := cx + Glyph.BBXOffX + x;
+                  if (px >= cx) and (px < cx + CellWidth) then
+                    bmp.Canvas.Pixels[px, py] := clBlack;
+                end;
+              end;
+            end;
+          end;
+        end;
+      end;
+    end;
+    png := TPngImage.Create;
+    try
+      png.Assign(bmp);
+      png.SaveToStream(Stream);
+    finally
+      png.Free;
+    end;
+  finally
+    bmp.Free;
+  end;
+  {$ENDIF}
 end;
 
 procedure TBDF.BuildXNAToStream(Stream: TStream);
 const
-  cSpacing = 1;        // key-color (magenta) border thickness between and around cells
-  cFirstChar = 32;     // Space
-  cGlyphCount = 95;    // printable ASCII: 32..126
-  cColumns = 21;       // cells per row (grid layout, like the reference RayLib atlas)
+  cSpacing = 1;
+  cFirstChar = 32;
+  cGlyphCount = 95;
+  cColumns = 21;
 var
+  {$IFDEF FPC}
   img: TFPMemoryImage;
   writer: TFPWriterPNG;
+  KeyColor, CellColor, MarkColor: TFPColor;
+  {$ELSE}
+  bmp: TBitmap;
+  png: TPngImage;
+  {$ENDIF}
   x, y, i, px, py, RowBytes, ByteIndex, BitInByte, BitValue, Mask, Rows: Integer;
   Code, Index, CellWidth, CellHeight, TotalWidth, TotalHeight, BaseLineY, OffY: Integer;
-  KeyColor, CellColor, MarkColor: TFPColor;
   CodeIndex: array[0..255] of Integer;
   Glyph: TCodePoint;
   CellX, CellY: Integer;
@@ -460,7 +519,6 @@ begin
   TotalWidth := cSpacing + (CellWidth + cSpacing) * cColumns;
   TotalHeight := cSpacing + (CellHeight + cSpacing) * Rows;
 
-  // All cell boxes share the same height so every glyph stands on the same baseline.
   BaseLineY := 0;
   for i := 0 to FCount - 1 do
   begin
@@ -469,28 +527,24 @@ begin
       BaseLineY := y;
   end;
 
-  // Magenta is the single key color: it surrounds every character and is the
-  // transparent key for RayLib LoadFontFromImage(). Cells are solid non-key so
-  // the RayLib scan always measures a contiguous box; glyph marks are white.
-  KeyColor.Red := $FFFF; KeyColor.Green := $0000; KeyColor.Blue := $FFFF; KeyColor.Alpha := $FFFF;
-  CellColor.Red := $0000; CellColor.Green := $0000; CellColor.Blue := $0000; CellColor.Alpha := $0000;
-  MarkColor.Red := $FFFF; MarkColor.Green := $FFFF; MarkColor.Blue := $FFFF; MarkColor.Alpha := $FFFF;
-
   for i := 0 to 255 do
     CodeIndex[i] := -1;
   for i := 0 to FCount - 1 do
     if (FCodePoints[i].Code >= 0) and (FCodePoints[i].Code <= 255) then
       CodeIndex[FCodePoints[i].Code] := i;
 
+  {$IFDEF FPC}
+  KeyColor.Red := $FFFF; KeyColor.Green := $0000; KeyColor.Blue := $FFFF; KeyColor.Alpha := $FFFF;
+  CellColor.Red := $0000; CellColor.Green := $0000; CellColor.Blue := $0000; CellColor.Alpha := $0000;
+  MarkColor.Red := $FFFF; MarkColor.Green := $FFFF; MarkColor.Blue := $FFFF; MarkColor.Alpha := $FFFF;
+
   img := TFPMemoryImage.Create(TotalWidth, TotalHeight);
   try
     img.UsePalette := True;
-    // Background: everything is the key (magenta), cells are drawn on top of it.
     for py := 0 to TotalHeight - 1 do
       for px := 0 to TotalWidth - 1 do
         img.Colors[px, py] := KeyColor;
 
-    // Characters arranged sequentially in rows, starting with Space (ASCII 32).
     for Code := 0 to cGlyphCount - 1 do
     begin
       CellX := cSpacing + (Code mod cColumns) * (CellWidth + cSpacing);
@@ -535,7 +589,7 @@ begin
     writer := TFPWriterPNG.Create;
     try
       writer.CompressionLevel := clDefault;
-      writer.Indexed:= True;
+      writer.Indexed := True;
       writer.UseAlpha := True;
       writer.WordSized := False;
       writer.GrayScale := False;
@@ -546,6 +600,77 @@ begin
   finally
     img.Free;
   end;
+  {$ELSE}
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(TotalWidth, TotalHeight);
+    bmp.PixelFormat := pf24bit;
+    bmp.Canvas.Brush.Color := clFuchsia;
+    bmp.Canvas.FillRect(Rect(0, 0, TotalWidth, TotalHeight));
+
+    for Code := 0 to cGlyphCount - 1 do
+    begin
+      CellX := cSpacing + (Code mod cColumns) * (CellWidth + cSpacing);
+      CellY := cSpacing + (Code div cColumns) * (CellHeight + cSpacing);
+
+      bmp.Canvas.Brush.Color := clBlack;
+      bmp.Canvas.FillRect(Rect(CellX, CellY, CellX + CellWidth, CellY + CellHeight));
+
+      Index := CodeIndex[cFirstChar + Code];
+      if Index < 0 then
+        Continue;
+      Glyph := FCodePoints[Index];
+      if (Glyph.BBXWidth <= 0) or (Glyph.BBXHeight <= 0) or (Length(Glyph.Bits) = 0) then
+        Continue;
+
+      RowBytes := (Glyph.BBXWidth + 7) div 8;
+      OffY := BaseLineY - (Glyph.BBXOffY + Glyph.BBXHeight - 1);
+      for y := 0 to Glyph.BBXHeight - 1 do
+      begin
+        py := CellY + OffY + y;
+        if (py < CellY) or (py >= CellY + CellHeight) then
+          Continue;
+        for x := 0 to Glyph.BBXWidth - 1 do
+        begin
+          ByteIndex := y * RowBytes + (x shr 3);
+          if ByteIndex >= Length(Glyph.Bits) then
+            Continue;
+          BitInByte := 7 - (x and 7);
+          BitValue := Glyph.Bits[ByteIndex];
+          Mask := 1 shl BitInByte;
+          if (BitValue and Mask) <> 0 then
+          begin
+            px := CellX + Glyph.BBXOffX + x;
+            if (px >= CellX) and (px < CellX + CellWidth) then
+              bmp.Canvas.Pixels[px, py] := clWhite;
+          end;
+        end;
+      end;
+    end;
+
+    png := TPngImage.Create;
+    try
+      png.Assign(bmp);
+      png.CreateAlpha;
+      // Set alpha: magenta key and white marks = opaque, cell black = transparent
+      for py := 0 to TotalHeight - 1 do
+      begin
+        for px := 0 to TotalWidth - 1 do
+        begin
+          if bmp.Canvas.Pixels[px, py] = clBlack then
+            png.AlphaScanline[py][px] := 0
+          else
+            png.AlphaScanline[py][px] := 255;
+        end;
+      end;
+      png.SaveToStream(Stream);
+    finally
+      png.Free;
+    end;
+  finally
+    bmp.Free;
+  end;
+  {$ENDIF}
 end;
 
 end.
