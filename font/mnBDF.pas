@@ -18,11 +18,11 @@ unit mnBDF;
 interface
 
 uses
-  Classes, SysUtils
+  Classes, SysUtils,
   {$IFDEF FPC}
-  , fpimage, fpwritepng, zstream
+  fpimage, fpwritepng, zstream
   {$ELSE}
-  , Graphics, PNGImage
+  Graphics, PNGImage
   {$ENDIF};
 
 type
@@ -305,7 +305,6 @@ begin
       FBaseLine := FontBBXHeight;
 
     FLoaded := True;
-    EncodeToPNG;
   finally
     BitmapRows.Free;
     Lines.Free;
