@@ -75,6 +75,10 @@
         <UnitName Value="mnHttpClient"/>
       </Item>
       <Item>
+        <Filename Value="..\source\IceCastClients.pas"/>
+        <UnitName Value="IceCastClients"/>
+      </Item>
+      <Item>
         <Filename Value="..\source\mnWebModules.pas"/>
         <UnitName Value="mnWebModules"/>
       </Item>
