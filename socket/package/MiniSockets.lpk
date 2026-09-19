@@ -75,10 +75,6 @@
         <UnitName Value="mnHttpClient"/>
       </Item>
       <Item>
-        <Filename Value="..\source\IceCastClients.pas"/>
-        <UnitName Value="IceCastClients"/>
-      </Item>
-      <Item>
         <Filename Value="..\source\mnWebModules.pas"/>
         <UnitName Value="mnWebModules"/>
       </Item>
@@ -86,6 +82,10 @@
         <Filename Value="..\source\mnConnections.pas"/>
         <AddToUsesPkgSection Value="False"/>
         <UnitName Value="mnConnections"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnIceCasts.pas"/>
+        <UnitName Value="mnIceCasts"/>
       </Item>
     </Files>
     <RequiredPkgs>
