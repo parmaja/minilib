@@ -52,15 +52,8 @@ function ucpAnsiToUnicode(const S: AnsiString; Proc: Tmbtowc_proc): WideString; 
 function ucpUnicodeToAnsi(const S: WideString): AnsiString; overload;
 function ucpUnicodeToAnsi(const S: WideString; Proc: Twctomb_proc): AnsiString; overload;
 
-procedure ucpInstall(MBToWCProc: Tmbtowc_proc; WCtoMBProc: Twctomb_proc{$IFDEF FPC}; Hook: Boolean{$ENDIF});
-
-implementation
-
-uses
-  ucp1250; //the default code page
-
 const
-  UnicodeRanges: array[0..2248] of TUnicodeRange = (
+  UnicodeRanges: array[0..848] of TUnicodeRange = (
     (First: $0000; Last: $001F; Category: ucOther),
     (First: $0020; Last: $0020; Category: ucSeparator),
     (First: $0021; Last: $0023; Category: ucPunctuation),
@@ -911,6 +904,13 @@ const
     (First: $F0000; Last: $FFFFD; Category: ucOther),
     (First: $100000; Last: $10FFFD; Category: ucOther)
 );
+
+procedure ucpInstall(MBToWCProc: Tmbtowc_proc; WCtoMBProc: Twctomb_proc{$IFDEF FPC}; Hook: Boolean{$ENDIF});
+
+implementation
+
+uses
+  ucp1250; //the default code page
 
 function UnicodeCategory(Code: Cardinal): TUnicodeCategory;
 var
