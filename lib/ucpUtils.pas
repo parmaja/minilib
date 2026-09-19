@@ -60,7 +60,7 @@ uses
   ucp1250; //the default code page
 
 const
-  UnicodeRanges: array[0..848] of TUnicodeRange = (
+  UnicodeRanges: array[0..2248] of TUnicodeRange = (
     {$I unicode_ranges.inc}
   );
 
