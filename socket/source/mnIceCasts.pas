@@ -1,4 +1,4 @@
-unit IceCastClients;
+unit mnIceCasts;
 {$M+}{$H+}
 {$ifdef fpc}
 {$mode delphi}

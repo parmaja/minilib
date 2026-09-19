@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ucputils, ucp864, ucp1256, minibidi;
+  ucpUtils, ucp864, ucp1256, minibidi;
 
 type
 
