@@ -132,6 +132,7 @@ type
   TmnwCookieOption =
   (
     Stricted, //SameSite
+    Lax, //SameSite
     Secured, //HTTPS only
     HostOnly,
     HttpOnly //JS script in client cant see it
@@ -173,7 +174,7 @@ type
   TmnwCookies = class(TmnNameValueObjectList<TmnwCookie>)
   public
     procedure SetRequestText(S: string);
-    function GetRequestText: string;    
+    function GetRequestText: string;
     function SetCookie(const Domain, Path: string; const Name: string; const Value: string; Options: TmnwCookieOptions = []; Age: Integer = 31536000 {a year}): TmnwCookie;
   end;
 
@@ -2806,8 +2807,10 @@ begin
 
   if Stricted in Options then
     Result := Result + '; SameSite=Strict'
+  else if Lax in Options then
+    Result := Result + '; SameSite=Lax'
   else
-    Result := Result + '; SameSite=Lax'; //NONE needs https
+    Result := Result + '; SameSite=None'; //NONE needs https
 
   if Secured in Options then
     Result := Result + '; Secure';
