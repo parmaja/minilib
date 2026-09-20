@@ -36,6 +36,9 @@ type
   { TmnIceCastSocket }
 
   TmnIceCastSocket = class(TmnClientSocket)
+  public
+    //disconnect and release the socket so it can be connected again (used when following HTTP redirects)
+    procedure ResetSocket;
   protected
     procedure DoHandleError(var Handle: Boolean; AError: Integer); override;
   end;
@@ -69,10 +72,15 @@ type
     FContentType: string;
     FReadTimeout: Integer;
     FStreamEnded: Boolean;
+    FConnectedTo: string;
+    FChunked: Boolean;
+    FChunkRemain: Int64;
+    FBodyEnded: Boolean;
     procedure SetState(AState: TmnIceCastState; const AMessage: string = '');
     procedure SetTitle(const ATitle: string);
     procedure SendRequest;
     procedure ReadHeaders;
+    function ReadBody(var Buffer; Count: Longint): Longint;
     procedure ReadMeta;
     procedure ParseMeta(const AMeta: AnsiString);
     procedure StreamAudio(AChunk: Integer);
@@ -109,6 +117,7 @@ type
     function GetBitrate: string;
     function GetStationURL: string;
     function GetContentType: string;
+    function GetConnectedTo: string;
     function GetResponseCode: Integer;
     function GetStreamEnded: Boolean;
     function GetBuffer: TMemoryStream;
@@ -140,6 +149,8 @@ type
     property StreamEnded: Boolean read GetStreamEnded;
     property Headers: TStringList read GetHeaders;
     property URL: string read FURL;
+    //the real URL used for streaming, after following any redirects
+    property ConnectedTo: string read GetConnectedTo;
     //if the server announce Icy-MetaData, default True
     property UseMetaData: Boolean read FUseMetaData write FUseMetaData;
     property ReadTimeout: Integer read FReadTimeout write FReadTimeout;
@@ -154,6 +165,7 @@ implementation
 
 const
   cIceCastReadChunk = 8192;
+  cIceCastMaxRedirects = 5;
 
 procedure IceCastParseURL(const vURL: string; out vProtocol, vHost, vPort, vParams: string);
 var
@@ -191,6 +203,56 @@ begin
       vPort := '443'
     else
       vPort := '80';
+  end;
+end;
+
+//Resolve a redirect Location header against the current connection
+function ResolveURL(const AProtocol, AHost, APort, APath, ALocation: string): string;
+var
+  i: Integer;
+  path: string;
+begin
+  Result := '';
+  if ALocation = '' then
+    Exit
+  else if Pos('://', ALocation) > 0 then
+    Result := ALocation
+  else if (Length(ALocation) > 2) and (ALocation[1] = '/') and (ALocation[2] = '/') then
+    Result := AProtocol + ':' + ALocation //protocol-relative
+  else if ALocation[1] = '/' then
+    Result := AProtocol + '://' + AHost + ':' + APort + ALocation //host-relative
+  else
+  begin //path-relative
+    path := APath;
+    i := LastDelimiter('/', path);
+    if i > 0 then
+      path := Copy(path, 1, i);
+    Result := AProtocol + '://' + AHost + ':' + APort + path + ALocation;
+  end;
+end;
+
+function ParseChunkSize(const s: string): Int64;
+var
+  i, n: Integer;
+  c: Char;
+begin
+  Result := 0;
+  n := Length(s);
+  i := 1;
+  while (i <= n) and ((s[i] = ' ') or (s[i] = #9)) do
+    Inc(i);
+  while i <= n do
+  begin
+    c := s[i];
+    if (c >= '0') and (c <= '9') then
+      Result := (Result shl 4) + (Ord(c) - Ord('0'))
+    else if (c >= 'a') and (c <= 'f') then
+      Result := (Result shl 4) + (Ord(c) - Ord('a') + 10)
+    else if (c >= 'A') and (c <= 'F') then
+      Result := (Result shl 4) + (Ord(c) - Ord('A') + 10)
+    else
+      Break; //';' extension or anything else
+    Inc(i);
   end;
 end;
 
@@ -240,6 +302,12 @@ end;
 
 procedure TmnIceCastSocket.DoHandleError(var Handle: Boolean; AError: Integer);
 begin
+end;
+
+procedure TmnIceCastSocket.ResetSocket;
+begin
+  Disconnect;
+  FreeSocket;
 end;
 
 { TmnIceCastConnection }
@@ -365,14 +433,59 @@ begin
   end;
   if FCode = 0 then
     raise EmnStreamException.Create('Invalid response from server');
-  if (FCode < 200) or (FCode >= 300) then
-    raise EmnStreamException.CreateFmt('Server error, HTTP %d', [FCode]);
   FContentType := GetHeader('Content-Type');
+  FChunked := Pos('chunked', LowerCase(GetHeader('Transfer-Encoding'))) > 0;
   FMetaInterval := StrToIntDef(GetHeader('Icy-MetaInt'), 0);
   FStationName := GetHeader('Icy-Name');
   FGenre := GetHeader('Icy-Genre');
   FBitrate := GetHeader('Icy-Br');
   FStationURL := GetHeader('Icy-URL');
+end;
+
+//read the stream body, transparently decoding Transfer-Encoding: chunked,
+//so the caller sees the pure audio/metadata stream (and Icy-MetaInt counting works)
+function TmnIceCastConnection.ReadBody(var Buffer; Count: Longint): Longint;
+var
+  p: PByte;
+  r, c: Longint;
+  s: AnsiString;
+begin
+  Result := 0;
+  if not FChunked then
+    Exit(FStream.Read(Buffer, Count));
+  p := @Buffer;
+  while Count > 0 do
+  begin
+    if FChunkRemain <= 0 then
+    begin
+      if FBodyEnded then
+        Break;
+      if not FStream.ReadLine(s) then
+        Break; //connection closed (chunk header line)
+      FChunkRemain := ParseChunkSize(String(s));
+      if FChunkRemain <= 0 then
+      begin
+        //last chunk reached, skip possible trailers
+        FBodyEnded := True;
+        while FStream.ReadLine(s) do
+          if s = '' then
+            Break;
+        Break;
+      end;
+    end;
+    c := Count;
+    if FChunkRemain < c then
+      c := FChunkRemain;
+    r := FStream.Read(p^, c);
+    if r <= 0 then
+      Break;
+    Inc(p, r);
+    Inc(Result, r);
+    Dec(FChunkRemain, r);
+    Dec(Count, r);
+    if FChunkRemain = 0 then
+      FStream.ReadLine(s); //skip CRLF between chunks
+  end;
 end;
 
 procedure TmnIceCastConnection.ReadMeta;
@@ -382,7 +495,7 @@ var
   r: Longint;
   aMeta: AnsiString;
 begin
-  r := FStream.Read(b, 1);
+  r := ReadBody(b, 1);
   if r <= 0 then
   begin
     StopByEnd;
@@ -391,7 +504,10 @@ begin
   n := Integer(b) * 16;
   if n > 0 then
   begin
-    aMeta := FStream.ReadAnsiString(n);
+    SetLength(aMeta, n);
+    r := ReadBody(PAnsiChar(aMeta)^, n);
+    if r < n then
+      SetLength(aMeta, r);
     if Length(aMeta) > 0 then
       ParseMeta(aMeta);
   end;
@@ -411,8 +527,9 @@ procedure TmnIceCastConnection.StreamAudio(AChunk: Integer);
 var
   r: Integer;
 begin
-  FScratch.SetSize(0);
-  r := FStream.CopyToStream(FScratch, AChunk);
+  FScratch.SetSize(AChunk);
+  r := ReadBody(FScratch.Memory^, AChunk);
+  FScratch.SetSize(r);
   if r > 0 then
   begin
     FScratch.Position := 0;
@@ -472,6 +589,9 @@ begin
 end;
 
 procedure TmnIceCastConnection.Prepare;
+var
+  vRedirects: Integer;
+  aLocation: string;
 begin
   FCode := 0;
   FError := '';
@@ -480,22 +600,51 @@ begin
   FUseMeta := False;
   FMetaInterval := 0;
   FBytesToMeta := 0;
+  FConnectedTo := '';
+  FChunked := False;
+  FChunkRemain := 0;
+  FBodyEnded := False;
   FStream := TmnIceCastSocket.Create;
   FStream.EndOfLine := sWinEndOfLine;
   FStream.ReadTimeout := FReadTimeout;
   FStream.ConnectTimeout := 10000;
   FStream.WriteTimeout := 5000;
   FStream.Options := FStream.Options + [soWaitBeforeRead];
-  if FSSL then
-    FStream.Options := FStream.Options + [soSSL];
   FStream.Address := FAddress;
   FStream.Port := FPort;
+  vRedirects := 0;
   try
-    SetState(icConnecting);
-    FStream.Connect;
-    SetState(icOpening);
-    SendRequest;
-    ReadHeaders;
+    repeat
+      if FSSL then
+        FStream.Options := FStream.Options + [soSSL]
+      else
+        FStream.Options := FStream.Options - [soSSL];
+      SetState(icConnecting);
+      FStream.Connect;
+      SetState(icOpening);
+      SendRequest;
+      ReadHeaders;
+      if (FCode >= 300) and (FCode < 400) then
+      begin //follow the redirect
+        aLocation := GetHeader('Location');
+        if aLocation = '' then
+          raise EmnStreamException.CreateFmt('Server error, HTTP %d', [FCode]);
+        Inc(vRedirects);
+        if vRedirects > cIceCastMaxRedirects then
+          raise EmnStreamException.Create('Too many redirects');
+        FStream.ResetSocket;
+        aLocation := ResolveURL(FProtocol, FAddress, FPort, FPath, aLocation);
+        IceCastParseURL(aLocation, FProtocol, FAddress, FPort, FPath);
+        FSSL := SameText(FProtocol, 'https') or SameText(FProtocol, 'wss');
+        FStream.Address := FAddress;
+        FStream.Port := FPort;
+      end
+      else if (FCode < 200) or (FCode >= 300) then
+        raise EmnStreamException.CreateFmt('Server error, HTTP %d', [FCode])
+      else
+        Break;
+    until False;
+    FConnectedTo := FProtocol + '://' + FAddress + ':' + FPort + FPath;
     FUseMeta := FUseMetaData and (FMetaInterval > 0);
     FBytesToMeta := FMetaInterval;
     SetState(icReady);
@@ -672,6 +821,19 @@ begin
       Result := ''
     else
       Result := FConnection.FContentType;
+  finally
+    FLock.Leave;
+  end;
+end;
+
+function TmnIceCastClient.GetConnectedTo: string;
+begin
+  FLock.Enter;
+  try
+    if FConnection = nil then
+      Result := ''
+    else
+      Result := FConnection.FConnectedTo;
   finally
     FLock.Leave;
   end;
