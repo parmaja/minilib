@@ -659,6 +659,9 @@ var
   PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; out pkey: PEVP_PKEY; out cert: PX509; var ca: PSSLObject): Integer; cdecl;
   PKCS12_free: procedure(a: PKCS12); cdecl;
 
+  //OpenSSL 3 only: some PFX/PEM files use ciphers (RC2/RC4/3DES...) that live in the "legacy" provider
+  OSSL_PROVIDER_load: function(libctx: Pointer; const name: PUTF8Char): Pointer; cdecl;
+
   //Aliases functions
 
   function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong; inline;
@@ -1143,6 +1146,7 @@ begin
   d2i_PKCS12_bio := GetAddress('d2i_PKCS12_bio');
   PKCS12_parse := GetAddress('PKCS12_parse');
   PKCS12_free := GetAddress('PKCS12_free');
+  OSSL_PROVIDER_load := GetAddress('OSSL_PROVIDER_load');
 end;
 
 function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt; inline;

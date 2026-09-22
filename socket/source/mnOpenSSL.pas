@@ -1108,6 +1108,13 @@ begin
         OpenSSL_add_all_algorithms
       else
         OPENSSL_init_crypto(0, nil);
+
+      //OpenSSL 3 keeps old PKCS#12 algorithms (RC2, RC4...) in the legacy provider:
+      //without it, PKCS12_parse fails with 'error:0308010C:digital envelope routines::unsupported'
+      //if Assigned(OSSL_PROVIDER_load) then
+        //OSSL_PROVIDER_load(nil, PUTF8Char('legacy'));
+      OSSL_PROVIDER_load(nil, 'default'); //must add 'default' and 'legacy'
+      OSSL_PROVIDER_load(nil, 'legacy');  //fix load iis pfx
     end;
 
     //ERR_load_CRYPTO_strings();//IDK

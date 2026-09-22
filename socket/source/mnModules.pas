@@ -2823,7 +2823,7 @@ begin
     Result := Result + '; Domain=' + Domain.ToLower;
 
   if Path <> '' then
-    Result := Result + '; Path=' + Path.ToLower
+    Result := Result + '; Path=' + Path
   else
     Result := Result + '; Path=/';
 
