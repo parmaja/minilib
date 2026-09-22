@@ -1089,7 +1089,7 @@ const
 
 procedure TmodWebServer.AddChallengeAcme(const AHomeDir: string);
 begin
-  if Modules.Find(sAcmeNameDir) = nil then
+  if (Modules.Find(sAcmeNameDir) = nil) and (AHomeDir<>'') then
   begin
     //* http://localhost/.well-known/acme-challenge/index.html
     with TmodWebFileModule.Create(Self, sAcmeNameDir, '.' + sAcmeNameDir) do

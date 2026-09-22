@@ -233,7 +233,8 @@ type
     procedure BeforeDestruction; override;
     destructor Destroy; override;
     //Server.Log This called from outside of any threads, i mean you should be in the main thread to call it, if not use Listener.Log
-    procedure Log(const S: string);
+    procedure Log(const S: string); overload;
+    function Log(vCheck: Boolean; const S: string): Boolean; overload;
 
     procedure Start(WaitToStart: Boolean = False);
     procedure Restart;
@@ -552,6 +553,13 @@ begin
     FIdleTick := TThread.GetTickCount64;
     vListener.Queue(DoIdle);
   end;
+end;
+
+function TmnServer.Log(vCheck: Boolean; const S: string): Boolean;
+begin
+  Result := vCheck;
+  if Result then
+    Log(s);
 end;
 
 procedure TmnServer.DoAfterOpen;
@@ -1002,17 +1010,11 @@ begin
     DoStarting; //* more init values from read config
     if IsSecure then
     begin
-      if not FileExists(CertificateFile) then
-      begin
-        DoLog('CertificateFile not exists');
+      if Log(not FileExists(CertificateFile), 'CertificateFile not exists:'+CertificateFile) then
         Exit;
-      end;
 
-      if not FileExists(PrivateKeyFile) then
-      begin
-        DoLog('PrivateKeyFile not exists');
+      if Log((PrivateKeyFile<>'') and not FileExists(PrivateKeyFile), 'PrivateKeyFile not exists:'+PrivateKeyFile) then //maybe load pfx file
         Exit;
-      end;
 
       InitOpenSSL;
     end;

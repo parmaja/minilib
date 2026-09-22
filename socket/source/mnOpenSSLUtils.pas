@@ -119,6 +119,8 @@ var
   bne: PBIGNUM;
   sign: Integer;
   res: Integer;
+
+  notBefore, notAfter: PASN1_TIME;
 begin
   x := nil;
   pk := nil;
@@ -158,8 +160,16 @@ begin
 
     ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
     //set validity (replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x)
-    X509_time_adj_ex(X509_get0_notBefore(x), 0, 0, nil);
-    X509_time_adj_ex(X509_get0_notAfter(x), 60 * 60 * 24 * Days, 0, nil);
+    //X509_time_adj_ex(X509_get0_notBefore(x), 0, 0, nil);
+    //X509_time_adj_ex(X509_get0_notAfter(x), 60 * 60 * 24 * Days, 0, nil);
+
+    notBefore := X509_time_adj_ex(nil, 0, 0, nil);
+    X509_set1_notBefore(x, notBefore);
+    ASN1_TIME_free(notBefore);
+
+    notAfter := X509_time_adj_ex(nil, 0, 60 * 60 * 24 * Days, nil);
+    X509_set1_notAfter(x, notAfter);
+    ASN1_TIME_free(notAfter);
 
     X509_set_pubkey(x, pk);
     name := X509_get_subject_name(x);
