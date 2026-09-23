@@ -39,6 +39,9 @@ begin
   SetLength(Result, ((Length(S) + 2) div 3) * 4);
   for i := 1 to ((Length(S) + 2) div 3) do
   begin
+    { The final block may contain only one or two bytes.  Clear the unused
+      bytes so their bits cannot leak into the encoded result. }
+    FillChar(InBuf, SizeOf(InBuf), 0);
     if Length(S) < (i * 3) then
       Move(S[(i - 1) * 3 + 1], InBuf, Length(S) - (i - 1) * 3)
     else

@@ -75,6 +75,10 @@
         <UnitName Value="mnHttpClient"/>
       </Item>
       <Item>
+        <Filename Value="..\source\mnOpenAI.pas"/>
+        <UnitName Value="mnOpenAI"/>
+      </Item>
+      <Item>
         <Filename Value="..\source\mnWebModules.pas"/>
         <UnitName Value="mnWebModules"/>
       </Item>

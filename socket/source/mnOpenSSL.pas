@@ -1175,8 +1175,14 @@ begin
 end;
 
 procedure TBIOStreamSSL.SetHostName(AHostName: utf8string);
+var
+  SSL: TSSL;
 begin
   BIO_set_conn_hostname(Handle, PUTF8Char(AHostName)); //Always return 1
+  // BIO_set_conn_hostname configures the TCP destination only.  Virtual-hosted
+  // HTTPS services also require TLS SNI before the handshake.
+  SSL := GetSSL;
+  SSL.SetHostName(AHostName);
 end;
 
 procedure TBIOStreamSSL.SetHostPort(APort: utf8string);

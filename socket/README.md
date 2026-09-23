@@ -31,9 +31,39 @@ MiniSockets provides a unified socket abstraction with high-level client/server 
 
 - **HTTP Client** (`mnHttpClient`)
   - HTTP/1.1 and HTTPS support
-  - GET, POST, PATCH, HEAD methods
+  - GET, POST, PATCH, DELETE, HEAD, and arbitrary HTTP methods
   - File download, stream upload, and memory operations
   - Chunked transfer and compression support
+
+- **OpenAI-compatible API** (`mnOpenAI`)
+  - OpenAI v1, LM Studio, and other local OpenAI-compatible servers
+  - Models, Chat Completions, Responses, Completions, Embeddings, and Moderations
+  - Vision image upload using data URLs
+  - Image generation/editing and generated-image download
+  - Audio transcription, translation, and speech helpers
+  - Generic `Get`, `Post`, `Delete`, and `Request` methods for provider-specific endpoints
+
+```pascal
+uses mnOpenAI;
+
+var
+  AI: TmnOpenAIClient;
+begin
+  AI := TmnOpenAIClient.Create('http://127.0.0.1:1234', 'your-key');
+  try
+    AI.Model := 'your-model';
+    WriteLn(AI.Chat('Say hello in one sentence'));
+  finally
+    AI.Free;
+  end;
+end;
+```
+
+The base URL can be either the server root (`http://127.0.0.1:1234`) or an
+explicit v1 root (`http://127.0.0.1:1234/v1`). `Request` accepts any HTTP
+method and endpoint, including absolute URLs, so provider-specific endpoints
+remain accessible. See `demo/openai/openai_test.lpr` for a console example
+using `OPENAI_BASE_URL`, `OPENAI_API_KEY`, and `OPENAI_MODEL`.
 
 - **HTTP Server** (`mnHttpServer`)
   - Basic HTTP/1.1 web server

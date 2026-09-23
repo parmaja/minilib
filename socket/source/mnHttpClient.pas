@@ -46,6 +46,9 @@ type
     FOnProgress: TOnHttpDownloadProgress;
     FLastURL: UTF8String;
     FAutoClearHeaders: Boolean;
+    FConnectTimeout: Integer;
+    FReadTimeout: Integer;
+    FWriteTimeout: Integer;
     function GetRequest: TwebRequest;
     function GetResponse: TwebResponse;
   protected
@@ -83,6 +86,20 @@ type
     function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
     function Post(const vURL: UTF8String; const vData: UTF8String): Boolean; overload;
 
+    function Delete(vData: PByte; vCount: Integer): Boolean; overload;
+    function Delete(const vData: UTF8String): Boolean; overload;
+    function Delete(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
+    function Delete(const vURL: UTF8String; const vData: UTF8String): Boolean; overload;
+
+    { Send any HTTP method.  This is useful for APIs which add endpoints that
+      are not covered by the convenience methods above (for example PUT). }
+    function Execute(const vURL, vMethod: UTF8String; vData: PByte;
+      vCount: Integer): Boolean; overload;
+    function Execute(const vURL, vMethod, vData: UTF8String): Boolean; overload;
+    function Execute(const vMethod: UTF8String; vData: PByte;
+      vCount: Integer): Boolean; overload;
+    function Execute(const vMethod, vData: UTF8String): Boolean; overload;
+
     function Patch(vData: PByte; vCount: Integer): Boolean; overload;
     function Patch(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
     function Patch(const vURL: UTF8String; const vData: UTF8String): Boolean; overload;
@@ -111,6 +128,9 @@ type
     procedure Clear;
 
     property AutoClearHeaders: Boolean read FAutoClearHeaders write FAutoClearHeaders default False;
+    property ConnectTimeout: Integer read FConnectTimeout write FConnectTimeout;
+    property ReadTimeout: Integer read FReadTimeout write FReadTimeout;
+    property WriteTimeout: Integer read FWriteTimeout write FWriteTimeout;
     property Protocol: UTF8String read FProtocol write FProtocol;
     property Port: UTF8String read FPort write FPort;
     property Path: UTF8String read FPath write FPath;
@@ -167,8 +187,9 @@ type
 
   { TmnBIOHttpClient }
 
-  TmnBIOHttpClient = class(TmnCustomHttpClient)
+  TmnBIOHttpClient = class(TmnHttpClient)
   public
+    // Uses BIO/OpenSSL for TLS and inherited sockets for plain HTTP.
     function DoCreateStream(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String): TmnConnectionStream; override;
   end;
 
@@ -427,7 +448,9 @@ begin
   Request.Head := Command + ' ' + Path + ' ' + sHTTPProtocol_101;
 
   if Request.Use.Compressing <> ovYes then
-    Request.ContentLength := vCount;
+    Request.ContentLength := vCount
+  else
+    Request.ContentLength := 0; //no content-length when the request body is compressed (chunked)
 
   Request.Reset;
   Request.SendHeader;
@@ -521,6 +544,9 @@ begin
   FRequest := CreateRequest(nil);
   FResponse := CreateResponse;
   FAutoClearHeaders := False;
+  FConnectTimeout := 5000;
+  FReadTimeout := 30000;
+  FWriteTimeout := 5000;
 end;
 
 function TmnCustomHttpClient.CreateRequest(AStream: TmnConnectionStream): TmodRequest;
@@ -610,6 +636,61 @@ end;
 function TmnCustomHttpClient.Post(const vData: UTF8String): Boolean;
 begin
   Result := Post(PByte(vData), Length(vData));
+end;
+
+function TmnCustomHttpClient.Delete(vData: PByte; vCount: Integer): Boolean;
+begin
+  if (Stream = nil) or not Stream.Connected then
+    raise EmnStreamException.Create('Not connected yet');
+  SendCommand('DELETE', vData, vCount);
+  Result := Stream.Connected;
+  if Result then
+    ReceiveHeader;
+end;
+
+function TmnCustomHttpClient.Delete(const vData: UTF8String): Boolean;
+begin
+  Result := Delete(PByte(vData), Length(vData));
+end;
+
+function TmnCustomHttpClient.Delete(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
+begin
+  Connect(vURL);
+  Result := Delete(vData, vCount);
+end;
+
+function TmnCustomHttpClient.Delete(const vURL: UTF8String; const vData: UTF8String): Boolean;
+begin
+  Result := Delete(vURL, PByte(vData), Length(vData));
+end;
+
+function TmnCustomHttpClient.Execute(const vURL, vMethod: UTF8String;
+  vData: PByte; vCount: Integer): Boolean;
+begin
+  Connect(vURL);
+  Result := Execute(vMethod, vData, vCount);
+end;
+
+function TmnCustomHttpClient.Execute(const vMethod: UTF8String;
+  vData: PByte; vCount: Integer): Boolean;
+begin
+  if (Stream = nil) or not Stream.Connected then
+    raise EmnStreamException.Create('Not connected yet');
+  SendCommand(string(vMethod), vData, vCount);
+  Result := Stream.Connected;
+  if Result then
+    ReceiveHeader;
+end;
+
+function TmnCustomHttpClient.Execute(const vURL, vMethod,
+  vData: UTF8String): Boolean;
+begin
+  Result := Execute(vURL, vMethod, PByte(vData), Length(vData));
+end;
+
+function TmnCustomHttpClient.Execute(const vMethod, vData: UTF8String): Boolean;
+begin
+  Result := Execute(vMethod, PByte(vData), Length(vData));
 end;
 
 function TmnCustomHttpClient.ReadStream(AStream: TStream; Count: Integer): TFileSize;
@@ -773,9 +854,9 @@ begin
   aStream := TmnHttpStream.Create;
 
   aStream.EndOfLine      := sWinEndOfLine;
-  aStream.ReadTimeout    := 30000;
-  aStream.ConnectTimeout := 5000;
-  aStream.WriteTimeout   := 5000;
+  aStream.ReadTimeout    := ReadTimeout;
+  aStream.ConnectTimeout := ConnectTimeout;
+  aStream.WriteTimeout   := WriteTimeout;
   aStream.Options := aStream.Options + [soWaitBeforeRead];
 
   ParseURL(vURL, vProtocol, vHost, vPort, vParams);
@@ -797,14 +878,20 @@ function TmnBIOHttpClient.DoCreateStream(const vURL: UTF8String; out vProtocol, 
 var
   aStream: TmnBIOHttpStream;
 begin
+  ParseURL(vURL, vProtocol, vHost, vPort, vParams);
+  if not SameText(vProtocol, 'https') and not SameText(vProtocol, 'wss') then
+  begin
+    Result := inherited DoCreateStream(vURL, vProtocol, vHost, vPort, vParams);
+    Exit;
+  end;
+
   aStream := TmnBIOHttpStream.Create;
 
   aStream.EndOfLine      := sWinEndOfLine;
-  aStream.ReadTimeout    := 5000;
-  aStream.ConnectTimeout := 5000;
-  aStream.WriteTimeout   := 5000;
+  aStream.ReadTimeout    := ReadTimeout;
+  aStream.ConnectTimeout := ConnectTimeout;
+  aStream.WriteTimeout   := WriteTimeout;
 
-  ParseURL(vURL, vProtocol, vHost, vPort, vParams);
   FPath := vParams;
   aStream.Address := vHost;
   aStream.Port := vPort;
