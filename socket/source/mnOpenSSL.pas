@@ -575,8 +575,6 @@ end;
 procedure BIOToFile(vProc: TBIOWriteProc; FileName: string);
 var
   bio: PBIO;
-  b: PByte;
-  aLen: NativeInt;
 begin
   bio := BIO_new_file(PUTF8Char(UTF8Encode(FileName)), PUTF8Char('wb'));
   if bio = nil then
@@ -674,7 +672,6 @@ begin
       raise Exception.Create('X509_REQ_sign failed');
   except
     X509_REQ_free(Result);
-    Result := nil;
     raise;
   end;
 end;
@@ -706,7 +703,6 @@ function LoadEckey(FileName: string): PEVP_PKEY;
 var
   bio: PBIO;
 begin
-  Result := nil;
   InitOpenSSLLibrary;
 
   if not FileExists(FileName) then
@@ -951,7 +947,7 @@ var
   name: PX509_NAME;
   bne: PBIGNUM;
   sign: Integer;
-  res: Integer;
+//  res: Integer;
 begin
   x := nil;
   pk := nil;
@@ -1231,8 +1227,8 @@ end;
 constructor EmnOpenSSLException.CreateLastError(const msg: string);
 var
   s: string;
-  e: NativeUInt;
-  buf: array[0..255] of AnsiChar;
+  //e: NativeUInt;
+  //buf: array[0..255] of AnsiChar;
 begin
   //s := ERR_error_string(ERR_peek_error, nil);
   s := CollectOpenSSLErrors;

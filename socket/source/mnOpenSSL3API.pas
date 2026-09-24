@@ -73,17 +73,10 @@ type
 
   POPENSSL_INIT_SETTINGS = ^TOPENSSL_INIT_SETTINGS;
 
-  //PSSLObject = class(TObject);
-  {$ifdef FPC}
-  //SSLObject = record end;
-  //PSSLObject = ^SSLObject;
-  PSSLObject = type Pointer; //* Unfortunately FPC have no `type of` :(
-  {$else}
-//  SSLObject = record end;
-//  PSSLObject = ^SSLObject; //* Unfortunately FPC have no `type of` :(
-  PSSLObject = type Pointer;
-  //PSSLObject = type of Pointer; for check errors and not wrking with helper need check in future
-  {$endif}
+  SSLObject = record end;
+  PSSLObject = ^SSLObject; //* Unfortunately FPC have no `type of` :(
+  //PSSLObject = type Pointer;
+  //PSSLObject = type of Pointer; dos not work in FPC, for check errors and not working with helper need check in future
   PPSSLObject = ^PSSLObject;
 
   PSSL = PSSLObject;
@@ -97,10 +90,12 @@ type
   PASN1_VALUE = Pointer;
   PPASN1_VALUE = ^PASN1_VALUE;
 
-  PX509 = type PSSLObject;
+  X509 = type SSLObject;
+  PX509 = ^X509;
   PPX509 = ^PX509;
   PX509_STORE_CTX = PSSLObject;
-  PX509_REQ = type PSSLObject;
+  X509_REQ = type SSLObject;
+  PX509_REQ = ^X509_REQ;
   PX509_CRL = PSSLObject;
   PX509V3_CONF_METHOD = PSSLObject;
   PPX509_REQ = ^PX509_REQ;
@@ -164,7 +159,8 @@ type
   TX509V3_CTX = TV3_ext_ctx;
   PX509V3_CTX = ^TX509V3_CTX;
 
-  POPENSSL_STACK = PSSLObject;
+  OPENSSL_STACK = type SSLObject;
+  POPENSSL_STACK = ^OPENSSL_STACK;
   PPOPENSSL_STACK = ^POPENSSL_STACK;
   PSTACK_OF_GENERAL_NAME = PSSLObject;
   PPSTACK_OF_GENERAL_NAME = ^PSTACK_OF_GENERAL_NAME;
@@ -235,7 +231,7 @@ type
   PASN1_SCTX = Pointer;
   PPASN1_SCTX = ^PASN1_SCTX;
 
-  PStack_st_X509_EXTENSION = PSSLObject;
+  PStack_st_X509_EXTENSION = POPENSSL_STACK;
   PPStack_st_X509_EXTENSION = ^PStack_st_X509_EXTENSION;
 
   TASN1_ENCODING = record
@@ -656,7 +652,7 @@ var
   d2i_X509: function(px: PPX509; data: PPointer; size: Integer): PX509; cdecl;
   d2i_PKCS12_bio: function(bp: PBIO; p: PPKCS12): PKCS12; cdecl; //return PKCS12
 
-  PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; out pkey: PEVP_PKEY; out cert: PX509; var ca: PSSLObject): Integer; cdecl;
+  PKCS12_parse: function(p12: PKCS12; const password: PUTF8Char; out pkey: PEVP_PKEY; out cert: PX509; var ca: POPENSSL_STACK): Integer; cdecl;
   PKCS12_free: procedure(a: PKCS12); cdecl;
 
   //OpenSSL 3 only: some PFX/PEM files use ciphers (RC2/RC4/3DES...) that live in the "legacy" provider

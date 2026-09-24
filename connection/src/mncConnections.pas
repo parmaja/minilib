@@ -1157,7 +1157,9 @@ end;
 function TmncCommand.Fetch: Boolean;
 begin
   if not FExecuted then
-    Result := InternalExecute(True);
+    Result := InternalExecute(True)
+  else
+    Result := False;
 
   if not FFetched then
   begin
@@ -1165,7 +1167,10 @@ begin
     FFetched := True;
   end
   else
+  begin
+//    if Result then //TODO
     Result := Next;
+  end;
 
   if not Result then
     Close;

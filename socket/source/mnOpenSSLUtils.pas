@@ -34,7 +34,7 @@ type
     function AltNames: TStrings;
   end;
 
-  TPX509Helper = record helper for PX509
+  TPX509Helper = record helper for X509
   public
     procedure SetSerial(vSerial: Integer);
     procedure AdjTime(vDays: NativeInt); overload;
@@ -49,13 +49,13 @@ type
     class function Generate(vConfig: TsslConfig; vProc: TProc<PX509, PEVP_PKEY>): Boolean; static;
   end;
 
-  TPX509ReqHelper = record helper for PX509_REQ
+  TPX509ReqHelper = record helper for X509_REQ
     procedure SetSubjectName(const vField, vData: string); overload;
     procedure SetSubjectName(vNID: Integer; const vData: string); overload;
     function SetExt(sk: POPENSSL_STACK; const vName, vData: string): Integer; overload;
   end;
 
-  TSSLStackHelper = record helper for POPENSSL_STACK
+  TSSLStackHelper = record helper for OPENSSL_STACK
     function SetExt(NID: Integer; const vData: string): Integer; overload;
     function SetExt(req: PX509_REQ; const vName, vData: string): Integer; overload;
     function SetStack(typ: Integer; const vData: TStrings): Integer;
@@ -380,7 +380,7 @@ end;
 
 function MakeCertReq(vConfig: TsslConfig): Boolean; overload;
 begin
-  Result := PX509.Generate(vConfig, procedure(px: PX509; pk: PEVP_PKEY)
+  Result := X509.Generate(vConfig, procedure(px: PX509; pk: PEVP_PKEY)
   begin
     vConfig.WriteString('Result', 'PrvKey', px.BIOstr(procedure(bio: PBIO)
     begin
@@ -460,8 +460,8 @@ end;
 procedure TPX509Helper.AdjTime(vFrom, vTo: NativeInt);
 begin
   //replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x
-  X509_time_adj_ex(X509_get0_notBefore(Self), 0, 0, nil);
-  X509_time_adj_ex(X509_get0_notAfter(Self), 60 * 60 * 24 * vTo, 0, nil);
+  X509_time_adj_ex(X509_get0_notBefore(@Self), 0, 0, nil);
+  X509_time_adj_ex(X509_get0_notAfter(@Self), 60 * 60 * 24 * vTo, 0, nil);
 end;
 
 function TPX509Helper.BIOstr(vProc: TProc<PBIO>): string;
@@ -527,7 +527,7 @@ var
 begin
   if vData <> '' then
   begin
-    n := X509_get_subject_name(Self);
+    n := X509_get_subject_name(@Self);
     f := UTF8Encode(vField);
     d := UTF8Encode(vData);
 
@@ -547,12 +547,12 @@ begin
     d := UTF8Encode(vData);
 
     X509V3_set_ctx_nodb(@ctx);
-    X509V3_set_ctx(@ctx, Self, Self, nil, nil, 0);
+    X509V3_set_ctx(@ctx, @Self, @Self, nil, nil, 0);
 
     ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(NID), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
     if ex <> nil then
     try
-      Result := X509_add_ext(Self, ex, -1);
+      Result := X509_add_ext(@Self, ex, -1);
     finally
       X509_EXTENSION_free(ex);
     end;
@@ -561,7 +561,7 @@ end;
 
 procedure TPX509Helper.SetSerial(vSerial: Integer);
 begin
-  ASN1_INTEGER_set(X509_get_serialNumber(Self), vSerial);
+  ASN1_INTEGER_set(X509_get_serialNumber(@Self), vSerial);
 end;
 
 procedure TPX509Helper.SetSubjectName(vNID: Integer; const vData: string);
@@ -571,7 +571,7 @@ var
 begin
   if vData <> '' then
   begin
-    n := X509_get_subject_name(Self);
+    n := X509_get_subject_name(@Self);
     d := UTF8Encode(vData);
 
     X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_UTF8, PByte(d), -1, -1, 0);
@@ -725,7 +725,7 @@ begin
     Ext := X509V3_EXT_nconf(nil, nil, OBJ_nid2sn(NID), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
     if Ext <> nil then
     begin
-      if OPENSSL_sk_push(Self, Ext) > 0 then
+      if OPENSSL_sk_push(@Self, Ext) > 0 then
         Result := 1
       else
         X509_EXTENSION_free(Ext);
@@ -753,9 +753,9 @@ begin
     ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
     if ex <> nil then
     begin
-      if OPENSSL_sk_push(Self, ex) > 0 then
+      if OPENSSL_sk_push(@Self, ex) > 0 then
       begin
-        if X509_REQ_add_extensions_nid(req, Self, nid) > 0 then
+        if X509_REQ_add_extensions_nid(req, @Self, nid) > 0 then
           Result := 1;
       end
       else
@@ -771,7 +771,7 @@ var
 begin
   sk := BuildAltStack(typ, vData, aArr);
   try
-    Result := X509V3_add1_i2d(Self, NID_subject_alt_name, sk, 0, X509V3_ADD_REPLACE);
+    Result := X509V3_add1_i2d(@Self, NID_subject_alt_name, sk, 0, X509V3_ADD_REPLACE);
   finally
     OPENSSL_sk_pop_free(sk, @GENERAL_NAME_free);
   end;
@@ -794,7 +794,7 @@ begin
     d := UTF8Encode(vData);
 
     X509V3_set_ctx_nodb(@ctx);
-    X509V3_set_ctx(@ctx, nil, nil, Self, nil, 0);
+    X509V3_set_ctx(@ctx, nil, nil, @Self, nil, 0);
     nid := OBJ_txt2nid(PUTF8Char(n));
 
     ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
@@ -815,7 +815,7 @@ var
 begin
   if vData <> '' then
   begin
-    n := X509_REQ_get_subject_name(Self);
+    n := X509_REQ_get_subject_name(@Self);
     d := UTF8Encode(vData);
 
     X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_UTF8, PByte(d), -1, -1, 0);
@@ -829,7 +829,7 @@ var
 begin
   if vData <> '' then
   begin
-    n := X509_REQ_get_subject_name(Self);
+    n := X509_REQ_get_subject_name(@Self);
     f := UTF8Encode(vField);
     d := UTF8Encode(vData);
 
