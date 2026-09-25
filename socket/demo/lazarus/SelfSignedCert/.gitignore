@@ -1,0 +1,14 @@
+# build output
+SelfSignedCertDemo.exe
+SelfSignedCertDemo.o
+*.lps
+lib/
+
+# generated test certificates
+cert.pem
+key.pem
+cert.csr
+memory.crt
+memory.key
+cert_pub.txt
+key_pub.txt

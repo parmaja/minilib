@@ -939,39 +939,48 @@ begin
   exit(1);
 end;
 
-//TODO need to make more clean when exit, some objects most not freed if assigned successed
+//SelfSignedCert: OpenSSL 3.x compatible self-signed certificate generation.
+//- RSA key is generated with the provider based EVP_PKEY API (GenerateRSAKey),
+//  not the removed RSA_new/RSA_generate_key_ex/EVP_PKEY_assign_RSA.
+//- Validity is set with X509_time_adj_ex (C signature: s, offset_day, offset_sec, t
+//  = DAY first, SECONDS second) + X509_set1_notBefore/X509_set1_notAfter, replacing
+//  the deprecated X509_gmtime_adj/X509_getm_not*.
+//- Subject entries use MBSTRING_UTF8 (OpenSSL 3.x default for UTF8 strings).
+//- v3 extensions are built with X509V3_EXT_nconf (X509V3_EXT_conf_nid is
+//  deprecated in OpenSSL 3.x).
+//Ownership: on success x509p/pkeyp are set and must be freed by the caller;
+//on failure they are left untouched and all temporary objects are freed here.
 function SelfSignedCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
   x: PX509;
   pk: PEVP_PKEY;
   name: PX509_NAME;
   bne: PBIGNUM;
+  notBefore, notAfter: PASN1_TIME;
   sign: Integer;
-//  res: Integer;
 begin
   x := nil;
   pk := nil;
-//  name := nil;
-//  bne := nil;
-//  sign := nil;
+  notBefore := nil;
+  notAfter := nil;
   Result := False;
   try
     InitOpenSSLLibrary;
-  	if (pkeyp = nil) then
+    if (pkeyp = nil) then
     begin
       pk := nil; //key generated below via GenerateRSAKey
     end
-  	else
+    else
       pk := pkeyp;
 
-  	if (x509p = nil) then
+    if (x509p = nil) then
     begin
       x := X509_new();
-  		if (x = nil) then
+      if (x = nil) then
         exit(False);
     end
-  	else
-  		x := x509p;
+    else
+      x := x509p;
 
     //generate RSA key (replaces RSA_new/RSA_generate_key_ex/EVP_PKEY_assign_RSA, deprecated in OpenSSL 3.x)
     if pk = nil then
@@ -989,37 +998,58 @@ begin
     X509_set_version(x, 2);
 
     ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
+
     //replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x
     //X509_time_adj_ex(s, offset_day, offset_sec, t): DAY first, SECONDS second
-    X509_time_adj_ex(X509_get0_notBefore(x), 0, 0, nil);
-    X509_time_adj_ex(X509_get0_notAfter(x), Days, 0, nil);
+    notBefore := X509_time_adj_ex(nil, 0, 0, nil); //now
+    if notBefore = nil then
+      exit(False);
+    if X509_set1_notBefore(x, notBefore) <> 1 then
+      exit(False);
+    ASN1_TIME_free(notBefore);
+    notBefore := nil;
 
-    X509_set_pubkey(x, pk);
+    notAfter := X509_time_adj_ex(nil, Days, 0, nil); //now + Days
+    if notAfter = nil then
+      exit(False);
+    if X509_set1_notAfter(x, notAfter) <> 1 then
+      exit(False);
+    ASN1_TIME_free(notAfter);
+    notAfter := nil;
+
+    if X509_set_pubkey(x, pk) <> 1 then
+      exit(False);
     name := X509_get_subject_name(x);
 
     (* This function creates and adds the entry, working out the
      * correct utf8string type and performing checks on its length.
      *)
-    if CN <> '' then
-      X509_NAME_add_entry_by_txt(name, 'CN', MBSTRING_ASC, PByte(CN), -1, -1, 0);
-    if O <> '' then
-      X509_NAME_add_entry_by_txt(name, 'O', MBSTRING_ASC, PByte(O), -1, -1, 0);
-    if C <> '' then
-   	  X509_NAME_add_entry_by_txt(name, 'C', MBSTRING_ASC, PByte(C), -1, -1, 0);
-    if OU <> '' then
-      X509_NAME_add_entry_by_txt(name, 'OU', MBSTRING_ASC, PByte(OU), -1, -1, 0);
+    if (CN <> '') and (X509_NAME_add_entry_by_txt(name, 'CN', MBSTRING_UTF8, PByte(CN), -1, -1, 0) <> 1) then
+      exit(False);
+    if (O <> '') and (X509_NAME_add_entry_by_txt(name, 'O', MBSTRING_UTF8, PByte(O), -1, -1, 0) <> 1) then
+      exit(False);
+    if (C <> '') and (X509_NAME_add_entry_by_txt(name, 'C', MBSTRING_UTF8, PByte(C), -1, -1, 0) <> 1) then
+      exit(False);
+    if (OU <> '') and (X509_NAME_add_entry_by_txt(name, 'OU', MBSTRING_UTF8, PByte(OU), -1, -1, 0) <> 1) then
+      exit(False);
 
     (* Its self signed so set the issuer name to be the same as the
      * subject.
      *)
-    X509_set_issuer_name(x, name);
+    if X509_set_issuer_name(x, name) <> 1 then
+      exit(False);
 
     (* Add various extensions: standard extensions *)
 
-    AddExt(x, NID_basic_constraints, 'critical,CA:TRUE');
+    if AddExt(x, NID_basic_constraints, 'critical,CA:TRUE') <> 1 then
+      exit(False);
     //AddExt(x, NID_key_usage, PUTF8Char('critical,digitalSignature,keyEncipherment'));
-    AddExt(x, NID_key_usage, PUTF8Char(UTF8String('critical,cRLSign,digitalSignature,keyCertSign'))); //Self-Signed
-    AddExt(x, NID_subject_key_identifier, 'hash');
+    if AddExt(x, NID_key_usage, PUTF8Char('critical,cRLSign,digitalSignature,keyCertSign')) <> 1 then //Self-Signed
+      exit(False);
+    if AddExt(x, NID_subject_key_identifier, 'hash') <> 1 then
+      exit(False);
+    if AddExt(x, NID_authority_key_identifier, 'keyid:always') <> 1 then //self-signed: issuer = subject
+      exit(False);
 
     sign := X509_sign(x, pk, EVP_sha256());
     if (sign = 0) then
@@ -1028,49 +1058,81 @@ begin
     pkeyp := pk;
     exit(True);
   finally
+    if notBefore <> nil then
+      ASN1_TIME_free(notBefore);
+    if notAfter <> nil then
+      ASN1_TIME_free(notAfter);
     if not Result then
     begin
       if x <> nil then
-      	X509_free(x);
+        X509_free(x);
       if pk <> nil then
-      	EVP_PKEY_free(pk);
+        EVP_PKEY_free(pk);
     end;
   end;
 end;
 
 function SelfSignedCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
-	x509: PX509;
-	pkey: PEVP_PKEY;
+  x509: PX509;
+  pkey: PEVP_PKEY;
   outbio: PBIO;
   s: utf8string;
   xx: PX509_REQ;
 begin
-	x509 :=nil;
-	pkey := nil;
+  x509 := nil;
+  pkey := nil;
+  xx := nil;
+  Result := False;
   try
-    Result := SelfSignedCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days);
+    if not SelfSignedCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days) then
+      exit(False);
 
-    outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');
-	  PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
-    BIO_free(outbio);
+    outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), PUTF8Char('w'));
+    if outbio = nil then
+      exit(False);
+    try
+      if PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil) <> 1 then
+        exit(False);
+    finally
+      BIO_free(outbio);
+    end;
 
-    outbio := BIO_new_file(PUTF8Char(CertificateFile), 'w');
-	  PEM_write_bio_X509(outbio, x509);
-    BIO_free(outbio);
+    outbio := BIO_new_file(PUTF8Char(CertificateFile), PUTF8Char('w'));
+    if outbio = nil then
+      exit(False);
+    try
+      if PEM_write_bio_X509(outbio, x509) <> 1 then
+        exit(False);
+    finally
+      BIO_free(outbio);
+    end;
 
+    //for backwards compatibility also write a CSR derived from the generated certificate
     s := ChangeFileExt(CertificateFile, '.csr');
     xx := X509_to_X509_REQ(x509, pkey, EVP_sha256);
-    outbio := BIO_new_file(PUTF8Char(s), 'w');
-	  PEM_write_bio_X509_REQ(outbio, xx);
-    BIO_free(outbio);
-    X509_REQ_free(xx);
+    if xx <> nil then
+    begin
+      try
+        outbio := BIO_new_file(PUTF8Char(s), PUTF8Char('w'));
+        if outbio <> nil then
+        try
+          PEM_write_bio_X509_REQ(outbio, xx);
+        finally
+          BIO_free(outbio);
+        end;
+      finally
+        X509_REQ_free(xx);
+        xx := nil;
+      end;
+    end;
 
+    Result := True;
   finally
     if x509 <> nil then
-  	  X509_free(x509);
+      X509_free(x509);
     if pkey <> nil then
-  	  EVP_PKEY_free(pkey);
+      EVP_PKEY_free(pkey);
   end;
 end;
 
