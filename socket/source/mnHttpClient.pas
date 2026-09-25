@@ -382,7 +382,7 @@ end;
 
 procedure ParseURL(const vURL: UTF8String; out vProtocol, vHost, vPort, vParams: UTF8String);
 var
-  p: PUTF8Char;
+  p, q: PUTF8Char;
   l: Integer;
 begin
   vProtocol := '';
@@ -397,23 +397,50 @@ begin
 
   if l > 0 then
   begin
-    vHost := GetUrlPart(p, l, ':', ['/']);
-    if vHost <> '' then
+    if p^ = '[' then //[ipv6] or [ipv6]:port, the host is returned without the brackets
     begin
-      vPort := GetUrlPart(p, l, '/', []);
-      if vPort = '' then
+      Inc(p); Dec(l); //skip '['
+      q := p;
+      while (l > 0) and (p^ <> ']') do
       begin
-        SetString(vPort, p, l);
-        l := 0;
+        Inc(p); Dec(l);
+      end;
+      if l > 0 then
+      begin
+        SetString(vHost, q, p - q);
+        Inc(p); Dec(l); //skip ']'
+        if (l > 0) and (p^ = ':') then
+        begin
+          Inc(p); Dec(l); //skip ':'
+          q := p;
+          while (l > 0) and (p^ <> '/') do
+          begin
+            Inc(p); Dec(l);
+          end;
+          SetString(vPort, q, p - q);
+        end;
       end;
     end
     else
     begin
-      vHost := GetUrlPart(p, l, '/', []);
-      if vHost = '' then
+      vHost := GetUrlPart(p, l, ':', ['/']);
+      if vHost <> '' then
       begin
-        SetString(vHost, p, l);
-        l := 0;
+        vPort := GetUrlPart(p, l, '/', []);
+        if vPort = '' then
+        begin
+          SetString(vPort, p, l);
+          l := 0;
+        end;
+      end
+      else
+      begin
+        vHost := GetUrlPart(p, l, '/', []);
+        if vHost = '' then
+        begin
+          SetString(vHost, p, l);
+          l := 0;
+        end;
       end;
     end;
   end;
