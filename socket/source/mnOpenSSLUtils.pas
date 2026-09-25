@@ -116,8 +116,9 @@ end;
 procedure TPX509Helper.AdjTime(vFrom, vTo: NativeInt);
 begin
   //replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x
+  //X509_time_adj_ex(s, offset_day, offset_sec, t): DAY first, SECONDS second
   X509_time_adj_ex(X509_get0_notBefore(@Self), 0, 0, nil);
-  X509_time_adj_ex(X509_get0_notAfter(@Self), 60 * 60 * 24 * vTo, 0, nil);
+  X509_time_adj_ex(X509_get0_notAfter(@Self), vTo, 0, nil);
 end;
 
 function TPX509Helper.BIOstr(vProc: TProc<PBIO>): string;
@@ -525,7 +526,6 @@ var
   name: PX509_NAME;
   bne: PBIGNUM;
   sign: Integer;
-  res: Integer;
 
   notBefore, notAfter: PASN1_TIME;
 begin
@@ -567,14 +567,19 @@ begin
 
     ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
     //set validity (replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x)
+    //X509_time_adj_ex(s, offset_day, offset_sec, t): DAY first, SECONDS second
     //X509_time_adj_ex(X509_get0_notBefore(x), 0, 0, nil);
-    //X509_time_adj_ex(X509_get0_notAfter(x), 60 * 60 * 24 * Days, 0, nil);
+    //X509_time_adj_ex(X509_get0_notAfter(x), Days, 0, nil);
 
     notBefore := X509_time_adj_ex(nil, 0, 0, nil);
+    if notBefore = nil then
+      exit(False);
     X509_set1_notBefore(x, notBefore);
     ASN1_TIME_free(notBefore);
 
-    notAfter := X509_time_adj_ex(nil, 0, 60 * 60 * 24 * Days, nil);
+    notAfter := X509_time_adj_ex(nil, Days, 0, nil);
+    if notAfter = nil then
+      exit(False);
     X509_set1_notAfter(x, notAfter);
     ASN1_TIME_free(notAfter);
 

@@ -152,6 +152,12 @@ type
       crl: PX509_CRL;
       db_meth: PX509V3_CONF_METHOD;
       db: Pointer;
+      {
+        OpenSSL 3.0 added `EVP_PKEY *issuer_pkey` at the end of X509V3_CTX.
+        Without this field the record is 8 bytes smaller than the C struct and
+        X509V3_set_ctx() writes past the buffer, corrupting the stack.
+      }
+      issuer_pkey: Pointer;
     // Maybe more here
   end;
   Pv3_ext_ctx = ^TV3_ext_ctx;
@@ -506,7 +512,7 @@ var
   X509_get_serialNumber: function(x: PX509): PASN1_INTEGER; cdecl;
   X509_get0_notBefore: function(x: PX509): PASN1_TIME; cdecl; //replaces X509_getm_notBefore (deprecated in OpenSSL 3.x)
   X509_get0_notAfter: function(x: PX509): PASN1_TIME; cdecl; //replaces X509_getm_notAfter (deprecated in OpenSSL 3.x)
-  X509_time_adj_ex: function(s: PASN1_TIME; offset_sec: clong; offset_day: clong; t: Pointer): PASN1_TIME; cdecl; //replaces X509_gmtime_adj (deprecated in OpenSSL 3.x)
+  X509_time_adj_ex: function(s: PASN1_TIME; offset_day: clong; offset_sec: clong; t: Pointer): PASN1_TIME; cdecl; //replaces X509_gmtime_adj (deprecated in OpenSSL 3.x). C signature: (s, int offset_day, long offset_sec, const time_t *t) - DAY first, SECONDS second!
   X509_set1_notBefore: function(x: PX509; t: PASN1_TIME): Integer; cdecl;
   X509_set1_notAfter: function(x: PX509; t: PASN1_TIME): Integer; cdecl;
   ASN1_TIME_free: procedure(a: PASN1_TIME); cdecl;

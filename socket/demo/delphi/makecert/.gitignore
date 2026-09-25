@@ -1,0 +1,8 @@
+# Build / run artifacts
+dcu/
+*.exe
+*.dll
+
+# Generated certificates and keys
+*.crt
+*.key

@@ -990,8 +990,9 @@ begin
 
     ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
     //replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x
+    //X509_time_adj_ex(s, offset_day, offset_sec, t): DAY first, SECONDS second
     X509_time_adj_ex(X509_get0_notBefore(x), 0, 0, nil);
-    X509_time_adj_ex(X509_get0_notAfter(x), 60 * 60 * 24 * Days, 0, nil);
+    X509_time_adj_ex(X509_get0_notAfter(x), Days, 0, nil);
 
     X509_set_pubkey(x, pk);
     name := X509_get_subject_name(x);
