@@ -26,7 +26,10 @@
     </RunParams>
     <RequiredPackages>
       <Item>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniSockets"/>
+      </Item>
+      <Item>
+        <PackageName Value="MiniLib"/>
       </Item>
     </RequiredPackages>
     <Units>
@@ -47,6 +50,11 @@
       <OtherUnitFiles Value="..\..\..\..\lib;..\..\..\source"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <Linking>
+      <Debugging>
+        <DebugInfoType Value="dsDwarf3"/>
+      </Debugging>
+    </Linking>
   </CompilerOptions>
   <Debugging>
     <Exceptions>

@@ -80,12 +80,13 @@ end;
 { TMainForm }
 
 const
-  //sUserAgent = 'Embarcadero URI Client/1.0';
-  sUserAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0';
+  //sMyUserAgent = 'Embarcadero URI Client/1.0';
+  sMyUserAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0';
   //httpbin.org serves plain http images with Content-Length and keep-alive,
   //so the whole demo works without an https connection (no OpenSSL needed)
   sURL = 'http://httpbin.org/image/png';      //first image (keep-alive demo)
   sURL2 = 'http://httpbin.org/image/jpeg';    //second image / file size demo
+  sOSM_URL2 = 'https://tile.openstreetmap.org/6/38/25.png';    //second image / file size demo
   sPATH2 = '/image/jpeg';                     //second path on the same connection
   sURL3 = 'http://example.com/';              //simple page
 
@@ -98,7 +99,7 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.Request.UserAgent := sMyUserAgent;
     HttpClient.GetMemoryStream(sURL, MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
   finally
@@ -117,7 +118,7 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.Request.UserAgent := sMyUserAgent;
     HttpClient.Request.Use.Compressing := ovYes;
     //HttpClient.Request.UserAgent := 'blalbla';
     HttpClient.GetMemoryStream(sURL2, MemoryStream);
@@ -137,7 +138,7 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.Request.UserAgent := sMyUserAgent;
     //Open is a "connect and keep it connected" call: Connect + send GET + receive the header
     HttpClient.Open(sURL3);
     LogEdit.Lines.Add(HttpClient.Response.ContentType);
@@ -168,7 +169,7 @@ begin
   Application.ProcessMessages;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.Request.UserAgent := sMyUserAgent;
     //manual HEAD: connect, compose the request line, send it, read the response header
     HttpClient.Connect(sURL2);
     HttpClient.Request.Head := 'HEAD ' + HttpClient.Path + ' HTTP/1.1';
@@ -196,7 +197,7 @@ begin
   try
     HttpClient.Request.UserAgent := sUserAgent;
     //Open = connect + send GET + receive the response header, keep the connection open
-    HttpClient.Open(sURL2);
+    HttpClient.Open(sOSM_URL2);
 
     HttpClient.ReceiveMemoryStream(MemoryStream);
     MemoryStream.Position := 0;
@@ -223,7 +224,7 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.Request.UserAgent := sMyUserAgent;
     HttpClient.Request.Use.KeepAlive := ovYes;
     //first GET on the connection
     HttpClient.Open(sURL);
