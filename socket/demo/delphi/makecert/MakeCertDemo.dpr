@@ -1,7 +1,7 @@
 program MakeCertDemo;
 
-// MakeCert2 demo - generates a self-signed RSA certificate + private key
-// using mnOpenSSLUtils.MakeCert2 (fixed to work with OpenSSL 3.x).
+// MakeCertificate demo - generates a self-signed RSA certificate + private key
+// using mnOpenSSLUtils.MakeCertificate (fixed to work with OpenSSL 3.x).
 //
 // The fix (see README.md) touched:
 //   - socket/source/mnOpenSSL3API.pas   : TV3_ext_ctx record (missing issuer_pkey
@@ -9,7 +9,7 @@ program MakeCertDemo;
 //                                         X509_time_adj_ex parameter order (real C
 //                                         signature is (s, offset_day, offset_sec, t)).
 //   - socket/source/mnOpenSSL.pas       : MakeCert validity dates.
-//   - socket/source/mnOpenSSLUtils.pas  : MakeCert2 + TPX509Helper.AdjTime.
+//   - socket/source/mnOpenSSLUtils.pas  : MakeCertificate + TPX509Helper.AdjTime.
 //
 // Requires OpenSSL 3.x DLLs (libssl-3-x64.dll + libcrypto-3-x64.dll on x64,
 // libssl-3.dll + libcrypto-3.dll on x86) to be findable at runtime, i.e. in the
@@ -71,24 +71,24 @@ begin
   vCertFile := vDir + 'MakeCertDemo.crt';
   vKeyFile := vDir + 'MakeCertDemo.key';
 
-  WriteLn('== MakeCert2 demo (OpenSSL 3.x) ==');
+  WriteLn('== MakeCertificate demo (OpenSSL 3.x) ==');
   WriteLn;
 
   // 1) File overload: signs directly to PEM cert + key files
-  WriteLn('[1] MakeCert2(certFile, keyFile, ...)  Bits=' + IntToStr(Bits) + ' Days=' + IntToStr(Days));
-  if MakeCert2(vCertFile, vKeyFile, CN, O, C, OU, Bits, Serial, Days) then
+  WriteLn('[1] MakeCertificate(certFile, keyFile, ...)  Bits=' + IntToStr(Bits) + ' Days=' + IntToStr(Days));
+  if MakeCertificate(vCertFile, vKeyFile, CN, O, C, OU, Bits, Serial, Days) then
     WriteLn('    OK -> ' + vCertFile + ' + ' + vKeyFile)
   else
   begin
     WriteLn('    FAILED');
-    DumpErrQueue('MakeCert2(file)');
+    DumpErrQueue('MakeCertificate(file)');
   end;
 
   WriteLn;
-  WriteLn('[2] MakeCert2(x509, pkey, ...)  in-memory overload');
+  WriteLn('[2] MakeCertificate(x509, pkey, ...)  in-memory overload');
   x509 := nil;
   pkey := nil;
-  if MakeCert2(x509, pkey, CN, O, C, OU, Bits, Serial, Days) then
+  if MakeCertificate(x509, pkey, CN, O, C, OU, Bits, Serial, Days) then
   begin
     WriteLn('    OK:');
     WriteLn('      subject   = CN=' + CN + ', O=' + O + ', C=' + C);
@@ -103,7 +103,7 @@ begin
   else
   begin
     WriteLn('    FAILED');
-    DumpErrQueue('MakeCert2(var)');
+    DumpErrQueue('MakeCertificate(var)');
   end;
 
   // 3) TPX509Helper.AdjTime uses the same X509_time_adj_ex call -> show it too

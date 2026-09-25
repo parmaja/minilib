@@ -54,7 +54,7 @@ begin
   Server.Logging := True;
 
   if not FileExists('certificate.pem') then
-    MakeCert('certificate.pem', 'privatekey.pem', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
+    SelfSignedCert('certificate.pem', 'privatekey.pem', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
 
   aIni := TIniFile.Create(ExtractFilePath(ParamStr(0)) + 'config.ini');
   try

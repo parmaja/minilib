@@ -83,8 +83,8 @@ function BuildAltStack(AltType: Integer; Names: TStrings; var vArr: TSSLStackArr
 procedure AddDirNameSAN(req: PX509_REQ; vProc: TFetchNamesProc);
 
 
-function MakeCert2(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
-function MakeCert2(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+function MakeCertificate(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+function MakeCertificate(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 
 implementation
 
@@ -519,7 +519,7 @@ begin
   exit(1);
 end;
 
-function MakeCert2(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
+function MakeCertificate(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
   x: PX509;
   pk: PEVP_PKEY;
@@ -627,7 +627,7 @@ begin
   end;
 end;
 
-function MakeCert2(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
+function MakeCertificate(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
   x509: PX509;
   pkey: PEVP_PKEY;
@@ -637,7 +637,7 @@ begin
   pkey := nil;
   Result := False;
   try
-    if not MakeCert2(x509, pkey, CN, O, C, OU, Bits, Serial, Days) then
+    if not MakeCertificate(x509, pkey, CN, O, C, OU, Bits, Serial, Days) then
       exit;
 
     outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');

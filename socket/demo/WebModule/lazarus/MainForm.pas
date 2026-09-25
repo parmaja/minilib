@@ -150,7 +150,7 @@ end;
 
 procedure TMain.MakeCertBtnClick(Sender: TObject);
 begin
-  MakeCert('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
+  SelfSignedCert('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
 end;
 
 procedure TMain.MenuItem1Click(Sender: TObject);

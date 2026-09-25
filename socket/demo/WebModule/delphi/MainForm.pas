@@ -266,10 +266,10 @@ begin
     s.WriteString('alt_names', 'address', 'MyAddress');
     s.WriteString('alt_names', 'category', 'Industry');
 
-    MakeCert2(ExtractFilePath(Application.ExeName)+ 'HttpServer.crt', ExtractFilePath(Application.ExeName)+ 'HttpServer.private.key', 'minilib', 'parmaja', 'SY', '', 2048, 0, 100);
+    MakeCertificate(ExtractFilePath(Application.ExeName)+ 'HttpServer.crt', ExtractFilePath(Application.ExeName)+ 'HttpServer.private.key', 'minilib', 'parmaja', 'SY', '', 2048, 0, 100);
 
-    //MakeCert2('HttpServer', s);
-    {if MakeCert(s) then
+    //MakeCertificate('HttpServer', s);
+    {if SelfSignedCert(s) then
     begin
       aPubKey := s.ReadString('Result', 'PubKey', '');
       aPrvKey := s.ReadString('Result', 'PrvKey', '');
@@ -330,7 +330,7 @@ end;
 
 procedure TMain.Button4Click(Sender: TObject);
 begin
-  MakeCert(ExtractFilePath(Application.ExeName)+ 'HttpServer.crt', ExtractFilePath(Application.ExeName)+ 'HttpServer.private.key', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
+  SelfSignedCert(ExtractFilePath(Application.ExeName)+ 'HttpServer.crt', ExtractFilePath(Application.ExeName)+ 'HttpServer.private.key', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
 end;
 
 procedure TMain.FormCreate(Sender: TObject);

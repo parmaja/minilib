@@ -262,8 +262,8 @@ procedure CleanupOpenSSL;
 procedure RaiseLastSSLError;
 procedure RaiseSSLError(Message: utf8string);
 
-function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
-function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+function SelfSignedCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+function SelfSignedCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 
 function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
 function ECDSASignBase64(const vData, vKey: utf8string): UTF8String; overload;
@@ -940,7 +940,7 @@ begin
 end;
 
 //TODO need to make more clean when exit, some objects most not freed if assigned successed
-function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
+function SelfSignedCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
   x: PX509;
   pk: PEVP_PKEY;
@@ -1038,7 +1038,7 @@ begin
   end;
 end;
 
-function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
+function SelfSignedCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
 	x509: PX509;
 	pkey: PEVP_PKEY;
@@ -1049,7 +1049,7 @@ begin
 	x509 :=nil;
 	pkey := nil;
   try
-    Result := MakeCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days);
+    Result := SelfSignedCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days);
 
     outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');
 	  PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
