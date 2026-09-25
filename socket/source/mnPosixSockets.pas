@@ -67,7 +67,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
     function GetSocketError(Handle: TSocketHandle): Integer; override;
-    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; AFamily: TSocketFamily; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; var Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
   end;
@@ -105,11 +105,34 @@ const
   FIONBIO         = $5421;//from LinuxAPI
   {$endif}
 
+  {$if not declared(AF_INET6)}
+  //AF_INET6 is not declared in Posix.SysSocket on some Delphi platforms
+  AF_INET6 = {$if defined(MACOS) or defined(IOS)} 30 {$else} 10 {$endif};
+  {$endif}
+
 type
   TaddrIP4 = packed record
     case boolean of
        true: (s_addr  : in_addr_t);
        false: (s_bytes : packed array[1..4] of byte);
+  end;
+
+  Tin6_addr = record
+    case integer of
+      0: (s6_addr: packed array[0..15] of Byte);
+      1: (u6_addr16: packed array[0..7] of UInt16);
+      2: (u6_addr32: packed array[0..3] of Cardinal);
+  end;
+
+  sockaddr_in6 = record
+    {$if defined(OSX) or defined(IOS)}
+    sin6_len: UInt8;
+    {$ifend}
+    sin6_family: sa_family_t;
+    sin6_port: word;
+    sin6_flowinfo: Cardinal;
+    sin6_addr: Tin6_addr;
+    sin6_scope_id: Cardinal;
   end;
 
   sockaddr_in = record
@@ -127,7 +150,7 @@ type
     case integer of
       0: (addr: sockaddr);
       1: (addr_in: sockaddr_in);
-      //2: (addr_in6: sockaddr_in6)
+      2: (addr_in6: sockaddr_in6);
   end;
 
 function StrToNetAddr(S: string): TaddrIP4;
@@ -359,16 +382,29 @@ end;
 
 function TmnSocket.GetRemoteAddress: string;
 var
-  aSockAddr: SockAddr;
+  aSockAddr: TSockAddr;
   aSize: {$ifdef ANDROID32} Integer;{$else}Cardinal;{$endif}
+  aText: array[0..63] of AnsiChar;
 begin
   CheckActive;
-  aSize := SizeOf(aSockAddr);
-  //Initialize(aSockAddr);
-  if getpeername(FHandle, aSockAddr, aSize) = 0 then
-    Result := NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)
+  if FFamily = sfIPv6 then
+  begin
+    aSize := SizeOf(aSockAddr.addr_in6);
+    aText[0] := #0;
+    if getpeername(FHandle, aSockAddr.addr, aSize) = 0 then
+      Result := String(PAnsiChar(inet_ntop(AF_INET6, MarshaledAString(@aSockAddr.addr_in6.sin6_addr), aText, SizeOf(aText))))
+    else
+      Result := '';
+  end
   else
-    Result := '';
+  begin
+    aSize := SizeOf(aSockAddr.addr_in);
+    //Initialize(aSockAddr);
+    if getpeername(FHandle, aSockAddr.addr, aSize) = 0 then
+      Result := NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)
+    else
+      Result := '';
+  end;
 end;
 
 function TmnSocket.GetRemoteName: string;
@@ -382,16 +418,29 @@ end;
 
 function TmnSocket.GetLocalAddress: string;
 var
-  aSockAddr: SockAddr;
+  aSockAddr: TSockAddr;
   aSize: {$ifdef ANDROID32} Integer;{$else}Cardinal;{$endif}
+  aText: array[0..63] of AnsiChar;
 begin
   CheckActive;
-  aSize := SizeOf(aSockAddr);
-  //Initialize(aSockAddr);
-  if GetSockName(FHandle, aSockAddr, aSize) = 0 then
-    Result := NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)
+  if FFamily = sfIPv6 then
+  begin
+    aSize := SizeOf(aSockAddr.addr_in6);
+    aText[0] := #0;
+    if GetSockName(FHandle, aSockAddr.addr, aSize) = 0 then
+      Result := String(PAnsiChar(inet_ntop(AF_INET6, MarshaledAString(@aSockAddr.addr_in6.sin6_addr), aText, SizeOf(aText))))
+    else
+      Result := '';
+  end
   else
-    Result := '';
+  begin
+    aSize := SizeOf(aSockAddr.addr_in);
+    //Initialize(aSockAddr);
+    if GetSockName(FHandle, aSockAddr.addr, aSize) = 0 then
+      Result := NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)
+    else
+      Result := '';
+  end;
 end;
 
 function TmnSocket.GetLocalName: string;
@@ -476,7 +525,7 @@ begin
   vHandle := INVALID_SOCKET;
 end;
 
-procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; AFamily: TSocketFamily; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
   aSize: {$ifdef ANDROID32}Integer;{$else}Cardinal;{$endif}
@@ -494,7 +543,7 @@ begin
   else
   begin
     InitSocketOptions(aHandle, Options, ReadTimeout);
-    vSocket := TmnSocket.Create(aHandle, Options, skServer);
+    vSocket := TmnSocket.Create(aHandle, Options, skServer, '', '', AFamily);
     vErr := 0;
   end;
 end;
@@ -550,9 +599,18 @@ procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer; var Po
 var
   aHandle: TSocketHandle;
   aAddr : TSockAddr;
+  aAddrLen: socklen_t;
+  aFamily: TSocketFamily;
   l: socklen_t;
 begin
-  aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  aFamily := sfIPv4;
+  if IsIPv6Address(Address) then
+    aFamily := sfIPv6;
+
+  if aFamily = sfIPv6 then
+    aHandle := Posix.SysSocket.socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP)
+  else
+    aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
   if aHandle <> INVALID_SOCKET then
   begin
@@ -561,38 +619,76 @@ begin
     if soReuseAddr in Options then
       vErr := setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, SO_TRUE, SizeOf(SO_TRUE));
 
-    aAddr.addr_in.sin_family := AF_INET;
-    aAddr.addr_in.sin_port := htons(LookupPort(Port));
-    if (Address = '') or (Address = '0.0.0.0') then
-      aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
-    else
-      aAddr.addr_in.sin_addr := StrToNetAddr(Address);
+    if aFamily = sfIPv6 then
+    begin
+      FillChar(aAddr.addr_in6, SizeOf(aAddr.addr_in6), 0);
+      aAddr.addr_in6.sin6_family := AF_INET6;
+      aAddr.addr_in6.sin6_port := htons(LookupPort(Port));
+      aAddrLen := SizeOf(aAddr.addr_in6);
+      if (Address <> '') and (Address <> '::') and (Address <> '[::]') then
+        if inet_pton(AF_INET6, MarshaledAString(TMarshal.AsAnsi(StripHostBrackets(Address))), @aAddr.addr_in6.sin6_addr) <> 1 then
+          vErr := errno; //invalid IPv6 address
 
-    If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr)) <> 0 then
-    begin
-      vErr := errno; //GetSocketError(aHandle);
-      FreeSocket(aHandle);
-    end
-    else
-    begin
-      // Extract the port number
-      if aAddr.addr_in.sin_port = 0 then
+      if vErr = 0 then
       begin
-        l := SizeOf(aAddr);
-        if getsockname(aHandle, aAddr.addr, l) = SOCKET_ERROR then
+        if Posix.SysSocket.bind(aHandle, aAddr.addr, aAddrLen) <> 0 then
         begin
           vErr := errno; //GetSocketError(aHandle);
           FreeSocket(aHandle);
         end
         else
-          Port := IntToStr(ntohs(aAddr.addr_in.sin_port));
-      end;
-		end;
+        begin
+          // Extract the port number
+          if aAddr.addr_in6.sin6_port = 0 then
+          begin
+            l := SizeOf(aAddr.addr_in6);
+            if getsockname(aHandle, aAddr.addr, l) = SOCKET_ERROR then
+            begin
+              vErr := errno; //GetSocketError(aHandle);
+              FreeSocket(aHandle);
+            end
+            else
+              Port := IntToStr(ntohs(aAddr.addr_in6.sin6_port));
+          end;
+        end;
+      end
+      else
+        FreeSocket(aHandle);
+    end
+    else
+    begin
+      aAddr.addr_in.sin_family := AF_INET;
+      aAddr.addr_in.sin_port := htons(LookupPort(Port));
+      if (Address = '') or (Address = '0.0.0.0') then
+        aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
+      else
+        aAddr.addr_in.sin_addr := StrToNetAddr(Address);
 
+      If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr.addr_in)) <> 0 then
+      begin
+        vErr := errno; //GetSocketError(aHandle);
+        FreeSocket(aHandle);
+      end
+      else
+      begin
+        // Extract the port number
+        if aAddr.addr_in.sin_port = 0 then
+        begin
+          l := SizeOf(aAddr.addr_in);
+          if getsockname(aHandle, aAddr.addr, l) = SOCKET_ERROR then
+          begin
+            vErr := errno; //GetSocketError(aHandle);
+            FreeSocket(aHandle);
+          end
+          else
+            Port := IntToStr(ntohs(aAddr.addr_in.sin_port));
+        end;
+      end;
+    end;
   end;
 
   if aHandle<>INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skListener)
+    vSocket := TmnSocket.Create(aHandle, Options, skListener, '', '', aFamily)
   else
     vSocket := nil;
 end;
@@ -601,37 +697,32 @@ procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeo
 var
   aHandle: TSocketHandle;
   aAddr : TSockAddr;
+  aAddrLen: socklen_t;
+  aAddrText: array[0..63] of AnsiChar;
   aHostName: string;
+  aFamily: TSocketFamily;
   ret: integer;
 
   LHints: AddrInfo;
   LRetVal: Integer;
   LAddrInfo: pAddrInfo;
-  aInfo: AddrInfo;
   aMode: UInt32;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
 
-  FillChar(aInfo, SizeOf(AddrInfo), 0);
-  aInfo.ai_family := AF_UNSPEC;
-  aInfo.ai_socktype := SOCK_STREAM;
-  aInfo.ai_protocol := IPPROTO_TCP;
-  LAddrInfo := TestGetAddrInfo(Address, Port, aInfo); //Zaher: IDK what is it, but cool
+  aHandle := INVALID_SOCKET;
+  vSocket := nil;
+  vErr := 0;
+  aHostName := '';
+  aFamily := sfIPv4;
+  if IsIPv6Address(Address) then
+    aFamily := sfIPv6;
 
-  if LAddrInfo = nil then //TODO
-  begin
-    vSocket := nil;
-    vErr := 0;
-    exit;
-  end;
-  //aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, IPPROTO_TCP);
-  aHandle := Posix.SysSocket.socket(LAddrInfo.ai_family, LAddrInfo.ai_socktype, LAddrInfo.ai_protocol);
-  if LAddrInfo <> nil then
-  begin
-    Posix.NetDB.freeaddrinfo(LAddrInfo^);
-    LAddrInfo := nil;
-  end;
+  if aFamily = sfIPv6 then
+    aHandle := Posix.SysSocket.socket(AF_INET6, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, IPPROTO_TCP)
+  else
+    aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, IPPROTO_TCP);
 
   if aHandle <> INVALID_SOCKET then
   begin
@@ -650,29 +741,31 @@ begin
 
     if aHandle <> TSocketHandle(SOCKET_ERROR) then
     begin
-      aAddr.addr_in.sin_family := AF_INET;
-      aAddr.addr_in.sin_port := htons(LookupPort(Port));
-
-      if (Address = '') or (Address = '0.0.0.0') then
-        aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
-      else
+      if aFamily = sfIPv6 then
       begin
-        aAddr.addr_in.sin_addr := StrToNetAddr(Address);
-        if (aAddr.addr_in.sin_addr.s_addr = 0) then
+        FillChar(aAddr.addr_in6, SizeOf(aAddr.addr_in6), 0);
+        aAddr.addr_in6.sin6_family := AF_INET6;
+        aAddr.addr_in6.sin6_port := htons(LookupPort(Port));
+        aAddrLen := SizeOf(aAddr.addr_in6);
+        if inet_pton(AF_INET6, MarshaledAString(TMarshal.AsAnsi(StripHostBrackets(Address))), @aAddr.addr_in6.sin6_addr) <> 1 then
         begin
-          //h := gethostbyname(TMarshal.AsAnsi(Address));
-          //aAddr.addr_in.sin_addr.s_addr := UInt32(h.h_addr_list);
-
+          //Not a literal IPv6 address, resolve hostname into an IPv6 address
           FillChar(LHints, SizeOf(LHints), 0);
-          LHints.ai_family := AF_INET;
+          LHints.ai_family := AF_INET6;
           LHints.ai_socktype := SOCK_STREAM;
+          LHints.ai_protocol := IPPROTO_TCP;
           LAddrInfo := nil;
-
-          LRetVal := getaddrinfo(MarshaledAString(TMarshal.AsAnsi(Address)), nil, LHints, LAddrInfo);
+          LRetVal := getaddrinfo(MarshaledAString(TMarshal.AsAnsi(StripHostBrackets(Address))), MarshaledAString(TMarshal.AsAnsi(Port)), LHints, LAddrInfo);
           if LRetVal = 0 then
           begin
-            aAddr.addr_in.sin_addr.s_addr := Psockaddr_in(LAddrInfo^.ai_addr).sin_addr.s_addr;
-            aHostName := Address;
+            if LAddrInfo <> nil then
+            begin
+              aAddrLen := LAddrInfo^.ai_addrlen;
+              if aAddrLen > SizeOf(aAddr.addr_in6) then
+                aAddrLen := SizeOf(aAddr.addr_in6);
+              Move(LAddrInfo^.ai_addr^, aAddr.addr_in6, aAddrLen);
+              aHostName := Address;
+            end;
           end
           else
           begin
@@ -685,11 +778,51 @@ begin
             LAddrInfo := nil;
           end;
         end;
+      end
+      else
+      begin
+        aAddr.addr_in.sin_family := AF_INET;
+        aAddr.addr_in.sin_port := htons(LookupPort(Port));
+        aAddrLen := SizeOf(aAddr.addr_in);
+
+        if (Address = '') or (Address = '0.0.0.0') then
+          aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
+        else
+        begin
+          aAddr.addr_in.sin_addr := StrToNetAddr(Address);
+          if (aAddr.addr_in.sin_addr.s_addr = 0) then
+          begin
+            //h := gethostbyname(TMarshal.AsAnsi(Address));
+            //aAddr.addr_in.sin_addr.s_addr := UInt32(h.h_addr_list);
+
+            FillChar(LHints, SizeOf(LHints), 0);
+            LHints.ai_family := AF_INET;
+            LHints.ai_socktype := SOCK_STREAM;
+            LAddrInfo := nil;
+
+            LRetVal := getaddrinfo(MarshaledAString(TMarshal.AsAnsi(Address)), nil, LHints, LAddrInfo);
+            if LRetVal = 0 then
+            begin
+              aAddr.addr_in.sin_addr.s_addr := Psockaddr_in(LAddrInfo^.ai_addr).sin_addr.s_addr;
+              aHostName := Address;
+            end
+            else
+            begin
+              vErr := errno; //GetSocketError(aHandle);
+              FreeSocket(aHandle);
+            end;
+            if LAddrInfo <> nil then
+            begin
+              Posix.NetDB.freeaddrinfo(LAddrInfo^);
+              LAddrInfo := nil;
+            end;
+          end;
+        end;
       end;
 
       if aHandle <> TSocketHandle(SOCKET_ERROR) then
       begin
-        ret := Posix.SysSocket.connect(aHandle, aAddr.addr, SizeOf(aAddr));
+        ret := Posix.SysSocket.connect(aHandle, aAddr.addr, aAddrLen);
 
         if ret = -1 then
         begin
@@ -729,7 +862,18 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skClient, NetAddrToStr(sockaddr_in(aAddr).sin_addr), aHostName)
+  begin
+    if aFamily = sfIPv6 then
+    begin
+      aAddrText[0] := #0;
+      if inet_ntop(AF_INET6, MarshaledAString(@aAddr.addr_in6.sin6_addr), aAddrText, SizeOf(aAddrText)) <> nil then
+        vSocket := TmnSocket.Create(aHandle, Options, skClient, String(PAnsiChar(@aAddrText)), aHostName, sfIPv6)
+      else
+        vSocket := TmnSocket.Create(aHandle, Options, skClient, StripHostBrackets(Address), aHostName, sfIPv6);
+    end
+    else
+      vSocket := TmnSocket.Create(aHandle, Options, skClient, NetAddrToStr(sockaddr_in(aAddr).sin_addr), aHostName);
+  end
   else
     vSocket := nil;
 end;

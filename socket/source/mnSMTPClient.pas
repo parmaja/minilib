@@ -235,7 +235,7 @@ var
   SMTPClient: TmnSMTPClient;
   aHost, aPort, aUserName, aUserMail: string;
 begin
-  SplitStr(vHost, ':', aHost, aPort);
+  SplitHostPort(vHost, aHost, aPort);
   SMTPClient := TmnSMTPClient.Create;
   try
     SMTPClient.Host := aHost;

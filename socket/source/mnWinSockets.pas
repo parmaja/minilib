@@ -64,13 +64,63 @@ type
     constructor Create; override;
     destructor Destroy; override;
     function GetSocketError(Handle: TSocketHandle): Integer; override;
-    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; AFamily: TSocketFamily; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; var Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     function ResolveIP(const Address: string): string; override;
   end;
 
 implementation
+
+type
+  {$ifdef FPC}
+  TMnSockAddrIn6 = TSockAddrIn6;
+  PMnSockAddrIn6 = PSockAddrIn6;
+  {$else}
+  //Winapi.WinSock2 does not declare the IPv6 sockaddr types, declare them as in the Windows SDK
+  in6_addr = record
+    case integer of
+      0: (S6_addr: packed array[0..15] of Byte);
+      1: (u6_addr16: packed array[0..7] of Word);
+      2: (u6_addr32: packed array[0..3] of Cardinal);
+  end;
+  sockaddr_in6 = record
+    sin6_family: Smallint;
+    sin6_port: u_short;
+    sin6_flowinfo: u_long;
+    sin6_addr: in6_addr;
+    sin6_scope_id: u_long;
+  end;
+  PSockAddrIn6 = ^sockaddr_in6;
+  TMnSockAddrIn6 = sockaddr_in6;
+  PMnSockAddrIn6 = PSockAddrIn6;
+  {$endif}
+
+  PMnAddrInfo = ^TMnAddrInfo;
+  TMnAddrInfo = record
+    ai_flags: Integer;
+    ai_family: Integer;
+    ai_socktype: Integer;
+    ai_protocol: Integer;
+    ai_addrlen: NativeUInt;
+    ai_addr: Pointer;
+    ai_canonname: PAnsiChar;
+    ai_next: PMnAddrInfo;
+  end;
+
+//Direct WinSock2 bindings (not all of them exported by FPC's WinSock2 unit)
+function MnInetPton(AFamily: Integer; AddrText: PAnsiChar; AddrBuf: Pointer): Integer; stdcall; external 'ws2_32.dll' name 'inet_pton';
+function MnInetNtop(AFamily: Integer; AddrBuf: Pointer; AddrText: PAnsiChar; BufLen: NativeUInt): PAnsiChar; stdcall; external 'ws2_32.dll' name 'inet_ntop';
+function MnBind(s: TSocketHandle; const Addr; AddrLen: Integer): Integer; stdcall; external 'ws2_32.dll' name 'bind';
+function MnConnect(s: TSocketHandle; const Addr; AddrLen: Integer): Integer; stdcall; external 'ws2_32.dll' name 'connect';
+function MnGetSockName(s: TSocketHandle; var Addr; var AddrLen: Integer): Integer; stdcall; external 'ws2_32.dll' name 'getsockname';
+function MnGetPeerName(s: TSocketHandle; var Addr; var AddrLen: Integer): Integer; stdcall; external 'ws2_32.dll' name 'getpeername';
+function MnGetAddrInfo(NodeName, ServiceName: PAnsiChar; Hints: PMnAddrInfo; var ResultAddr: PMnAddrInfo): Integer; stdcall; external 'ws2_32.dll' name 'getaddrinfo';
+procedure MnFreeAddrInfo(AddrInfo: PMnAddrInfo); stdcall; external 'ws2_32.dll' name 'freeaddrinfo';
+
+const
+  AI_PASSIVE = 1;
+  WSAHOST_NOT_FOUND = 11001;
 
 const
   INVALID_SOCKET: TSocketHandle = TSocketHandle(-1);
@@ -223,17 +273,38 @@ end;
 
 function TmnSocket.GetRemoteAddress: string;
 var
+  aAddr6: TMnSockAddrIn6;
+  aSize: Integer;
+  aText: array[0..64] of AnsiChar;
   SockAddrIn: {$ifdef FPC}TSockAddrIn;{$else} TSockAddr;{$endif}
   Size: Integer;
 begin
   CheckActive;
-  Size := SizeOf(SockAddrIn);
-  {$ifdef FPC} Initialize(SockAddrIn); {$endif}
-  if getpeername(FHandle, SockAddrIn, Size) = 0 then
-    //Result := inet_ntoa(SockAddrIn.sin_addr)
-    Result := String(inet_ntoa(sockaddr_in(SockAddrIn).sin_addr))
+  if FFamily = sfIPv6 then
+  begin
+    aSize := SizeOf(aAddr6);
+    Initialize(aAddr6);
+    aText[0] := #0;
+    if MnGetPeerName(FHandle, aAddr6, aSize) = 0 then
+    begin
+      if MnInetNtop(AF_INET6, @aAddr6.sin6_addr, @aText, SizeOf(aText)) <> nil then
+        Result := String(PAnsiChar(@aText))
+      else
+        Result := '';
+    end
+    else
+      Result := '';
+  end
   else
-    Result := '';
+  begin
+    Size := SizeOf(SockAddrIn);
+    {$ifdef FPC} Initialize(SockAddrIn); {$endif}
+    if getpeername(FHandle, SockAddrIn, Size) = 0 then
+      //Result := inet_ntoa(SockAddrIn.sin_addr)
+      Result := String(inet_ntoa(sockaddr_in(SockAddrIn).sin_addr))
+    else
+      Result := '';
+  end;
 end;
 
 function TmnSocket.GetRemoteName: string;
@@ -299,12 +370,32 @@ end;
 
 function TmnSocket.GetLocalAddress: string;
 var
+  aAddr6: TMnSockAddrIn6;
+  aSize: Integer;
+  aText: array[0..64] of AnsiChar;
   aName: AnsiString;
   aAddr: PAnsiChar;
   sa: TInAddr;
   aHostEnt: PHostEnt;
 begin
   CheckActive;
+  if FFamily = sfIPv6 then
+  begin
+    aSize := SizeOf(aAddr6);
+    Initialize(aAddr6);
+    aText[0] := #0;
+    if MnGetSockName(FHandle, aAddr6, aSize) = 0 then
+    begin
+      if MnInetNtop(AF_INET6, @aAddr6.sin6_addr, @aText, SizeOf(aText)) <> nil then
+        Result := String(PAnsiChar(@aText))
+      else
+        Result := '';
+    end
+    else
+      Result := '';
+  end
+  else
+  begin
   {$IFDEF FPC}
   aName := '';
   {$endif}
@@ -335,6 +426,7 @@ begin
   end
   else
     Result := '';
+  end;
 end;
 
 function TmnSocket.GetLocalName: string;
@@ -389,7 +481,7 @@ begin
   vHandle := INVALID_SOCKET;
 end;
 
-procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; AFamily: TSocketFamily; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
 begin
@@ -402,7 +494,7 @@ begin
   else
   begin
     InitSocketOptions(aHandle, Options, ReadTimeout);
-    vSocket := TmnSocket.Create(aHandle, Options, skServer);
+    vSocket := TmnSocket.Create(aHandle, Options, skServer, '', '', AFamily);
     vErr := 0;
   end;
 end;
@@ -461,80 +553,127 @@ procedure TmnWallSocket.Bind(Options: TmnsoOptions; ListenTimeout: Integer; var 
 var
   aHandle: TSocketHandle;
   aSockAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
+  aSockAddr6: TMnSockAddrIn6;
+  aFamily: TSocketFamily;
   aHostEnt: PHostEnt;
   l: Integer;
 begin
-  aHandle := TSocketHandle(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP));
+  aFamily := sfIPv4;
+  if IsIPv6Address(Address) then
+    aFamily := sfIPv6;
+
+  if aFamily = sfIPv6 then
+    aHandle := TSocketHandle(socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP))
+  else
+    aHandle := TSocketHandle(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP));
 
   if aHandle <> INVALID_SOCKET then
   begin
-    FillChar(aSockAddr, SizeOf(aSockAddr), #0);
-
-    //https://stackoverflow.com/questions/55034112/c-disable-delayed-ack-on-windows
-    //aFreq := 1; // can be 1..255, default is 2
-    //aErr := ioctlsocket(sock, SIO_TCP_SET_ACK_FREQUENCY, &freq);
-
     vErr := InitSocketOptions(aHandle, Options, ListenTimeout);
 
     if soReuseAddr in Options then
       WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-    aSockAddr.sin_family := AF_INET;
-    aSockAddr.sin_port := htons(LookupPort(Port));
-    if (Address = '') or (Address = '0.0.0.0') then
-      aSockAddr.sin_addr.s_addr := INADDR_ANY
-    else
+    if aFamily = sfIPv6 then
     begin
-      aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
-      if ((aSockAddr.sin_addr.s_addr) = u_long(INADDR_NONE)) or (aSockAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
-      begin
-        aHostEnt := gethostbyname(PAnsiChar(AnsiString(Address)));
-        if aHostEnt <> nil then
-        begin
-          {$ifdef FPC}
-          aSockAddr.sin_addr.S_un_b.s_b1 := aHostEnt.h_addr^[0];
-          aSockAddr.sin_addr.S_un_b.s_b2 := aHostEnt.h_addr^[1];
-          aSockAddr.sin_addr.S_un_b.s_b3 := aHostEnt.h_addr^[2];
-          aSockAddr.sin_addr.S_un_b.s_b4 := aHostEnt.h_addr^[3];
-          {$else}
-          aSockAddr.sin_addr.S_un_b.s_b1 := Byte(aHostEnt.h_addr^[0]);
-          aSockAddr.sin_addr.S_un_b.s_b2 := Byte(aHostEnt.h_addr^[1]);
-          aSockAddr.sin_addr.S_un_b.s_b3 := Byte(aHostEnt.h_addr^[2]);
-          aSockAddr.sin_addr.S_un_b.s_b4 := Byte(aHostEnt.h_addr^[3]);
-          {$endif}
-          aSockAddr.sin_family := aHostEnt.h_addrtype;
-        end;
-      end;
-    end;
+      FillChar(aSockAddr6, SizeOf(aSockAddr6), 0);
+      aSockAddr6.sin6_family := AF_INET6;
+      aSockAddr6.sin6_port := htons(LookupPort(Port));
+      if (Address <> '::') and (Address <> '[::]') then
+        if MnInetPton(AF_INET6, PAnsiChar(AnsiString(StripHostBrackets(Address))), @aSockAddr6.sin6_addr) <> 1 then
+          vErr := WSAGetLastError; //invalid IPv6 address
 
-    {$IFDEF FPC}
-    if WinSock2.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
-    {$ELSE}
-    if WinSock2.bind(aHandle, TSockAddr(aSockAddr), SizeOf(aSockAddr)) = SOCKET_ERROR then
-    {$ENDIF}
-    begin
-      vErr := WSAGetLastError;
-      FreeSocket(aHandle);
-    end
-    else
-    begin
-      // Extract the port number
-      if aSockAddr.sin_port = 0 then
+      if vErr = 0 then
       begin
-        l := SizeOf(aSockAddr);
-        if WinSock2.getsockname(aHandle, TSockAddr(aSockAddr), l) = SOCKET_ERROR then
+        if MnBind(aHandle, aSockAddr6, SizeOf(aSockAddr6)) = SOCKET_ERROR then
         begin
           vErr := WSAGetLastError;
           FreeSocket(aHandle);
         end
         else
-          Port := IntToStr(ntohs(aSockAddr.sin_port));
+        begin
+          // Extract the port number
+          if aSockAddr6.sin6_port = 0 then
+          begin
+            l := SizeOf(aSockAddr6);
+            if MnGetSockName(aHandle, aSockAddr6, l) = SOCKET_ERROR then
+            begin
+              vErr := WSAGetLastError;
+              FreeSocket(aHandle);
+            end
+            else
+              Port := IntToStr(ntohs(aSockAddr6.sin6_port));
+          end;
+        end;
+      end
+      else
+        FreeSocket(aHandle);
+    end
+    else
+    begin
+      FillChar(aSockAddr, SizeOf(aSockAddr), #0);
+
+      //https://stackoverflow.com/questions/55034112/c-disable-delayed-ack-on-windows
+      //aFreq := 1; // can be 1..255, default is 2
+      //aErr := ioctlsocket(sock, SIO_TCP_SET_ACK_FREQUENCY, &freq);
+
+      aSockAddr.sin_family := AF_INET;
+      aSockAddr.sin_port := htons(LookupPort(Port));
+      if (Address = '') or (Address = '0.0.0.0') then
+        aSockAddr.sin_addr.s_addr := INADDR_ANY
+      else
+      begin
+        aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
+        if ((aSockAddr.sin_addr.s_addr) = u_long(INADDR_NONE)) or (aSockAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+        begin
+          aHostEnt := gethostbyname(PAnsiChar(AnsiString(Address)));
+          if aHostEnt <> nil then
+          begin
+            {$ifdef FPC}
+            aSockAddr.sin_addr.S_un_b.s_b1 := aHostEnt.h_addr^[0];
+            aSockAddr.sin_addr.S_un_b.s_b2 := aHostEnt.h_addr^[1];
+            aSockAddr.sin_addr.S_un_b.s_b3 := aHostEnt.h_addr^[2];
+            aSockAddr.sin_addr.S_un_b.s_b4 := aHostEnt.h_addr^[3];
+            {$else}
+            aSockAddr.sin_addr.S_un_b.s_b1 := Byte(aHostEnt.h_addr^[0]);
+            aSockAddr.sin_addr.S_un_b.s_b2 := Byte(aHostEnt.h_addr^[1]);
+            aSockAddr.sin_addr.S_un_b.s_b3 := Byte(aHostEnt.h_addr^[2]);
+            aSockAddr.sin_addr.S_un_b.s_b4 := Byte(aHostEnt.h_addr^[3]);
+            {$endif}
+            aSockAddr.sin_family := aHostEnt.h_addrtype;
+          end;
+        end;
       end;
-		end;
+
+      {$IFDEF FPC}
+      if WinSock2.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
+      {$ELSE}
+      if WinSock2.bind(aHandle, TSockAddr(aSockAddr), SizeOf(aSockAddr)) = SOCKET_ERROR then
+      {$ENDIF}
+      begin
+        vErr := WSAGetLastError;
+        FreeSocket(aHandle);
+      end
+      else
+      begin
+        // Extract the port number
+        if aSockAddr.sin_port = 0 then
+        begin
+          l := SizeOf(aSockAddr);
+          if WinSock2.getsockname(aHandle, TSockAddr(aSockAddr), l) = SOCKET_ERROR then
+          begin
+            vErr := WSAGetLastError;
+            FreeSocket(aHandle);
+          end
+          else
+            Port := IntToStr(ntohs(aSockAddr.sin_port));
+        end;
+      end;
+    end;
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skListener)
+    vSocket := TmnSocket.Create(aHandle, Options, skListener, '', '', aFamily)
   else
     vSocket := nil;
 end;
@@ -543,30 +682,36 @@ procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeo
 var
   aHandle: TSocketHandle;
   aAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
+  aAddr6: TMnSockAddrIn6;
+  aFamily: TSocketFamily;
   aHostAddress: PHostEnt;
   aHostName: string;
+  aText: array[0..64] of AnsiChar;
+  aInfo: PMnAddrInfo;
+  aPort: string;
   ret: Longint;
   aMode: u_long;
 begin
   //* https://stackoverflow.com/questions/2605182/when-binding-a-client-tcp-socket-to-a-specific-local-port-with-winsock-so-reuse
 
-  aHandle := TSocketHandle(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP));
+  aHandle := INVALID_SOCKET;
+  vSocket := nil;
+  vErr := 0;
+  aHostName := '';
+  aFamily := sfIPv4;
+  if IsIPv6Address(Address) then
+    aFamily := sfIPv6;
+
+  if aFamily = sfIPv6 then
+    aHandle := TSocketHandle(socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP))
+  else
+    aHandle := TSocketHandle(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP));
+
   if aHandle <> INVALID_SOCKET then
   begin
     vErr := InitSocketOptions(aHandle, Options, ReadTimeout);
 
-    if ConnectTimeout <> -1 then
-    begin
-      aMode := 1;
-      ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
-      if ret = Longint(SOCKET_ERROR) then
-      begin
-        vErr := WSAGetLastError;
-        FreeSocket(aHandle);
-      end;
-    end;
-
-    if (BindAddress <> '') then
+    if (BindAddress <> '') and (aFamily = sfIPv4) then
     begin
       aAddr.sin_family := AF_INET;
       aAddr.sin_port := htons(0); //Random port for client
@@ -582,45 +727,102 @@ begin
       end;
     end;
 
-    if aHandle <> TSocketHandle(SOCKET_ERROR) then
+    if ConnectTimeout <> -1 then
     begin
-      aAddr.sin_family := AF_INET;
-      aAddr.sin_port := htons(LookupPort(Port));
+      aMode := 1;
+      ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
+      if ret = Longint(SOCKET_ERROR) then
+      begin
+        vErr := WSAGetLastError;
+        FreeSocket(aHandle);
+      end;
+    end;
 
-      if Address = '' then
-        aAddr.sin_addr.s_addr := INADDR_ANY
+    if aHandle <> INVALID_SOCKET then
+    begin
+      if aFamily = sfIPv6 then
+      begin
+        FillChar(aAddr6, SizeOf(aAddr6), 0);
+        aAddr6.sin6_family := AF_INET6;
+        aAddr6.sin6_port := htons(LookupPort(Port));
+        if MnInetPton(AF_INET6, PAnsiChar(AnsiString(StripHostBrackets(Address))), @aAddr6.sin6_addr) <> 1 then
+        begin
+          //Not a literal IPv6 address, try to resolve hostname into an IPv6 address
+          aInfo := nil;
+          aPort := IntToStr(LookupPort(Port));
+          if MnGetAddrInfo(PAnsiChar(AnsiString(StripHostBrackets(Address))), PAnsiChar(AnsiString(aPort)), nil, aInfo) <> 0 then
+          begin
+            vErr := WSAGetLastError;
+            FreeSocket(aHandle);
+          end
+          else if (aInfo = nil) or (aInfo.ai_addr = nil) or (aInfo.ai_addrlen > SizeOf(aAddr6)) then
+          begin
+            vErr := WSAHOST_NOT_FOUND;
+            FreeSocket(aHandle);
+          end
+          else
+          begin
+            Move(aInfo.ai_addr^, aAddr6, aInfo.ai_addrlen);
+            aHostName := Address;
+          end;
+          if aInfo <> nil then
+          begin
+            MnFreeAddrInfo(aInfo);
+            aInfo := nil;
+          end;
+        end;
+      end
       else
       begin
-        aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
-        if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+        aAddr.sin_family := AF_INET;
+        aAddr.sin_port := htons(LookupPort(Port));
+
+        if Address = '' then
+          aAddr.sin_addr.s_addr := INADDR_ANY
+        else
         begin
-          aHostAddress := gethostbyname(PAnsiChar(AnsiString(Address)));
-          if aHostAddress <> nil then
+          aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
+          if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
           begin
-            {$ifdef FPC}
-            aAddr.sin_addr.S_un_b.s_b1 := aHostAddress.h_addr^[0];
-            aAddr.sin_addr.S_un_b.s_b2 := aHostAddress.h_addr^[1];
-            aAddr.sin_addr.S_un_b.s_b3 := aHostAddress.h_addr^[2];
-            aAddr.sin_addr.S_un_b.s_b4 := aHostAddress.h_addr^[3];
-            {$else}
-            aAddr.sin_addr.S_un_b.s_b1 := Byte(aHostAddress.h_addr^[0]);
-            aAddr.sin_addr.S_un_b.s_b2 := Byte(aHostAddress.h_addr^[1]);
-            aAddr.sin_addr.S_un_b.s_b3 := Byte(aHostAddress.h_addr^[2]);
-            aAddr.sin_addr.S_un_b.s_b4 := Byte(aHostAddress.h_addr^[3]);
-            {$endif}
-            aAddr.sin_family := aHostAddress.h_addrtype;
-            aHostName := Address;
+            aHostAddress := gethostbyname(PAnsiChar(AnsiString(Address)));
+            if aHostAddress <> nil then
+            begin
+              {$ifdef FPC}
+              aAddr.sin_addr.S_un_b.s_b1 := aHostAddress.h_addr^[0];
+              aAddr.sin_addr.S_un_b.s_b2 := aHostAddress.h_addr^[1];
+              aAddr.sin_addr.S_un_b.s_b3 := aHostAddress.h_addr^[2];
+              aAddr.sin_addr.S_un_b.s_b4 := aHostAddress.h_addr^[3];
+              {$else}
+              aAddr.sin_addr.S_un_b.s_b1 := Byte(aHostAddress.h_addr^[0]);
+              aAddr.sin_addr.S_un_b.s_b2 := Byte(aHostAddress.h_addr^[1]);
+              aAddr.sin_addr.S_un_b.s_b3 := Byte(aHostAddress.h_addr^[2]);
+              aAddr.sin_addr.S_un_b.s_b4 := Byte(aHostAddress.h_addr^[3]);
+              {$endif}
+              aAddr.sin_family := aHostAddress.h_addrtype;
+              aHostName := Address;
+            end
+            else
+            begin
+              vErr := WSAGetLastError;
+              FreeSocket(aHandle);
+            end;
           end;
         end;
       end;
 
-      if aHandle <> TSocketHandle(SOCKET_ERROR) then
+      if aHandle <> INVALID_SOCKET then
       begin
-      {$IFDEF FPC}
-        ret := WinSock2.connect(aHandle, aAddr, SizeOf(aAddr));
-      {$ELSE}
-        ret := WinSock2.connect(aHandle, TSockAddr(aAddr), SizeOf(aAddr));
-      {$ENDIF}
+        if aFamily = sfIPv6 then
+          ret := MnConnect(aHandle, aAddr6, SizeOf(aAddr6))
+        else
+        begin
+        {$IFDEF FPC}
+          ret := WinSock2.connect(aHandle, aAddr, SizeOf(aAddr));
+        {$ELSE}
+          ret := WinSock2.connect(aHandle, TSockAddr(aAddr), SizeOf(aAddr));
+        {$ENDIF}
+        end;
+
         if (ret = SOCKET_ERROR) then
         begin
           vErr := WSAGetLastError;
@@ -661,7 +863,18 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skClient, String(inet_ntoa(sockaddr_in(aAddr).sin_addr)), aHostName)
+  begin
+    if aFamily = sfIPv6 then
+    begin
+      aText[0] := #0;
+      if MnInetNtop(AF_INET6, @aAddr6.sin6_addr, @aText, SizeOf(aText)) <> nil then
+        vSocket := TmnSocket.Create(aHandle, Options, skClient, String(PAnsiChar(@aText)), aHostName, sfIPv6)
+      else
+        vSocket := TmnSocket.Create(aHandle, Options, skClient, StripHostBrackets(Address), aHostName, sfIPv6);
+    end
+    else
+      vSocket := TmnSocket.Create(aHandle, Options, skClient, String(inet_ntoa(sockaddr_in(aAddr).sin_addr)), aHostName);
+  end
   else
     vSocket := nil;
 end;
@@ -670,20 +883,39 @@ function TmnWallSocket.ResolveIP(const Address: string): string;
 var
   aHostAddress: PHostEnt;
   aAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
+  aAddr6: TMnSockAddrIn6;
+  aText: array[0..64] of AnsiChar;
 begin
   if Address <> '' then
   begin
-    aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
-    if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+    if IsIPv6Address(Address) then
     begin
-      aHostAddress := gethostbyname(PAnsiChar(AnsiString(Address)));
-      if aHostAddress <> nil then
-        Result := Byte(aHostAddress.h_addr^[0]).ToString + '.' + Byte(aHostAddress.h_addr^[1]).ToString + '.' + Byte(aHostAddress.h_addr^[2]).ToString + '.' + Byte(aHostAddress.h_addr^[3]).ToString
+      FillChar(aAddr6, SizeOf(aAddr6), 0);
+      if MnInetPton(AF_INET6, PAnsiChar(AnsiString(StripHostBrackets(Address))), @aAddr6.sin6_addr) = 1 then
+      begin
+        aText[0] := #0;
+        if MnInetNtop(AF_INET6, @aAddr6.sin6_addr, @aText, SizeOf(aText)) <> nil then
+          Result := String(PAnsiChar(@aText))
+        else
+          Result := '';
+      end
       else
-        Result := '';
+        Result := ''; //TODO hostname resolve
     end
     else
-      Result := Address;
+    begin
+      aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
+      if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+      begin
+        aHostAddress := gethostbyname(PAnsiChar(AnsiString(Address)));
+        if aHostAddress <> nil then
+          Result := Byte(aHostAddress.h_addr^[0]).ToString + '.' + Byte(aHostAddress.h_addr^[1]).ToString + '.' + Byte(aHostAddress.h_addr^[2]).ToString + '.' + Byte(aHostAddress.h_addr^[3]).ToString
+        else
+          Result := '';
+      end
+      else
+        Result := Address;
+    end;
   end
   else
     Result := '';

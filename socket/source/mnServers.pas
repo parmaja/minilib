@@ -1178,20 +1178,21 @@ end;
 
 function TmnServerSocket.GetFullAddress: string;
 begin
-  Result := FAddress + ':' + FPort;
+  Result := FAddress;
+  if IsIPv6Address(Result) and (Result[1] <> '[') then
+    Result := '[' + Result + ']';
+  if FPort <> '' then
+    Result := Result + ':' + FPort;
 end;
 
 procedure TmnServerSocket.SetFullAddress(AValue: string);
 var
-  aPort: string;
+  aAddress, aPort: string;
 begin
-  FAddress := AValue;
-  aPort := SubStr(FAddress, ':', 1);
+  SplitHostPort(AValue, aAddress, aPort);
+  FAddress := aAddress;
   if aPort <> '' then
-  begin
     FPort := aPort;
-    FAddress := SubStr(FAddress, ':', 0)
-  end;
 end;
 
 procedure TmnServerSocket.SetPort(Value: string);
@@ -1238,12 +1239,14 @@ begin
 end;
 
 constructor TmnServerSocket.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
+var
+  aAddress, aPort: string;
 begin
   inherited Create;
-  FAddress := vAddress;
-  FPort := SubStr(FAddress, ':', 1);
-  if FPort <> '' then
-    FAddress := SubStr(FAddress, ':', 0)
+  SplitHostPort(vAddress, aAddress, aPort);
+  FAddress := aAddress;
+  if aPort <> '' then
+    FPort := aPort
   else
     FPort := vPort;
   Options := vOptions;

@@ -323,7 +323,7 @@ constructor TmnClientSocket.Create(const vAddress: string; vOptions: TmnsoOption
 var
   aAddress, aPort: string;
 begin
-  SplitStr(vAddress, ':', aAddress, aPort);
+  SplitHostPort(vAddress, aAddress, aPort);
   Create(aAddress, aPort, vOptions);
 end;
 
@@ -331,7 +331,7 @@ constructor TmnClientSocket.CreateBy(const vHost: string; vDefPort: string; vOpt
 var
   aAddress, aPort: string;
 begin
-  SplitStr(vHost, ':', aAddress, aPort);
+  SplitHostPort(vHost, aAddress, aPort);
   if aPort = '' then
     aPort := vDefPort;
   Create(aAddress, aPort, vOptions);
@@ -360,7 +360,11 @@ end;
 
 function TmnClientSocket.GetFullAddress: string;
 begin
-  Result := FAddress + ':' + FPort;
+  Result := FAddress;
+  if IsIPv6Address(Result) and (Result[1] <> '[') then
+    Result := '[' + Result + ']';
+  if FPort <> '' then
+    Result := Result + ':' + FPort;
 end;
 
 procedure TmnClientSocket.SetBindAddress(AValue: string);
@@ -372,17 +376,16 @@ begin
 end;
 
 procedure TmnClientSocket.SetFullAddress(const AValue: string);
+var
+  aAddress, aPort: string;
 begin
   if Connected then
     raise EmnException.Create('Can not change Address value when active');
 
-  if Pos(':', AValue) <> 0 then
-  begin
-    FPort := SubStr(AValue, ':', 1);
-    FAddress := SubStr(AValue, ':', 0)
-  end
-  else
-    FAddress := AValue;
+  SplitHostPort(AValue, aAddress, aPort);
+  FAddress := aAddress;
+  if aPort <> '' then
+    FPort := aPort;
 end;
 
 procedure TmnClientSocket.SetPort(const Value: string);

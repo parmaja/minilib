@@ -49,7 +49,17 @@ type
 
   TSocketHandle = NativeInt;
 
+  TSocketFamily = (sfIPv4, sfIPv6);
+
   TSelectCheck = (slRead, slWrite);
+
+//IP helpers (works with [bracketed] addresses too)
+function IsIPv6Address(const Address: string): Boolean; //True if the address contains ':' (IPv6 literal or host with brackets)
+function StripHostBrackets(const Address: string): string; //Remove [ ] from "[ipv6]" address
+//Split "host:port", "[ipv6]:port" or "[ipv6]" into host and port, an unbracketed IPv6 address goes entirely to AHost
+procedure SplitHostPort(const AValue: string; out AHost: string; out APort: string);
+
+type
 
   TmnsoOption = (
     soReuseAddr,
@@ -95,6 +105,7 @@ type
     FStates: TmnSocketStates;
     FHandle: TSocketHandle; //following OpenSSL handle of socket
     FPrepared: Boolean;
+    FFamily: TSocketFamily;
 
     ContextOwned: Boolean; //if not referenced
     SSL: TSSL;
@@ -114,7 +125,7 @@ type
   public
     Context: TContext; //Maybe Reference to Listener CTX or external CTX
 
-    constructor Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAddress: string = ''; AHostName: string = '');
+    constructor Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAddress: string = ''; AHostName: string = ''; AFamily: TSocketFamily = sfIPv4);
     destructor Destroy; override;
     procedure EnableSSL;
     procedure Prepare; virtual; //TODO rename Connect;
@@ -142,6 +153,7 @@ type
     property HostAddress: string read FHostAddress;
 		property HostName: string read FHostName;
     property Backlog: Integer read FBacklog write FBacklog default 512;
+    property Family: TSocketFamily read FFamily;
   end;
 
   { TmnCustomWallSocket }
@@ -157,7 +169,7 @@ type
 
     //Bind used by Listener of server
     procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; var Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
-    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
+    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; AFamily: TSocketFamily; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
     //Connect used by clients
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); overload; virtual; abstract;
     function Connect(const Address: string; const Port: string; const BindAddress: string; out vErr: Integer; Options: TmnsoOptions = []; ConnectTimeout: Integer = cConnectTimeout; ReadTimeout: Integer = cReadTimeout): TmnCustomSocket; overload;
@@ -265,6 +277,51 @@ begin
   Result := '';
 end;
 
+function StripHostBrackets(const Address: string): string;
+begin
+  Result := Address;
+  if (Length(Result) > 1) and (Result[1] = '[') and (Result[Length(Result)] = ']') then
+    Result := Copy(Result, 2, Length(Result) - 2);
+end;
+
+function IsIPv6Address(const Address: string): Boolean;
+begin
+  Result := Pos(':', StripHostBrackets(Address)) > 0;
+end;
+
+procedure SplitHostPort(const AValue: string; out AHost: string; out APort: string);
+var
+  i, c, e: Integer;
+begin
+  AHost := AValue;
+  APort := '';
+  if AValue = '' then
+    exit;
+  if AValue[1] = '[' then //[ipv6] or [ipv6]:port
+  begin
+    e := Pos(']', AValue);
+    if e > 0 then
+    begin
+      AHost := Copy(AValue, 2, e - 2);
+      if (e < Length(AValue)) and (AValue[e + 1] = ':') then
+        APort := Copy(AValue, e + 2, MaxInt);
+      exit;
+    end;
+  end;
+  c := 0;
+  for i := 1 to Length(AValue) do
+    if AValue[i] = ':' then
+      Inc(c);
+  if c >= 2 then //unbracketed IPv6 address, no port included
+    exit;
+  e := Pos(':', AValue); //host:port (ipv4/hostname)
+  if e > 0 then
+  begin
+    AHost := Copy(AValue, 1, e - 1);
+    APort := Copy(AValue, e + 1, MaxInt);
+  end;
+end;
+
 { TmnCustomSocket }
 
 procedure TmnCustomSocket.CheckActive;
@@ -276,7 +333,7 @@ begin
   end
 end;
 
-constructor TmnCustomSocket.Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAddress: string; AHostName: string);
+constructor TmnCustomSocket.Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind; AHostAddress: string; AHostName: string; AFamily: TSocketFamily);
 begin
   inherited Create;
   FOptions := AOptions;
@@ -284,6 +341,7 @@ begin
   FHandle := AHandle;
   FHostName := AHostName;
   FHostAddress := AHostAddress;
+  FFamily := AFamily;
   FBacklog := 512;
 end;
 
@@ -362,7 +420,7 @@ var
   aErr: Integer;
 begin
   CheckActive;
-  WallSocket.Accept(FHandle, Options, ReadTimeout, Result, aErr);
+  WallSocket.Accept(FHandle, Options, ReadTimeout, Family, Result, aErr);
 end;
 
 function TmnCustomSocket.Receive(var Buffer; var Count: Longint): TmnError;

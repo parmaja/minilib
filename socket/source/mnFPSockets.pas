@@ -59,7 +59,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
     function GetSocketError(Handle: TSocketHandle): Integer; override;
-    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; AFamily: TSocketFamily; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; var Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: ansistring; const Address: AnsiString; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
   end;
@@ -240,15 +240,28 @@ end;
 function TmnSocket.GetRemoteAddress: string;
 var
   aSockAddr: TSockAddr;
+  aSockAddr6: TInetSockAddr6;
   aSize: Integer;
 begin
   CheckActive;
-  aSize := SizeOf(SockAddr);
-  Initialize(aSockAddr);
-  if fpGetPeerName(FHandle, @aSockAddr, @aSize) = 0 then
-    Result := String(NetAddrToStr(sockaddr_in(aSockAddr).sin_addr))
+  if FFamily = sfIPv6 then
+  begin
+    aSize := SizeOf(aSockAddr6);
+    Initialize(aSockAddr6);
+    if fpGetPeerName(FHandle, PSockAddr(@aSockAddr6), @aSize) = 0 then
+      Result := String(NetAddrToStr6(aSockAddr6.sin6_addr))
+    else
+      Result := '';
+  end
   else
-    Result := '';
+  begin
+    aSize := SizeOf(aSockAddr);
+    Initialize(aSockAddr);
+    if fpGetPeerName(FHandle, @aSockAddr, @aSize) = 0 then
+      Result := String(NetAddrToStr(sockaddr_in(aSockAddr).sin_addr))
+    else
+      Result := '';
+  end;
 end;
 
 function TmnSocket.GetRemoteName: string;
@@ -273,14 +286,28 @@ end;
 function TmnSocket.GetLocalAddress: string;
 var
   SockAddr: TSockAddr;
+  SockAddr6: TInetSockAddr6;
   aSize: Integer;
 begin
   CheckActive;
-  aSize := SizeOf(SockAddr);
-  if fpGetSockName(FHandle, @SockAddr, @aSize) = 0 then
-//    Result := NetAddrToStr(SockAddr)
+  if FFamily = sfIPv6 then
+  begin
+    aSize := SizeOf(SockAddr6);
+    Initialize(SockAddr6);
+    if fpGetSockName(FHandle, PSockAddr(@SockAddr6), @aSize) = 0 then
+      Result := String(NetAddrToStr6(SockAddr6.sin6_addr))
+    else
+      Result := '';
+  end
   else
-    Result := '';
+  begin
+    aSize := SizeOf(SockAddr);
+    Initialize(SockAddr);
+    if fpGetSockName(FHandle, @SockAddr, @aSize) = 0 then
+      Result := String(NetAddrToStr(sockaddr_in(SockAddr).sin_addr))
+    else
+      Result := '';
+  end;
 end;
 
 function TmnSocket.GetLocalName: string;
@@ -330,7 +357,7 @@ begin
   vHandle := INVALID_SOCKET;
 end;
 
-procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; AFamily: TSocketFamily; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
 begin
@@ -343,7 +370,7 @@ begin
   else
   begin
     InitSocketOptions(aHandle, Options, ReadTimeout);
-    vSocket := TmnSocket.Create(aHandle, Options, skServer);
+    vSocket := TmnSocket.Create(aHandle, Options, skServer, '', '', AFamily);
     vErr := 0;
   end;
 end;
@@ -387,10 +414,19 @@ procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer; var Po
 var
   aHandle: TSocketHandle;
   aSockAddr : TINetSockAddr;
+  aSockAddr6: TInetSockAddr6;
+  aFamily: TSocketFamily;
   aHostEnt: PHostEntry;
   l: Integer;
 begin
-  aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
+  aFamily := sfIPv4;
+  if IsIPv6Address(Address) then
+    aFamily := sfIPv6;
+
+  if aFamily = sfIPv6 then
+    aHandle := fpsocket(AF_INET6, SOCK_STREAM, 0{IPPROTO_TCP})
+  else
+    aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
 
   if aHandle <> INVALID_SOCKET then
   begin
@@ -399,37 +435,75 @@ begin
     if soReuseAddr in Options then
       vErr := fpsetsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-    aSockAddr.sin_family := AF_INET;
-    aSockAddr.sin_port := htons(LookupPort(Port));
-    if (Address = '') or (Address = '0.0.0.0') then
-      aSockAddr.sin_addr.s_addr := INADDR_ANY
-    else
-      aSockAddr.sin_addr := StrToNetAddr(Address);
+    if aFamily = sfIPv6 then
+    begin
+      FillChar(aSockAddr6, SizeOf(aSockAddr6), 0);
+      aSockAddr6.sin6_family := AF_INET6;
+      aSockAddr6.sin6_port := htons(LookupPort(Port));
+      if (Address <> '') and (Address <> '::') and (Address <> '[::]') then
+        if not TryStrToHostAddr6(StripHostBrackets(Address), aSockAddr6.sin6_addr) then
+          vErr := SocketError; //invalid IPv6 address
 
-    if fpbind(aHandle,@aSockAddr, Sizeof(aSockAddr)) <> 0 then
-    begin
-      vErr := SocketError;
-      FreeSocket(aHandle);
-    end
-    else
-    begin
-      // Extract the port number
-      if aSockAddr.sin_port = 0 then
+      if vErr = 0 then
       begin
-        l := SizeOf(aSockAddr);
-        if fpgetsockname(aHandle, TSockAddr(aSockAddr), l) = SOCKET_ERROR then
+        if fpbind(aHandle, PSockAddr(@aSockAddr6), SizeOf(aSockAddr6)) <> 0 then
         begin
           vErr := SocketError;
           FreeSocket(aHandle);
         end
         else
-          Port := IntToStr(ntohs(aSockAddr.sin_port));
+        begin
+          // Extract the port number
+          if aSockAddr6.sin6_port = 0 then
+          begin
+            l := SizeOf(aSockAddr6);
+            if fpgetsockname(aHandle, PSockAddr(@aSockAddr6), @l) = SOCKET_ERROR then
+            begin
+              vErr := SocketError;
+              FreeSocket(aHandle);
+            end
+            else
+              Port := IntToStr(ntohs(aSockAddr6.sin6_port));
+          end;
+        end;
+      end
+      else
+        FreeSocket(aHandle);
+    end
+    else
+    begin
+      aSockAddr.sin_family := AF_INET;
+      aSockAddr.sin_port := htons(LookupPort(Port));
+      if (Address = '') or (Address = '0.0.0.0') then
+        aSockAddr.sin_addr.s_addr := INADDR_ANY
+      else
+        aSockAddr.sin_addr := StrToNetAddr(Address);
+
+      if fpbind(aHandle,@aSockAddr, Sizeof(aSockAddr)) <> 0 then
+      begin
+        vErr := SocketError;
+        FreeSocket(aHandle);
+      end
+      else
+      begin
+        // Extract the port number
+        if aSockAddr.sin_port = 0 then
+        begin
+          l := SizeOf(aSockAddr);
+          if fpgetsockname(aHandle, TSockAddr(aSockAddr), l) = SOCKET_ERROR then
+          begin
+            vErr := SocketError;
+            FreeSocket(aHandle);
+          end
+          else
+            Port := IntToStr(ntohs(aSockAddr.sin_port));
+        end;
       end;
-		end;
+    end;
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skListener)
+    vSocket := TmnSocket.Create(aHandle, Options, skListener, '', '', aFamily)
   else
     vSocket := nil;
 end;
@@ -438,7 +512,10 @@ procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeo
 var
   aHandle: TSocketHandle;
   aAddr : TINetSockAddr;
+  aAddr6: TInetSockAddr6;
+  aFamily: TSocketFamily;
   aHostAddress: THostEntry;
+  aHostAddress6: THostEntry6;
   aHostName: string;
   aMode: longint;
   ret: cint;
@@ -448,7 +525,15 @@ begin
   Initialize(aHostAddress);
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
-  aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
+  aFamily := sfIPv4;
+  if IsIPv6Address(Address) then
+    aFamily := sfIPv6;
+
+  if aFamily = sfIPv6 then
+    aHandle := fpsocket(AF_INET6, SOCK_STREAM, 0{IPPROTO_TCP})
+  else
+    aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
+
   if aHandle <> INVALID_SOCKET then
   begin
     vErr := InitSocketOptions(aHandle, Options, ReadTimeout);
@@ -466,27 +551,54 @@ begin
 
     if aHandle <> TSocketHandle(SOCKET_ERROR) then
     begin
-      aAddr.sin_family := AF_INET;
-      aAddr.sin_port := htons(StrToIntDef(Port, 0));
-
-      if (Address = '') or (Address = '0.0.0.0') then
-        aAddr.sin_addr.s_addr := INADDR_ANY
-      else
+      if aFamily = sfIPv6 then
       begin
-        aAddr.sin_addr := StrToNetAddr(Address);
-        if (aAddr.sin_addr.s_addr = 0) then
+        FillChar(aAddr6, SizeOf(aAddr6), 0);
+        aAddr6.sin6_family := AF_INET6;
+        aAddr6.sin6_port := htons(StrToIntDef(Port, 0));
+
+        if not TryStrToHostAddr6(StripHostBrackets(Address), aAddr6.sin6_addr) then
         begin
-          if ResolveHostByName(Address, aHostAddress) then
+          //Not a literal IPv6 address, try to resolve hostname into an IPv6 address
+          if ResolveHostByName6(StripHostBrackets(Address), aHostAddress6) then
           begin
             aHostName := Address;
-            aAddr.sin_addr.s_addr := aHostAddress.Addr.s_addr;
+            aAddr6.sin6_addr := aHostAddress6.Addr;
           end
+          else
+          begin
+            vErr := SocketError;
+            FreeSocket(aHandle);
+          end;
+        end;
+      end
+      else
+      begin
+        aAddr.sin_family := AF_INET;
+        aAddr.sin_port := htons(StrToIntDef(Port, 0));
+
+        if (Address = '') or (Address = '0.0.0.0') then
+          aAddr.sin_addr.s_addr := INADDR_ANY
+        else
+        begin
+          aAddr.sin_addr := StrToNetAddr(Address);
+          if (aAddr.sin_addr.s_addr = 0) then
+          begin
+            if ResolveHostByName(Address, aHostAddress) then
+            begin
+              aHostName := Address;
+              aAddr.sin_addr.s_addr := aHostAddress.Addr.s_addr;
+            end
+          end;
         end;
       end;
 
       if aHandle <> TSocketHandle(SOCKET_ERROR) then
       begin
-        ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
+        if aFamily = sfIPv6 then
+          ret := fpconnect(aHandle, PSockAddr(@aAddr6), SizeOf(aAddr6))
+        else
+          ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
 
         if ret = -1 then
         begin
@@ -514,7 +626,12 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skClient, String(NetAddrToStr(sockaddr_in(aAddr).sin_addr)), aHostName)
+  begin
+    if aFamily = sfIPv6 then
+      vSocket := TmnSocket.Create(aHandle, Options, skClient, String(NetAddrToStr6(aAddr6.sin6_addr)), aHostName, sfIPv6)
+    else
+      vSocket := TmnSocket.Create(aHandle, Options, skClient, String(NetAddrToStr(sockaddr_in(aAddr).sin_addr)), aHostName)
+  end
   else
     vSocket := nil;
 end;
