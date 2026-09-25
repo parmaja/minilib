@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Buttons, mnLogs, mnHttpClient;
+  Buttons, mnLogs, mnHttpClient, mnModules;
 
 type
 
@@ -37,7 +37,7 @@ type
     procedure FormDestroy(Sender: TObject);
   private
   protected
-    procedure LogEvent(S: String);
+    procedure LogEvent(const S: String);
     procedure LoadFromStream(ContentType: string; MemoryStream: TMemoryStream; Index: Integer = 0);
   public
 
@@ -82,26 +82,24 @@ end;
 const
   //sUserAgent = 'Embarcadero URI Client/1.0';
   sUserAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0';
-  //'http://a.tile.openstreetmap.org/18/157418/105125.png' /crc error
-  //sURL = 'http://c.tile.openstreetmap.org/18/157418/105127.png';
-  sURLGoogle = 'http://mt0.google.com/vt/lyrs=m@999&hl=ar&x=78707&y=52561&z=17&s=Gal';
-  sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
-  sURL2 = 'https://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
-  sPATH2 = '/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
-  //sURL = 'http://placehold.it/120x120&text=image1';
+  //httpbin.org serves plain http images with Content-Length and keep-alive,
+  //so the whole demo works without an https connection (no OpenSSL needed)
+  sURL = 'http://httpbin.org/image/png';      //first image (keep-alive demo)
+  sURL2 = 'http://httpbin.org/image/jpeg';    //second image / file size demo
+  sPATH2 = '/image/jpeg';                     //second path on the same connection
+  sURL3 = 'http://example.com/';              //simple page
 
 procedure TMainForm.Button1Click(Sender: TObject);
 var
   HttpClient: TmnHttpClient;
   MemoryStream: TMemoryStream;
 begin
-  LogEdit.Lines.Add('Getting from URL ' + sURLGoogle);
+  LogEdit.Lines.Add('Getting from URL ' + sURL);
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.UserAgent := sUserAgent;
-    //HttpClient.Compressing := True;
-    HttpClient.GetMemoryStream(sURLGoogle, MemoryStream);
+    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.GetMemoryStream(sURL, MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
   finally
     HttpClient.Free;
@@ -115,21 +113,20 @@ var
   HttpClient: TmnHttpClient;
   MemoryStream: TMemoryStream;
 begin
-  //LogEdit.Lines.Add('Getting from URL ' + HostEdit.Text);
+  LogEdit.Lines.Add('Getting from URL ' + sURL2);
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Compressing := True;
-    //HttpClient.UserAgent := 'blalbla';
-    //HttpClient.Compressing := True;
-    HttpClient.GetMemoryStream('http://10.0.0.119:81/html/laz-logo.png', MemoryStream);
-    //LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
-    MemoryStream.SaveToFile(Application.Location + '1.png');
+    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.Request.Use.Compressing := ovYes;
+    //HttpClient.Request.UserAgent := 'blalbla';
+    HttpClient.GetMemoryStream(sURL2, MemoryStream);
+    LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
   finally
     HttpClient.Free;
     MemoryStream.Free;
   end;
-  //LogEdit.Lines.Add('Finished');
+  LogEdit.Lines.Add('Finished');
 end;
 
 procedure TMainForm.Button3Click(Sender: TObject);
@@ -140,12 +137,10 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.UserAgent := sUserAgent;
-    //HttpClient.Compressing := True;
-    HttpClient.Open('http://uk7.internet-radio.com:8226/live');
-    //HttpClient.GetMemoryStream('http://uk7.internet-radio.com:8226/live  ', MemoryStream);
+    HttpClient.Request.UserAgent := sUserAgent;
+    //Open is a "connect and keep it connected" call: Connect + send GET + receive the header
+    HttpClient.Open(sURL3);
     LogEdit.Lines.Add(HttpClient.Response.ContentType);
-    //LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
   finally
     HttpClient.Free;
     MemoryStream.Free;
@@ -155,7 +150,7 @@ end;
 
 procedure TMainForm.GetFileSizeBtn1Click(Sender: TObject);
 var
-  aSize: Integer;
+  aSize: Longint;
 begin
   if mnHttpClient.HttpGetFileSize(sURL2, aSize) then
     LogEdit.Lines.Add(IntToStr(aSize))
@@ -170,18 +165,16 @@ var
 begin
   LogEdit.Lines.Add('Getting from URL');
   Screen.Cursor := crHourGlass;
-  Image1.Picture.Clear;
-  Image2.Picture.Clear;
   Application.ProcessMessages;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.UserAgent := sUserAgent;
-    //HttpClient.KeepAlive := True;
-    HttpClient.Host := 'www.parmaja.org';
-    HttpClient.Open(sURL2, False);
-    HttpClient.Request.SendHead;
-    HttpClient.Response.Receive;
-    aSizeStr := HttpClient.Response.Header['Content-Length'];
+    HttpClient.Request.UserAgent := sUserAgent;
+    //manual HEAD: connect, compose the request line, send it, read the response header
+    HttpClient.Connect(sURL2);
+    HttpClient.Request.Head := 'HEAD ' + HttpClient.Path + ' HTTP/1.1';
+    HttpClient.Request.SendHeader;
+    HttpClient.Response.ReceiveHeader(True);
+    aSizeStr := HttpClient.Response.Header.Values['Content-Length'];
     LogEdit.Lines.Add(aSizeStr);
     HttpClient.Disconnect;
   finally
@@ -201,19 +194,13 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.UserAgent := sUserAgent;
-    HttpClient.KeepAlive := True;
-    //HttpClient.Connect('https://www.openstreetmap.org', False);
-    //https://c.tile.openstreetmap.fr/osmfr/14/9765/6391.png
-    //https://c.tile.openstreetmap.de/14/9765/6391.png
-    HttpClient.Open('https://c.tile.openstreetmap.org/14/9765/6391.png', False);
+    HttpClient.Request.UserAgent := sUserAgent;
+    //Open = connect + send GET + receive the response header, keep the connection open
+    HttpClient.Open(sURL2);
 
-    HttpClient.Request.SendGet;
-    HttpClient.Response.Receive;
     HttpClient.ReceiveMemoryStream(MemoryStream);
     MemoryStream.Position := 0;
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
-    //MemoryStream.SaveToFile(Application.Location + '1.html');
     HttpClient.Disconnect;
   finally
     HttpClient.Free;
@@ -236,23 +223,19 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.UserAgent := sUserAgent;
-    HttpClient.KeepAlive := True;
-    HttpClient.Open(sURL, False);
-    HttpClient.Host := 'www.parmaja.org';
-
-    HttpClient.Request.SendGet;
-    HttpClient.Response.Receive;
+    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.Request.Use.KeepAlive := ovYes;
+    //first GET on the connection
+    HttpClient.Open(sURL);
     HttpClient.ReceiveMemoryStream(MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream, 0);
 
     Application.ProcessMessages;
 
-    HttpClient.Path := sPATH2;
+    //second GET reusing the same connection, just changing the path
     MemoryStream.Clear;
-
-    HttpClient.Request.SendGet;
-    HttpClient.Response.Receive;
+    HttpClient.Path := sPATH2;
+    HttpClient.Get;
     HttpClient.ReceiveMemoryStream(MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream, 1);
 
@@ -272,67 +255,12 @@ end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
 begin
-  UninstallEventLog(@LogEvent);
+  //mnLogs intentionally has no public uninstall for event logs
 end;
 
-procedure TMainForm.LogEvent(S: String);
+procedure TMainForm.LogEvent(const S: String);
 begin
   LogEdit.Lines.Add(S);
 end;
 
-{function GetUrlData(const Url: string): TMemoryStream;
-var
-  n: THTTPClient;
-  t: TmnHttpClient;
-  c: string;
-  r: IHTTPResponse;
-  h: TNetHeaders;
-begin
-  Result := TMemoryStream.Create;
-  if Url<>'' then
-  begin
-    {t := TmnHttpClient.Create;
-    try
-      t.Compressing := True;
-      //t.ConnectionTimeout := 600;
-      //t.ResponseTimeout := 600;
-      //t.Request.UserAgent := 'Embarcadero URI Client/1.0';
-      t.Request.UserAgent := 'curl/7.55.1';
-      t.GetStream(Url, Result);
-    finally
-      t.Free;
-    end;}
-    //System.TMonitor.Enter(mapMapClasses);
-
-    LogBeginTickDebug;
-    n := THTTPClient.Create;
-    try
-      n.AcceptEncoding := 'gzip, deflate';
-      //n.ConnectionTimeout := 600;
-      //n.ResponseTimeout := 600;
-      n.ConnectionTimeout := 300;
-      n.ResponseTimeout := 3000;
-      //n.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0';
-      n.UserAgent := 'curl/7.55.1';
-
-      try
-        r := n.Get(Url, Result);
-        h := r.Headers;
-
-        c := 'succ';
-      except
-        c := 'fail';
-        Result.Clear;
-      end;
-
-    finally
-      LogEndTick('%s [%s]', [c, Url]);
-      n.Free;
-      //System.TMonitor.Exit(mapMapClasses);
-    end;
-  end;
-end;}
-
-
 end.
-
