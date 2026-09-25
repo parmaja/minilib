@@ -8,6 +8,7 @@ unit mnOpenSSLUtils;
 {$M+}{$H+}
 {$ifdef fpc}
 {$mode delphi}
+{$modeswitch advancedrecords}
 {$error 'Delphi Only'}
 {$endif}
 
@@ -86,6 +87,412 @@ function MakeCert2(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8str
 function MakeCert2(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 
 implementation
+
+{ TsslConfig }
+
+constructor TsslConfig.Create;
+begin
+  inherited Create('');
+end;
+
+function TsslConfig.AltNames: TStrings;
+begin
+  Result := TStringList.Create;
+  try
+    if SectionExists('alt_names') then
+      ReadSectionValues('alt_names', Result);
+  except
+    FreeAndNil(Result);
+  end;
+end;
+
+procedure TsslConfig.UpdateFile;
+begin
+  //inherited; do nothing
+end;
+
+{ TPX509Helper }
+
+procedure TPX509Helper.AdjTime(vFrom, vTo: NativeInt);
+begin
+  //replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x
+  X509_time_adj_ex(X509_get0_notBefore(@Self), 0, 0, nil);
+  X509_time_adj_ex(X509_get0_notAfter(@Self), 60 * 60 * 24 * vTo, 0, nil);
+end;
+
+function TPX509Helper.BIOstr(vProc: TProc<PBIO>): string;
+var
+  bio: PBIO;
+  b: PByte;
+  aLen: Integer;
+begin
+  bio := BIO_new(BIO_s_mem());
+  try
+    vProc(bio);
+    aLen := BIO_get_mem_data(bio, b);
+    Result := TEncoding.ANSI.GetString(b, aLen);
+  finally
+    BIO_free(bio);
+  end;
+end;
+
+class function TPX509Helper.Generate(vConfig: TsslConfig; vProc: TProc<PX509, PEVP_PKEY>): Boolean;
+var
+  px: PX509;
+  pk: PEVP_PKEY;
+begin
+  px := MakeX509(vConfig);
+  if px<>nil then
+  begin
+    try
+      pk := SignX509(px, vConfig);
+      if pk<>nil then
+      begin
+        try
+          vProc(px, pk);
+        finally
+          EVP_PKEY_free(pk);
+        end;
+        Exit(True);
+      end;
+    finally
+      X509_free(px);
+    end;
+  end;
+  Result := False;
+end;
+
+function TPX509Helper.RegisterOID(const vName, vSNName: string): Integer;
+var
+  n, sn: UTF8String;
+begin
+  n := UTF8Encode(vName);
+  sn := UTF8Encode(vSNName);
+  Result := OBJ_create(PUTF8Char(n), PUTF8Char(sn), PUTF8Char(sn));
+end;
+
+procedure TPX509Helper.AdjTime(vDays: NativeInt);
+begin
+  AdjTime(0, vDays);
+end;
+
+procedure TPX509Helper.SetSubjectName(const vField, vData: string);
+var
+  n: PX509_NAME;
+  f, d: UTF8String;
+begin
+  if vData <> '' then
+  begin
+    n := X509_get_subject_name(@Self);
+    f := UTF8Encode(vField);
+    d := UTF8Encode(vData);
+
+    X509_NAME_add_entry_by_txt(n, PUTF8Char(f), MBSTRING_UTF8, PByte(d), -1, -1, 0);
+  end;
+end;
+
+function TPX509Helper.SetExt(NID: Integer; const vData: string): Integer;
+var
+  ex: PX509_EXTENSION;
+  ctx: TX509V3_CTX;
+  d: UTF8String;
+begin
+  Result := 0;
+  if vData <> '' then
+  begin
+    d := UTF8Encode(vData);
+
+    X509V3_set_ctx_nodb(@ctx);
+    X509V3_set_ctx(@ctx, @Self, @Self, nil, nil, 0);
+
+    ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(NID), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+    if ex <> nil then
+    try
+      Result := X509_add_ext(@Self, ex, -1);
+    finally
+      X509_EXTENSION_free(ex);
+    end;
+  end;
+end;
+
+procedure TPX509Helper.SetSerial(vSerial: Integer);
+begin
+  ASN1_INTEGER_set(X509_get_serialNumber(@Self), vSerial);
+end;
+
+procedure TPX509Helper.SetSubjectName(vNID: Integer; const vData: string);
+var
+  n: PX509_NAME;
+  d: UTF8String;
+begin
+  if vData <> '' then
+  begin
+    n := X509_get_subject_name(@Self);
+    d := UTF8Encode(vData);
+
+    X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_UTF8, PByte(d), -1, -1, 0);
+  end;
+end;
+
+//***************
+
+procedure AddDirNameSAN(req: PX509_REQ; vProc: TFetchNamesProc);
+var
+  dirName: PX509_NAME;
+  gen: PGENERAL_NAME;
+  gens: PSTACK_OF_GENERAL_NAME; // = Pstack_st_GENERAL_NAME in most bindings
+  extStack: Pstack_st_X509_EXTENSION; // local stack, NOT pulled from req
+  ret: Integer;
+begin
+
+  dirName := X509_NAME_new();
+  try
+    // Order matters for how the DN prints/encodes - match your
+    // issuing CA's expected attribute order if one is mandated.
+    {AddEntry(dirName, NID_surname,           ASN);
+    AddEntry(dirName, NID_uniqueIdentifier,  AUID);
+    AddEntry(dirName, NID_title,             ATitle);
+    AddEntry(dirName, NID_registeredAddress, ARegisteredAddress);
+    AddEntry(dirName, NID_businessCategory,  ABusinessCategory);}
+
+    vProc(procedure(nid: Integer; const value: string)
+          var
+            utf8: UTF8String;
+          begin
+            if value = '' then Exit; // skip empty attrs rather than emitting an empty RDN
+            utf8 := UTF8Encode(value);
+            if X509_NAME_add_entry_by_NID(dirName, nid, MBSTRING_UTF8, PByte(utf8), Length(utf8), -1, 0) <> 1 then
+              raise Exception.CreateFmt('X509_NAME_add_entry_by_NID failed for NID %d', [nid]);
+          end
+    );
+
+    gen := GENERAL_NAME_new();
+
+    // GEN_DIRNAME = 4. GENERAL_NAME_set0_value takes ownership of dirName.
+    GENERAL_NAME_set0_value(gen, GEN_DIRNAME, dirName);
+    dirName := nil; // ownership transferred; don't free it below
+
+    gens := sk_GENERAL_NAME_new_null();
+    if gens = nil then
+    begin
+      GENERAL_NAME_free(gen);
+      raise Exception.Create('sk_GENERAL_NAME_new_null failed');
+    end;
+
+    if sk_GENERAL_NAME_push(gens, gen) = 0 then
+    begin
+      GENERAL_NAME_free(gen);
+      sk_GENERAL_NAME_free(gens);
+      raise Exception.Create('sk_GENERAL_NAME_push failed');
+    end;
+
+    try
+      // Address of the mutable extension-stack field on the cert.
+      // Exact accessor depends on your binding: some expose
+      // X509_get0_extensions returning a mutable pointer pre-1.1.0-style
+      // structs; others require going through cert^.cert_info^.extensions.
+
+      extStack := nil;
+      ret := X509V3_add1_i2d(@extStack, NID_subject_alt_name, gens, 0, X509V3_ADD_APPEND);
+      if ret <> 1 then
+        raise Exception.CreateFmt('X509V3_add1_i2d failed, ret=%d', [ret]);
+    finally
+      // add1_i2d serializes gens to DER internally and does NOT take
+      // ownership - you must free the stack (and its GENERAL_NAME) yourself.
+      sk_GENERAL_NAME_pop_free(gens, @GENERAL_NAME_free);
+    end;
+
+    if X509_REQ_add_extensions(req, extStack) <> 1 then
+      raise Exception.Create('X509_REQ_add_extensions failed');
+  finally
+    X509_NAME_free(dirName); // only reached if we raised before set0_value
+    if extStack <> nil then
+      sk_X509_EXTENSION_pop_free(extStack, @X509_EXTENSION_free);
+  end;
+end;
+
+function BuildAltStack(AltType: Integer; Names: TStrings; var vArr: TSSLStackArr): POPENSSL_STACK;
+var
+  g: PGENERAL_NAME;
+  v: PASN1_OCTET_STRING;
+  t: UTF8String;
+  i: Integer;
+  s: string;
+begin
+  vArr := nil;
+  Result := OPENSSL_sk_new_null;
+  if (Names = nil) or (Names.Count = 0) then
+    Exit;
+
+  SetLength(vArr, Names.Count);
+  i := 0;
+
+  for s in Names do
+  begin
+    g := GENERAL_NAME_new;
+    if g = nil then
+      Continue;
+
+    v := ASN1_OCTET_STRING_new;
+    if v = nil then
+    begin
+      GENERAL_NAME_free(g);
+      Continue;
+    end;
+
+    t := UTF8Encode(s);
+
+    if ASN1_OCTET_STRING_set(v, PByte(t), Length(t)) <= 0 then
+    begin
+      ASN1_OCTET_STRING_free(v);
+      GENERAL_NAME_free(g);
+      Continue;
+    end;
+
+    GENERAL_NAME_set0_value(g, AltType, v);
+    if OPENSSL_sk_push(Result, g) > 0 then
+    begin
+      vArr[i].Name := t;
+      vArr[i].Gen := g;
+      vArr[i].Asn := v;
+      Inc(i);
+    end
+    else
+    begin
+      GENERAL_NAME_free(g);
+    end;
+  end;
+
+  // Trim vArr to actual size if some entries failed
+  if i <> Length(vArr) then
+    SetLength(vArr, i);
+end;
+
+{ TSSLStackHelper }
+
+function TSSLStackHelper.SetExt(NID: Integer; const vData: string): Integer;
+var
+  Ext: PX509_EXTENSION;
+  d: UTF8String;
+begin
+  Result := 0;
+  if vData <> '' then
+  begin
+    d := UTF8Encode(vData);
+    Ext := X509V3_EXT_nconf(nil, nil, OBJ_nid2sn(NID), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+    if Ext <> nil then
+    begin
+      if OPENSSL_sk_push(@Self, Ext) > 0 then
+        Result := 1
+      else
+        X509_EXTENSION_free(Ext);
+    end;
+  end;
+end;
+
+function TSSLStackHelper.SetExt(req: PX509_REQ; const vName, vData: string): Integer;
+var
+  ex: PX509_EXTENSION;
+  ctx: TX509V3_CTX;
+  n, d: UTF8String;
+  nid: Integer;
+begin
+  Result := 0;
+  if vData <> '' then
+  begin
+    n := UTF8Encode(vName);
+    d := UTF8Encode(vData);
+
+    X509V3_set_ctx_nodb(@ctx);
+    X509V3_set_ctx(@ctx, nil, nil, req, nil, 0);
+    nid := OBJ_txt2nid(PUTF8Char(n));
+
+    ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+    if ex <> nil then
+    begin
+      if OPENSSL_sk_push(@Self, ex) > 0 then
+      begin
+        if X509_REQ_add_extensions_nid(req, @Self, nid) > 0 then
+          Result := 1;
+      end
+      else
+        X509_EXTENSION_free(ex);
+    end;
+  end;
+end;
+
+function TSSLStackHelper.SetStack(typ: Integer; const vData: TStrings): Integer;
+var
+  sk: POPENSSL_STACK;
+  aArr: TSSLStackArr;
+begin
+  sk := BuildAltStack(typ, vData, aArr);
+  try
+    Result := X509V3_add1_i2d(@Self, NID_subject_alt_name, sk, 0, X509V3_ADD_REPLACE);
+  finally
+    OPENSSL_sk_pop_free(sk, @GENERAL_NAME_free);
+  end;
+end;
+
+
+{ TPX509ReqHelper }
+
+function TPX509ReqHelper.SetExt(sk: POPENSSL_STACK; const vName, vData: string): Integer;
+var
+  ex: PX509_EXTENSION;
+  ctx: TX509V3_CTX;
+  n, d: UTF8String;
+  nid: Integer;
+begin
+  Result := 0;
+  if vData <> '' then
+  begin
+    n := UTF8Encode(vName);
+    d := UTF8Encode(vData);
+
+    X509V3_set_ctx_nodb(@ctx);
+    X509V3_set_ctx(@ctx, nil, nil, @Self, nil, 0);
+    nid := OBJ_txt2nid(PUTF8Char(n));
+
+    ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
+    if ex <> nil then
+    begin
+      if OPENSSL_sk_push(sk, ex) > 0 then
+        Result := 1
+      else
+        X509_EXTENSION_free(ex);
+    end;
+  end;
+end;
+
+procedure TPX509ReqHelper.SetSubjectName(vNID: Integer; const vData: string);
+var
+  n: PX509_NAME;
+  d: UTF8String;
+begin
+  if vData <> '' then
+  begin
+    n := X509_REQ_get_subject_name(@Self);
+    d := UTF8Encode(vData);
+
+    X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_UTF8, PByte(d), -1, -1, 0);
+  end;
+end;
+
+procedure TPX509ReqHelper.SetSubjectName(const vField, vData: string);
+var
+  n: PX509_NAME;
+  f, d: UTF8String;
+begin
+  if vData <> '' then
+  begin
+    n := X509_REQ_get_subject_name(@Self);
+    f := UTF8Encode(vField);
+    d := UTF8Encode(vData);
+
+    X509_NAME_add_entry_by_txt(n, PUTF8Char(f), MBSTRING_UTF8, PByte(d), -1, -1, 0);
+  end;
+end;
 
 function AddExt(cert: PX509; nid: integer; value: PUTF8Char): Integer;
 var
@@ -368,7 +775,7 @@ begin
     X509_REQ_sign(req, pk, EVP_sha256);
 
     vConfig.WriteString('Result', 'Csr', px.BIOstr(procedure(bio: PBIO)
-    begin                                
+    begin
       PEM_write_bio_X509_REQ(bio, req);
     end));
   finally
@@ -429,411 +836,6 @@ begin
     _Write(vName+'.csr', vConfig.ReadString('Result', 'Csr', ''));
     _Write(vName+'.private.pem', vConfig.ReadString('Result', 'PrvKey', ''));
     _Write(vName+'.public.pem', vConfig.ReadString('Result', 'PubKey', ''));
-  end;
-end;
-
-{ TsslConfig }
-
-constructor TsslConfig.Create;
-begin
-  inherited Create('');
-end;
-
-function TsslConfig.AltNames: TStrings;
-begin
-  Result := TStringList.Create;
-  try
-    if SectionExists('alt_names') then
-      ReadSectionValues('alt_names', Result);
-  except
-    FreeAndNil(Result);
-  end;
-end;
-
-procedure TsslConfig.UpdateFile;
-begin
-  //inherited; do nothing
-end;
-
-{ TPX509Helper }
-
-procedure TPX509Helper.AdjTime(vFrom, vTo: NativeInt);
-begin
-  //replaces X509_gmtime_adj/X509_getm_not*, deprecated in OpenSSL 3.x
-  X509_time_adj_ex(X509_get0_notBefore(@Self), 0, 0, nil);
-  X509_time_adj_ex(X509_get0_notAfter(@Self), 60 * 60 * 24 * vTo, 0, nil);
-end;
-
-function TPX509Helper.BIOstr(vProc: TProc<PBIO>): string;
-var
-  bio: PBIO;
-  b: PByte;
-  aLen: Integer;
-begin
-  bio := BIO_new(BIO_s_mem());
-  try
-    vProc(bio);
-    aLen := BIO_get_mem_data(bio, b);
-    Result := TEncoding.ANSI.GetString(b, aLen);
-  finally
-    BIO_free(bio);
-  end;
-end;
-
-class function TPX509Helper.Generate(vConfig: TsslConfig; vProc: TProc<PX509, PEVP_PKEY>): Boolean;
-var
-  px: PX509;
-  pk: PEVP_PKEY;
-begin
-  px := MakeX509(vConfig);
-  if px<>nil then
-  begin
-    try
-      pk := SignX509(px, vConfig);
-      if pk<>nil then
-      begin
-        try
-          vProc(px, pk);
-        finally
-          EVP_PKEY_free(pk);
-        end;
-        Exit(True);
-      end;
-    finally
-      X509_free(px);
-    end;
-  end;
-  Result := False;
-end;
-
-function TPX509Helper.RegisterOID(const vName, vSNName: string): Integer;
-var
-  n, sn: UTF8String;
-begin
-  n := UTF8Encode(vName);
-  sn := UTF8Encode(vSNName);
-  Result := OBJ_create(PUTF8Char(n), PUTF8Char(sn), PUTF8Char(sn));
-end;
-
-procedure TPX509Helper.AdjTime(vDays: NativeInt);
-begin
-  AdjTime(0, vDays);
-end;
-
-procedure TPX509Helper.SetSubjectName(const vField, vData: string);
-var
-  n: PX509_NAME;
-  f, d: UTF8String;
-begin
-  if vData <> '' then
-  begin
-    n := X509_get_subject_name(@Self);
-    f := UTF8Encode(vField);
-    d := UTF8Encode(vData);
-
-    X509_NAME_add_entry_by_txt(n, PUTF8Char(f), MBSTRING_UTF8, PByte(d), -1, -1, 0);
-  end;
-end;
-
-function TPX509Helper.SetExt(NID: Integer; const vData: string): Integer;
-var
-  ex: PX509_EXTENSION;
-  ctx: TX509V3_CTX;
-  d: UTF8String;
-begin
-  Result := 0;
-  if vData <> '' then
-  begin
-    d := UTF8Encode(vData);
-
-    X509V3_set_ctx_nodb(@ctx);
-    X509V3_set_ctx(@ctx, @Self, @Self, nil, nil, 0);
-
-    ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(NID), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
-    if ex <> nil then
-    try
-      Result := X509_add_ext(@Self, ex, -1);
-    finally
-      X509_EXTENSION_free(ex);
-    end;
-  end;
-end;
-
-procedure TPX509Helper.SetSerial(vSerial: Integer);
-begin
-  ASN1_INTEGER_set(X509_get_serialNumber(@Self), vSerial);
-end;
-
-procedure TPX509Helper.SetSubjectName(vNID: Integer; const vData: string);
-var
-  n: PX509_NAME;
-  d: UTF8String;
-begin
-  if vData <> '' then
-  begin
-    n := X509_get_subject_name(@Self);
-    d := UTF8Encode(vData);
-
-    X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_UTF8, PByte(d), -1, -1, 0);
-  end;
-end;
-
-procedure AddDirNameSAN(req: PX509_REQ; vProc: TFetchNamesProc);
-var
-  dirName: PX509_NAME;
-  gen: PGENERAL_NAME;
-  gens: PSTACK_OF_GENERAL_NAME; // = Pstack_st_GENERAL_NAME in most bindings
-  extStack: Pstack_st_X509_EXTENSION; // local stack, NOT pulled from req
-  ret: Integer;
-begin
-
-  var aProc := procedure(nid: Integer; const value: string)
-  begin
-    if value = '' then Exit; // skip empty attrs rather than emitting an empty RDN
-    var utf8 := UTF8Encode(value);
-    if X509_NAME_add_entry_by_NID(dirName, nid, MBSTRING_UTF8, PByte(utf8), Length(utf8), -1, 0) <> 1 then
-      raise Exception.CreateFmt('X509_NAME_add_entry_by_NID failed for NID %d', [nid]);
-  end;
-
-
-  dirName := X509_NAME_new();
-  try
-    // Order matters for how the DN prints/encodes - match your
-    // issuing CA's expected attribute order if one is mandated.
-    {AddEntry(dirName, NID_surname,           ASN);
-    AddEntry(dirName, NID_uniqueIdentifier,  AUID);
-    AddEntry(dirName, NID_title,             ATitle);
-    AddEntry(dirName, NID_registeredAddress, ARegisteredAddress);
-    AddEntry(dirName, NID_businessCategory,  ABusinessCategory);}
-
-    vProc(aProc);
-
-
-    gen := GENERAL_NAME_new();
-
-    // GEN_DIRNAME = 4. GENERAL_NAME_set0_value takes ownership of dirName.
-    GENERAL_NAME_set0_value(gen, GEN_DIRNAME, dirName);
-    dirName := nil; // ownership transferred; don't free it below
-
-    gens := sk_GENERAL_NAME_new_null();
-    if gens = nil then
-    begin
-      GENERAL_NAME_free(gen);
-      raise Exception.Create('sk_GENERAL_NAME_new_null failed');
-    end;
-
-    if sk_GENERAL_NAME_push(gens, gen) = 0 then
-    begin
-      GENERAL_NAME_free(gen);
-      sk_GENERAL_NAME_free(gens);
-      raise Exception.Create('sk_GENERAL_NAME_push failed');
-    end;
-
-    try
-      // Address of the mutable extension-stack field on the cert.
-      // Exact accessor depends on your binding: some expose
-      // X509_get0_extensions returning a mutable pointer pre-1.1.0-style
-      // structs; others require going through cert^.cert_info^.extensions.
-
-      extStack := nil;
-      ret := X509V3_add1_i2d(@extStack, NID_subject_alt_name, gens, 0, X509V3_ADD_APPEND);
-      if ret <> 1 then
-        raise Exception.CreateFmt('X509V3_add1_i2d failed, ret=%d', [ret]);
-    finally
-      // add1_i2d serializes gens to DER internally and does NOT take
-      // ownership - you must free the stack (and its GENERAL_NAME) yourself.
-      sk_GENERAL_NAME_pop_free(gens, @GENERAL_NAME_free);
-    end;
-
-    if X509_REQ_add_extensions(req, extStack) <> 1 then
-      raise Exception.Create('X509_REQ_add_extensions failed');
-  finally
-    X509_NAME_free(dirName); // only reached if we raised before set0_value
-    if extStack <> nil then
-      sk_X509_EXTENSION_pop_free(extStack, @X509_EXTENSION_free);
-    aProc := nil;
-  end;
-end;
-
-function BuildAltStack(AltType: Integer; Names: TStrings; var vArr: TSSLStackArr): POPENSSL_STACK;
-var
-  g: PGENERAL_NAME;
-  v: PASN1_OCTET_STRING;
-  t: UTF8String;
-  i: Integer;
-begin
-  vArr := nil;
-  Result := OPENSSL_sk_new_null;
-  if (Names = nil) or (Names.Count = 0) then
-    Exit;
-
-  SetLength(vArr, Names.Count);
-  i := 0;
-
-  for var s in Names do
-  begin
-    g := GENERAL_NAME_new;
-    if g = nil then
-      Continue;
-
-    v := ASN1_OCTET_STRING_new;
-    if v = nil then
-    begin
-      GENERAL_NAME_free(g);
-      Continue;
-    end;
-
-    t := UTF8Encode(s);
-
-    if ASN1_OCTET_STRING_set(v, PByte(t), Length(t)) <= 0 then
-    begin
-      ASN1_OCTET_STRING_free(v);
-      GENERAL_NAME_free(g);
-      Continue;
-    end;
-
-    GENERAL_NAME_set0_value(g, AltType, v);
-    if OPENSSL_sk_push(Result, g) > 0 then
-    begin
-      vArr[i].Name := t;
-      vArr[i].Gen := g;
-      vArr[i].Asn := v;
-      Inc(i);
-    end
-    else
-    begin
-      GENERAL_NAME_free(g);
-    end;
-  end;
-
-  // Trim vArr to actual size if some entries failed
-  if i <> Length(vArr) then
-    SetLength(vArr, i);
-end;
-
-{ TSSLStackHelper }
-
-function TSSLStackHelper.SetExt(NID: Integer; const vData: string): Integer;
-var
-  Ext: PX509_EXTENSION;
-  d: UTF8String;
-begin
-  Result := 0;
-  if vData <> '' then
-  begin
-    d := UTF8Encode(vData);
-    Ext := X509V3_EXT_nconf(nil, nil, OBJ_nid2sn(NID), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
-    if Ext <> nil then
-    begin
-      if OPENSSL_sk_push(@Self, Ext) > 0 then
-        Result := 1
-      else
-        X509_EXTENSION_free(Ext);
-    end;
-  end;
-end;
-
-function TSSLStackHelper.SetExt(req: PX509_REQ; const vName, vData: string): Integer;
-var
-  ex: PX509_EXTENSION;
-  ctx: TX509V3_CTX;
-  n, d: UTF8String;
-  nid: Integer;
-begin
-  Result := 0;
-  if vData <> '' then
-  begin
-    n := UTF8Encode(vName);
-    d := UTF8Encode(vData);
-
-    X509V3_set_ctx_nodb(@ctx);
-    X509V3_set_ctx(@ctx, nil, nil, req, nil, 0);
-    nid := OBJ_txt2nid(PUTF8Char(n));
-
-    ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
-    if ex <> nil then
-    begin
-      if OPENSSL_sk_push(@Self, ex) > 0 then
-      begin
-        if X509_REQ_add_extensions_nid(req, @Self, nid) > 0 then
-          Result := 1;
-      end
-      else
-        X509_EXTENSION_free(ex);
-    end;
-  end;
-end;
-
-function TSSLStackHelper.SetStack(typ: Integer; const vData: TStrings): Integer;
-var
-  sk: POPENSSL_STACK;
-  aArr: TSSLStackArr;
-begin
-  sk := BuildAltStack(typ, vData, aArr);
-  try
-    Result := X509V3_add1_i2d(@Self, NID_subject_alt_name, sk, 0, X509V3_ADD_REPLACE);
-  finally
-    OPENSSL_sk_pop_free(sk, @GENERAL_NAME_free);
-  end;
-end;
-
-
-{ TPX509ReqHelper }
-
-function TPX509ReqHelper.SetExt(sk: POPENSSL_STACK; const vName, vData: string): Integer;
-var
-  ex: PX509_EXTENSION;
-  ctx: TX509V3_CTX;
-  n, d: UTF8String;
-  nid: Integer;
-begin
-  Result := 0;
-  if vData <> '' then
-  begin
-    n := UTF8Encode(vName);
-    d := UTF8Encode(vData);
-
-    X509V3_set_ctx_nodb(@ctx);
-    X509V3_set_ctx(@ctx, nil, nil, @Self, nil, 0);
-    nid := OBJ_txt2nid(PUTF8Char(n));
-
-    ex := X509V3_EXT_nconf(nil, @ctx, OBJ_nid2sn(nid), PUTF8Char(d)); //replaces X509V3_EXT_conf_nid (deprecated in OpenSSL 3.x)
-    if ex <> nil then
-    begin
-      if OPENSSL_sk_push(sk, ex) > 0 then
-        Result := 1
-      else
-        X509_EXTENSION_free(ex);
-    end;
-  end;
-end;
-
-procedure TPX509ReqHelper.SetSubjectName(vNID: Integer; const vData: string);
-var
-  n: PX509_NAME;
-  d: UTF8String;
-begin
-  if vData <> '' then
-  begin
-    n := X509_REQ_get_subject_name(@Self);
-    d := UTF8Encode(vData);
-
-    X509_NAME_add_entry_by_NID(n, vNID, MBSTRING_UTF8, PByte(d), -1, -1, 0);
-  end;
-end;
-
-procedure TPX509ReqHelper.SetSubjectName(const vField, vData: string);
-var
-  n: PX509_NAME;
-  f, d: UTF8String;
-begin
-  if vData <> '' then
-  begin
-    n := X509_REQ_get_subject_name(@Self);
-    f := UTF8Encode(vField);
-    d := UTF8Encode(vData);
-
-    X509_NAME_add_entry_by_txt(n, PUTF8Char(f), MBSTRING_UTF8, PByte(d), -1, -1, 0);
   end;
 end;
 

@@ -35,6 +35,9 @@ requires
   MiniCommonsLib;
 
 contains
+  mnOpenSSL in '..\source\mnOpenSSL.pas',
+  mnOpenSSL3API in '..\source\mnOpenSSL3API.pas',
+  mnOpenSSLUtils in '..\source\mnOpenSSLUtils.pas',
   mnSockets in '..\source\mnSockets.pas',
   mnWinSockets in '..\source\mnWinSockets.pas',
   mnServers in '..\source\mnServers.pas',

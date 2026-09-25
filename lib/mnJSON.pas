@@ -316,9 +316,9 @@ end;
 procedure TmnJSONParser.RaiseError(AError: string; Line: Integer = 0; Column: Integer = 0);
 begin
   if Line > 0 then
-    ErrorMessage := AError + ' [line: ' + Line.ToString + ', column: ' + Column.ToString+']'
+    ErrorMessage := 'JSON: ' + AError + ' [line: ' + Line.ToString + ', column: ' + Column.ToString+']'
   else
-    ErrorMessage := AError + ' [column: '+ Column.ToString+']';
+    ErrorMessage := 'JSON: ' + AError + ' [column: '+ Column.ToString+']';
 
   if not (jsoSafe in Options) then
     raise Exception.Create(ErrorMessage)
