@@ -263,6 +263,7 @@ procedure RaiseLastSSLError;
 procedure RaiseSSLError(Message: utf8string);
 
 function SelfSignedCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+//Will generate 3 files, cert.pem, key.pem, and cert.csr
 function SelfSignedCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 
 function ECDSASign(const vData, vKey: utf8string): TBytes; overload;
