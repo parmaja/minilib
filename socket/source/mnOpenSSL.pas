@@ -275,6 +275,15 @@ function HmacSHA256(const vKey, vData: utf8string): TBytes; overload;
 function HmacSHA256Base64(const vKey, vData: TBytes): UTF8String; overload;
 function HmacSHA256Base64(const vKey, vData: utf8string): UTF8String; overload;
 
+function HashSHA256(vData: PByte; vLen: NativeUInt): TBytes; overload;
+function HashSHA256(const vData: utf8string): TBytes; overload;
+
+function HashSHA1(vData: PByte; vLen: NativeUInt): TBytes; overload;
+function HashSHA1(const vData: utf8string): TBytes; overload;
+
+function HashMD5(vData: PByte; vLen: NativeUInt): TBytes; overload;
+function HashMD5(const vData: utf8string): TBytes; overload;
+
 procedure X509SaveToFile(X509: PX509; const FileName: string);
 
 function BioBase64Encode(vBuf: PByte; vLen: Integer): UTF8String;
@@ -527,6 +536,113 @@ begin
     Result := BioBase64Encode(PByte(@b[0]), Length(b))
   else
     Result := '';
+end;
+
+{ Hash }
+
+type
+  THashAlgorithm = (haSHA256, haSHA1, haMD5);
+
+const
+  SHA256_DIGEST_SIZE = 32;
+  SHA1_DIGEST_SIZE = 20;
+  MD5_DIGEST_SIZE = 16;
+
+  sHashAlgorithms: array[THashAlgorithm] of utf8string = ('SHA256', 'SHA1', 'MD5');
+
+type
+  { One EVP_MD and one EVP_MD_CTX per algorithm per thread, both created on the
+    first hash call of the thread and reused by all its next calls, so a hash
+    call does not fetch, allocate or free anything inside OpenSSL.
+
+    - EVP_sha256/EVP_sha1/EVP_md5 return a static cached object of OpenSSL, it
+      must not be freed, and it is resolved once only.
+    - EVP_DigestInit_ex called again on the same context with the same EVP_MD
+      reuses the internal provider state already allocated in the context
+      instead of reallocating and copying it.
+    - threadvar keeps it safe and lock free when several threads hash in
+      parallel, without paying for a mutex/lookup per call. }
+  TThreadDigest = record
+    MD: array[THashAlgorithm] of PEVP_MD;
+    Ctx: array[THashAlgorithm] of PEVP_MD_CTX;
+  end;
+
+threadvar ThreadDigest: TThreadDigest;
+
+function GetThreadDigest(AAlg: THashAlgorithm): PEVP_MD_CTX;
+begin
+  Result := ThreadDigest.Ctx[AAlg];
+  if Result = nil then
+  begin
+    //InitOpenSSLLibrary; //loads and links the libraries, only done once per thread and algorithm
+    case AAlg of
+      haSHA256: ThreadDigest.MD[AAlg] := EVP_sha256();
+      haSHA1: ThreadDigest.MD[AAlg] := EVP_sha1();
+      haMD5: ThreadDigest.MD[AAlg] := EVP_md5();
+    end;
+    if ThreadDigest.MD[AAlg] = nil then
+      raise EmnOpenSSLException.CreateLastError('Error get digest ' + sHashAlgorithms[AAlg]);
+
+    Result := EVP_MD_CTX_new();
+    if Result = nil then
+      raise EmnOpenSSLException.CreateLastError('Error EVP_MD_CTX_new');
+    ThreadDigest.Ctx[AAlg] := Result;
+  end;
+end;
+
+//Hash vData in one pass into vDigest, returns its length in vDigestLen
+procedure HashDigest(AAlg: THashAlgorithm; vData: PByte; vLen: NativeUInt; vDigest: PByte; out vDigestLen: Cardinal);
+var
+  ctx: PEVP_MD_CTX;
+begin
+  ctx := GetThreadDigest(AAlg);
+
+  if EVP_DigestInit_ex(ctx, ThreadDigest.MD[AAlg], nil) <> 1 then
+    raise EmnOpenSSLException.CreateLastError('Error EVP_DigestInit_ex ' + sHashAlgorithms[AAlg]);
+
+  if (vData <> nil) and (vLen > 0) and (EVP_DigestUpdate(ctx, Pointer(vData), vLen) <> 1) then
+    raise EmnOpenSSLException.CreateLastError('Error EVP_DigestUpdate ' + sHashAlgorithms[AAlg]);
+
+  if EVP_DigestFinal_ex(ctx, vDigest, @vDigestLen) <> 1 then
+    raise EmnOpenSSLException.CreateLastError('Error EVP_DigestFinal_ex ' + sHashAlgorithms[AAlg]);
+end;
+
+function HashToBytes(AAlg: THashAlgorithm; vDigestSize: Integer; vData: PByte; vLen: NativeUInt): TBytes;
+var
+  l: Cardinal;
+begin
+  SetLength(Result, vDigestSize);
+  HashDigest(AAlg, vData, vLen, PByte(@Result[0]), l);
+end;
+
+function HashSHA256(vData: PByte; vLen: NativeUInt): TBytes; overload;
+begin
+  Result := HashToBytes(haSHA256, SHA256_DIGEST_SIZE, vData, vLen);
+end;
+
+function HashSHA256(const vData: utf8string): TBytes; overload;
+begin
+  Result := HashToBytes(haSHA256, SHA256_DIGEST_SIZE, PByte(vData), Length(vData));
+end;
+
+function HashSHA1(vData: PByte; vLen: NativeUInt): TBytes; overload;
+begin
+  Result := HashToBytes(haSHA1, SHA1_DIGEST_SIZE, vData, vLen);
+end;
+
+function HashSHA1(const vData: utf8string): TBytes; overload;
+begin
+  Result := HashToBytes(haSHA1, SHA1_DIGEST_SIZE, PByte(vData), Length(vData));
+end;
+
+function HashMD5(vData: PByte; vLen: NativeUInt): TBytes; overload;
+begin
+  Result := HashToBytes(haMD5, MD5_DIGEST_SIZE, vData, vLen);
+end;
+
+function HashMD5(const vData: utf8string): TBytes; overload;
+begin
+  Result := HashToBytes(haMD5, MD5_DIGEST_SIZE, PByte(vData), Length(vData));
 end;
 
 function BIOToString(vProc: TBIOWriteProc): UTF8String;
@@ -1936,5 +2052,23 @@ begin
   Result := Length(Self);
 end;
 
+//Releases the cached contexts of this thread, they are never shared with other threads
+procedure FreeThreadDigest;
+var
+  a: THashAlgorithm;
+begin
+  for a := Low(THashAlgorithm) to High(THashAlgorithm) do
+  begin
+    if ThreadDigest.Ctx[a] <> nil then
+    begin
+      EVP_MD_CTX_free(ThreadDigest.Ctx[a]);
+      ThreadDigest.Ctx[a] := nil;
+    end;
+  end;
+end;
+
 initialization
 end.
+
+finalization
+  FreeThreadDigest;

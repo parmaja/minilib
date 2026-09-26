@@ -567,6 +567,9 @@ var
   EVP_sha384: function(): PEVP_MD; cdecl;
   EVP_sha512: function(): PEVP_MD; cdecl;
   EVP_DigestUpdate: function(ctx: PEVP_MD_CTX; d: Pointer; cnt: NativeUInt): Integer; cdecl;
+  //EVP_MD streaming digest API, used to hash with a reused EVP_MD_CTX (fast, no alloc per call)
+  EVP_DigestInit_ex: function(ctx: PEVP_MD_CTX; md: PEVP_MD; imp: Pointer): Integer; cdecl;
+  EVP_DigestFinal_ex: function(ctx: PEVP_MD_CTX; md: PByte; s: PCardinal): Integer; cdecl;
 
   BN_new: function(): PBIGNUM; cdecl;
   BN_set_word: function(a: PBIGNUM; w: BN_ULONG): integer; cdecl;
@@ -1055,6 +1058,8 @@ begin
   EVP_sha384 := GetAddress('EVP_sha384');
   EVP_sha512 := GetAddress('EVP_sha512');
   EVP_DigestUpdate := GetAddress('EVP_DigestUpdate');
+  EVP_DigestInit_ex := GetAddress('EVP_DigestInit_ex');
+  EVP_DigestFinal_ex := GetAddress('EVP_DigestFinal_ex');
 
   BIO_ctrl := GetAddress('BIO_ctrl');
   BIO_new := GetAddress('BIO_new');
