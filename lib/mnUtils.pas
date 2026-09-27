@@ -342,6 +342,10 @@ function StringOfUTF8(const Value: PByte; Size: Integer): string;
 function UTF8StringOf(const Value: PByte; Size: Integer): UTF8String; overload;
 function UTF8StringOf(const Value: TBytes): UTF8String; overload;
 
+function UTF8Length(S: UTF8String): Integer;
+function UTF8Copy(const S: UTF8String; StartChar, CharCount: Integer): UTF8String;
+function UTF8CodepointSize(const LeadingByte: PByte): Integer;
+
 function NewUUID: string;
 //TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
@@ -2964,6 +2968,97 @@ begin
   SetLength(Result, Size);
   if Size > 0 then
     Move(PByte(Value)^, Result[1], Size);
+end;
+
+//Iterate through the bytes. In UTF-8, a byte is the start of a new character if its value is less than $80 or between $C0 and $FD.
+//(Continuation bytes always start with the bits 10, meaning a hex value between $80 and $BF).
+function UTF8Length(S: UTF8String): Integer;
+var
+  i: Integer;
+  B: Byte;
+begin
+  Result := 0;
+  for i := 1 to Length(S) do
+  begin
+    B := Byte(S[i]);
+    // If the byte is NOT a continuation byte (10xxxxxx), it's a new char
+    if (B and $C0) <> $80 then
+      Inc(Result);
+  end;
+end;
+
+function UTF8Copy(const S: UTF8String; StartChar, CharCount: Integer): UTF8String;
+var
+  i, CurrentChar: Integer;
+  StartByte, EndByte: Integer;
+  B: Byte;
+begin
+  Result := '';
+  // 1. Validate Input
+  if (StartChar < 1) or (CharCount <= 0) then
+    Exit;
+
+  CurrentChar := 1;
+  StartByte := 0;
+  EndByte := Length(S) + 1; // Default to end of string
+
+  // 2. Find the starting byte index
+  for i := 1 to Length(S) do
+  begin
+    if CurrentChar = StartChar then
+    begin
+      StartByte := i;
+      Break;
+    end;
+
+    B := Byte(S[i]);
+    // If it's NOT a continuation byte (10xxxxxx), it's a new character
+    if (B and $C0) <> $80 then
+      Inc(CurrentChar);
+  end;
+
+  // If StartChar was out of bounds, exit
+  if StartByte = 0 then
+    Exit;
+
+  // 3. Find the ending byte index
+  CurrentChar := 0;
+  for i := StartByte to Length(S) do
+  begin
+    B := Byte(S[i]);
+    if (B and $C0) <> $80 then // New character found
+    begin
+      if CurrentChar = CharCount then
+      begin
+        EndByte := i;
+        Break;
+      end;
+      Inc(CurrentChar);
+    end;
+  end;
+
+  // 4. Slice the bytes
+  Result := Copy(S, StartByte, EndByte - StartByte);
+end;
+
+function UTF8CodepointSize(const LeadingByte: PByte): Integer;
+begin
+  // 0xxxxxxx (1-byte character)
+  if (LeadingByte^ and $80) = $00 then
+    Result := 1
+  // 110xxxxx (2-byte character)
+  else if (LeadingByte^ and $E0) = $C0 then
+    Result := 2
+  // 1110xxxx (3-byte character)
+  else if (LeadingByte^ and $F0) = $E0 then
+    Result := 3
+  // 11110xxx (4-byte character)
+  else if (LeadingByte^ and $F8) = $F0 then
+    Result := 4
+  // Fallback: If it's a continuation byte (10xxxxxx) or invalid UTF-8 (11111xxx)
+  // Returning 1 prevents infinite loops in parsing loops.
+  else
+    Result := 1;
 end;
 
 function HexToString(const vData: string): string; overload;

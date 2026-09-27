@@ -1199,7 +1199,6 @@ var
 begin
   x509 := nil;
   pkey := nil;
-  xx := nil;
   Result := False;
   try
     if not SelfSignedCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days) then
@@ -2068,7 +2067,8 @@ begin
 end;
 
 initialization
-end.
-
 finalization
   FreeThreadDigest;
+end.
+
+

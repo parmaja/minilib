@@ -485,7 +485,7 @@ end;
 function TBDF.EncodeToPNG: TMemoryStream;
 begin
   if not FLoaded then
-    Exit;
+    Exit(nil);
   Result := TMemoryStream.Create;
   BuildXNAToStream(Result);
   Result.Position := 0;
