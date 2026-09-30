@@ -97,7 +97,7 @@ function GetSubValue(const Content, Name: string; out Value: string; Terminals: 
 
 //Parse ParamStr to Strings
 //Always use KeyValues with one - not --
-procedure ParseCommandArguments(CallBackProc: TArgumentsCallbackProc; Sender: Pointer; KeyValues: TArray<string> = []); overload;
+procedure ParseCommandArguments(CallBackProc: TArgumentsCallbackProc; Sender: Pointer; KeyValues: TArray<string> = []; ValueSeperators: TSysCharSet = ['=']); overload;
 procedure ParseCommandArguments(Arguments: TStrings; KeyValues: TArray<string> = []); overload;
 
 {
@@ -158,6 +158,7 @@ function IsStrInArray(const Str: String; const InArray : Array of String; CaseIn
 function IsStrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean = False): Boolean; overload;
 function CharInArray(const C: Char; const ArrayOfChar : array of Char; CaseInsensitive: Boolean = False) : Boolean;
 function CharArrayToSet(const ArrayOfChar : TArray<Char>) : TSysCharSet;
+function LastChar(S: string): Char;
 
 //vPeriod is a datetime not tickcount
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
@@ -1404,7 +1405,7 @@ begin
   Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, Options, Terminals, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
-procedure ParseCommandArguments(CallBackProc: TArgumentsCallbackProc; Sender: Pointer; KeyValues: TArray<string>);
+procedure ParseCommandArguments(CallBackProc: TArgumentsCallbackProc; Sender: Pointer; KeyValues: TArray<string>; ValueSeperators: TSysCharSet);
 var
   Resume: Boolean;
   NextIsValue: Boolean;
@@ -1431,7 +1432,9 @@ begin
       else if StartsText('--', Name) then
         Name := Copy(Name, 2, MaxInt);
 
-      if EndsText('=', Name) or EndsText(':', Name) then
+      //if EndsText('=', Name) or EndsText(':', Name) then
+
+      if CharInSet(LastChar(Name), ValueSeperators) then
       begin
         Name := Copy(Name, 1, Length(Name)-1);
         NextIsValue := True;
@@ -1440,7 +1443,7 @@ begin
         NextIsValue := True
       else
       begin
-        idx := IndexOfChar(Name, ['=', ':']);
+        idx := IndexOfChar(Name, ValueSeperators);
         if idx > 0 then
         begin
           Value := Copy(Name, idx+1, MaxInt);
@@ -2185,6 +2188,14 @@ begin
   Result := [];
   for itm in ArrayOfChar do
     Include(Result, AnsiChar(itm));
+end;
+
+function LastChar(S: string): Char;
+begin
+  if S <> '' then
+    Result := S[Length(S)]
+  else
+    Result := #0;
 end;
 
 function CharInArray(const C: Char; const ArrayOfChar: array of Char; CaseInsensitive: Boolean): Boolean;

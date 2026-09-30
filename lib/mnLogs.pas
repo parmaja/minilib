@@ -138,6 +138,8 @@ procedure InitConsole;
 procedure ConsoleWriteLine(StringColor: TConsoleColor; s: string);
 procedure ConsoleWrite(StringColor: TConsoleColor; s: string);
 
+function StrToLogLevel(Param: string): TLogLevel;
+
 function Log: TLogDispatcher;
 
 implementation
@@ -245,7 +247,26 @@ begin
     FreeAndNil(aStream);
   end;
 end;
-  
+
+function StrToLogLevel(Param: string): TLogLevel;
+begin
+  Param := Param.ToLower;
+  if SameText(Param, 'debug') then
+    Result := lglDebug
+  else if SameText(Param, 'warning') then
+    Result := lglWarning
+  else if SameText(Param, 'error') then
+    Result := lglError
+  else if SameText(Param, 'info') then
+    Result := lglInfo
+  else if SameText(Param, 'text') then
+    Result := lglText
+  else if SameText(Param, 'on') then
+    Result := lglInfo
+  else
+    raise Exception.Create('Can not set log to ' + Param);
+end;
+
 function Log: TLogDispatcher;
 begin
   if FShutdowning then

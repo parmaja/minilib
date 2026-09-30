@@ -51,7 +51,7 @@ type
 
 const
   cTabSize = 4;
-  sDefaultOptions = [coUseSubnames, coInherite];
+  sDefaultOptions = [coInherite];
 
 type
 
@@ -93,7 +93,7 @@ type
     FIsComment: Boolean;
     FName: string;
   public
-    function FullString(Seperator: string = '='): String; virtual;
+    function FullString(Separator: string = '='): String; virtual;
     property IsComment: Boolean read FIsComment;
     property Name: string read FName write FName;
   end;
@@ -167,7 +167,7 @@ type
   private
     FAttributes: TStringList;
     FAutoRemove: Boolean;
-    FSeperator: string;
+    FSeparator: string;
     FDelimiter: Char;
     FParent: TConfSection;
     FSections: TConfSections;
@@ -190,7 +190,7 @@ type
     function RequireField(const vName: string): TConfField; //find it if not exists create it
     function Add(AName, AValue: string): TConfField; overload;
     function Replace(AName, AValue: string): TConfField; overload;
-    function AddItem(S: string; Seperator: string; TrimIt: Boolean = False; MergeIt: Boolean = False): TConfField; overload;
+    function AddItem(S: string; Separator: string; TrimIt: Boolean = False; MergeIt: Boolean = False): TConfField; overload;
     function AddComment(S: string): TConfField; overload;
     function Find(const vName: string): TConfField; virtual; //no exception
     function Exists(const vName: string): Boolean;
@@ -229,20 +229,22 @@ type
     function Clone(Parented: Boolean; SectionName: string = ''): TConfSection; overload;
 
     //collect all fields that have no name into one string //TODO with names
-    function Collect(Seperator: string): string; overload;
-    function Collect(SectionName: string; CollectSeperator: string): string; overload;
+    function Collect(Separator: string): string; overload;
+    function Collect(SectionName: string; CollectSeparator: string): string; overload;
 
     procedure WriteTo(Writer: TConfWriter; Level: Integer); virtual;
 
     //it will merge into it, You need to `clear` before load it
     procedure LoadFromStream(Stream: TStream; IgnoreComments: Boolean = False; MergeIt: Boolean = False);
     procedure LoadFromFile(const FileName: string; IgnoreComments: Boolean = False; MergeIt: Boolean = False);
+    procedure MergeFromFile(const FileName: string; IgnoreComments: Boolean = False);
+    procedure MergeArguments(KeyValues: TArray<string> = []);
     procedure SaveToStream(Stream: TStream);
     procedure SaveToFile(const FileName: string);
 
     //AutoRemove remove field if Value = '' when use Values or SetValues
     property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
-    property Seperator: string read FSeperator write FSeperator; //value
+    property Separator: string read FSeparator write FSeparator; //value
     property Delimiter: Char read FDelimiter write FDelimiter; //eol
     property AsString: string read GetAsString write SetAsString;
     property Require[const Index: string]: TConfField read RequireField;
@@ -311,7 +313,7 @@ end;
 function ParseArguments(KeyValues: TArray<string>): TConfFile;
 begin
   Result := TConfFile.Create;
-  MergeArguments(Result);
+  MergeArguments(Result, KeyValues);
 end;
 
 { TConfWriter }
@@ -361,19 +363,19 @@ end;
 
 { TConfField }
 
-function TConfField.FullString(Seperator: string): String;
+function TConfField.FullString(Separator: string): String;
 begin
   if Name = '' then
   begin
     if IsComment then
       Result := Value
-    else if Pos(Seperator, Value) > 0 then
+    else if Pos(Separator, Value) > 0 then
       Result := '"' + Value + '"'
     else
       Result := Value;
   end
   else
-    Result := Name + Seperator + Value;
+    Result := Name + Separator + Value;
 end;
 
 { TConfSection }
@@ -677,7 +679,7 @@ begin
   begin
     if Result <> '' then
       Result := Result + Delimiter;
-    Result := Result + Item.Name + Seperator + ' ' + Item.Value;
+    Result := Result + Item.Name + Separator + ' ' + Item.Value;
   end;
 end;
 
@@ -779,7 +781,7 @@ begin
   FAttributes := TStringList.Create;
   FAttributes.Delimiter := ',';
   FAttributes.StrictDelimiter := True;
-  Seperator := '=';
+  Separator := '=';
   Delimiter := #13;
   AutoRemove := False;
 end;
@@ -808,7 +810,8 @@ begin
     Result := Def;
 end;
 
-function TConfSection.ReadPath(AName, RelativeTo, Def: String; AOptions: TConfOptions): String;
+function TConfSection.ReadPath(AName: string; RelativeTo: string; Def: String;
+  AOptions: TConfOptions): String;
 begin
   Result := Self.ReadString(AName, Def, AOptions + [coInherite, coEmptyIsValue]);
   if (Result = '.') then
@@ -876,7 +879,7 @@ begin
     for Field in Self do
       if not Field.IsComment then
       begin
-        S := Field.FullString(Seperator);
+        S := Field.FullString(Separator);
         if AllowDuplicate or (AStrings.IndexOf(S) < 0) then
           AStrings.Add(S);
       end;
@@ -1023,7 +1026,7 @@ begin
   end;
 end;
 
-function TConfSection.Collect(Seperator: string): string;
+function TConfSection.Collect(Separator: string): string;
 var
   i: Integer;
 begin
@@ -1032,7 +1035,7 @@ begin
     for i := 0 to Count-1 do
     begin
       if Items[i].Name = '' then
-        Result := ConcatString(Result, Seperator, Items[i].Value)
+        Result := ConcatString(Result, Separator, Items[i].Value)
     end;
 end;
 
@@ -1055,7 +1058,8 @@ begin
   Add(Result);
 end;
 
-function TConfSection.AddItem(S: string; Seperator: string; TrimIt, MergeIt: Boolean): TConfField;
+function TConfSection.AddItem(S: string; Separator: string; TrimIt: Boolean;
+  MergeIt: Boolean): TConfField;
 var
   p: Integer;
   aName: string;
@@ -1069,7 +1073,7 @@ begin
   end
   else
   begin
-    p := Pos(Seperator, S);
+    p := Pos(Separator, S);
     if (p > 0) then
     begin
       aName := Trim(Copy(S, 1, P - 1));
@@ -1184,7 +1188,8 @@ begin
   end;
 end;
 
-procedure TConfSection.Merge(FromSection, ToSectionName: string; MergeOptions:TConfMergeOptions);
+procedure TConfSection.Merge(FromSection: string; ToSectionName: string;
+  MergeOptions: TConfMergeOptions);
 var
   aSection: TConfSection;
 begin
@@ -1216,7 +1221,7 @@ begin
     Result := TConfSection.Create(nil);
 end;
 
-function TConfSection.Collect(SectionName: string; CollectSeperator: string): string;
+function TConfSection.Collect(SectionName: string; CollectSeparator: string): string;
 var
   ASection: TConfSection;
 begin
@@ -1225,7 +1230,7 @@ begin
   else
     ASection := Sections.Find(SectionName);
   if (ASection <> nil) then
-    Result := ASection.Collect(CollectSeperator)
+    Result := ASection.Collect(CollectSeparator)
   else
     Result := '';
 end;
@@ -1237,7 +1242,7 @@ var
 begin
   for aField in Self do
   begin
-    Writer.WriteLine(aField.FullString(Seperator), Level);
+    Writer.WriteLine(aField.FullString(Separator), Level);
   end;
 
   for aSection in Sections do
@@ -1316,6 +1321,16 @@ begin
   end;
 end;
 
+procedure TConfSection.MergeFromFile(const FileName: string; IgnoreComments: Boolean);
+begin
+  LoadFromFile(FileName, IgnoreComments);
+end;
+
+procedure TConfSection.MergeArguments(KeyValues: TArray<string>);
+begin
+  mnConfigs.MergeArguments(Self, KeyValues);
+end;
+
 procedure TConfSection.SaveToStream(Stream: TStream);
 var
   aWriter: TConfWriter;
@@ -1354,7 +1369,7 @@ var
     vName := Trim(vName);
     vParams := '';
     vType := '';
-    i := Pos(':', vName);
+    i := Pos(Separator, vName);
     if i > 0 then
     begin
       vType := Trim(MidStr(vName, i + 1, MaxInt));
@@ -1418,7 +1433,7 @@ begin
         if CharInArray(l, cCommentChars) then
         begin
           if not IgnoreComments then
-            aValueSection.AddItem(Line, aCurrentSection.Seperator, True, MergeIt);
+            aValueSection.AddItem(Line, aCurrentSection.Separator, True, MergeIt);
         end
         else
         begin
@@ -1453,7 +1468,7 @@ begin
           else
           begin
             Line := ReplaceVariable(Line);
-            aValueSection.AddItem(Line, aCurrentSection.Seperator, True, MergeIt);
+            aValueSection.AddItem(Line, aCurrentSection.Separator, True, MergeIt);
           end
         end;
       end;
