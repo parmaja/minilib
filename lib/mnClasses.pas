@@ -120,7 +120,7 @@ type
     {$endif}
     function Peek(Index: Integer): _Object_;
 
-    procedure QuickSort; virtual;
+    procedure QuickSort; overload; virtual;
 
     function Last: _Object_;
     function First: _Object_;
