@@ -20,9 +20,9 @@ type
 
 { SHA-256 }
 procedure SHA256Init(var Context: Pointer);
-procedure SHA256Update(var Context: Pointer; const Data; DataLen: PtrUInt);
+procedure SHA256Update(var Context: Pointer; const Data; DataLen: UIntPtr);
 procedure SHA256Final(var Context: Pointer; var Digest: TSHA256Digest);
-function SHA256Buffer(const Buffer; BufLen: PtrUInt): TSHA256Digest;
+function SHA256Buffer(const Buffer; BufLen: UIntPtr): TSHA256Digest;
 function SHA256String(const S: UTF8String): TSHA256Digest;
 function SHA256Hex(const S: UTF8String): string;
 
@@ -117,11 +117,11 @@ begin
   Context := Ctx;
 end;
 
-procedure SHA256Update(var Context: Pointer; const Data; DataLen: PtrUInt);
+procedure SHA256Update(var Context: Pointer; const Data; DataLen: UIntPtr);
 var
   Ctx: PSHA256Context absolute Context;
   P: PByte;
-  CopyLen: PtrUInt;
+  CopyLen: UIntPtr;
 begin
   if Context = nil then Exit;
   P := @Data;
@@ -175,7 +175,7 @@ begin
   end;
 end;
 
-function SHA256Buffer(const Buffer; BufLen: PtrUInt): TSHA256Digest;
+function SHA256Buffer(const Buffer; BufLen: UIntPtr): TSHA256Digest;
 var
   Ctx: Pointer;
 begin
