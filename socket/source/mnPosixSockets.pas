@@ -401,7 +401,7 @@ begin
     aSize := SizeOf(aSockAddr.addr_in);
     //Initialize(aSockAddr);
     if getpeername(FHandle, aSockAddr.addr, aSize) = 0 then
-      Result := NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)
+      Result := NetAddrToStr(aSockAddr.addr_in.sin_addr)
     else
       Result := '';
   end;
@@ -437,7 +437,7 @@ begin
     aSize := SizeOf(aSockAddr.addr_in);
     //Initialize(aSockAddr);
     if GetSockName(FHandle, aSockAddr.addr, aSize) = 0 then
-      Result := NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)
+      Result := NetAddrToStr(aSockAddr.addr_in.sin_addr)
     else
       Result := '';
   end;
@@ -872,7 +872,7 @@ begin
         vSocket := TmnSocket.Create(aHandle, Options, skClient, StripHostBrackets(Address), aHostName, sfIPv6);
     end
     else
-      vSocket := TmnSocket.Create(aHandle, Options, skClient, NetAddrToStr(sockaddr_in(aAddr).sin_addr), aHostName);
+      vSocket := TmnSocket.Create(aHandle, Options, skClient, NetAddrToStr(aAddr.addr_in.sin_addr), aHostName);
   end
   else
     vSocket := nil;
