@@ -3016,16 +3016,19 @@ begin
   // 2. Find the starting byte index
   for i := 1 to Length(S) do
   begin
+    B := Byte(S[i]);
+    // A byte in $80..$BF continues the character before it, so it can be the
+    // second half of a slice but never the start of one - without this the
+    // search stops on the continuation byte of the character it just counted
+    if (B and $C0) = $80 then
+      Continue;
     if CurrentChar = StartChar then
     begin
       StartByte := i;
       Break;
     end;
 
-    B := Byte(S[i]);
-    // If it's NOT a continuation byte (10xxxxxx), it's a new character
-    if (B and $C0) <> $80 then
-      Inc(CurrentChar);
+    Inc(CurrentChar);
   end;
 
   // If StartChar was out of bounds, exit
