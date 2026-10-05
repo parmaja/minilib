@@ -199,10 +199,10 @@ type
   );
   TVarReplacesCallbackProc = procedure(Sender: Pointer; const Name: string; var Value: string);
 
-function VarReplace(S: string; List: TStrings; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
-function VarReplace(S: string; List: TStrings; VarOptions: TVarOptions; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []): string; overload;
-function VarEnvReplace(S: string; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
-function VarEnvReplace(S: string; VarOptions: TVarOptions; Prefix: string = '?'): string; overload;
+function VarReplace(const S: string; List: TStrings; const Prefix: string = '?'; const Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+function VarReplace(const S: string; List: TStrings; VarOptions: TVarOptions; const Prefix: string = '?'; const Suffix: String = ''; ExtraChar: TSysCharSet = []): string; overload;
+function VarEnvReplace(const S: string; const Prefix: string = '?'; const Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+function VarEnvReplace(const S: string; VarOptions: TVarOptions; const Prefix: string = '?'): string; overload;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -859,7 +859,7 @@ end;
 *  Use name values in strings
 *}
 
-function VarReplace(S: string; List: TStrings; Prefix: string; Suffix: String; ExtraChar: TSysCharSet; VarOptions: TVarOptions; Sender: Pointer; ReplacesCallbackProc: TVarReplacesCallbackProc): string;
+function VarReplace(const S: string; List: TStrings; const Prefix: string; const Suffix: String; ExtraChar: TSysCharSet; VarOptions: TVarOptions; Sender: Pointer; ReplacesCallbackProc: TVarReplacesCallbackProc): string;
 var
   Start: Integer;
   OpenStart: Integer;
@@ -955,17 +955,17 @@ begin
   AddIt(MaxInt);
 end;
 
-function VarReplace(S: string; List: TStrings; VarOptions: TVarOptions; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []): string; overload;
+function VarReplace(const S: string; List: TStrings; VarOptions: TVarOptions; const Prefix: string = '?'; const Suffix: String = ''; ExtraChar: TSysCharSet = []): string; overload;
 begin
   Result := VarReplace(S, List, Prefix, Suffix, ExtraChar, VarOptions, nil, nil);
 end;
 
-function VarEnvReplace(S: string; Prefix: string = '?'; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+function VarEnvReplace(const S: string; const Prefix: string = '?'; const Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
 begin
   Result := VarReplace(S, EnvironmentValues, Prefix, Suffix, ExtraChar, VarOptions, Sender, ReplacesCallbackProc);
 end;
 
-function VarEnvReplace(S: string; VarOptions: TVarOptions; Prefix: string = '?'): string; overload;
+function VarEnvReplace(const S: string; VarOptions: TVarOptions; const Prefix: string = '?'): string; overload;
 begin
   Result := VarReplace(S, EnvironmentValues, Prefix, '', [], VarOptions, nil, nil);
 end;
