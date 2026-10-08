@@ -729,22 +729,22 @@ begin
     begin
       try
         if (Socket <> nil) and (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated and Connected then
-          begin
-            try
-              aSocket := Accept;
-            except
-              aSocket := nil;
-            end;
-            if aSocket <> nil then
-            begin
-              UpdateChanged;
-              aSocket.Context := Context;
-            end;
-          end
-          else
-          begin
+        begin
+          try
+            aSocket := Accept;
+          except
             aSocket := nil;
           end;
+          if aSocket <> nil then
+          begin
+            UpdateChanged;
+            aSocket.Context := Context;
+          end;
+        end
+        else
+        begin
+          aSocket := nil;
+        end;
 
         {Enter; //todo remove it;
         try
@@ -753,7 +753,7 @@ begin
           Leave;
         end;}
 
-        //Yield;//todo test:
+        Yield;//todo test:
 
         if not Terminated then
         begin
