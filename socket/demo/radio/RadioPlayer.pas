@@ -247,6 +247,7 @@ type
     FBuffers: array[0..cOutHeaderCount - 1] of PAnsiChar;
     FWritten: array[0..cOutHeaderCount - 1] of Boolean;
     FFormat: TWaveFormatEx; //output PCM format
+    FMinFrame: Integer; //smallest complete MP3 frame in bytes
   protected
     procedure Execute; override;
     function WaitForReady: Boolean;
@@ -373,6 +374,7 @@ begin
     PostState(rpsError, 'Cannot find MP3 frames in the stream');
     Exit;
   end;
+  FMinFrame := aInfo.BlockSize + 4; //minimum bytes of a complete frame
   //source format: MPEG Layer-3
   FillChar(aMP3, SizeOf(aMP3), 0);
   aMP3.wfx.wFormatTag := WAVE_FORMAT_MPEGLAYER3;
@@ -486,25 +488,34 @@ end;
 
 procedure TRadioPlayThread.PlayPCM(ABuf: PAnsiChar; ALen: Integer);
 var
-  i: Integer;
+  i, n, aFree: Integer;
+  p: PAnsiChar;
 begin
-  if (ALen <= 0) or (FWaveOut = 0) then
-    Exit;
-  while not Terminated do
+  p := ABuf;
+  while (ALen > 0) and (FWaveOut <> 0) and not Terminated do
   begin
+    aFree := -1;
     for i := 0 to cOutHeaderCount - 1 do
-    begin
       if (not FWritten[i]) or ((FHeaders[i].dwFlags and WHDR_DONE) <> 0) then
       begin
-        Move(ABuf^, FBuffers[i]^, ALen);
-        FHeaders[i].dwBufferLength := ALen;
-        if waveOutWrite(FWaveOut, @FHeaders[i], SizeOf(TWaveHdr)) <> MMSYSERR_NOERROR then
-          raise Exception.Create('waveOutWrite failed');
-        FWritten[i] := True;
-        Exit;
+        aFree := i;
+        Break;
       end;
+    if aFree < 0 then
+    begin
+      Sleep(10); //all buffers queued, wait the device to consume
+      Continue;
     end;
-    Sleep(10); //all buffers queued, wait the device to consume
+    n := ALen;
+    if n > cOutHeaderSize then
+      n := cOutHeaderSize;
+    Move(p^, FBuffers[aFree]^, n);
+    FHeaders[aFree].dwBufferLength := n;
+    if waveOutWrite(FWaveOut, @FHeaders[aFree], SizeOf(TWaveHdr)) <> MMSYSERR_NOERROR then
+      raise Exception.Create('waveOutWrite failed');
+    FWritten[aFree] := True;
+    Inc(p, n);
+    Dec(ALen, n);
   end;
 end;
 
@@ -545,7 +556,8 @@ begin
   if (Used = 0) and (Produced = 0) then
   begin
     Inc(FNoProgress);
-    if FNoProgress > 100 then
+    Sleep(10); //decoder buffered it, or it is a stall, avoid a tight loop
+    if FNoProgress > 200 then
       raise Exception.Create('MP3 decoder is not consuming the stream');
   end
   else
@@ -573,6 +585,11 @@ begin
     else if FInSize = 0 then
     begin
       Sleep(15); //wait for the network
+      Continue;
+    end;
+    if FInSize < FMinFrame then
+    begin
+      Sleep(15); //not even one complete frame buffered yet
       Continue;
     end;
     ConvertRound;
@@ -757,8 +774,9 @@ begin
   end;
   if aWave <> 0 then
   begin
-    aVol := (DWORD(FVolume) * $FFFF) div 100;
-    waveOutSetVolume(HWAVEOUT(aWave), MakeLong(Word(aVol), Word(aVol)));
+    aVol := DWORD(FVolume) * $FFFF div 100;
+    aVol := (aVol shl 16) or aVol;   // left channel in high word, right in low word
+    waveOutSetVolume(HWAVEOUT(aWave), aVol);
   end;
 end;
 
