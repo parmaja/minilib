@@ -382,7 +382,7 @@ begin
   if FFamily = sfIPv6 then
   begin
     aSize := SizeOf(aAddr6);
-    Initialize(aAddr6);
+    aAddr6 := Default(TMnSockAddrIn6);
     aText[0] := #0;
     if MnGetSockName(FHandle, aAddr6, aSize) = 0 then
     begin

@@ -55,7 +55,7 @@ type
     FPort: string;
     FPath: string;
     FProtocol: string;
-    FSSL: Boolean;
+    FIsSecure: Boolean;
     FUseMetaData: Boolean;
     FUseMeta: Boolean;
     FMetaInterval: Integer;
@@ -324,7 +324,7 @@ begin
   FReadTimeout := AClient.ReadTimeout;
   FUseMetaData := AClient.UseMetaData;
   IceCastParseURL(AClient.URL, FProtocol, FAddress, FPort, FPath);
-  FSSL := SameText(FProtocol, 'https') or SameText(FProtocol, 'wss');
+  FIsSecure := SameText(FProtocol, 'https') or SameText(FProtocol, 'wss');
 end;
 
 destructor TmnIceCastConnection.Destroy;
@@ -615,7 +615,7 @@ begin
   vRedirects := 0;
   try
     repeat
-      if FSSL then
+      if FIsSecure then
         FStream.Options := FStream.Options + [soSSL]
       else
         FStream.Options := FStream.Options - [soSSL];
@@ -635,7 +635,7 @@ begin
         FStream.ResetSocket;
         aLocation := ResolveURL(FProtocol, FAddress, FPort, FPath, aLocation);
         IceCastParseURL(aLocation, FProtocol, FAddress, FPort, FPath);
-        FSSL := SameText(FProtocol, 'https') or SameText(FProtocol, 'wss');
+        FIsSecure := SameText(FProtocol, 'https') or SameText(FProtocol, 'wss');
         FStream.Address := FAddress;
         FStream.Port := FPort;
       end

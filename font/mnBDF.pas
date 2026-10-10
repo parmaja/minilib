@@ -92,13 +92,13 @@ begin
   p := 1;
   n := 0;
   // skip leading whitespace
-  while (p <= Length(Line)) and (Line[p] in [' ', #9]) do
+  while (p <= Length(Line)) and CharInSet(Line[p], [' ', #9]) do
     Inc(p);
   StartPos := p;
   while p <= Length(Line) do
   begin
     ch := Line[p];
-    if ch in [' ', #9] then
+    if CharInSet(ch, [' ', #9]) then
     begin
       if n = Index then
       begin
@@ -107,7 +107,7 @@ begin
       end;
       Inc(n);
       // skip whitespace
-      while (p <= Length(Line)) and (Line[p] in [' ', #9]) do
+      while (p <= Length(Line)) and CharInSet(Line[p], [' ', #9]) do
         Inc(p);
       StartPos := p;
     end

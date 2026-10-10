@@ -774,7 +774,6 @@ constructor TmnThread.Create;
 begin
   inherited Create(True);
   FreeOnTerminate := False;
-
 end;
 
 procedure TmnThread.Execute;

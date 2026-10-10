@@ -1199,7 +1199,6 @@ var
 begin
   x509 := nil;
   pkey := nil;
-  Result := False;
   try
     if not SelfSignedCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days) then
       exit(False);
@@ -1239,7 +1238,7 @@ begin
         end;
       finally
         X509_REQ_free(xx);
-        xx := nil;
+//        xx := nil;
       end;
     end;
 
