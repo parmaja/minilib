@@ -99,7 +99,7 @@ type
     FKind: TSocketKind;
     FHostAddress: string;
 		FHostName: string;
-    FBacklog: Integer;
+    FPoolSize: Integer;
     function GetConnected: Boolean;
   protected
     FStates: TmnSocketStates;
@@ -152,7 +152,7 @@ type
 
     property HostAddress: string read FHostAddress;
 		property HostName: string read FHostName;
-    property Backlog: Integer read FBacklog write FBacklog default 512;
+    property PoolSize: Integer read FPoolSize write FPoolSize default 512;
     property Family: TSocketFamily read FFamily;
   end;
 
@@ -342,7 +342,7 @@ begin
   FHostName := AHostName;
   FHostAddress := AHostAddress;
   FFamily := AFamily;
-  FBacklog := 512;
+  FPoolSize := 512;
 end;
 
 destructor TmnCustomSocket.Destroy;

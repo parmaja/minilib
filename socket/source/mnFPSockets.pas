@@ -175,7 +175,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := fplisten(FHandle, Backlog);
+  c := fplisten(FHandle, PoolSize);
   if c = SOCKET_ERROR then
     Result := erInvalid
   else

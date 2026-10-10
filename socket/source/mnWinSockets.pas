@@ -237,7 +237,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := WinSock2.listen(FHandle, Backlog);
+  c := WinSock2.listen(FHandle, PoolSize);
   if c = SOCKET_ERROR then
     Result := erInvalid
   else
