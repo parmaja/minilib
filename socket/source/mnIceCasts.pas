@@ -28,6 +28,7 @@ type
     icConnecting, //trying to connect to the server
     icOpening, //connected, sending request and reading headers
     icReady, //streaming audio into Buffer
+    icReconnecting, //connection failed or dropped, waiting before the next attempt
     icError
   );
 
@@ -76,6 +77,9 @@ type
     FChunked: Boolean;
     FChunkRemain: Int64;
     FBodyEnded: Boolean;
+    FMaxAttempts: Integer;
+    FReconnectDelay: Integer;
+    FAttempts: Integer;
     procedure SetState(AState: TmnIceCastState; const AMessage: string = '');
     procedure SetTitle(const ATitle: string);
     procedure SendRequest;
@@ -84,7 +88,10 @@ type
     procedure ReadMeta;
     procedure ParseMeta(const AMeta: AnsiString);
     procedure StreamAudio(AChunk: Integer);
-    procedure StopByEnd;
+    procedure StreamLost;
+    function TryConnect: Boolean;
+    function ConnectWithRetries: Boolean;
+    function WaitReconnect: Boolean;
     procedure HandleError(E: Exception);
     function GetHeader(const AName: string): string;
   protected
@@ -106,6 +113,8 @@ type
     FConnection: TmnIceCastConnection;
     FUseMetaData: Boolean;
     FReadTimeout: Integer;
+    FMaxAttempts: Integer;
+    FReconnectDelay: Integer;
     FOnStateChanged: TmnIceCastNotify;
     FOnTitleChanged: TmnIceCastNotify;
     FURL: string;
@@ -154,6 +163,10 @@ type
     //if the server announce Icy-MetaData, default True
     property UseMetaData: Boolean read FUseMetaData write FUseMetaData;
     property ReadTimeout: Integer read FReadTimeout write FReadTimeout;
+    //how many times we try to (re)connect before giving up, default 5
+    property MaxAttempts: Integer read FMaxAttempts write FMaxAttempts;
+    //milliseconds to wait between connect attempts, default 1000
+    property ReconnectDelay: Integer read FReconnectDelay write FReconnectDelay;
     //Fired in main thread
     property OnStateChanged: TmnIceCastNotify read FOnStateChanged write SetOnStateChanged;
     property OnTitleChanged: TmnIceCastNotify read FOnTitleChanged write SetOnTitleChanged;
@@ -323,6 +336,8 @@ begin
   FState := icStopped;
   FReadTimeout := AClient.ReadTimeout;
   FUseMetaData := AClient.UseMetaData;
+  FMaxAttempts := AClient.MaxAttempts;
+  FReconnectDelay := AClient.ReconnectDelay;
   IceCastParseURL(AClient.URL, FProtocol, FAddress, FPort, FPath);
   FIsSecure := SameText(FProtocol, 'https') or SameText(FProtocol, 'wss');
 end;
@@ -337,7 +352,11 @@ end;
 
 function TmnIceCastConnection.GetConnected: Boolean;
 begin
-  Result := (FStream <> nil) and FStream.Connected;
+  //Keep the worker loop alive while we still intend to (re)connect, so a lost
+  //connection can be retried instead of ending the stream. The loop stops when
+  //the client is terminated, the stream is stopped or all attempts failed.
+  Result := (not Terminated) and
+    (FState in [icConnecting, icOpening, icReady, icReconnecting]);
 end;
 
 procedure TmnIceCastConnection.SetState(AState: TmnIceCastState; const AMessage: string);
@@ -352,7 +371,7 @@ begin
   finally
     FClient.Lock.Leave;
   end;
-  if (AState = icError) or (AState = icReady) or (AState = icStopped) then
+  if (AState = icError) or (AState = icReady) or (AState = icReconnecting) or (AState = icStopped) then
     Queue(FClient.PostStateChanged);
 end;
 
@@ -498,7 +517,7 @@ begin
   r := ReadBody(b, 1);
   if r <= 0 then
   begin
-    StopByEnd;
+    StreamLost;
     Exit;
   end;
   n := Integer(b) * 16;
@@ -545,73 +564,71 @@ begin
       Dec(FBytesToMeta, r);
   end
   else
-    StopByEnd;
+    StreamLost;
 end;
 
-procedure TmnIceCastConnection.StopByEnd;
+procedure TmnIceCastConnection.StreamLost;
 begin
-  FClient.Lock.Enter;
-  try
-    FStreamEnded := True;
-  finally
-    FClient.Lock.Leave;
-  end;
-  SetState(icStopped);
+  //The stream ended or the connection dropped. Do not stop: mark that a
+  //reconnect is needed and release the socket so it can be connected again.
   if FStream <> nil then
-    FStream.Disconnect;
+    FStream.ResetSocket;
+  SetState(icReconnecting);
 end;
 
-procedure TmnIceCastConnection.HandleError(E: Exception);
-begin
-  if E is EmnStreamExceptionAbort then
-    Exit;
-  SetState(icError, E.Message);
-  if FStream <> nil then
-    FStream.Disconnect;
-end;
-
-procedure TmnIceCastConnection.CloseStream;
+function TmnIceCastConnection.WaitReconnect: Boolean;
 var
-  aStream: TmnIceCastSocket;
+  aWaited: Integer;
 begin
-  Terminate;
-  FClient.Lock.Enter;
-  try
-    if FState = icReady then
-      FState := icStopped;
-    FStreamEnded := False;
-    aStream := FStream;
-  finally
-    FClient.Lock.Leave;
+  //Sleep in small slices so a Close from another thread stays responsive.
+  aWaited := 0;
+  while (aWaited < FReconnectDelay) and (not Terminated) do
+  begin
+    TThread.Sleep(100);
+    Inc(aWaited, 100);
   end;
-  if aStream <> nil then
-    aStream.Disconnect;
+  Result := not Terminated;
 end;
 
-procedure TmnIceCastConnection.Prepare;
+function TmnIceCastConnection.ConnectWithRetries: Boolean;
+var
+  vMax: Integer;
+begin
+  Result := False;
+  FAttempts := 0;
+  vMax := FMaxAttempts;
+  if vMax < 1 then
+    vMax := 1;
+  while not Terminated do
+  begin
+    Inc(FAttempts);
+    if TryConnect then
+    begin
+      Result := True;
+      Exit;
+    end;
+    if Terminated or (FAttempts >= vMax) then
+      Exit;
+    SetState(icReconnecting, FError);
+    if not WaitReconnect then
+      Exit;
+  end;
+end;
+
+function TmnIceCastConnection.TryConnect: Boolean;
 var
   vRedirects: Integer;
   aLocation: string;
 begin
+  Result := False;
   FCode := 0;
-  FError := '';
-  FStreamEnded := False;
-  FTitle := '';
-  FUseMeta := False;
-  FMetaInterval := 0;
-  FBytesToMeta := 0;
   FConnectedTo := '';
   FChunked := False;
   FChunkRemain := 0;
   FBodyEnded := False;
-  FStream := TmnIceCastSocket.Create;
-  FStream.EndOfLine := sWinEndOfLine;
-  FStream.ReadTimeout := FReadTimeout;
-  FStream.ConnectTimeout := 10000;
-  FStream.WriteTimeout := 5000;
-  FStream.Options := FStream.Options + [soWaitBeforeRead];
-  FStream.Address := FAddress;
-  FStream.Port := FPort;
+  FUseMeta := False;
+  FMetaInterval := 0;
+  FBytesToMeta := 0;
   vRedirects := 0;
   try
     repeat
@@ -648,10 +665,80 @@ begin
     FUseMeta := FUseMetaData and (FMetaInterval > 0);
     FBytesToMeta := FMetaInterval;
     SetState(icReady);
+    Result := True;
   except
     on E: Exception do
-      HandleError(E);
+    begin
+      if E is EmnStreamExceptionAbort then
+        Exit;
+      FClient.Lock.Enter;
+      try
+        FError := E.Message;
+      finally
+        FClient.Lock.Leave;
+      end;
+      if FStream <> nil then
+        FStream.ResetSocket; //release the socket so the next attempt can connect
+    end;
   end;
+end;
+
+procedure TmnIceCastConnection.HandleError(E: Exception);
+begin
+  if E is EmnStreamExceptionAbort then
+    Exit;
+  FClient.Lock.Enter;
+  try
+    FError := E.Message;
+  finally
+    FClient.Lock.Leave;
+  end;
+  StreamLost;
+end;
+
+procedure TmnIceCastConnection.CloseStream;
+var
+  aStream: TmnIceCastSocket;
+begin
+  Terminate;
+  FClient.Lock.Enter;
+  try
+    if FState = icReady then
+      FState := icStopped;
+    FStreamEnded := False;
+    aStream := FStream;
+  finally
+    FClient.Lock.Leave;
+  end;
+  if aStream <> nil then
+    aStream.Disconnect;
+end;
+
+procedure TmnIceCastConnection.Prepare;
+begin
+  FCode := 0;
+  FError := '';
+  FStreamEnded := False;
+  FTitle := '';
+  FUseMeta := False;
+  FMetaInterval := 0;
+  FBytesToMeta := 0;
+  FConnectedTo := '';
+  FChunked := False;
+  FChunkRemain := 0;
+  FBodyEnded := False;
+  FAttempts := 0;
+  FStream := TmnIceCastSocket.Create;
+  FStream.EndOfLine := sWinEndOfLine;
+  FStream.ReadTimeout := FReadTimeout;
+  FStream.ConnectTimeout := 10000;
+  FStream.WriteTimeout := 5000;
+  FStream.Options := FStream.Options + [soWaitBeforeRead];
+  FStream.Address := FAddress;
+  FStream.Port := FPort;
+  //Try to connect, retrying MaxAttempts times before reporting an error.
+  if (not ConnectWithRetries) and (not Terminated) then
+    SetState(icError, FError);
 end;
 
 procedure TmnIceCastConnection.Process;
@@ -659,6 +746,17 @@ var
   vChunk: Integer;
 begin
   try
+    //A previous read failed or the stream dropped: try to reconnect instead of
+    //ending playback. Only when every attempt fails we move to icError.
+    if FState <> icReady then
+    begin
+      if not ConnectWithRetries then
+      begin
+        if not Terminated then
+          SetState(icError, FError);
+        Exit;
+      end;
+    end;
     if FState = icReady then
     begin
       if FUseMeta and (FBytesToMeta <= 0) then
@@ -670,7 +768,9 @@ begin
         else
           vChunk := cIceCastReadChunk;
         StreamAudio(vChunk);
-      end;
+      end
+      else
+        StreamLost;
     end;
   except
     on E: Exception do
@@ -713,6 +813,8 @@ begin
   FLock := TCriticalSection.Create;
   FUseMetaData := True;
   FReadTimeout := 10000;
+  FMaxAttempts := 5;
+  FReconnectDelay := 1000;
 end;
 
 destructor TmnIceCastClient.Destroy;
