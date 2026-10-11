@@ -138,7 +138,6 @@ type
     procedure SetDefaultDoc(const Value: TStringList);
   protected
     function DoCreateListener: TmnListener; override;
-    function CreateListener: TmnListener; override;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -266,6 +265,7 @@ begin
   FDefaultDocument.Add('index.htm');
   FDefaultDocument.Add('default.html');
   FDefaultDocument.Add('default.htm');
+  ReuseAddress := True;
 end;
 
 destructor TmnHttpServer.Destroy;
@@ -470,17 +470,15 @@ begin
 end;
 
 function TmnHttpServer.DoCreateListener: TmnListener;
+var
+  aListener: TmnHttpListener;
 begin
-  Result := TmnHttpListener.Create;
-  Result.Options := Result.Options + [soReuseAddr];
-end;
+  aListener := TmnHttpListener.Create;
+  aListener.Config := Config;
+  aListener.DefaultDocument.Assign(FDefaultDocument);
+  aListener.FConfig.DocumentRoot := ExcludeTrailingPathDelimiter(TmnHttpListener(Result).Config.DocumentRoot);
 
-function TmnHttpServer.CreateListener: TmnListener;
-begin
-  Result := inherited CreateListener;
-  TmnHttpListener(Result).Config := Config;
-  TmnHttpListener(Result).DefaultDocument.Assign(FDefaultDocument);
-  TmnHttpListener(Result).FConfig.DocumentRoot := ExcludeTrailingPathDelimiter(TmnHttpListener(Result).Config.DocumentRoot);
+  Result := aListener;
 end;
 
 procedure EnumDirList(const Path: string; Strings: TStrings);

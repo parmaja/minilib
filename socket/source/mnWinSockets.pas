@@ -44,6 +44,7 @@ type
     function DoListen: TmnError; override;
     function DoClose: TmnError; override;
     function DoPending: Boolean; override;
+    function DefaultPoolSize: Integer; override;
   public
     function GetRemoteAddress: string; override;
     function GetRemoteName: string; override;
@@ -170,6 +171,14 @@ var
   aErr: Integer;
 begin
   Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check, aErr);
+end;
+
+function TmnSocket.DefaultPoolSize: Integer;
+begin
+  if PoolSize=0 then
+    Result := SOMAXCONN
+  else
+    Result := PoolSize;
 end;
 
 function TmnSocket.DoClose: TmnError;

@@ -101,6 +101,8 @@ type
 		FHostName: string;
     FPoolSize: Integer;
     function GetConnected: Boolean;
+    function GetPoolSize: Integer;
+    procedure SetPoolSize(const Value: Integer);
   protected
     FStates: TmnSocketStates;
     FHandle: TSocketHandle; //following OpenSSL handle of socket
@@ -120,6 +122,7 @@ type
     function DoPeek(var Buffer; var Count: Longint): TmnError; virtual; abstract;
     function DoPending: Boolean; virtual; abstract;
     function DoClose: TmnError; virtual; abstract;
+    function DefaultPoolSize: Integer; virtual;
     property Kind: TSocketKind read FKind;
     property States: TmnSocketStates read FStates;
   public
@@ -152,7 +155,7 @@ type
 
     property HostAddress: string read FHostAddress;
 		property HostName: string read FHostName;
-    property PoolSize: Integer read FPoolSize write FPoolSize default 512;
+    property PoolSize: Integer read GetPoolSize write SetPoolSize;
     property Family: TSocketFamily read FFamily;
   end;
 
@@ -342,7 +345,12 @@ begin
   FHostName := AHostName;
   FHostAddress := AHostAddress;
   FFamily := AFamily;
-  FPoolSize := 512;
+  FPoolSize := 0;
+end;
+
+function TmnCustomSocket.DefaultPoolSize: Integer;
+begin
+  Result := 0;
 end;
 
 destructor TmnCustomSocket.Destroy;
@@ -406,6 +414,15 @@ end;
 function TmnCustomSocket.GetConnected: Boolean;
 begin
   Result := Active and not (sdClose in FStates);
+end;
+
+function TmnCustomSocket.GetPoolSize: Integer;
+begin
+  Result := FPoolSize;
+  if Result=0 then
+    Result := DefaultPoolSize;
+  if Result=0 then
+    Result := 512;
 end;
 
 function TmnCustomSocket.Listen: TmnError;
@@ -518,6 +535,11 @@ begin
     else if (Result = erTimeout) and (Count = 0) then
       Count := -1; //Timeout result -1
   end;
+end;
+
+procedure TmnCustomSocket.SetPoolSize(const Value: Integer);
+begin
+  FPoolSize := Value;
 end;
 
 function TmnCustomSocket.Shutdown(How: TmnSocketStates): TmnError;

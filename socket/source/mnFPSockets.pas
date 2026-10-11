@@ -40,6 +40,7 @@ type
     function DoListen: TmnError; override;
     function DoClose: TmnError; override;
     function DoPending: Boolean; override;
+    function DefaultPoolSize: Integer; override;
   public
     function GetRemoteAddress: string; override;
     function GetRemoteName: string; override;
@@ -112,6 +113,11 @@ end;
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
   Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
+end;
+
+function TmnSocket.DefaultPoolSize: Integer;
+begin
+  Result := 4096;
 end;
 
 function TmnSocket.DoClose: TmnError;

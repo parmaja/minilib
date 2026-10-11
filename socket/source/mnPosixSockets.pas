@@ -47,6 +47,8 @@ type
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
     function DoClose: TmnError; override;
     function DoPending: Boolean; override;
+    function DefaultPoolSize: Integer; override;
+
   public
     function GetRemoteAddress: string; override;
     function GetRemoteName: string; override;
@@ -218,6 +220,11 @@ end;
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
   Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
+end;
+
+function TmnSocket.DefaultPoolSize: Integer;
+begin
+  Result := 4096;
 end;
 
 function TmnSocket.DoClose: TmnError;
@@ -616,6 +623,7 @@ begin
   begin
     vErr := InitSocketOptions(aHandle, Options, ReadTimeout);
 
+    // soReuseAddr Allow the port to be reused immediately after the process exits
     if soReuseAddr in Options then
       vErr := setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, SO_TRUE, SizeOf(SO_TRUE));
 

@@ -194,6 +194,7 @@ type
     FIdleTick: UInt64;
     FIdleInterval: Int64;
     FPrepared: Boolean;
+    FReuseAddress: Boolean;
     procedure SetActive(const Value: Boolean);
     procedure SetBind(const Value: string);
     procedure SetName(AValue: string);
@@ -205,7 +206,7 @@ type
     IsDestroying: Boolean;
     IsStopping: Boolean;
     function DoCreateListener: TmnListener; virtual;
-    function CreateListener: TmnListener; virtual;
+    function CreateListener: TmnListener;
     procedure DoPrepare; virtual;
     procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
@@ -247,6 +248,7 @@ type
     property Count: Integer read GetCount;
 
     property IsSecure: Boolean read FIsSecure write FIsSecure;
+    property ReuseAddress: Boolean read FReuseAddress write FReuseAddress;
     //You set port to '0' to get random port from system
     property Port: string read FPort write SetPort;
     //The used port if you set port to '0'
@@ -627,8 +629,8 @@ begin
   inherited Create;
   FEvent := TEvent.Create(nil, False, False, '');
   FreeOnTerminate := False;
-  FLogMessages := TLockStringList.Create;
-  FTimeout := cListenerTimeout;
+  FLogMessages    := TLockStringList.Create;
+  FTimeout        := cListenerTimeout;
 end;
 
 function TmnListener.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
@@ -710,6 +712,7 @@ var
   aSocket: TmnCustomSocket;
   s: string;
   aConnection: TmnServerConnection;
+  err: TmnError;
 begin
   inherited;
   try
@@ -728,7 +731,12 @@ begin
     while Connected and not Terminated do
     begin
       try
-        if (Socket <> nil) and (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated and Connected then
+        //if (Socket <> nil) and (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated and Connected then
+        err := Socket.Select(Timeout, slRead);
+        if Terminated or not Connected then
+          Break;
+
+        if (err = erSuccess) then
         begin
           try
             aSocket := Accept;
@@ -739,21 +747,12 @@ begin
           begin
             UpdateChanged;
             aSocket.Context := Context;
-          end;
+          end
         end
         else
         begin
           aSocket := nil;
         end;
-
-        {Enter; //todo remove it;
-        try
-          //Just a stop to finish some procedures outside, or make terminated get new value before continue
-        finally
-          Leave;
-        end;}
-
-        Yield;//todo test:
 
         if not Terminated then
         begin
@@ -784,6 +783,14 @@ begin
         end;
       finally
       end;
+
+      //Yield;//todo test: sleep(1) keep threads breathings better than yield
+      //if (Random(100) mod 3) = 0 then
+      //SleepMS(10);
+      {$IFNDEF FPC}
+      YieldProcessor;
+      {$endif}
+
     end;
     DropConnections;
     Enter;
@@ -957,6 +964,8 @@ begin
   //PrivateKeyFile := 'privatekey.pem';
   IdleInterval := cIdleInterval;
   FIdleTick := 0;
+  FIsSecure := False;
+  FReuseAddress := False;
 end;
 
 procedure TmnServer.BeforeDestruction;
@@ -1023,6 +1032,8 @@ begin
       FListener.FServer := Self;
       FListener.FPort := FPort;
       FListener.FAddress := FBind;
+      if ReuseAddress then
+        FListener.FOptions := FListener.FOptions + [soReuseAddr];
       if IsSecure then
         FListener.FOptions := FListener.FOptions + [soSSL, soWaitBeforeRead];
       FListener.CertificateFile := CertificateFile;
