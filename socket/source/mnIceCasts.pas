@@ -205,14 +205,34 @@ begin
     vParams := Copy(aRest, i, MaxInt);
     aRest := Copy(aRest, 1, i - 1);
   end;
-  i := Pos(':', aRest);
-  if i > 0 then
+  //Handle IPv6 addresses in brackets: [::1]:8000
+  if (Length(aRest) > 0) and (aRest[1] = '[') then
   begin
-    vHost := Copy(aRest, 1, i - 1);
-    vPort := Copy(aRest, i + 1, MaxInt);
+    i := Pos(']', aRest);
+    if i > 0 then
+    begin
+      vHost := Copy(aRest, 1, i); //includes brackets
+      aRest := Copy(aRest, i + 1, MaxInt);
+      if (Length(aRest) > 0) and (aRest[1] = ':') then
+      begin
+        vPort := Copy(aRest, 2, MaxInt);
+        aRest := '';
+      end;
+    end
+    else
+      vHost := aRest;
   end
   else
-    vHost := aRest;
+  begin
+    i := Pos(':', aRest);
+    if i > 0 then
+    begin
+      vHost := Copy(aRest, 1, i - 1);
+      vPort := Copy(aRest, i + 1, MaxInt);
+    end
+    else
+      vHost := aRest;
+  end;
   if vPort = '' then
   begin
     if SameText(vProtocol, 'https') then
@@ -233,9 +253,9 @@ begin
     Exit
   else if Pos('://', ALocation) > 0 then
     Result := ALocation
-  else if (Length(ALocation) > 2) and (ALocation[1] = '/') and (ALocation[2] = '/') then
+  else if (Length(ALocation) >= 2) and (ALocation[1] = '/') and (ALocation[2] = '/') then
     Result := AProtocol + ':' + ALocation //protocol-relative
-  else if ALocation[1] = '/' then
+  else if (Length(ALocation) > 0) and (ALocation[1] = '/') then
     Result := AProtocol + '://' + AHost + ':' + APort + ALocation //host-relative
   else
   begin //path-relative
@@ -276,6 +296,7 @@ function ExtractMetaValue(const AMeta, AName: string): string;
 var
   i, j, n: Integer;
   aKey, aValue: string;
+  aQuote: Char;
 begin
   Result := '';
   i := 1;
@@ -295,15 +316,28 @@ begin
       aKey := Trim(Copy(AMeta, i, j - i));
       i := j + 1;
       aValue := '';
-      while (i <= n) and (AMeta[i] <> ';') do
+      //Handle quoted values that may contain semicolons
+      if (i <= n) and ((AMeta[i] = '''') or (AMeta[i] = '"')) then
       begin
-        aValue := aValue + AMeta[i];
+        aQuote := AMeta[i];
         Inc(i);
+        while (i <= n) and (AMeta[i] <> aQuote) do
+        begin
+          aValue := aValue + AMeta[i];
+          Inc(i);
+        end;
+        if i <= n then
+          Inc(i); //skip closing quote
+      end
+      else
+      begin
+        while (i <= n) and (AMeta[i] <> ';') do
+        begin
+          aValue := aValue + AMeta[i];
+          Inc(i);
+        end;
       end;
       aValue := Trim(aValue);
-      if Length(aValue) >= 2 then
-        if ((aValue[1] = '''') or (aValue[1] = '"')) and (aValue[Length(aValue)] = aValue[1]) then
-          aValue := Copy(aValue, 2, Length(aValue) - 2);
       if SameText(aKey, AName) then
       begin
         Result := aValue;
@@ -469,7 +503,8 @@ end;
 function TmnIceCastConnection.ReadBody(var Buffer; Count: Longint): Longint;
 var
   p: PByte;
-  r, c: Longint;
+  r: Longint;
+  c: Int64;
   s: AnsiString;
 begin
   Result := 0;
@@ -498,7 +533,10 @@ begin
     c := Count;
     if FChunkRemain < c then
       c := FChunkRemain;
-    r := FStream.Read(p^, c);
+    //Clamp to Longint to avoid truncation on 32-bit platforms
+    if c > High(Longint) then
+      c := High(Longint);
+    r := FStream.Read(p^, Longint(c));
     if r <= 0 then
       Break;
     Inc(p, r);
@@ -529,7 +567,15 @@ begin
     SetLength(aMeta, n);
     r := ReadBody(PAnsiChar(aMeta)^, n);
     if r < n then
+    begin
+      //Truncated read — stream is misaligned, do not reset FBytesToMeta
+      //so the next read attempts to resync at the same position.
       SetLength(aMeta, r);
+      if Length(aMeta) > 0 then
+        ParseMeta(aMeta);
+      StreamLost;
+      Exit;
+    end;
     if Length(aMeta) > 0 then
       ParseMeta(aMeta);
   end;
@@ -564,7 +610,12 @@ begin
       FClient.Lock.Leave;
     end;
     if FUseMeta then
+    begin
       Dec(FBytesToMeta, r);
+      //Clamp to zero so Process can detect metadata boundary correctly
+      if FBytesToMeta < 0 then
+        FBytesToMeta := 0;
+    end;
   end
   else
     StreamLost;
@@ -700,6 +751,8 @@ begin
       finally
         FClient.Lock.Leave;
       end;
+      //Restore FUseMeta on failure so the next attempt starts clean
+      FUseMeta := False;
       if FStream <> nil then
         FStream.ResetSocket; //release the socket so the next attempt can connect
     end;
@@ -730,9 +783,13 @@ begin
       FState := icStopped;
     FStreamEnded := False;
     aStream := FStream;
+    //Detach from FStream so the worker thread doesn't touch it after we leave the lock
+    if aStream <> nil then
+      FStream := nil;
   finally
     FClient.Lock.Leave;
   end;
+  //Disconnect outside the lock but only after the worker thread can no longer access it
   if aStream <> nil then
     aStream.Disconnect;
 end;
@@ -793,16 +850,14 @@ begin
     //At this point we are connected — read stream data.
     if FUseMeta and (FBytesToMeta <= 0) then
       ReadMeta;
-    if FStream.Connected then
-    begin
-      if FUseMeta and (FBytesToMeta > 0) and (FBytesToMeta < cIceCastReadChunk) then
-        vChunk := FBytesToMeta
-      else
-        vChunk := cIceCastReadChunk;
-      StreamAudio(vChunk);
-    end
+    //Read regardless of FStream.Connected — ReadBody will return 0 if the
+    //connection dropped, which triggers StreamLost. The Connected check is
+    //unreliable because the connection can drop between the check and the read.
+    if FUseMeta and (FBytesToMeta > 0) and (FBytesToMeta < cIceCastReadChunk) then
+      vChunk := FBytesToMeta
     else
-      StreamLost;
+      vChunk := cIceCastReadChunk;
+    StreamAudio(vChunk);
   except
     on E: Exception do
       HandleError(E);
@@ -827,7 +882,10 @@ begin
   FClient.Lock.Enter;
   try
     aState := FState;
-    if aState = icReady then
+    //Mark stream as ended if we were in any active or reconnecting state,
+    //not just icReady. This ensures GetStreamEnded returns True when the
+    //stream stops while reconnecting.
+    if aState in [icReady, icReconnecting, icConnecting, icOpening] then
       FStreamEnded := True;
   finally
     FClient.Lock.Leave;
