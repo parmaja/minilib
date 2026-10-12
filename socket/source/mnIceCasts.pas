@@ -336,7 +336,11 @@ begin
   FBuffer := TMemoryStream.Create;
   FScratch := TMemoryStream.Create;
   FHeaders := TStringList.Create;
-  FState := icStopped;
+  //A connection only exists while the client is opening it, so start in
+  //icConnecting. Otherwise a consumer polling State between Open and the worker
+  //thread reaching Prepare sees the transient icStopped and thinks the stream
+  //already ended.
+  FState := icConnecting;
   FReadTimeout := AClient.ReadTimeout;
   FUseMetaData := AClient.UseMetaData;
   FMaxAttempts := AClient.MaxAttempts;
@@ -363,7 +367,10 @@ begin
 end;
 
 procedure TmnIceCastConnection.SetState(AState: TmnIceCastState; const AMessage: string);
+var
+  vNotify: Boolean;
 begin
+  vNotify := False;
   FClient.Lock.Enter;
   try
     if AMessage <> '' then
@@ -371,26 +378,35 @@ begin
     if FState = AState then
       Exit;
     FState := AState;
+    //Only queue a notification when someone is listening. TThread.Queue needs a
+    //main loop that pumps CheckSynchronize; an app without one (e.g. a plain
+    //raylib loop) would otherwise accumulate queued method records forever.
+    vNotify := ((AState = icError) or (AState = icReady) or
+      (AState = icReconnecting) or (AState = icStopped)) and
+      Assigned(FClient.FOnStateChanged);
   finally
     FClient.Lock.Leave;
   end;
-  if (AState = icError) or (AState = icReady) or (AState = icReconnecting) or (AState = icStopped) then
+  if vNotify then
     Queue(FClient.PostStateChanged);
 end;
 
 procedure TmnIceCastConnection.SetTitle(const ATitle: string);
 var
-  vChanged: Boolean;
+  vChanged, vNotify: Boolean;
 begin
+  vChanged := False;
+  vNotify := False;
   FClient.Lock.Enter;
   try
     vChanged := FTitle <> ATitle;
     if vChanged then
       FTitle := ATitle;
+    vNotify := vChanged and Assigned(FClient.FOnTitleChanged);
   finally
     FClient.Lock.Leave;
   end;
-  if vChanged then
+  if vNotify then
     Queue(FClient.PostTitleChanged);
 end;
 
@@ -618,8 +634,9 @@ begin
   //Enforce minimum interval since last connect attempt. This prevents a tight
   //loop when the server accepts the connection but immediately drops it:
   //without this, Process would call Reconnect → ConnectWithRetries → TryConnect
-  //in a fast cycle with no delay.
-  if not WaitReconnect then
+  //in a fast cycle with no delay. The very first attempt (FAttempts = 0) must
+  //not wait, otherwise Open() always sleeps ReconnectDelay before connecting.
+  if (FAttempts > 0) and (not WaitReconnect) then
     Exit;
   while not Terminated do
   begin
