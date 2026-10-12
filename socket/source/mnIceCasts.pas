@@ -80,6 +80,8 @@ type
     FMaxAttempts: Integer;
     FReconnectDelay: Integer;
     FAttempts: Integer;
+    FLastConnectTime: UInt64;
+    FConnectLocked: Boolean;
     procedure SetState(AState: TmnIceCastState; const AMessage: string = '');
     procedure SetTitle(const ATitle: string);
     procedure SendRequest;
@@ -92,6 +94,7 @@ type
     function TryConnect: Boolean;
     function ConnectWithRetries: Boolean;
     function WaitReconnect: Boolean;
+    procedure Reconnect;
     procedure HandleError(E: Exception);
     function GetHeader(const AName: string): string;
   protected
@@ -579,10 +582,22 @@ end;
 function TmnIceCastConnection.WaitReconnect: Boolean;
 var
   aWaited: Integer;
+  aDelay: Integer;
 begin
+  //Enforce a minimum interval between *any* two connect attempts, even after a
+  //successful connect that immediately drops. This prevents a tight loop when
+  //the server accepts then immediately closes the connection.
+  if FLastConnectTime > 0 then
+  begin
+    aDelay := FReconnectDelay - Integer(GetTickCount64 - FLastConnectTime);
+    if aDelay < 0 then
+      aDelay := 0;
+  end
+  else
+    aDelay := FReconnectDelay;
   //Sleep in small slices so a Close from another thread stays responsive.
   aWaited := 0;
-  while (aWaited < FReconnectDelay) and (not Terminated) do
+  while (aWaited < aDelay) and (not Terminated) do
   begin
     TThread.Sleep(100);
     Inc(aWaited, 100);
@@ -595,13 +610,21 @@ var
   vMax: Integer;
 begin
   Result := False;
-  FAttempts := 0;
+  //Do NOT reset FAttempts here — the counter must persist across calls from
+  //both Prepare and Process so MaxAttempts is a true global budget.
   vMax := FMaxAttempts;
   if vMax < 1 then
     vMax := 1;
+  //Enforce minimum interval since last connect attempt. This prevents a tight
+  //loop when the server accepts the connection but immediately drops it:
+  //without this, Process would call Reconnect → ConnectWithRetries → TryConnect
+  //in a fast cycle with no delay.
+  if not WaitReconnect then
+    Exit;
   while not Terminated do
   begin
     Inc(FAttempts);
+    FLastConnectTime := GetTickCount64;
     if TryConnect then
     begin
       Result := True;
@@ -728,6 +751,8 @@ begin
   FChunkRemain := 0;
   FBodyEnded := False;
   FAttempts := 0;
+  FLastConnectTime := 0;
+  FConnectLocked := False;
   FStream := TmnIceCastSocket.Create;
   FStream.EndOfLine := sWinEndOfLine;
   FStream.ReadTimeout := FReadTimeout;
@@ -741,37 +766,43 @@ begin
     SetState(icError, FError);
 end;
 
+procedure TmnIceCastConnection.Reconnect;
+begin
+  //Separate reconnection from stream processing so the state machine is clearer.
+  //Only when every attempt fails we move to icError.
+  if not ConnectWithRetries then
+  begin
+    if not Terminated then
+      SetState(icError, FError);
+    Exit;
+  end;
+end;
+
 procedure TmnIceCastConnection.Process;
 var
   vChunk: Integer;
 begin
   try
     //A previous read failed or the stream dropped: try to reconnect instead of
-    //ending playback. Only when every attempt fails we move to icError.
+    //ending playback.
     if FState <> icReady then
     begin
-      if not ConnectWithRetries then
-      begin
-        if not Terminated then
-          SetState(icError, FError);
-        Exit;
-      end;
+      Reconnect;
+      Exit;
     end;
-    if FState = icReady then
+    //At this point we are connected — read stream data.
+    if FUseMeta and (FBytesToMeta <= 0) then
+      ReadMeta;
+    if FStream.Connected then
     begin
-      if FUseMeta and (FBytesToMeta <= 0) then
-        ReadMeta;
-      if FStream.Connected then
-      begin
-        if FUseMeta and (FBytesToMeta > 0) and (FBytesToMeta < cIceCastReadChunk) then
-          vChunk := FBytesToMeta
-        else
-          vChunk := cIceCastReadChunk;
-        StreamAudio(vChunk);
-      end
+      if FUseMeta and (FBytesToMeta > 0) and (FBytesToMeta < cIceCastReadChunk) then
+        vChunk := FBytesToMeta
       else
-        StreamLost;
-    end;
+        vChunk := cIceCastReadChunk;
+      StreamAudio(vChunk);
+    end
+    else
+      StreamLost;
   except
     on E: Exception do
       HandleError(E);
