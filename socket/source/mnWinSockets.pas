@@ -175,10 +175,7 @@ end;
 
 function TmnSocket.DefaultPoolSize: Integer;
 begin
-  if PoolSize=0 then
-    Result := SOMAXCONN
-  else
-    Result := PoolSize;
+  Result := SOMAXCONN
 end;
 
 function TmnSocket.DoClose: TmnError;
