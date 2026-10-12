@@ -20,8 +20,11 @@ uses
   Classes, SysUtils, StrUtils, Types, DateUtils, SyncObjs, 
   Generics.Collections, Contnrs, RTTI;
 
-type
 
+var
+  cReportLag: Integer = 20; //over 20Ms (millisecons)
+
+type
   {$IFDEF FPC} //*Temporary, To be compatiple with Delphi
   TMREWSync = TMultiReadExclusiveWriteSynchronizer; //Short form
 
@@ -128,96 +131,109 @@ type
     //procedure Clear; {$ifdef FPC} override; {$else} virtual; {TODO talk with belal} {$endif}
   end;
 
-    { TmnNamedObjectList }
+  { TmnNamedObjectList }
 
-    TmnNamedObject = class(TmnObject)
-    private
-      FName: string;
-    protected
-      procedure SetName(const Value: string); virtual;
-    public
-      property Name: string read FName write SetName;
-    end;
+  TmnNamedObject = class(TmnObject)
+  private
+    FName: string;
+  protected
+    procedure SetName(const Value: string); virtual;
+  public
+    property Name: string read FName write SetName;
+  end;
 
-    //USAGE: TMyNamedObjectList = class(TmnNamedObjectList<TMyNamedObject>)
+  //USAGE: TMyNamedObjectList = class(TmnNamedObjectList<TMyNamedObject>)
 
-    TmnNamedObjectList<_Object_: TmnNamedObject> = class(TmnObjectList<_Object_>)
-    private
-      FDicSize: Integer;
-      FDic: TDictionary<string, _Object_>;
-    protected
-      procedure Created; override;
-      {$ifdef FPC}
-      procedure Notify(Ptr: Pointer; Action: TListNotification); override;
-      {$else}
-      procedure Notify(const Value: _Object_; Action: TCollectionNotification); override;
-      {$endif}
-    public
-      //Set DicSize to 0 for not creating hashing list
-      //if you use hashing list, you need to assign name to object on creation not after adding it to the list
-      constructor Create(ADicSize: Integer = 1024; FreeObjects : boolean = True); overload;
-      destructor Destroy; override;
-      procedure AfterConstruction; override;
-      function Find(const Name: string): _Object_; overload;
-      function IndexOfName(vName: string): Integer;
-      {$ifdef FPC} //not now
-      procedure Clear; override;
-      {$endif}
-      property Item[const Index: string]: _Object_ read Find;
-    end;
-
-    { TmnNameValueObjectList }
-
-    TmnNameValueObject = class(TmnNamedObject)
-    private
-      FValue: string;
-    protected
-      procedure SetValue(const AValue: string); virtual;
-    public
-      procedure Assign(FromObject: TObject); virtual;
-      constructor Create(const vName: string; const AValue: string = ''); virtual; //must be virtual for generic function
-      constructor CreateFrom(FromObject: TmnNameValueObject);
-      property Value: string read FValue write SetValue;
-    end;
-
-    //USAGE: TMyNameValueObjectList = class(TmnNameValueObjectList<TMyNameValueObject>)
-
-    TmnNameValueObjectList<_Object_: TmnNameValueObject> = class(TmnNamedObjectList<_Object_>)
-    private
-      FAutoRemove: Boolean;
-      function GetValues(Index: string): string;
-      procedure SetValues(Index: string; AValue: string);
-    public
-      function Add(Name: string; Value: string = ''): _Object_; overload;
-      function Add(Name: string; Value: Integer): _Object_; overload;
-      function Add(Name: string; Value: Boolean): _Object_; overload;
-      function AddIf(Condition: Boolean; Name: string; Value: TValue): _Object_; overload;
-      //If Value <> ''
-      function AddIf(Name: string; Value: TValue): _Object_; overload;
-      property Values[Index: string]: string read GetValues write SetValues; default;
-      property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
-    end;
-
+  TmnNamedObjectList<_Object_: TmnNamedObject> = class(TmnObjectList<_Object_>)
+  private
+    FDicSize: Integer;
+    FDic: TDictionary<string, _Object_>;
+  protected
+    procedure Created; override;
     {$ifdef FPC}
-
-    { INamedObject }
-
-    INamedObject = Interface
-    ['{E8E58D2B-122D-4EA4-9A1A-BC9EE883D957}']
-      function GetName: string;
-      property Name: string read GetName;
-    end;
-
-    { TINamedObjects }
-
-    TINamedObjects<T: INamedObject> = class(TmnObjectList<T>)
-    public
-      function Find(const AName: string): T;
-      function IndexOfName(AName: string): Integer;
-    end;
-
+    procedure Notify(Ptr: Pointer; Action: TListNotification); override;
+    {$else}
+    procedure Notify(const Value: _Object_; Action: TCollectionNotification); override;
     {$endif}
+  public
+    //Set DicSize to 0 for not creating hashing list
+    //if you use hashing list, you need to assign name to object on creation not after adding it to the list
+    constructor Create(ADicSize: Integer = 1024; FreeObjects : boolean = True); overload;
+    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    function Find(const Name: string): _Object_; overload;
+    function IndexOfName(vName: string): Integer;
+    {$ifdef FPC} //not now
+    procedure Clear; override;
+    {$endif}
+    property Item[const Index: string]: _Object_ read Find;
+  end;
 
+  { TmnNameValueObjectList }
+
+  TmnNameValueObject = class(TmnNamedObject)
+  private
+    FValue: string;
+  protected
+    procedure SetValue(const AValue: string); virtual;
+  public
+    procedure Assign(FromObject: TObject); virtual;
+    constructor Create(const vName: string; const AValue: string = ''); virtual; //must be virtual for generic function
+    constructor CreateFrom(FromObject: TmnNameValueObject);
+    property Value: string read FValue write SetValue;
+  end;
+
+  //USAGE: TMyNameValueObjectList = class(TmnNameValueObjectList<TMyNameValueObject>)
+
+  TmnNameValueObjectList<_Object_: TmnNameValueObject> = class(TmnNamedObjectList<_Object_>)
+  private
+    FAutoRemove: Boolean;
+    function GetValues(Index: string): string;
+    procedure SetValues(Index: string; AValue: string);
+  public
+    function Add(Name: string; Value: string = ''): _Object_; overload;
+    function Add(Name: string; Value: Integer): _Object_; overload;
+    function Add(Name: string; Value: Boolean): _Object_; overload;
+    function AddIf(Condition: Boolean; Name: string; Value: TValue): _Object_; overload;
+    //If Value <> ''
+    function AddIf(Name: string; Value: TValue): _Object_; overload;
+    property Values[Index: string]: string read GetValues write SetValues; default;
+    property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
+  end;
+
+  {$ifdef FPC}
+
+  { INamedObject }
+
+  INamedObject = Interface
+  ['{E8E58D2B-122D-4EA4-9A1A-BC9EE883D957}']
+    function GetName: string;
+    property Name: string read GetName;
+  end;
+
+  { TINamedObjects }
+
+  TINamedObjects<T: INamedObject> = class(TmnObjectList<T>)
+  public
+    function Find(const AName: string): T;
+    function IndexOfName(AName: string): Integer;
+  end;
+
+  {$endif}
+
+  TmnCriticalSection = class(TCriticalSection)
+  private
+    {$ifopt D+}
+    FEnterTime: UInt64;
+    {$endif}
+  public
+    {$ifopt D+}
+    //Enter/Leave call the virtual Acquire/Release, so overriding them here
+    //covers both, on FPC and Delphi alike.
+    procedure Acquire; override;
+    procedure Release; override;
+    {$endif}
+  end;
 
   { TmnThread }
 
@@ -767,6 +783,26 @@ procedure TmnInterfacedPersistent.Created;
 begin
 
 end;
+
+{ TmnCriticalSection }
+
+{$ifopt D+}
+procedure TmnCriticalSection.Acquire;
+begin
+  inherited Acquire;
+  FEnterTime := TThread.GetTickCount64;
+end;
+
+procedure TmnCriticalSection.Release;
+var
+  aLag: UInt64;
+begin
+  aLag := TThread.GetTickCount64 - FEnterTime;
+  inherited Release;
+  if (aLag > cReportLag) and IsConsole then
+    WriteLn(Format('TmnCriticalSection: held for %d ms', [aLag]));
+end;
+{$endif}
 
 { TmnThread }
 

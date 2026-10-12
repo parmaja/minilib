@@ -20,9 +20,6 @@ uses
   Classes, SysUtils, Types, SyncObjs, mnLogs,
   mnClasses, mnStreams, mnSockets;
 
-var
-  cReportLag: Integer = 20; //over 20Ms (millisecons)
-
 type
 
   TmnConnection = class;
@@ -36,20 +33,6 @@ type
   protected
   public
     property Items[Index: Integer]: TmnConnection read GetItems write SetItems; default;
-  end;
-
-  TmnCriticalSection = class(TCriticalSection)
-  private
-    {$ifopt D+}
-    FEnterTime: UInt64;
-    {$endif}
-  public
-    {$ifopt D+}
-    //Enter/Leave call the virtual Acquire/Release, so overriding them here
-    //covers both, on FPC and Delphi alike.
-    procedure Acquire; override;
-    procedure Release; override;
-    {$endif}
   end;
 
   { TmnConnections }
@@ -115,26 +98,6 @@ begin
   if Value > 0 then
     raise EmnException.Create('WinSocket, error #' + IntToStr(Value));
 end;
-
-{ TmnCriticalSection }
-
-{$ifopt D+}
-procedure TmnCriticalSection.Acquire;
-begin
-  inherited Acquire;
-  FEnterTime := TThread.GetTickCount64;
-end;
-
-procedure TmnCriticalSection.Release;
-var
-  aLag: UInt64;
-begin
-  aLag := TThread.GetTickCount64 - FEnterTime;
-  inherited Release;
-  if (aLag > cReportLag) and IsConsole then
-    WriteLn(Format('TmnCriticalSection: held for %d ms', [aLag]));
-end;
-{$endif}
 
 { TmnConnections }
 

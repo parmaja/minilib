@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, SyncObjs,
-  mnTypes, mnStreams, mnSockets, mnConnections, mnClients;
+  mnTypes, mnStreams, mnSockets, mnClasses, mnConnections, mnClients;
 
 type
 
