@@ -798,10 +798,13 @@ procedure TmnCriticalSection.Release;
 var
   aLag: UInt64;
 begin
-  aLag := TThread.GetTickCount64 - FEnterTime;
-  inherited Release;
-  if (cReportLag > 0) and (aLag > cReportLag) and IsConsole then
-    WriteLn(Format(ClassName + 'CriticalSection: held for %d ms', [aLag]));
+  inherited;
+  if (cReportLag > 0) then
+  begin
+    aLag := TThread.GetTickCount64 - FEnterTime;
+    if (aLag > cReportLag) and IsConsole then
+      WriteLn(Format(ClassName + ' CriticalSection: held for %d ms', [aLag]));
+  end;
 end;
 {$endif}
 
