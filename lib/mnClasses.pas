@@ -221,17 +221,22 @@ type
 
   {$endif}
 
+  { TmnCriticalSection }
+
   TmnCriticalSection = class(TCriticalSection)
   private
     {$ifopt D+}
     FEnterTime: UInt64;
+    FReportLag: Integer;
     {$endif}
   public
     {$ifopt D+}
     //Enter/Leave call the virtual Acquire/Release, so overriding them here
     //covers both, on FPC and Delphi alike.
+    constructor Create;
     procedure Acquire; override;
     procedure Release; override;
+    property ReportLag: Integer read FReportLag write FReportLag;
     {$endif}
   end;
 
@@ -787,10 +792,17 @@ end;
 { TmnCriticalSection }
 
 {$ifopt D+}
+
+constructor TmnCriticalSection.Create;
+begin
+  inherited Create;
+  FReportLag := cReportLag;
+end;
+
 procedure TmnCriticalSection.Acquire;
 begin
   inherited Acquire;
-  if (cReportLag > 0) then
+  if (FReportLag > 0) then
     FEnterTime := TThread.GetTickCount64;
 end;
 
@@ -799,10 +811,10 @@ var
   aLag: UInt64;
 begin
   inherited;
-  if (cReportLag > 0) then
+  if (FReportLag > 0) then
   begin
     aLag := TThread.GetTickCount64 - FEnterTime;
-    if (aLag > cReportLag) and IsConsole then
+    if (aLag > FReportLag) and IsConsole then
       WriteLn(Format(ClassName + ' CriticalSection: held for %d ms', [aLag]));
   end;
 end;

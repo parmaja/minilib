@@ -108,11 +108,15 @@ type
     procedure CloseStream; //stop connection, called from out of thread
   end;
 
+  TiceCriticalSection = class(TmnCriticalSection)
+  public
+  end;
+
   { TmnIceCastClient }
 
   TmnIceCastClient = class(TObject)
   private
-    FLock: TmnCriticalSection;
+    FLock: TiceCriticalSection;
     FConnection: TmnIceCastConnection;
     FUseMetaData: Boolean;
     FReadTimeout: Integer;
@@ -148,7 +152,7 @@ type
     procedure ClearBuffer;
     //Buffer contain the downloaded audio, protect it with Lock
     property Buffer: TMemoryStream read GetBuffer;
-    property Lock: TmnCriticalSection read FLock;
+    property Lock: TiceCriticalSection read FLock;
     property State: TmnIceCastState read GetState;
     property Error: string read GetError;
     property Title: string read GetTitle;
@@ -858,7 +862,7 @@ end;
 constructor TmnIceCastClient.Create;
 begin
   inherited;
-  FLock := TmnCriticalSection.Create;
+  FLock := TiceCriticalSection.Create;
   FUseMetaData := True;
   FReadTimeout := 10000;
   FMaxAttempts := 5;
