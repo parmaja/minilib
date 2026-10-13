@@ -22,7 +22,7 @@ uses
 
 
 var
-  cReportLag: Integer = 20; //over 20Ms (millisecons)
+  cReportLag: Integer = 0; //over 20Ms (millisecons)
 
 type
   {$IFDEF FPC} //*Temporary, To be compatiple with Delphi
@@ -249,14 +249,14 @@ type
 
   TmnLockThread = class(TmnThread)
   private
-    FLock: TCriticalSection;
+    FLock: TmnCriticalSection;
   protected
   public
     constructor Create;
     destructor Destroy; override;
     procedure Enter;
     procedure Leave;
-    property Lock: TCriticalSection read FLock;
+    property Lock: TmnCriticalSection read FLock;
   end;
     
 implementation
@@ -790,7 +790,8 @@ end;
 procedure TmnCriticalSection.Acquire;
 begin
   inherited Acquire;
-  FEnterTime := TThread.GetTickCount64;
+  if (cReportLag > 0) then
+    FEnterTime := TThread.GetTickCount64;
 end;
 
 procedure TmnCriticalSection.Release;
@@ -799,8 +800,8 @@ var
 begin
   aLag := TThread.GetTickCount64 - FEnterTime;
   inherited Release;
-  if (aLag > cReportLag) and IsConsole then
-    WriteLn(Format('TmnCriticalSection: held for %d ms', [aLag]));
+  if (cReportLag > 0) and (aLag > cReportLag) and IsConsole then
+    WriteLn(Format(ClassName + 'CriticalSection: held for %d ms', [aLag]));
 end;
 {$endif}
 
@@ -814,7 +815,7 @@ end;
 
 procedure TmnThread.Execute;
 begin
-  //inherited;
+  //inherited; //parent is abstract
 
   //TThread.NameThreadForDebugging('DelphiCreated_' + ClassName, Self.ThreadID);
   //i := SetThreadDescription(Self.ThreadID, PChar('DelphiCreated_' + ClassName));
@@ -824,7 +825,7 @@ end;
 constructor TmnLockThread.Create;
 begin
   inherited;
-  FLock := TCriticalSection.Create;
+  FLock := TmnCriticalSection.Create;
 end;
 
 destructor TmnLockThread.Destroy;
