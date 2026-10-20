@@ -376,6 +376,8 @@ type
 
     function GenerateSQL(Callback: TCallbackObject): Boolean; overload;
     function GenerateSQL(vSQL: TStrings): Boolean; overload;
+    //Generate the SQL for a single named object (a table for example), checking it first
+    function GenerateSQL(const AObjectName: string; vSQL: TStrings): Boolean; overload;
 
     procedure RegisterGenerator(AObjectClass: TormObjectClass; AGeneratorClass: TormGeneratorClass);
 
@@ -1477,15 +1479,12 @@ end;
 
 function ValueToStr(vValue: Variant): string;
 begin
-  if not VarIsEmpty(vValue) then
-  begin
-    if VarType(vValue) = varString then
-      Result := '''' + vValue + ''''
-    else
-      Result := VarToStr(vValue);
-  end
+  if VarIsEmpty(vValue) then
+    Result := ''''''
+  else if VarIsStr(vValue) then
+    Result := '''' + StringReplace(VarToStr(vValue), '''', '''''', [rfReplaceAll]) + ''''
   else
-    Result := '''''';
+    Result := VarToStr(vValue);
 end;
 
 constructor TormObject.Create(AParent: TormObject; const AName: String);
@@ -1566,6 +1565,32 @@ begin
   SQLCB := TSQLCallbackObject.Create(vSQL);
   try
     GenerateSQL(SQLCB);
+  finally
+    FreeAndNil(SQLCB);
+  end;
+  Result := True;
+end;
+
+function TmncORM.GenerateSQL(const AObjectName: string; vSQL: TStrings): Boolean;
+var
+  SQLCB: TSQLCallbackObject;
+  AObject: TormSQLObject;
+  Generator: TormGenerator;
+begin
+  Result := False;
+  AObject := FindObject(TormSQLObject, AObjectName, True) as TormSQLObject;
+  AObject.Check;
+  SQLCB := TSQLCallbackObject.Create(vSQL);
+  try
+    if AObject.GeneratorClass <> nil then
+    begin
+      Generator := AObject.GeneratorClass.Create;
+      try
+        Generator.GenerateSQL(AObject, SQLCB, 0);
+      finally
+        Generator.Free;
+      end;
+    end;
   finally
     FreeAndNil(SQLCB);
   end;
