@@ -236,8 +236,14 @@ function DescapeString(const S: string; const Esc: string; Chars: array of Char;
 function EscapeCString(const S: string; QuoteChar: Char = '"'): string;
 function DescapeCString(const S: string): string;
 function ToUnixPathDelimiter(const S: string): string;
+//Encode a single URL component (path segment or query value) as UTF-8.
+//Space becomes %20 and plus becomes %2B, so it is safe to use in a path segment.
+function URLEncodeComponent(const S: string): string;
 function HTMLEncode(const Str: string): string;
 function EscapeJSONString(const AStr: string): string;
+//Escape a JSON string for embedding inside a single quoted JavaScript literal.
+//HTML entities are not decoded inside <script>, so apostrophes are escaped too.
+function EscapeJSONAttr(const S: string): string;
 
 function ExpandFile(const Name: string): string;
 
@@ -276,6 +282,8 @@ function ExcludeTrailing(const Str: string; const TrailingChar: string = #0): st
 //IncludePathDelimiter add the Delimiter when S not = ''
 function IncludePathDelimiter(const S: string; Force: Boolean = False): string;
 function ExcludePathDelimiter(Path: string): string;
+//True when APath is inside ADir. ADir itself is not considered inside.
+function IsPathInside(const APath, ADir: string): Boolean;
 
 //This not check if S = '' or use Add...
 function IncludeURLDelimiter(const S: string): string; //deprecated 'AddEndURLDelimiter';
@@ -391,6 +399,14 @@ type
   
 function GetFileInfo(const FileName: string; out Info: TFileInfo): Boolean; overload;
 function GetFileInfo(const FileName: string): TFileInfo; overload; 
+
+//Human readable file size, e.g. 1.5 MB
+function FileSizeToStr(ASize: Int64): string;
+//Reject empty names, . / .., path separators, drive/stream characters and control chars.
+function IsValidFileName(const AName: string): Boolean;
+//True for Windows reserved device names (CON, PRN, AUX, NUL, COM1..9, LPT1..9)
+//including names with an extension, e.g. CON.txt.
+function IsReservedFileName(const AName: string): Boolean;
 
 function GetSizeOfFile(const FileName: string): Int64; deprecated; //GetFileSize
 
@@ -2233,6 +2249,29 @@ begin
   Result := StringReplace(S, '\', '/', [rfReplaceAll]);
 end;
 
+function URLEncodeComponent(const S: string): string;
+const
+  HexDigits = '0123456789ABCDEF';
+var
+  U: UTF8String;
+  I: Integer;
+  C: Byte;
+begin
+  Result := '';
+  U := UTF8String(S);
+  for I := 1 to Length(U) do
+  begin
+    C := Ord(U[I]);
+    if ((C >= Ord('A')) and (C <= Ord('Z'))) or
+       ((C >= Ord('a')) and (C <= Ord('z'))) or
+       ((C >= Ord('0')) and (C <= Ord('9'))) or
+       (C = Ord('-')) or (C = Ord('_')) or (C = Ord('.')) or (C = Ord('~')) then
+      Result := Result + Char(C)
+    else
+      Result := Result + '%' + HexDigits[(C shr 4) + 1] + HexDigits[(C and $0F) + 1];
+  end;
+end;
+
 function EscapeJSONString(const AStr: string): string;
 const 
   HexChars: array[0..15] of Char = '0123456789ABCDEF';
@@ -2280,6 +2319,11 @@ begin
     end;
   end;  
   SetLength(Result, J); // Trim to actual used size
+end;
+
+function EscapeJSONAttr(const S: string): string;
+begin
+  Result := StringReplace(EscapeJSONString(S), #39, '\' + #39, [rfReplaceAll]);
 end;
 
 function CorrectPath(const Path: string): string;
@@ -2411,6 +2455,20 @@ begin
     Result := ''
   else
     Result := ExcludeTrailingPathDelimiter(Path);
+end;
+
+function IsPathInside(const APath, ADir: string): Boolean;
+var
+  P, D: string;
+begin
+  D := IncludePathDelimiter(ExpandFileName(ADir));
+  P := ExpandFileName(APath);
+  Result := (Length(P) > Length(D)) and
+    {$IFDEF MSWINDOWS}
+    SameText(Copy(P, 1, Length(D)), D);
+    {$ELSE}
+    (Copy(P, 1, Length(D)) = D);
+    {$ENDIF}
 end;
 
 function AddStartURLDelimiter(const Path: string; Force: Boolean): string;
@@ -3252,6 +3310,43 @@ end;
 function GetFileInfo(const FileName: string): TFileInfo; overload; inline;
 begin
   GetFileInfo(FileName, Result);
+end;
+
+function FileSizeToStr(ASize: Int64): string;
+const
+  Units: array[0..4] of string = ('B', 'KB', 'MB', 'GB', 'TB');
+var
+  V: Double;
+  I: Integer;
+begin
+  V := ASize;
+  I := 0;
+  while (V >= 1024) and (I < High(Units)) do
+  begin
+    V := V / 1024;
+    Inc(I);
+  end;
+  if I = 0 then
+    Result := IntToStr(ASize) + ' ' + Units[I]
+  else
+    Result := FormatFloat('0.##', V) + ' ' + Units[I];
+end;
+
+function IsValidFileName(const AName: string): Boolean;
+begin
+  Result := False;
+  if (AName = '') or (AName = '.') or (AName = '..') then
+    Exit;
+  //reject path separators, drive stuff and control characters
+  Result := not HaveChar(AName, ['/', '\', ':', '*', '?', '"', '<', '>', '|', #0..#31]);
+end;
+
+function IsReservedFileName(const AName: string): Boolean;
+begin
+  Result := IsStrInArray(SubStr(UpperCase(AName), '.', 0),
+    ['CON', 'PRN', 'AUX', 'NUL',
+     'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+     'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9']);
 end;
 
 procedure EnumFiles(Callback: TEnumFilesCallback; AObject: TObject; const Folder, Filter: string; Options: TEnumFilesOptions = [efFile]); overload;
