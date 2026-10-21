@@ -131,9 +131,9 @@ type
   { TmnwCookie }
   TmnwCookieOption =
   (
-    Stricted, //SameSite
-    Lax, //SameSite
     Secured, //HTTPS only
+    Stricted, //Stricted
+    //None or Lax depends on Secured
     HostOnly,
     HttpOnly //JS script in client cant see it
   );
@@ -2805,22 +2805,28 @@ begin
       Result := Result + '; max-age=' + Age.ToString;
   end;
 
+  if (Domain <> '') and not SameText(Domain, 'localhost') then
+    Result := Result + '; Domain=' + Domain.ToLower;
+{
+  Strict  ──►  Lax  ──►  None
+  (most restrictive)     (least restrictive, but needs Secure)
+}
+  //Examples will effect
+  // Changing Language
+  // Storing Session
   if Stricted in Options then
     Result := Result + '; SameSite=Strict'
-  else if Lax in Options then
-    Result := Result + '; SameSite=Lax'
+  else if Secured in Options  then
+    Result := Result + '; SameSite=None' //NONE needs https
   else
-    Result := Result + '; SameSite=None'; //NONE needs https
+    Result := Result + '; SameSite=Lax';
 
-  if Secured in Options then
+  if Secured in Options then  //HTTPS only
     Result := Result + '; Secure';
   if HttpOnly in Options then
-    Result := Result + '; HttpOnly';  
+    Result := Result + '; HttpOnly';
   if HostOnly in Options then
-    Result := Result + '; HostOnly';  
-    
-  if Domain <> '' then
-    Result := Result + '; Domain=' + Domain.ToLower;
+    Result := Result + '; HostOnly';
 
   if Path <> '' then
     Result := Result + '; Path=' + Path
