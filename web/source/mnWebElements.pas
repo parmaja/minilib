@@ -6181,11 +6181,32 @@ end;
 
 { TAuthSchema }
 
+//A `redirect` query/form field lets a module send the user back after login.
+//Only local absolute paths are accepted, to avoid open redirects.
+function GetAuthRedirect(const Ctx: TmnwContext): string;
+var
+  Target: string;
+begin
+  Result := '';
+  Target := '';
+  if (Ctx.Data <> nil) and (Ctx.Data['redirect'] <> nil) then
+    Target := Trim(Ctx.Data['redirect'].AsString)
+  else
+    Target := Trim(Ctx.Request.Params['redirect']);
+  if Target = '' then
+    exit;
+  if (Target[1] <> '/') or (Copy(Target, 1, 2) = '//') or
+     (Pos('\', Target) > 0) or (Pos(#13, Target) > 0) or (Pos(#10, Target) > 0) then
+    exit;
+  Result := Target;
+end;
+
 procedure TAuthSchema.UserLogin(const Ctx: TmnwContext);
 var
   aSuccess: Boolean;
   aMessage: string;
   aSessionID: string;
+  aRedirect: string;
 begin
   aSuccess := False;
   aSessionID := '';
@@ -6195,10 +6216,13 @@ begin
   if aSuccess then
   begin
     Ctx.Session.ID := aSessionID;
+    aRedirect := GetAuthRedirect(Ctx);
+    if aRedirect = '' then
+      aRedirect := Ctx.GetDefaultPath;
     if Ctx.Request.RequestType = rtJSONData then
-       Ctx.Response.RespondJSON('{"type": "success", "state": "200", "message": "Login successed.", "redirect": "'+Ctx.GetDefaultPath+'" }')
+       Ctx.Response.RespondJSON('{"type": "success", "state": "200", "message": "Login successed.", "redirect": "'+EscapeJSONString(aRedirect)+'" }')
     else
-      Ctx.Response.RespondRedirectTo(Ctx.GetDefaultPath);
+      Ctx.Response.RespondRedirectTo(aRedirect);
   end
   else
   begin
@@ -6361,6 +6385,10 @@ begin
       begin
         THiddenInput.Create(This, 'JWTMode', 'True');
       end;
+
+      //keep the optional return path when the login page was reached with ?redirect=
+      if Ctx.Request.Params['redirect'] <> '' then
+        THiddenInput.Create(This, 'redirect', Ctx.Request.Params['redirect']);
 
       Submit.Caption := Ctx._T('submit',  'Submit');
       Reset.Caption := Ctx._T('reset',  'Reset');
