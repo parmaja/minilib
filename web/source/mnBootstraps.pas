@@ -1778,7 +1778,8 @@ var
   e: THTML.TNavBar;
 begin
   e := Scope.Element as THTML.TNavBar;
-  Ctx.Writer.OpenTag('a', 'class="logo d-flex navbar-brand align-items-center p-0 me-auto" href="' + EndURL(Ctx.GetDefaultPath) + '"');
+  //when there are nav items, let their `me-auto` push the tools to the end
+  Ctx.Writer.OpenTag('a', 'class="logo d-flex navbar-brand align-items-center p-0 me-auto' + '" href="' + EndURL(Ctx.GetDefaultPath) + '"');
 
 //  if e.Schema.Web.Assets.Logo.Data.Size > 0 then
 //    Ctx.Writer.AddShortTag('img', 'src="' + Ctx.GetPath(e.Schema.Web.Assets.Logo)+ '" alt=""');
@@ -1832,7 +1833,9 @@ begin
 
   DoRenderBrand(Scope, Ctx);
 
-  Ctx.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="true" data-bs-keyboard="false" tabindex="-1"');
+  //`offcanvas-{breakpoint}` keeps the item list inline on wide screens and
+  //turns it into the top offcanvas on small ones.
+  Ctx.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas-' + WideSize + ' offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="true" data-bs-keyboard="false" tabindex="-1"');
   //Ctx.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
   Ctx.Writer.OpenTag('ul', 'class="navbar-nav me-auto m-2 m-' + WideSize+'-0"');
   inherited;
