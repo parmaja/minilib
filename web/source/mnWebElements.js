@@ -394,6 +394,43 @@ mnw.showToast = function(content, type = "warning")
   toast.show();
 }
 
+mnw.copy = async function(element)
+{
+  const data = element && element.dataset ? element.dataset : {};
+  const text = data.copy || '';
+  if (!text)
+    return false;
+
+  try
+  {
+    if (navigator.clipboard && window.isSecureContext)
+      await navigator.clipboard.writeText(text);
+    else
+    {
+      //plain http (not localhost) has no async clipboard API; use the old trick
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.top = '-1000px';
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand('copy');
+      area.remove();
+    }
+
+    if (mnw.showToast)
+      mnw.showToast(data.copied || 'Copied to clipboard', 'success');
+    return true;
+  }
+  catch (e)
+  {
+    if (mnw.showToast)
+      mnw.showToast('Copy failed', 'danger');
+    return false;
+  }
+};
+
 /* UI functions */
 
 mnw.switch_theme = function(e)
