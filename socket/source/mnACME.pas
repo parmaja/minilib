@@ -325,10 +325,11 @@ var
   p: Integer;
 begin
   Result := 0;
-  if A = nil then Exit;
+  if A = nil then
+    Exit;
   SetString(s, PAnsiChar(A^.data), A^.length);
-  if s = '' then Exit;
-  p := 1;
+  if s = '' then
+    Exit;
   if A^.&type = V_ASN1_GENERALIZEDTIME then
   begin
     //YYYYMMDDHHMMSSZ  (14 chars + Z)
@@ -338,9 +339,13 @@ begin
   else
   begin
     //YYMMDDHHMMSSZ  (12 chars + Z)
-    if Length(s) < 12 then Exit;
+    if Length(s) < 12 then
+      Exit;
     yr := StrToIntDef(Copy(string(s), 1, 2), 0);  p := 3;
-    if yr >= 50 then yr := 1900 + yr else yr := 2000 + yr;
+    if yr >= 50 then
+      yr := 1900 + yr
+    else
+      yr := 2000 + yr;
   end;
   mo := StrToIntDef(Copy(string(s), p,     2), 0);
   dy := StrToIntDef(Copy(string(s), p + 2, 2), 0);
@@ -434,7 +439,7 @@ var
     bio: PBIO;
     fs: TFileStream;
     m: TMemoryStream;
-    aBN_N, aBN_E, aBN_D: PBIGNUM;
+    aBN_N, aBN_E: PBIGNUM;
   begin
     aKeyPKey := nil;
     if FileExists(AAccountKeyFile) then

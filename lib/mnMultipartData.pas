@@ -90,7 +90,7 @@ type
     constructor Create(ABoundary: string = ''; AOutputPath: string = ''); overload;
 
     function Find(AName: string): TMPDItem;
-    
+
     function Read(vStream: TmnBufferStream): Boolean;
     function Write(vStream: TmnBufferStream): Boolean;
 

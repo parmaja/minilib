@@ -1577,7 +1577,6 @@ var
   AObject: TormSQLObject;
   Generator: TormGenerator;
 begin
-  Result := False;
   AObject := FindObject(TormSQLObject, AObjectName, True) as TormSQLObject;
   AObject.Check;
   SQLCB := TSQLCallbackObject.Create(vSQL);

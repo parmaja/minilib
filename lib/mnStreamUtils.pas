@@ -725,7 +725,7 @@ begin
         end;
         else
           if Length(s) < 255 then
-            s := s + Chr(b);
+            s := s + AnsiChar(b);
       end;
     end
     else

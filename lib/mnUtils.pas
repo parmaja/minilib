@@ -355,7 +355,7 @@ function UTF8Length(S: UTF8String): Integer;
 function UTF8Copy(const S: UTF8String; StartChar, CharCount: Integer): UTF8String;
 function UTF8CodepointSize(const LeadingByte: PByte): Integer;
 
-function NewUUID: string;
+function NewUUID(Hyphen: string = '-'): string;
 //TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
 procedure BinToHex(Buffer: PByte; Output: PByte; BufSize: longint); overload;
@@ -3660,9 +3660,9 @@ begin
 {$endif}
 end;
 
-function NewUUID: string;
+function NewUUID(Hyphen: string): string;
 begin
-  Result := UUIDToString(TGUID.NewGuid);
+  Result := UUIDToString(TGUID.NewGuid, Hyphen);
 end;
 
 function GetTimeStamp: Int64;
