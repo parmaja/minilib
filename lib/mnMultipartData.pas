@@ -54,17 +54,20 @@ type
     procedure DoRead(const Buffer; Count: Longint); override;
     procedure DoWrite(vStream: TmnBufferStream); override;    
   end;
-  
+
+  //Value is the file name, if using UUID, original filename is in FileName property
   TMPDFile = class(TMPDItem)
   protected
     FFileStream: TFileStream;
+    FFileName: string;
     function GetFileName: string;
     procedure DoReadPrepare; override;
     procedure DoReadUnPrepare; override;
     procedure DoPrepare; override;
     procedure DoRead(const Buffer; Count: Longint); override;
-    procedure DoWrite(vStream: TmnBufferStream); override;    
+    procedure DoWrite(vStream: TmnBufferStream); override;
   public
+    property FileName: string read FFileName;
   end;
 
   TMPDMemoy = class(TMPDItem) //Unused
@@ -82,6 +85,7 @@ type
     FBoundary: string;
     FOutputPath: string;
     FShortFileNames: Boolean;
+    FUseUUID: Boolean;
   protected
     function DoCreateItem(vStream: TmnBufferStream; vHeader: TmnHeader): TMPDItem; virtual;
     function CreateItem(vStream: TmnBufferStream): TMPDItem;
@@ -97,6 +101,8 @@ type
     property Boundary: string read FBoundary write FBoundary;
     property OutputPath: string read FOutputPath write FOutputPath;
     property ShortFileNames: Boolean read FShortFileNames write FShortFileNames;
+    //Store files in temp using UUID
+    property UseUUID: Boolean read FUseUUID write FUseUUID;
   end;
 
 implementation
@@ -222,7 +228,11 @@ begin
         aType.Options := [];
         if not ShortFileNames then        
           s := IncludePathDelimiter(OutputPath) + s;
-        TMPDFile(Result).Value := TDON_String.Create(Result, s, aType);
+        TMPDFile(Result).FFileName := s;
+        if UseUUID then
+          TMPDFile(Result).Value := TDON_String.Create(Result, NewUUID(''), aType)
+        else
+          TMPDFile(Result).Value := TDON_String.Create(Result, s, aType);
       end
       else
       begin
@@ -347,11 +357,7 @@ procedure TMPDFile.DoReadPrepare;
 var
   aPath, aFile: string;
 begin
-  if (Parent as TmnMultipartData).ShortFileNames then
-    aFile := IncludePathDelimiter((Parent as TmnMultipartData).OutputPath) + Value.AsString
-  else
-    aFile := Value.AsString;
-  
+  aFile := GetFileName;
   if aFile <> '' then
   begin
     aPath := ExtractFilePath(aFile);
@@ -377,11 +383,14 @@ begin
   finally
     f.Free;
   end;
-
 end;
 
 function TMPDFile.GetFileName: string;
 begin
+  if (Parent as TmnMultipartData).ShortFileNames then
+    Result := IncludePathDelimiter((Parent as TmnMultipartData).OutputPath) + Value.AsString
+  else
+    Result := Value.AsString;
 end;
 
 { TMPDMemoy }
