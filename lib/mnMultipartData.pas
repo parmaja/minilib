@@ -91,7 +91,7 @@ type
     function CreateItem(vStream: TmnBufferStream): TMPDItem;
   public
     constructor Create(AParent: TDON_Parent = nil); overload;
-    constructor Create(ABoundary: string = ''; AOutputPath: string = ''); overload;
+    constructor Create(ABoundary: string = ''; AOutputPath: string = ''; AUseUUID: Boolean = False); overload;
 
     function Find(AName: string): TMPDItem;
 
@@ -198,11 +198,12 @@ begin
   inherited Create(AParent);
 end;
 
-constructor TmnMultipartData.Create(ABoundary, AOutputPath: string);
+constructor TmnMultipartData.Create(ABoundary, AOutputPath: string; AUseUUID: Boolean);
 begin
   Create(nil);
   OutputPath := AOutputPath;
   Boundary := ABoundary;
+  UseUUID := AUseUUID;
 end;
 
 function TmnMultipartData.CreateItem(vStream: TmnBufferStream): TMPDItem;
@@ -221,25 +222,24 @@ begin
     Result := DoCreateItem(vStream, aHeader);
     if Result = nil then
     begin
-      if GetSubValue(aDisposition, 'filename', s) and (s <> '') then
+      if GetSubValue(aDisposition, 'filename', s) then //We accept s = ''
       begin
         Result := TMPDFile.Create(Self);
         aType.Name := 'filename';
         aType.Options := [];
-        if not ShortFileNames then        
-          s := IncludePathDelimiter(OutputPath) + s;
         TMPDFile(Result).FFileName := s;
         if UseUUID then
-          TMPDFile(Result).Value := TDON_String.Create(Result, NewUUID(''), aType)
-        else
-          TMPDFile(Result).Value := TDON_String.Create(Result, s, aType);
+          s := NewUUID('');
+        if not ShortFileNames then
+          s := IncludePathDelimiter(OutputPath) + s;
+        TMPDFile(Result).Value := TDON_String.Create(Result, s, aType);
       end
       else
       begin
         Result := TMPDString.Create(Self);
         aType.Name := 'string';
-        aType.Options := [];        
-        TMPDFile(Result).Value := TDON_String.Create(Result, '', aType);
+        aType.Options := [];
+        Result.Value := TDON_String.Create(Result, '', aType);
       end;
     end;
     GetSubValue(aDisposition, 'name', s);

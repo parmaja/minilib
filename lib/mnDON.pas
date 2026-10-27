@@ -434,6 +434,7 @@ type
     function Add(const Name: String; const Value: Int64): TDON_Value; overload;
 
     function FindPair(const Name: string): TDON_Pair; overload;
+    function FindPair<T: TDON_Pair>(const Name: string): T; overload;
     function PairExists(const Name: string): Boolean; overload;
     function FindByValue(const Value: string): TDON_Pair; overload;
     function FindNameByValue(const Value: string): string;  overload;
@@ -1500,6 +1501,16 @@ begin
     begin
       Exit(FPairs[i]);
     end;
+  Result := nil
+end;
+
+function TDON_Object.FindPair<T>(const Name: string): T;
+var
+  i: Integer;
+begin
+  for i := 0 to FPairs.Count - 1 do
+    if (FPairs[i] is T) and SameText(FPairs[i].Name, Name) then
+      Exit(FPairs[i] as T);
   Result := nil
 end;
 

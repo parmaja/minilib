@@ -75,16 +75,26 @@ name=   value
 }
 
   //sText := 'file=/data/file.exe /D: value'; //bug
-  sText := 'name=a";b"c;"m;"';
+  sText := 'name1=a1 a2 -a3 --a4 --a5=v5 name2="" name3=';
+
+  WriteLn('Testing:    ' + sText);
+  WriteLn('=========================');
+
+  ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [pargValues, pargDeqoute, pargKeepSwitch], [' '], [' ', #9], ['''','"'], [':', '=']);
+  WriteLn('--------');
+  WriteLn('');
+  exit;
+
   sText := 'a "a" a,b a;b "a;b" a="b"';
   sText := 'name=a;;s';
+
+  WriteLn('Testing:    ' + sText);
+  WriteLn('=========================');
 
   ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [pargDeqoute, pargKeepSwitch], [';', ' '], [' ', #9], ['''','"'], [':', '=']);
   WriteLn('--------');
   WriteLn('');
   //Exit;
-
-
 
   ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [pargDeqoute, pargKeepSwitch], [' ', #9], [' ', #9], ['''','"'], [':', '=']);
   WriteLn('--------');
@@ -101,6 +111,8 @@ name=   value
   list := TStringList.Create;
   files := TStringList.Create;
   sText := 'test1 test1 -s --silent -w -v: value1';
+  WriteLn('Testing:    ' + sText);
+  WriteLn('=========================');
   ParseArguments(sText, list, ['-', '/'], [pargKeepSwitch]);
   GetArgument(list, files);
 

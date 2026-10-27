@@ -81,9 +81,9 @@ function StrScanTo(const Content: string; FromIndex: Integer; out S: string; out
 }
 type
   TParseArgumentsOptions = set of (
-    pargKeepSwitch,
-    pargDeqoute,
-    pargTrim, //TODO
+    pargKeepSwitch, //Keep switch char as prefix
+    pargDeqoute, //Deqoute string value
+//    pargTrim, //TODO
     pargValues //without name=value consider it as value
   );
 
@@ -421,6 +421,8 @@ function SwapBytes(const Source: Word): Word; overload;
 function SwapBytes(const Source: SmallInt): SmallInt; overload;
 function SwapBytes(const Source: Cardinal): Cardinal; overload;
 function SwapBytes(const Source: Int64): Int64; overload;
+
+function BooleanOf(S: string): Boolean;
 
 //Rect functions
 procedure CenterRect(var R1: TRect; R2: TRect);
@@ -1356,18 +1358,32 @@ begin
       end
       else
       begin
-        Name := S;
-        Value := '';
         if State = stAssign then
-          State := stValue
+        begin
+          State := stValue;
+          Name := S;
+          Value := '';
+        end
         else
+        begin
           State := stName;
+          if (pargValues in Options) and (S <> '') and not CharInArray(S[1], Switches) then //Not a Switch
+          begin
+            Name := '';
+            Value := S;
+          end
+          else
+          begin
+            Name := S;
+            Value := '';
+          end;
+        end;
       end;
 
       if State = stName then
       begin
         Resume := True;
-        if (Name<>'') and CharInArray(Name[1], Switches) then
+        if (Name <> '') and CharInArray(Name[1], Switches) then
         begin
           IsSwitch := True;
 
@@ -1387,11 +1403,11 @@ begin
               Name := Copy(Name, 2, Length(Name));
           end;
         end;
-        //run2.exe  name=value "name"=value name="value" "name=value"
-        if (Value='') and not IsSwitch and (pargValues in Options) then
+        //run2.exe  name=value "name"=value name="value" "name=value" name
+{        if (Value = '') and not IsSwitch and (pargValues in Options) then
           CallBackProc(Sender, Index, '', Name, IsSwitch, Resume)
-        else
-          CallBackProc(Sender, Index, Name, Value, IsSwitch, Resume);
+        else}
+        CallBackProc(Sender, Index, Name, Value, IsSwitch, Resume);
 
         IsSwitch := False;
         Index := Index + 1;
@@ -2537,6 +2553,11 @@ begin
     Result := Copy(Path, 2, MaxInt)
   else
     Result := Path
+end;
+
+function BooleanOf(S: string): Boolean;
+begin
+  Result := IsStrInArray(LowerCase(Trim(S)), ['true', 'on', 'yes', '1']);
 end;
 
 procedure CenterRect(var R1: TRect; R2: TRect);

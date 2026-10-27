@@ -5559,7 +5559,7 @@ begin
     //yes always created, i maybe pass params that come from Query (after ? )
     if Request.RequestType = rtFormData then
     begin
-      Ctx.Data := TmnMultipartData.Create(Request.Header.Field['Content-Type'].SubValue('boundary'), (Module as TmnwWebModule).PrivatePath + 'temp');
+      Ctx.Data := TmnMultipartData.Create(Request.Header.Field['Content-Type'].SubValue('boundary'), (Module as TmnwWebModule).PrivatePath + 'temp', True);
       (Ctx.Data as TmnMultipartData).Read(Request.Stream);
     end
     else if Request.RequestType = rtJSONData then
