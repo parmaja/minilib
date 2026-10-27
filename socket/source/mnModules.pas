@@ -441,11 +441,13 @@ type
     function SendUTF8String(const s: UTF8String): Boolean; overload;
     function SendString(const s: string): Boolean; overload;
     function SendStream(s: TStream; AAlias: string; ASize: Int64; AFileDate: TDateTime; FileDispositions: TmodFileDispositions = []): Boolean; overload;
+    function SendStream(s: TStream; AAlias: string; ASize: Int64; AFileDate: TDateTime; FileDispositions: TmodFileDispositions; const AContentType: string): Boolean; overload;
     function SendStream(s: TStream; ASize: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
     function SendStream(s: ImnStreamPersist; Count: Int64; AOptions: TmodSendOptions = []): Boolean; overload;
 
     function SendResource(const ResName: string; Alias: string): Boolean; overload;
     function SendFile(const AFileName: string; Alias: string = ''; FileDispositions: TmodFileDispositions = []): Boolean; overload;
+    function SendFile(const AFileName: string; Alias: string; FileDispositions: TmodFileDispositions; const AContentType: string): Boolean; overload;
 
     function ReceiveStream(s: TStream): Int64; overload;
     function ReceiveStream(s: ImnStreamPersist; Count: Int64): Int64; overload;
@@ -1583,6 +1585,38 @@ begin
   end;
 end;
 
+function TmodResponse.SendFile(const AFileName: string; Alias: string; FileDispositions: TmodFileDispositions; const AContentType: string): Boolean;
+var
+  aStream: TStream;
+  Info: TFileInfo;
+begin
+  if not GetFileInfo(AFileName, Info) then
+  begin
+    Answer := hrNotFound;
+    exit(False);
+  end;
+
+  if Alias = '' then
+    Alias := ExtractFileName(AFileName);
+
+  Answer := hrOK;
+
+  Stamp := GetFileStamp(Info.Size, Info.TimeStamp); //Yes it is repeated in SendStream but we will pass fdResend
+
+  if not DeveloperMode and not (fdResend in FileDispositions) and (Request.Stamp = Stamp) then
+  begin
+    Answer := hrNotModified;
+    exit(False);
+  end;
+
+  aStream := TFileStream.Create(AFileName, fmShareDenyNone or fmOpenRead);
+  try
+    Result := SendStream(aStream, Alias, Info.Size, Info.TimeStamp, FileDispositions + [fdResend], AContentType);
+  finally
+    aStream.Free;
+  end;
+end;
+
 function TmodResponse.SendResource(const ResName: string; Alias: string): Boolean;
 var
   aStream: TResourceStream;
@@ -1619,6 +1653,11 @@ begin
 end;
 
 function TmodResponse.SendStream(s: TStream; AAlias: string; ASize: Int64; AFileDate: TDateTime; FileDispositions: TmodFileDispositions): Boolean;
+begin
+  Result := SendStream(s, AAlias, ASize, AFileDate, FileDispositions, '');
+end;
+
+function TmodResponse.SendStream(s: TStream; AAlias: string; ASize: Int64; AFileDate: TDateTime; FileDispositions: TmodFileDispositions; const AContentType: string): Boolean;
 var
   aMIMEItem: TmnMIMEItem;
   aDisposition: string;
@@ -1647,8 +1686,13 @@ begin
 
   aMIMEItem := DocumentToMIME(AAlias);
 
-  if aMIMEItem <> nil then
-    ContentType := aMIMEItem.ContentType;
+  if AContentType <> '' then
+    ContentType := AContentType
+  else if ContentType = '' then
+  begin
+    if aMIMEItem <> nil then
+      ContentType := aMIMEItem.ContentType;
+  end;
   if (aMIMEItem <> nil) and (Binary in aMIMEItem.Features) then
   begin
     if aDisposition = '' then
