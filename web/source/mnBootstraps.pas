@@ -201,13 +201,6 @@ type
         procedure DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext); override;
       end;
 
-      { TFooter }
-
-      TFooter = class(THTMLComponent)
-      protected
-        procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
-      end;
-
       { TToast }
 
       TToast = class(THTMLComponent)
@@ -849,7 +842,6 @@ begin
     RegisterRenderer(THTML.TAccordionSection, TAccordionSection);
     RegisterRenderer(THTML.TAccordionItem, TAccordionItem);
     RegisterRenderer(THTML.TMain, TMain);
-    RegisterRenderer(THTML.TFooter, TFooter);
     RegisterRenderer(THTML.TToast, TToast);
     RegisterRenderer(THTML.TLink, TLink);
     RegisterRenderer(THTML.TSpan, TSpan);
@@ -969,16 +961,6 @@ begin
   Ctx.Writer.OpenTag('header', Scope.ToString);
   inherited;
   Ctx.Writer.CloseTag('header');
-end;
-
-{ TBSRenderer.TFooterHTML }
-
-procedure TBSRenderer.TFooter.DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext);
-begin
-  Scope.Classes.Add('text-center');
-  Ctx.Writer.OpenTag('footer', Scope.ToString);
-  inherited;
-  Ctx.Writer.CloseTag('footer');
 end;
 
 { TBSRenderer.TToast }

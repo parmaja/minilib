@@ -60,9 +60,9 @@ WebElement:                              NameSpace                              
 │            │ │                   │ │       │ │   │
 │            │ └───────────────────┘ └───────┘ │   │
 │            │                                 │   │
-├────────────┴── Footer ───────────────────────┤  ─┤
-│                                              │   ├─ Footer
-└──────────────────────────────────────────────┘  ─┘
+│            ├──────── Footer ─────────────────┤  ─┤
+│            │                                 │   ├─ Footer (TODO)
+└────────────┴─────────────────────────────────┘  ─┘
 
   https://bootstrap.build/app
   https://www.layoutit.com
@@ -1475,6 +1475,7 @@ type
         property Main: TMain read FMain;
         property Footer: TFooter read FFooter;
         property Toast: TToast read FToast;
+
         property Wide: Boolean read GetWide write SetWide;
       end;
 
