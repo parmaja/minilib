@@ -1684,15 +1684,18 @@ begin
   else
     aDisposition := '';
 
-  aMIMEItem := DocumentToMIME(AAlias);
 
   if AContentType <> '' then
-    ContentType := AContentType
-  else if ContentType = '' then
-  begin
-    if aMIMEItem <> nil then
-      ContentType := aMIMEItem.ContentType;
-  end;
+    aMIMEItem := ContentTypeToMIME(AContentType)
+  else
+    aMIMEItem := nil;
+
+  if aMIMEItem = nil then
+    aMIMEItem := DocumentToMIME(AAlias);
+
+  if aMIMEItem <> nil then
+    ContentType := aMIMEItem.ContentType;
+
   if (aMIMEItem <> nil) and (Binary in aMIMEItem.Features) then
   begin
     if aDisposition = '' then

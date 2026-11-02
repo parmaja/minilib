@@ -45,6 +45,7 @@ type
     procedure Register;
   public
     function Add(const Extension, ContentType: string; const Description: string = ''; AFeatures: TMIMEFeatures = []): TmnMIMEItem;
+    function FindType(const ContentType: string): TmnMIMEItem;
   end;
 
 //* You can call txt or .txt filename.txt or c:\temp\filename.txt
@@ -52,6 +53,7 @@ function DocumentToContentType(const FileOrExtension: string): string; inline;
 function ContentTypeOf(const FileOrExtension: string): string;
 //* Always return MIME , default is first one
 function DocumentToMIME(const FileOrExtension: string): TmnMIMEItem;
+function ContentTypeToMIME(const ContentType: string): TmnMIMEItem;
 
 function MIME: TmnMIME; 
 
@@ -84,6 +86,11 @@ begin
     Result := MIME[0];
 end;
 
+function ContentTypeToMIME(const ContentType: string): TmnMIMEItem;
+begin
+  Result := MIME.FindType(LowerCase(ContentType));
+end;
+
 function ContentTypeOf(const FileOrExtension: string): string;
 var
   Item: TmnMIMEItem;
@@ -110,6 +117,18 @@ begin
   Result.Description := Description;
   Result.Features := AFeatures;
   inherited Add(Result);
+end;
+
+function TmnMIME.FindType(const ContentType: string): TmnMIMEItem;
+var
+  aItem: TmnMIMEItem;
+begin
+  for aItem in Self do
+  begin
+    if aItem.ContentType = ContentType then
+      exit(aItem);
+  end;
+  Result := nil;
 end;
 
 procedure TmnMIME.Register;

@@ -99,7 +99,7 @@ uses
   {$endif}
   syncobjs, mnDON, mnJSON,
   mnUtils, mnClasses, mnStreams, mnStreamUtils, mnLogs, mnMIME, mnParams, mnTypes,
-  mnMultipartData, mnModules, mnWebModules;
+  mnMultipartData, mnModules, mnWebModules, mnHttpClient;
 
 const
   cVersion = '1.85';
@@ -363,7 +363,7 @@ type
     function ToString(WithSpace: Boolean): string; overload;
 
     constructor Create(AElement: TmnwElement);
-    procedure Free;
+    destructor Destroy; override;
   end;
 
   TmnwLibraryClass = class of TmnwLibrary;
@@ -512,6 +512,8 @@ type
     property Sources: TLibrarySources read FSources;
   end;
 
+  TOnCancel = procedure(out Cancel: Boolean);
+
   { TmnwLibraries }
 
   TmnwLibraries = class(TmnNamedObjectList<TmnwLibrary>)
@@ -519,17 +521,18 @@ type
     FLock: TMREWSync;
   public
     constructor Create; virtual;
-    destructor Destroy; override;     
+    destructor Destroy; override;
     function Find(ALibraryName: string): TmnwLibrary; overload;
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
     function RegisterLibrary(ALibraryClass: TmnwLibraryClass; Priority: Integer = 0): TmnwLibrary; overload;
+    procedure DownloadSources(const AFolder: string; OnCancel: TOnCancel = nil);
     property Lock: TMREWSync read FLock;
   end;
 
   TmnwRequires = class(TmnNamedObjectList<TmnwLibrary>)
   protected
     function Compare(Item1, Item2: TmnwLibrary): Integer; override;
-  public    
+  public
     function Find(ALibraryClass: TmnwLibraryClass): TmnwLibrary; overload;
 
     procedure Use(ALibraryClass: TmnwLibraryClass); overload;
@@ -2380,7 +2383,7 @@ implementation
 
 uses  
   Generics.Collections,
-  mnBase64, mnHttpClient;
+  mnBase64;
 
 function DirectionToStr(Direction: TDirection): string;
 begin
@@ -2527,7 +2530,7 @@ function Renderers: TmnwRenderers;
 begin
   if FRenderers = nil then
     FRenderers := TmnwRenderers.Create;
-  Result := FRenderers;  
+  Result := FRenderers;
 end;
 
 function Libraries: TmnwLibraries;
@@ -2535,6 +2538,107 @@ begin
   if FLibraries = nil then
     FLibraries := TmnwLibraries.Create;
   Result := FLibraries;
+end;
+
+{ TmnwLibraries.DownloadSources }
+
+procedure TmnwLibraries.DownloadSources(const AFolder: string; OnCancel: TOnCancel = nil);
+var
+  i, j: Integer;
+  Lib: TmnwLibrary;
+  Source: TmnwLibrarySource;
+  DestPath: string;
+  LocalFile: string;
+  Downloaded: Integer;
+  ACancel: Boolean;
+  procedure DoDownload(const URL, AFileName, DisplayName: string);
+  var
+    StartTime: Cardinal;
+    LastUpdate: Cardinal;
+    LastPercent: Integer;
+  begin
+    Log.Write('  Downloading ' + DisplayName + ' ...');
+
+    StartTime := TThread.GetTickCount;
+    LastUpdate := StartTime;
+    LastPercent := -1;
+
+    HttpDownloadFileEx(URL, AFileName, procedure(Sender: TObject; const AName: string; ATotal, ADownloaded: Int64; var ACancel: Boolean)
+      var
+        NowTime: Cardinal;
+        ElapsedSec: Double;
+        Speed: Double;
+        Percent: Integer;
+      begin
+        NowTime := TThread.GetTickCount;
+
+        if ATotal > 0 then
+          Percent := (ADownloaded * 100) div ATotal
+        else
+          Percent := 0;
+
+        if (NowTime - LastUpdate >= 200) or (Percent <> LastPercent) or (ADownloaded >= ATotal) then
+        begin
+          ElapsedSec := (NowTime - StartTime) / 1000;
+          if ElapsedSec > 0 then
+            Speed := ADownloaded / ElapsedSec
+          else
+            Speed := 0;
+
+          if IsConsole then
+          begin
+            if ATotal > 0 then
+              Write(#13'  ' + AName + ': ' + IntToStr(ADownloaded) + ' / ' + IntToStr(ATotal) +
+                ' (' + IntToStr(Percent) + '%)  ' + FormatFloat('0.0', Speed / 1024) + ' KB/s' + #32)
+            else
+              Log.Write(#13'  ' + AName + ': ' + IntToStr(ADownloaded) + ' bytes  ' +
+                FormatFloat('0.0', Speed / 1024) + ' KB/s' + #32);
+          end;
+
+          LastUpdate := NowTime;
+          LastPercent := Percent;
+        end;
+
+        if (ADownloaded >= ATotal) and (ATotal > 0) then
+          Log.WriteLn(' - Done');
+        if Assigned(OnCancel) then
+          OnCancel(ACancel);
+      end
+    );
+
+    Log.WriteLn('');
+  end;
+
+begin
+  if AFolder = '' then
+    raise Exception.Create('DownloadSources: Folder path is required');
+
+  DestPath := IncludeTrailingPathDelimiter(AFolder);
+  ForceDirectories(DestPath);
+
+  Downloaded := 0;
+  for i := 0 to Libraries.Count - 1 do
+  begin
+    Lib := Libraries[i];
+    for j := 0 to Lib.Sources.Count - 1 do
+    begin
+      Source := Lib.Sources[j];
+      if (Source.Where = stOnline) and (Source.OnlineFile <> '') then
+      begin
+        LocalFile := DestPath + Source.Name;
+        if Assigned(OnCancel) then
+        begin
+          OnCancel(ACancel);
+          if ACancel then
+            break;
+        end;
+        DoDownload(Source.OnlineFile, LocalFile, Source.Name);
+        Inc(Downloaded);
+      end;
+    end;
+  end;
+
+  Log.WriteLn('Downloaded: ' + Downloaded.ToString + ' files');
 end;
 
 var
@@ -5912,14 +6016,6 @@ end;
 
 { TmnwScope }
 
-procedure TmnwScope.Free;
-begin  
-  FreeAndNil(Attributes);
-  Element := nil;
-  Classes := Default(TElementClasses);
-  WrapClasses := Default(TElementClasses);
-end;
-
 function TmnwScope.ToString(Area: TAttributeAreas; WithSpace: Boolean): string;
 begin
   Result := Classes.ToString(Area);
@@ -5938,6 +6034,14 @@ begin
   inherited Create;
   Attributes := TmnwAttributes.Create;
   Element := AElement;
+end;
+
+destructor TmnwScope.Destroy;
+begin
+  Element := nil;
+  FreeAndNil(Attributes);
+  WrapClasses := Default(TElementClasses);
+  inherited;
 end;
 
 function TmnwScope.ToString(WithSpace: Boolean): string;

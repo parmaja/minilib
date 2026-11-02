@@ -195,6 +195,8 @@ type
 
 function HttpDownloadFile(const URL, FileName: string): TFileSize;
 function HttpGetFileSize(const URL: string; out FileSize: TFileSize): Boolean;
+function HttpDownloadFileEx(const URL, FileName: string; OnProgress: TOnHttpDownloadProgress): TFileSize;
+
 
 function BIO_HttpDownloadFile(const URL, FileName: string): TFileSize;
 
@@ -296,6 +298,19 @@ begin
   aHttpClient := TmnHttpClient.Create;
   try
     Result := aHttpClient.GetFile(URL, FileName);
+  finally
+    FreeAndNil(aHttpClient);
+  end;
+end;
+
+function HttpDownloadFileEx(const URL, FileName: string; OnProgress: TOnHttpDownloadProgress): TFileSize;
+var
+  aHttpClient: TmnHttpClient;
+begin
+  aHttpClient := TmnHttpClient.Create;
+  try
+    aHttpClient.OnProgress := OnProgress;
+    Result := aHttpClient.GetFileEx(URL, FileName);
   finally
     FreeAndNil(aHttpClient);
   end;
