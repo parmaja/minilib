@@ -720,7 +720,6 @@ begin
             IntToHex(Guid.D4[2], 2) + IntToHex(Guid.D4[3], 2) + IntToHex(Guid.D4[4], 2) +
             IntToHex(Guid.D4[5], 2) + IntToHex(Guid.D4[6], 2) + IntToHex(Guid.D4[7], 2)
             );
-//or  Result := LowerCase(RemoveEncloseStr(GUIDToString(Guid), '{', '}'));
 end;
 
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions; vChar: Char): string;

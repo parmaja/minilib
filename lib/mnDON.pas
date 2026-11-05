@@ -129,6 +129,7 @@ type
     FParent: TDON_Parent;
     function GetValues(const Index: string): TDON_Value;
     procedure SetValues(const Index: string; const Value: TDON_Value);
+    procedure SetParent(const AValue: TDON_Parent);
   protected
     function FindItem(const Name: string): TDON_Value; virtual;
     function GetItem(Index: Integer): TDON_Value; virtual;
@@ -149,7 +150,7 @@ type
     function AddArray(const Name: String): TDON_Value; overload;
     function AddPair(const Name: String; const Value: string): TDON_Value; overload; //Add Pair with string value with this name
 
-    property Parent: TDON_Parent read FParent;
+    property Parent: TDON_Parent read FParent write SetParent;
 
     property Values[const Index: string]: TDON_Value read GetValues write SetValues; default;
 	  {$ifndef FPC}
@@ -293,6 +294,10 @@ type
     property Value: Boolean read FValue write FValue;
   end;
 
+  TDON_<Integer> = class(TDON_Number);
+//  TDON_<Boolean> = class(TDON_Boolean);
+//  TDON_<String> = class(TDON_String);
+
   { TDON_Comment }
   //* Not used
 
@@ -306,6 +311,8 @@ type
   end;
 
   TDON_Parent = class abstract(TDON_Value) //No not TDON_ScalarValue it is aggregate
+  public
+    function Detach(Child: TDON_Value): Boolean; virtual; abstract;
   end;
 
   { Arrays }
@@ -344,6 +351,7 @@ type
   public
     constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
+    function Detach(Child: TDON_Value): Boolean; override;
     function GetEnumerator: TArrayEnumerator; inline;
 
     function Add(Value: TDON_Value): TDON_Value; overload;
@@ -369,7 +377,7 @@ type
     FName: string;
     FValue: TDON_Value;
 
-    procedure SetPairValue(AValue: TDON_Value);
+    procedure SetValueObject(AValue: TDON_Value);
   protected
     function FindItem(const Name: string): TDON_Value; override;
     function GetAsString: string; override;
@@ -380,7 +388,7 @@ type
     destructor Destroy; override;
     function ReleaseValue: TDON_Value;
   published
-    property Value: TDON_Value read FValue write SetPairValue;
+    property Value: TDON_Value read FValue write SetValueObject;
     property Name: string read FName write FName;
   end;
 
@@ -414,9 +422,9 @@ type
         function MoveNext: Boolean; inline;
         property Current: TDON_Pair read GetCurrent;
       end;
-          
+
     function FindItem(const Name: string): TDON_Value; override;
-   
+
     function GetItem(Index: Integer): TDON_Value; override;
     function GetAsString: string; override;
     function GetValue: Variant; override;
@@ -426,16 +434,32 @@ type
     function GetEnumerator: TPairsEnumerator; inline;
     constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
+    function Detach(Child: TDON_Value): Boolean; overload; override;
+    function Detach(Child: string): Boolean; overload;
     function CreatePair(const PairName: string; AValue: TDON_Value = nil): TDON_Pair;
     procedure AcquirePair(const AName: string; out AObject: TObject);
     procedure Add(Value: TDON_Pair); overload;
+
+    function Add(const Name: String; const Value: TDON_Value): TDON_Value; overload;
+
     function Add(const Name: String; const Value: string): TDON_Value; overload;
+    function Add(const Name: String; const Value: Boolean): TDON_Value; overload;
     function Add(const Name: String; const Value: Integer): TDON_Value; overload;
     function Add(const Name: String; const Value: Int64): TDON_Value; overload;
+
+    function SetPair(const AName: String; const AValue: TDON_Value): TDON_Pair; overload;
+    function SetPair(const AName: String; const AValue: string): TDON_Pair; overload;
+    function SetPair(const AName: String; const AValue: Boolean): TDON_Pair; overload;
+    function SetPair(const AName: String; const AValue: Integer): TDON_Pair; overload;
+    function SetPair(const AName: String; const AValue: Int64): TDON_Pair; overload;
+    function SetPair(const AName: String; const AValue: TDateTime): TDON_Pair; overload;
+
+    function SetPair<T>(const AName: String; const AValue: T): TDON_Pair; overload; //TODO
 
     function FindPair(const Name: string): TDON_Pair; overload;
     function FindPair<T: TDON_Pair>(const Name: string): T; overload;
     function PairExists(const Name: string): Boolean; overload;
+    function FindByValue(const Value: TDON_Value): TDON_Pair; overload;
     function FindByValue(const Value: string): TDON_Pair; overload;
     function FindNameByValue(const Value: string): string;  overload;
 
@@ -445,11 +469,11 @@ type
   published
   end;
 
-//*---------------------------------------------------------------------------------------------    
+//*---------------------------------------------------------------------------------------------
 const
   cIndentSpaces = 2;
 
-type  
+type
 
   { TmnTidyWriter }
 
@@ -1275,6 +1299,13 @@ begin
     Result := FindItem(Index);
 end;
 
+procedure TDON_Value.SetParent(const AValue: TDON_Parent);
+begin
+  if FParent <> nil then
+    FParent.Detach(Self);
+  FParent := AValue;
+end;
+
 {class operator TDON_Value.Implicit(const AData: TDON_Value): string;
 begin
   Result := AData.ToString;
@@ -1334,6 +1365,11 @@ destructor TDON_Array.Destroy;
 begin
   FreeAndNil(FItems);
   inherited;
+end;
+
+function TDON_Array.Detach(Child: TDON_Value): Boolean;
+begin
+  Result := FItems.Extract(Child) <> nil;
 end;
 
 function TDON_Array.Find(const AName: string): Integer;
@@ -1420,6 +1456,24 @@ begin
   Result := aPair.Value;
 end;
 
+function TDON_Object.Add(const Name: String; const Value: TDON_Value): TDON_Value;
+var
+  aPair: TDON_Pair;
+begin
+  aPair := CreatePair(Name);
+  aPair.Value := Value;
+  Result := aPair.Value;
+end;
+
+function TDON_Object.Add(const Name: String; const Value: Boolean): TDON_Value;
+var
+  aPair: TDON_Pair;
+begin
+  aPair := CreatePair(Name);
+  aPair.Value := TDON_Boolean.Create(aPair, Value);
+  Result := aPair.Value;
+end;
+
 function TDON_Object.Add(const Name: String; const Value: Integer): TDON_Value;
 var
   aPair: TDON_Pair;
@@ -1454,6 +1508,36 @@ begin
   inherited;
 end;
 
+function TDON_Object.Detach(Child: string): Boolean;
+var
+  P: TDON_Pair;
+begin
+  P := FindPair(Child);
+  Result := P <> nil;
+  if Result then
+    FPairs.Extract(P);
+end;
+
+function TDON_Object.Detach(Child: TDON_Value): Boolean;
+var
+  P: TDON_Pair;
+begin
+  P := FindByValue(Child);
+  Result := P <> nil;
+  if Result then
+    FPairs.Extract(P);
+end;
+
+function TDON_Object.FindByValue(const Value: TDON_Value): TDON_Pair;
+var
+  i: Integer;
+begin
+  for i := 0 to FPairs.Count-1 do
+    if FPairs[i].Value = Value then
+      Exit(FPairs[i]);
+  Result := nil
+end;
+
 function TDON_Object.FindItem(const Name: string): TDON_Value;
 var
   i: Integer;
@@ -1474,9 +1558,7 @@ var
 begin
   for i := 0 to FPairs.Count-1 do
     if SameText(FPairs[i].Value.AsString, Value) then
-    begin
       Exit(FPairs[i]);
-    end;
   Result := nil
 end;
 
@@ -1562,6 +1644,90 @@ begin
   FPairs.Add(Value);
 end;
 
+function TDON_Object.SetPair(const AName, AValue: string): TDON_Pair;
+begin
+  Result := FindPair(AName);
+  if Result <> nil then
+      Result.Value.AsString := AValue
+  else
+  begin
+    Result := CreatePair(AName);
+    Result.Value := TDON_String.Create(Result, Value);
+  end;
+end;
+
+function TDON_Object.SetPair(const AName: String; const AValue: Integer): TDON_Pair;
+begin
+  Result := FindPair(AName);
+  if Result <> nil then
+      Result.Value.AsInteger := AValue
+  else
+  begin
+    Result := CreatePair(AName);
+    Result.Value := TDON_Number.Create(Result, Value);
+  end;
+end;
+
+function TDON_Object.SetPair(const AName: String; const AValue: Int64): TDON_Pair;
+begin
+  Result := FindPair(AName);
+  if Result <> nil then
+      Result.Value.AsInt64:= AValue
+  else
+  begin
+    Result := CreatePair(AName);
+    Result.Value := TDON_Number.Create(Result, Value);
+  end;
+end;
+
+function TDON_Object.SetPair(const AName: String; const AValue: TDateTime): TDON_Pair;
+begin
+  Result := FindPair(AName);
+  if Result <> nil then
+      Result.Value.AsDateTime:= AValue
+  else
+  begin
+    Result := CreatePair(AName);
+    Result.Value := TDON_Number.Create(Result, Value);
+  end;
+end;
+
+function TDON_Object.SetPair(const AName: String; const AValue: TDON_Value): TDON_Pair;
+begin
+  Result := FindPair(AName);
+  if Result <> nil then
+      Result.Value := AValue
+  else
+  begin
+    Result := CreatePair(AName);
+    Result.Value := AValue
+  end;
+end;
+
+function TDON_Object.SetPair(const AName: String; const AValue: Boolean): TDON_Pair;
+begin
+  Result := FindPair(AName);
+  if Result <> nil then
+      Result.Value.AsBoolean:= AValue
+  else
+  begin
+    Result := CreatePair(AName);
+    Result.Value := TDON_Boolean.Create(Result, Value);
+  end;
+end;
+
+function TDON_Object.SetPair<T>(const AName: String; const AValue: T): TDON_Pair;
+begin
+  Result := FindPair(AName);
+  if Result <> nil then
+//      Result.Value.AsString := AValue
+  else
+  begin
+    Result := CreatePair(AName);
+    Result.Value := TDON_<T>.Create(Result, Value);
+  end;
+end;
+
 procedure TDON_Object.SetValue(const AValue: Variant);
 begin
   AsString := aValue;
@@ -1569,7 +1735,7 @@ end;
 
 { TDON_Pair }
 
-procedure TDON_Pair.SetPairValue(AValue: TDON_Value);
+procedure TDON_Pair.SetValueObject(AValue: TDON_Value);
 begin
   if FValue <> AValue then
   begin
