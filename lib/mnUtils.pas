@@ -351,6 +351,8 @@ function StringOfUTF8(const Value: PByte; Size: Integer): string;
 function UTF8StringOf(const Value: PByte; Size: Integer): UTF8String; overload;
 function UTF8StringOf(const Value: TBytes): UTF8String; overload;
 
+function BooleanToStr(B: Boolean; const TrueStr, FalseStr: string): string; overload;
+
 function UTF8Length(S: UTF8String): Integer;
 function UTF8Copy(const S: UTF8String; StartChar, CharCount: Integer): UTF8String;
 function UTF8CodepointSize(const LeadingByte: PByte): Integer;
@@ -422,7 +424,7 @@ function SwapBytes(const Source: SmallInt): SmallInt; overload;
 function SwapBytes(const Source: Cardinal): Cardinal; overload;
 function SwapBytes(const Source: Int64): Int64; overload;
 
-function BooleanOf(S: string): Boolean;
+function BooleanOf(const S: string): Boolean;
 
 //Rect functions
 procedure CenterRect(var R1: TRect; R2: TRect);
@@ -2555,7 +2557,7 @@ begin
     Result := Path
 end;
 
-function BooleanOf(S: string): Boolean;
+function BooleanOf(const S: string): Boolean;
 begin
   Result := IsStrInArray(LowerCase(Trim(S)), ['true', 'on', 'yes', '1']);
 end;
@@ -3058,6 +3060,14 @@ begin
   SetLength(Result, Size);
   if Size > 0 then
     Move(PByte(Value)^, Result[1], Size);
+end;
+
+function BooleanToStr(B: Boolean; const TrueStr, FalseStr: string): string; overload;
+begin
+  if B then
+    Result := TrueStr
+  else
+    Result := FalseStr
 end;
 
 //Iterate through the bytes. In UTF-8, a byte is the start of a new character if its value is less than $80 or between $C0 and $FD.

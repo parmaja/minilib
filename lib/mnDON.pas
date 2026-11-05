@@ -938,7 +938,7 @@ end;
 constructor TSerializer.Create;
 begin
   inherited Create;
-  TabWidth := 4;
+  TabWidth := 2;
   LineTerminator := #10;
 end;
 
@@ -1663,7 +1663,7 @@ end;
 
 function TDON_Boolean.GetAsString: string;
 begin
-  Result := BoolToStr(FValue);
+  Result := BooleanToStr(FValue, 'true', 'false');
 end;
 
 function TDON_Boolean.GetValue: Variant;
@@ -1767,7 +1767,7 @@ end;
 
 procedure TDON_CustomStringValue.SetAsBoolean(const Value: Boolean);
 begin
-  FValue := BoolToStr(Value);
+  FValue := BooleanToStr(Value, 'true', 'false');
 end;
 
 procedure TDON_CustomStringValue.SetAsCurrency(const Value: Currency);
@@ -1982,7 +1982,7 @@ begin
   end
   else if AClass = TDON_Boolean then
   begin
-    Serializer.Add(BoolToStr((AObject as TDON_Boolean).Value, True), LastOne, ',');
+    Serializer.Add(BooleanToStr((AObject as TDON_Boolean).Value, 'true', 'false'), LastOne, ',');
     Serializer.NewLine;
   end
   else if AClass.ClassParent <> nil then //if we cant find it we take parent class

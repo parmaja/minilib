@@ -238,7 +238,7 @@ mnw.formPost = async function(e, extraJson) {
   if (extraJson)
     Object.assign(data, extraJson);
 
-  const action = e.submitter.getAttribute('data-action') || "";
+  const action = (e.submitter && e.submitter.getAttribute('data-action')) || "";
   if (action)
     data['action'] = action;
 

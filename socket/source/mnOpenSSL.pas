@@ -2069,5 +2069,3 @@ initialization
 finalization
   FreeThreadDigest;
 end.
-
-
