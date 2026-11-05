@@ -129,7 +129,6 @@ type
     FParent: TDON_Parent;
     function GetValues(const Index: string): TDON_Value;
     procedure SetValues(const Index: string; const Value: TDON_Value);
-    procedure SetParent(const AValue: TDON_Parent);
   protected
     function FindItem(const Name: string): TDON_Value; virtual;
     function GetItem(Index: Integer): TDON_Value; virtual;
@@ -150,7 +149,7 @@ type
     function AddArray(const Name: String): TDON_Value; overload;
     function AddPair(const Name: String; const Value: string): TDON_Value; overload; //Add Pair with string value with this name
 
-    property Parent: TDON_Parent read FParent write SetParent;
+    property Parent: TDON_Parent read FParent;
 
     property Values[const Index: string]: TDON_Value read GetValues write SetValues; default;
 	  {$ifndef FPC}
@@ -295,8 +294,8 @@ type
   end;
 
   TDON_<Integer> = class(TDON_Number);
-//  TDON_<Boolean> = class(TDON_Boolean);
 //  TDON_<String> = class(TDON_String);
+//  TDON_<Boolean> = class(TDON_Boolean);
 
   { TDON_Comment }
   //* Not used
@@ -312,7 +311,6 @@ type
 
   TDON_Parent = class abstract(TDON_Value) //No not TDON_ScalarValue it is aggregate
   public
-    function Detach(Child: TDON_Value): Boolean; virtual; abstract;
   end;
 
   { Arrays }
@@ -351,7 +349,7 @@ type
   public
     constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
-    function Detach(Child: TDON_Value): Boolean; override;
+    function ReleaseValue(Child: TDON_Value): Boolean;
     function GetEnumerator: TArrayEnumerator; inline;
 
     function Add(Value: TDON_Value): TDON_Value; overload;
@@ -434,8 +432,8 @@ type
     function GetEnumerator: TPairsEnumerator; inline;
     constructor Create(AParent: TDON_Parent = nil); overload;
     destructor Destroy; override;
-    function Detach(Child: TDON_Value): Boolean; overload; override;
-    function Detach(Child: string): Boolean; overload;
+    function ReleaseValue(Child: TDON_Value): Boolean; overload;
+    function ReleaseValue(Child: string): Boolean; overload;
     function CreatePair(const PairName: string; AValue: TDON_Value = nil): TDON_Pair;
     procedure AcquirePair(const AName: string; out AObject: TObject);
     procedure Add(Value: TDON_Pair); overload;
@@ -448,7 +446,9 @@ type
     function Add(const Name: String; const Value: Int64): TDON_Value; overload;
 
     function SetPair(const AName: String; const AValue: TDON_Value): TDON_Pair; overload;
+
     function SetPair(const AName: String; const AValue: string): TDON_Pair; overload;
+
     function SetPair(const AName: String; const AValue: Boolean): TDON_Pair; overload;
     function SetPair(const AName: String; const AValue: Integer): TDON_Pair; overload;
     function SetPair(const AName: String; const AValue: Int64): TDON_Pair; overload;
@@ -1299,13 +1299,6 @@ begin
     Result := FindItem(Index);
 end;
 
-procedure TDON_Value.SetParent(const AValue: TDON_Parent);
-begin
-  if FParent <> nil then
-    FParent.Detach(Self);
-  FParent := AValue;
-end;
-
 {class operator TDON_Value.Implicit(const AData: TDON_Value): string;
 begin
   Result := AData.ToString;
@@ -1367,7 +1360,7 @@ begin
   inherited;
 end;
 
-function TDON_Array.Detach(Child: TDON_Value): Boolean;
+function TDON_Array.ReleaseValue(Child: TDON_Value): Boolean;
 begin
   Result := FItems.Extract(Child) <> nil;
 end;
@@ -1508,7 +1501,7 @@ begin
   inherited;
 end;
 
-function TDON_Object.Detach(Child: string): Boolean;
+function TDON_Object.ReleaseValue(Child: string): Boolean;
 var
   P: TDON_Pair;
 begin
@@ -1518,7 +1511,7 @@ begin
     FPairs.Extract(P);
 end;
 
-function TDON_Object.Detach(Child: TDON_Value): Boolean;
+function TDON_Object.ReleaseValue(Child: TDON_Value): Boolean;
 var
   P: TDON_Pair;
 begin
@@ -1720,7 +1713,9 @@ function TDON_Object.SetPair<T>(const AName: String; const AValue: T): TDON_Pair
 begin
   Result := FindPair(AName);
   if Result <> nil then
-//      Result.Value.AsString := AValue
+  begin
+//   Result.Value.AsString := AValue
+  end
   else
   begin
     Result := CreatePair(AName);
