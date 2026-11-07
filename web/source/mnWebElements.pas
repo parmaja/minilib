@@ -1688,12 +1688,14 @@ type
       private
         FHeader: TCardHeader;
         FFooter: TCardFooter;
+        FRounded: Boolean;
       protected
         procedure Created; override;
       public
         Caption: string;
         Collapse: Boolean;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
+        property Rounded: Boolean read FRounded write FRounded;
         property Footer: TCardFooter read FFooter;
         property Header: TCardHeader read FHeader;
       end;
@@ -5470,6 +5472,7 @@ end;
 constructor THTML.TCard.Create(AParent: TmnwElement; AKind: TmnwElementKinds);
 begin
   inherited;
+  FRounded := True;
   FFooter := TCardFooter.Create(Self, [elEmbed, elInternal]);
   FHeader := TCardHeader.Create(Self, [elEmbed, elInternal]);
 end;

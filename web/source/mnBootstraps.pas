@@ -1036,11 +1036,13 @@ begin
   e := Scope.Element as THTML.TCard;
   Scope.Classes.Add('card');
   Scope.Classes.Add('p-0');
+  if not e.Rounded then
+    Scope.Classes.Add('rounded-0');
 
   Ctx.Writer.OpenTag('div', Scope.ToString([ssOuter]));
   if (e.Caption <> '') or (e.Header.Count > 0) then
   begin
-    Ctx.Writer.OpenTag('h6', 'id="' + e.id + '-header" class="card-header align-items-center d-flex'+ BSControlStyleToStr('text-bg-', e.Style, True) + BSControlStyleToStr('bg-', e.Style, True) + '"');
+    Ctx.Writer.OpenTag('h6', 'id="' + e.id + '-header" class="card-header align-items-center d-flex'+ When(not e.Rounded, ' rounded-0') + BSControlStyleToStr('text-bg-', e.Style, True) + BSControlStyleToStr('bg-', e.Style, True) + '"');
     Ctx.Writer.WriteLn(e.Caption);
     Ctx.Writer.OpenTag('div', 'class="d-flex ms-auto"');
     e.Header.Render(Ctx);
