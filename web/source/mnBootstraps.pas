@@ -1819,7 +1819,7 @@ begin
 
   //`offcanvas-{breakpoint}` keeps the item list inline on wide screens and
   //turns it into the top offcanvas on small ones.
-  Ctx.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas-' + WideSize + ' offcanvas-top'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="true" data-bs-keyboard="false" tabindex="-1"');
+  Ctx.Writer.OpenTag('div', 'id="'+e.id+'-items'+'" class="offcanvas-' + WideSize + ' offcanvas-end'+When((e.Schema as THTML).Document.Body.Header.CanRender, ' content-top') + ' navbar-dark bg-black" data-bs-scroll="true" data-bs-backdrop="true" data-bs-keyboard="false" tabindex="-1"');
   //Ctx.Writer.WriteLn('<div class="offcanvas-body">', [woOpenIndent]);
   Ctx.Writer.OpenTag('ul', 'class="navbar-nav me-auto m-2 m-' + WideSize+'-0"');
   inherited;

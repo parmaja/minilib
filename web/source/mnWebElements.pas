@@ -2237,6 +2237,7 @@ type
   TAssetsSchema = class(TmnwSchema)
   private
     FLogoFile: string;
+    procedure SetLogoFile(const Value: string);
   protected
     //FLogo: THTML.TMemory;  
     procedure Created; override;
@@ -2245,7 +2246,7 @@ type
     class function GetCapabilities: TmnwSchemaCapabilities; override;
     procedure Start; override;
     //property Logo: THTML.TMemory read FLogo;
-    property LogoFile: string read FLogoFile write FLogoFile;
+    property LogoFile: string read FLogoFile write SetLogoFile;
     function GetPublicPath: string; override;
   end;
 
@@ -5702,6 +5703,11 @@ begin
   //FLogo.Route := 'logo';
   FPhase := scmpNormal;
   ServeFiles := [serveEnabled, serveSmart, serveDefault];
+end;
+
+procedure TAssetsSchema.SetLogoFile(const Value: string);
+begin
+  FLogoFile := Value;
 end;
 
 procedure TAssetsSchema.Start;
