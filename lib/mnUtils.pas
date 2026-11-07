@@ -3035,9 +3035,9 @@ end;
 
 function StringOfUTF8(const Value: PByte; Size: Integer): string;
 begin
-  {$ifdef FPC}
   if Size = 0 then
     exit('');
+  {$ifdef FPC}
   SetString(Result, PChar(Value), Size);
   {$else}
   Result := TEncoding.UTF8.GetString(Value, Size);

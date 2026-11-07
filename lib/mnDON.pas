@@ -95,6 +95,7 @@ type
     constructor Create(vStream: TStream; vIsUTF8: Boolean);
     destructor Destroy; override;
     procedure Add(const S: string); override;
+    property IsUTF8: Boolean read FIsUTF8;
   end;
 
   //-------
@@ -594,12 +595,12 @@ end;
 
 procedure JsonSaveString(Pair: TDON_Pair; out Result: string; Options: TSerializerOptions = []);
 var
-  AStream: TStringStream;
+  AStream: TMemoryStream;
 begin
-  AStream := TStringStream.Create('');
+  AStream := TMemoryStream.Create;
   try
     JsonSaveStream(Pair, AStream, Options);
-    Result := AStream.DataString;
+    Result := UTF8StringOf(AStream.Memory, AStream.Size);
   finally
     AStream.Free;
   end;
@@ -622,7 +623,7 @@ begin
   end;
 end;
 
-procedure JsonSaveStream(Obj: TDON_Object; AStream: TStream; Options: TSerializerOptions = []);
+procedure JsonSaveStream(Obj: TDON_Object; AStream: TStream; Options: TSerializerOptions);
 var
   Serializer: TStreamSerializer;
 begin
@@ -649,12 +650,12 @@ end;
 
 procedure JsonSaveString(Obj: TDON_Object; out Result: string; Options: TSerializerOptions = []);
 var
-  AStream: TStringStream;
+  AStream: TMemoryStream;
 begin
-  AStream := TStringStream.Create('');
+  AStream := TMemoryStream.Create;
   try
     JsonSaveStream(Obj, AStream, Options);
-    Result := AStream.DataString;
+    Result := UTF8StringOf(AStream.Memory, AStream.Size);
   finally
     AStream.Free;
   end;
@@ -2154,14 +2155,10 @@ end;
 
 procedure TStreamSerializer.Add(const S: string);
 begin
-  if FIsUTF8 then
-  begin
-    FStream.WriteUTF8String(UTF8Encode(s));
-  end
+  if IsUTF8 then
+    FStream.WriteUTF8String(s)
   else
-  begin
     FStream.WriteString(s);
-  end;
 end;
 
 constructor TStreamSerializer.Create(vStream: TStream; vIsUTF8: Boolean);

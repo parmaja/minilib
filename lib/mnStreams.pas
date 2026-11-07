@@ -480,7 +480,7 @@ end;}
 function TStreamHelper.WriteUTF8String(const vData: UTF8String): TFileSize;
 begin
   if vData<>'' then
-    Result := Write(PByte(vData)^, Length(vData))
+    Result := Write(PUTF8Char(vData)^, ByteLength(vData))
   else
     Result := 0;
 end;
@@ -591,7 +591,7 @@ end;
 function TStreamHelper.WriteString(const vData: string): TFileSize;
 begin
   if vData<>'' then
-    Result := Write(PByte(vData)^, mnStreams.ByteLength(vData))
+    Result := Write(PChar(vData)^, mnStreams.ByteLength(vData))
   else
     Result := 0;
 end;
