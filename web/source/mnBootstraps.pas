@@ -1018,10 +1018,7 @@ begin
 end;
 
 procedure TBSRenderer.TCard.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
-var
-  e: THTML.TCard;
 begin
-  e := Scope.Element as THTML.TCard;
   if Scope.Element.ID <> '' then
     Scope.Attributes.Add('id', Scope.Element.ID, ssOuter); //change area
   inherited;
@@ -1770,7 +1767,7 @@ begin
   e.Logo.Render(Ctx); // Render Image
 
   if e.Title <> '' then
-    Ctx.Writer.AddTag('span', '', e.Title);
+    Ctx.Writer.AddTag('span', 'class="d-none d-sm-inline"', e.Title);
   Ctx.Writer.CloseTag('a');
 end;
 
