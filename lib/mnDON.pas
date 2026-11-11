@@ -1891,7 +1891,10 @@ end;
 
 function TDON_CustomStringValue.GetAsBoolean: Boolean;
 begin
-  Result := StrToBoolDef(AsString, False);
+  if Self = nil then
+    Result := False
+  else
+    Result := StrToBoolean(AsString, False);
 end;
 
 function TDON_CustomStringValue.GetAsCurrency: Currency;

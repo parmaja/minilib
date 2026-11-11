@@ -351,7 +351,8 @@ function StringOfUTF8(const Value: PByte; Size: Integer): string;
 function UTF8StringOf(const Value: PByte; Size: Integer): UTF8String; overload;
 function UTF8StringOf(const Value: TBytes): UTF8String; overload;
 
-function BooleanToStr(B: Boolean; const TrueStr, FalseStr: string): string; overload;
+function BooleanToStr(B: Boolean; const TrueStr: string = 'true'; const FalseStr: string = 'false'): string; overload;
+function StrToBoolean(S: string; Def: Boolean = False): Boolean;
 
 function UTF8Length(S: UTF8String): Integer;
 function UTF8Copy(const S: UTF8String; StartChar, CharCount: Integer): UTF8String;
@@ -3067,6 +3068,15 @@ begin
     Result := TrueStr
   else
     Result := FalseStr
+end;
+
+function StrToBoolean(S: string; Def: Boolean): Boolean;
+begin
+  if S = '' then
+    exit(Def);
+
+  S := S.ToLower;
+  Result := (S = 'true') or (S = '1') or (S = 'on') or (S = 'yes') or (S = 'ok')
 end;
 
 //Iterate through the bytes. In UTF-8, a byte is the start of a new character if its value is less than $80 or between $C0 and $FD.
