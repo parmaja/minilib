@@ -362,10 +362,10 @@ function NewUUID(Hyphen: string = '-'): string;
 //TODO fix ansi to widestring
 function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
 procedure BinToHex(Buffer: PByte; Output: PByte; BufSize: longint); overload;
+function DataToHex(const Buffer: PByte; vCount: Integer): UTF8String; overload;
 function BytesToHex(const B: TBytes): string;
 function HexToBytes(const Hex: string): TBytes;
 function StringToHex(const vStr: string): string; overload;
-function DataToHex(const vData: PByte; vCount: Integer): UTF8String; overload;
 function HexToString(const vData: string): string; overload;
 function UUIDToString(Guid: TGuid; Hyphen: string = '-'): string;
 
@@ -3197,10 +3197,10 @@ begin
     Result := '';
 end;
 
-function DataToHex(const vData: PByte; vCount: Integer): UTF8String;
+function DataToHex(const Buffer: PByte; vCount: Integer): UTF8String;
 begin
   SetLength(Result, vCount * 2);
-  BinToHex(vData, PByte(Result), vCount);
+  BinToHex(Buffer, PByte(Result), vCount);
 end;
 
 const
@@ -3675,9 +3675,11 @@ begin
 end;
 
 function IsServiceProcess: Boolean;
+{$ifdef windows}
 var
   LSessionID, LSize: Cardinal;
   LToken: THandle;
+{$endif}
 begin
   Result := False;
 {$ifdef windows}

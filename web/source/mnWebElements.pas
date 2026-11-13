@@ -1114,7 +1114,7 @@ type
 
       { TFile }
 
-      TFile = class(THTMLElement)
+      TFile = class(TmnwElementRenderer)
       protected
         procedure DoInnerRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
       end;
@@ -5793,7 +5793,7 @@ function TmnwWebModule.GetDefaultURL: string;
 begin
   Result := inherited;
   if Web.DefaultSchema <> nil then
-     Result := Result+ AddStartURLDelimiter(Web.DefaultSchema.Name);
+     Result := Result + AddStartURLDelimiter(Web.DefaultSchema.Name);
 end;
 
 procedure TmnwWebModule.Start;

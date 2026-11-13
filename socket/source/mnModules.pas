@@ -696,6 +696,7 @@ type
     //Protocols all should lowercase
     constructor Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String = ''); overload; virtual;
     destructor Destroy; override;
+
     function RegisterCommand(vName: String; CommandClass: TwebCommandClass; AFallback: Boolean = False): Integer; overload;
 
     //* Run in Connection Thread
@@ -726,7 +727,7 @@ type
   TmodModules = class(TmnNamedObjectList<TmodModule>)
   private
     FActive: Boolean;
-    FDefaultModule: TmodModule;
+    FDefault: TmodModule;
     FInit: Boolean;
     FServer: TmodModuleServer;
   protected
@@ -749,7 +750,7 @@ type
     function Find<T: Class>(const AName: string): T; overload;
     function Find(const AName: string): TmodModule; overload;
     function Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
-    property DefaultModule: TmodModule read FDefaultModule write FDefaultModule;
+    property Default: TmodModule read FDefault write FDefault;
 
     function Add(const Name, AliasName: String; AModule: TmodModule): Integer; overload;
 
@@ -894,12 +895,13 @@ type
     Alias: string;
     ServerClass: TmodModuleServerClass;
     ModuleClass: TmodModuleClass;
+    IsDefault: Boolean;
   end;
 
   TmnRegisteredModules = class(TmnObjectList<TmnRegisteredModule>)
   public
-    procedure RegisterModule(const AName, AAlias: string; ServerClass: TmodModuleServerClass; ModuleClass: TmodModuleClass); overload;
-    procedure RegisterModule(const AName, AAlias: string; ModuleClass: TmodModuleClass); overload;
+    procedure RegisterModule(const AName, AAlias: string; ServerClass: TmodModuleServerClass; ModuleClass: TmodModuleClass; AsDefault: Boolean = False); overload;
+    procedure RegisterModule(const AName, AAlias: string; ModuleClass: TmodModuleClass; AsDefault: Boolean = False); overload;
     procedure CreateModules(AServer: TmodModuleServer);
   end;
 
@@ -2463,13 +2465,15 @@ end;
 constructor TmodModule.Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String);
 begin
   Name := AName;
-  FAliasName := AAliasName;   
+  FAliasName := AAliasName;
   FCommands := TmodCommandClasses.Create(True);
   FUse.KeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
   if AServer <> nil then
   begin
     FServer := AServer;//* nope, Add will assign it
     FServer.Modules.Add(Self);
+    if FServer.Modules.Default = nil then
+      FServer.Modules.Default := Self;
   end;
   InitItems; //TODO rename to Init
 end;
@@ -2759,7 +2763,7 @@ begin
   end;
 
   if aModule = nil then
-    aModule := DefaultModule;
+    aModule := Default;
 
   if aModule = nil then
     aModule := aDefault;
@@ -3986,7 +3990,7 @@ end;
 
 { TmnRegisteredModules }
 
-procedure TmnRegisteredModules.RegisterModule(const AName, AAlias: string; ServerClass: TmodModuleServerClass; ModuleClass: TmodModuleClass);
+procedure TmnRegisteredModules.RegisterModule(const AName, AAlias: string; ServerClass: TmodModuleServerClass; ModuleClass: TmodModuleClass; AsDefault: Boolean);
 var
   item: TmnRegisteredModule;
 begin
@@ -3995,25 +3999,29 @@ begin
   item.Alias := AAlias;
   item.ServerClass := ServerClass;
   item.ModuleClass := ModuleClass;
+  item.IsDefault := AsDefault;
   Add(Item);
 end;
 
 procedure TmnRegisteredModules.CreateModules(AServer: TmodModuleServer);
 var
   item: TmnRegisteredModule;
+  aModule: TmodModule;
 begin
   for item in Self do
   begin
     if (item.ServerClass = nil) or (AServer is item.ServerClass) then
     begin
-      item.ModuleClass.Create(AServer, item.Name, item.Alias);
+      aModule := item.ModuleClass.Create(AServer, item.Name, item.Alias);
+      if item.IsDefault then
+        AServer.Modules.FDefault := aModule;
     end;
   end;
 end;
 
-procedure TmnRegisteredModules.RegisterModule(const AName, AAlias: string; ModuleClass: TmodModuleClass);
+procedure TmnRegisteredModules.RegisterModule(const AName, AAlias: string; ModuleClass: TmodModuleClass; AsDefault: Boolean);
 begin
-  RegisterModule(AName, AAlias, nil, ModuleClass);
+  RegisterModule(AName, AAlias, nil, ModuleClass, AsDefault);
 end;
 
 initialization
