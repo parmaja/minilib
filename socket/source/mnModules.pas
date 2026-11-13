@@ -659,8 +659,10 @@ type
     FServer: TmodModuleServer;
     FProtocols: TArray<String>;
     FUse: TmodCommunicateUsing;
+    FEnabled: Boolean;
     procedure SetAliasName(AValue: String);
     procedure SetProtocols(AValue: TArray<String>);
+    procedure SetEnabled(const Value: Boolean);
   protected
     FFallbackCommand: TwebCommandClass;
     //Name here will corrected with registered item name for example Get -> GET
@@ -703,6 +705,7 @@ type
     function Execute(ARequest: TmodRequest): TmodRespondResult; virtual;
 
     property Commands: TmodCommandClasses read FCommands;
+    property Enabled: Boolean read FEnabled write SetEnabled;
     property Active: Boolean read GetActive;
     //* use lower case in Protocols
     property Protocols: TArray<String> read FProtocols write SetProtocols;
@@ -2464,7 +2467,9 @@ end;
 
 constructor TmodModule.Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String);
 begin
+  inherited Create;
   Name := AName;
+  FEnabled := True;
   FAliasName := AAliasName;
   FCommands := TmodCommandClasses.Create(True);
   FUse.KeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
@@ -2588,6 +2593,11 @@ begin
   if FAliasName = AValue then
     Exit;
   FAliasName := AValue;
+end;
+
+procedure TmodModule.SetEnabled(const Value: Boolean);
+begin
+  FEnabled := Value;
 end;
 
 procedure TmodModule.SetProtocols(AValue: TArray<String>);
@@ -2753,13 +2763,16 @@ begin
   aDefault := nil;
   for item in Self do
   begin
-    if (item.AliasName <> '') and item.Match(ARequest) then
+    if item.Enabled then
     begin
-      aModule := item;
-      break;
-    end
-    else if (item.AliasName = '') then //* find fallback module without aliasname
-      aDefault := item;
+      if (item.AliasName <> '') and item.Match(ARequest) then
+      begin
+        aModule := item;
+        break;
+      end
+      else if (item.AliasName = '') then //* find fallback module without aliasname
+        aDefault := item;
+    end;
   end;
 
   if aModule = nil then
