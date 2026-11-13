@@ -807,13 +807,13 @@ type
     procedure DoIdle; override;
     function CreateModules: TmodModules; virtual;
     procedure Created; override;
-    property Modules: TmodModules read FModules;
   public
     constructor Create; override;
     destructor Destroy; override;
+    property Modules: TmodModules read FModules;
     function Module<T: class>: T;
     function Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
-    function Add(ModuleClass: TmodModuleClass; const AName: string; const AAliasName: String = ''): TmodModule; overload; 
+    function Add(ModuleClass: TmodModuleClass; const AName: string; const AAliasName: String = ''): TmodModule; overload;
     property Enabled: Boolean read FEnabled write SetEnabled;
     property EndOfLine: String read FEndOfLine write SetEndOfLine; //TODO move to module
     property DefaultProtocol: String read FDefaultProtocol write FDefaultProtocol;

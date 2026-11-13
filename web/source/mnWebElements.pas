@@ -1203,6 +1203,7 @@ type
 
   TmnwWeb = class(TmnObjectList<TmnwSchema>)
   private
+    FModule: TmodWebModule;
     FOptions: TmnwAppOptions;
     FPublicPath: string;
     FAppPath: string;
@@ -1232,7 +1233,7 @@ type
     Domain: string; //localhost
     Port: string;
     
-    ModuleName: string; //Module Name
+    //ModuleName: string; //Module Name
 
     CompactMode: Boolean;
     SessionAge: Integer; //* in ms
@@ -1242,7 +1243,7 @@ type
     FallbackTo: string;
     JWTmode: Boolean;
 
-    constructor Create;
+    constructor Create(AModule: TmnwWebModule); virtual;
     destructor Destroy; override;
     procedure Start;
     procedure Stop;
@@ -1278,6 +1279,7 @@ type
     property TimeStamp: Int64 read FTimeStamp;
     property Version: string read FVersion write FVersion;
     property ShowVersion: Boolean read FShowVersion write FShowVersion;
+    property Module: TmodWebModule read FModule;
   end;
 
 {-------------------------------------------------------}
@@ -2309,10 +2311,10 @@ type
     procedure Start; override;
     procedure Stop; override;
   public
-    destructor Destroy; override;
     constructor Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String); override;
-    function GetDefaultURL: string; override;
+    destructor Destroy; override;
     property Web: TmnwWeb read FWeb;
+    function GetDefaultURL: string; override;
   end;
 
 { Controls } 
@@ -3803,8 +3805,9 @@ begin
   end;
 end;
 
-constructor TmnwWeb.Create;
+constructor TmnwWeb.Create(AModule: TmnwWebModule);
 begin
+  FModule := AModule;
   FTimeStamp := GetTimeStamp;
   FLock := TMREWSync.Create;
   FRegistered := TRegisteredSchemas.Create;
@@ -3812,7 +3815,7 @@ begin
   FShowVersion := True;
   FLanguage := 'en';
   FAppPath := ExtractFilePath(ParamStr(0));
-  inherited;
+  inherited Create;
 end;
 
 function TmnwWeb.CreateSchema(SchemaItem: TmnwRegisterdSchema): TmnwSchema;
@@ -5803,8 +5806,6 @@ begin
     Web.PublicPath := PublicPath;
   if Web.PrivatePath = '' then
     Web.PrivatePath := PrivatePath;
-  if Web.ModuleName = '' then
-    Web.ModuleName := AliasName;
   //Web.Assets.PublicPath := Web.PublicPath;
   Web.IsSecure := Server.IsSecure;
 
@@ -5846,7 +5847,7 @@ end;
 
 constructor TmnwWebModule.Create(AServer: TmodModuleServer; const AName: string; const AAliasName: String);
 begin
-  FWeb := TmnwWeb.Create;
+  FWeb := TmnwWeb.Create(Self);
   inherited;
 end;
 
