@@ -501,7 +501,14 @@ begin
 end;
 
 initialization
+  {$IFDEF MSWINDOWS}
   SQLiteLib := TmncSQLiteLib.Create('sqlite3');
+  {$ELSE}
+  //POSIX: the library is libsqlite3.so; Debian only ships the versioned
+  //libsqlite3.so.0 unless the -dev package is installed, TmnLibrary falls back
+  //to the versioned names when the plain one can not be opened.
+  SQLiteLib := TmncSQLiteLib.Create('libsqlite3.so');
+  {$ENDIF}
 finalization
   FreeAndNil(SQLiteLib);
 end.

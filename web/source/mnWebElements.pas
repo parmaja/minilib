@@ -422,7 +422,7 @@ type
     //this get path relative requested path /element1/element2
     function GetRelativePath(e: TmnwElement): string; overload;    
 
-    // http://host:80/default_schema/basepath/
+    // http://host:80/module/default_schema/basepath/
     function GetDefaultPath: string; overload;    
     //Schema URL with http://host:80/basepath/assets/schema
     function GetAssetsPath: string;
@@ -1075,9 +1075,9 @@ type
     RendererID: Integer;
   end;
 
-  TmnwPlaneRenderer = class(TmnwRenderer)
+  TmnwPlainRenderer = class(TmnwRenderer)
   protected
-    class var Plane_ElementRenderers: TmnwElementRenderers;
+    class var Plain_ElementRenderers: TmnwElementRenderers;
     procedure Created; override;
   public
     class function ElementRenderers: TmnwElementRenderers; override;
@@ -5833,7 +5833,7 @@ end;
 function TmnwWebModule.CreateRenderer: TmnwRenderer;
 begin
   if Renderers.Current = nil then
-    Result := TmnwPlaneRenderer.Create(Self)
+    Result := TmnwPlainRenderer.Create(Self)
   else
     Result := Renderers.Current.RendererClass.Create(Self);
 end;
@@ -6570,23 +6570,23 @@ begin
   FCurrent := itm;
 end;
 
-{ TmnwPlaneRenderer }
+{ TmnwPlainRenderer }
 
-procedure TmnwPlaneRenderer.Created;
+procedure TmnwPlainRenderer.Created;
 begin
   inherited;
 end;
 
-class destructor TmnwPlaneRenderer.Destroy;
+class destructor TmnwPlainRenderer.Destroy;
 begin
-  FreeAndNil(Plane_ElementRenderers);
+  FreeAndNil(Plain_ElementRenderers);
 end;
 
-class function TmnwPlaneRenderer.ElementRenderers: TmnwElementRenderers;
+class function TmnwPlainRenderer.ElementRenderers: TmnwElementRenderers;
 begin
-  if Plane_ElementRenderers = nil then
-    Plane_ElementRenderers := TmnwElementRenderers.Create;
-  Result := Plane_ElementRenderers;
+  if Plain_ElementRenderers = nil then
+    Plain_ElementRenderers := TmnwElementRenderers.Create;
+  Result := Plain_ElementRenderers;
 end;
 
 { TmnwSchema.TRoute }

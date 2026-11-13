@@ -112,6 +112,45 @@ begin
   {$endif}
 end;
 
+{$IFDEF POSIX}
+{ dlopen needs the exact soname. Distributions keep the runtime file as
+  lib<name>.so.<version> and only the -dev package adds the unversioned
+  lib<name>.so symlink, so the versioned spellings are tried as a fallback. }
+function InternalLoadPosixLibrary(const ALibraryName: string): TLibHandle;
+var
+  Dir, Name, Ext, Candidate: string;
+  Candidates: array [0 .. 12] of string;
+  I, Count: Integer;
+begin
+  Result := 0;
+  Dir := ExtractFilePath(ALibraryName);
+  Name := ExtractFileName(ALibraryName);
+  Ext := ExtractFileExt(Name);
+  if Ext <> '.so' then
+    Exit;
+  Name := ChangeFileExt(Name, '');
+  if Copy(Name, 1, 3) = 'lib' then
+    Name := Copy(Name, 4, MaxInt);
+  if Name = '' then
+    Exit;
+  Count := 0;
+  Candidates[Count] := Dir + 'lib' + Name + '.so';
+  Inc(Count);
+  for I := 0 to 9 do
+  begin
+    Candidates[Count] := Dir + 'lib' + Name + '.so.' + IntToStr(I);
+    Inc(Count);
+  end;
+  for I := 0 to Count - 1 do
+  begin
+    Candidate := Candidates[I];
+    Result := InternalLoadLibrary(Candidate);
+    if Result <> 0 then
+      Exit;
+  end;
+end;
+{$ENDIF}
+
 { TmnLibrary }
 
 constructor TmnLibrary.Create(ALibraryName: string);
@@ -141,6 +180,10 @@ begin
   else
   begin
     FHandle := InternalLoadLibrary(LibraryName);
+    {$IFDEF POSIX}
+    if FHandle = 0 then
+      FHandle := InternalLoadPosixLibrary(LibraryName);
+    {$ENDIF}
     if (FHandle = 0) then
     begin
       RefCount := 0;
