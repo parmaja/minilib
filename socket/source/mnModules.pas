@@ -669,7 +669,8 @@ type
     function GetActive: Boolean; virtual;
     function GetCommandClass(var CommandName: String): TwebCommandClass; virtual;
     procedure Created; override;
-    procedure InitItems; virtual; //TODO rename it to Init
+    procedure InitItems; virtual; deprecated 'use Init'; //TODO rename it to Init
+    procedure Init; virtual; //TODO rename it to Init
     procedure DoMatch(ARequest: TmodRequest; var vMatch: Boolean); virtual;
     procedure DoMatched(ARequest: TmodRequest); virtual;
 
@@ -2443,6 +2444,11 @@ begin
   inherited;
 end;
 
+procedure TmodModule.Init;
+begin
+
+end;
+
 procedure TmodModule.InitItems;
 begin
 end;
@@ -2480,6 +2486,7 @@ begin
     if FServer.Modules.Default = nil then
       FServer.Modules.Default := Self;
   end;
+  Init;
   InitItems; //TODO rename to Init
 end;
 
@@ -2756,11 +2763,11 @@ end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;
 var
-  item, aModule, aDefault: TmodModule;
+  item, aModule, aFallback: TmodModule;
 begin
   Result := nil;
   aModule := nil;
-  aDefault := nil;
+  aFallback := nil;
   for item in Self do
   begin
     if item.Enabled then
@@ -2771,15 +2778,17 @@ begin
         break;
       end
       else if (item.AliasName = '') then //* find fallback module without aliasname
-        aDefault := item;
+        aFallback := item;
     end;
   end;
 
+{ NO fallback should aliasname is ''
   if aModule = nil then
     aModule := Default;
+}
 
   if aModule = nil then
-    aModule := aDefault;
+    aModule := aFallback;
 
   if aModule <> nil then
   begin
