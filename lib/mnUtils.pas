@@ -92,6 +92,7 @@ function ParseArgumentsCallback(const Content: string; const CallBackProc: TArgu
 
 function ParseArguments(const Content: string; Strings: TStrings; Switches: TArray<Char>; Options: TParseArgumentsOptions = [pargKeepSwitch, pargDeqoute]; Terminals: TSysCharSet = [' ', #9]; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 function GetSubValue(const Content, Name: string; out Value: string; Terminals: TSysCharSet = [';']; WhiteSpaces: TSysCharSet = [' ',#9]; Quotes: TSysCharSet = ['"']; ValueSeperators: TSysCharSet = ['=']): Boolean; overload;
+function CheckSubValue(const Content, Name: string; Terminals: TSysCharSet = [';']; WhiteSpaces: TSysCharSet = [' ',#9]; Quotes: TSysCharSet = ['"']; ValueSeperators: TSysCharSet = ['=']): Boolean; overload;
 //*
 
 
@@ -1269,6 +1270,19 @@ begin
   ParseArgumentsCallback(Content, @GetSubValueCallbackProc, @r, [], [pargValues, pargDeqoute], Terminals, WhiteSpaces, Quotes, ValueSeperators);
 
   Value := r.Value;
+  Result := r.Found;
+end;
+
+function CheckSubValue(const Content, Name: string; Terminals: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Boolean;
+var
+  r: TSubStrResult;
+begin
+  r.Found := False;
+  r.Name := Name;
+  r.Value := Name;
+
+  ParseArgumentsCallback(Content, @GetSubValueCallbackProc, @r, [], [pargDeqoute], Terminals, WhiteSpaces, Quotes, ValueSeperators);
+
   Result := r.Found;
 end;
 

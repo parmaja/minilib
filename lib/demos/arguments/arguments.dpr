@@ -1,11 +1,9 @@
 program arguments;
 
-
 {$APPTYPE CONSOLE}
 
 uses
-  Classes, SysUtils, mnUtils;
-
+  Classes, SysUtils, mnUtils, mnFields, mnModules;
 
 type
 
@@ -139,7 +137,6 @@ end;
 constructor TMyArguments.Create;
 begin
   inherited Create;
-
 end;
 
 destructor TMyArguments.Destroy;
@@ -154,7 +151,17 @@ end;
 
 var
   r: TMyArguments;
+  b: Boolean;
+  s: string;
+const
+  aContents = 'test1;multipart/form-data; boundary=-------Embt-Boundary--4AA698702B678037';
 begin
+  b := CheckSubValue(aContents, 'multipart/form-data');
+  if b then
+    WriteLn('subvalue is exists')
+  else
+    WriteLn('subvalue is not exists');
+
   r := TMyArguments.Create;
   try
     r.DoRun;
