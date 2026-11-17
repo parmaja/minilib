@@ -265,7 +265,7 @@ type
   TmnRoute = class(TStringList)
   private
     FIsRooted: Boolean;
-    function GetRoute(vIndex: Integer): string;    
+    function GetRoute(vIndex: Integer): string;
   public
 //    Index: Integer; TODO
     //is started with / when parsed
@@ -1776,9 +1776,18 @@ end;
 
 function TmodRequest.PopSubPath(const CheckValue: string): string;
 begin
+
+  if (CheckValue = '') and (Route.Count=0)  then
+    Exit('');
+
+  if Route.Count=0 then
+    raise Exception.Create('Route Count=0');
+
   Result := Route[0];
+
   if (CheckValue <> '') and not SameText(Result, CheckValue) then
-    raise Exception.Create('PopSubPath dosnt match value');  
+    raise Exception.Create('PopSubPath dosnt match value');
+
   Route.Delete(0);
   Route.FIsRooted := False;
   FCurrentPath := DeleteSubPath(Result, FCurrentPath);
