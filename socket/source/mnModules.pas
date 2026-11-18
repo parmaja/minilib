@@ -1667,7 +1667,6 @@ function TmodResponse.SendStream(s: TStream; AAlias: string; ASize: Int64; AFile
 var
   aMIMEItem: TmnMIMEItem;
   aDisposition: string;
-  aCacheControl: string;
   SendOptions: TmodSendOptions;
 begin
   Stamp := GetFileStamp(ASize, AFileDate);
@@ -1718,16 +1717,13 @@ begin
     Header['Content-Disposition'] := aDisposition;
   end;
 
-  //86400 = 24*60*60 = 1 day  
+  //86400 = 24*60*60 = 1 day
   if ClientCacheMode then
-    aCacheControl := 'public, max-age=3600, must-revalidate'
+    Header['Cache-Control'] := 'public, max-age=3600, must-revalidate'
   else
-    aCacheControl := 'public, no-cache'; //This will cache but send request with If-None-Match
+    Header['Cache-Control'] := 'public, no-cache'; //This will cache but send request with If-None-Match
 
-  if aCacheControl <> '' then
-    Header['Cache-Control'] := aCacheControl;
-  
-  if ASize > 0 then  
+  if ASize > 0 then
     Result := SendStream(s, ASize, SendOptions)
   else
     Result := False;
