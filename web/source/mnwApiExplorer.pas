@@ -37,6 +37,16 @@ unit mnwApiExplorer;
 
   Note: the inline content must be JSON. The component's loadSpec() accepts a
   spec object or a URL, it does not parse YAML strings.
+
+  Bootstrap integration:
+    By default (BootstrapTheme = True) the viewer takes its colors from the
+    Bootstrap CSS variables (--bs-body-bg, --bs-body-color, --bs-primary, ...)
+    and follows the page light/dark mode set with data-bs-theme="dark" on
+    <html> (Bootstrap 5.3+), the common .dark class, or the OS preference.
+    Theme can also force 'light' or 'dark' for the viewer alone.
+
+    Colors set explicitly (BackgroundColor, TextColor, PrimaryColor,
+    SecondaryColor, NavBackgroundColor) are never overridden.
 *)
 
 interface
@@ -65,6 +75,14 @@ type
   );
   TApiExplorerOptions = set of TApiExplorerOption;
 
+  { TApiExplorerTheme }
+
+  TApiExplorerTheme = (
+    aetAuto,                      //* Follow Bootstrap/OS light or dark mode
+    aetLight,                     //* Force light mode
+    aetDark                       //* Force dark mode
+  );
+
   { TApiExplorer }
 
   [TID_Extension]
@@ -73,6 +91,8 @@ type
     FSpecURL: string;
     FSpecContent: string;
     FOptions: TApiExplorerOptions;
+    FTheme: TApiExplorerTheme;
+    FBootstrapTheme: Boolean;
     FHeadingText: string;
     FExplorerLocation: string;
     FServerURL: string;
@@ -100,6 +120,10 @@ type
     property SpecContent: string read FSpecContent write FSpecContent;
     //* Rendering options
     property Options: TApiExplorerOptions read FOptions write FOptions;
+    //* Light/dark theme (default aetAuto follows Bootstrap/OS)
+    property Theme: TApiExplorerTheme read FTheme write FTheme;
+    //* Use Bootstrap CSS variables for colors and follow its light/dark mode
+    property BootstrapTheme: Boolean read FBootstrapTheme write FBootstrapTheme;
     //* Custom heading text shown above the API title
     property HeadingText: string read FHeadingText write FHeadingText;
     //* Initial location in the document, e.g. 'get-/v1/users'
@@ -160,6 +184,8 @@ procedure TApiExplorer.Created;
 begin
   inherited;
   FSchemaExpandLevel := 0; // 0 = use the component default (unlimited)
+  FTheme := aetAuto;
+  FBootstrapTheme := True;
 end;
 
 procedure TApiExplorer.DoRequired(const Ctx: TmnwContext);
@@ -198,6 +224,134 @@ var
   begin
     if AOption in e.FOptions then
       AddAttr(AName, 'true');
+  end;
+
+  function BoolJS(AValue: Boolean): string;
+  begin
+    Result := IfThen(AValue, 'true', 'false');
+  end;
+
+  // Applies Bootstrap colors and follows its light/dark mode at runtime.
+  // The component only accepts hex colors in its color attributes, so the
+  // Bootstrap CSS variables are read and converted to hex here.
+  procedure WriteThemeScript;
+  var
+    aTheme: string;
+  begin
+    case e.FTheme of
+      aetLight: aTheme := 'light';
+      aetDark: aTheme := 'dark';
+    else
+      aTheme := 'auto';
+    end;
+
+    Ctx.Writer.OpenTag('script');
+    Ctx.Writer.WriteLn('(function(){');
+    Ctx.Writer.WriteLn('  var el = document.getElementById(' + DQ(e.ID) + ');');
+    Ctx.Writer.WriteLn('  if (!el) return;');
+    Ctx.Writer.WriteLn('  var theme = ' + DQ(aTheme) + ';');
+    Ctx.Writer.WriteLn('  var useBootstrap = ' + BoolJS(e.FBootstrapTheme) + ';');
+    Ctx.Writer.WriteLn('  var explicit = { bg: ' + BoolJS(e.FBackgroundColor <> '') +
+      ', fg: ' + BoolJS(e.FTextColor <> '') +
+      ', primary: ' + BoolJS(e.FPrimaryColor <> '') +
+      ', secondary: ' + BoolJS(e.FSecondaryColor <> '') +
+      ', navBg: ' + BoolJS(e.FNavBackgroundColor <> '') + ' };');
+    Ctx.Writer.WriteLn('  function toHex(v){');
+    Ctx.Writer.WriteLn('    if (!v) return "";');
+    Ctx.Writer.WriteLn('    v = String(v).trim().toLowerCase();');
+    Ctx.Writer.WriteLn('    if (/^#[0-9a-f]{3}$/.test(v)) return "#" + v.charAt(1) + v.charAt(1) + v.charAt(2) + v.charAt(2) + v.charAt(3) + v.charAt(3);');
+    Ctx.Writer.WriteLn('    if (/^#[0-9a-f]{6}$/.test(v)) return v;');
+    Ctx.Writer.WriteLn('    var m = v.match(/^rgba?\(([^)]+)\)$/);');
+    Ctx.Writer.WriteLn('    if (!m) return "";');
+    Ctx.Writer.WriteLn('    var p = m[1].split(",");');
+    Ctx.Writer.WriteLn('    if (p.length < 3) return "";');
+    Ctx.Writer.WriteLn('    var r = "";');
+    Ctx.Writer.WriteLn('    for (var i = 0; i < 3; i++) {');
+    Ctx.Writer.WriteLn('      var h = Math.max(0, Math.min(255, Math.round(parseFloat(p[i])))).toString(16);');
+    Ctx.Writer.WriteLn('      r += h.length === 1 ? "0" + h : h;');
+    Ctx.Writer.WriteLn('    }');
+    Ctx.Writer.WriteLn('    return "#" + r;');
+    Ctx.Writer.WriteLn('  }');
+    Ctx.Writer.WriteLn('  function isDark(){');
+    Ctx.Writer.WriteLn('    if (theme === "dark") return true;');
+    Ctx.Writer.WriteLn('    if (theme === "light") return false;');
+    Ctx.Writer.WriteLn('    var host = el.closest("[data-bs-theme]");');
+    Ctx.Writer.WriteLn('    var t = (host && host.getAttribute("data-bs-theme")) || document.documentElement.getAttribute("data-bs-theme");');
+    Ctx.Writer.WriteLn('    if (t === "dark") return true;');
+    Ctx.Writer.WriteLn('    if (t === "light") return false;');
+    Ctx.Writer.WriteLn('    if (document.documentElement.classList.contains("dark") || (document.body && document.body.classList.contains("dark"))) return true;');
+    Ctx.Writer.WriteLn('    return !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);');
+    Ctx.Writer.WriteLn('  }');
+    Ctx.Writer.WriteLn('  function readColors(dark){');
+    Ctx.Writer.WriteLn('    var probe = document.createElement("div");');
+    Ctx.Writer.WriteLn('    probe.setAttribute("data-bs-theme", dark ? "dark" : "light");');
+    Ctx.Writer.WriteLn('    probe.style.display = "none";');
+    Ctx.Writer.WriteLn('    (el.parentNode || document.body).appendChild(probe);');
+    Ctx.Writer.WriteLn('    var cs = getComputedStyle(probe);');
+    Ctx.Writer.WriteLn('    function read(name, fallback){');
+    Ctx.Writer.WriteLn('      return toHex(cs.getPropertyValue(name)) || fallback;');
+    Ctx.Writer.WriteLn('    }');
+    Ctx.Writer.WriteLn('    var c = {');
+    Ctx.Writer.WriteLn('      bg: read("--bs-body-bg", dark ? "#212529" : "#ffffff"),');
+    Ctx.Writer.WriteLn('      fg: read("--bs-body-color", dark ? "#dee2e6" : "#212529"),');
+    Ctx.Writer.WriteLn('      primary: read("--bs-primary", "#0d6efd"),');
+    Ctx.Writer.WriteLn('      secondary: read("--bs-secondary", "#6c757d"),');
+    Ctx.Writer.WriteLn('      navBg: read("--bs-dark", dark ? "#1a1d20" : "#212529"),');
+    Ctx.Writer.WriteLn('      border: read("--bs-border-color", dark ? "#495057" : "#dee2e6"),');
+    Ctx.Writer.WriteLn('      blue: read("--bs-link-color", read("--bs-primary", "#0d6efd")),');
+    Ctx.Writer.WriteLn('      green: read("--bs-green", "#198754"),');
+    Ctx.Writer.WriteLn('      red: read("--bs-red", "#dc3545"),');
+    Ctx.Writer.WriteLn('      orange: read("--bs-orange", "#fd7e14"),');
+    Ctx.Writer.WriteLn('      yellow: read("--bs-yellow", "#ffc107"),');
+    Ctx.Writer.WriteLn('      purple: read("--bs-purple", "#6f42c1"),');
+    Ctx.Writer.WriteLn('      pink: read("--bs-pink", "#d63384"),');
+    Ctx.Writer.WriteLn('      gray: read("--bs-gray", "#6c757d"),');
+    Ctx.Writer.WriteLn('      white: read("--bs-white", "#ffffff")');
+    Ctx.Writer.WriteLn('    };');
+    Ctx.Writer.WriteLn('    (el.parentNode || document.body).removeChild(probe);');
+    Ctx.Writer.WriteLn('    if (dark && c.navBg.toLowerCase() === c.bg.toLowerCase()) c.navBg = "#1a1d20";');
+    Ctx.Writer.WriteLn('    return c;');
+    Ctx.Writer.WriteLn('  }');
+    Ctx.Writer.WriteLn('  function builtinColors(dark){');
+    Ctx.Writer.WriteLn('    return dark');
+    Ctx.Writer.WriteLn('      ? { bg: "#212529", fg: "#dee2e6", primary: "#0d6efd", secondary: "#6c757d", navBg: "#1a1d20", border: "#495057" }');
+    Ctx.Writer.WriteLn('      : { bg: "#ffffff", fg: "#212529", primary: "#0d6efd", secondary: "#6c757d", navBg: "#212529", border: "#dee2e6" };');
+    Ctx.Writer.WriteLn('  }');
+    Ctx.Writer.WriteLn('  function apply(){');
+    Ctx.Writer.WriteLn('    var dark = isDark();');
+    Ctx.Writer.WriteLn('    var c = useBootstrap ? readColors(dark) : builtinColors(dark);');
+    Ctx.Writer.WriteLn('    var changed = false;');
+    Ctx.Writer.WriteLn('    function attr(name, value, skip){');
+    Ctx.Writer.WriteLn('      if (!skip && value && el.getAttribute(name) !== value) { el.setAttribute(name, value); changed = true; }');
+    Ctx.Writer.WriteLn('    }');
+    Ctx.Writer.WriteLn('    attr("bg-color", c.bg, explicit.bg);');
+    Ctx.Writer.WriteLn('    attr("text-color", c.fg, explicit.fg);');
+    Ctx.Writer.WriteLn('    attr("primary-color", c.primary, explicit.primary);');
+    Ctx.Writer.WriteLn('    attr("secondary-color", c.secondary, explicit.secondary);');
+    Ctx.Writer.WriteLn('    attr("nav-bg-color", c.navBg, explicit.navBg);');
+    Ctx.Writer.WriteLn('    if (useBootstrap) {');
+    Ctx.Writer.WriteLn('      var vars = { "--blue": c.blue, "--green": c.green, "--red": c.red, "--orange": c.orange, "--yellow": c.yellow, "--purple": c.purple, "--pink": c.pink, "--gray": c.gray, "--white": c.white, "--border-color": c.border };');
+    Ctx.Writer.WriteLn('      for (var k in vars) {');
+    Ctx.Writer.WriteLn('        if (el.style.getPropertyValue(k) !== vars[k]) { el.style.setProperty(k, vars[k]); changed = true; }');
+    Ctx.Writer.WriteLn('      }');
+    Ctx.Writer.WriteLn('    }');
+    Ctx.Writer.WriteLn('    if (changed && typeof el.requestUpdate === "function") el.requestUpdate();');
+    Ctx.Writer.WriteLn('  }');
+    Ctx.Writer.WriteLn('  apply();');
+    Ctx.Writer.WriteLn('  if (theme === "auto" && window.MutationObserver) {');
+    Ctx.Writer.WriteLn('    var timer = null;');
+    Ctx.Writer.WriteLn('    function schedule(){ if (timer) clearTimeout(timer); timer = setTimeout(apply, 50); }');
+    Ctx.Writer.WriteLn('    var mo = new MutationObserver(schedule);');
+    Ctx.Writer.WriteLn('    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-bs-theme", "class"] });');
+    Ctx.Writer.WriteLn('    if (document.body) mo.observe(document.body, { attributes: true, attributeFilter: ["data-bs-theme", "class"] });');
+    Ctx.Writer.WriteLn('  }');
+    Ctx.Writer.WriteLn('  if (theme === "auto" && window.matchMedia) {');
+    Ctx.Writer.WriteLn('    var mq = matchMedia("(prefers-color-scheme: dark)");');
+    Ctx.Writer.WriteLn('    if (mq.addEventListener) mq.addEventListener("change", apply);');
+    Ctx.Writer.WriteLn('    else if (mq.addListener) mq.addListener(apply);');
+    Ctx.Writer.WriteLn('  }');
+    Ctx.Writer.WriteLn('})();');
+    Ctx.Writer.CloseTag('script');
   end;
 
 begin
@@ -251,6 +405,10 @@ begin
   // Render the <openapi-explorer> custom element
   Ctx.Writer.OpenTag('openapi-explorer', 'id=' + DQ(e.ID) + IfThen(aAttrText <> '', ' ' + aAttrText, ''));
   Ctx.Writer.CloseTag('openapi-explorer');
+
+  // Bootstrap colors and light/dark theme
+  if e.FBootstrapTheme or (e.FTheme <> aetAuto) then
+    WriteThemeScript;
 
   // For inline spec content (no URL), load it with loadSpec() after the
   // custom element is defined
