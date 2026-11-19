@@ -146,36 +146,29 @@ var
   e: TScalar;
   aOptions: string;
 
-  procedure AddOption(const AJSName: string; AValue: string);
+  //a JSON string literal (quoted and escaped) of AValue
+  function JsonStr(const AValue: string): string;
+  begin
+    Result := '"' + EscapeJSONString(AValue) + '"';
+  end;
+
+  procedure AddOption(const AJSName: string; const AJSValue: string);
   begin
     if aOptions <> '' then
       aOptions := aOptions + ', ';
-    aOptions := aOptions + '"' + AJSName + '": ' + AValue;
+    aOptions := aOptions + JsonStr(AJSName) + ': ' + AJSValue;
   end;
 
   procedure AddBoolOption(const AJSName: string; AOption: TScalarOption);
   begin
     if AOption in e.FOptions then
-    begin
-      if aOptions <> '' then
-        aOptions := aOptions + ', ';
-      aOptions := aOptions + '"' + AJSName + '": true';
-    end;
+      AddOption(AJSName, 'true');
   end;
 
   procedure AddStringOption(const AJSName: string; const AValue: string);
   begin
     if AValue <> '' then
-      AddOption(AJSName, '"' + EscapeJSONString(AValue) + '"');
-  end;
-
-  function EscapeJSONString(const S: string): string;
-  begin
-    Result := StringReplace(S, '\', '\\', [rfReplaceAll]);
-    Result := StringReplace(Result, '"', '\"', [rfReplaceAll]);
-    Result := StringReplace(Result, #13, '\r', [rfReplaceAll]);
-    Result := StringReplace(Result, #10, '\n', [rfReplaceAll]);
-    Result := StringReplace(Result, #9, '\t', [rfReplaceAll]);
+      AddOption(AJSName, JsonStr(AValue));
   end;
 
 begin
@@ -189,7 +182,7 @@ begin
 
   // Spec source: URL takes priority over inline content
   if e.FSpecURL <> '' then
-    AddOption('url', '"' + EscapeJSONString(e.FSpecURL) + '"')
+    AddOption('url', JsonStr(e.FSpecURL))
   else if e.FSpecContent <> '' then
     AddOption('content', 'document.getElementById(' + DQ(e.ID + '_spec') + ').textContent');
 
@@ -243,15 +236,23 @@ begin
     Ctx.Writer.CloseTag('script');
   end;
 
-  // Initialisation script
+  // Initialisation script, it runs now when the DOM is already parsed (the
+  // control can be rendered later, e.g. inside an updated panel) or on
+  // DOMContentLoaded when the page is still loading
   Ctx.Writer.OpenTag('script');
-  Ctx.Writer.WriteLn('document.addEventListener("DOMContentLoaded", function(){');
-  Ctx.Writer.WriteLn('  var el = document.getElementById(' + DQ(e.ID) + ');');
-  Ctx.Writer.WriteLn('  if (el && typeof Scalar !== "undefined" && Scalar.createApiReference) {');
-  Ctx.Writer.WriteLn('    var opts = ' + aOptions + ';');
-  Ctx.Writer.WriteLn('    Scalar.createApiReference(' + DQ('#' + e.ID) + ', opts);');
+  Ctx.Writer.WriteLn('(function(){');
+  Ctx.Writer.WriteLn('  function init(){');
+  Ctx.Writer.WriteLn('    var el = document.getElementById(' + DQ(e.ID) + ');');
+  Ctx.Writer.WriteLn('    if (el && typeof Scalar !== "undefined" && Scalar.createApiReference) {');
+  Ctx.Writer.WriteLn('      var opts = ' + aOptions + ';');
+  Ctx.Writer.WriteLn('      Scalar.createApiReference(' + DQ('#' + e.ID) + ', opts);');
+  Ctx.Writer.WriteLn('    }');
   Ctx.Writer.WriteLn('  }');
-  Ctx.Writer.WriteLn('});');
+  Ctx.Writer.WriteLn('  if (document.readyState === "loading")');
+  Ctx.Writer.WriteLn('    document.addEventListener("DOMContentLoaded", init);');
+  Ctx.Writer.WriteLn('  else');
+  Ctx.Writer.WriteLn('    init();');
+  Ctx.Writer.WriteLn('})();');
   Ctx.Writer.CloseTag('script');
 end;
 
@@ -259,13 +260,12 @@ end;
 
 procedure TScalar_Library.Created;
 const
-  cBaseURL = 'https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.63.0/dist/';
+  cBaseURL = 'https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.63.0/dist/browser/';
 begin
   inherited;
-  // Scalar API Reference CSS
-  Sources.Add(stStyle, cBaseURL, 'style.min.css');
-  // Scalar API Reference standalone browser bundle
-  Sources.Add(stScript, cBaseURL+'browser/', 'standalone.min.js');
+  //The standalone bundle injects its own stylesheet (style#scalar-style) and
+  //exposes window.Scalar, no separate CSS file is needed
+  Sources.Add(stScript, cBaseURL, 'standalone.js');
 end;
 
 initialization

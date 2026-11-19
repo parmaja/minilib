@@ -4425,7 +4425,9 @@ var
 begin
   itm := API.FindApi(Ctx.Request.Method, RemoveStartURLDelimiter(RemoveEndURLDelimiter(Ctx.CurrentPath)));
   if (itm <> nil) then
-    Result := itm.Execute(Ctx);
+    Result := itm.Execute(Ctx)
+  else
+    Result := False;
   //if not Result then //No maybe we want to check again
     DoExecute(Ctx, Result);
 end;
