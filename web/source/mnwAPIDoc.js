@@ -25,7 +25,7 @@
       height: '',                                // CSS height (default fills the viewport)
       credentials: 'same-origin',                // fetch credentials for TryIt
       search: true, tryIt: true, download: true, sidebar: true,
-      expandOperations: false, expandSchemas: false,
+      expandSections: false, expandOperations: false, expandSchemas: false,
       hideModels: false, sortTags: false, sortOperations: false,
       fillBody: true, showCurl: false,
       customCss: ''
@@ -273,13 +273,14 @@ var mnwAPIDoc = (function () {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 14px;
+  padding: 2px 14px;
   background: var(--ap-bg2);
   border: 1px solid var(--ap-border);
   border-radius: 8px;
+  /*line-height: 2rem;*/
 }
 .ap-section > summary::-webkit-details-marker { display: none; }
-.ap-section > summary::before { content: "\\25B8"; flex: none; color: var(--ap-muted); transition: transform 0.12s; }
+.ap-section > summary::before { content: "\\25B8"; flex: none; color: var(--ap-muted); transition: transform 0.12s; font-size: 2.0em; }
 .ap-section[open] > summary::before { transform: rotate(90deg); }
 .ap-section > summary:hover { background: var(--ap-hover); }
 .ap-section > summary h2 { margin: 0; border: none; padding: 0; }
@@ -303,11 +304,22 @@ var mnwAPIDoc = (function () {
   background: var(--ap-bg2);
 }
 .ap-op > summary::-webkit-details-marker { display: none; }
+.ap-op > summary::before { content: "\\25B8"; flex: none; color: var(--ap-muted); transition: transform 0.12s; }
+.ap-op[open] > summary::before { transform: rotate(90deg); }
 .ap-op > summary:hover { background: var(--ap-hover); }
 .ap-op-path {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 13px;
   word-break: break-all;
+}
+.ap-op-params {
+  color: var(--ap-muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .ap-op-summary { color: var(--ap-muted); font-size: 12.5px; margin-inline-start: auto; text-align: end; }
 .ap-op-body { padding: 6px 16px 16px; border-top: 1px solid var(--ap-border); }
@@ -345,7 +357,7 @@ var mnwAPIDoc = (function () {
 .ap-type { color: var(--ap-muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
 
 /* --- schema tree --- */
-.ap-schema { margin-inline-start: 0; }
+.ap-schema { margin-inline-start: 0; background: var(--ap-bg2); }
 .ap-schema ul { list-style: none; margin: 0; padding-inline-start: 18px; }
 .ap-schema > ul { padding-inline-start: 4px; }
 .ap-row { padding: 2.5px 0; border-bottom: 1px dashed transparent; }
@@ -372,6 +384,8 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   list-style: none;
 }
 .ap-resp > summary::-webkit-details-marker { display: none; }
+.ap-resp > summary::before { content: "\\25B8"; flex: none; color: var(--ap-muted); transition: transform 0.12s; }
+.ap-resp[open] > summary::before { transform: rotate(90deg); }
 .ap-status {
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
@@ -395,8 +409,13 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   background: var(--ap-bg2);
   list-style: none;
   color: var(--ap-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .ap-try > summary::-webkit-details-marker { display: none; }
+.ap-try > summary::before { content: "\\25B8"; flex: none; transition: transform 0.12s; }
+.ap-try[open] > summary::before { transform: rotate(90deg); }
 .ap-try-body { padding: 10px 14px 14px; border-top: 1px solid var(--ap-border); }
 .ap-field { margin: 6px 0; display: flex; flex-direction: column; gap: 2px; }
 .ap-field label { font-size: 12px; font-weight: 600; color: var(--ap-muted); }
@@ -1225,6 +1244,25 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     var sum = el('summary');
     sum.appendChild(el('span', 'ap-method ap-method-' + opInfo.method, esc(opInfo.method)));
     sum.appendChild(el('span', 'ap-op-path', esc(opInfo.path)));
+    //Short parameters hint: query/header/cookie params (path params are
+    //already visible in the path itself)
+    var hintParts = [];
+    var hintText = [];
+    opInfo.params.forEach(function (p) {
+      if (p.in === 'query') { hintParts.push('?' + p.name); }
+      else if (p.in === 'header' || p.in === 'cookie') { hintParts.push(p.name); }
+      else { return; }
+      hintText.push(p.name + ' (' + p.in + (p.required ? ', required)' : ')'));
+    });
+    if (opInfo.body && opInfo.body.content) {
+      hintParts.push('{body}');
+      hintText.push('request body (' + Object.keys(opInfo.body.content).join(', ') + ')');
+    }
+    if (hintParts.length) {
+      var hints = el('span', 'ap-op-params', esc(hintParts.join(' ')));
+      hints.title = hintText.join('\n');
+      sum.appendChild(hints);
+    }
     if (op.deprecated) { sum.appendChild(el('span', 'ap-badge-deprecated', esc(labels.deprecated))); }
     if (op.summary) { sum.appendChild(el('span', 'ap-op-summary', esc(op.summary))); }
     card.appendChild(sum);
@@ -1332,7 +1370,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 
     var section = el('details', 'ap-section');
     section.id = 'models';
-    section.open = true;
+    section.open = !!state.options.expandSections;
     var sum = el('summary');
     sum.appendChild(el('h2', null, esc(labels.models)));
     section.appendChild(sum);
@@ -1384,7 +1422,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     // Groups of operations
     state.groups.forEach(function (group) {
       var g = el('details', 'ap-nav-group');
-      g.open = true;
+      g.open = !!state.options.expandSections;
       var s = el('summary', null, esc(group.name));
       g.appendChild(s);
       group.operations.forEach(function (opInfo) {
@@ -1404,7 +1442,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     // Models link
     if (state.modelsSection) {
       var mg = el('details', 'ap-nav-group');
-      mg.open = true;
+      mg.open = !!state.options.expandSections;
       mg.appendChild(el('summary', null, esc(labels.models)));
       state.modelsSection.querySelectorAll('.ap-op').forEach(function (card) {
         var item = el('div', 'ap-nav-op');
@@ -1547,7 +1585,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     state.groups.forEach(function (group) {
       var section = el('details', 'ap-section');
       section.id = 'tag-' + sanitizeId(group.name);
-      section.open = true;
+      section.open = !!state.options.expandSections;
       var sum = el('summary');
       sum.appendChild(el('h2', null, esc(group.name)));
       section.appendChild(sum);
@@ -1573,15 +1611,23 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     return main;
   }
 
-  // Find a section/operation by id and open it with all its parent
-  // collapsible sections (tag groups and models are collapsible)
-  function revealTarget(main, id) {
-    var target = main.querySelector('#' + CSS.escape(id));
+  // Find a section/operation by id and open its parent collapsible
+  // sections (tag groups and models), also opens its group in the sidebar.
+  // The target itself stays as-is: methods are not auto-opened.
+  function revealTarget(state, id) {
+    var target = state.main.querySelector('#' + CSS.escape(id));
     if (!target) { return null; }
-    var box = target.closest('details');
+    var box = target.parentElement ? target.parentElement.closest('details') : null;
     while (box) {
       box.open = true;
       box = box.parentElement ? box.parentElement.closest('details') : null;
+    }
+    if (state.nav) {
+      var item = state.nav.querySelector('.ap-nav-op[data-ap-target="' + id + '"]');
+      if (item) {
+        var grp = item.closest('details');
+        if (grp) { grp.open = true; }
+      }
     }
     return target;
   }
@@ -1593,7 +1639,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       var item = ev.target.closest('.ap-nav-op');
       if (!item) { return; }
       ev.preventDefault();
-      var target = revealTarget(state.main, item.dataset.apTarget);
+      var target = revealTarget(state, item.dataset.apTarget);
       if (!target) { return; }
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -1603,7 +1649,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       var a = ev.target.closest('a[data-ap-scroll]');
       if (!a) { return; }
       ev.preventDefault();
-      var target = revealTarget(state.main, a.dataset.apScroll);
+      var target = revealTarget(state, a.dataset.apScroll);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -1678,7 +1724,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     bindNavigation(state);
 
     if (location.hash) {
-      var target = revealTarget(state.main, location.hash.substring(1));
+      var target = revealTarget(state, location.hash.substring(1));
       if (target) {
         setTimeout(function () { target.scrollIntoView({ block: 'start' }); }, 0);
       }
@@ -1781,7 +1827,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.1',
+    version: '1.5',
     render: render,
     labels: defaultLabels
   };

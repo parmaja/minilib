@@ -69,7 +69,8 @@ type
     adoExpandSchemas,         //* Expand schema trees by default
     adoHideModels,            //* Hide the models/schemas section
     adoSortTags,              //* Sort tag groups alphabetically
-    adoSortOperations         //* Sort operations by path inside a group
+    adoSortOperations,        //* Sort operations by path inside a group
+    adoExpandSections         //* Expand the tag/models sections by default (default is collapsed)
   );
   TAPIDocOptions = set of TAPIDocOption;
 
@@ -281,6 +282,7 @@ begin
   AddBoolOption('download', adoShowDownload in e.FOptions);
   AddBoolOption('fillBody', adoFillBodyExample in e.FOptions);
   AddBoolOption('showCurl', adoShowCurl in e.FOptions);
+  AddBoolOption('expandSections', adoExpandSections in e.FOptions);
   AddBoolOption('expandOperations', adoExpandOperations in e.FOptions);
   AddBoolOption('expandSchemas', adoExpandSchemas in e.FOptions);
   AddBoolOption('hideModels', adoHideModels in e.FOptions);
