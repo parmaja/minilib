@@ -658,6 +658,7 @@ type
 
   //Keep it as DoRespond form
   TRespondProc = reference to procedure (const Ctx: TmnwContext);
+  TExecuteProc = reference to procedure (const Ctx: TmnwContext; var Result: Boolean);
   TRenderProc = reference to procedure(Scope: TmnwScope; const Ctx: TmnwContext);
 
   { TmnwElement }
@@ -870,12 +871,38 @@ type
     scmpReleased
     );
 
+  //Name is the Method
+  TmnwAPIitem = class(TmnNamedObject)
+  private
+    FMethods: TArray<String>;
+    FPath: string;
+    FOnExecute: TExecuteProc;
+  protected
+    procedure DoExecute(var Ctx: TmnwContext; var Result: Boolean); virtual; abstract;
+  public
+    constructor Create(const AName: string; const AMethods: TArray<String>; const APath: string; AOnExecute: TExecuteProc = nil); overload;
+    constructor Create(const AMethod: string; const APath: string; AOnExecute: TExecuteProc = nil); overload;
+    constructor Create(const AName, AMethod: string; const APath: string; AOnExecute: TExecuteProc = nil); overload;
+    function Execute(var Ctx: TmnwContext): Boolean;
+    property Path: string read FPath;
+    property Methods: TArray<String> read FMethods;
+  end;
+
+  TmnwAPIitemClass = class of TmnwAPIitem;
+
+  TmnwAPI = class(TmnNamedObjectList<TmnwAPIitem>)
+  public
+    function FindApi(const Method, Path: string): TmnwAPIitem;
+    function Add(const AName: string; const Method, Path: string; ItemClass: TmnwAPIitemClass): TmnwAPIitem; overload;
+  end;
+
   { TmnwSchema }
 
   TmnwSchema = class(TmnwElement)
   private
     FAttached: Boolean;
     FAttachments: TmnwAttachments;
+    FAPI: TmnwAPI;
     FDefaultDocuments: TStringList;
     FWeb: TmnwWeb;
     FPhase: TmnwSchemaPhase;
@@ -891,7 +918,8 @@ type
     procedure UpdateAttached;
     class procedure Registered; virtual;
     procedure DoRespond(const Ctx: TmnwContext); override;
-    procedure DoAccept(var Ctx: TmnwContext; var Resume: Boolean); virtual;
+    procedure DoAccept(var Ctx: TmnwContext; var Accepted: Boolean); virtual;
+    procedure DoExecute(var Ctx: TmnwContext; var Processed: Boolean); virtual;
     procedure DoPrepare; override;
     procedure DoChildRespond(AElement: TmnwElement; const Ctx: TmnwContext); virtual;
     procedure AttachedMessage(const s: string); virtual; //from websocket
@@ -921,12 +949,15 @@ type
 
     procedure Start; virtual;
     function Accept(var Ctx: TmnwContext): Boolean;
+    // Process return true if you processed it, this will not call compose if processed
+    function Execute(var Ctx: TmnwContext): Boolean;
     procedure Compose(const Ctx: TmnwContext); override;
 
     // Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
     procedure Attach(Route: string; Sender: TObject; AStream: TmnBufferStream); // in connection thread
 
     property Attachments: TmnwAttachments read FAttachments;
+    property API: TmnwAPI read FAPI;
     property Attached: Boolean read FAttached;
     property Released: Boolean read GetReleased;
     property Phase: TmnwSchemaPhase read FPhase;
@@ -2253,7 +2284,7 @@ type
   end;
 
   //Return error as json if fail with message of error, so we need JS to post
-  TAuthForm = class(THTML.THTMLItem)
+  TmnwAuthForm = class(THTML.THTMLItem)
   private
     FForm: THTML.TForm;
   protected
@@ -2264,9 +2295,9 @@ type
     property Form: THTML.TForm read FForm;
   end;
 
-  TAuthSchema = class(THTML)
+  TmnwAuthSchema = class(THTML)
   private
-    FAuth: TAuthForm;
+    FAuth: TmnwAuthForm;
     FLoginCard: THTML.TCard;
   public
   protected
@@ -2281,7 +2312,7 @@ type
     procedure DoCompose(const Ctx: TmnwContext); override;
     procedure Created; override;     
   public
-    property Auth: TAuthForm read FAuth;
+    property Auth: TmnwAuthForm read FAuth;
   end;
 
   { TmnwWebCommand }
@@ -3512,10 +3543,12 @@ var
   aRoutes: TStringList;
   i: Integer;
   aSchemaName, aRoute: string;
-  aSchema: TmnwSchema; 
-begin  
+  aSchema: TmnwSchema;
+  aSkip: Boolean;
+begin
   aSchema := nil;
   Result := False;
+  aSkip := False;
   aRoutes := TStringList.Create;
   try
     StrToStrings(Ctx.CurrentPath, aRoutes, [URLDelimiter]);
@@ -3603,7 +3636,12 @@ begin
 
       if aSchema.Accept(Ctx) then
       begin
-        if not (estComposed in aSchema.State) then
+        if aSchema.Execute(Ctx) then
+        begin
+          aSkip := True;
+          Result := False;
+        end
+        else if not (estComposed in aSchema.State) then
         begin
           aSchema.Enter;
           try
@@ -3622,8 +3660,8 @@ begin
           end;
         end;
 
-        if (estComposed in aSchema.State) then
-        begin                 
+        if not aSkip and (estComposed in aSchema.State) then
+        begin
           Ctx.Element := aSchema;
 
           Result := True;
@@ -3652,8 +3690,8 @@ begin
                 else
                 begin
                   Ctx.Element := aElement;
-                  Result := True;
                   Ctx.CurrentPath := DeleteSubPath(aRoute, Ctx.CurrentPath);
+                  Result := True;
                 end;
               end;
               inc(i);
@@ -4041,6 +4079,8 @@ begin
   FSchema := Self;
   FIsRoot := True;
   FAttachments := TmnwAttachments.Create;
+  FAPI := TmnwAPI.Create;
+
   if schemaStatic in GetCapabilities then
     FInternalLock := TCriticalSection.Create
   else
@@ -4254,7 +4294,7 @@ begin
     FInternalLock.Enter;
 end;
 
-procedure TmnwSchema.DoAccept(var Ctx: TmnwContext; var Resume: Boolean);
+procedure TmnwSchema.DoAccept(var Ctx: TmnwContext; var Accepted: Boolean);
 begin
 end;
 
@@ -4350,6 +4390,10 @@ begin
   inherited; // hook for descendants
 end;
 
+procedure TmnwSchema.DoExecute(var Ctx: TmnwContext; var Processed: Boolean);
+begin
+end;
+
 function TmnwSchema.GetReleased: Boolean;
 begin
   Result := (FPhase = scmpReleased) or not (schemaStatic in GetCapabilities);
@@ -4373,6 +4417,17 @@ function TmnwSchema.NewHandle: THandle;
 begin
   AtomicIncrement(FNamingLastNumber);
   Result := FNamingLastNumber;
+end;
+
+function TmnwSchema.Execute(var Ctx: TmnwContext): Boolean;
+var
+  itm: TmnwAPIitem;
+begin
+  itm := API.FindApi(Ctx.Request.Method, RemoveStartURLDelimiter(RemoveEndURLDelimiter(Ctx.CurrentPath)));
+  if (itm <> nil) then
+    Result := itm.Execute(Ctx);
+  //if not Result then //No maybe we want to check again
+    DoExecute(Ctx, Result);
 end;
 
 function TmnwSchema.GetPublicPath: string;
@@ -6294,7 +6349,7 @@ begin
     Result := Request.Domain;
 end;
 
-{ TAuthSchema }
+{ TmnwAuthSchema }
 
 //A `redirect` query/form field lets a module send the user back after login.
 //Only local absolute paths are accepted, to avoid open redirects.
@@ -6316,7 +6371,7 @@ begin
   Result := Target;
 end;
 
-procedure TAuthSchema.UserLogin(const Ctx: TmnwContext);
+procedure TmnwAuthSchema.UserLogin(const Ctx: TmnwContext);
 var
   aSuccess: Boolean;
   aMessage: string;
@@ -6345,13 +6400,13 @@ begin
   end;    
 end;
 
-procedure TAuthSchema.UserLogout(const Ctx: TmnwContext);
+procedure TmnwAuthSchema.UserLogout(const Ctx: TmnwContext);
 begin
   Ctx.Session.ID := '';
   Ctx.Response.RespondRedirectTo(Ctx.GetDefaultPath);
 end;
 
-procedure TAuthSchema.DoRespondHeader(const Ctx: TmnwContext);
+procedure TmnwAuthSchema.DoRespondHeader(const Ctx: TmnwContext);
 begin
   if (Ctx.Data <> nil) and Ctx.Data.Values['password'].IsExists then
   begin
@@ -6360,7 +6415,7 @@ begin
   inherited;
 end;
 
-procedure TAuthSchema.Created;
+procedure TmnwAuthSchema.Created;
 begin
   inherited;
   with Document.Body.Main do
@@ -6368,13 +6423,13 @@ begin
     FLoginCard := TCard.Create(this);
     with FLoginCard do
     begin
-      FAuth := TAuthForm.Create(This);              
+      FAuth := TmnwAuthForm.Create(This);
       Auth.Form.CancelTo := toDefault;
   end;
   end;
 end;
 
-procedure TAuthSchema.DoChildRespond(AElement: TmnwElement; const Ctx: TmnwContext);
+procedure TmnwAuthSchema.DoChildRespond(AElement: TmnwElement; const Ctx: TmnwContext);
 begin
   inherited;
   if (AElement.Name = 'login-form') and (Ctx.Data <> nil) and (Ctx.Data.Values['password'].IsExists) then
@@ -6383,7 +6438,7 @@ begin
   end;
 end;
 
-procedure TAuthSchema.DoCompose(const Ctx: TmnwContext);
+procedure TmnwAuthSchema.DoCompose(const Ctx: TmnwContext);
 begin
   inherited;
   with Document do
@@ -6413,11 +6468,11 @@ begin
   end;
 end;
 
-procedure TAuthSchema.DoLogin(const Ctx: TmnwContext; var Success: Boolean; var Message: string; var SessionID: string);
+procedure TmnwAuthSchema.DoLogin(const Ctx: TmnwContext; var Success: Boolean; var Message: string; var SessionID: string);
 begin
 end;
 
-procedure TAuthSchema.DoLogout(const Ctx: TmnwContext);
+procedure TmnwAuthSchema.DoLogout(const Ctx: TmnwContext);
 begin
 end;
 
@@ -6452,15 +6507,15 @@ begin
   //Route := ExtractFileName(FFileName);
 end;
 
-{ TAuthForm }
+{ TmnwAuthForm }
 
-procedure TAuthForm.Created;
+procedure TmnwAuthForm.Created;
 begin
   inherited;
   FForm := THTML.TForm.Create(This);
 end;
 
-procedure TAuthForm.DoCompose(const Ctx: TmnwContext);
+procedure TmnwAuthForm.DoCompose(const Ctx: TmnwContext);
 begin
   Caption := Ctx._T('login', 'Login');
 
@@ -7428,6 +7483,57 @@ procedure THTML.TPassword.Created;
 begin
   inherited;
   AutoComplete := True;
+end;
+
+{ TmnwAPI }
+
+function TmnwAPI.Add(const AName: string; const Method, Path: string; ItemClass: TmnwAPIitemClass): TmnwAPIitem;
+begin
+  Result := ItemClass.Create(AName, [Method], Path);
+  Inherited Add(Result);
+end;
+
+function TmnwAPI.FindApi(const Method, Path: string): TmnwAPIitem;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+  begin
+    if ((Length(Items[i].Methods) = 0) or IsStrInArray(Method, Items[i].Methods)) and SameText(Path, Items[i].Path) then
+      exit(Items[i]);
+  end;
+  Result := nil;
+end;
+
+{ TmnwAPIitem }
+
+constructor TmnwAPIitem.Create(const AName: string; const AMethods: TArray<String>; const APath: string; AOnExecute: TExecuteProc);
+begin
+  inherited Create;
+  Name := AName;
+  FMethods := AMethods;
+  FPath := APath;
+  FOnExecute := AOnExecute;
+end;
+
+constructor TmnwAPIitem.Create(const AMethod, APath: string; AOnExecute: TExecuteProc);
+begin
+  Create(AMethod, [AMethod], APath, AOnExecute);
+end;
+
+constructor TmnwAPIitem.Create(const AName, AMethod, APath: string; AOnExecute: TExecuteProc);
+begin
+  if AName = '' then
+    raise Exception.Create('API must have name or method');
+  Create(AName, [AMethod], APath, AOnExecute);
+end;
+
+function TmnwAPIitem.Execute(var Ctx: TmnwContext): Boolean;
+begin
+  if Assigned(FOnExecute) then
+    FOnExecute(Ctx, Result);
+  if not Result then
+    DoExecute(Ctx, Result);
 end;
 
 initialization

@@ -218,6 +218,8 @@ type
 
       TormFieldType = (ftString, ftBoolean, ftSmallInteger, ftInteger, ftBigInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftText, ftUUID, ftBlob);
 
+      TormFieldSubType = (ftJSON);
+
       TormReferenceOption = (
         rfoNothing,
         rfoSetNull,
@@ -327,6 +329,7 @@ type
       public
         constructor Create(ADatabase: TDatabase; ATableName: string);
         procedure AddValue(FieldName, FieldValue: Variant);
+//        procedure AddValues(Fields, Values: TArray<string>);
         property Table: TTable read FTable;
       end;
 
