@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>mnwAPIDoc test page</title>
+  <style>
+    body { font-family: sans-serif; margin: 16px; }
+    h1 { font-size: 18px; }
+    .viewer { margin-bottom: 40px; }
+  </style>
+</head>
+<body>
+  <h1>mnwAPIDoc - OpenAPI 3 inline spec</h1>
+  <div id="api3" class="viewer"></div>
+
+  <h1>mnwAPIDoc - Swagger 2.0 inline spec</h1>
+  <div id="api2" class="viewer"></div>
+
+  <script src="../../web/source/mnwAPIDoc.js"></script>
+  <script>
+    var spec3 = {
+      openapi: "3.0.0",
+      info: {
+        title: "Library API",
+        version: "2.1",
+        description: "# About\nThis is a **test** spec for `mnwAPIDoc`.\n\n- supports lists\n- supports [links](https://example.com)\n\n```\ncurl example\n```",
+        contact: { name: "Zaher", url: "https://example.com" },
+        license: { name: "MIT", url: "https://opensource.org/licenses/MIT" }
+      },
+      servers: [
+        { url: "https://api.example.com/v2", description: "Production" },
+        { url: "https://staging.example.com/v2", description: "Staging" }
+      ],
+      tags: [
+        { name: "books", description: "Book operations" },
+        { name: "authors", description: "Author operations" }
+      ],
+      paths: {
+        "/books": {
+          get: {
+            tags: ["books"],
+            operationId: "listBooks",
+            summary: "List books",
+            description: "Returns all books.",
+            parameters: [
+              { name: "limit", in: "query", required: false, schema: { type: "integer", default: 10 }, description: "Max items" },
+              { name: "genre", in: "query", schema: { type: "string", enum: ["sci-fi", "horror"] } },
+              { $ref: "#/components/parameters/TokenHeader" }
+            ],
+            responses: {
+              "200": {
+                description: "ok",
+                content: {
+                  "application/json": {
+                    schema: { type: "array", items: { $ref: "#/components/schemas/Book" } }
+                  }
+                }
+              },
+              "400": { description: "bad request" }
+            }
+          },
+          post: {
+            tags: ["books"],
+            operationId: "addBook",
+            summary: "Add a book",
+            requestBody: {
+              required: true,
+              content: {
+                "application/json": { schema: { $ref: "#/components/schemas/Book" } }
+              }
+            },
+            responses: { "201": { description: "created" } }
+          }
+        },
+        "/books/{bookId}": {
+          parameters: [
+            { name: "bookId", in: "path", required: true, schema: { type: "string" }, description: "Book id" }
+          ],
+          get: {
+            tags: ["books"],
+            operationId: "getBook",
+            summary: "Get one book",
+            responses: {
+              "200": {
+                description: "ok",
+                content: { "application/json": { schema: { $ref: "#/components/schemas/Book" } } }
+              },
+              "404": { description: "not found" }
+            }
+          },
+          delete: {
+            tags: ["books"],
+            summary: "Delete a book",
+            deprecated: true,
+            responses: { "204": { description: "deleted" } }
+          }
+        },
+        "/authors": {
+          get: {
+            tags: ["authors"],
+            summary: "List authors",
+            responses: {
+              "200": {
+                description: "ok",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        total: { type: "integer" },
+                        items: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              name: { type: "string" },
+                              address: { $ref: "#/components/schemas/Address" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      components: {
+        parameters: {
+          TokenHeader: { name: "X-Token", in: "header", schema: { type: "string" }, description: "Auth token" }
+        },
+        securitySchemes: {
+          ApiKeyAuth: { type: "apiKey", in: "header", name: "X-API-Key", description: "API key header" }
+        },
+        schemas: {
+          Book: {
+            type: "object",
+            required: ["id", "title"],
+            properties: {
+              id: { type: "string", description: "Unique id" },
+              title: { type: "string" },
+              author: { $ref: "#/components/schemas/Author" },
+              tags: { type: "array", items: { type: "string" } },
+              status: { type: "string", enum: ["draft", "published"], default: "draft" }
+            }
+          },
+          Author: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              books: { type: "array", items: { $ref: "#/components/schemas/Book" } }
+            }
+          },
+          Address: {
+            type: "object",
+            properties: {
+              city: { type: "string" },
+              street: { type: "string" }
+            }
+          }
+        }
+      }
+    };
+
+    var spec2 = {
+      swagger: "2.0",
+      info: { title: "Pet Store (Swagger 2)", version: "1.0" },
+      host: "petstore.example.com",
+      basePath: "/v2",
+      schemes: ["https"],
+      tags: [{ name: "pet", description: "Pets" }],
+      paths: {
+        "/pet": {
+          post: {
+            tags: ["pet"],
+            summary: "Add a pet",
+            consumes: ["application/json"],
+            parameters: [
+              { name: "body", in: "body", required: true, schema: { $ref: "#/definitions/Pet" } }
+            ],
+            responses: { "200": { description: "ok", schema: { $ref: "#/definitions/Pet" } } }
+          }
+        },
+        "/pet/{petId}": {
+          get: {
+            tags: ["pet"],
+            summary: "Find pet by id",
+            parameters: [
+              { name: "petId", in: "path", required: true, type: "integer", description: "id of pet" }
+            ],
+            responses: { "200": { description: "ok", schema: { $ref: "#/definitions/Pet" } } }
+          }
+        },
+        "/pet/findByStatus": {
+          get: {
+            tags: ["pet"],
+            summary: "Find by status",
+            parameters: [
+              { name: "status", in: "query", required: true, type: "string", enum: ["available", "sold"] }
+            ],
+            responses: {
+              "200": { description: "ok", schema: { type: "array", items: { $ref: "#/definitions/Pet" } } }
+            }
+          }
+        }
+      },
+      definitions: {
+        Pet: {
+          type: "object",
+          required: ["name"],
+          properties: {
+            id: { type: "integer", format: "int64" },
+            name: { type: "string", example: "doggie" },
+            status: { type: "string", enum: ["available", "pending", "sold"], default: "available" },
+            tags: { type: "array", items: { type: "object", properties: { id: { type: "integer" }, name: { type: "string" } } } }
+          }
+        }
+      }
+    };
+
+    mnwAPIDoc.render(document.getElementById("api3"), {
+      content: spec3,
+      height: "600px",
+      theme: "auto",
+      bootstrapTheme: false,
+      showCurl: true,
+      serverUrl: "https://httpbin.org"
+    });
+
+    mnwAPIDoc.render(document.getElementById("api2"), {
+      content: spec2,
+      height: "600px",
+      expandOperations: true,
+      bootstrapTheme: false,
+      theme: "dark"
+    });
+  </script>
+</body>
+</html>

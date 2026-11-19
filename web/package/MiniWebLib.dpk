@@ -40,5 +40,6 @@ contains
   mnBootstraps   in '..\source\mnBootstraps.pas',
   mnwApiExplorer in '..\source\mnwApiExplorer.pas',
   mnwRapiDoc     in '..\source\mnwRapiDoc.pas',
+  mnwAPIDoc      in '..\source\mnwAPIDoc.pas',
   mnwMarkdownIt  in '..\source\mnwMarkdownIt.pas';
 end.

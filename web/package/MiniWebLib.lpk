@@ -46,6 +46,18 @@
         <UnitName Value="mnwRapiDoc"/>
       </Item>
       <Item>
+        <Filename Value="..\source\mnwAPIDoc.pas"/>
+        <UnitName Value="mnwAPIDoc"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnwAPIDoc.js"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnwAPIDoc.rc"/>
+        <Type Value="Text"/>
+      </Item>
+      <Item>
         <Filename Value="..\source\mnWebElements.rc"/>
         <Type Value="Text"/>
       </Item>
