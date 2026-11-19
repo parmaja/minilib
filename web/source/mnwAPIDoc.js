@@ -265,6 +265,26 @@ var mnwAPIDoc = (function () {
 .ap-chip:hover { border-color: var(--ap-primary); text-decoration: none; }
 .ap-tag-desc { color: var(--ap-muted); margin: 2px 0 12px; }
 
+/* --- sections --- */
+.ap-section { margin: 22px 0 12px; }
+.ap-section > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: var(--ap-bg2);
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+}
+.ap-section > summary::-webkit-details-marker { display: none; }
+.ap-section > summary::before { content: "\\25B8"; flex: none; color: var(--ap-muted); transition: transform 0.12s; }
+.ap-section[open] > summary::before { transform: rotate(90deg); }
+.ap-section > summary:hover { background: var(--ap-hover); }
+.ap-section > summary h2 { margin: 0; border: none; padding: 0; }
+.ap-section-body { padding: 2px 2px 0; }
+
 /* --- operation card --- */
 .ap-op {
   border: 1px solid var(--ap-border);
@@ -1310,9 +1330,14 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     var names = Object.keys(schemas).sort();
     if (!names.length) { return null; }
 
-    var section = el('section');
+    var section = el('details', 'ap-section');
     section.id = 'models';
-    section.appendChild(el('h2', null, esc(labels.models)));
+    section.open = true;
+    var sum = el('summary');
+    sum.appendChild(el('h2', null, esc(labels.models)));
+    section.appendChild(sum);
+    var sbody = el('div', 'ap-section-body');
+    section.appendChild(sbody);
     names.forEach(function (name) {
       var card = el('details', 'ap-op');
       card.id = 'model-' + sanitizeId(name);
@@ -1334,7 +1359,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       var example = buildExample(schemas[name], state.spec, 0, [modelsBase + name]);
       body.appendChild(el('pre', null, '<code>' + esc(formatJSON(example === undefined ? {} : example)) + '</code>'));
       if (state.options.expandSchemas) { card.open = true; }
-      section.appendChild(card);
+      sbody.appendChild(card);
       state.sections.push({ id: card.id, group: labels.models });
     });
     return section;
@@ -1520,14 +1545,19 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 
     // Groups
     state.groups.forEach(function (group) {
-      var section = el('section');
+      var section = el('details', 'ap-section');
       section.id = 'tag-' + sanitizeId(group.name);
-      section.appendChild(el('h2', null, esc(group.name)));
+      section.open = true;
+      var sum = el('summary');
+      sum.appendChild(el('h2', null, esc(group.name)));
+      section.appendChild(sum);
+      var sbody = el('div', 'ap-section-body');
+      section.appendChild(sbody);
       if (group.description) {
-        section.appendChild(el('div', 'ap-tag-desc ap-md', mdToHtml(group.description)));
+        sbody.appendChild(el('div', 'ap-tag-desc ap-md', mdToHtml(group.description)));
       }
       group.operations.forEach(function (opInfo) {
-        section.appendChild(renderOperation(state, group, opInfo));
+        sbody.appendChild(renderOperation(state, group, opInfo));
       });
       main.appendChild(section);
     });
@@ -1543,16 +1573,28 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     return main;
   }
 
+  // Find a section/operation by id and open it with all its parent
+  // collapsible sections (tag groups and models are collapsible)
+  function revealTarget(main, id) {
+    var target = main.querySelector('#' + CSS.escape(id));
+    if (!target) { return null; }
+    var box = target.closest('details');
+    while (box) {
+      box.open = true;
+      box = box.parentElement ? box.parentElement.closest('details') : null;
+    }
+    return target;
+  }
+
   function bindNavigation(state) {
+    if (!state.nav) { return; }
     // Click on a nav item: open the target and scroll to it
     state.nav.addEventListener('click', function (ev) {
       var item = ev.target.closest('.ap-nav-op');
       if (!item) { return; }
       ev.preventDefault();
-      var target = state.main.querySelector('#' + CSS.escape(item.dataset.apTarget));
+      var target = revealTarget(state.main, item.dataset.apTarget);
       if (!target) { return; }
-      var card = target.closest('details.ap-op') || target;
-      if (card.tagName === 'DETAILS') { card.open = true; }
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
@@ -1561,33 +1603,49 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       var a = ev.target.closest('a[data-ap-scroll]');
       if (!a) { return; }
       ev.preventDefault();
-      var target = state.main.querySelector('#' + CSS.escape(a.dataset.apScroll));
+      var target = revealTarget(state.main, a.dataset.apScroll);
       if (target) {
-        var card = target.closest('details.ap-op');
-        if (card) { card.open = true; }
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
 
     // Scroll spy: mark the active operation in the sidebar
-    var ticking = false;
+    // (throttled with setTimeout instead of requestAnimationFrame, which
+    // never fires while the tab is hidden and would stall the flag)
+    var timer = null;
     state.main.addEventListener('scroll', function () {
-      if (ticking) { return; }
-      ticking = true;
-      requestAnimationFrame(function () {
-        ticking = false;
+      if (timer) { return; }
+      timer = setTimeout(function () {
+        timer = null;
         var top = state.main.getBoundingClientRect().top;
         var current = null;
+        var lastVisible = null;
         state.sections.forEach(function (sec) {
           var node = state.main.querySelector('#' + CSS.escape(sec.id));
-          if (node && node.getBoundingClientRect().top - top <= 60) { current = sec.id; }
+          if (!node) { return; }
+          //skip nodes inside a collapsed section header
+          var box = node.closest('details:not([open])');
+          if (box && box !== node) { return; }
+          var rel = node.getBoundingClientRect().top - top;
+          if (rel <= 60) {
+            current = sec.id;
+          }
+          if (rel >= 0 && rel < state.main.clientHeight - 20) {
+            lastVisible = sec.id;
+          }
         });
+        //at the end of the content the band rule finds nothing below,
+        //use the last section whose header is visible instead
+        var atBottom = state.main.scrollTop + state.main.clientHeight >= state.main.scrollHeight - 4;
+        if (atBottom && lastVisible) {
+          current = lastVisible;
+        }
         state.nav.querySelectorAll('.ap-nav-op.ap-active').forEach(function (n) { n.classList.remove('ap-active'); });
         if (current) {
           var active = state.nav.querySelector('.ap-nav-op[data-ap-target="' + current + '"]');
           if (active) { active.classList.add('ap-active'); }
         }
-      });
+      }, 60);
     });
   }
 
@@ -1610,19 +1668,18 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     state.groups = collectGroups(state);
     state.sections = [];
 
+    //Build main first, the sidebar lists models found in it
+    state.main = buildMain(state);
     if (state.options.sidebar !== false) {
       state.nav = renderSidebar(state);
       state.root.appendChild(state.nav);
     }
-    state.main = buildMain(state);
     state.root.appendChild(state.main);
     bindNavigation(state);
 
     if (location.hash) {
-      var target = state.main.querySelector('#' + CSS.escape(location.hash.substring(1)));
+      var target = revealTarget(state.main, location.hash.substring(1));
       if (target) {
-        var card = target.closest('details.ap-op');
-        if (card) { card.open = true; }
         setTimeout(function () { target.scrollIntoView({ block: 'start' }); }, 0);
       }
     }
@@ -1724,7 +1781,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.0',
+    version: '1.1',
     render: render,
     labels: defaultLabels
   };
