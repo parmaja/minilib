@@ -34,6 +34,10 @@
         <UnitName Value="mnWebElements"/>
       </Item>
       <Item>
+        <Filename Value="..\source\mnwApiExplorer.pas"/>
+        <UnitName Value="mnwApiExplorer"/>
+      </Item>
+      <Item>
         <Filename Value="..\source\mnwMarkdownIt.pas"/>
         <UnitName Value="mnwMarkdownIt"/>
       </Item>
