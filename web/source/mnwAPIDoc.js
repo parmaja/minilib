@@ -87,7 +87,7 @@ var mnwAPIDoc = (function () {
   --ap-other: #7f8c8d;
   display: flex;
   flex-direction: row;
-  height: calc(100vh - 96px);
+  /*height: calc(100vh - 96px);*/
   min-height: 420px;
   border: 1px solid var(--ap-border);
   border-radius: 8px;
@@ -437,7 +437,8 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   width: 100%;
 }
 .ap-field input:focus, .ap-field select:focus, .ap-field textarea:focus { border-color: var(--ap-primary); }
-.ap-try-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.ap-try-actions { display: flex; gap: 6px; align-items: center; margin-inline-start: auto; flex: none; flex-wrap: wrap; }
+.ap-try-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ap-btn {
   padding: 5px 16px;
   border: 1px solid var(--ap-primary);
@@ -988,7 +989,8 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     var op = opInfo.op;
     var labels = state.labels;
     var wrap = el('details', 'ap-try');
-    var sum = el('summary', null, esc(labels.tryit));
+    var sum = el('summary');
+    sum.appendChild(el('span', 'ap-try-title', esc(labels.tryit)));
     wrap.appendChild(sum);
     var body = el('div', 'ap-try-body');
     wrap.appendChild(body);
@@ -1071,7 +1073,13 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       var curlBtn = el('button', 'ap-btn ap-btn-plain', 'cURL');
       actions.appendChild(curlBtn);
     }
-    body.appendChild(actions);
+    sum.appendChild(actions);
+    //The action buttons live in the header row: their clicks must not
+    //toggle (close) the panel, and pressing one opens it.
+    actions.addEventListener('click', function (e) {
+      e.preventDefault();
+      wrap.open = true;
+    });
     var resultBox = el('div', 'ap-try-result');
     body.appendChild(resultBox);
 
@@ -1096,8 +1104,13 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
           headers[it.param.name] = v;
         }
       });
-      var url = path;
-      if (base) { url = base.replace(/\/+$/, '') + path; }
+      // Always build a full URL: a missing or relative server in the spec
+      // means the documentation page's own origin, so the cURL example
+      // shows a complete URL. Same-origin fetch() behaves identically.
+      if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(base)) {
+        base = window.location.origin + (base === '/' ? '' : base);
+      }
+      var url = base.replace(/\/+$/, '') + path;
       if (query.length) { url += (url.indexOf('?') >= 0 ? '&' : '?') + query.join('&'); }
       var hasBody = bodyTextarea && bodyTextarea.value !== '';
       if (hasBody) { headers['Content-Type'] = currentContentType(); }
@@ -1827,7 +1840,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.5',
+    version: '1.7',
     render: render,
     labels: defaultLabels
   };
