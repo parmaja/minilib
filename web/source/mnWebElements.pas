@@ -4104,7 +4104,7 @@ begin
 
   FAttachments.Clear;
   FreeAndNil(FAttachments);
-
+  FreeAndNil(FAPI);
   FreeAndNil(LLock);
   FreeAndNil(FDefaultDocuments);
   inherited;
