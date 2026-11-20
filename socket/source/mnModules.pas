@@ -45,7 +45,7 @@ interface
 uses
   SysUtils, Classes, StrUtils, Types, DateUtils, {$ifdef FPC}ZStream,{$else}ZLib,{$endif}
   Generics.Defaults, mnStreamUtils, SyncObjs, Math,
-  mnClasses, mnStreams, mnFields, mnParams, mnMIME, mnTypes,
+  mnClasses, mnStreams, mnFields, mnParams, mnMIME, mnTypes, mnDON,
   {$ifdef FPC}
   sha1, base64,
   {$else}
@@ -579,6 +579,7 @@ type
     procedure RespondText(S: string; AAnswer: TmodAnswer = hrOK);    
     procedure RespondHTML(S: string);    
     procedure RespondJSON(S: string; AAnswer: TmodAnswer = hrOK); overload;
+    procedure RespondJSON(JSONObject: TDON_Object; AAnswer: TmodAnswer = hrOK); overload;
     procedure RespondJSON(ResultType, State, Message: string; AAnswer: TmodAnswer = hrOK); overload;
     procedure RespondJSON(ResultType, State, Message: string; Redirect: string;AAnswer: TmodAnswer = hrOK); overload;
     
@@ -3689,6 +3690,11 @@ begin
   ContentType := DocumentToContentType('.html');
   SendUTF8String(S);
   Responded;
+end;
+
+procedure TwebResponse.RespondJSON(JSONObject: TDON_Object; AAnswer: TmodAnswer);
+begin
+  RespondJSON(JSONObject.AsString, AAnswer);
 end;
 
 procedure TwebResponse.RespondJSON(ResultType, State, Message, Redirect: string; AAnswer: TmodAnswer);

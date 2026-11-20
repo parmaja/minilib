@@ -90,7 +90,7 @@ var mnwAPIDoc = (function () {
   /*height: calc(100vh - 96px);*/
   min-height: 420px;
   border: 1px solid var(--ap-border);
-  border-radius: 8px;
+  /*border-radius: 8px;*/
   overflow: hidden;
   background: var(--ap-bg);
   color: var(--ap-fg);
