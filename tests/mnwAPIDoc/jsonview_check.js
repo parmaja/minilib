@@ -9,11 +9,14 @@ var file = path.join(__dirname, '..', '..', 'web', 'source', 'mnwAPIDoc.js');
 var src = fs.readFileSync(file, 'utf8');
 
 // the helpers are plain functions, take them out of the module as they are
-var start = src.indexOf('function isPlainObject(');
+// (esc comes first, the table view helpers live in the same block)
+var start = src.indexOf('function esc(');
 var end = src.indexOf('function sanitizeId(');
 if (start < 0 || end < 0) { throw new Error('helpers not found in ' + file); }
 var block = src.slice(start, end);
-if (block.indexOf('function jsonList(') < 0) { throw new Error('jsonList is outside the block'); }
+if (block.indexOf('function jsonList(') < 0) {
+  throw new Error('the block does not hold every helper');
+}
 var names = ['isPlainObject', 'parseJSONText', 'jsonKind', 'jsonType', 'jsonCell',
   'jsonFlattenRows', 'jsonList'];
 var api = new Function(block + '\nreturn {' + names.map(function (n) {

@@ -37,7 +37,8 @@ unit mnwAPIDoc;
   the specification does not declare. A JSON response body opens as a table
   beside its raw text: the list it is about (the body itself when it is an
   array, the first property holding objects otherwise) as one row per entry,
-  the whole document as name/type/value rows when it holds no list.
+  the whole document as name/type/value rows when it holds no list. A Raw button
+  opens the same body as text.
 
   UI texts are the English ones built into the viewer: this is a developer
   tool, the specification content decides the language of the page. The viewer

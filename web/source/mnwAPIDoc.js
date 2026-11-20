@@ -67,6 +67,7 @@ var mnwAPIDoc = (function () {
     nocontent: 'No content',
     table: 'Table',
     authValue: 'Authorization',
+    raw: 'Raw',
     authHide: 'Hide the auth fields',
     authShow: 'Show the auth fields',
     extraHeaders: 'Other headers',
@@ -518,7 +519,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 
 /*a section title that carries a button: the button belongs to the title*/
 .ap-title-line { display: flex; align-items: center; gap: 0.5rem; }
-.ap-btn.ap-btn-table { padding: 0.125rem 0.5rem; font-size: 0.75rem; font-weight: 500; }
+.ap-btn.ap-btn-title { padding: 0.125rem 0.5rem; font-size: 0.75rem; font-weight: 500; }
 
 /* --- the card a JSON body is shown as a table in --- */
 .ap-card-back {
@@ -535,7 +536,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   display: flex;
   flex-direction: column;
   width: min(64rem, 100%);
-  max-height: 100%;
+  max-height: 90%;
   border: var(--ap-line) solid var(--ap-border);
   border-radius: 0.5rem;
   background: var(--ap-bg);
@@ -569,6 +570,8 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 .ap-card-x:hover { color: var(--ap-primary); border-color: var(--ap-border); }
 .ap-card-body { padding: 0.125rem 0.875rem 0.875rem; overflow: auto; }
 .ap-card-body .ap-table { margin-top: 0; }
+/*the raw text of a body: the card body carries the scroll bar, not the pre*/
+.ap-card-body pre { margin: 0.5rem 0 0; overflow: visible; }
 /*the properties around a list, they are not part of its rows*/
 .ap-card-meta {
   display: flex;
@@ -791,12 +794,11 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     return table;
   }
 
-  //The card the table is shown in: it floats over the page while the console
-  //keeps its place. It goes inside the viewer element so it takes the theme
-  //variables that are set there. Only one card is open at a time. meta holds
-  //the properties around a list, they are written above the table.
+  //The card that shows a body: it floats over the page while the console keeps
+  //its place. It goes inside the viewer element so it takes the theme
+  //variables that are set there, and only one of them is open at a time.
   var closeJsonCard = null;
-  function showJsonCard(title, data, meta, host) {
+  function showJsonCard(title, content, host) {
     if (closeJsonCard) { closeJsonCard(); }
     var back = el('div', 'ap-card-back');
     var card = el('div', 'ap-card');
@@ -806,16 +808,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     head.appendChild(close);
     card.appendChild(head);
     var box = el('div', 'ap-card-body');
-    if (meta && meta.length) {
-      var line = el('div', 'ap-card-meta');
-      meta.forEach(function (m) {
-        var p = document.createElement('span');
-        p.innerHTML = '<b>' + esc(m[0]) + '</b> ' + esc(m[1]);
-        line.appendChild(p);
-      });
-      box.appendChild(line);
-    }
-    box.appendChild(jsonTable(data));
+    box.appendChild(content);
     card.appendChild(box);
     back.appendChild(card);
     function closeCard() {
@@ -836,27 +829,60 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     close.focus();
   }
 
-  //A section title with a Table button beside it: the button opens the body in
-  //a card as a table, the list of the body when it has one. No button when
-  //there is no body or it is not JSON.
-  function jsonTitle(titleText, bodyText, tableText) {
+  //What goes inside the table card: the list of the body when it has one, with
+  //the properties around it written above the table, the document itself when
+  //it holds no list.
+  function jsonCardBody(data) {
+    var list = jsonList(data);
+    if (!list) { return jsonTable(data); }
+    if (!list.meta.length) { return jsonTable(list.rows); }
+    var box = el('div');
+    var line = el('div', 'ap-card-meta');
+    list.meta.forEach(function (m) {
+      var p = document.createElement('span');
+      p.innerHTML = '<b>' + esc(m[0]) + '</b> ' + esc(m[1]);
+      line.appendChild(p);
+    });
+    box.appendChild(line);
+    box.appendChild(jsonTable(list.rows));
+    return box;
+  }
+
+  //The body as text: the JSON laid out again when it parses, the text as it
+  //came otherwise. Nothing is marked up, the text is only escaped.
+  function rawBody(data, bodyText) {
+    var text = data !== null ? formatJSON(data) : bodyText;
+    var pre = el('pre');
+    var code = document.createElement('code');
+    code.innerHTML = esc(text);
+    pre.appendChild(code);
+    return pre;
+  }
+
+  //The title above a body with the buttons that open it in a card: Table for a
+  //JSON body with something tabular in it, Raw for its text. Both are left out
+  //when there is no body.
+  function bodyTitle(labels, bodyText) {
     var box = el('div', 'ap-section-title ap-title-line');
-    box.appendChild(el('span', null, esc(titleText)));
+    box.appendChild(el('span', null, esc(labels.body)));
     var data = parseJSONText(bodyText);
-    if (data !== null && jsonKind(data)) {
-      var btn = el('button', 'ap-btn ap-btn-plain ap-btn-table', esc(tableText));
+    var isJSON = data !== null && jsonKind(data);
+    var list = isJSON ? jsonList(data) : null;
+    function addButton(text, title, make) {
+      var btn = el('button', 'ap-btn ap-btn-plain ap-btn-title', esc(text));
       btn.addEventListener('click', function (e) {
         e.preventDefault();
-        var host = box.closest('.mnw-apidoc');
-        var list = jsonList(data);
-        if (!list) {
-          showJsonCard(titleText, data, null, host);
-        } else {
-          showJsonCard(list.name ? titleText + ' \u00b7 ' + list.name : titleText,
-            list.rows, list.meta, host);
-        }
+        showJsonCard(title, make(), btn.closest('.mnw-apidoc'));
       });
       box.appendChild(btn);
+    }
+    if (isJSON) {
+      addButton(labels.table, labels.body + (list && list.name ? ' \u00b7 ' + list.name : ''),
+        function () { return jsonCardBody(data); });
+    }
+    if (bodyText) {
+      addButton(labels.raw, labels.body + ' \u00b7 ' + labels.raw,
+        function () { return rawBody(data, bodyText); });
     }
     return box;
   }
@@ -1815,11 +1841,9 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         table.appendChild(tr);
       });
       rbody.appendChild(table);
-      rbody.appendChild(jsonTitle(labels.body, respBody, labels.table));
+      rbody.appendChild(bodyTitle(labels, respBody));
       if (respBody) {
-        var pretty = respBody;
-        try { pretty = formatJSON(JSON.parse(respBody)); } catch (e) { /* keep raw */ }
-        rbody.appendChild(el('pre', null, '<code>' + esc(pretty) + '</code>'));
+        rbody.appendChild(rawBody(parseJSONText(respBody), respBody));
       } else {
         rbody.appendChild(el('div', 'ap-prop-meta', esc(labels.nocontent)));
       }
@@ -2534,7 +2558,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.19',
+    version: '1.22',
     render: render,
     labels: defaultLabels
   };
