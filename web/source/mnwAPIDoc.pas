@@ -36,8 +36,9 @@ unit mnwAPIDoc;
   value goes to the header/query the scheme names) and takes extra headers that
   the specification does not declare.
 
-  UI texts are translated through the mnw language files (Ctx._T with the
-  keys 'apidoc.*' in en.mnw.json/ar.mnw.json), English is the fallback.
+  UI texts are the English ones built into the viewer: this is a developer
+  tool, the specification content decides the language of the page. The viewer
+  still accepts a labels option, so the plain script can be reworded.
 
   Usage with URL:
     with TAPIDoc.Create(Document.Body.Main) do
@@ -218,53 +219,6 @@ var
       AddOption(AJSName, JsonStr(AValue));
   end;
 
-  //The viewer UI texts, translated via the page language files
-  function LabelsJSON: string;
-  var
-    aLabels: string;
-
-    procedure AddLabel(const AKey: string; const ADefault: string);
-    begin
-      if aLabels <> '' then
-        aLabels := aLabels + ', ';
-      aLabels := aLabels + JsonStr(AKey) + ': ' + JsonStr(Ctx._T('apidoc.' + AKey, ADefault));
-    end;
-
-  begin
-    aLabels := '';
-    AddLabel('overview', 'Overview');
-    AddLabel('servers', 'Servers');
-    AddLabel('authentication', 'Authentication');
-    AddLabel('download', 'Download spec');
-    AddLabel('models', 'Models');
-    AddLabel('search', 'Search...');
-    AddLabel('parameters', 'Parameters');
-    AddLabel('requestBody', 'Request body');
-    AddLabel('responses', 'Responses');
-    AddLabel('tryit', 'Try it out');
-    AddLabel('send', 'Send');
-    AddLabel('clear', 'Clear');
-    AddLabel('status', 'Status');
-    AddLabel('time', 'Time');
-    AddLabel('headers', 'Headers');
-    AddLabel('body', 'Body');
-    AddLabel('example', 'Example');
-    AddLabel('required', 'required');
-    AddLabel('deprecated', 'deprecated');
-    AddLabel('noresult', 'No matching operations');
-    AddLabel('loaderror', 'Failed to load the specification');
-    AddLabel('name', 'Name');
-    AddLabel('type', 'Type');
-    AddLabel('in', 'In');
-    AddLabel('description', 'Description');
-    AddLabel('nocontent', 'No content');
-    AddLabel('authValue', 'Authorization');
-    AddLabel('extraHeaders', 'Other headers');
-    AddLabel('addHeader', 'Add header');
-    AddLabel('value', 'value');
-    Result := '{' + aLabels + '}';
-  end;
-
   function ThemeJS: string;
   begin
     case e.FTheme of
@@ -315,9 +269,6 @@ begin
   AddStringOption('height', e.FHeight);
   AddStringOption('credentials', e.FFetchCredentials);
   AddStringOption('customCss', e.FCustomCSS);
-
-  //UI texts
-  AddOption('labels', LabelsJSON);
 
   aOptions := '{' + aOptions + '}';
 

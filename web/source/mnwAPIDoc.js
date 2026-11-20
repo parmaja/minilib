@@ -16,7 +16,7 @@
       url: '/assets/spec/openapi.json',          // fetch the spec from URL
       content: specObjectOrJsonString,           // or give the spec directly
       contentElementId: 'api_spec',              // or read it from a <script> template
-      labels: {},                                // UI strings (default English)
+      labels: {},                                // UI strings, English by default
       theme: 'auto',                             // auto | light | dark
       bootstrapTheme: true,                      // follow Bootstrap CSS variables
       serverUrl: '',                             // override the spec servers
@@ -2186,7 +2186,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.14',
+    version: '1.15',
     render: render,
     labels: defaultLabels
   };
