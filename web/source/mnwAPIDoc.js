@@ -493,10 +493,10 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 .ap-btn.ap-btn-auth { padding: 0.3125rem 0.4375rem; display: inline-flex; align-items: center; }
 .ap-btn.ap-btn-auth svg { display: block; }
 .ap-auth.ap-auth-off { display: none; }
-/*headers that are not in the specification: name and value beside each other,
-  they stack when the console column gets too narrow for both*/
-.ap-hrow { display: flex; gap: 0.375rem; align-items: center; margin: 0.25rem 0; flex-wrap: wrap; }
-.ap-hrow-name { flex: 1 1 3.125rem; min-width: 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.78125rem; }
+/*headers that are not in the specification: every row is a field like the
+  parameters, a label above and the name and the value beside each other*/
+.ap-hline { display: flex; gap: 0.375rem; align-items: center; }
+.ap-hrow-name { flex: 1 1 3.125rem; min-width: 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
 .ap-hrow-value { flex: 2 1 4.6875rem; min-width: 0; }
 .ap-hrow-x, .ap-hadd {
   padding: 0.1875rem 0.5rem;
@@ -510,7 +510,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   flex: none;
 }
 .ap-hrow-x { line-height: 1; padding: 0.25rem 0.5rem; }
-.ap-hadd { flex: none; align-self: flex-start; }
+.ap-hadd { line-height: 1; padding: 0.25rem 0.5rem; align-self: flex-start; }
 .ap-hrow-x:hover, .ap-hadd:hover { color: var(--ap-primary); border-color: var(--ap-border); }
 .ap-try-result { margin-top: 0.75rem; }
 .ap-try-result .ap-resp-body { border-top: var(--ap-line) solid var(--ap-border); }
@@ -1208,28 +1208,36 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       else if (state.authHidden) { authWrap.classList.add('ap-auth-off'); }
     }
 
-    // Headers that are not in the specification, added by hand for this request
+    // Headers that are not in the specification, added by hand for this request.
+    // Each one is a field like the parameters: a label above, inputs below.
     var headerRows = [];
     var fExtra = el('div', 'ap-field');
     fExtra.appendChild(el('label', null, esc(labels.extraHeaders)));
-    var headerList = el('div', 'ap-hlist');
-    fExtra.appendChild(headerList);
     var addHeaderBtn = el('button', 'ap-hadd', esc(labels.addHeader));
     fExtra.appendChild(addHeaderBtn);
+    var headerList = el('div', 'ap-hlist');
     body.appendChild(fExtra);
+    body.appendChild(headerList);
+
+    function labelHeaderRows() {
+      headerRows.forEach(function (row, i) {
+        row.label.textContent = labels.name + ' ' + (i + 1);
+      });
+    }
 
     function removeHeaderRow(row) {
       var i = headerRows.indexOf(row);
       if (i >= 0) { headerRows.splice(i, 1); }
       row.box.remove();
-      if (!headerRows.length) { headerList.remove(); }
+      labelHeaderRows();
     }
 
     function addHeaderRow(name, value) {
-      var rowBox = el('div', 'ap-hrow');
+      var rowBox = el('div', 'ap-field ap-hrow');
+      var lab = el('label');
+      var line = el('div', 'ap-hline');
       var nameIn = document.createElement('input');
       nameIn.className = 'ap-hrow-name';
-      nameIn.placeholder = labels.name;
       nameIn.value = name || '';
       var valueIn = document.createElement('input');
       valueIn.className = 'ap-hrow-value';
@@ -1237,13 +1245,15 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       valueIn.value = value || '';
       var x = el('button', 'ap-hrow-x', '\u00d7');
       x.title = labels.clear;
-      rowBox.appendChild(nameIn);
-      rowBox.appendChild(valueIn);
-      rowBox.appendChild(x);
-      if (headerList.parentElement !== body) { body.insertBefore(headerList, fExtra); }
+      line.appendChild(nameIn);
+      line.appendChild(valueIn);
+      line.appendChild(x);
+      rowBox.appendChild(lab);
+      rowBox.appendChild(line);
       headerList.appendChild(rowBox);
-      var row = { name: nameIn, value: valueIn, box: rowBox };
+      var row = { name: nameIn, value: valueIn, label: lab, box: rowBox };
       headerRows.push(row);
+      labelHeaderRows();
       x.addEventListener('click', function (e) { e.preventDefault(); removeHeaderRow(row); });
       nameIn.focus();
       return row;
@@ -2232,7 +2242,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.16',
+    version: '1.17',
     render: render,
     labels: defaultLabels
   };
