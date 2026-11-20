@@ -900,6 +900,7 @@ type
 
   TmnwSchema = class(TmnwElement)
   private
+    FInit: Boolean;
     FAttached: Boolean;
     FAttachments: TmnwAttachments;
     FAPI: TmnwAPI;
@@ -922,6 +923,7 @@ type
     //* a request hook with an other signature then TmnwElement.DoExecute, it
     //* hides it on purpose, the element hook is never used on a schema
     procedure DoExecute(var Ctx: TmnwContext; var Processed: Boolean); reintroduce; virtual;
+    procedure DoInit; virtual;
     procedure DoPrepare; override;
     procedure DoChildRespond(AElement: TmnwElement; const Ctx: TmnwContext); virtual;
     procedure AttachedMessage(const s: string); virtual; //from websocket
@@ -936,6 +938,7 @@ type
     Interactive: Boolean;
     constructor Create(AWeb: TmnwWeb; AName:string; ARoute: string = ''); reintroduce;
     destructor Destroy; override;
+    procedure Init;  //Call it manually before composed
 
     class function GetCapabilities: TmnwSchemaCapabilities; virtual;
     function GetPublicPath: string; virtual;
@@ -3473,6 +3476,7 @@ begin
   if schemaStartup in aSchemaItem.SchemaClass.GetCapabilities then
   begin
     Result := CreateSchema(SchemaClass, AName);
+    Result.Init;
     Result.FPhase := scmpNormal;
     Add(Result);
   end
@@ -3635,8 +3639,9 @@ begin
         begin
           aSchema.Enter;
           try
-            if not (estComposed in aSchema.State) then //Check again after Enter, while waiting can be composed
+            if not (estComposed in aSchema.State) then //Check again after Enter, while waiting can be composed at that time
             try
+              aSchema.Init;
               aSchema.Compose(Ctx); //Compose
             except
               aSchema.Leave;
@@ -4297,6 +4302,15 @@ procedure TmnwSchema.DoChildRespond(AElement: TmnwElement; const Ctx: TmnwContex
 begin
 end;
 
+procedure TmnwSchema.Init;
+begin
+  if not FInit then
+  begin
+      FInit := true;
+      DoInit;
+  end;
+end;
+
 procedure TmnwSchema.InteractiveMessage(const s: string);
 var
   Json: TDON_Pair;
@@ -4386,6 +4400,10 @@ begin
 end;
 
 procedure TmnwSchema.DoExecute(var Ctx: TmnwContext; var Processed: Boolean);
+begin
+end;
+
+procedure TmnwSchema.DoInit;
 begin
 end;
 
