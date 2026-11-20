@@ -36,10 +36,9 @@ requires
   MiniSocketLib;
 
 contains
-  mnWebElements  in '..\source\mnWebElements.pas',
-  mnBootstraps   in '..\source\mnBootstraps.pas',
-  mnwApiExplorer in '..\source\mnwApiExplorer.pas',
-  mnwRapiDoc     in '..\source\mnwRapiDoc.pas',
-  mnwAPIDoc      in '..\source\mnwAPIDoc.pas',
-  mnwMarkdownIt  in '..\source\mnwMarkdownIt.pas';
+  mnWebElements in '..\source\mnWebElements.pas',
+  mnBootstraps in '..\source\mnBootstraps.pas',
+  mnwAPIDoc in '..\source\mnwAPIDoc.pas',
+  mnwMarkdownIt in '..\source\mnwMarkdownIt.pas';
+
 end.
