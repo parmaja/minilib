@@ -247,9 +247,9 @@ var mnwAPIDoc = (function () {
   overflow-y: auto;
   padding: 1.25rem 1.75rem 5rem;
   /*border: var(--ap-line) solid var(--ap-border);*/
-  scroll-behavior: smooth; }
-  .ap-main h1 { font-size: 1.625rem; margin: 0 0 0.25rem;
+  scroll-behavior: smooth;
 }
+.ap-main h1 { font-size: 1.625rem; margin: 0 0 0.25rem; }
 .ap-main h2 {
   font-size: 1.1875rem;
   margin: 2.125rem 0 0.625rem;
