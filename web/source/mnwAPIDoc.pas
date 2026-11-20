@@ -25,7 +25,9 @@ unit mnwAPIDoc;
   section, light/dark themes (optionally following the Bootstrap theme),
   and a "Try it out" console with cURL support. On wide screens the console
   goes to a column at the end side of the operation details, on small ones it
-  stays below them.
+  stays below them. The navigation sidebar sticks in view while the page
+  scrolls (place it below a fixed header with the --ap-nav-top CSS variable)
+  and scrolls its own entries when they do not fit the screen.
 
   UI texts are translated through the mnw language files (Ctx._T with the
   keys 'apidoc.*' in en.mnw.json/ar.mnw.json), English is the fallback.

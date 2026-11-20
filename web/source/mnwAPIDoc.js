@@ -80,6 +80,8 @@ var mnwAPIDoc = (function () {
   --ap-line: 0.0625rem;
   --ap-hover: #eaeef2;
   --ap-primary: #3b82f6;
+  /*where the sticky navigation stops while scrolling the page*/
+  --ap-nav-top: 0;
   --ap-code-bg: #f0f2f5;
   --ap-get: #2f9de4;
   --ap-post: #16a085;
@@ -90,10 +92,12 @@ var mnwAPIDoc = (function () {
   display: flex;
   flex-direction: row;
   /*height: calc(100vh - 6rem);*/
+  height: 100%;
   min-height: 26.25rem;
-  border: var(--ap-line) solid var(--ap-border);
+  /*border: var(--ap-line) solid var(--ap-border);*/
   /*border-radius: 0.5rem;*/
-  overflow: hidden;
+  /*no overflow here, it would make the container a scroll port and stop the
+    sticky navigation, the panels scroll/clip their own content*/
   background: var(--ap-bg);
   color: var(--ap-fg);
   font-size: 0.875rem;
@@ -143,6 +147,13 @@ var mnwAPIDoc = (function () {
   min-width: 15.625rem;
   display: flex;
   flex-direction: column;
+  /*stays in view while the page scrolls, the list inside gets the scroll bar
+    when the entries do not fit the screen (max-height)*/
+  position: sticky;
+  top: var(--ap-nav-top);
+  max-height: 100vh;
+  z-index: 1;
+  border: var(--ap-line) solid var(--ap-border);
   border-inline-end: var(--ap-line) solid var(--ap-border);
   background: var(--ap-bg2);
 }
@@ -173,7 +184,7 @@ var mnwAPIDoc = (function () {
   outline: none;
 }
 .ap-nav-search input:focus { border-color: var(--ap-primary); }
-.ap-nav-list { flex: 1; overflow-y: auto; padding: 0.25rem 0 1.5rem; }
+.ap-nav-list { flex: 1; overflow-y: auto; scrollbar-width: thin; padding: 0.25rem 0 1.5rem; }
 .ap-nav-group { margin: 0.125rem 0; }
 .ap-nav-group > summary {
   padding: 0.4375rem 1rem;
@@ -231,8 +242,14 @@ var mnwAPIDoc = (function () {
 .ap-method-head, .ap-method-options, .ap-method-trace { background: var(--ap-other); }
 
 /* --- main content --- */
-.ap-main { flex: 1; overflow-y: auto; padding: 1.25rem 1.75rem 5rem; scroll-behavior: smooth; }
-.ap-main h1 { font-size: 1.625rem; margin: 0 0 0.25rem; }
+.ap-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.75rem 5rem;
+  /*border: var(--ap-line) solid var(--ap-border);*/
+  scroll-behavior: smooth; }
+  .ap-main h1 { font-size: 1.625rem; margin: 0 0 0.25rem;
+}
 .ap-main h2 {
   font-size: 1.1875rem;
   margin: 2.125rem 0 0.625rem;
@@ -482,7 +499,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 }
 @media (max-width: 47.5rem) {
   .mnw-apidoc { flex-direction: column; height: auto; }
-  .ap-nav { width: 100%; max-height: 18.75rem; border-inline-end: none; border-bottom: var(--ap-line) solid var(--ap-border); }
+  .ap-nav { position: static; width: 100%; max-height: 18.75rem; border-inline-end: none; border-bottom: var(--ap-line) solid var(--ap-border); }
   .ap-main { overflow: visible; }
 }
 `;
@@ -1684,15 +1701,20 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       }
     });
 
-    // Scroll spy: mark the active operation in the sidebar
+    // Scroll spy: mark the active operation in the sidebar. The panel scrolls
+    // itself when it has a height, otherwise the page scrolls and the sidebar
+    // stays in view (sticky), so both scroll ports are watched and the
+    // measure line is the top of the port that moves.
     // (throttled with setTimeout instead of requestAnimationFrame, which
     // never fires while the tab is hidden and would stall the flag)
     var timer = null;
-    state.main.addEventListener('scroll', function () {
+    var spy = function () {
       if (timer) { return; }
       timer = setTimeout(function () {
         timer = null;
-        var top = state.main.getBoundingClientRect().top;
+        var panel = state.main.scrollHeight > state.main.clientHeight + 4 ? state.main : null;
+        var portTop = panel ? panel.getBoundingClientRect().top : 0;
+        var portHeight = panel ? panel.clientHeight : (window.innerHeight || document.documentElement.clientHeight);
         var current = null;
         var lastVisible = null;
         state.sections.forEach(function (sec) {
@@ -1701,17 +1723,19 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
           //skip nodes inside a collapsed section header
           var box = node.closest('details:not([open])');
           if (box && box !== node) { return; }
-          var rel = node.getBoundingClientRect().top - top;
+          var rel = node.getBoundingClientRect().top - portTop;
           if (rel <= 60) {
             current = sec.id;
           }
-          if (rel >= 0 && rel < state.main.clientHeight - 20) {
+          if (rel >= 0 && rel < portHeight - 20) {
             lastVisible = sec.id;
           }
         });
         //at the end of the content the band rule finds nothing below,
         //use the last section whose header is visible instead
-        var atBottom = state.main.scrollTop + state.main.clientHeight >= state.main.scrollHeight - 4;
+        var atBottom = panel
+          ? (state.main.scrollTop + state.main.clientHeight >= state.main.scrollHeight - 4)
+          : (state.root.getBoundingClientRect().bottom <= portHeight + 4);
         if (atBottom && lastVisible) {
           current = lastVisible;
         }
@@ -1721,7 +1745,9 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
           if (active) { active.classList.add('ap-active'); }
         }
       }, 60);
-    });
+    };
+    state.main.addEventListener('scroll', spy);
+    window.addEventListener('scroll', spy);
   }
 
   function showError(state, message) {
@@ -1856,7 +1882,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.9',
+    version: '1.10',
     render: render,
     labels: defaultLabels
   };
