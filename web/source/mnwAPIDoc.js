@@ -261,13 +261,16 @@ var mnwAPIDoc = (function () {
 .ap-heading-text { color: var(--ap-muted); font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .ap-version-badge {
   display: inline-block;
+  margin-inline-start: 0.5rem;
   padding: 0.0625rem 0.625rem;
   font-size: 0.75rem;
   font-weight: 600;
   border: var(--ap-line) solid var(--ap-primary);
   color: var(--ap-primary);
   border-radius: 0.75rem;
-  vertical-align: middle;
+  /*the badge sits in a heading, middle would ride on the text middle line,
+    this lifts it by half of the badge height over the baseline*/
+  vertical-align: 0.3125rem;
 }
 .ap-doc-meta { color: var(--ap-muted); font-size: 0.8125rem; margin: 0.25rem 0 0.75rem; }
 .ap-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.625rem 0 0.25rem; }
@@ -1707,7 +1710,10 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     var h1 = el('h1');
     h1.textContent = info.title || 'API';
     overview.appendChild(h1);
-    if (info.version) { overview.appendChild(el('span', 'ap-version-badge', 'v ' + esc(info.version))); }
+    if (info.version) {
+      //the badge rides with the title, inside the heading, not below it
+      h1.appendChild(el('span', 'ap-version-badge', 'v ' + esc(info.version)));
+    }
     var meta = el('div', 'ap-doc-meta');
     if (spec.openapi) { meta.textContent = 'OpenAPI ' + esc(spec.openapi); }
     else if (spec.swagger) { meta.textContent = 'Swagger ' + esc(spec.swagger); }
@@ -2036,7 +2042,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.12',
+    version: '1.13',
     render: render,
     labels: defaultLabels
   };
