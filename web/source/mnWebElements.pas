@@ -2407,8 +2407,6 @@ function NV(const Name, Value, Default: string): string; overload; inline;
 function AddIf(const Value: string; Add: string): string; overload; inline;
 function When(Value: Boolean; Kind: TmnwElementKind): TmnwElementKinds; overload;
 
-function StartURL(const Path: string): string; inline;
-function EndURL(const Path: string): string; inline;
 function EscapeAttr(const S: string): string;
 
 function Renderers: TmnwRenderers;
@@ -2501,16 +2499,6 @@ begin
   Result := [Kind]
  else
   Result := [];
-end;
-
-function StartURL(const Path: string): string;
-begin
-  Result := AddStartURLDelimiter(Path);
-end;
-
-function EndURL(const Path: string): string;
-begin
-  Result := AddEndURLDelimiter(Path);
 end;
 
 function EscapeAttr(const S: string): string;
@@ -3583,7 +3571,7 @@ begin
 
         if (aSchema = nil) and (aSchemaName = '') then
         begin
-          Ctx.Response.RespondRedirectTo(EndURL(FallbackTo));
+          Ctx.Response.RespondRedirectTo(AddStartURLDelimiter(FallbackTo));
           exit;
         end;
           
@@ -3744,7 +3732,6 @@ begin
           Ctx.Response.ContentType := Ctx.Element.GetContentType(Ctx.CurrentPath);
       end;
 
-      //* Resume maybe come false in action
       //* We will render it now
       if not Ctx.Response.IsResponded then
       begin
@@ -5270,7 +5257,7 @@ begin
       begin
         if (source.OnlineFile = '') or (source.Where = stResource) or CheckOffline(Ctx, source.Name) then
         begin
-          url := EndUrl(Ctx.GetAssetsURL) + source.Name;
+          url := AddEndURLDelimiter(Ctx.GetAssetsPath) + source.Name;
           local := True;
         end
         else 
@@ -5279,14 +5266,14 @@ begin
           local:= False;
         end;
 
-        if not StartsText('http', url) and not StartsStr('//', url) then
+        if not StartsText('http', url) and not StartsStr('/', url) then
         begin
           if Ctx.Request.IsSecure then
             url := 'https://' + url
           else
             url := 'http://' + url;
         end;
-        
+
         case source.SourceType of
           stStyle: Ctx.Writer.AddLinkStyle(url, When(not local, source.Integrity), libCross in source.Options);
           stScript: Ctx.Writer.AddLinkScript(url, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options);
@@ -6233,7 +6220,7 @@ end;
 
 function TmnwContext.GetPath(e: TmnwElement): string;
 begin
-  Result := GetBasePath + StartURL(e.GetPath);
+  Result := GetBasePath + AddStartURLDelimiter(e.GetPath);
 end;
 
 function TmnwContext.GetPort: string;
@@ -6258,7 +6245,7 @@ end;
 
 function TmnwContext.GetRequestURL: string;
 begin
-  Result := EndUrl(GetHostURL) + Request.URI;
+  Result := AddStartURLDelimiter(GetHostURL) + Request.URI;
 end;
 
 function TmnwContext.GetSchemaURL: string;
@@ -6295,7 +6282,7 @@ end;
 
 function TmnwContext.GetBasePath: string;
 begin
-  Result := RemoveEndURLDelimiter(StartURL(Request.BasePath));
+  Result := RemoveEndURLDelimiter(AddStartURLDelimiter(Request.BasePath));
 end;
 
 function TmnwContext.GetHomeURL: string;
@@ -6311,18 +6298,18 @@ end;
 function TmnwContext.GetLocationPath(AElement: TmnwElement; Location: TLocation): string;
 begin
   if Location.Where = toSchema then
-    Result := EndURL(GetPath(Schema))
+    Result := AddStartURLDelimiter(GetPath(Schema))
   else if Location.Where = toElement then
-    Result := EndURL(GetPath(AElement))
+    Result := AddStartURLDelimiter(GetPath(AElement))
   else if Location.Where = toHome then
-    Result := EndURL(GetBasePath)
+    Result := AddStartURLDelimiter(GetBasePath)
   else if Location.Where = toDefault then
     Result := GetDefaultPath;
     
   if Location.Where = toCustom then
-    Result := EndURL(Location.Custom)
+    Result := AddStartURLDelimiter(Location.Custom)
   else if Location.Custom <> '' then
-    Result := EndURL(Result) + EndURL(Location.Custom);
+    Result := AddStartURLDelimiter(Result) + AddStartURLDelimiter(Location.Custom);
     
   if Location.WithQuery and (Request.Query <> '') then
     Result := Result + '?' + Request.Query;
@@ -6330,7 +6317,7 @@ end;
 
 function TmnwContext.GetURL(e: TmnwElement): string;
 begin
-  Result := GetHomeURL + StartURL(e.GetPath);
+  Result := GetHomeURL + AddStartURLDelimiter(e.GetPath);
 end;
 
 function TmnwContext.GetAssetDir: string;
@@ -6355,7 +6342,7 @@ function TmnwContext.GetDefaultPath: string;
 begin
   Result := GetHomeURL;
   if Schema.Web.DefaultSchema <> nil then  
-    Result := Result + StartURL(Schema.Web.DefaultSchema.Name);
+    Result := Result + AddStartURLDelimiter(Schema.Web.DefaultSchema.Name);
 end;
 
 function TmnwContext.GetDomain: string;

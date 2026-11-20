@@ -1760,7 +1760,7 @@ var
 begin
   e := Scope.Element as THTML.TNavBar;
   //when there are nav items, let their `me-auto` push the tools to the end
-  Ctx.Writer.OpenTag('a', 'class="logo d-flex navbar-brand align-items-center p-0 me-auto' + '" href="' + EndURL(Ctx.GetDefaultPath) + '"');
+  Ctx.Writer.OpenTag('a', 'class="logo d-flex navbar-brand align-items-center p-0 me-auto' + '" href="' + AddStartURLDelimiter(Ctx.GetDefaultPath) + '"');
 
 //  if e.Schema.Web.Assets.Logo.Data.Size > 0 then
 //    Ctx.Writer.AddShortTag('img', 'src="' + Ctx.GetPath(e.Schema.Web.Assets.Logo)+ '" alt=""');

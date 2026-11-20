@@ -461,7 +461,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 @media (min-width: 87.5rem) {
   .ap-op-cols { display: flex; flex-wrap: nowrap; align-items: flex-start; gap: 1rem; }
   .ap-op-cols > .ap-op-info { flex: 1 1 0; min-width: 0; }
-  .ap-op-cols > .ap-try { flex: 0 0 26.25rem; margin: 0 0 0.75rem; }
+  .ap-op-cols > .ap-try { flex: 0 0 50%; margin: 0 0 0.75rem; }
 }
 
 /* --- markdown --- */
