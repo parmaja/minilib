@@ -66,10 +66,22 @@ var mnwAPIDoc = (function () {
     description: 'Description',
     nocontent: 'No content',
     authValue: 'Authorization',
+    authHide: 'Hide the auth fields',
+    authShow: 'Show the auth fields',
     extraHeaders: 'Other headers',
     addHeader: 'Add header',
     value: 'value'
   };
+
+  /* ------------------------------------------------------------- icons */
+
+  /* The eye of the auth button: the pupil is taken away when the fields are
+     hidden. currentColor lets it take the colour of the button it sits in. */
+  var EYE_SVG =
+    '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" ' +
+    'stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M1.4 8C3.2 4.9 5.6 3.4 8 3.4s4.8 1.5 6.6 4.6C12.8 11.1 10.4 12.6 8 12.6 5.6 12.6 3.2 11.1 1.4 8Z"/>' +
+    '<circle id="ap-pupil" cx="8" cy="8" r="2.1"/></svg>';
 
   /* ---------------------------------------------------------------- CSS */
 
@@ -477,6 +489,10 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 }
 .ap-btn:disabled { opacity: 0.55; cursor: default; }
 .ap-btn.ap-btn-plain { background: none; color: var(--ap-fg); border-color: var(--ap-border); }
+/*the auth eye: a square button holding only the icon*/
+.ap-btn.ap-btn-auth { padding: 0.3125rem 0.4375rem; display: inline-flex; align-items: center; }
+.ap-btn.ap-btn-auth svg { display: block; }
+.ap-auth.ap-auth-off { display: none; }
 /*headers that are not in the specification: name and value beside each other,
   they stack when the console column gets too narrow for both*/
 .ap-hrow { display: flex; gap: 0.375rem; align-items: center; margin: 0.25rem 0; flex-wrap: wrap; }
@@ -1162,10 +1178,16 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     opInfo.params.forEach(addField);
 
     // The security schemes of the operation: one field for each, the value
-    // goes to the header/query the scheme names, Authorization gets its prefix
+    // goes to the header/query the scheme names, Authorization gets its prefix.
+    // A button in the header shows or hides them, the values are used either way.
+    var authFields = [];
+    var authWrap = null;
+    var authBtn = null;
     var auths = securityForOperation(spec, op);
     if (auths.length) {
-      body.appendChild(el('div', 'ap-section-title', esc(labels.authValue)));
+      authWrap = el('div', 'ap-auth');
+      authWrap.appendChild(el('div', 'ap-section-title', esc(labels.authValue)));
+      body.appendChild(authWrap);
       auths.forEach(function (a) {
         var loc = authLocation(a.scheme);
         if (!loc) { return; }
@@ -1177,9 +1199,13 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         input.type = loc.secret ? 'password' : 'text';
         input.placeholder = (a.scheme.description || loc.name).replace(/\s+/g, ' ');
         f.appendChild(input);
-        body.appendChild(f);
+        authWrap.appendChild(f);
         inputs.push({ param: { in: loc.at, name: loc.name, prefix: loc.prefix }, input: input });
+        authFields.push(f);
       });
+      //an unknown scheme type brings no field, then the block has nothing to show
+      if (!authFields.length) { authWrap.remove(); authWrap = null; }
+      else if (state.authHidden) { authWrap.classList.add('ap-auth-off'); }
     }
 
     // Headers that are not in the specification, added by hand for this request
@@ -1358,6 +1384,26 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     if (state.options.showCurl) {
       var curlBtn = el('button', 'ap-btn ap-btn-plain', 'cURL');
       actions.appendChild(curlBtn);
+    }
+    if (authFields.length) {
+      //an eye, the whole button is the icon: it shows or hides the auth fields
+      authBtn = el('button', 'ap-btn ap-btn-plain ap-btn-auth');
+      authBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        state.authHidden = !state.authHidden;
+        if (authWrap) { authWrap.classList.toggle('ap-auth-off', state.authHidden); }
+        paintAuthBtn();
+      });
+      actions.insertBefore(authBtn, actions.firstChild);
+      paintAuthBtn();
+    }
+    function paintAuthBtn() {
+      if (!authBtn) { return; }
+      authBtn.innerHTML = EYE_SVG;
+      var pupil = authBtn.querySelector('circle');
+      if (pupil) { pupil.hidden = !!state.authHidden; }
+      authBtn.title = state.authHidden ? labels.authShow : labels.authHide;
+      authBtn.setAttribute('aria-label', authBtn.title);
     }
     sum.appendChild(actions);
     //The action buttons live in the header row: their clicks must not
@@ -2186,7 +2232,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.15',
+    version: '1.16',
     render: render,
     labels: defaultLabels
   };
