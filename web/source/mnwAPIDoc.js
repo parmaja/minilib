@@ -65,6 +65,7 @@ var mnwAPIDoc = (function () {
     in: 'In',
     description: 'Description',
     nocontent: 'No content',
+    table: 'Table',
     authValue: 'Authorization',
     authHide: 'Hide the auth fields',
     authShow: 'Show the auth fields',
@@ -515,6 +516,70 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 .ap-try-result { margin-top: 0.75rem; }
 .ap-try-result .ap-resp-body { border-top: var(--ap-line) solid var(--ap-border); }
 
+/*a section title that carries a button: the button belongs to the title*/
+.ap-title-line { display: flex; align-items: center; gap: 0.5rem; }
+.ap-btn.ap-btn-table { padding: 0.125rem 0.5rem; font-size: 0.75rem; font-weight: 500; }
+
+/* --- the card a JSON body is shown as a table in --- */
+.ap-card-back {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(1, 4, 9, 0.55);
+}
+.ap-card {
+  display: flex;
+  flex-direction: column;
+  width: min(64rem, 100%);
+  max-height: 100%;
+  border: var(--ap-line) solid var(--ap-border);
+  border-radius: 0.5rem;
+  background: var(--ap-bg);
+  color: var(--ap-fg);
+  box-shadow: 0 0.75rem 2rem rgba(1, 4, 9, 0.35);
+}
+.ap-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  border-bottom: var(--ap-line) solid var(--ap-border);
+  background: var(--ap-bg2);
+  border-start-start-radius: 0.5rem;
+  border-start-end-radius: 0.5rem;
+  flex: none;
+}
+.ap-card-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-card-x {
+  padding: 0 0.5rem;
+  border: var(--ap-line) solid transparent;
+  background: none;
+  color: var(--ap-muted);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  flex: none;
+}
+.ap-card-x:hover { color: var(--ap-primary); border-color: var(--ap-border); }
+.ap-card-body { padding: 0.125rem 0.875rem 0.875rem; overflow: auto; }
+.ap-card-body .ap-table { margin-top: 0; }
+/*the properties around a list, they are not part of its rows*/
+.ap-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.125rem 1rem;
+  margin: 0.5rem 0 0.125rem;
+  font-size: 0.8125rem;
+  color: var(--ap-muted);
+}
+.ap-card-meta b { color: var(--ap-fg); font-weight: 600; }
+
 /* On wide screens the console is a column at the end side of the operation
    details, on small screens it stays below them (default flow) */
 @media (min-width: 87.5rem) {
@@ -567,6 +632,233 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 
   function formatJSON(v) {
     try { return JSON.stringify(v, null, 2); } catch (e) { return String(v); }
+  }
+
+  /* --------------------------------------------------- JSON table view */
+
+  //What the response body is for the table view: 'object', 'array' or null.
+  //A JSON text is parsed here, plain texts and HTML are left alone.
+  function parseJSONText(text) {
+    if (typeof text !== 'string' || !text) { return null; }
+    var first = text.charAt(0);
+    if (first !== '{' && first !== '[') { return null; }
+    try { return JSON.parse(text); } catch (e) { return null; }
+  }
+
+  function jsonKind(data) {
+    if (Array.isArray(data)) { return 'array'; }
+    if (isPlainObject(data)) { return 'object'; }
+    return null;
+  }
+
+  //The type of a value, arrays say what they hold: array of string
+  function jsonType(v) {
+    if (v === null) { return 'null'; }
+    if (Array.isArray(v)) {
+      if (!v.length) { return 'array'; }
+      var kinds = [];
+      for (var i = 0; i < v.length; i++) {
+        var k = jsonType(v[i]);
+        if (kinds.indexOf(k) < 0) { kinds.push(k); }
+      }
+      return 'array of ' + kinds.join(' / ');
+    }
+    if (isPlainObject(v)) { return 'object'; }
+    return typeof v;
+  }
+
+  //A row value: scalars as they are, a short look at what is inside the rest
+  function jsonCell(v) {
+    if (v === null) { return 'null'; }
+    if (Array.isArray(v)) {
+      if (!v.length) { return '[]'; }
+      if (v.every(function (x) { return !isPlainObject(x) && !Array.isArray(x); })) {
+        var flat = v.slice(0, 12).map(function (x) { return x === null ? 'null' : String(x); });
+        return flat.join(', ') + (v.length > 12 ? ' \u2026' : '');
+      }
+      return '{' + v.length + (jsonType(v[0]).indexOf('object') === 0 ? ' objects' : ' items') + '}';
+    }
+    if (isPlainObject(v)) { return '{' + Object.keys(v).length + ' keys}'; }
+    return String(v);
+  }
+
+  //One row per property, nested objects walked into with dotted names
+  function jsonFlattenRows(data, name, rows, depth) {
+    if (rows.length > 400 || depth > 8) { return; }
+    Object.keys(data).forEach(function (k) {
+      var path = name ? name + '.' + k : k;
+      var v = data[k];
+      if (isPlainObject(v)) {
+        rows.push([path, jsonType(v), jsonCell(v)]);
+        jsonFlattenRows(v, path, rows, depth + 1);
+      } else if (Array.isArray(v) && v.length && v.every(function (x) { return isPlainObject(x); })) {
+        rows.push([path, jsonType(v), jsonCell(v)]);
+        var cols = [];
+        v.forEach(function (item) {
+          Object.keys(item).forEach(function (c) { if (cols.indexOf(c) < 0) { cols.push(c); } });
+        });
+        v.forEach(function (item, i) {
+          cols.forEach(function (c) {
+            var cell = item[c];
+            if (isPlainObject(cell) || Array.isArray(cell)) {
+              rows.push([path + '.' + i + '.' + c, jsonType(cell), jsonCell(cell)]);
+            } else {
+              rows.push([path + '.' + i + '.' + c, jsonType(cell), String(cell === null ? 'null' : cell)]);
+            }
+          });
+        });
+      } else {
+        rows.push([path, jsonType(v), jsonCell(v)]);
+      }
+    });
+  }
+
+  //The list a JSON document is about: an array body is its own list, an object
+  //brings the first property that holds a list of objects (the records of a
+  //search result or a page), null says there is no list and the object itself
+  //is shown as name/type/value rows. meta keeps the rest of the object.
+  function jsonList(data) {
+    if (Array.isArray(data)) { return { rows: data, name: '', meta: [] }; }
+    if (!isPlainObject(data)) { return null; }
+    var keys = Object.keys(data);
+    for (var i = 0; i < keys.length; i++) {
+      var v = data[keys[i]];
+      if (Array.isArray(v) && v.length && v.every(function (x) { return isPlainObject(x); })) {
+        var meta = [];
+        keys.forEach(function (k, n) {
+          if (n !== i) { meta.push([k, jsonCell(data[k])]); }
+        });
+        return { rows: v, name: keys[i], meta: meta };
+      }
+    }
+    return null;
+  }
+
+  //A table of a JSON document: columns for an array of same shaped objects,
+  //name/type/value rows for anything else
+  function jsonTable(data) {
+    var table = el('table', 'ap-table');
+    var head = document.createElement('tr');
+    if (Array.isArray(data) && data.length && data.every(function (x) { return isPlainObject(x); })) {
+      var cols = [];
+      data.forEach(function (item) {
+        Object.keys(item).forEach(function (c) { if (cols.indexOf(c) < 0) { cols.push(c); } });
+      });
+      cols.forEach(function (c) { head.appendChild(el('th', null, esc(c))); });
+      table.appendChild(head);
+      data.slice(0, 200).forEach(function (item) {
+        var tr = document.createElement('tr');
+        cols.forEach(function (c) {
+          tr.appendChild(el('td', null, Object.prototype.hasOwnProperty.call(item, c) ?
+            esc(jsonCell(item[c])) : ''));
+        });
+        table.appendChild(tr);
+      });
+      if (data.length > 200) {
+        var more = document.createElement('tr');
+        more.appendChild(el('td', 'ap-prop-meta', esc('\u2026 ' + (data.length - 200))));
+        more.firstChild.colSpan = cols.length;
+        table.appendChild(more);
+      }
+      return table;
+    }
+    var rows = [];
+    if (Array.isArray(data)) {
+      data.forEach(function (item, i) {
+        if (isPlainObject(item)) { jsonFlattenRows(item, String(i), rows, 0); }
+        else { rows.push([String(i), jsonType(item), jsonCell(item)]); }
+      });
+    } else {
+      jsonFlattenRows(data, '', rows, 0);
+    }
+    head.appendChild(el('th', null, esc('Name')));
+    head.appendChild(el('th', null, esc('Type')));
+    head.appendChild(el('th', null, esc('Value')));
+    table.appendChild(head);
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      tr.appendChild(el('td', 'ap-cell-name', esc(r[0])));
+      tr.appendChild(el('td', 'ap-type', esc(r[1])));
+      tr.appendChild(el('td', null, esc(r[2])));
+      table.appendChild(tr);
+    });
+    if (!rows.length) {
+      var none = document.createElement('tr');
+      none.appendChild(el('td', 'ap-prop-meta', '\u2014'));
+      none.firstChild.colSpan = 3;
+      table.appendChild(none);
+    }
+    return table;
+  }
+
+  //The card the table is shown in: it floats over the page while the console
+  //keeps its place. It goes inside the viewer element so it takes the theme
+  //variables that are set there. Only one card is open at a time. meta holds
+  //the properties around a list, they are written above the table.
+  var closeJsonCard = null;
+  function showJsonCard(title, data, meta, host) {
+    if (closeJsonCard) { closeJsonCard(); }
+    var back = el('div', 'ap-card-back');
+    var card = el('div', 'ap-card');
+    var head = el('div', 'ap-card-head');
+    head.appendChild(el('span', 'ap-card-title', esc(title)));
+    var close = el('button', 'ap-card-x', '\u00d7');
+    head.appendChild(close);
+    card.appendChild(head);
+    var box = el('div', 'ap-card-body');
+    if (meta && meta.length) {
+      var line = el('div', 'ap-card-meta');
+      meta.forEach(function (m) {
+        var p = document.createElement('span');
+        p.innerHTML = '<b>' + esc(m[0]) + '</b> ' + esc(m[1]);
+        line.appendChild(p);
+      });
+      box.appendChild(line);
+    }
+    box.appendChild(jsonTable(data));
+    card.appendChild(box);
+    back.appendChild(card);
+    function closeCard() {
+      back.remove();
+      document.removeEventListener('keydown', onKey);
+      if (closeJsonCard === closeCard) { closeJsonCard = null; }
+    }
+    function onKey(ev) {
+      if (ev.key === 'Escape' || ev.keyCode === 27) { closeCard(); }
+    }
+    back.addEventListener('click', function (ev) {
+      if (ev.target === back) { closeCard(); }
+    });
+    close.addEventListener('click', closeCard);
+    document.addEventListener('keydown', onKey);
+    (host || document.body).appendChild(back);
+    closeJsonCard = closeCard;
+    close.focus();
+  }
+
+  //A section title with a Table button beside it: the button opens the body in
+  //a card as a table, the list of the body when it has one. No button when
+  //there is no body or it is not JSON.
+  function jsonTitle(titleText, bodyText, tableText) {
+    var box = el('div', 'ap-section-title ap-title-line');
+    box.appendChild(el('span', null, esc(titleText)));
+    var data = parseJSONText(bodyText);
+    if (data !== null && jsonKind(data)) {
+      var btn = el('button', 'ap-btn ap-btn-plain ap-btn-table', esc(tableText));
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var host = box.closest('.mnw-apidoc');
+        var list = jsonList(data);
+        if (!list) {
+          showJsonCard(titleText, data, null, host);
+        } else {
+          showJsonCard(list.name ? titleText + ' \u00b7 ' + list.name : titleText,
+            list.rows, list.meta, host);
+        }
+      });
+      box.appendChild(btn);
+    }
+    return box;
   }
 
   function sanitizeId(s) {
@@ -1523,7 +1815,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         table.appendChild(tr);
       });
       rbody.appendChild(table);
-      rbody.appendChild(el('div', 'ap-section-title', esc(labels.body)));
+      rbody.appendChild(jsonTitle(labels.body, respBody, labels.table));
       if (respBody) {
         var pretty = respBody;
         try { pretty = formatJSON(JSON.parse(respBody)); } catch (e) { /* keep raw */ }
@@ -2242,7 +2534,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.17',
+    version: '1.19',
     render: render,
     labels: defaultLabels
   };

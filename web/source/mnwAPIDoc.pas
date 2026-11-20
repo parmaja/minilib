@@ -34,7 +34,10 @@ unit mnwAPIDoc;
   model reference or the URL hash) opens it, the panels inside it keep their
   own state. The console asks for the security schemes of the operation (the
   value goes to the header/query the scheme names) and takes extra headers that
-  the specification does not declare.
+  the specification does not declare. A JSON response body opens as a table
+  beside its raw text: the list it is about (the body itself when it is an
+  array, the first property holding objects otherwise) as one row per entry,
+  the whole document as name/type/value rows when it holds no list.
 
   UI texts are the English ones built into the viewer: this is a developer
   tool, the specification content decides the language of the page. The viewer
