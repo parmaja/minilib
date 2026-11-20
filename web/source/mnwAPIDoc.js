@@ -1011,6 +1011,35 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 
   /* ---------------------------------------------------------- try it --- */
 
+  //The request body properties to show as fields, or null to keep the raw
+  //editor. One field per property (like the parameters) only when the body is
+  //a flat object: every property holds a single value, no objects, arrays or
+  //combined schemas in it.
+  function simpleBodyProps(schema, spec) {
+    var full = deref(spec, schema);
+    if (!isPlainObject(full) || !isPlainObject(full.properties)) { return null; }
+    if (full.type && full.type !== 'object') { return null; }
+    var names = Object.keys(full.properties);
+    if (!names.length) { return null; }
+    var required = Array.isArray(full.required) ? full.required : [];
+    var props = [];
+    for (var i = 0; i < names.length; i++) {
+      var p = deref(spec, full.properties[names[i]]);
+      if (!isPlainObject(p)) { return null; }
+      var combined = p.properties || p.items || p.additionalProperties ||
+        p.oneOf || p.anyOf || p.allOf || p.type === 'object' || p.type === 'array';
+      var single = p.enum || p.type === 'string' || p.type === 'number' ||
+        p.type === 'integer' || p.type === 'boolean' || (!p.type && !combined);
+      if (combined || !single) { return null; }
+      props.push({
+        name: names[i],
+        schema: p,
+        required: required.indexOf(names[i]) >= 0 || p.required === true
+      });
+    }
+    return props;
+  }
+
   function tryItSection(state, group, opInfo) {
     var spec = state.spec;
     var op = opInfo.op;
@@ -1060,8 +1089,12 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     }
     opInfo.params.forEach(addField);
 
-    // Body editor
+    // Body editor: a flat object gets one field per property (like the
+    // parameters), everything else stays a raw text area
     var bodyTextarea = null;
+    var bodyFields = [];
+    //what the fields make: 'json' document or 'form' url encoded pairs
+    var bodyFieldKind = null;
     var contentTypeSel = null;
     if (opInfo.body && opInfo.body.content) {
       var types = Object.keys(opInfo.body.content);
@@ -1069,6 +1102,98 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       var labBody = el('label');
       labBody.innerHTML = esc(labels.requestBody) + (opInfo.body.required ? ' <span class="ap-req-star">*</span>' : '');
       fBody.appendChild(labBody);
+      body.appendChild(fBody);
+      //The property fields live here, the text area stays with its label
+      var bodyEditor = el('div', 'ap-body-editor');
+      body.appendChild(bodyEditor);
+
+      function bodyExample(type) {
+        var media = opInfo.body.content[type] || {};
+        if (media.example !== undefined) { return media.example; }
+        return media.schema ? buildExample(media.schema, spec, 0) : undefined;
+      }
+
+      //How the fields are sent: as a JSON document, as url encoded pairs, or
+      //only a raw text area for the media types we cannot build (XML, binary)
+      function bodyKind(type) {
+        if (/json/i.test(type)) { return 'json'; }
+        if (/x-www-form-urlencoded/i.test(type)) { return 'form'; }
+        return null;
+      }
+
+      function addBodyField(prop, value) {
+        var f = el('div', 'ap-field');
+        var lab = el('label');
+        lab.innerHTML = esc(prop.name) +
+          (prop.required ? ' <span class="ap-req-star">*</span>' : '') +
+          ' <span class="ap-f-in">(' + esc(schemaTypeName(prop.schema)) + ')</span>';
+        f.appendChild(lab);
+        var choices = prop.schema.enum ? prop.schema.enum :
+          (prop.schema.type === 'boolean' ? ['true', 'false'] : null);
+        var input;
+        if (choices) {
+          input = document.createElement('select');
+          if (!prop.required) {
+            var none = document.createElement('option');
+            none.value = '';
+            none.textContent = '';
+            input.appendChild(none);
+          }
+          choices.forEach(function (v) {
+            var opt = document.createElement('option');
+            opt.value = String(v);
+            opt.textContent = String(v);
+            input.appendChild(opt);
+          });
+        } else {
+          input = document.createElement('input');
+          input.type = prop.schema.type === 'integer' || prop.schema.type === 'number' ? 'number' : 'text';
+          input.placeholder = schemaTypeName(prop.schema) +
+            (prop.schema.description ? ' - ' + prop.schema.description : '');
+        }
+        if (prop.required) { input.dataset.apRequired = '1'; }
+        var prefill = (value === undefined || value === null) ? '' : String(value);
+        input.value = prefill;
+        f.appendChild(input);
+        bodyEditor.appendChild(f);
+        bodyFields.push({ name: prop.name, schema: prop.schema, input: input, prefill: prefill });
+      }
+
+      function renderBodyEditor(type) {
+        bodyFields = [];
+        bodyFieldKind = null;
+        bodyEditor.innerHTML = '';
+        if (bodyTextarea) {
+          if (bodyTextarea.parentNode) { bodyTextarea.parentNode.removeChild(bodyTextarea); }
+          bodyTextarea = null;
+        }
+        var media = opInfo.body.content[type] || {};
+        var kind = bodyKind(type);
+        var props = kind ? simpleBodyProps(media.schema, spec) : null;
+        if (props) {
+          bodyFieldKind = kind;
+          var example = state.options.fillBody !== false ? bodyExample(type) : undefined;
+          props.forEach(function (prop) {
+            var value;
+            if (isPlainObject(example) && example[prop.name] !== undefined) {
+              value = example[prop.name];
+            } else if (prop.schema.example !== undefined) {
+              value = prop.schema.example;
+            } else if (prop.schema.default !== undefined) {
+              value = prop.schema.default;
+            }
+            addBodyField(prop, value);
+          });
+        } else {
+          bodyTextarea = document.createElement('textarea');
+          if (state.options.fillBody !== false) {
+            var example2 = bodyExample(type);
+            if (example2 !== undefined) { bodyTextarea.value = formatJSON(example2); }
+          }
+          fBody.appendChild(bodyTextarea);
+        }
+      }
+
       if (types.length > 1) {
         contentTypeSel = document.createElement('select');
         types.forEach(function (t, i) {
@@ -1076,18 +1201,12 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
           opt.value = t; opt.textContent = t; opt.selected = i === 0;
           contentTypeSel.appendChild(opt);
         });
+        contentTypeSel.addEventListener('change', function () {
+          renderBodyEditor(contentTypeSel.value);
+        });
         fBody.appendChild(contentTypeSel);
       }
-      bodyTextarea = document.createElement('textarea');
-      if (state.options.fillBody !== false) {
-        var firstType = types[0];
-        var media = opInfo.body.content[firstType] || {};
-        var example = media.example !== undefined ? media.example :
-          (media.schema ? buildExample(media.schema, spec, 0) : undefined);
-        if (example !== undefined) { bodyTextarea.value = formatJSON(example); }
-      }
-      fBody.appendChild(bodyTextarea);
-      body.appendChild(fBody);
+      renderBodyEditor(types[0]);
     }
 
     // Actions
@@ -1139,9 +1258,33 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       }
       var url = base.replace(/\/+$/, '') + path;
       if (query.length) { url += (url.indexOf('?') >= 0 ? '&' : '?') + query.join('&'); }
-      var hasBody = bodyTextarea && bodyTextarea.value !== '';
-      if (hasBody) { headers['Content-Type'] = currentContentType(); }
-      return { url: url, method: opInfo.method.toUpperCase(), headers: headers, body: hasBody ? bodyTextarea.value : null };
+      var bodyText = null;
+      if (bodyFields.length) {
+        //The fields make the body, empty ones are left out. Booleans and
+        //numbers keep their type in JSON, url encoded pairs are all text.
+        var doc = null;
+        var pairs = null;
+        bodyFields.forEach(function (bf) {
+          var v = bf.input.value;
+          if (v === '') { return; }
+          if (bodyFieldKind === 'json') {
+            var t = bf.schema.type;
+            if (t === 'boolean') { v = v === 'true'; }
+            else if ((t === 'integer' || t === 'number') && !isNaN(Number(v))) { v = Number(v); }
+            doc = doc || {};
+            doc[bf.name] = v;
+          } else {
+            pairs = pairs || [];
+            pairs.push(encodeURIComponent(bf.name) + '=' + encodeURIComponent(v));
+          }
+        });
+        if (doc) { bodyText = formatJSON(doc); }
+        else if (pairs) { bodyText = pairs.join('&'); }
+      } else if (bodyTextarea && bodyTextarea.value !== '') {
+        bodyText = bodyTextarea.value;
+      }
+      if (bodyText !== null) { headers['Content-Type'] = currentContentType(); }
+      return { url: url, method: opInfo.method.toUpperCase(), headers: headers, body: bodyText };
     }
 
     function curlCommand(req) {
@@ -1199,6 +1342,9 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       inputs.forEach(function (it) {
         if (it.input.dataset.apRequired && it.input.value === '') { missing.push(it.param.name); }
       });
+      bodyFields.forEach(function (bf) {
+        if (bf.input.dataset.apRequired && bf.input.value === '') { missing.push(bf.name); }
+      });
       if (missing.length) {
         showText(labels.required + ': ' + missing.join(', '));
         return;
@@ -1236,13 +1382,18 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 
     clearBtn.addEventListener('click', function () {
       inputs.forEach(function (it) { it.input.value = ''; });
-      if (bodyTextarea && state.options.fillBody !== false) {
-        var firstType = Object.keys(opInfo.body.content)[0];
-        var media = opInfo.body.content[firstType] || {};
-        var example = media.schema ? buildExample(media.schema, spec, 0) : undefined;
-        bodyTextarea.value = example === undefined ? '' : formatJSON(example);
-      } else if (bodyTextarea) {
-        bodyTextarea.value = '';
+      bodyFields.forEach(function (bf) {
+        bf.input.value = state.options.fillBody !== false ? bf.prefill : '';
+      });
+      if (bodyTextarea) {
+        if (state.options.fillBody !== false) {
+          var media = opInfo.body.content[currentContentType()] || {};
+          var example = media.example !== undefined ? media.example :
+            (media.schema ? buildExample(media.schema, spec, 0) : undefined);
+          bodyTextarea.value = example === undefined ? '' : formatJSON(example);
+        } else {
+          bodyTextarea.value = '';
+        }
       }
       resultBox.innerHTML = '';
     });
@@ -1882,7 +2033,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.10',
+    version: '1.11',
     render: render,
     labels: defaultLabels
   };

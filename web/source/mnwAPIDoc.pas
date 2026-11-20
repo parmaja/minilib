@@ -27,7 +27,10 @@ unit mnwAPIDoc;
   goes to a column at the end side of the operation details, on small ones it
   stays below them. The navigation sidebar sticks in view while the page
   scrolls (place it below a fixed header with the --ap-nav-top CSS variable)
-  and scrolls its own entries when they do not fit the screen.
+  and scrolls its own entries when they do not fit the screen. A request body
+  that is a flat object is edited as one field per property (like the
+  parameters), url encoded bodies become the matching pairs; nested or
+  combined schemas stay a raw editor.
 
   UI texts are translated through the mnw language files (Ctx._T with the
   keys 'apidoc.*' in en.mnw.json/ar.mnw.json), English is the fallback.

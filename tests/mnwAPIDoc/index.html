@@ -95,6 +95,36 @@
             responses: { "204": { description: "deleted" } }
           }
         },
+        "/books/{bookId}/note": {
+          put: {
+            tags: ["books"],
+            operationId: "noteBook",
+            summary: "Note a book, flat body",
+            parameters: [
+              { name: "bookId", in: "path", required: true, schema: { type: "string" }, description: "Book id" }
+            ],
+            requestBody: {
+              required: true,
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    required: ["note"],
+                    properties: {
+                      note: { type: "string", description: "The note text" },
+                      public: { type: "boolean", default: false },
+                      to: { type: "string", description: "Who to mail" },
+                      rating: { type: "integer", default: 5 },
+                      shelf: { type: "string", enum: ["desk", "storage"] }
+                    }
+                  },
+                  example: { note: "great read", public: true, to: "club", rating: 4, shelf: "desk" }
+                }
+              }
+            },
+            responses: { "200": { description: "ok" } }
+          }
+        },
         "/authors": {
           get: {
             tags: ["authors"],
@@ -191,6 +221,42 @@
               { name: "petId", in: "path", required: true, type: "integer", description: "id of pet" }
             ],
             responses: { "200": { description: "ok", schema: { $ref: "#/definitions/Pet" } } }
+          }
+        },
+        "/pet/{petId}/note": {
+          post: {
+            tags: ["pet"],
+            summary: "Note a pet, flat body",
+            consumes: ["application/json"],
+            parameters: [
+              { name: "petId", in: "path", required: true, type: "integer" },
+              {
+                name: "body", in: "body", required: true,
+                schema: {
+                  type: "object",
+                  required: ["text"],
+                  properties: {
+                    text: { type: "string", description: "The note" },
+                    vet: { type: "boolean" },
+                    weight: { type: "number" }
+                  }
+                }
+              }
+            ],
+            responses: { "200": { description: "ok" } }
+          }
+        },
+        "/pet/{petId}/status": {
+          post: {
+            tags: ["pet"],
+            summary: "Set pet status, form body",
+            consumes: ["application/x-www-form-urlencoded"],
+            parameters: [
+              { name: "petId", in: "path", required: true, type: "integer" },
+              { name: "status", in: "formData", required: true, type: "string", enum: ["available", "sold"] },
+              { name: "note", in: "formData", type: "string" }
+            ],
+            responses: { "200": { description: "ok" } }
           }
         },
         "/pet/findByStatus": {
