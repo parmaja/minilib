@@ -1808,10 +1808,12 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     return main;
   }
 
-  // Find a section/operation by id and open its parent collapsible
-  // sections (tag groups and models), also opens its group in the sidebar.
-  // The target itself stays as-is: methods are not auto-opened.
-  function revealTarget(state, id) {
+  // Find a section/operation by id and open its parent collapsible sections
+  // (tag groups and models), also opens its group in the sidebar. With expand
+  // the target opens too, so a jump lands on the details and not on a closed
+  // row; the panels inside it (schema tree, responses, the console) keep their
+  // own state and the options that set them.
+  function revealTarget(state, id, expand) {
     var target = state.main.querySelector('#' + CSS.escape(id));
     if (!target) { return null; }
     var box = target.parentElement ? target.parentElement.closest('details') : null;
@@ -1819,6 +1821,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       box.open = true;
       box = box.parentElement ? box.parentElement.closest('details') : null;
     }
+    if (expand && target.tagName === 'DETAILS') { target.open = true; }
     if (state.nav) {
       var item = state.nav.querySelector('.ap-nav-op[data-ap-target="' + id + '"]');
       if (item) {
@@ -1836,17 +1839,17 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       var item = ev.target.closest('.ap-nav-op');
       if (!item) { return; }
       ev.preventDefault();
-      var target = revealTarget(state, item.dataset.apTarget);
+      var target = revealTarget(state, item.dataset.apTarget, true);
       if (!target) { return; }
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // Reference links inside schema trees
+    // Reference links inside schema trees, they open the model they point at
     state.main.addEventListener('click', function (ev) {
       var a = ev.target.closest('a[data-ap-scroll]');
       if (!a) { return; }
       ev.preventDefault();
-      var target = revealTarget(state, a.dataset.apScroll);
+      var target = revealTarget(state, a.dataset.apScroll, true);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -1930,7 +1933,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     bindNavigation(state);
 
     if (location.hash) {
-      var target = revealTarget(state, location.hash.substring(1));
+      var target = revealTarget(state, location.hash.substring(1), true);
       if (target) {
         setTimeout(function () { target.scrollIntoView({ block: 'start' }); }, 0);
       }
@@ -2033,7 +2036,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.11',
+    version: '1.12',
     render: render,
     labels: defaultLabels
   };

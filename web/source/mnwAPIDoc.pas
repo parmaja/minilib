@@ -30,7 +30,9 @@ unit mnwAPIDoc;
   and scrolls its own entries when they do not fit the screen. A request body
   that is a flat object is edited as one field per property (like the
   parameters), url encoded bodies become the matching pairs; nested or
-  combined schemas stay a raw editor.
+  combined schemas stay a raw editor. Jumping to a target (from the sidebar, a
+  model reference or the URL hash) opens it, the panels inside it keep their
+  own state.
 
   UI texts are translated through the mnw language files (Ctx._T with the
   keys 'apidoc.*' in en.mnw.json/ar.mnw.json), English is the fallback.
