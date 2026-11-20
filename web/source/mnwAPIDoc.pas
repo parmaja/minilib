@@ -190,6 +190,7 @@ end;
 procedure TAPIDocRenderer.DoCollectAttributes(Scope: TmnwScope; Ctx: TmnwContext);
 begin
   inherited;
+  Scope.Attributes.Add('dir', 'ltr');
   Scope.Classes.Add('mnw-apidoc-container');
   Scope.Classes.Add('w-100');
 end;
