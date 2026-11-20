@@ -80,6 +80,7 @@
             tags: ["books"],
             operationId: "getBook",
             summary: "Get one book",
+            security: [{ ApiKeyAuth: [] }],
             responses: {
               "200": {
                 description: "ok",
@@ -100,6 +101,7 @@
             tags: ["books"],
             operationId: "noteBook",
             summary: "Note a book, flat body",
+            security: [{ ApiKeyAuth: [], BearerAuth: [] }],
             parameters: [
               { name: "bookId", in: "path", required: true, schema: { type: "string" }, description: "Book id" }
             ],
@@ -162,7 +164,8 @@
           TokenHeader: { name: "X-Token", in: "header", schema: { type: "string" }, description: "Auth token" }
         },
         securitySchemes: {
-          ApiKeyAuth: { type: "apiKey", in: "header", name: "X-API-Key", description: "API key header" }
+          ApiKeyAuth: { type: "apiKey", in: "header", name: "X-API-Key", description: "API key header" },
+          BearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT", description: "JWT access token" }
         },
         schemas: {
           Book: {
@@ -228,6 +231,7 @@
             tags: ["pet"],
             summary: "Note a pet, flat body",
             consumes: ["application/json"],
+            security: [{ ApiKeyHeader: [] }, { ApiKeyQuery: [] }],
             parameters: [
               { name: "petId", in: "path", required: true, type: "integer" },
               {
@@ -271,6 +275,11 @@
             }
           }
         }
+      },
+      securityDefinitions: {
+        ApiKeyHeader: { type: "apiKey", name: "X-Auth-Token", in: "header", description: "Pet store key" },
+        ApiKeyQuery: { type: "apiKey", name: "access_token", in: "query" },
+        BasicAuth: { type: "basic", description: "User and password" }
       },
       definitions: {
         Pet: {

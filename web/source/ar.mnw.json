@@ -39,5 +39,9 @@
   "apidoc.type": "النوع",
   "apidoc.in": "الموضع",
   "apidoc.description": "الوصف",
-  "apidoc.nocontent": "لا يوجد محتوى"
+  "apidoc.nocontent": "لا يوجد محتوى",
+  "apidoc.authValue": "التفويض",
+  "apidoc.extraHeaders": "ترويسات أخرى",
+  "apidoc.addHeader": "إضافة ترويسة",
+  "apidoc.value": "القيمة"
 }

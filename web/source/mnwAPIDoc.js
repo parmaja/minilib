@@ -64,7 +64,11 @@ var mnwAPIDoc = (function () {
     type: 'Type',
     in: 'In',
     description: 'Description',
-    nocontent: 'No content'
+    nocontent: 'No content',
+    authValue: 'Authorization',
+    extraHeaders: 'Other headers',
+    addHeader: 'Add header',
+    value: 'value'
   };
 
   /* ---------------------------------------------------------------- CSS */
@@ -473,6 +477,25 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 }
 .ap-btn:disabled { opacity: 0.55; cursor: default; }
 .ap-btn.ap-btn-plain { background: none; color: var(--ap-fg); border-color: var(--ap-border); }
+/*headers that are not in the specification: name and value beside each other,
+  they stack when the console column gets too narrow for both*/
+.ap-hrow { display: flex; gap: 0.375rem; align-items: center; margin: 0.25rem 0; flex-wrap: wrap; }
+.ap-hrow-name { flex: 1 1 3.125rem; min-width: 0; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.78125rem; }
+.ap-hrow-value { flex: 2 1 4.6875rem; min-width: 0; }
+.ap-hrow-x, .ap-hadd {
+  padding: 0.1875rem 0.5rem;
+  border: var(--ap-line) solid transparent;
+  background: none;
+  color: var(--ap-muted);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+  flex: none;
+}
+.ap-hrow-x { line-height: 1; padding: 0.25rem 0.5rem; }
+.ap-hadd { flex: none; align-self: flex-start; }
+.ap-hrow-x:hover, .ap-hadd:hover { color: var(--ap-primary); border-color: var(--ap-border); }
 .ap-try-result { margin-top: 0.75rem; }
 .ap-try-result .ap-resp-body { border-top: var(--ap-line) solid var(--ap-border); }
 
@@ -609,6 +632,52 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 
   function getSecuritySchemes(spec) {
     return (spec.components && spec.components.securitySchemes) || spec.securityDefinitions || {};
+  }
+
+  //The schemes the operation asks for: its own security, the document one when
+  //the operation does not say anything, nothing when it asks for an empty list.
+  function securityForOperation(spec, op) {
+    var req = op.security;
+    if (req === undefined) { req = spec.security; }
+    if (!Array.isArray(req) || !req.length) { return []; }
+    var schemes = getSecuritySchemes(spec);
+    var names = [];
+    req.forEach(function (need) {
+      Object.keys(need || {}).forEach(function (n) {
+        if (schemes[n] && names.indexOf(n) < 0) { names.push(n); }
+      });
+    });
+    return names.map(function (n) {
+      var sc = deref(spec, schemes[n]) || {};
+      return { name: n, scheme: sc };
+    });
+  }
+
+  //What the console has to ask for to satisfy a scheme: where the value goes,
+  //under which name and with which prefix. OAuth2 and OpenID Connect cannot be
+  //run from a documentation page, still their access token can be pasted and
+  //goes out as a bearer token.
+  function authLocation(scheme) {
+    var type = String(scheme.type || '').toLowerCase();
+    if (type === 'apikey') {
+      var at = String(scheme.in || 'header').toLowerCase();
+      var keyName = scheme.name || 'X-API-Key';
+      return {
+        at: at === 'query' ? 'query' : 'header',
+        name: keyName,
+        secret: false,
+        hint: (at === 'query' ? 'query ' : 'header ') + keyName
+      };
+    }
+    if (type === 'http') {
+      var s = String(scheme.scheme || 'bearer').toLowerCase();
+      if (s === 'basic') { return { at: 'header', name: 'Authorization', prefix: 'Basic ', secret: true, hint: 'basic user:pass' }; }
+      return { at: 'header', name: 'Authorization', prefix: 'Bearer ', secret: true, hint: 'bearer token' };
+    }
+    if (type === 'oauth2' || type === 'openidconnect') {
+      return { at: 'header', name: 'Authorization', prefix: 'Bearer ', secret: true, hint: 'access token' };
+    }
+    return null;
   }
 
   // Swagger 2.0 parameter -> OpenAPI 3 style parameter (keeps name/in/description/required/schema)
@@ -1092,6 +1161,74 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     }
     opInfo.params.forEach(addField);
 
+    // The security schemes of the operation: one field for each, the value
+    // goes to the header/query the scheme names, Authorization gets its prefix
+    var auths = securityForOperation(spec, op);
+    if (auths.length) {
+      body.appendChild(el('div', 'ap-section-title', esc(labels.authValue)));
+      auths.forEach(function (a) {
+        var loc = authLocation(a.scheme);
+        if (!loc) { return; }
+        var f = el('div', 'ap-field');
+        var lab = el('label');
+        lab.innerHTML = esc(a.name) + ' <span class="ap-f-in">(' + esc(loc.hint) + ')</span>';
+        f.appendChild(lab);
+        var input = document.createElement('input');
+        input.type = loc.secret ? 'password' : 'text';
+        input.placeholder = (a.scheme.description || loc.name).replace(/\s+/g, ' ');
+        f.appendChild(input);
+        body.appendChild(f);
+        inputs.push({ param: { in: loc.at, name: loc.name, prefix: loc.prefix }, input: input });
+      });
+    }
+
+    // Headers that are not in the specification, added by hand for this request
+    var headerRows = [];
+    var fExtra = el('div', 'ap-field');
+    fExtra.appendChild(el('label', null, esc(labels.extraHeaders)));
+    var headerList = el('div', 'ap-hlist');
+    fExtra.appendChild(headerList);
+    var addHeaderBtn = el('button', 'ap-hadd', esc(labels.addHeader));
+    fExtra.appendChild(addHeaderBtn);
+    body.appendChild(fExtra);
+
+    function removeHeaderRow(row) {
+      var i = headerRows.indexOf(row);
+      if (i >= 0) { headerRows.splice(i, 1); }
+      row.box.remove();
+      if (!headerRows.length) { headerList.remove(); }
+    }
+
+    function addHeaderRow(name, value) {
+      var rowBox = el('div', 'ap-hrow');
+      var nameIn = document.createElement('input');
+      nameIn.className = 'ap-hrow-name';
+      nameIn.placeholder = labels.name;
+      nameIn.value = name || '';
+      var valueIn = document.createElement('input');
+      valueIn.className = 'ap-hrow-value';
+      valueIn.placeholder = labels.value;
+      valueIn.value = value || '';
+      var x = el('button', 'ap-hrow-x', '\u00d7');
+      x.title = labels.clear;
+      rowBox.appendChild(nameIn);
+      rowBox.appendChild(valueIn);
+      rowBox.appendChild(x);
+      if (headerList.parentElement !== body) { body.insertBefore(headerList, fExtra); }
+      headerList.appendChild(rowBox);
+      var row = { name: nameIn, value: valueIn, box: rowBox };
+      headerRows.push(row);
+      x.addEventListener('click', function (e) { e.preventDefault(); removeHeaderRow(row); });
+      nameIn.focus();
+      return row;
+    }
+
+    addHeaderBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      wrap.open = true;
+      addHeaderRow('', '');
+    });
+
     // Body editor: a flat object gets one field per property (like the
     // parameters), everything else stays a raw text area
     var bodyTextarea = null;
@@ -1250,8 +1387,14 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         } else if (it.param.in === 'query') {
           query.push(encodeURIComponent(it.param.name) + '=' + encodeURIComponent(v));
         } else if (it.param.in === 'header') {
-          headers[it.param.name] = v;
+          //an Authorization from a security scheme brings its prefix along
+          headers[it.param.name] = it.param.prefix ? it.param.prefix + v : v;
         }
+      });
+      //the hand written headers come last, they may stand over the others
+      headerRows.forEach(function (r) {
+        var n = r.name.value.trim();
+        if (n) { headers[n] = r.value.value; }
       });
       // Always build a full URL: a missing or relative server in the spec
       // means the documentation page's own origin, so the cURL example
@@ -1385,6 +1528,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 
     clearBtn.addEventListener('click', function () {
       inputs.forEach(function (it) { it.input.value = ''; });
+      headerRows.slice().forEach(removeHeaderRow);
       bodyFields.forEach(function (bf) {
         bf.input.value = state.options.fillBody !== false ? bf.prefill : '';
       });
@@ -2042,7 +2186,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.13',
+    version: '1.14',
     render: render,
     labels: defaultLabels
   };

@@ -39,5 +39,9 @@
   "apidoc.type": "Type",
   "apidoc.in": "In",
   "apidoc.description": "Description",
-  "apidoc.nocontent": "No content"
+  "apidoc.nocontent": "No content",
+  "apidoc.authValue": "Authorization",
+  "apidoc.extraHeaders": "Other headers",
+  "apidoc.addHeader": "Add header",
+  "apidoc.value": "value"
 }

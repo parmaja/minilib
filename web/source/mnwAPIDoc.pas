@@ -32,7 +32,9 @@ unit mnwAPIDoc;
   parameters), url encoded bodies become the matching pairs; nested or
   combined schemas stay a raw editor. Jumping to a target (from the sidebar, a
   model reference or the URL hash) opens it, the panels inside it keep their
-  own state.
+  own state. The console asks for the security schemes of the operation (the
+  value goes to the header/query the scheme names) and takes extra headers that
+  the specification does not declare.
 
   UI texts are translated through the mnw language files (Ctx._T with the
   keys 'apidoc.*' in en.mnw.json/ar.mnw.json), English is the fallback.
@@ -256,6 +258,10 @@ var
     AddLabel('in', 'In');
     AddLabel('description', 'Description');
     AddLabel('nocontent', 'No content');
+    AddLabel('authValue', 'Authorization');
+    AddLabel('extraHeaders', 'Other headers');
+    AddLabel('addHeader', 'Add header');
+    AddLabel('value', 'value');
     Result := '{' + aLabels + '}';
   end;
 
