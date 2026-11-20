@@ -388,7 +388,7 @@ type
     //
     Data: TDON_Value;
     // For
-    CurrentPath: string;   
+    CurrentPath: string;
 
     Language: string;
     Direction: TDirection;    
@@ -4436,8 +4436,8 @@ begin
     Result := itm.Execute(Ctx)
   else
     Result := False;
-  //if not Result then //No maybe we want to check again
-    DoExecute(Ctx, Result);
+  //if not Result then //No, maybe we want to check again
+  DoExecute(Ctx, Result);
 end;
 
 function TmnwSchema.GetPublicPath: string;
@@ -7552,12 +7552,16 @@ begin
 end;
 
 function TmnwAPIitem.Execute(var Ctx: TmnwContext): Boolean;
+var
+  aCtx: TmnwContext;
 begin
-  Result := False; //DoExecute can assign it, it must not start with garbage
+  aCtx := Ctx;
+  aCtx.CurrentPath := DeleteSubPath(Path, aCtx.CurrentPath);
+  Result := False;
   if Assigned(FOnExecute) then
-    FOnExecute(Ctx, Result);
+    FOnExecute(aCtx, Result);
   if not Result then
-    DoExecute(Ctx, Result);
+    DoExecute(aCtx, Result);
 end;
 
 initialization
