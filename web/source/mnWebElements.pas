@@ -359,8 +359,8 @@ type
   public
     State: TmnwScopeStates;
     function ToString: string; overload; override;
-    function ToString(Area: TAttributeAreas; WithSpace: Boolean = False): string; overload;
-    function ToString(WithSpace: Boolean): string; overload;
+    function ToString(Area: TAttributeAreas; WithSpace: Boolean = False): string; reintroduce; overload;
+    function ToString(WithSpace: Boolean): string; reintroduce; overload;
 
     constructor Create(AElement: TmnwElement);
     destructor Destroy; override;
@@ -919,7 +919,9 @@ type
     class procedure Registered; virtual;
     procedure DoRespond(const Ctx: TmnwContext); override;
     procedure DoAccept(var Ctx: TmnwContext; var Accepted: Boolean); virtual;
-    procedure DoExecute(var Ctx: TmnwContext; var Processed: Boolean); virtual;
+    //* a request hook with an other signature then TmnwElement.DoExecute, it
+    //* hides it on purpose, the element hook is never used on a schema
+    procedure DoExecute(var Ctx: TmnwContext; var Processed: Boolean); reintroduce; virtual;
     procedure DoPrepare; override;
     procedure DoChildRespond(AElement: TmnwElement; const Ctx: TmnwContext); virtual;
     procedure AttachedMessage(const s: string); virtual; //from websocket
@@ -2865,20 +2867,20 @@ begin
           if CompareLeftStr(s,'echo') then
           begin
             DetectEOL;
-            Stream.WriteUTF8String(lValue + eol); //testing propuse
+            Stream.WriteUTF8String(UTF8String(lValue + eol)); //testing propuse
           end
           else if Schema.Interactive then
           begin
             DetectEOL;
             if (lCmd = 'attach') then
             begin
-              Stream.WriteUTF8String('attached'+eol);
+              Stream.WriteUTF8String(UTF8String('attached' + eol));
               Name := lValue;
               FInteractive := True;
             end
             else if (lCmd = 'interactive') then
             begin
-              Stream.WriteUTF8String('attached'+eol);
+              Stream.WriteUTF8String(UTF8String('attached' + eol));
               Name := ''; // no name
               FInteractive := True;
             end
@@ -3731,7 +3733,13 @@ begin
       if not Ctx.Response.IsResponded then
       begin
         if (Ctx.Element = Ctx.Schema) and (Ctx.Schema.Name <> '') and (Ctx.CurrentPath = '') then
-          Ctx.Response.RespondRedirectTo(IncludeURLDelimiter(Ctx.GetPath(Ctx.Schema)), True)
+        begin
+          //* an url that already ends with the delimiter would redirect to itself
+          if not EndsStr(URLDelimiter, Ctx.GetPath(Ctx.Schema)) then
+            Ctx.Response.RespondRedirectTo(IncludeURLDelimiter(Ctx.GetPath(Ctx.Schema)), True)
+          else
+            Ctx.Response.ContentType := Ctx.Element.GetContentType(Ctx.CurrentPath);
+        end
         else
           Ctx.Response.ContentType := Ctx.Element.GetContentType(Ctx.CurrentPath);
       end;
@@ -4311,7 +4319,7 @@ var
 begin
   if s.StartsWith('{') then
   begin
-    Json := JsonParsePairString(s, Error, [jsoSafe]);
+    Json := JsonParsePairString(UTF8String(s), Error, [jsoSafe]);
     try
       elementID := Json['element'].AsString;
       element := FindByID(elementID);
@@ -5687,8 +5695,14 @@ begin
   inherited;
   if (Request.CurrentPath = '') and (Request.URI <> '') then
   begin
-    Response.RespondRedirectTo(IncludeURLDelimiter(Request.URI));
-    exit;
+    //* alias strip redirect: /notes -> /notes/, an url that already ends with
+    //* the delimiter (or carries a query) would redirect to itself, it is
+    //* answered bellow as the empty path of the module
+    if (Pos('?', Request.URI) = 0) and not EndsStr(URLDelimiter, Request.URI) then
+    begin
+      Response.RespondRedirectTo(IncludeURLDelimiter(Request.URI));
+      exit;
+    end;
   end;
   AtomicIncrement(RendererID);
   InitMemory(Ctx, SizeOf(Ctx));
@@ -7497,12 +7511,19 @@ end;
 
 function TmnwAPI.FindApi(const Method, Path: string): TmnwAPIitem;
 var
-  i: Integer;
+  I: Integer;
 begin
-  for i := 0 to Count - 1 do
+  for I := 0 to Count - 1 do
   begin
-    if ((Length(Items[i].Methods) = 0) or IsStrInArray(Method, Items[i].Methods)) and SameText(Path, Items[i].Path) then
-      exit(Items[i]);
+    //* the method is case insensitive, the item answers when the path is its
+    //* own (`note`) or the first segment of the url is its own (`note/1234`)
+    if ((Length(Items[I].Methods) = 0) or IsStrInArray(Method, Items[I].Methods, True)) then
+    begin
+      if SameText(Path, Items[I].Path) then
+        exit(Items[I]);
+      if (Path <> '') and (Items[I].Path <> '') and StartsText(Items[I].Path + URLDelimiter, Path) then
+        exit(Items[I]);
+    end;
   end;
   Result := nil;
 end;
@@ -7532,6 +7553,7 @@ end;
 
 function TmnwAPIitem.Execute(var Ctx: TmnwContext): Boolean;
 begin
+  Result := False; //DoExecute can assign it, it must not start with garbage
   if Assigned(FOnExecute) then
     FOnExecute(Ctx, Result);
   if not Result then

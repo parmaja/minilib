@@ -1787,6 +1787,12 @@ begin
   Route.Delete(0);
   Route.FIsRooted := False;
   FCurrentPath := DeleteSubPath(Result, FCurrentPath);
+  //the path stays unrooted (the router splits it by the delimiter), an url like
+  //`/notes/` leaves only the delimiter behind, it is the empty path
+  if IsURLDelimiter(FCurrentPath) then
+    FCurrentPath := ''
+  else
+    FCurrentPath := RemoveStartURLDelimiter(FCurrentPath);
   FBasePath := AddEndURLDelimiter(FBasePath) + AddEndURLDelimiter(Result);
 end;
 
