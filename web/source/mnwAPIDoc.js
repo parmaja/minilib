@@ -454,6 +454,14 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 .ap-try-result { margin-top: 12px; }
 .ap-try-result .ap-resp-body { border-top: 1px solid var(--ap-border); }
 
+/* On wide screens the console is a column at the end side of the operation
+   details, on small screens it stays below them (default flow) */
+@media (min-width: 1400px) {
+  .ap-op-cols { display: flex; flex-wrap: nowrap; align-items: flex-start; gap: 16px; }
+  .ap-op-cols > .ap-op-info { flex: 1 1 0; min-width: 0; }
+  .ap-op-cols > .ap-try { flex: 0 0 420px; margin: 0 0 12px; }
+}
+
 /* --- markdown --- */
 .ap-md h1, .ap-md h2, .ap-md h3, .ap-md h4 { margin: 14px 0 6px; }
 .ap-md h1 { font-size: 20px; }
@@ -1282,16 +1290,20 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 
     var body = el('div', 'ap-op-body');
     card.appendChild(body);
+    //The details, on wide screens the "Try it out" console goes next to them
+    //in a second column (see .ap-op-cols), below them otherwise
+    var info = el('div', 'ap-op-info');
+    body.appendChild(info);
 
-    if (op.operationId) { body.appendChild(el('div', 'ap-prop-meta', 'operationId: ' + esc(op.operationId))); }
+    if (op.operationId) { info.appendChild(el('div', 'ap-prop-meta', 'operationId: ' + esc(op.operationId))); }
     if (op.description && op.description !== op.summary) {
-      body.appendChild(el('div', 'ap-desc ap-md', mdToHtml(op.description)));
+      info.appendChild(el('div', 'ap-desc ap-md', mdToHtml(op.description)));
     } else if (op.summary) {
-      body.appendChild(el('div', 'ap-desc', esc(op.summary)));
+      info.appendChild(el('div', 'ap-desc', esc(op.summary)));
     }
 
     if (opInfo.params.length) {
-      body.appendChild(el('div', 'ap-section-title', esc(labels.parameters)));
+      info.appendChild(el('div', 'ap-section-title', esc(labels.parameters)));
       var table = el('table', 'ap-table');
       table.innerHTML = '<tr><th>' + esc(labels.name) + '</th><th>' + esc(labels.in) + '</th><th>' +
         esc(labels.type) + '</th><th></th><th>' + esc(labels.description) + '</th></tr>';
@@ -1306,30 +1318,30 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
           '<td>' + (p.description ? mdInline(p.description) : '') + '</td>';
         table.appendChild(tr);
       });
-      body.appendChild(table);
+      info.appendChild(table);
     }
 
     if (opInfo.body && opInfo.body.content) {
-      body.appendChild(el('div', 'ap-section-title', esc(labels.requestBody) +
+      info.appendChild(el('div', 'ap-section-title', esc(labels.requestBody) +
         (opInfo.body.required ? ' *' : '')));
       if (opInfo.body.description) {
-        body.appendChild(el('div', 'ap-desc', mdInline(opInfo.body.description)));
+        info.appendChild(el('div', 'ap-desc', mdInline(opInfo.body.description)));
       }
       mediaSchemas(opInfo.body.content).forEach(function (m) {
-        body.appendChild(el('div', 'ap-prop-meta', esc(m.type)));
+        info.appendChild(el('div', 'ap-prop-meta', esc(m.type)));
         if (m.media.schema) {
-          body.appendChild(schemaTree(m.media.schema, state));
+          info.appendChild(schemaTree(m.media.schema, state));
         }
         if (m.media.example !== undefined) {
-          body.appendChild(el('div', 'ap-section-title', esc(labels.example)));
-          body.appendChild(el('pre', null, '<code>' + esc(formatJSON(m.media.example)) + '</code>'));
+          info.appendChild(el('div', 'ap-section-title', esc(labels.example)));
+          info.appendChild(el('pre', null, '<code>' + esc(formatJSON(m.media.example)) + '</code>'));
         }
       });
     }
 
     var codes = Object.keys(opInfo.responses);
     if (codes.length) {
-      body.appendChild(el('div', 'ap-section-title', esc(labels.responses)));
+      info.appendChild(el('div', 'ap-section-title', esc(labels.responses)));
       codes.sort().forEach(function (code) {
         var r = opInfo.responses[code];
         var box = el('details', 'ap-resp');
@@ -1362,11 +1374,13 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
           rbody.appendChild(ht);
         }
         box.open = codes.length === 1;
-        body.appendChild(box);
+        info.appendChild(box);
       });
     }
 
     if (state.options.tryIt !== false) {
+      //The console becomes the second column on wide screens
+      body.classList.add('ap-op-cols');
       body.appendChild(tryItSection(state, group, opInfo));
     }
 
@@ -1840,7 +1854,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   }
 
   return {
-    version: '1.7',
+    version: '1.8',
     render: render,
     labels: defaultLabels
   };

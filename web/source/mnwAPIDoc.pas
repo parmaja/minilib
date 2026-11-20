@@ -23,7 +23,9 @@ unit mnwAPIDoc;
   Features: sidebar navigation with search, grouped operations by tags,
   parameters/request body/responses with collapsible schema trees, models
   section, light/dark themes (optionally following the Bootstrap theme),
-  and a "Try it out" console with cURL support.
+  and a "Try it out" console with cURL support. On wide screens the console
+  goes to a column at the end side of the operation details, on small ones it
+  stays below them.
 
   UI texts are translated through the mnw language files (Ctx._T with the
   keys 'apidoc.*' in en.mnw.json/ar.mnw.json), English is the fallback.
