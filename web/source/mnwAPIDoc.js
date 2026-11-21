@@ -883,6 +883,8 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     var text = data !== null ? formatJSON(data) : bodyText;
     var pre = el('pre');
     var code = document.createElement('code');
+    //tag real JSON so a syntax highlighter can pick it up
+    if (data !== null) { code.className = 'language-json'; }
     code.innerHTML = esc(text);
     pre.appendChild(code);
     return pre;
@@ -2109,7 +2111,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         }
         if (m.media.example !== undefined) {
           info.appendChild(el('div', 'ap-section-title', esc(labels.example)));
-          info.appendChild(el('pre', null, '<code>' + esc(formatJSON(m.media.example)) + '</code>'));
+          info.appendChild(el('pre', null, '<code class="language-json">' + esc(formatJSON(m.media.example)) + '</code>'));
         }
       });
     }
@@ -2137,7 +2139,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
           }
           if (example !== undefined) {
             rbody.appendChild(el('div', 'ap-section-title', esc(labels.jsonExample)));
-            rbody.appendChild(el('pre', null, '<code>' + esc(formatJSON(example)) + '</code>'));
+            rbody.appendChild(el('pre', null, '<code class="language-json">' + esc(formatJSON(example)) + '</code>'));
           }
         });
         if (!r.content) { rbody.appendChild(el('div', 'ap-prop-meta', esc(labels.nocontent))); }
@@ -2203,7 +2205,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       var modelsBase = state.spec.components && state.spec.components.schemas
         ? '#/components/schemas/' : '#/definitions/';
       var example = buildExample(schemas[name], state.spec, 0, [modelsBase + name]);
-      body.appendChild(el('pre', null, '<code>' + esc(formatJSON(example === undefined ? {} : example)) + '</code>'));
+      body.appendChild(el('pre', null, '<code class="language-json">' + esc(formatJSON(example === undefined ? {} : example)) + '</code>'));
       if (state.options.expandSchemas) { card.open = true; }
       sbody.appendChild(card);
       state.sections.push({ id: card.id, group: labels.models });

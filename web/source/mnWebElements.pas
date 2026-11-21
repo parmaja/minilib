@@ -448,7 +448,8 @@ type
   TmnwObject = class(TmnNamedObject);
 
   TLibraryOption = (
-    libDefer, 
+    libDefer,
+    libDisabled,
     libCross
   );
   
@@ -466,7 +467,8 @@ type
   );
   
   TmnwLibrarySource = class(TmnNamedObject)
-  public    
+  public
+    ID: string;
     SourceType: TLibrarySourceType;
     Where: TLibrarySourceWhere;
     OnlineFile: string;
@@ -5310,15 +5312,15 @@ begin
         end;
 
         case source.SourceType of
-          stStyle: Ctx.Writer.AddLinkStyle(url, When(not local, source.Integrity), libCross in source.Options);
-          stScript: Ctx.Writer.AddLinkScript(url, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options);
+          stStyle: Ctx.Writer.AddLinkStyle(source.ID, url, When(not local, source.Integrity), libCross in source.Options);
+          stScript: Ctx.Writer.AddLinkScript(source.id, url, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options);
         end;
       end
       else
       begin
         case source.SourceType of
-          stStyle: Ctx.Writer.AddEmbedStyle(source.Text);
-          stScript: Ctx.Writer.AddEmbedScript(source.Text, libDefer in source.Options);
+          stStyle: Ctx.Writer.AddEmbedStyle(source.ID, source.Text);
+          stScript: Ctx.Writer.AddEmbedScript(source.ID, source.Text, libDefer in source.Options);
         end;
       end;
     end;    
@@ -5429,7 +5431,7 @@ end;
 procedure TJQuery_Library.Created;
 begin
   inherited;
-  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js', '', []); //* no Differ
+  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js', '', []); //* no Defer
 end;
 
 { THighlightJS_Library }
@@ -5477,14 +5479,16 @@ procedure THighlightJS_Library.Created;
 begin
   inherited;
   // highlight.js - syntax highlighting for code blocks (light + dark variants)
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github.min.css');
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github-dark-dimmed.min.css');
+  with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github.min.css') do
+    ID := 'github-light';
+  with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github-dark-dimmed.min.css') do
+    ID := 'github-dark';
   Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/', 'highlight.min.js', [libDefer]);
   // Delphi/Pascal is not in the common highlight.js build
-  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/', 'delphi.min.js');
+  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/', 'delphi.min.js', [libDefer]);
   // the theme script must run after all theme stylesheets
-  with Sources.AddEmbed(stScript, 'highlight-theme.js', HighlightThemeScript) do
-    Options := [];
+  //Sources.AddEmbed(stScript, 'highlight-theme.js', HighlightThemeScript);
+  Sources.AddEmbed(stScript, 'HighlightJS', 'document.addEventListener("DOMContentLoaded", () => { if (window.hljs) hljs.highlightAll(); });');
 end;
 
 procedure HighlightAllWrite(const Ctx: TmnwContext);
@@ -6881,7 +6885,7 @@ end;
 constructor TmnwLibrarySource.Create;
 begin
   inherited;
-  Options := [libDefer, libCross];
+  Options := [libCross];
 end;
 
 { TmnwRequires }

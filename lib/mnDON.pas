@@ -515,10 +515,12 @@ type
     procedure ReadFromFile(FileName: string);
 
     procedure AddSpace;
-    procedure AddLinkScript(const src: string; Integrity: string = ''; Defer: Boolean = True; Cross: Boolean = True);
-    procedure AddEmbedScript(const Text: string; Defer: Boolean = True);
-    procedure AddLinkStyle(const src: string; Integrity: string = ''; Cross: Boolean  = True);
-    procedure AddEmbedStyle(const Text: string);
+    procedure AddLinkScript(const id, src: string; Integrity: string = ''; Defer: Boolean = True; Cross: Boolean = True);
+    procedure AddEmbedScript(const id, Text: string; Defer: Boolean = True); overload;
+    procedure AddEmbedScript(const Text: string; Defer: Boolean = True); overload;
+    procedure AddLinkStyle(const id, src: string; Integrity: string = ''; Cross: Boolean  = True); overload;
+    procedure AddLinkStyle(const src: string; Integrity: string = ''; Cross: Boolean  = True); overload;
+    procedure AddEmbedStyle(const id, Text: string);
   end; 
   
 //* Serializer
@@ -2348,11 +2350,13 @@ begin
   WriteLn('<!--' + Comment + '-->', [woOpenIndent, woCloseIndent]);
 end;
 
-procedure TmnwXML_TidyWriterHelper.AddEmbedScript(const Text: string; Defer: Boolean = True);
+procedure TmnwXML_TidyWriterHelper.AddEmbedScript(const id, Text: string; Defer: Boolean = True);
 var
   s: string;
 begin
   s := '';
+  if id <> '' then
+    s := s + ' id ="' + id + '"';
   if Defer then
     s := s + ' defer';  
   OpenTag('script' + s);
@@ -2360,30 +2364,33 @@ begin
   CloseTag('script');
 end;
 
-procedure TmnwXML_TidyWriterHelper.AddEmbedStyle(const Text: string);
+procedure TmnwXML_TidyWriterHelper.AddEmbedScript(const Text: string; Defer: Boolean);
 begin
-  OpenTag('style');
+  AddEmbedScript('', Text, Defer);
+end;
+
+procedure TmnwXML_TidyWriterHelper.AddEmbedStyle(const id, Text: string);
+begin
+  if id <> '' then
+    OpenTag('style', 'id=' + QuoteStr(id))
+  else
+    OpenTag('style');
   WriteLines(Text);
   CloseTag('style');
 end;
 
 procedure TmnwXML_TidyWriterHelper.AddLinkStyle(const src: string; Integrity: string; Cross: Boolean);
-var
-  s: string;
 begin
-  s := '';
-  if Integrity <> '' then
-    s := s + ' integrity="' + Integrity + '"';
-  if Cross then
-    s :=s + ' crossorigin="anonymous"';
-  AddShortTag('link', 'rel="stylesheet" href="' + src + '"' + s);
+  AddLinkStyle('', src, Integrity, Cross);
 end;
 
-procedure TmnwXML_TidyWriterHelper.AddLinkScript(const src: string; Integrity: string; Defer: Boolean; Cross: Boolean);
+procedure TmnwXML_TidyWriterHelper.AddLinkScript(const id, src: string; Integrity: string; Defer: Boolean; Cross: Boolean);
 var
   s: string;
 begin
   s := '';
+  if id <> '' then
+    s := s + ' id ="' + id + '"';
   if Integrity <> '' then
     s := s + ' integrity="' + Integrity + '"';
   if Cross then
@@ -2391,6 +2398,20 @@ begin
   if Defer then
     s := s + ' defer';  
   AddTag('script', 'src="' + src + '" ' + s);
+end;
+
+procedure TmnwXML_TidyWriterHelper.AddLinkStyle(const id, src: string; Integrity: string; Cross: Boolean);
+var
+  s: string;
+begin
+  s := '';
+  if id <> '' then
+    s := s + ' id="' + id+ '"';
+  if Integrity <> '' then
+    s := s + ' integrity="' + Integrity + '"';
+  if Cross then
+    s :=s + ' crossorigin="anonymous"';
+  AddShortTag('link', 'rel="stylesheet" href="' + src + '"' + s);
 end;
 
 procedure TmnwXML_TidyWriterHelper.AddInlineShortTag(const TagName: string; TagAttributes: string);
