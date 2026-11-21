@@ -66,6 +66,7 @@ var mnwAPIDoc = (function () {
     description: 'Description',
     nocontent: 'No content',
     table: 'Table',
+    jsonExample: 'JSON example',
     authValue: 'Authorization',
     raw: 'Raw',
     authHide: 'Hide the auth fields',
@@ -1193,6 +1194,22 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         var v = buildExample(props[name], spec, depth + 1, seen);
         if (v !== undefined) { out[name] = v; }
       });
+      //An object can also take its shape from combined subschemas: allOf adds
+      //the fields of each one, oneOf and anyOf add the first that fits.
+      if (Array.isArray(s.allOf)) {
+        s.allOf.forEach(function (c) {
+          var v = buildExample(c, spec, depth + 1, seen);
+          if (isPlainObject(v)) { Object.assign(out, v); }
+        });
+      } else {
+        var alt = s.oneOf || s.anyOf;
+        if (Array.isArray(alt)) {
+          for (var ai = 0; ai < alt.length; ai++) {
+            var av = buildExample(alt[ai], spec, depth + 1, seen);
+            if (isPlainObject(av)) { Object.assign(out, av); break; }
+          }
+        }
+      }
       return out;
     }
     if (type === 'array') {
@@ -2041,9 +2058,15 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         mediaSchemas(r.content).forEach(function (m) {
           rbody.appendChild(el('div', 'ap-prop-meta', esc(m.type)));
           if (m.media.schema) { rbody.appendChild(schemaTree(m.media.schema, state)); }
-          if (m.media.example !== undefined) {
-            rbody.appendChild(el('div', 'ap-section-title', esc(labels.example)));
-            rbody.appendChild(el('pre', null, '<code>' + esc(formatJSON(m.media.example)) + '</code>'));
+          //A readable JSON view: the example from the spec when it has one,
+          //otherwise one built from the schema, so the body is easy to follow.
+          var example = m.media.example;
+          if (example === undefined && m.media.schema) {
+            example = buildExample(m.media.schema, spec, 0, []);
+          }
+          if (example !== undefined) {
+            rbody.appendChild(el('div', 'ap-section-title', esc(labels.jsonExample)));
+            rbody.appendChild(el('pre', null, '<code>' + esc(formatJSON(example)) + '</code>'));
           }
         });
         if (!r.content) { rbody.appendChild(el('div', 'ap-prop-meta', esc(labels.nocontent))); }
