@@ -521,6 +521,8 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
 /*the auth eye: a square button holding only the icon*/
 .ap-btn.ap-btn-auth { padding: 0.3125rem 0.4375rem; display: inline-flex; align-items: center; }
 .ap-btn.ap-btn-auth svg { display: block; }
+/*the fields are shown: the eye button takes the primary colour*/
+.ap-btn.ap-btn-auth.ap-btn-on { background: var(--ap-primary); border-color: var(--ap-primary); color: #fff; }
 .ap-auth.ap-auth-off { display: none; }
 /*headers that are not in the specification: every row is a field like the
   parameters, a label above and the name and the value beside each other*/
@@ -1763,11 +1765,11 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     var sendBtn = el('button', 'ap-btn', esc(labels.send));
     var clearBtn = el('button', 'ap-btn ap-btn-plain', esc(labels.clear));
     actions.appendChild(sendBtn);
-    actions.appendChild(clearBtn);
     if (state.options.showCurl) {
       var curlBtn = el('button', 'ap-btn ap-btn-plain', 'cURL');
       actions.appendChild(curlBtn);
     }
+    actions.appendChild(clearBtn);
     if (authFields.length) {
       //an eye, the whole button is the icon: it shows or hides the auth fields
       authBtn = el('button', 'ap-btn ap-btn-plain ap-btn-auth');
@@ -1785,6 +1787,9 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       authBtn.innerHTML = EYE_SVG;
       var pupil = authBtn.querySelector('circle');
       if (pupil) { pupil.hidden = !!state.authHidden; }
+      //the button turns primary while the fields are shown
+      authBtn.classList.toggle('ap-btn-on', !state.authHidden);
+      authBtn.setAttribute('aria-pressed', state.authHidden ? 'false' : 'true');
       authBtn.title = state.authHidden ? labels.authShow : labels.authHide;
       authBtn.setAttribute('aria-label', authBtn.title);
     }
@@ -2607,7 +2612,9 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       sections: [],
       nav: null,
       main: null,
-      modelsSection: null
+      modelsSection: null,
+      //the auth/headers fields start hidden, the eye button opens them
+      authHidden: true
     };
     var cleanupTheme = applyTheme(state);
 
