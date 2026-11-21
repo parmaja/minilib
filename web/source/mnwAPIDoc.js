@@ -148,16 +148,13 @@ var mnwAPIDoc = (function () {
   font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Consolas, monospace;
   font-size: 0.78125rem;
 }
-.mnw-apidoc code { background: var(--ap-code-bg); padding: 0.0625rem 0.3125rem; border-radius: 0.25rem; }
+.mnw-apidoc code { border-radius: 0.25rem; }
 .mnw-apidoc pre {
-  background: var(--ap-code-bg);
   border: var(--ap-line) solid var(--ap-border);
   border-radius: 0.375rem;
-  padding: 0.625rem 0.75rem;
   overflow: auto;
   margin: 0.5rem 0;
 }
-.mnw-apidoc pre code { background: none; padding: 0; }
 
 /* --- side navigation --- */
 .ap-nav {

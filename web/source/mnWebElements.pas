@@ -5479,9 +5479,10 @@ procedure THighlightJS_Library.Created;
 begin
   inherited;
   // highlight.js - syntax highlighting for code blocks (light + dark variants)
-  with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github.min.css') do
+  with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'stackoverflow-light.min.css', [libDisabled]) do
     ID := 'github-light';
-  with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github-dark-dimmed.min.css') do
+//  with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github-dark-dimmed.min.css') do
+  with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'stackoverflow-dark.min.css') do
     ID := 'github-dark';
   Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/', 'highlight.min.js', [libDefer]);
   // Delphi/Pascal is not in the common highlight.js build
