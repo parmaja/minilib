@@ -250,49 +250,11 @@ end;
 
 { TMarkdownIt_Library }
 
-//Enable the light or dark stylesheet matching the application theme. The app
-//stores the selected theme in `mnw-theme` and mirrors it on body[data-theme].
-const
-  MarkdownThemeScript =
-    '''
-    (function(){
-      function apply(){
-        var theme = 'light';
-        try { theme = localStorage.getItem('mnw-theme') || 'light'; } catch (e) {}
-        var bodyTheme = document.body && (document.body.getAttribute('data-theme') ||
-          document.body.getAttribute('data-bs-theme'));
-        if (bodyTheme)
-          theme = bodyTheme;
-        var links = document.querySelectorAll('link[rel="stylesheet"]');
-        for (var i = 0; i < links.length; i++) {
-          var href = links[i].getAttribute('href') || '';
-          if (href.indexOf('github-markdown-light') >= 0)
-            links[i].disabled = (theme !== 'light');
-          else if (href.indexOf('github-markdown-dark') >= 0)
-            links[i].disabled = (theme !== 'dark');
-          else if (href.indexOf('github-dark-dimmed') >= 0)
-            links[i].disabled = (theme !== 'dark');
-          else if (href.indexOf('/github.min.css') >= 0 || href.indexOf('/github.css') >= 0)
-            links[i].disabled = (theme !== 'light');
-          else if (href.indexOf('/prism-tomorrow.min.css') >= 0)
-            links[i].disabled = (theme !== 'dark');
-          else if (href.indexOf('/prism.min.css') >= 0)
-            links[i].disabled = (theme !== 'light');
-        }
-      }
-      apply();
-      document.addEventListener('DOMContentLoaded', function(){
-        apply();
-        if (window.MutationObserver)
-          new MutationObserver(apply).observe(document.body, {attributes: true, attributeFilter: ['data-theme', 'data-bs-theme']});
-      });
-    })();
-    ''';
-
 procedure TMarkdownIt_Library.Created;
 begin
   inherited;
-  // GitHub markdown CSS - light and dark variants, the theme script enables one
+  // GitHub markdown CSS - light and dark variants, the highlight theme script
+  // (in THighlightJS_Library) enables the one matching the app theme
   Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/github-markdown-css@5.9.0/', 'github-markdown-light.css');
   Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/github-markdown-css@5.9.0/', 'github-markdown-dark-dimmed.css');
   // compact variant used by cards/comments: drop the outer margins
@@ -306,10 +268,6 @@ begin
   Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.4/', 'purify.min.js');
   // markdown-it-task-lists - checkbox task list support
   Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/markdown-it-task-lists@2.1.1/dist/', 'markdown-it-task-lists.min.js');
-  //For highlights
-  // the theme script must run after all stylesheets above
-  with Sources.AddEmbed(stScript, 'markdown-theme.js', MarkdownThemeScript) do
-    Options := [];
 end;
 
 initialization

@@ -2431,6 +2431,10 @@ function Libraries: TmnwLibraries;
 function _T(const Key: string; const Lang: string; const Default: string = ''): string;
 procedure InitLanguages(const APath: string);
 
+//Emit script that highlights raw <pre><code class="hljs language-xxx"> blocks,
+//highlight.js v11 does not run by itself. Require(THighlightJS_Library) first.
+procedure HighlightAllWrite(const Ctx: TmnwContext);
+
 implementation
 
 uses  
@@ -5430,6 +5434,45 @@ end;
 
 { THighlightJS_Library }
 
+//Enable the light or dark stylesheet matching the application theme. The app
+//stores the selected theme in `mnw-theme` and mirrors it on body[data-theme].
+const
+  HighlightThemeScript =
+    '''
+    (function(){
+      function apply(){
+        var theme = 'light';
+        try { theme = localStorage.getItem('mnw-theme') || 'light'; } catch (e) {}
+        var bodyTheme = document.body && (document.body.getAttribute('data-theme') ||
+          document.body.getAttribute('data-bs-theme'));
+        if (bodyTheme)
+          theme = bodyTheme;
+        var links = document.querySelectorAll('link[rel="stylesheet"]');
+        for (var i = 0; i < links.length; i++) {
+          var href = links[i].getAttribute('href') || '';
+          if (href.indexOf('github-markdown-light') >= 0)
+            links[i].disabled = (theme !== 'light');
+          else if (href.indexOf('github-markdown-dark') >= 0)
+            links[i].disabled = (theme !== 'dark');
+          else if (href.indexOf('github-dark-dimmed') >= 0)
+            links[i].disabled = (theme !== 'dark');
+          else if (href.indexOf('/github.min.css') >= 0 || href.indexOf('/github.css') >= 0)
+            links[i].disabled = (theme !== 'light');
+          else if (href.indexOf('/prism-tomorrow.min.css') >= 0)
+            links[i].disabled = (theme !== 'dark');
+          else if (href.indexOf('/prism.min.css') >= 0)
+            links[i].disabled = (theme !== 'light');
+        }
+      }
+      apply();
+      document.addEventListener('DOMContentLoaded', function(){
+        apply();
+        if (window.MutationObserver)
+          new MutationObserver(apply).observe(document.body, {attributes: true, attributeFilter: ['data-theme', 'data-bs-theme']});
+      });
+    })();
+    ''';
+
 procedure THighlightJS_Library.Created;
 begin
   inherited;
@@ -5439,6 +5482,17 @@ begin
   Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/', 'highlight.min.js', [libDefer]);
   // Delphi/Pascal is not in the common highlight.js build
   Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/', 'delphi.min.js');
+  // the theme script must run after all theme stylesheets
+  with Sources.AddEmbed(stScript, 'highlight-theme.js', HighlightThemeScript) do
+    Options := [];
+end;
+
+procedure HighlightAllWrite(const Ctx: TmnwContext);
+begin
+  Ctx.Writer.AddEmbedScript(
+    'document.addEventListener("DOMContentLoaded", function(){' + sLineBreak +
+    '  if (window.hljs) hljs.highlightAll();' + sLineBreak +
+    '});', False);
 end;
 
 { TPrismJS_Library }
