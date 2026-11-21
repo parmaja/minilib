@@ -30,7 +30,9 @@ unit mnwAPIDoc;
   and scrolls its own entries when they do not fit the screen. A request body
   that is a flat object is edited as one field per property (like the
   parameters), url encoded bodies become the matching pairs; nested or
-  combined schemas stay a raw editor. Jumping to a target (from the sidebar, a
+  combined schemas stay a raw editor. With the adoBodyFields option the field
+  editor also covers multipart/form-data uploads, where a binary part becomes a
+  file picker. Jumping to a target (from the sidebar, a
   model reference or the URL hash) opens it, the panels inside it keep their
   own state. The console asks for the security schemes of the operation (the
   value goes to the header/query the scheme names) and takes extra headers that
@@ -40,9 +42,9 @@ unit mnwAPIDoc;
   the whole document as name/type/value rows when it holds no list. A Raw button
   opens the same body as text.
 
-  UI texts are the English ones built into the viewer: this is a developer
-  tool, the specification content decides the language of the page. The viewer
-  still accepts a labels option, so the plain script can be reworded.
+  UI texts are the English ones built into the viewer: this is a developer tool
+  that is English and left-to-right only, the specification content decides the
+  language of the page.
 
   Usage with URL:
     with TAPIDoc.Create(Document.Body.Main) do
@@ -81,6 +83,7 @@ type
     adoShowDownload,          //* Show the "Download spec" button (default on)
     adoFillBodyExample,       //* Pre-fill the request body with an example (default on)
     adoShowCurl,              //* Show cURL buttons in the TryIt console
+    adoBodyFields,            //* Edit multipart/form-data bodies as fields too, with a file picker (off by default)
     adoHideModels,            //* Hide the models/schemas section
     adoSortTags,              //* Sort tag groups alphabetically
     adoSortOperations,        //* Sort operations by path inside a group
@@ -287,6 +290,7 @@ begin
   AddBoolOption('download', adoShowDownload in e.FOptions);
   AddBoolOption('fillBody', adoFillBodyExample in e.FOptions);
   AddBoolOption('showCurl', adoShowCurl in e.FOptions);
+  AddBoolOption('bodyFields', adoBodyFields in e.FOptions);
   AddBoolOption('expandSections', adoExpandSections in e.FOptions);
   AddBoolOption('expandOperations', adoExpandOperations in e.FOptions);
   AddBoolOption('expandSchemas', adoExpandSchemas in e.FOptions);

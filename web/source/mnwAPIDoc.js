@@ -16,7 +16,6 @@
       url: '/assets/spec/openapi.json',          // fetch the spec from URL
       content: specObjectOrJsonString,           // or give the spec directly
       contentElementId: 'api_spec',              // or read it from a <script> template
-      labels: {},                                // UI strings, English by default
       theme: 'auto',                             // auto | light | dark
       bootstrapTheme: true,                      // follow Bootstrap CSS variables
       serverUrl: '',                             // override the spec servers
@@ -476,6 +475,35 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
   width: 100%;
 }
 .ap-field input:focus, .ap-field select:focus, .ap-field textarea:focus { border-color: var(--ap-primary); }
+/*the file picker: a Bootstrap-like field with its Browse button in the primary
+  colour. It follows the theme vars, so under the Bootstrap theme it takes the
+  page's own button colours. The value text sits beside the button.*/
+.ap-field input.ap-file { padding: 0; overflow: hidden; cursor: pointer; }
+.ap-field input.ap-file::-webkit-file-upload-button {
+  padding: 0.3125rem 1rem;
+  margin-inline-end: 0.5625rem;
+  border: none;
+  border-inline-end: var(--ap-line) solid var(--ap-border);
+  background: var(--ap-primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ap-field input.ap-file::file-selector-button {
+  padding: 0.3125rem 1rem;
+  margin-inline-end: 0.5625rem;
+  border: none;
+  border-inline-end: var(--ap-line) solid var(--ap-border);
+  background: var(--ap-primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.12s;
+}
+.ap-field input.ap-file:hover::file-selector-button { filter: brightness(0.94); }
+.ap-field input.ap-file:focus { border-color: var(--ap-primary); }
 .ap-try-actions { display: flex; gap: 0.375rem; align-items: center; margin-inline-start: auto; flex: none; flex-wrap: wrap; }
 .ap-try-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ap-btn {
@@ -1649,6 +1677,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
           //a real file picker for a binary part of a multipart upload
           input = document.createElement('input');
           input.type = 'file';
+          input.className = 'ap-file';
         } else if (choices) {
           input = document.createElement('select');
           if (!prop.required) {
@@ -2564,13 +2593,9 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     root.classList.add('mnw-apidoc');
 
     options = options || {};
-    var labels = {};
-    Object.keys(defaultLabels).forEach(function (k) { labels[k] = defaultLabels[k]; });
-    if (isPlainObject(options.labels)) {
-      Object.keys(options.labels).forEach(function (k) {
-        if (options.labels[k]) { labels[k] = options.labels[k]; }
-      });
-    }
+    //The UI texts are the English ones built into the viewer, the control is
+    //English and left-to-right only.
+    var labels = defaultLabels;
 
     var state = {
       root: root,
