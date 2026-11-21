@@ -31,6 +31,8 @@
     });
 
   Supports OpenAPI 3.x and Swagger 2.0 JSON documents (inline or by URL).
+  When the page loads highlight.js (window.hljs), the JSON code blocks are
+  highlighted with it; without it the viewer looks the same as before.
 */
 var mnwAPIDoc = (function () {
   'use strict';
@@ -666,6 +668,24 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     try { return JSON.stringify(v, null, 2); } catch (e) { return String(v); }
   }
 
+  //Syntax highlighting: when the page carries highlight.js (window.hljs), run
+  //it over the code blocks inside the given element. JSON blocks are tagged
+  //with language-json, markdown fences carry their fence language. Each block
+  //is highlighted once, and everything works without highlight.js too.
+  function highlightCode(scope) {
+    var hl = window.hljs;
+    if (!hl || !scope || !scope.querySelectorAll) { return; }
+    var blocks = scope.querySelectorAll('pre code');
+    Array.prototype.forEach.call(blocks, function (code) {
+      if (code.dataset.apHljs) { return; }
+      code.dataset.apHljs = '1';
+      try {
+        if (typeof hl.highlightElement === 'function') { hl.highlightElement(code); }
+        else if (typeof hl.highlightBlock === 'function') { hl.highlightBlock(code); }
+      } catch (e) { /* the highlighter is never fatal */ }
+    });
+  }
+
   /* --------------------------------------------------- JSON table view */
 
   //What the response body is for the table view: 'object', 'array' or null.
@@ -854,6 +874,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     close.addEventListener('click', closeCard);
     document.addEventListener('keydown', onKey);
     (host || document.body).appendChild(back);
+    highlightCode(card);
     closeJsonCard = closeCard;
     close.focus();
   }
@@ -1378,18 +1399,25 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     if (!text) { return ''; }
     var lines = String(text).replace(/\r\n/g, '\n').split('\n');
     var out = [];
-    var inCode = false, inList = null, codeBuf = [];
+    var inCode = false, inList = null, codeBuf = [], codeLang = '';
     function closeList() { if (inList) { out.push('</' + inList + '>'); inList = null; } }
+    //the fence language becomes a class so a syntax highlighter can use it
+    function codeHtml() {
+      var cls = codeLang ? ' class="language-' + esc(codeLang) + '"' : '';
+      return '<pre><code' + cls + '>' + esc(codeBuf.join('\n')) + '</code></pre>';
+    }
     lines.forEach(function (line) {
       var fence = line.match(/^```\s*(\w*)\s*$/);
       if (fence) {
         if (inCode) {
-          out.push('<pre><code>' + esc(codeBuf.join('\n')) + '</code></pre>');
+          out.push(codeHtml());
           codeBuf = [];
+          codeLang = '';
           inCode = false;
         } else {
           closeList();
           inCode = true;
+          codeLang = fence[1];
         }
         return;
       }
@@ -1415,7 +1443,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       if (line.trim() === '') { return; }
       out.push('<p>' + mdInline(line) + '</p>');
     });
-    if (inCode) { out.push('<pre><code>' + esc(codeBuf.join('\n')) + '</code></pre>'); }
+    if (inCode) { out.push(codeHtml()); }
     closeList();
     return out.join('\n');
   }
@@ -1940,6 +1968,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         rbody.appendChild(el('pre', null, '<code>' + esc(curlCommand(req)) + '</code>'));
       }
       resultBox.appendChild(box);
+      highlightCode(box);
     }
 
     sendBtn.addEventListener('click', function () {
@@ -2010,6 +2039,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         var req = buildRequest();
         resultBox.innerHTML = '';
         resultBox.appendChild(el('pre', null, '<code>' + esc(curlCommand(req)) + '</code>'));
+        highlightCode(resultBox);
       });
     }
 
@@ -2547,6 +2577,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
     }
     state.root.appendChild(state.main);
     bindNavigation(state);
+    highlightCode(state.root);
 
     if (location.hash) {
       var target = revealTarget(state, location.hash.substring(1), true);
