@@ -274,6 +274,10 @@ const
             links[i].disabled = (theme !== 'dark');
           else if (href.indexOf('/github.min.css') >= 0 || href.indexOf('/github.css') >= 0)
             links[i].disabled = (theme !== 'light');
+          else if (href.indexOf('/prism-tomorrow.min.css') >= 0)
+            links[i].disabled = (theme !== 'dark');
+          else if (href.indexOf('/prism.min.css') >= 0)
+            links[i].disabled = (theme !== 'light');
         }
       }
       apply();

@@ -489,6 +489,7 @@ type
 
     function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Direction: TDirection = dirUndefined): TmnwLibrarySource; overload;
     function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Integrity: string; Options: TLibraryOptions = [libDefer, libCross]): TmnwLibrarySource; overload;
+    function Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Options: TLibraryOptions): TmnwLibrarySource; overload;
 
     function AddStyle(const EmbedText: string; AName: string; Direction: TDirection = dirUndefined): TmnwLibrarySource; overload;
   end;
@@ -546,6 +547,12 @@ type
   end;
 
   THighlightJS_Library = class(TmnwLibrary)
+  protected
+    procedure Created; override;
+  public
+  end;
+
+  TPrismJS_Library = class(TmnwLibrary)
   protected
     procedure Created; override;
   public
@@ -5427,11 +5434,26 @@ procedure THighlightJS_Library.Created;
 begin
   inherited;
   // highlight.js - syntax highlighting for code blocks (light + dark variants)
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/', 'github.min.css');
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/', 'github-dark-dimmed.min.css');
-  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/', 'highlight.min.js');
+  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github.min.css');
+  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github-dark-dimmed.min.css');
+  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/', 'highlight.min.js', [libDefer]);
   // Delphi/Pascal is not in the common highlight.js build
-  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/', 'delphi.min.js');
+  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/', 'delphi.min.js');
+end;
+
+{ TPrismJS_Library }
+
+procedure TPrismJS_Library.Created;
+begin
+  inherited;
+  // prismjs - syntax highlighting for code blocks (light + dark variants)
+  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/', 'prism.min.css');
+  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/', 'prism-tomorrow.min.css');
+  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/', 'prism-core.min.js');
+  // Autoloader fetches language components from the CDN on demand
+  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/autoloader/', 'prism-autoloader.min.js');
+  // Pascal/Delphi is not in the core build
+  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/', 'prism-pascal.min.js');
 end;
 
 { THTML }
@@ -6795,6 +6817,11 @@ begin
   Result.Direction := Direction;
 end;
 
+function TLibrarySources.Add(SourceType: TLibrarySourceType; const OnlineFile, LocalFile: string; Options: TLibraryOptions): TmnwLibrarySource;
+begin
+  Result := Add(SourceType, OnlineFile, LocalFile, '', Options);
+end;
+
 { TmnwLibrarySource }
 
 constructor TmnwLibrarySource.Create;
@@ -7594,6 +7621,7 @@ initialization
   Libraries.RegisterLibrary(TCustomTheme_Library, 2050);
   Libraries.RegisterLibrary(TJQuery_Library);
   Libraries.RegisterLibrary(THighlightJS_Library);
+  Libraries.RegisterLibrary(TPrismJS_Library);
 finalization
   FreeAndNil(FRenderers);
   FreeAndNil(FLibraries);
