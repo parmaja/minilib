@@ -81,11 +81,11 @@ type
     adoShowDownload,          //* Show the "Download spec" button (default on)
     adoFillBodyExample,       //* Pre-fill the request body with an example (default on)
     adoShowCurl,              //* Show cURL buttons in the TryIt console
-    adoExpandOperations,      //* Expand all operations by default
-    adoExpandSchemas,         //* Expand schema trees by default
     adoHideModels,            //* Hide the models/schemas section
     adoSortTags,              //* Sort tag groups alphabetically
     adoSortOperations,        //* Sort operations by path inside a group
+    adoExpandOperations,      //* Expand all operations by default
+    adoExpandSchemas,         //* Expand schema trees by default
     adoExpandSections         //* Expand the tag/models sections by default (default is collapsed)
   );
   TAPIDocOptions = set of TAPIDocOption;
@@ -114,10 +114,14 @@ type
     FHeight: string;
     FFetchCredentials: string;
     FCustomCSS: string;
+    FBaseURL: string;
   protected
     procedure Created; override;
     procedure DoRequired(const Ctx: TmnwContext); override;
   public
+    procedure LoadFromFile(AFileName: string); virtual;
+    //* TODO
+    property BaseURL: string read FBaseURL write FBaseURL;
     //* URL to the OpenAPI/Swagger spec (JSON)
     property SpecURL: string read FSpecURL write FSpecURL;
     //* Inline OpenAPI/Swagger spec content as JSON string
@@ -184,6 +188,33 @@ begin
   Ctx.Require(TBootstrapIcons_Library);
   Ctx.Require(TAPIDoc_Library);
 end;
+
+const
+  //this token in the json file is replaced with the base path of the module so
+  //the "Try it" requests point to the right server
+  cSpecBaseURLToken = '@BASEURL@';
+
+//Load the OpenAPI document of the notes module, when the file is missing it
+//answers a minimal document so the documentation page still renders
+procedure TAPIDoc.LoadFromFile(AFileName: string);
+var
+  AMessage: string;
+begin
+  if FileExists(AFileName) then
+  begin
+    SpecContent := LoadFileString(AFileName);
+    SpecContent := StringReplace(SpecContent, cSpecBaseURLToken, BaseURL, [rfReplaceAll]);
+  end
+  else
+  begin
+    AMessage := 'Missing ' + AFileName + ', the API documentation is empty';
+    //Log.WriteLn(lglWarning, 'cs.notes: ' + AMessage);
+    SpecContent := '{"openapi":"3.0.0","info":{"title":"Notes API","version":"1.0.0",' +
+      '"description":"' + EscapeJSONString(AMessage) + '"},"servers":' +
+      '[{"url":"' + EscapeJSONString(BaseURL) + '"}],"paths":{}}';
+  end;
+end;
+
 
 { TAPIDocRenderer }
 

@@ -3479,11 +3479,23 @@ end;
 function LoadFileString(const FileName: string): string;
 var
   Stream : TStringStream;
+  BOM: array[0..2] of Byte;
 begin
-  Stream := TStringStream.Create('' , TUTF8Encoding.Create);
+  Stream := TStringStream.Create('', TUTF8Encoding.Create);
   try
     Stream.LoadFromFile(FileName);
     Result := Stream.DataString;
+    // Remove UTF-8 BOM if present
+    if (Length(Result) >= 1) and (Result[1] = #$EF) then
+    begin
+      if (Length(Result) >= 3) and
+         (Result[2] = #$BB) and (Result[3] = #$BF) then
+        Delete(Result, 1, 3)
+      else if Length(Result) >= 2 then
+        // Single-byte check for #$EF alone is ambiguous but harmless;
+        // only strip when full BOM sequence matches
+        ;
+    end;
   finally
     Stream.Free;
   end;
