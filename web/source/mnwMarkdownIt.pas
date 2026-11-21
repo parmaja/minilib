@@ -253,10 +253,6 @@ end;
 procedure TMarkdownIt_Library.Created;
 begin
   inherited;
-  // GitHub markdown CSS - light and dark variants, the highlight theme script
-  // (in THighlightJS_Library) enables the one matching the app theme
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/github-markdown-css@5.9.0/', 'github-markdown-light.css');
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/github-markdown-css@5.9.0/', 'github-markdown-dark-dimmed.css');
   // compact variant used by cards/comments: drop the outer margins
   Sources.AddStyle(
     '.markdown-body.markdown-compact > :first-child { margin-top: 0 !important; }' + sLineBreak +

@@ -1323,9 +1323,8 @@ begin
   Ctx.Writer.OpenTag('body', Scope.ToString);
 
   Ctx.Writer.OpenTag('script');
-  Ctx.Writer.Writeln('const theme = localStorage.getItem("mnw-theme") || "'+When(e.Theme = themeDark, ThemeToStr(e.Theme), 'light')+'";');
-  Ctx.Writer.Writeln('document.body.setAttribute("data-bs-theme", theme);');
-  Ctx.Writer.Writeln('document.body.setAttribute("data-theme", theme);');
+  Ctx.Writer.Writeln('const theme = localStorage.getItem("mnw-theme") || "' + When(e.Theme = themeDark, ThemeToStr(e.Theme), 'light')+'";');
+  Ctx.Writer.Writeln('mnw.set_theme(theme)');
 
   Ctx.Writer.Writeln('let mnw_zoom = localStorage.getItem("mnw-zoom");');
   Ctx.Writer.Writeln('if (mnw_zoom) document.documentElement.setAttribute("data-mnw-zoom", mnw_zoom);');

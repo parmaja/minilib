@@ -468,7 +468,7 @@ type
   
   TmnwLibrarySource = class(TmnNamedObject)
   public
-    ID: string;
+    Attributes: string;
     SourceType: TLibrarySourceType;
     Where: TLibrarySourceWhere;
     OnlineFile: string;
@@ -5312,15 +5312,15 @@ begin
         end;
 
         case source.SourceType of
-          stStyle: Ctx.Writer.AddLinkStyle(source.ID, url, When(not local, source.Integrity), libCross in source.Options);
-          stScript: Ctx.Writer.AddLinkScript(source.id, url, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options);
+          stStyle: Ctx.Writer.AddLinkStyle(source.Attributes, url, When(not local, source.Integrity), libCross in source.Options, libDisabled in source.Options);
+          stScript: Ctx.Writer.AddLinkScript(source.Attributes, url, When(not local, source.Integrity), libDefer in source.Options, libCross in source.Options);
         end;
       end
       else
       begin
         case source.SourceType of
-          stStyle: Ctx.Writer.AddEmbedStyle(source.ID, source.Text);
-          stScript: Ctx.Writer.AddEmbedScript(source.ID, source.Text, libDefer in source.Options);
+          stStyle: Ctx.Writer.AddEmbedStyle(source.Attributes, source.Text);
+          stScript: Ctx.Writer.AddEmbedScript(source.Attributes, source.Text, libDefer in source.Options);
         end;
       end;
     end;    
@@ -5436,54 +5436,15 @@ end;
 
 { THighlightJS_Library }
 
-//Enable the light or dark stylesheet matching the application theme. The app
-//stores the selected theme in `mnw-theme` and mirrors it on body[data-theme].
-const
-  HighlightThemeScript =
-    '''
-    (function(){
-      function apply(){
-        var theme = 'light';
-        try { theme = localStorage.getItem('mnw-theme') || 'light'; } catch (e) {}
-        var bodyTheme = document.body && (document.body.getAttribute('data-theme') ||
-          document.body.getAttribute('data-bs-theme'));
-        if (bodyTheme)
-          theme = bodyTheme;
-        var links = document.querySelectorAll('link[rel="stylesheet"]');
-        for (var i = 0; i < links.length; i++) {
-          var href = links[i].getAttribute('href') || '';
-          if (href.indexOf('github-markdown-light') >= 0)
-            links[i].disabled = (theme !== 'light');
-          else if (href.indexOf('github-markdown-dark') >= 0)
-            links[i].disabled = (theme !== 'dark');
-          else if (href.indexOf('github-dark-dimmed') >= 0)
-            links[i].disabled = (theme !== 'dark');
-          else if (href.indexOf('/github.min.css') >= 0 || href.indexOf('/github.css') >= 0)
-            links[i].disabled = (theme !== 'light');
-          else if (href.indexOf('/prism-tomorrow.min.css') >= 0)
-            links[i].disabled = (theme !== 'dark');
-          else if (href.indexOf('/prism.min.css') >= 0)
-            links[i].disabled = (theme !== 'light');
-        }
-      }
-      apply();
-      document.addEventListener('DOMContentLoaded', function(){
-        apply();
-        if (window.MutationObserver)
-          new MutationObserver(apply).observe(document.body, {attributes: true, attributeFilter: ['data-theme', 'data-bs-theme']});
-      });
-    })();
-    ''';
-
 procedure THighlightJS_Library.Created;
 begin
   inherited;
   // highlight.js - syntax highlighting for code blocks (light + dark variants)
   with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'stackoverflow-light.min.css', [libDisabled]) do
-    ID := 'github-light';
+    Attributes :=  'data-theme="light"';
 //  with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'github-dark-dimmed.min.css') do
   with Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/styles/', 'stackoverflow-dark.min.css') do
-    ID := 'github-dark';
+    Attributes :=  'data-theme="dark"';
   Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/', 'highlight.min.js', [libDefer]);
   // Delphi/Pascal is not in the common highlight.js build
   Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/languages/', 'delphi.min.js', [libDefer]);
@@ -5523,7 +5484,7 @@ begin
   Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/js-sha256@0.11.1/src/', 'sha256.min.js', '', []);
 //  Sources.Add(stScript, '', 'web-elements.js?v=' + IntToStr(GlobalTimeStamp));
 //  Sources.Add(stStyle, '', 'web-elements.css?v=' + IntToStr(GlobalTimeStamp));
-  Sources.Add(stScript, stResource, 'web-elements.js', '?minilib\web\source\mnWebElements.js');
+  Sources.Add(stScript, stResource, 'web-elements.js', '?minilib\web\source\mnWebElements.js', '', []);
   Sources.Add(stStyle, stResource, 'web-elements.css', '?minilib\web\source\mnWebElements.css');
 end;
 
@@ -6886,7 +6847,7 @@ end;
 constructor TmnwLibrarySource.Create;
 begin
   inherited;
-  Options := [libCross];
+  Options := [];
 end;
 
 { TmnwRequires }

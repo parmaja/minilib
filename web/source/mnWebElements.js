@@ -433,14 +433,22 @@ mnw.copy = async function(element)
 
 /* UI functions */
 
+mnw.set_theme = function(theme)
+{
+  document.body.setAttribute('data-bs-theme', theme);
+  document.body.setAttribute('data-theme', theme); //* Some Addons/Controls may use it like Marked.js
+
+  document.querySelectorAll('link[data-theme]').forEach(link => { link.disabled = link.dataset.theme !== theme; });
+
+  localStorage.setItem('mnw-theme', theme);
+}
+
 mnw.switch_theme = function(e)
 {
-  let bs_theme = 'dark';
+  let theme = 'dark';
   if (document.body.getAttribute('data-bs-theme') == 'dark')
-    bs_theme = 'light';
-  document.body.setAttribute('data-bs-theme', bs_theme);
-  document.body.setAttribute('data-theme', bs_theme); //* Some Addons/Controls may use it like Marked.js
-  localStorage.setItem('mnw-theme', bs_theme);
+    theme = 'light';
+  mnw.set_theme(theme);
 }
 
 mnw.switch_zoom = function(e)

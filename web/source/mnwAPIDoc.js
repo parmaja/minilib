@@ -149,6 +149,10 @@ var mnwAPIDoc = (function () {
   font-size: 0.78125rem;
 }
 .mnw-apidoc code { border-radius: 0.25rem; }
+/* highlight.js marks the blocks it highlights with its hljs class: on those
+   the code carries no background, so the hljs theme one applies. The others
+   keep ours, the viewer looks right without highlight.js too. */
+.mnw-apidoc code:not(.hljs) { background: var(--ap-code-bg); }
 .mnw-apidoc pre {
   border: var(--ap-line) solid var(--ap-border);
   border-radius: 0.375rem;
