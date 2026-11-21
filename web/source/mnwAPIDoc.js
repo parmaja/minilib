@@ -27,7 +27,7 @@
       search: true, tryIt: true, download: true, sidebar: true,
       expandSections: false, expandOperations: false, expandSchemas: false,
       hideModels: false, sortTags: false, sortOperations: false,
-      fillBody: true, showCurl: false,
+      fillBody: true, showCurl: false, bodyFields: false,
       customCss: ''
     });
 
@@ -1622,11 +1622,14 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         return media.schema ? buildExample(media.schema, spec, 0) : undefined;
       }
 
-      //How the fields are sent: as a JSON document, as url encoded pairs, or
-      //only a raw text area for the media types we cannot build (XML, binary)
+      //How the fields are sent: as a JSON document, as url encoded pairs, as a
+      //multipart upload, or only a raw text area for the media types we cannot
+      //build (XML, binary). The multipart fields are behind the bodyFields
+      //option, the file server uploads are the main case that needs them.
       function bodyKind(type) {
         if (/json/i.test(type)) { return 'json'; }
         if (/x-www-form-urlencoded/i.test(type)) { return 'form'; }
+        if (state.options.bodyFields && /multipart\/form-data/i.test(type)) { return 'multipart'; }
         return null;
       }
 
@@ -1637,10 +1640,16 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
           (prop.required ? ' <span class="ap-req-star">*</span>' : '') +
           ' <span class="ap-f-in">(' + esc(schemaTypeName(prop.schema)) + ')</span>';
         f.appendChild(lab);
+        var fileField = bodyFieldKind === 'multipart' &&
+          prop.schema.format === 'binary';
         var choices = prop.schema.enum ? prop.schema.enum :
           (prop.schema.type === 'boolean' ? ['true', 'false'] : null);
         var input;
-        if (choices) {
+        if (fileField) {
+          //a real file picker for a binary part of a multipart upload
+          input = document.createElement('input');
+          input.type = 'file';
+        } else if (choices) {
           input = document.createElement('select');
           if (!prop.required) {
             var none = document.createElement('option');
@@ -1662,10 +1671,12 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
         }
         if (prop.required) { input.dataset.apRequired = '1'; }
         var prefill = (value === undefined || value === null) ? '' : String(value);
-        input.value = prefill;
+        //a file input only takes an empty value, its content is picked by hand
+        if (!fileField) { input.value = prefill; } else { prefill = ''; }
         f.appendChild(input);
         bodyEditor.appendChild(f);
-        bodyFields.push({ name: prop.name, schema: prop.schema, input: input, prefill: prefill });
+        bodyFields.push({ name: prop.name, schema: prop.schema, input: input, prefill: prefill,
+          file: fileField });
       }
 
       function renderBodyEditor(type) {
@@ -1794,32 +1805,50 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       var url = base.replace(/\/+$/, '') + path;
       if (query.length) { url += (url.indexOf('?') >= 0 ? '&' : '?') + query.join('&'); }
       var bodyText = null;
+      var formData = null;
       if (bodyFields.length) {
         //The fields make the body, empty ones are left out. Booleans and
-        //numbers keep their type in JSON, url encoded pairs are all text.
+        //numbers keep their type in JSON, url encoded pairs are all text, a
+        //multipart body becomes form data with the picked files inside it.
         var doc = null;
         var pairs = null;
-        bodyFields.forEach(function (bf) {
-          var v = bf.input.value;
-          if (v === '') { return; }
-          if (bodyFieldKind === 'json') {
-            var t = bf.schema.type;
-            if (t === 'boolean') { v = v === 'true'; }
-            else if ((t === 'integer' || t === 'number') && !isNaN(Number(v))) { v = Number(v); }
-            doc = doc || {};
-            doc[bf.name] = v;
-          } else {
-            pairs = pairs || [];
-            pairs.push(encodeURIComponent(bf.name) + '=' + encodeURIComponent(v));
-          }
-        });
-        if (doc) { bodyText = formatJSON(doc); }
-        else if (pairs) { bodyText = pairs.join('&'); }
+        if (bodyFieldKind === 'multipart') {
+          formData = new FormData();
+          var anyPart = false;
+          bodyFields.forEach(function (bf) {
+            if (bf.file) {
+              var picked = bf.input.files && bf.input.files[0];
+              if (picked) { formData.append(bf.name, picked, picked.name); anyPart = true; }
+            } else if (bf.input.value !== '') {
+              formData.append(bf.name, bf.input.value); anyPart = true;
+            }
+          });
+          if (!anyPart) { formData = null; }
+        } else {
+          bodyFields.forEach(function (bf) {
+            var v = bf.input.value;
+            if (v === '') { return; }
+            if (bodyFieldKind === 'json') {
+              var t = bf.schema.type;
+              if (t === 'boolean') { v = v === 'true'; }
+              else if ((t === 'integer' || t === 'number') && !isNaN(Number(v))) { v = Number(v); }
+              doc = doc || {};
+              doc[bf.name] = v;
+            } else {
+              pairs = pairs || [];
+              pairs.push(encodeURIComponent(bf.name) + '=' + encodeURIComponent(v));
+            }
+          });
+          if (doc) { bodyText = formatJSON(doc); }
+          else if (pairs) { bodyText = pairs.join('&'); }
+        }
       } else if (bodyTextarea && bodyTextarea.value !== '') {
         bodyText = bodyTextarea.value;
       }
+      //the multipart body gets its content type (with the boundary) from fetch
       if (bodyText !== null) { headers['Content-Type'] = currentContentType(); }
-      return { url: url, method: opInfo.method.toUpperCase(), headers: headers, body: bodyText };
+      return { url: url, method: opInfo.method.toUpperCase(), headers: headers,
+        body: bodyText, form: formData };
     }
 
     function curlCommand(req) {
@@ -1827,7 +1856,15 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       Object.keys(req.headers).forEach(function (h) {
         parts.push("-H '" + h + ': ' + req.headers[h] + "'");
       });
-      if (req.body) { parts.push("--data-raw '" + req.body.replace(/'/g, "'\\''") + "'"); }
+      if (req.form) {
+        //a multipart upload shows as one -F pair per field, files as @name
+        req.form.forEach(function (v, k) {
+          var name = typeof v === 'string' ? v : (v.name || '');
+          parts.push("-F '" + k + '=' + (typeof v === 'string' ? v : '@' + name) + "'");
+        });
+      } else if (req.body) {
+        parts.push("--data-raw '" + req.body.replace(/'/g, "'\\''") + "'");
+      }
       return parts.join(' \\\n  ');
     }
 
@@ -1896,7 +1933,7 @@ details.ap-row[open] > summary::before { transform: rotate(90deg); }
       fetch(url, {
         method: req.method,
         headers: req.headers,
-        body: req.body,
+        body: req.form || req.body,
         credentials: state.options.credentials || 'same-origin'
       }).then(function (resp) {
         return resp.text().then(function (text) {
