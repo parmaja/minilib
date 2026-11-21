@@ -90,12 +90,6 @@ type
   public
   end;
 
-  THighlightJS_Library = class(TmnwLibrary)
-  protected
-    procedure Created; override;
-  public
-  end;
-
   //* Require the libraries used by markdown blocks (markdown-it, DOMPurify,
   //* github-markdown-css and highlight.js). Call it while composing the page.
   procedure MarkdownItRequire(const Ctx: TmnwContext);
@@ -308,19 +302,7 @@ begin
   Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.4/', 'purify.min.js');
   // markdown-it-task-lists - checkbox task list support
   Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/markdown-it-task-lists@2.1.1/dist/', 'markdown-it-task-lists.min.js');
-end;
-
-{ THighlightJS_Library }
-
-procedure THighlightJS_Library.Created;
-begin
-  inherited;
-  // highlight.js - syntax highlighting for code blocks (light + dark variants)
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/', 'github.min.css');
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/', 'github-dark-dimmed.min.css');
-  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/', 'highlight.min.js');
-  // Delphi/Pascal is not in the common highlight.js build
-  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/', 'delphi.min.js');
+  //For highlights
   // the theme script must run after all stylesheets above
   with Sources.AddEmbed(stScript, 'markdown-theme.js', MarkdownThemeScript) do
     Options := [];
@@ -328,6 +310,5 @@ end;
 
 initialization
   Libraries.RegisterLibrary(TMarkdownIt_Library);
-  Libraries.RegisterLibrary(THighlightJS_Library);
   TBSRenderer.RegisterRenderer(TMarkdownIt, TMarkdownItRenderer);
 end.

@@ -190,6 +190,7 @@ begin
   Ctx.Require(TBootstrap_Library);
   Ctx.Require(TBootstrapIcons_Library);
   Ctx.Require(TAPIDoc_Library);
+  Ctx.Require(THighlightJS_Library);
 end;
 
 const

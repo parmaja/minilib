@@ -545,6 +545,12 @@ type
   public
   end;
 
+  THighlightJS_Library = class(TmnwLibrary)
+  protected
+    procedure Created; override;
+  public
+  end;
+
   { TWebElements_Library }
 
   TWebElements_Library = class(TmnwLibrary)
@@ -5415,6 +5421,19 @@ begin
   Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/jquery@4.0.0/dist/', 'jquery.min.js', '', []); //* no Differ
 end;
 
+{ THighlightJS_Library }
+
+procedure THighlightJS_Library.Created;
+begin
+  inherited;
+  // highlight.js - syntax highlighting for code blocks (light + dark variants)
+  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/', 'github.min.css');
+  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/', 'github-dark-dimmed.min.css');
+  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/', 'highlight.min.js');
+  // Delphi/Pascal is not in the common highlight.js build
+  Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/', 'delphi.min.js');
+end;
+
 { THTML }
 
 procedure TWebElements_Library.Created;
@@ -7574,6 +7593,7 @@ initialization
   Libraries.RegisterLibrary(TDarklyTheme_Library, 2000);
   Libraries.RegisterLibrary(TCustomTheme_Library, 2050);
   Libraries.RegisterLibrary(TJQuery_Library);
+  Libraries.RegisterLibrary(THighlightJS_Library);
 finalization
   FreeAndNil(FRenderers);
   FreeAndNil(FLibraries);
