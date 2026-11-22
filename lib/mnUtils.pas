@@ -3478,23 +3478,30 @@ end;
 
 function LoadFileString(const FileName: string): string;
 var
-  Stream : TStringStream;
-  BOM: array[0..2] of Byte;
+  Stream: TFileStream;
+  Raw: TBytes;
+  Enc: TUTF8Encoding;
+  Start: Integer;
 begin
-  Stream := TStringStream.Create('', TUTF8Encoding.Create);
+  Result := '';
+  Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   try
-    Stream.LoadFromFile(FileName);
-    Result := Stream.DataString;
-    // Remove UTF-8 BOM if present
-    if (Length(Result) >= 1) and (Result[1] = #$EF) then
+    if Stream.Size > 0 then
     begin
-      if (Length(Result) >= 3) and
-         (Result[2] = #$BB) and (Result[3] = #$BF) then
-        Delete(Result, 1, 3)
-      else if Length(Result) >= 2 then
-        // Single-byte check for #$EF alone is ambiguous but harmless;
-        // only strip when full BOM sequence matches
-        ;
+      SetLength(Raw, Stream.Size);
+      Stream.ReadBuffer(Raw[0], Length(Raw));
+      // Strip a UTF-8 BOM before decoding, at the byte level: the UTF-8
+      // decoder turns the BOM sequence into a '?' replacement character,
+      // and a script file that begins with '?' dies on "unexpected symbol".
+      Start := 0;
+      if (Length(Raw) >= 3) and (Raw[0] = $EF) and (Raw[1] = $BB) and (Raw[2] = $BF) then
+        Start := 3;
+      Enc := TUTF8Encoding.Create;
+      try
+        Result := Enc.GetString(Raw, Start, Length(Raw) - Start);
+      finally
+        Enc.Free;
+      end;
     end;
   finally
     Stream.Free;
