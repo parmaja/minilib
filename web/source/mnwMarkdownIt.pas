@@ -197,7 +197,7 @@ begin
   Cls := 'markdown-body';
   if AClasses <> '' then
     Cls := Cls + ' ' + AClasses;
-  Ctx.Writer.OpenTagA('div', Cls, 'id=' + DQ(AID));
+  Ctx.Writer.OpenTagA('div', Cls, 'id=' + DQ(AID) + ' dir="auto"');
   Ctx.Writer.CloseTag('div');
   MarkdownItWriteSource(Ctx, AID, ASource);
   MarkdownItWriteScript(Ctx, AID, AOptions);
