@@ -313,8 +313,11 @@ type
 
       { TAccordionItem }
 
-      TAccordionItem = class(THTMLControl)
-      end;
+      {TAccordionItem = class(THTMLControl)
+      protected
+        procedure DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
+        procedure DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext); override;
+      end;}
 
       { TCollapseCaption }
 
@@ -840,7 +843,7 @@ begin
     RegisterRenderer(THTML.TSideBar, TSideBar);
     RegisterRenderer(THTML.TAccordion, TAccordion);
     RegisterRenderer(THTML.TAccordionSection, TAccordionSection);
-    RegisterRenderer(THTML.TAccordionItem, TAccordionItem);
+    //RegisterRenderer(THTML.TAccordionItem, TAccordionItem);
     RegisterRenderer(THTML.TMain, TMain);
     RegisterRenderer(THTML.TToast, TToast);
     RegisterRenderer(THTML.TLink, TLink);
@@ -957,6 +960,7 @@ procedure TBSRenderer.THeader.DoInnerRender(Scope: TmnwScope; const Ctx: TmnwCon
 begin  
   Scope.Classes.Append('header sticky-top d-flex align-items-center py-0 px-1');
   Scope.Classes.Append('navbar-dark bg-black'); //dark theme header
+  Scope.Classes.Append('shadow-header');
   Scope.Attributes.Add('data-bs-theme', 'dark'); //Needed because our Header is always darktheme some items/icons not detected it
   Ctx.Writer.OpenTag('header', Scope.ToString);
   inherited;
@@ -1674,11 +1678,13 @@ procedure TBSRenderer.TAccordionSection.DoEnterChildRender(Scope: TmnwScope; con
 var 
   classes: TElementClasses;
 begin
-  classes.Init('list-group-item');
+  classes.Init('nav-item');
   classes.Add('bg-transparent');
   classes.Append(Scope.WrapClasses);
   Ctx.Writer.OpenTag('li', classes.ToFullString);
   inherited;
+  if Scope.Element is THTML.TLink then
+    Scope.Classes.Add('nav-link');
 end;
 
 procedure TBSRenderer.TAccordionSection.DoLeaveChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
@@ -1744,7 +1750,7 @@ begin
      not (e.Parent as THTML.TAccordion).AlwaysOpen then
     Scope.Attributes.Add('data-bs-parent', '#'+e.Parent.ID);
   Ctx.Writer.OpenTag('div', Scope.ToString + ' aria-labelledby="' + e.ID + '-header"');
-  Ctx.Writer.OpenTag('ul', 'class="accordion-body list-group list-group-flush p-1"');
+  Ctx.Writer.OpenTag('ul', 'class="accordion-body nav flex-column p-1"');
   inherited;
   Ctx.Writer.CloseTag('ul');
   Ctx.Writer.CloseTag('div');
@@ -2574,6 +2580,20 @@ begin
   else
     inherited;
 end;
+
+{ TBSRenderer.TAccordionItem }
+
+{procedure TBSRenderer.TAccordionItem.DoEnterChildRender(Scope: TmnwScope; const Ctx: TmnwContext);
+begin
+  inherited;
+end;
+
+procedure TBSRenderer.TAccordionItem.DoLeaveChildRender(Scope: TmnwScope;
+  const Ctx: TmnwContext);
+begin
+  inherited;
+
+end;}
 
 initialization
   Libraries.RegisterLibrary(TBootstrap_Library);

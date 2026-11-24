@@ -242,6 +242,12 @@ svg {
     box-shadow: 3px 4px 4px -2px rgba(0,0,0,0.5);
 }
 
+.shadow-header
+{
+    box-shadow: 0 0.2rem 0.5rem 0.0rem rgba(0,0,0,0.5);
+    border-radius: 0px;
+}
+
 /** Max Width */
 
 .max-w-1 {
@@ -589,14 +595,24 @@ aside{
     color: var(--bs-primary-bg);
 }
 
+/* Light theme: mix with black to darken */
+[data-bs-theme="light"] .accordion-body .nav-item:hover {
+    background-color: color-mix(in srgb, var(--bs-body-bg) 90%, black) !important;
+}
+
+/* Dark theme: mix with white to lighten */
+[data-bs-theme="dark"] .accordion-body .nav-item:hover {
+    background-color: color-mix(in srgb, var(--bs-body-bg) 90%, white) !important;
+}
+
 .accordion a
 {
     text-decoration: none;
 }
 
-.accordion-button {
+.accordion-header, .accordion-button {
     /*border-width: 0.1rem;*/
-    background-color: var(--bs-accordion-active-bg);
+    background-color: var(--bs-accordion-active-bg); /* if collapsed */
 }
 
 /* Confirm Modal */
@@ -613,10 +629,6 @@ aside{
 .form-label {
     min-width: 2.4rem;
     flex-shrink: 0;
-}
-
-.accordion-header{
-    background-color: var(--bs-accordion-active-bg);
 }
 
 .form-control {

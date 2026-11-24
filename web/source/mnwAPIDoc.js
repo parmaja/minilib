@@ -111,7 +111,7 @@ var mnwAPIDoc = (function () {
   flex-direction: row;
   /*height: calc(100vh - 6rem);*/
   height: 100%;
-  min-height: 26.25rem;
+  /*min-height: 26.25rem;*/
   /*border: var(--ap-line) solid var(--ap-border);*/
   /*border-radius: 0.5rem;*/
   /*no overflow here, it would make the container a scroll port and stop the

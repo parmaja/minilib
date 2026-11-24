@@ -79,6 +79,13 @@ type
 //    serveRender
   );
 
+  TModuleOption = (
+    moduleInternal,
+    moduleSubModule
+  );
+
+  TModuleOptions = set of TModuleOption;
+
   TmodWebFileModule = class;
 
   { TwebFileCommand }
@@ -92,6 +99,8 @@ type
     FOrigins: TStrings;
     FPublicPath: string;
     FPrivatePath: string;
+    FLanguageSection: string;
+    FOptions: TModuleOptions;
 
     procedure SetPublicPath(AValue: string);
     procedure SetOrigins(AValue: TStrings);
@@ -118,8 +127,11 @@ type
     //Public Directory
     property PublicPath: string read FPublicPath write SetPublicPath;
     //Private Directory
-    property PrivatePath: string read FPrivatePath write FPrivatePath;    
-    
+    property PrivatePath: string read FPrivatePath write FPrivatePath;
+
+    //If you want have different language section, default is empty
+    property LanguageSection: string read FLanguageSection write FLanguageSection;
+    property Options: TModuleOptions read FOptions write FOptions;
   end;
   { TmodWebFileModule }
 

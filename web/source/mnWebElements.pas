@@ -554,12 +554,6 @@ type
   public
   end;
 
-  TPrismJS_Library = class(TmnwLibrary)
-  protected
-    procedure Created; override;
-  public
-  end;
-
   { TWebElements_Library }
 
   TWebElements_Library = class(TmnwLibrary)
@@ -1699,9 +1693,9 @@ type
         function CanRender: Boolean; override;
       end;
 
-      TAccordionItem = class(TClickable)
+      {TAccordionItem = class(TClickable)
       public
-      end;
+      end;}
 
       TPanelMode = (emdUndefined, emdColumn, emdRow);
 
@@ -2697,6 +2691,7 @@ var
   SR: TSearchRec;
   LangCode: string;
   LangData: TDON_Value;
+  S, Suffix: string;
 begin
   if Languages = nil then
     Languages := TDictionary<string, TDON_Value>.Create
@@ -2706,13 +2701,12 @@ begin
   if FindFirst(APath + '*.json', 0, SR) = 0 then
   try
     repeat
-      LangCode := SubStr(SR.Name, '.');
+      SplitStr(SR.Name, '.', LangCode, S);
+      if POs('.', S) > 0 then
+        SplitStr(S, '.', Suffix, S);
       LangData := JsonLoadFile(APath + SR.Name, [jsoModern, jsoModernPlus]);
       if LangData <> nil then
-      begin
-//        Languages.AddOrSetValue(LangCode, LangData);
-        Languages.Add(LangCode, LangData);
-      end;
+        Languages.Add(ConcatString(LangCode, '.', Suffix), LangData);
     until FindNext(SR) <> 0;
   finally
     FindClose(SR);
@@ -5461,21 +5455,6 @@ begin
     '});', False);
 end;
 
-{ TPrismJS_Library }
-
-procedure TPrismJS_Library.Created;
-begin
-  inherited;
-  // prismjs - syntax highlighting for code blocks (light + dark variants)
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/', 'prism.min.css');
-  Sources.Add(stStyle, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/', 'prism-tomorrow.min.css');
-  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/', 'prism-core.min.js');
-  // Autoloader fetches language components from the CDN on demand
-  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/autoloader/', 'prism-autoloader.min.js');
-  // Pascal/Delphi is not in the core build
-  Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/', 'prism-pascal.min.js');
-end;
-
 { THTML }
 
 procedure TWebElements_Library.Created;
@@ -5568,7 +5547,6 @@ end;
 procedure THTML.THeader.Created;
 begin
   inherited;
-  Shadow := ShadowBottom;
   if ID = '' then
     ID := 'header';
 end;
@@ -6356,7 +6334,15 @@ end;
 
 function TmnwContext._T(const Key, Default: string): string;
 begin
-  Result := mnWebElements._T(Key, Language, Default);
+  with Schema.Web.Module do
+  begin
+    if LanguageSection <> '' then
+      Result := mnWebElements._T(Key, Language + '.' + LanguageSection, Default)
+    else
+      Result := '';
+    if Result = '' then
+      Result := mnWebElements._T(Key, Language, Default);
+  end;
 end;
 
 function TmnwContext.GetBasePath: string;
@@ -7641,7 +7627,6 @@ initialization
   Libraries.RegisterLibrary(TCustomTheme_Library, 2050);
   Libraries.RegisterLibrary(TJQuery_Library);
   Libraries.RegisterLibrary(THighlightJS_Library);
-  Libraries.RegisterLibrary(TPrismJS_Library);
 finalization
   FreeAndNil(FRenderers);
   FreeAndNil(FLibraries);
