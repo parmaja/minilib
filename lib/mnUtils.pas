@@ -300,10 +300,11 @@ function RemoveEndDelimiter(const Path: string; Delimiter: string): string;
 function RemoveStartDelimiter(const Path: string; Delimiter: string): string;
 
 //If empty do not add
-function AddStartURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
-function AddEndURLDelimiter(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
-function RemoveEndURLDelimiter(const Path: string): string;
-function RemoveStartURLDelimiter(const Path: string): string;
+function AddStartURL(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
+function AddEndURL(const Path: string; Force: Boolean = False): string; {$ifdef D-}inline;{$endif}
+
+function RemoveEndURL(const Path: string): string;
+function RemoveStartURL(const Path: string): string;
 
 function EncloseStr(const S, Left, Right: string): string;
 function UncloseStr(const S, Left, Right: string): string;
@@ -2503,17 +2504,17 @@ begin
     {$ENDIF}
 end;
 
-function AddStartURLDelimiter(const Path: string; Force: Boolean): string;
+function AddStartURL(const Path: string; Force: Boolean): string;
 begin
   Result := AddStartDelimiter(Path, URLDelimiter, Force);
 end;
 
-function AddEndURLDelimiter(const Path: string; Force: Boolean): string;
+function AddEndURL(const Path: string; Force: Boolean): string;
 begin
   Result := AddEndDelimiter(Path, URLDelimiter, Force);
 end;
 
-function RemoveEndURLDelimiter(const Path: string): string;
+function RemoveEndURL(const Path: string): string;
 begin
   if EndsDelimiter(Path) then
     Result := Copy(Path, 1, Length(Path) - 1)
@@ -2521,7 +2522,7 @@ begin
     Result := Path
 end;
 
-function RemoveStartURLDelimiter(const Path: string): string;
+function RemoveStartURL(const Path: string): string;
 begin
   if StartsDelimiter(Path) then
     Result := Copy(Path, 2, MaxInt)

@@ -399,9 +399,9 @@ type
 
     // http://host:80/
     function GetHostURL: string; overload;
-    // /basepath/module/
+    // /basepath/module
     function GetBasePath: string; overload;
-    // http://host:80/basepath/module/
+    // http://host:80/basepath/module
     function GetHomeURL: string; overload;
     // http://host:80/basepath/module/schema
     function GetSchemaURL: string; overload;
@@ -422,8 +422,8 @@ type
     //this get path relative requested path /element1/element2
     function GetRelativePath(e: TmnwElement): string; overload;    
 
-    // http://host:80/module/default_schema/basepath/
-    function GetDefaultPath: string; overload;    
+    // http://host:80/module/default_schema/basepath
+    function GetDefaultPath: string; overload;
     //Schema URL with http://host:80/basepath/assets/schema
     function GetAssetsPath: string;
     function GetAssetsURL: string;
@@ -1552,7 +1552,6 @@ type
       public
         Fixed: TmnwFixed;
         Title: string;
-//        LogoImage: string;
         constructor Create(AParent: TmnwElement; AKind: TmnwElementKinds =[]); override;
         destructor Destroy; override;
         property Logo: TImageFile read FLogo;
@@ -2220,6 +2219,12 @@ type
   public
     //function GetContentType(Route: string): string; override;
     property Document: TDocument read FDocument;
+  end;
+
+  THTMLSchema = class(THTML)
+  protected
+    procedure BuildLoginRequired(const Ctx: TmnwContext; Path: string); virtual;
+    procedure BuildSideBar(const Ctx: TmnwContext); virtual;
   end;
 
   { TmnwElementRendererRegister }
@@ -3588,7 +3593,7 @@ begin
 
         if (aSchema = nil) and (aSchemaName = '') then
         begin
-          Ctx.Response.RespondRedirectTo(AddStartURLDelimiter(FallbackTo));
+          Ctx.Response.RespondRedirectTo(AddStartURL(FallbackTo));
           exit;
         end;
           
@@ -4449,7 +4454,7 @@ function TmnwSchema.Execute(var Ctx: TmnwContext): Boolean;
 var
   itm: TmnwAPIitem;
 begin
-  itm := API.FindApi(Ctx.Request.Method, RemoveStartURLDelimiter(RemoveEndURLDelimiter(Ctx.CurrentPath)));
+  itm := API.FindApi(Ctx.Request.Method, RemoveStartURL(RemoveEndURL(Ctx.CurrentPath)));
   if (itm <> nil) then
     Result := itm.Execute(Ctx)
   else
@@ -4619,7 +4624,7 @@ begin
   if (Parent <> nil) then
   begin
     if Route <> '' then
-      Result := AddEndURLDelimiter(Parent.GetPath) + Route
+      Result := AddEndURL(Parent.GetPath) + Route
     else
       Result := Parent.GetPath;
   end
@@ -4630,7 +4635,7 @@ end;
 function TmnwElement.GetPathClasses: string;
 begin
   if (Parent <> nil) then
-    Result := AddEndURLDelimiter(Parent.GetPathClasses) + ClassName
+    Result := AddEndURL(Parent.GetPathClasses) + ClassName
   else
     Result := ClassName;
 end;
@@ -5288,7 +5293,7 @@ begin
       begin
         if (source.OnlineFile = '') or (source.Where = stResource) or CheckOffline(Ctx, source.Name) then
         begin
-          url := AddEndURLDelimiter(Ctx.GetAssetsPath) + source.Name;
+          url := AddEndURL(Ctx.GetAssetsPath) + source.Name;
           local := True;
         end
         else 
@@ -5752,7 +5757,7 @@ begin
   InitMemory(Ctx, SizeOf(Ctx));
 
   //Remove leading /
-  Ctx.CurrentPath := RemoveStartURLDelimiter(Request.CurrentPath);
+  Ctx.CurrentPath := RemoveStartURL(Request.CurrentPath);
   Ctx.Sender := Self;
 
   Ctx.FResponse := Response;
@@ -5911,7 +5916,7 @@ function TmnwWebModule.GetDefaultURL: string;
 begin
   Result := inherited;
   if Web.DefaultSchema <> nil then
-     Result := Result + AddStartURLDelimiter(Web.DefaultSchema.Name);
+     Result := Result + AddStartURL(Web.DefaultSchema.Name);
 end;
 
 procedure TmnwWebModule.Start;
@@ -6277,7 +6282,7 @@ end;
 
 function TmnwContext.GetPath(e: TmnwElement): string;
 begin
-  Result := GetBasePath + AddStartURLDelimiter(e.GetPath);
+  Result := GetBasePath + AddStartURL(e.GetPath);
 end;
 
 function TmnwContext.GetPort: string;
@@ -6302,7 +6307,7 @@ end;
 
 function TmnwContext.GetRequestURL: string;
 begin
-  Result := AddStartURLDelimiter(GetHostURL) + Request.URI;
+  Result := AddStartURL(GetHostURL) + Request.URI;
 end;
 
 function TmnwContext.GetSchemaURL: string;
@@ -6347,7 +6352,7 @@ end;
 
 function TmnwContext.GetBasePath: string;
 begin
-  Result := RemoveEndURLDelimiter(AddStartURLDelimiter(Request.BasePath));
+  Result := RemoveEndURL(AddStartURL(Request.BasePath));
 end;
 
 function TmnwContext.GetHomeURL: string;
@@ -6363,18 +6368,18 @@ end;
 function TmnwContext.GetLocationPath(AElement: TmnwElement; Location: TLocation): string;
 begin
   if Location.Where = toSchema then
-    Result := AddStartURLDelimiter(GetPath(Schema))
+    Result := AddStartURL(GetPath(Schema))
   else if Location.Where = toElement then
-    Result := AddStartURLDelimiter(GetPath(AElement))
+    Result := AddStartURL(GetPath(AElement))
   else if Location.Where = toHome then
-    Result := AddStartURLDelimiter(GetBasePath)
+    Result := AddStartURL(GetBasePath)
   else if Location.Where = toDefault then
     Result := GetDefaultPath;
     
   if Location.Where = toCustom then
-    Result := AddStartURLDelimiter(Location.Custom)
+    Result := AddStartURL(Location.Custom)
   else if Location.Custom <> '' then
-    Result := AddStartURLDelimiter(Result) + AddStartURLDelimiter(Location.Custom);
+    Result := AddStartURL(Result) + AddStartURL(Location.Custom);
     
   if Location.WithQuery and (Request.Query <> '') then
     Result := Result + '?' + Request.Query;
@@ -6382,7 +6387,7 @@ end;
 
 function TmnwContext.GetURL(e: TmnwElement): string;
 begin
-  Result := GetHomeURL + AddStartURLDelimiter(e.GetPath);
+  Result := GetHomeURL + AddStartURL(e.GetPath);
 end;
 
 function TmnwContext.GetAssetDir: string;
@@ -6406,8 +6411,8 @@ end;
 function TmnwContext.GetDefaultPath: string;
 begin
   Result := GetHomeURL;
-  if Schema.Web.DefaultSchema <> nil then  
-    Result := Result + AddStartURLDelimiter(Schema.Web.DefaultSchema.Name);
+  if Schema.Web.DefaultSchema <> nil then
+    Result := Result + AddStartURL(Schema.Web.DefaultSchema.Name);
 end;
 
 function TmnwContext.GetDomain: string;
@@ -7619,6 +7624,27 @@ begin
     FOnExecute(aCtx, Result);
   if not Result then
     DoExecute(aCtx, Result);
+end;
+
+{ THTMLSchema }
+
+procedure THTMLSchema.BuildLoginRequired(const Ctx: TmnwContext; Path: string);
+begin
+  with TCard.Create(Document.Body.Main) do
+  begin
+    Solitary := True;
+    Style := styleWarning;
+    Mode := emdColumn;
+    AlignItems := alCenter;
+    Size := szSmall;
+    Caption := _T('login_required', Ctx.Language, 'Login Required');
+    TParagraph.Create(This, _T('please_login', Ctx.Language, 'Please login'));
+    TLink.Create(This, Path + '?redirect=' + URLEncodeComponent(Ctx.Request.URI), _T('login', Ctx.Language, 'Login'));
+  end;
+end;
+
+procedure THTMLSchema.BuildSideBar(const Ctx: TmnwContext);
+begin
 end;
 
 initialization

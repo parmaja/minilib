@@ -1793,8 +1793,8 @@ begin
   if IsURLDelimiter(FCurrentPath) then
     FCurrentPath := ''
   else
-    FCurrentPath := RemoveStartURLDelimiter(FCurrentPath);
-  FBasePath := AddEndURLDelimiter(FBasePath) + AddEndURLDelimiter(Result);
+    FCurrentPath := RemoveStartURL(FCurrentPath);
+  FBasePath := AddEndURL(FBasePath) + AddEndURL(Result);
 end;
 
 destructor TmodRequest.Destroy;
@@ -3328,7 +3328,7 @@ end;
 function TmnRoute.ToPath: string;
 begin
   if IsRooted then  
-    Result := AddStartURLDelimiter(DelimitedText)
+    Result := AddStartURL(DelimitedText)
   else
     Result := DelimitedText
 end;

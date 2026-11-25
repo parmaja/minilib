@@ -571,7 +571,7 @@ begin
     if Server.Port <> '80' then
       Result := Result + ':' + Server.UsedPort;    
   end;    
-  Result := Result + Domain + AddStartURLDelimiter(Namespace) + AddStartURLDelimiter(AliasName);
+  Result := Result + Domain + AddStartURL(Namespace) + AddStartURL(AliasName);
 end;
 
 procedure TmodWebModule.InternalError(ARequest: TmodRequest; var Handled: Boolean);
