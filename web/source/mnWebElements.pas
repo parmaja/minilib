@@ -389,6 +389,8 @@ type
     Data: TDON_Value;
     // For
     CurrentPath: string;
+    //* File resolved by ServeFile and passed to the active file-extension handler
+    HandlerFile: string;
 
     Language: string;
     Direction: TDirection;    
@@ -1230,6 +1232,29 @@ type
   TRegisteredSchemas = class(TmnNamedObjectList<TmnwRegisterdSchema>)
   end;
 
+  { TmnwFileExtension }
+
+  //* Maps a file extension (without the leading dot, lowercase) to the Schema
+  //* that will render files with that extension, and the response content type.
+  TmnwFileExtension = class(TmnNamedObject)
+  public
+    Extension: string;
+    SchemaClass: TmnwSchemaClass;
+    ContentType: string;
+  end;
+
+  { TmnwFileExtensions }
+
+  TmnwFileExtensions = class(TmnNamedObjectList<TmnwFileExtension>)
+  public
+    //* Normalize an extension: lowercase and without the leading dot.
+    //* Accepts 'md', '.md', 'FILE.MD', 'C:\dir\FILE.MD'.
+    class function Normalize(const S: string): string;
+    procedure Register(const AExtension: string; ASchemaClass: TmnwSchemaClass; const AContentType: string = 'text/html');
+    function FindFile(const AFileName: string): TmnwFileExtension;
+    function Handle(const AFileName: string; const Ctx: TmnwContext): Boolean;
+  end;
+
   TAssetsSchema = class;
 
   TmnwAppOptions = set of (
@@ -1258,6 +1283,7 @@ type
     FShutdown: Boolean;
     FLock: TMREWSync;
     FRegistered: TRegisteredSchemas;
+    FExtensions: TmnwFileExtensions;
     FTimeStamp: Int64;
     FOnlineFiles: TOnlineFiles;
     FLanguage: string;
@@ -1295,13 +1321,19 @@ type
 
     function RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass; AsDefaultSchema: Boolean = False): TmnwSchema;
     property Registered: TRegisteredSchemas read FRegistered;
+    //* File extension handlers, e.g. .md -> markdown Schema
+    property Extensions: TmnwFileExtensions read FExtensions;
 
     function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
     function CreateSchema(const aSchemaName: string): TmnwSchema; overload;
     function CreateSchema(const SchemaClass: TmnwSchemaClass; AName: string): TmnwSchema; overload;
     function CreateSchema(SchemaItem: TmnwRegisterdSchema): TmnwSchema; overload;
     function ReleaseSchema(const aSchemaName: string; aSessionID: string): TmnwSchema;
-    
+
+    //* Called by the file-serving code: run the registered handler for AFileName,
+    //* return True when the response was produced by a handler.
+    function HandleFile(const AFileName: string; const Ctx: TmnwContext): Boolean;
+
     function InquireElement(var Ctx: TmnwContext; FindNested: Boolean): Boolean;
     //for HTML
     procedure Respond(var Ctx: TmnwContext);
@@ -3450,6 +3482,7 @@ end;
 
 destructor TmnwWeb.Destroy;
 begin
+  FreeAndNil(FExtensions);
   FreeAndNil(FRegistered);
   FreeAndNil(FLock);
   inherited;
@@ -3867,6 +3900,7 @@ begin
   FTimeStamp := GetTimeStamp;
   FLock := TMREWSync.Create;
   FRegistered := TRegisteredSchemas.Create;
+  FExtensions := TmnwFileExtensions.Create;
   SessionAge := msOneHour; //Forever
   FShowVersion := True;
   FLanguage := 'en';
@@ -3883,6 +3917,102 @@ begin
     if Started then
       Result.Start;
   end;
+end;
+
+{ TmnwFileExtensions }
+
+class function TmnwFileExtensions.Normalize(const S: string): string;
+var
+  aExt: string;
+begin
+  aExt := Trim(S);
+  //* Accept 'md', '.md', 'file.md' and 'C:\dir\file.md'.
+  if (Pos('\', aExt) > 0) or (Pos('/', aExt) > 0) or
+     ((Pos('.', aExt) > 1) and (aExt[1] <> '.')) then
+    aExt := ExtractFileExt(aExt);
+  Result := LowerCase(aExt);
+  if (Result <> '') and (Result[1] = '.') then
+    System.Delete(Result, 1, 1);
+end;
+
+procedure TmnwFileExtensions.Register(const AExtension: string;
+  ASchemaClass: TmnwSchemaClass; const AContentType: string);
+var
+  aItem: TmnwFileExtension;
+  aName: string;
+begin
+  aName := Normalize(AExtension);
+  if aName = '' then
+    raise Exception.Create('File extension is required');
+  if ASchemaClass = nil then
+    raise Exception.Create('File extension handler Schema is required: ' + aName);
+
+  //* Registering the same extension twice replaces the old handler.
+  aItem := Find(aName);
+  if aItem = nil then
+  begin
+    aItem := TmnwFileExtension.Create;
+    //* TmnNamedObjectList hashes on Name, so set it before adding.
+    aItem.Name := aName;
+    Add(aItem);
+  end;
+  aItem.Extension := aName;
+  aItem.SchemaClass := ASchemaClass;
+  if AContentType <> '' then
+    aItem.ContentType := AContentType
+  else
+    aItem.ContentType := 'text/html';
+end;
+
+function TmnwFileExtensions.FindFile(const AFileName: string): TmnwFileExtension;
+begin
+  Result := Find(Normalize(AFileName));
+end;
+
+function TmnwFileExtensions.Handle(const AFileName: string; const Ctx: TmnwContext): Boolean;
+var
+  aHandler: TmnwFileExtension;
+  aHandlerSchema: TmnwSchema;
+  aCtx: TmnwContext;
+begin
+  Result := False;
+  aHandler := FindFile(AFileName);
+  if (aHandler = nil) or (aHandler.SchemaClass = nil) or (Ctx.Web = nil) then
+    Exit;
+
+  aHandlerSchema := Ctx.Web.CreateSchema(aHandler.SchemaClass, 'ext_' + aHandler.Extension);
+  if aHandlerSchema = nil then
+    Exit;
+
+  //* ServeFile is called from inside the host Schema's DoRespond, and Ctx is a
+  //* const parameter there. Work on a copy so TmnwWeb.Respond keeps its own
+  //* Ctx.Schema for usage counting and cleanup. Response/Renderer/Writer are
+  //* shared objects, so the rendered page still goes to the real response.
+  aCtx := Ctx;
+  try
+    aCtx.Schema := aHandlerSchema;
+    aCtx.Element := aHandlerSchema;
+    aCtx.HandlerFile := AFileName;
+    aHandlerSchema.Init;
+    aHandlerSchema.Compose(aCtx);
+    if aCtx.Response <> nil then
+      aCtx.Response.ContentType := aHandler.ContentType;
+    aHandlerSchema.PrepareRenderer(aCtx);
+    if (aCtx.Response = nil) or not aCtx.Response.IsResponded then
+      aHandlerSchema.Respond(aCtx);
+    Result := True;
+  finally
+    aHandlerSchema.Free;
+  end;
+end;
+
+{ TmnwWeb }
+
+function TmnwWeb.HandleFile(const AFileName: string; const Ctx: TmnwContext): Boolean;
+begin
+  if FExtensions = nil then
+    Exit(False);
+  Result := FExtensions.Handle(AFileName, Ctx);
 end;
 
 { TLocation }
@@ -4236,7 +4366,13 @@ begin
   else if IsDocument then
   begin
     if StartsText(PublicPath, aDocument) then
+    begin
+      //* A registered extension may replace raw sending with a rendered response.
+      if (Schema <> nil) and (Schema.Web <> nil) and
+         Schema.Web.HandleFile(aDocument, Ctx) then
+        Exit(True);
       Ctx.Response.SendFile(aDocument)
+    end
     else
       Ctx.Response.RespondUnauthorized;
   end
@@ -5149,6 +5285,8 @@ end;
 procedure TmnwSchema.TFile.DoRespond(const Ctx: TmnwContext);
 begin
   inherited;
+  if (Schema <> nil) and (Schema.Web <> nil) and Schema.Web.HandleFile(FileName, Ctx) then
+    Exit;
   if ftResource in Options then
     Ctx.Response.SendResource(FileName, Route)
   else

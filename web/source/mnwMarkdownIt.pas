@@ -90,6 +90,20 @@ type
   public
   end;
 
+  { TMarkdownFileSchema }
+
+  //* Renders a registered *.md file as a full HTML page. WebElements passes the
+  //* resolved file path in Ctx.HandlerFile when it runs the extension handler.
+  TMarkdownFileSchema = class(THTML)
+  protected
+    procedure DoCompose(const Ctx: TmnwContext); override;
+  end;
+
+  //* Register .md / .markdown handlers on a web application.
+  procedure RegisterMarkdownFiles(Web: TmnwWeb); overload;
+  //* Register .md / .markdown handlers on a standalone extension list.
+  procedure RegisterMarkdownFiles(Extensions: TmnwFileExtensions); overload;
+
   //* Require the libraries used by markdown blocks (markdown-it, DOMPurify,
   //* github-markdown-css and highlight.js). Call it while composing the page.
   procedure MarkdownItRequire(const Ctx: TmnwContext);
@@ -206,6 +220,46 @@ end;
 procedure MarkdownItWrite(const Ctx: TmnwContext; const AID, ASource: string);
 begin
   MarkdownItWrite(Ctx, AID, ASource, [mioHTML, mioLinkify, mioSanitize]);
+end;
+
+{ TMarkdownFileSchema }
+
+procedure TMarkdownFileSchema.DoCompose(const Ctx: TmnwContext);
+var
+  aFileName, aSource: string;
+begin
+  inherited;
+  //* Never send / transform the same file a second time while rendering.
+  ServeFiles := [];
+  aFileName := Ctx.HandlerFile;
+  if (aFileName = '') or not FileExists(aFileName) then
+    Exit;
+  try
+    aSource := LoadFileString(aFileName);
+  except
+    aSource := '';
+  end;
+  Document.Title := ExtractFileName(aFileName);
+  with TMarkdownIt.Create(Document.Body.Main) do
+  begin
+    ID := 'markdown_file';
+    Source := aSource;
+    Options := [mioHTML, mioLinkify, mioSanitize, mioTaskLists, mioHighlight];
+  end;
+end;
+
+procedure RegisterMarkdownFiles(Web: TmnwWeb); overload;
+begin
+  if Web <> nil then
+    RegisterMarkdownFiles(Web.Extensions);
+end;
+
+procedure RegisterMarkdownFiles(Extensions: TmnwFileExtensions); overload;
+begin
+  if Extensions = nil then
+    Exit;
+  Extensions.Register('md', TMarkdownFileSchema, 'text/html');
+  Extensions.Register('markdown', TMarkdownFileSchema, 'text/html');
 end;
 
 { TMarkdownIt }

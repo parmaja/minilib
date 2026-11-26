@@ -162,6 +162,8 @@ begin
   Add('json', 'application/json', 'JSON format', [TEXT]);
   Add('jsonld', 'application/ld+json', 'JSON-LD format');
   Add('lua', 'application/x-httpd-lua', 'LUA Script file', [Executable]);
+  Add('markdown', 'text/markdown', 'Markdown document', [TEXT]);
+  Add('md', 'text/markdown', 'Markdown document', [TEXT]);
   Add('mid', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');
   Add('midi', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');
   Add('mp3', 'audio/mpeg', 'MP3 audio', [Compressed]);
