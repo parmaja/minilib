@@ -1,4 +1,4 @@
-unit mnwMarkdownIt;
+﻿unit mnwMarkdownIt;
 {$H+}{$M+}
 {$ifdef fpc}
 {$mode delphi}
@@ -32,6 +32,14 @@ unit mnwMarkdownIt;
       ID := 'myMD';
       Source := '# Hello World'#13#10'This is **markdown** text.';
     end;
+
+  It also hosts the markdown document handler, so a *.md file served by the web
+  can be rendered as a page instead of being downloaded:
+
+    Web.RegisterFileHandler(TmnwMarkdownFileHandler);
+
+    GET /notes/README.md        -> a styled html page
+    GET /notes/README.md?raw=1  -> the file as text/markdown
 }
 
 interface
@@ -100,6 +108,25 @@ type
   procedure MarkdownItWrite(const Ctx: TmnwContext; const AID, ASource: string;
     AOptions: TMarkdownItOptions; const AClasses: string = ''); overload;
   procedure MarkdownItWrite(const Ctx: TmnwContext; const AID, ASource: string); overload;
+
+type
+  { TmnwMarkdownDocumentSchema }
+
+  TmnwMarkdownDocumentSchema = class(TmnwDocumentSchema)
+  protected
+    procedure ComposeDocument(const Ctx: TmnwContext); override;
+  public
+    class function GetCapabilities: TmnwSchemaCapabilities; override;
+  end;
+
+  { TmnwMarkdownFileHandler }
+
+  TmnwMarkdownFileHandler = class(TmnwFileHandler)
+  protected
+    function Accepts(const Ctx: TmnwContext; const AFileName: string): Boolean; override;
+  public
+    constructor Create; override;
+  end;
 
 implementation
 
@@ -264,6 +291,64 @@ begin
   Sources.Add(stScript, 'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.4/', 'purify.min.js');
   // markdown-it-task-lists - checkbox task list support
   Sources.Add(stScript, 'https://cdn.jsdelivr.net/npm/markdown-it-task-lists@2.1.1/dist/', 'markdown-it-task-lists.min.js');
+end;
+
+//* ------------------------------------------------------------ markdown document
+
+const
+  cMarkdownExtensions: array [0 .. 4] of string = ('md', 'markdown', 'mdown', 'mkd', 'mkdn');
+
+{ TmnwMarkdownDocumentSchema }
+
+class function TmnwMarkdownDocumentSchema.GetCapabilities: TmnwSchemaCapabilities;
+begin
+  //* not schemaStatic: the schema is owned and cached by TmnwWeb.FDocumentSchemas
+  Result := [];
+end;
+
+procedure TmnwMarkdownDocumentSchema.ComposeDocument(const Ctx: TmnwContext);
+var
+  aID: string;
+  aSource: string;
+begin
+  aID := 'mnw_markdown_doc';
+
+  Ctx.Writer.OpenTag('div', 'class="mnw-document"');
+  Ctx.Writer.OpenTag('div', 'class="mnw-document-header d-flex align-items-center gap-2 mb-3"');
+  Ctx.Writer.AddTag('h1', 'class="h4 mb-0"', TextToHTML(ExtractFileName(DocumentFile)));
+  Ctx.Writer.OpenInlineTag('div', 'class="ms-auto"');
+  Ctx.Writer.AddInlineTag('a', 'class="btn btn-sm btn-outline-secondary" href="?raw=1"',
+    Ctx._T('source', 'Source'));
+  Ctx.Writer.CloseTag('div');
+  Ctx.Writer.CloseTag('div');
+
+  aSource := LoadDocument;
+  if Trim(aSource) = '' then
+    Ctx.Writer.AddTag('p', 'class="text-muted"', Ctx._T('empty_document', 'This document is empty.'))
+  else
+  begin
+    //* markdown-it needs its libraries in the page head
+    MarkdownItRequire(Ctx);
+    MarkdownItWrite(Ctx, aID, aSource, [mioLinkify, mioSanitize, mioTaskLists, mioHighlight]);
+  end;
+
+  Ctx.Writer.CloseTag('div');
+end;
+
+{ TmnwMarkdownFileHandler }
+
+constructor TmnwMarkdownFileHandler.Create;
+begin
+  inherited Create;
+  Name := 'markdown';
+  AddExtension(cMarkdownExtensions);
+  ContentType := 'text/markdown';
+  SchemaClass := TmnwMarkdownDocumentSchema;
+end;
+
+function TmnwMarkdownFileHandler.Accepts(const Ctx: TmnwContext; const AFileName: string): Boolean;
+begin
+  Result := inherited Accepts(Ctx, AFileName);
 end;
 
 initialization

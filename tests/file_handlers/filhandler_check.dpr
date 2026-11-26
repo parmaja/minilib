@@ -1,6 +1,7 @@
 program filhandler_check;
 {**
- *  Tests for mnwFileHandlers (registered file extensions -> schema) and the
+ *  Tests for the file handler registry in mnWebElements (registered file
+ *  extensions -> schema) and the
  *  markdown MIME registration in mnMIME.
  *
  *  Build (fpc 3.3, win64):
@@ -17,7 +18,7 @@ program filhandler_check;
 uses
   SysUtils, Classes,
   mnUtils, mnClasses, mnMIME, mnModules,
-  mnWebElements, mnwFileHandlers, mnwDocuments, mnwMarkdownFile;
+  mnWebElements, mnwMarkdownIt;
 
 var
   Failures: Integer = 0;
@@ -131,7 +132,7 @@ begin
 end;
 
 begin
-  WriteLn('=== mnwFileHandlers check ===');
+  WriteLn('=== file handlers check ===');
   try
     TestMIME;
     TestRegistry;
