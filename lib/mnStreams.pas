@@ -469,6 +469,36 @@ var
 
 implementation
 
+//ATTENTION: declare the ByteLength overloads before any use, otherwise
+//SysUtils.ByteLength(UnicodeString) is picked for UTF8 strings and doubles the size.
+
+function ByteLength(s: unicodestring): TFileSize; overload;
+begin
+{$ifdef FPC}
+  Result := Length(s) * SizeOf(UnicodeChar);
+{$else}
+  Result := Length(s) * SizeOf(WideChar);
+{$endif}
+end;
+
+{$ifndef NEXTGEN}
+function ByteLength(s: ansistring): TFileSize; overload;
+begin
+  Result := Length(s) * SizeOf(AnsiChar);
+end;
+
+function ByteLength(s: utf8string): TFileSize; overload;
+begin
+  Result := Length(s) * SizeOf(AnsiChar);
+end;
+
+function ByteLength(s: widestring): TFileSize; overload;
+begin
+  Result := Length(s) * SizeOf(WideChar);
+end;
+
+{$endif}
+
 {function TStreamHelper.WriteUtf8(const vData: UTF8String): TFileSize;
 begin
   if vData<>'' then
@@ -480,7 +510,9 @@ end;}
 function TStreamHelper.WriteUTF8String(const vData: UTF8String): TFileSize;
 begin
   if vData<>'' then
-    Result := Write(PUTF8Char(vData)^, ByteLength(vData))
+    //do not use ByteLength here: Length of a UTF8String is its byte size, and
+    //an inline body must not rely on private symbols of this unit.
+    Result := Write(PUTF8Char(vData)^, Length(vData))
   else
     Result := 0;
 end;
@@ -549,33 +581,6 @@ begin
   else
     s := '';
 end;
-{$endif}
-
-function ByteLength(s: unicodestring): TFileSize; overload;
-begin
-{$ifdef FPC}
-  Result := Length(s) * SizeOf(UnicodeChar);
-{$else}
-  Result := Length(s) * SizeOf(WideChar);
-{$endif}
-end;
-
-{$ifndef NEXTGEN}
-function ByteLength(s: ansistring): TFileSize; overload;
-begin
-  Result := Length(s) * SizeOf(AnsiChar);
-end;
-
-function ByteLength(s: utf8string): TFileSize; overload;
-begin
-  Result := Length(s) * SizeOf(AnsiChar);
-end;
-
-function ByteLength(s: widestring): TFileSize; overload;
-begin
-  Result := Length(s) * SizeOf(WideChar);
-end;
-
 {$endif}
 
 { TStreamHelper }

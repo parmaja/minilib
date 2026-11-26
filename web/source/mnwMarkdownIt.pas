@@ -90,6 +90,16 @@ type
   public
   end;
 
+  { TmnwMarkdownSchema }
+
+  //* Viewer schema for markdown files, register it with the web:
+  //*   Web.RegisterExtension('md', TmnwMarkdownSchema);
+  //* then a request for an existing *.md file renders it as a page
+  TmnwMarkdownSchema = class(TmnwFileViewerSchema)
+  protected
+    procedure BuildFileContent(const Ctx: TmnwContext); override;
+  end;
+
   //* Require the libraries used by markdown blocks (markdown-it, DOMPurify,
   //* github-markdown-css and highlight.js). Call it while composing the page.
   procedure MarkdownItRequire(const Ctx: TmnwContext);
@@ -246,6 +256,19 @@ begin
 
   MarkdownItWriteSource(Ctx, e.ID, e.Source);
   MarkdownItWriteScript(Ctx, e.ID, e.Options);
+end;
+
+{ TmnwMarkdownSchema }
+
+procedure TmnwMarkdownSchema.BuildFileContent(const Ctx: TmnwContext);
+begin
+  with TMarkdownIt.Create(Document.Body.Main) do
+  begin
+    ID := 'mdfile';
+    Name := 'mdfile';
+    Options := [mioHTML, mioLinkify, mioSanitize, mioTypographer, mioHighlight];
+    Source := GetFileText;
+  end;
 end;
 
 { TMarkdownIt_Library }

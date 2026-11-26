@@ -945,6 +945,8 @@ type
     RefreshInterval: Integer; //* in seconds, for refresh elements that need auto refresh
     ServeFiles: TmodServeFiles;
     Interactive: Boolean;
+    //* Absolute file to render, set by ServeByExtension before Init (viewer schemas)
+    FilePath: string;
     constructor Create(AWeb: TmnwWeb; AName:string; ARoute: string = ''); reintroduce;
     destructor Destroy; override;
     procedure Init;  //Call it manually before composed
@@ -966,6 +968,10 @@ type
     // Process return true if you processed it, this will not call compose if processed
     function Execute(var Ctx: TmnwContext): Boolean;
     procedure Compose(const Ctx: TmnwContext); override;
+
+    //* When a served file has a registered extension, its viewer schema renders
+    //* it instead of sending the raw bytes, False means: send the file as is
+    function ServeByExtension(const AFileName: string; const Ctx: TmnwContext): Boolean;
 
     // Executed from a thread of connection of WebSocket, it stay inside until the disconnect or terminate
     procedure Attach(Route: string; Sender: TObject; AStream: TmnBufferStream); // in connection thread
@@ -1230,6 +1236,28 @@ type
   TRegisteredSchemas = class(TmnNamedObjectList<TmnwRegisterdSchema>)
   end;
 
+  //Registered file extensions, when a served file has one of these extensions
+  //the registered Schema renders it (like a .md file rendered as HTML page)
+  TmnwExtensionOption = (
+    extRawParam,     //* ?raw=1 always sends the original bytes
+    extHtmlAccept,   //* only render when Accept contains text/html
+    extCacheFileAge  //* re-render only when the file modified date changes
+  );
+
+  TmnwExtensionOptions = set of TmnwExtensionOption;
+
+  { TmnwRegisterdExtension }
+
+  TmnwRegisterdExtension = class(TmnNamedObject)
+  public
+    SchemaClass: TmnwSchemaClass;
+    Options: TmnwExtensionOptions;
+    MaxFileSize: Int64; //* 0 = no limit, bigger files are sent raw
+  end;
+
+  TRegisteredExtensions = class(TmnNamedObjectList<TmnwRegisterdExtension>)
+  end;
+
   TAssetsSchema = class;
 
   TmnwAppOptions = set of (
@@ -1258,6 +1286,7 @@ type
     FShutdown: Boolean;
     FLock: TMREWSync;
     FRegistered: TRegisteredSchemas;
+    FRegisteredExtensions: TRegisteredExtensions;
     FTimeStamp: Int64;
     FOnlineFiles: TOnlineFiles;
     FLanguage: string;
@@ -1295,6 +1324,13 @@ type
 
     function RegisterSchema(const AName: string; SchemaClass: TmnwSchemaClass; AsDefaultSchema: Boolean = False): TmnwSchema;
     property Registered: TRegisteredSchemas read FRegistered;
+
+    //* Register a viewer Schema for a file extension, like 'md' for markdown files
+    function RegisterExtension(const AExtension: string; ASchemaClass: TmnwSchemaClass;
+      AOptions: TmnwExtensionOptions = [extRawParam]): TmnwRegisterdExtension;
+    //* Find the registered extension of a file name by its extension, nil when not registered
+    function FindExtension(const AFileName: string): TmnwRegisterdExtension;
+    property RegisteredExtensions: TRegisteredExtensions read FRegisteredExtensions;
 
     function FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
     function CreateSchema(const aSchemaName: string): TmnwSchema; overload;
@@ -2225,6 +2261,22 @@ type
   protected
     procedure BuildLoginRequired(const Ctx: TmnwContext; Path: string); virtual;
     procedure BuildSideBar(const Ctx: TmnwContext); virtual;
+  end;
+
+  { TmnwFileViewerSchema }
+
+  //* Base schema for files rendered by a registered extension, see TmnwWeb.RegisterExtension.
+  //* The framework sets FilePath before Init/Compose, it builds the page header and
+  //* the Raw link, descendants only fill the content in BuildFileContent
+  TmnwFileViewerSchema = class(THTML)
+  protected
+    procedure DoCompose(const Ctx: TmnwContext); override;
+    //* Fill the rendered file content here, FilePath is already set
+    procedure BuildFileContent(const Ctx: TmnwContext); virtual; abstract;
+    //* The file content as text, empty when the file is gone
+    function GetFileText: string; virtual;
+    //* Same request URL with raw=1, sends the original bytes
+    function GetRawURL(const Ctx: TmnwContext): string; virtual;
   end;
 
   { TmnwElementRendererRegister }
@@ -3450,6 +3502,7 @@ end;
 
 destructor TmnwWeb.Destroy;
 begin
+  FreeAndNil(FRegisteredExtensions);
   FreeAndNil(FRegistered);
   FreeAndNil(FLock);
   inherited;
@@ -3500,6 +3553,30 @@ begin
   end
   else
     Result := nil;
+end;
+
+function TmnwWeb.RegisterExtension(const AExtension: string; ASchemaClass: TmnwSchemaClass;
+  AOptions: TmnwExtensionOptions): TmnwRegisterdExtension;
+begin
+  Result := RegisteredExtensions.Find(AExtension);
+  if Result = nil then
+  begin
+    Result := TmnwRegisterdExtension.Create;
+    Result.Name := LowerCase(AExtension);
+    RegisteredExtensions.Add(Result);
+  end;
+  Result.SchemaClass := ASchemaClass;
+  Result.Options := AOptions;
+end;
+
+function TmnwWeb.FindExtension(const AFileName: string): TmnwRegisterdExtension;
+var
+  aExt: string;
+begin
+  aExt := ExtractFileExt(AFileName);
+  if Length(aExt) > 1 then
+    aExt := Copy(aExt, 2, Length(aExt));
+  Result := RegisteredExtensions.Find(aExt);
 end;
 
 function TmnwWeb.FindBy(const aSchemaName: string; const aSessionID: string): TmnwSchema;
@@ -3867,6 +3944,7 @@ begin
   FTimeStamp := GetTimeStamp;
   FLock := TMREWSync.Create;
   FRegistered := TRegisteredSchemas.Create;
+  FRegisteredExtensions := TRegisteredExtensions.Create;
   SessionAge := msOneHour; //Forever
   FShowVersion := True;
   FLanguage := 'en';
@@ -4089,6 +4167,7 @@ begin
   FDefaultDocuments.Add('index.htm');
   FDefaultDocuments.Add('default.html');
   FDefaultDocuments.Add('default.htm');
+  FDefaultDocuments.Add('index.md');
   FName := AName;
   if ARoute = '' then
     FRoute := FName
@@ -4202,11 +4281,17 @@ begin
   IsDocument := FileExists(aDocument);
   IsDirectory := DirectoryExists(aDocument);
 
-  if ((Ctx.CurrentPath = '') and not IsDocument) or (not EndsDelimiter(aRequestDocument) and IsDirectory) then
-  begin
-    Ctx.Response.RespondRedirectTo(IncludeURLDelimiter(Ctx.Request.Path)); //TODO short it
-    Exit;
-  end;
+  //the root path ('' or '/') expands to HomeDir without a trailing delimiter,
+  //add it so the default documents below can be found
+  if (Ctx.CurrentPath = '') and IsDirectory then
+    aDocument := IncludePathDelimiter(aDocument);
+
+  if not EndsDelimiter(Ctx.Request.Path) then
+    if ((Ctx.CurrentPath = '') and not IsDocument) or ((not EndsDelimiter(aRequestDocument)) and IsDirectory) then
+    begin
+      Ctx.Response.RespondRedirectTo(IncludeURLDelimiter(Ctx.Request.Path)); //TODO short it
+      Exit;
+    end;
 
   if EndsDelimiter(aDocument) then
   begin
@@ -4235,10 +4320,10 @@ begin
     Ctx.Response.RespondForbidden
   else if IsDocument then
   begin
-    if StartsText(PublicPath, aDocument) then
-      Ctx.Response.SendFile(aDocument)
-    else
-      Ctx.Response.RespondUnauthorized;
+    if not StartsText(PublicPath, aDocument) then
+      Ctx.Response.RespondUnauthorized
+    else if (Schema = nil) or not Schema.ServeByExtension(aDocument, Ctx) then
+      Ctx.Response.SendFile(aDocument);
   end
   else
     Result := False;
@@ -4304,6 +4389,57 @@ procedure TmnwSchema.DoRespond(const Ctx: TmnwContext);
 begin
   if not (serveEnabled in ServeFiles) or not ServeFile(GetPublicPath, DefaultDocuments, ServeFiles, Ctx) then
     Render(Ctx);
+end;
+
+function TmnwSchema.ServeByExtension(const AFileName: string; const Ctx: TmnwContext): Boolean;
+var
+  aExtItem: TmnwRegisterdExtension;
+  aViewer: TmnwSchema;
+  aCtx: TmnwContext;
+  aSearchRec: TSearchRec;
+begin
+  Result := False;
+  if Ctx.Response.IsResponded then
+    Exit;
+  aExtItem := Web.FindExtension(AFileName);
+  if aExtItem = nil then
+    Exit;
+  if (extRawParam in aExtItem.Options) and (Ctx.Request.Params['raw'] = '1') then
+    Exit; //* send the original bytes
+  if (extHtmlAccept in aExtItem.Options) and (Pos('text/html', LowerCase(Ctx.Request.Accept)) = 0) then
+    Exit; //* send the original bytes to API clients
+  if (aExtItem.MaxFileSize > 0) and (FindFirst(AFileName, faAnyFile, aSearchRec) = 0) then
+  try
+    if aSearchRec.Size > aExtItem.MaxFileSize then
+      Exit; //* too big to render, send it raw
+  finally
+    FindClose(aSearchRec);
+  end;
+  aViewer := Web.CreateSchema(aExtItem.SchemaClass, '');
+  if aViewer = nil then
+    Exit;
+  try
+    aViewer.FilePath := AFileName;
+    //* a copy of the context, the viewer schema owns it while it renders
+    aCtx := Ctx;
+    aCtx.Schema := aViewer;
+    aCtx.Element := aViewer;
+    aCtx.CurrentPath := '';
+    aCtx.Response.ContentType := DocumentToContentType('html');
+    aViewer.RespondInit(aCtx);
+    aViewer.Enter;
+    try
+      aViewer.Init;
+      aViewer.Compose(aCtx);
+    finally
+      aViewer.Leave;
+    end;
+    aViewer.PrepareRenderer(aCtx);
+    aViewer.Render(aCtx);
+    Result := True;
+  finally
+    FreeAndNil(aViewer);
+  end;
 end;
 
 procedure TmnwSchema.Enter;
@@ -7645,6 +7781,44 @@ end;
 
 procedure THTMLSchema.BuildSideBar(const Ctx: TmnwContext);
 begin
+end;
+
+{ TmnwFileViewerSchema }
+
+procedure TmnwFileViewerSchema.DoCompose(const Ctx: TmnwContext);
+begin
+  inherited;
+  with Document do
+  begin
+    Title := ExtractFileName(FilePath);
+    with Body.Main do
+    begin
+      THeading.Create(This, 5, ExtractFileName(FilePath), [hsMuted]);
+      with TLink.Create(This, GetRawURL(Ctx), _T('raw', Ctx.Language, 'Raw')) do
+      begin
+        ClickType := clickNavigate;
+      end;
+      TBreak.Create(This);
+      TBreak.Create(This);
+      BuildFileContent(Ctx);
+    end;
+  end;
+end;
+
+function TmnwFileViewerSchema.GetFileText: string;
+begin
+  if (FilePath <> '') and FileExists(FilePath) then
+    Result := LoadFileString(FilePath)
+  else
+    Result := '';
+end;
+
+function TmnwFileViewerSchema.GetRawURL(const Ctx: TmnwContext): string;
+begin
+  if Pos('?', Ctx.Request.URI) > 0 then
+    Result := Ctx.Request.URI + '&raw=1'
+  else
+    Result := Ctx.Request.URI + '?raw=1';
 end;
 
 initialization

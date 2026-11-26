@@ -11,7 +11,7 @@ interface
 uses
   Classes, SysUtils, StrUtils, DateUtils,
   mnUtils, mnStreams, mnModules, mnWebModules,
-	mnLogs, mnWebElements, mnBootstraps;
+	mnLogs, mnWebElements, mnBootstraps, mnwMarkdownIt;
 
 type
   { TmySchema }
@@ -849,6 +849,9 @@ begin
   Web.RegisterSchema('info', TInfoSchema);
   Web.RegisterSchema('files', TFilesSchema);
   Web.RegisterSchema('ws', TWSShema);
+  //* render *.md files as a formatted page instead of sending the raw bytes
+  Web.RegisterExtension('md', TmnwMarkdownSchema);
+  Web.RegisterExtension('markdown', TmnwMarkdownSchema);
   RegisterCommand('.ws', TWSEchoGetHomeCommand, False);
 end;
 
