@@ -34,6 +34,18 @@
         <UnitName Value="mnWebElements"/>
       </Item>
       <Item>
+        <Filename Value="..\source\mnwFileHandlers.pas"/>
+        <UnitName Value="mnwFileHandlers"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnwDocuments.pas"/>
+        <UnitName Value="mnwDocuments"/>
+      </Item>
+      <Item>
+        <Filename Value="..\source\mnwMarkdownFile.pas"/>
+        <UnitName Value="mnwMarkdownFile"/>
+      </Item>
+      <Item>
         <Filename Value="..\source\mnwMarkdownIt.pas"/>
         <UnitName Value="mnwMarkdownIt"/>
       </Item>

@@ -75,8 +75,10 @@ type
     serveIndex,
     serveIndexRoot, //if it root serve index too not schema TODO
     serveSmart, //
-    serveDefault
-//    serveRender
+    serveDefault,
+    //* let a registered file handler render the document, eg 'md' as html,
+    //* see TmnwWeb.FileHandlers, without it the file is served as it is
+    serveRender
   );
 
   TModuleOption = (

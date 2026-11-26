@@ -13,5 +13,7 @@
   "index.of": "Index of",
   "dirs": "Dirs",
   "files": "Files",
-  "executed": "Executed"
+  "executed": "Executed",
+  "source": "Source",
+  "empty_document": "This document is empty."
 }

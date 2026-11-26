@@ -162,6 +162,12 @@ begin
   Add('json', 'application/json', 'JSON format', [TEXT]);
   Add('jsonld', 'application/ld+json', 'JSON-LD format');
   Add('lua', 'application/x-httpd-lua', 'LUA Script file', [Executable]);
+  //* Text documents, served as source text, handlers may render them as HTML
+  Add('markdown', 'text/markdown', 'Markdown document', [Text, Document]);
+  Add('md', 'text/markdown', 'Markdown document', [Text, Document]);
+  Add('mdown', 'text/markdown', 'Markdown document', [Text, Document]);
+  Add('mkd', 'text/markdown', 'Markdown document', [Text, Document]);
+  Add('mkdn', 'text/markdown', 'Markdown document', [Text, Document]);
   Add('mid', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');
   Add('midi', 'audio/midi', 'Musical Instrument Digital Interface (MIDI)');
   Add('mp3', 'audio/mpeg', 'MP3 audio', [Compressed]);

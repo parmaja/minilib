@@ -383,6 +383,9 @@ type
 
     Schema: TmnwSchema;    
     Element: TmnwElement;
+
+    //* The file that a file handler (eg markdown) is rendering for this request
+    DocumentFile: string;
     
     ParentRenderer: TmnwElementRenderer;
     //
@@ -446,6 +449,17 @@ type
   end;
 
   TmnwObject = class(TmnNamedObject);
+
+  { TmnwFileHandlersBase }
+
+  //* Declared here, not in mnwFileHandlers.pas, so TmnwWeb can own it without a
+  //* circular unit reference. The real registry TmnwFileHandlers (ext -> handler)
+  //* lives in mnwFileHandlers.pas; mnWebElements knows only this abstract face.
+  TmnwFileHandlersBase = class(TmnwObject)
+  public
+    //* Return True when a handler rendered the document and owns the response
+    function ServeDocument(const Ctx: TmnwContext; const AFileName: string; Options: TmodServeFiles): Boolean; virtual; abstract;
+  end;
 
   TLibraryOption = (
     libDefer,
@@ -1263,11 +1277,16 @@ type
     FLanguage: string;
     FVersion: string;
     FShowVersion: Boolean;
+    FFileHandlers: TmnwFileHandlersBase;
+    FDocumentSchemas: TList; //* cached TmnwDocumentSchema, one per (class, folder)
     procedure SetLanguage(const Value: string);
+    function GetFileHandlers: TmnwFileHandlersBase;
+    procedure SetFileHandlers(const Value: TmnwFileHandlersBase);
   protected
     procedure SchemaCreated(Schema: TmnwSchema); virtual;
     procedure Created; override;
     procedure CleanSchemas;
+    procedure CleanDocumentSchemas; virtual;
 
     procedure DoCompose(const Ctx: TmnwContext); virtual;
 
@@ -1308,7 +1327,14 @@ type
     //for WebSocket
     function Attach(var Ctx: TmnwContext; Sender: TObject; AStream: TmnBufferStream): TmnwAttachment;
 
+    //* File handlers: 'md' -> renders the document as html, see mnwFileHandlers.pas
+    //* Use WebRegisterFileHandler(Web, TmnwMarkdownFileHandler) before Start
+    //* Get or create the schema (of ASchemaClass) used to render documents of a folder
+    function AcquireDocumentSchema(ASchemaClass: TmnwSchemaClass; const AFolder: string;
+      AShared: Boolean; out AIsNew: Boolean): TmnwSchema;
+
     property Lock: TMREWSync read FLock;
+    property FileHandlers: TmnwFileHandlersBase read GetFileHandlers write SetFileHandlers;
     property Assets: TAssetsSchema read FAssets;
     property DefaultSchema: TmnwRegisterdSchema read FDefaultSchema;
     //Public Web Files
@@ -3450,9 +3476,92 @@ end;
 
 destructor TmnwWeb.Destroy;
 begin
+  CleanDocumentSchemas;
+  FreeAndNil(FDocumentSchemas);
+  FreeAndNil(FFileHandlers);
   FreeAndNil(FRegistered);
   FreeAndNil(FLock);
   inherited;
+end;
+
+function TmnwWeb.GetFileHandlers: TmnwFileHandlersBase;
+begin
+  Result := FFileHandlers;
+end;
+
+procedure TmnwWeb.SetFileHandlers(const Value: TmnwFileHandlersBase);
+begin
+  if FFileHandlers <> Value then
+  begin
+    FreeAndNil(FFileHandlers);
+    FFileHandlers := Value;
+  end;
+end;
+
+function TmnwWeb.AcquireDocumentSchema(ASchemaClass: TmnwSchemaClass; const AFolder: string;
+  AShared: Boolean; out AIsNew: Boolean): TmnwSchema;
+var
+  i: Integer;
+  aSchema: TmnwSchema;
+  aName: string;
+begin
+  Result := nil;
+  AIsNew := False;
+  if ASchemaClass = nil then
+    Exit;
+
+  aName := ExtractFileName(ExcludePathDelimiter(AFolder));
+
+  Lock.BeginWrite;
+  try
+    if AShared then
+    begin
+      for i := 0 to FDocumentSchemas.Count - 1 do
+      begin
+        aSchema := TmnwSchema(FDocumentSchemas[i]);
+        if (aSchema.ClassType = ASchemaClass) and SameText(aSchema.Name, aName) and
+          SameText(ExcludePathDelimiter(aSchema.PublicPath), ExcludePathDelimiter(AFolder)) then
+        begin
+          Result := aSchema;
+          Exit;
+        end;
+      end;
+    end;
+
+    //* Do not add it to the web list; document schemas are not routed by name,
+    //* they are requested per file, and CleanSchemas would drop them anyway
+    Result := ASchemaClass.Create(Self, aName, '');
+    try
+      Result.PublicPath := AFolder;
+      if Started then
+        Result.Start;
+      AIsNew := True;
+      if AShared then
+        FDocumentSchemas.Add(Result);
+    except
+      Result.Free;
+      Result := nil;
+      raise;
+    end;
+  finally
+    Lock.EndWrite;
+  end;
+end;
+
+procedure TmnwWeb.CleanDocumentSchemas;
+var
+  i: Integer;
+begin
+  if FDocumentSchemas = nil then
+    Exit;
+  Lock.BeginWrite;
+  try
+    for i := 0 to FDocumentSchemas.Count - 1 do
+      TmnwSchema(FDocumentSchemas[i]).Free;
+    FDocumentSchemas.Clear;
+  finally
+    Lock.EndWrite;
+  end;
 end;
 
 procedure TmnwWeb.DoCompose(const Ctx: TmnwContext);
@@ -3475,6 +3584,7 @@ end;
 procedure TmnwWeb.Stop;
 begin
   FShutdown := True;
+  CleanDocumentSchemas;
   CleanSchemas;
   Started := False;
 end;
@@ -3867,6 +3977,7 @@ begin
   FTimeStamp := GetTimeStamp;
   FLock := TMREWSync.Create;
   FRegistered := TRegisteredSchemas.Create;
+  FDocumentSchemas := TList.Create;
   SessionAge := msOneHour; //Forever
   FShowVersion := True;
   FLanguage := 'en';
@@ -4098,6 +4209,8 @@ begin
   FIsRoot := True;
   FAttachments := TmnwAttachments.Create;
   FAPI := TmnwAPI.Create;
+  //* schemas render registered documents (eg 'md') as pages by default
+  ServeFiles := [serveRender];
 
   if schemaStatic in GetCapabilities then
     FInternalLock := TCriticalSection.Create
@@ -4169,6 +4282,7 @@ function TmnwElement.ServeFile(PublicPath: string; DefaultDocuments: TStringList
 var
   aDocument, aRequestDocument, aFile: string;
   IsDocument, IsDirectory, Expanded: Boolean;
+  aHandlers: TmnwFileHandlersBase;
 begin
   Result := True;
   if PublicPath = '' then
@@ -4236,7 +4350,17 @@ begin
   else if IsDocument then
   begin
     if StartsText(PublicPath, aDocument) then
+    begin
+      //* A registered handler (eg 'md') may render the document as a page,
+      //* if it declines or nothing registered, serve the file as it is
+      if (serveRender in Options) and (Ctx.Web <> nil) and (Ctx.Web.FileHandlers <> nil) then
+      begin
+        aHandlers := Ctx.Web.FileHandlers;
+        if aHandlers.ServeDocument(Ctx, aDocument, Options) then
+          Exit(True);
+      end;
       Ctx.Response.SendFile(aDocument)
+    end
     else
       Ctx.Response.RespondUnauthorized;
   end
